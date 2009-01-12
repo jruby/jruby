@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 
-import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -49,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNode {
+public class SymbolNode extends Node implements ILiteralNode, INameNode {
     private String name;
     private RubySymbol symbol;
 
@@ -88,8 +87,14 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNod
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return getSymbol(runtime);
     }
+    
+    @Override
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+       if (value == null) whenNode.interpret(runtime, context, self, aBlock);
+       if (value instanceof RubySymbol && ((RubySymbol) value).asJavaString() == name) {
+           return whenNode.interpret(runtime, context, self, aBlock);
+       }
 
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-       return otherValue instanceof RubySymbol && ((RubySymbol) otherValue).asJavaString() == name;
+       return null;
     }
 }

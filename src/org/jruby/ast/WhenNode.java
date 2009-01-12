@@ -48,10 +48,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents a when condition
  */
 public class WhenNode extends Node {
-    public enum Homogeneity {NONE, FIXNUM, SYMBOL};
-
-    protected final Node expressionNodes;
-    protected final Node bodyNode;
+    private final Node expressionNodes;
+    private final Node bodyNode;
     private final Node nextCase;
     public final CallSite eqq = MethodIndex.getFunctionalCallSite("===");
 
@@ -70,10 +68,6 @@ public class WhenNode extends Node {
 
     public NodeType getNodeType() {
         return NodeType.WHENNODE;
-    }
-
-    public NodeType getHomogeneity() {
-        return NodeType.NONE;
     }
 
     /**
@@ -115,16 +109,19 @@ public class WhenNode extends Node {
         return bodyNode.interpret(runtime, context, self, aBlock);
     }
 
-    public IRubyObject when(IRubyObject test, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-//        RubyArray expressions = RuntimeHelpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
+    // Ruby grammar has nested whens in a case body because of productions case_body and when_args.
+    @Override
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        RubyArray expressions = RuntimeHelpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
 
-        ListNode list = (ListNode) expressionNodes;
-        for (Node expressionNode : list.childNodes()) {
-            IRubyObject expression = expressionNode.interpret(runtime, context, self, aBlock);
-            if ((test != null && eqq.call(context, self, expression, test).isTrue())
-                    || (test == null && expression.isTrue())) {
-                return bodyNode.interpret(runtime, context, self, aBlock);
+        for (int j = 0,k = expressions.getLength(); j < k; j++) {
+            IRubyObject test = expressions.eltInternal(j);
+
+            if ((value != null && eqq.call(context, self, test, value).isTrue())
+                    || (value == null && test.isTrue())) {
+                return whenNode.interpret(runtime, context, self, aBlock);
             }
+
         }
 
         return null;

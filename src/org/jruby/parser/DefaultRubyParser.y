@@ -1113,14 +1113,12 @@ primary       : literal
                   $$ = new UntilNode(getPosition($1), support.getConditionNode($3), body);
               }
               | kCASE expr_value opt_terms case_body kEND {
-                  $$ = support.newCaseNode(support.union($1, $5), $2, $4);
-//                  $$ = new CaseNode(support.union($1, $5), $2, $4);
+                  $$ = new CaseNode(support.union($1, $5), $2, $4);
               }
               | kCASE opt_terms case_body kEND {
 // TODO: MRI is just a when node.  We need this extra logic for IDE consumers (null in casenode statement should be implicit nil)
 //                  if (support.getConfiguration().hasExtraPositionInformation()) {
-                      $$ = support.newCaseNode(support.union($1, $4), null, $3);
-//                      $$ = new CaseNode(support.union($1, $4), null, $3);
+                      $$ = new CaseNode(support.union($1, $4), null, $3);
 //                  } else {
 //                      $$ = $3;
 //                  }
@@ -1315,10 +1313,10 @@ case_body     : kWHEN when_args then compstmt cases {
 
 when_args     : args
               | args ',' tSTAR arg_value {
-                  $$ = $1.add(new SplatNode(support.union($1, $4), $4));
+                  $$ = $1.add(support.newWhenNode(getPosition($1), $4, null, null));
               }
               | tSTAR arg_value {
-                  $$ = support.newArrayNode(getPosition($1), new SplatNode(support.union($1, $2), $2));
+                  $$ = support.newArrayNode(getPosition($1), support.newWhenNode(getPosition($1), $2, null, null));
               }
 
 cases         : opt_else | case_body

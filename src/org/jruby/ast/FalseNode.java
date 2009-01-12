@@ -34,7 +34,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
-import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -46,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents a false literal.
  */
-public class FalseNode extends Node implements INameNode, IEqlNode {
+public class FalseNode extends Node implements INameNode {
     public FalseNode(ISourcePosition position) {
         super(position);
     }
@@ -83,8 +82,13 @@ public class FalseNode extends Node implements INameNode, IEqlNode {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return "false";
     }
+    
+    @Override
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        IRubyObject falseObject = interpret(runtime, context, self, aBlock); // For thread polling...maybe we can remove
 
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        return otherValue == interpret(runtime, context, self, aBlock) || !otherValue.isTrue();
+        if (value != null && value == falseObject) return whenNode.interpret(runtime, context, self, aBlock);
+
+        return null;
     }
 }

@@ -35,7 +35,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 
-import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -46,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents an integer literal.
  */
-public class FixnumNode extends Node implements ILiteralNode, IEqlNode {
+public class FixnumNode extends Node implements ILiteralNode {
     private long value;
     private RubyFixnum fixnum;
 
@@ -95,9 +94,19 @@ public class FixnumNode extends Node implements ILiteralNode, IEqlNode {
         return getFixnum(runtime);
     }
     
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        if (otherValue instanceof RubyFixnum) return value == ((RubyFixnum)otherValue).getLongValue();
+    @Override
+    public IRubyObject when(WhenNode whenNode, IRubyObject whenValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        interpret(runtime, context, self, aBlock); // For thread polling...maybe we can remove
 
-        return getFixnum(runtime).op_equal(context, otherValue).isTrue();
+        if (whenValue == null) return whenNode.interpret(runtime, context, self, aBlock);
+        if (whenValue instanceof RubyFixnum) {
+            if (((RubyFixnum) whenValue).getLongValue() == value) {
+                return whenNode.interpret(runtime, context, self, aBlock);
+            }
+        } else {
+            return super.when(whenNode, whenValue, context, runtime, self, aBlock);
+        }
+
+        return null;
     }
 }

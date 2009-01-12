@@ -10,10 +10,10 @@ public class VisitorTestSuite extends TestSuite {
 	
 	public static Test suite() throws Throwable {
 		TestSuite suite = new TestSuite();
-//		suite.addTest(SourceRewriteTester.suite());
+		suite.addTest(SourceRewriteTester.suite());
 		suite.addTest(new TestSuite(TestOperators.class));
 		suite.addTest(new TestSuite(TestBooleanStateStack.class));
-//		suite.addTest(new TestSuite(TestReWriteVisitor.class));
+		suite.addTest(new TestSuite(TestReWriteVisitor.class));
 		return suite;
 	}
 }

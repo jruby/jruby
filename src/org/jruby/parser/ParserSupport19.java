@@ -41,8 +41,6 @@ import org.jruby.ast.ListNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.SplatNode;
-import org.jruby.ast.WhenNode;
-import org.jruby.ast.WhenOneArgNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
@@ -163,26 +161,5 @@ public class ParserSupport19 extends ParserSupport {
         }
 
         return new ArrayNode(first.getPosition(), first).add(second);
-    }
-
-    @Override
-    public WhenNode newWhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        if (bodyNode == null) bodyNode = NilImplicitNode.NIL;
-
-        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode) {
-            return new WhenOneArgNode(position, expressionNodes, bodyNode, nextCase);
-        }
-        
-        ListNode list = (ListNode) expressionNodes;
-
-        if (list.size() == 1) {
-            Node element = list.get(0);
-
-            if (!(element instanceof SplatNode)) {
-                return new WhenOneArgNode(position, element, bodyNode, nextCase);
-            }
-        }
-
-        return new WhenNode(position, expressionNodes, bodyNode, nextCase);
     }
 }

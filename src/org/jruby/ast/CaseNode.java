@@ -52,25 +52,20 @@ public class CaseNode extends Node {
 	 **/
     private final Node caseNode;
 	/**
-	 * A list of all choices including else
+	 * the body of the case.
 	 */
-    private final ListNode cases;
-    private Node elseNode = null;
+    private final Node caseBody;
     
-    public CaseNode(ISourcePosition position, Node caseNode, ListNode cases) {
+    public CaseNode(ISourcePosition position, Node caseNode, Node caseBody) {
         super(position);
         
-        assert cases != null : "caseBody is not null";
+        assert caseBody != null : "caseBody is not null";
         // TODO: Rewriter and compiler assume case when empty expression.  In MRI this is just
         // a when.
 //        assert caseNode != null : "caseNode is not null";
         
         this.caseNode = caseNode;
-        this.cases = cases;
-    }
-
-    public void setElseNode(Node elseNode) {
-        this.elseNode = elseNode;
+        this.caseBody = caseBody;
     }
 
     public NodeType getNodeType() {
@@ -93,14 +88,6 @@ public class CaseNode extends Node {
     public Node getCaseNode() {
         return caseNode;
     }
-    
-    public ListNode getCases() {
-        return cases;
-    }
-
-    public Node getElseNode() {
-        return elseNode;
-    }
 
     /**
      * Gets the first whenNode.
@@ -108,28 +95,56 @@ public class CaseNode extends Node {
      * @return whenNode
      */
     public Node getFirstWhenNode() {
-        return cases;
+        return caseBody;
     }
     
     public List<Node> childNodes() {
-        return Node.createList(caseNode, cases);
+        return Node.createList(caseNode, caseBody);
     }
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject expression = caseNode == null ? null : caseNode.interpret(runtime, context, self, aBlock);
+        IRubyObject value = caseNode == null ? null : caseNode.interpret(runtime, context, self, aBlock);
 
         context.pollThreadEvents();
 
-        // We know all cases are when nodes...assert?
-        for (Node child : cases.childNodes()) {
-            WhenNode when = (WhenNode) child;
-            if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
-            IRubyObject result = when.when(expression, context, runtime, self, aBlock);
+        for (Node current = caseBody; current != null; current = ((WhenNode) current).getNextCase()) {
+            if (!(current instanceof WhenNode)) return current.interpret(runtime, context, self, aBlock);
+            
+            IRubyObject result = interpretExpressions((WhenNode) current, value, context, runtime, self, aBlock);
             if (result != null) return result;
-            context.pollThreadEvents();
+
+            context.pollThreadEvents();            
         }
 
-        return elseNode != null ? elseNode.interpret(runtime, context, self, aBlock) : runtime.getNil();
+        return runtime.getNil();        
+    }
+    
+    private static IRubyObject interpretExpressions(WhenNode whenNode, IRubyObject value,
+            ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        assert whenIsArray(whenNode);
+
+        Node expressionNodes = whenNode.getExpressionNodes();
+        List<Node> childNodes;
+        if (expressionNodes instanceof SplatNode) {
+          childNodes = ((SplatNode) expressionNodes).childNodes();
+        } else {
+          childNodes = ((ArrayNode) expressionNodes).childNodes();
+        }
+        for (Node expression: childNodes) {
+            ISourcePosition position = expression.getPosition();
+            context.setFileAndLine(position.getFile(), position.getStartLine());
+
+            if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
+
+            IRubyObject result = expression.when(whenNode, value, context, runtime, self, aBlock);
+            if (result != null) return result;
+        }
+        
+        return null;
+    }
+    
+    private static boolean whenIsArray(WhenNode whenNode) {
+        return whenNode.getExpressionNodes() instanceof ArrayNode;
     }
 }

@@ -34,7 +34,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
-import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -46,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Represents 'true'.
  */
-public class TrueNode extends Node implements INameNode, IEqlNode {
+public class TrueNode extends Node implements INameNode {
     public TrueNode(ISourcePosition position) {
         super(position);
     }
@@ -83,8 +82,13 @@ public class TrueNode extends Node implements INameNode, IEqlNode {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return "true";
     }
+    
+    @Override
+    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        IRubyObject trueObject = interpret(runtime, context, self, aBlock);
 
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        return otherValue == interpret(runtime, context, self, aBlock) || otherValue.isTrue();
+        if (value != null && value == trueObject || value == null) return whenNode.interpret(runtime, context, self, aBlock);
+
+        return null;
     }
 }
