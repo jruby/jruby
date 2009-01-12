@@ -254,7 +254,7 @@ class TestJavaExtension < Test::Unit::TestCase
   def test_map_interface_to_array
     hash = {"one"=>"two","three"=>"four"}
     map = java.util.HashMap.new(hash)
-    assert_equal hash.to_a, map.to_a
+    assert_equal hash.to_a.sort, map.to_a.sort
   end
 end
 
