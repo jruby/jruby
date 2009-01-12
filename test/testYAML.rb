@@ -420,7 +420,7 @@ test_equal("&.rb", YAML::load("---\n&.rb"))
 a_str = "foo"
 a_str.instance_variable_set :@bar, "baz"
 
-test_equal("--- !str \nstr: foo\n'@bar': baz\n", a_str.to_yaml)
+test_ok(["--- !str \nstr: foo\n'@bar': baz\n", "--- !str \n'@bar': baz\nstr: foo\n"].include?(a_str.to_yaml))
 test_equal "baz", YAML.load(a_str.to_yaml).instance_variable_get(:@bar)
 
 test_equal :"abc\"flo", YAML.load("---\n:\"abc\\\"flo\"")
