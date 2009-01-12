@@ -1148,6 +1148,16 @@
             </filtermapper>
         </mapper>
     </unzip>
+    <unzip src="build_lib/jffi.jar" dest="dist/lib/native">
+        <patternset>
+            <include name="**/libjffi.*"/>
+        </patternset>
+        <mapper>
+            <filtermapper>
+                <replacestring from="jni/" to="./"/>
+            </filtermapper>
+        </mapper>
+    </unzip>
     <fixEOLs/>
     <antcall target="install-gems">
       <param name="jruby.home" value="dist"/>
