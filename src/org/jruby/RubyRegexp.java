@@ -388,7 +388,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, pattern.getEncoding(), pattern.getOptions(), ErrorMode.PREPROCESS);
     }
     
-    static Regex preparePattern(Ruby runtime, RubyString str, Regex pattern) {
+    static Regex preparePattern(Ruby runtime, Regex pattern, RubyString str) {
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
             throw runtime.newArgumentError("invalid byte sequence in " + str.getEncoding());
         }

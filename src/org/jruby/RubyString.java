@@ -3972,13 +3972,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Regex pattern, pat;
         final RubyRegexp regexp;
         if (arg instanceof RubyRegexp) {
-            regexp = ((RubyRegexp)arg);
+            regexp = (RubyRegexp)arg;
             pattern = regexp.getPattern();
             pat = regexp.preparePattern(this);
         } else {
             regexp = null;
             pattern = getStringPattern19(runtime, arg);
-            pat = RubyRegexp.preparePattern(runtime, this, pattern);
+            pat = RubyRegexp.preparePattern(runtime, pattern, this);
         }
         int begin = value.begin;
         int range = begin + value.realSize;
