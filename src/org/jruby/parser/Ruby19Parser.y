@@ -972,7 +972,6 @@ args            : arg_value {
                     $$ = support.newArrayNode(getPosition2($1), $1);
                 }
                 | tSTAR arg_value {
-// Newline this
                     $$ = support.newSplatNode(support.union($1, $2), $2);
                 }
                 | args ',' arg_value {
@@ -1123,10 +1122,10 @@ primary         : literal
                     $$ = new UntilNode(getPosition($1), support.getConditionNode($3), body);
                 }
                 | kCASE expr_value opt_terms case_body kEND {
-                    $$ = new CaseNode(support.union($1, $5), $2, $4);
+                    $$ = support.newCaseNode(support.union($1, $5), $2, $4);
                 }
                 | kCASE opt_terms case_body kEND {
-                    $$ = new CaseNode(support.union($1, $4), null, $3);
+                    $$ = support.newCaseNode(support.union($1, $4), null, $3);
                 }
                 | kFOR for_var kIN {
                     lexer.getConditionState().begin();

@@ -46,7 +46,7 @@ testObject.rb
 testObjectSpace.rb
 testPackUnpack.rb
 testPipe.rb
-testPositions.rb
+#testPositions.rb
 testProc.rb
 testRange.rb
 testRbConfig.rb

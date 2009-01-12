@@ -755,18 +755,14 @@ public class ASTCompiler {
 
         boolean hasCase = caseNode.getCaseNode() != null;
 
-        // aggregate when nodes into a list, rather than walking a bloody hierarchy
+        // aggregate when nodes into a list, unfortunately, this is no
         List<WhenNode> whenNodes = new ArrayList<WhenNode>();
-
-        Node maybeWhen = caseNode.getFirstWhenNode();
-        while (maybeWhen instanceof WhenNode) {
-            WhenNode whenNode = (WhenNode)maybeWhen;
-            whenNodes.add((WhenNode)maybeWhen);
-            maybeWhen = whenNode.getNextCase();
+        for (Node childNode: caseNode.getCases().childNodes()) {
+            whenNodes.add((WhenNode) childNode);
         }
 
         // last node, either !instanceof WhenNode or null, is the else
-        Node elseNode = maybeWhen;
+        Node elseNode = caseNode.getElseNode();
 
         compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, expr, hasCase);
     }
@@ -864,39 +860,8 @@ public class ASTCompiler {
     }
 
     private void addConditionalForWhen(final WhenNode whenNode, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback body) {
-        ArrayNode cases = (ArrayNode)whenNode.getExpressionNodes();
-        ArgumentsCallback whenArgs;
-        boolean embeddedWhens = cases.get(cases.size() - 1) instanceof WhenNode;
-        if (!embeddedWhens) {
-            whenArgs = getArgsCallback(whenNode.getExpressionNodes());
-            conditionals.add(whenArgs);
-            bodies.add(body);
-        } else {
-            // this is not ideal; if there's any embedded splat, we duplicate each value
-            // plus the splat with its own copy of the body
-            for (Node kase : cases.childNodes()) {
-                if (kase instanceof WhenNode) {
-                    final WhenNode splatWhen = (WhenNode)kase;
-                    whenArgs = new ArgumentsCallback() {
-
-                        public int getArity() {
-                            return -1;
-                        }
-
-                        public void call(BodyCompiler context) {
-                            // splatted when, compile directly and splat
-                            compile(splatWhen.getExpressionNodes(), context, true);
-                            context.splatCurrentValue();
-                            context.convertToJavaArray();
-                        }
-                    };
-                } else {
-                    whenArgs = getArgsCallback(kase);
-                }
-                conditionals.add(whenArgs);
-                bodies.add(body);
-            }
-        }
+        conditionals.add(getArgsCallback(whenNode.getExpressionNodes()));
+        bodies.add(body);
     }
 
     public void compileClass(Node node, BodyCompiler context, boolean expr) {
