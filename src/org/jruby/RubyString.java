@@ -3690,15 +3690,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private RubyArray regexSplit(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
 
-        final Regex pattern = getQuotedPattern(pat);
+        final Regex regex = getQuotedPattern(pat);
 
         int begin = value.begin;
-        final Matcher matcher = pattern.matcher(value.bytes, begin, begin + value.realSize);
+        final Matcher matcher = regex.matcher(value.bytes, begin, begin + value.realSize);
 
         RubyArray result = runtime.newArray();
-        final Encoding enc = pattern.getEncoding();
+        final Encoding enc = regex.getEncoding();
 
-        int beg = regexSplit(runtime, result, matcher, enc, limit, lim, i, pattern.numberOfCaptures() != 0);
+        int beg = regexSplit(runtime, result, matcher, enc, limit, lim, i, regex.numberOfCaptures() != 0);
 
         // only this case affects backrefs 
         context.getCurrentFrame().setBackRef(runtime.getNil());
@@ -3851,24 +3851,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject scan(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = context.getRuntime();
         Encoding enc = runtime.getKCode().getEncoding();
-        final Regex regex;
+        final Regex pattern;
         final boolean tainted;
         if (arg instanceof RubyRegexp) {
-            regex = ((RubyRegexp)arg).getPattern();
+            pattern = ((RubyRegexp)arg).getPattern();
             tainted = arg.isTaint();
         } else {
-            regex = getStringPattern(runtime, enc, arg);
+            pattern = getStringPattern(runtime, enc, arg);
             tainted = false;
         }
 
         int begin = value.begin;
         int range = begin + value.realSize;
-        final Matcher matcher = regex.matcher(value.bytes, begin, range);
+        final Matcher matcher = pattern.matcher(value.bytes, begin, range);
 
         if (block.isGiven()) {
-            return scanIter(context, regex, matcher, enc, block, begin, range, tainted);
+            return scanIter(context, pattern, matcher, enc, block, begin, range, tainted);
         } else {
-            return scanNoIter(context, regex, matcher, enc, begin, range, tainted);
+            return scanNoIter(context, pattern, matcher, enc, begin, range, tainted);
         }
     }
 
