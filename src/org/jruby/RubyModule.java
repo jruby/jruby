@@ -1540,9 +1540,21 @@ public class RubyModule extends RubyObject {
         return context.getRuntime().newBoolean(isInstance(obj));
     }
 
+    /**
+     * We override equals here to provide a faster path, since equality for modules
+     * is pretty cut and dried.
+     * @param other The object to check for equality
+     * @return true if reference equality, false otherwise
+     */
+    @Override
+    public boolean equals(Object other) {
+        return this == other;
+    }
+
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+Thread.dumpStack();
         return super.op_equal(context, other);
     }
 
