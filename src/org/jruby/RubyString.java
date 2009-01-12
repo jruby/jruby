@@ -3690,15 +3690,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private RubyArray regexSplit(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
 
-        final Regex regex = getQuotedPattern(pat);
+        final Regex pattern = getQuotedPattern(pat);
 
         int begin = value.begin;
-        final Matcher matcher = regex.matcher(value.bytes, begin, begin + value.realSize);
+        final Matcher matcher = pattern.matcher(value.bytes, begin, begin + value.realSize);
 
         RubyArray result = runtime.newArray();
-        final Encoding enc = regex.getEncoding();
+        final Encoding enc = pattern.getEncoding();
 
-        int beg = regexSplit(runtime, result, matcher, enc, limit, lim, i, regex.numberOfCaptures() != 0);
+        int beg = regexSplit(runtime, result, matcher, enc, limit, lim, i, pattern.numberOfCaptures() != 0);
 
         // only this case affects backrefs 
         context.getCurrentFrame().setBackRef(runtime.getNil());
