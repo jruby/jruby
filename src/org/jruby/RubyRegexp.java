@@ -1411,7 +1411,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 } else if (enc.isPrint(c)) {
                     to.append(bytes, p, 1);
                 } else if (!enc.isSpace(c)) {
-                    Sprintf.sprintf(runtime, to, "\\x%02X", bytes[p] & 0377);
+                    Sprintf.sprintf(runtime, to, "\\%03o", bytes[p] & 0377);
                 } else {
                     to.append(bytes, p, 1);
                 }
