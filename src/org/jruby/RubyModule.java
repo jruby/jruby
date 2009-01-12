@@ -1554,7 +1554,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-Thread.dumpStack();
         return super.op_equal(context, other);
     }
 
