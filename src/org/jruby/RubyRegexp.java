@@ -146,7 +146,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return new Regex(bytes.bytes, p, p + bytes.realSize, flags, enc, Syntax.DEFAULT, runtime.getWarnings());
         } catch (Exception e) {
             if (runtime.is1_9()) {
-                e.printStackTrace();
                 raiseRegexpError19(runtime, bytes, enc, flags, e.getMessage());
             } else {
                 raiseRegexpError(runtime, bytes, enc, flags, e.getMessage());
