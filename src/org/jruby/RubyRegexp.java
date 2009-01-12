@@ -1140,19 +1140,39 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_eqq
      * 
      */
-    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
-    public IRubyObject eqq(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.getRuntime();        
-        if (!(str instanceof RubyString)) str = str.checkStringType();
-
-        if (str.isNil()) {
-            context.getCurrentFrame().setBackRef(runtime.getNil());
-            return runtime.getFalse();
+    @JRubyMethod(name = "===", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_8)
+    public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        final RubyString str;
+        if (arg instanceof RubyString) {
+            str = (RubyString)arg;
+        } else {
+            IRubyObject tmp = arg.checkStringType();
+            if (tmp.isNil()) {
+                context.getCurrentFrame().setBackRef(runtime.getNil());
+                return runtime.getFalse();
+            }
+            str = (RubyString)tmp;
         }
-        int start = search(context, (RubyString)str, 0, false);
+
+        int start = search(context, str, 0, false);
         return (start < 0) ? runtime.getFalse() : runtime.getTrue();
     }
 
+    @JRubyMethod(name = "===", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject eqq19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        arg = operandNoCheck(arg);
+        if (arg.isNil()) {
+            context.getCurrentFrame().setBackRef(runtime.getNil());
+            return runtime.getFalse();
+        }
+        RubyString str = (RubyString)arg;
+
+        int start = search(context, (RubyString)str, 0, false);
+        return (start < 0) ? runtime.getFalse() : runtime.getTrue();
+    }
+    
     /** rb_reg_match
      * 
      */
@@ -1268,10 +1288,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "source")
     public IRubyObject source() {
-        Ruby runtime = getRuntime();
         check();
-        RubyString str = RubyString.newStringShared(runtime, this.str);
-        if (isTaint()) str.taint(runtime.getCurrentContext());
+        RubyString str = RubyString.newStringShared(getRuntime(), this.str);
+        if (isTaint()) str.setTaint(true);
         return str;
     }
 
