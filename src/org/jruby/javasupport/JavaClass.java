@@ -349,7 +349,7 @@ public class JavaClass extends JavaObject {
             this.field = field;
         }
         void install(final RubyModule proxy) {
-            if (proxy.fastGetConstantAt(field.getName()) == null) {
+            if (proxy.getConstantAt(field.getName()) == null) {
                 // TODO: catch exception if constant is already set by other
                 // thread
                 if (!Ruby.isSecurityRestricted()) {
