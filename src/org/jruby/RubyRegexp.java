@@ -197,7 +197,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    private static final int REGEX_PREPROCESSED = 2;
+    private static final int REGEX_PREPROCESSED = 1;
     private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, int options, ErrorMode mode) {
         Map<ByteList, Regex> cache = getPatternCache();
         Regex regex = cache.get(bytes);
@@ -673,7 +673,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_s_quote
      * 
      */
-    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = {"quote", "escape"}, required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static RubyString quote(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         final KCode code;
@@ -684,9 +684,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         RubyString src = args[0].convertToString();
-        RubyString dst = RubyString.newString(runtime, quote(src.getByteList(), code.getEncoding()));
+        RubyString dst = RubyString.newStringShared(runtime, quote(src.getByteList(), code.getEncoding()));
         dst.infectBy(src);
         return dst;
+    }
+
+    @JRubyMethod(name = {"quote", "escape"}, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject quote19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        RubyString str = operandCheck(runtime, arg);
+        return RubyString.newStringShared(runtime, quote19(str.getByteList(), str.isAsciiOnly()));
     }
 
     /** rb_reg_quote
@@ -1717,6 +1724,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         return pos;
+    }
+
+    private static IRubyObject operandNoCheck(IRubyObject str) {
+        if (str instanceof RubySymbol) return ((RubySymbol)str).to_s();
+        return str.checkStringType();
+    }
+
+    private static RubyString operandCheck(Ruby runtime, IRubyObject str) {
+        if (str instanceof RubySymbol) return (RubyString)((RubySymbol)str).to_s();
+        IRubyObject tmp = str.checkStringType();
+        if (tmp.isNil()) throw runtime.newTypeError("can't convert " + str.getMetaClass() + "to String");
+        return (RubyString)tmp;
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
