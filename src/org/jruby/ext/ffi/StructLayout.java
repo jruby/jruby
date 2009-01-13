@@ -58,6 +58,9 @@ public final class StructLayout extends RubyObject {
     /** The total size of this struct */
     private final int size;
     
+    /** The minimum alignment of memory allocated for structs of this type */
+    private final int align;
+
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new StructLayout(runtime, klass);
@@ -97,6 +100,7 @@ public final class StructLayout extends RubyObject {
     StructLayout(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         this.size = 0;
+        this.align = 1;
         this.fields = Collections.emptyMap();
     }
     
@@ -106,14 +110,16 @@ public final class StructLayout extends RubyObject {
      * @param runtime The runtime for the <tt>StructLayout</tt>.
      * @param fields The fields map for this struct.
      * @param size the total size of the struct.
+     * @param minAlign The minimum alignment required when allocating memory.
      */
-    StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size) {
+    StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size, int minAlign) {
         super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
         //
         // fields should really be an immutable map as it is never modified after construction
         //
         this.fields = immutableMap(fields);
         this.size = size;
+        this.align = minAlign;
     }
     
     /**
@@ -217,7 +223,10 @@ public final class StructLayout extends RubyObject {
         }
         throw runtime.newArgumentError("Unknown field: " + name);
     }
-    
+
+    int getMinimumAlignment() {
+        return align;
+    }
     /**
      * A struct member.  This defines the offset within a chunk of memory to use
      * when reading/writing the member, as well as how to convert between the 
@@ -239,7 +248,10 @@ public final class StructLayout extends RubyObject {
         static final MemoryIO getMemoryIO(IRubyObject ptr) {
             return ((AbstractMemory) ptr).getMemoryIO();
         }
-        
+
+        final long getOffset(IRubyObject ptr) {
+            return ((AbstractMemory) ptr).getOffset() + offset;
+        }
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          * 
@@ -262,7 +274,7 @@ public final class StructLayout extends RubyObject {
          * @param ptr The memory area of the struct.
          * @return A ruby object equivalent to the native member value.
          */
-        IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
+        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
             return get(runtime, ptr);
         }
     }

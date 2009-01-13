@@ -72,19 +72,29 @@ public class Struct extends RubyObject {
         this.memory = memory;
     }
 
+    static final boolean isStruct(Ruby runtime, RubyClass klass) {
+        return klass.isKindOfModule(FFIProvider.getModule(runtime).getClass("Struct"));
+    }
     static final int getStructSize(IRubyObject structClass) {
         return RubyNumeric.fix2int(((RubyClass) structClass).fastGetClassVar("@size"));
     }
-    static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
+    static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
         RubyClass klass = (RubyClass) structClass;
         return klass.fastIsClassVarDefined("@layout")
                 ? (StructLayout) klass.fastGetClassVar("@layout")
-                : new StructLayout(context.getRuntime());
+                : new StructLayout(runtime);
     }
     
     private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
-        return new Struct(context.getRuntime(), (RubyClass) klass,
-                getStructLayout(context, klass), new Buffer(context.getRuntime(), getStructSize(klass), flags));
+        Ruby runtime = context.getRuntime();
+        return new Struct(runtime, (RubyClass) klass,
+                getStructLayout(runtime, klass), new Buffer(runtime, getStructSize(klass), flags));
+    }
+    /*
+     * This variant of newStruct is called from StructLayoutBuilder
+     */
+    static final Struct newStruct(Ruby runtime, RubyClass klass, IRubyObject ptr) {
+        return new Struct(runtime, (RubyClass) klass, getStructLayout(runtime, klass), ptr);
     }
     @JRubyMethod(name = "new", meta = true)
     public static Struct newInstance(ThreadContext context, IRubyObject self) {
@@ -92,7 +102,7 @@ public class Struct extends RubyObject {
     }
     @JRubyMethod(name = "new", meta = true)
     public static Struct newInstance(ThreadContext context, IRubyObject self, IRubyObject ptr) {
-        return new Struct(context.getRuntime(), (RubyClass) self, getStructLayout(context, self), ptr);
+        return new Struct(context.getRuntime(), (RubyClass) self, getStructLayout(context.getRuntime(), self), ptr);
     }
     
     @JRubyMethod(name = "new", meta = true, rest = true)
@@ -104,7 +114,7 @@ public class Struct extends RubyObject {
             System.arraycopy(args, 1, layoutArgs, 0, args.length - 1);
             layout = (StructLayout) self.callMethod(context, "layout", layoutArgs);
         } else {
-            layout = getStructLayout(context, self);
+            layout = getStructLayout(context.getRuntime(), self);
         }
         IRubyObject ptr = args.length > 0 && !args[0].isNil()
                 ? args[0] : new Buffer(context.getRuntime(), getStructSize(self));

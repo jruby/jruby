@@ -47,15 +47,19 @@ module FFI
       while i < spec.size
         name, type = spec[i, 2]
         i += 2
-        code = find_type(type, mod)
+        
         # If the next param is a Integer, it specifies the offset
         if spec[i].kind_of?(Integer)
-          offset = spec[i]
           i += 1
-          builder.add_field(name, code, offset)
+          offset = spec[i]
         else
-          builder.add_field(name, code)
+          offset = nil
         end
+        if type.kind_of?(Class) && type < Struct
+          builder.add_struct(name, type, offset)
+        else
+          builder.add_field(name, find_type(type, mod), offset)
+        end 
       end
       builder.build
     end
@@ -103,6 +107,9 @@ module FFI
       end
     end
     def self.find_type(type, mod = nil)
+      if type.kind_of?(Class)
+        return type if type < Struct || type < Array
+      end
       return mod ? mod.find_type(type) : FFI.find_type(type)
     end
   end

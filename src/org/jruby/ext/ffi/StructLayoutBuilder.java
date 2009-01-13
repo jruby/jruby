@@ -65,7 +65,7 @@ public final class StructLayoutBuilder extends RubyObject {
     static final int DOUBLE_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
     static final int FLOAT_ALIGN = isSparc() ? 64 : Float.SIZE;
     private final Map<IRubyObject, StructLayout.Member> fields = new LinkedHashMap<IRubyObject, StructLayout.Member>();
-    private int size = 0;
+    private int size = 0, maxAlign = 1;
     
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -93,7 +93,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     @JRubyMethod(name = "build")
     public StructLayout build(ThreadContext context) {
-        return new StructLayout(context.getRuntime(), fields, size);
+        return new StructLayout(context.getRuntime(), fields, size, maxAlign);
     }
     private static int alignMember(int offset, int alignBits) {
         int alignBytes = alignBits >> 3;
@@ -104,20 +104,24 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         return off;
     }
-    
     @JRubyMethod(name = "add_field", required = 2, optional = 1)
     public IRubyObject add(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
         IRubyObject name = args[0];
-        NativeParam type;
-        int offset = args.length > 2 ? Util.int32Value(args[2]) : -1;
+        Object type;
+        int offset = args.length > 2 && !args[2].isNil() ? Util.int32Value(args[2]) : -1;
         int align = 8, sizeBits = 8;
         if (args[1] instanceof CallbackInfo) {
             type = (CallbackInfo) args[1];
             align = ADDRESS_ALIGN; sizeBits = ADDRESS_SIZE;
+        } else if (args[1] instanceof RubyClass && Struct.isStruct(runtime, (RubyClass) args[1])) {
+            type = args[1];
+            align = Struct.getStructLayout(runtime, args[1]).getMinimumAlignment();
+            sizeBits = Struct.getStructSize(args[1]);
         } else {
-            type = NativeType.valueOf(Util.int32Value(args[1]));
-            switch ((NativeType) type) {
+            NativeType t = NativeType.valueOf(Util.int32Value(args[1]));
+            type = t;
+            switch (t) {
                 case INT8:
                 case UINT8:
                     align = 8; sizeBits = 8;
@@ -162,16 +166,34 @@ public final class StructLayoutBuilder extends RubyObject {
         if (offset < 0) {
             offset = alignMember(this.size, align);
         }
-        StructLayout.Member field = createMember(type, offset);
+        StructLayout.Member field = createMember(context.getRuntime(), type, offset);
         if (field == null) {
             throw runtime.newArgumentError("Unknown field type: " + type);
         }
         
         fields.put(createKey(runtime, name), field);
         this.size = offset + (sizeBits / 8);
-        return runtime.getNil();
+        this.maxAlign = Math.max(this.maxAlign, align);
+        return this;
     }
-    
+
+    @JRubyMethod(name = "add_struct", required = 2, optional = 1)
+    public IRubyObject add_struct(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.getRuntime();
+        IRubyObject name = args[0];
+        int offset = args.length > 2 && !args[2].isNil() ? Util.int32Value(args[2]) : -1;
+        final int align = Struct.getStructLayout(runtime, args[1]).getMinimumAlignment();
+        final int sizeBytes = Struct.getStructSize(args[1]);
+        if (offset < 0) {
+            offset = alignMember(this.size, align);
+        }
+        StructLayout.Member field = StructMember.create((RubyClass) args[1], offset);
+        
+        fields.put(createKey(runtime, name), field);
+        this.size = offset + sizeBytes;
+        this.maxAlign = Math.max(this.maxAlign, align);
+        return this;
+    }
     @JRubyMethod(name = "add_char_array", required = 2, optional = 1)
     public IRubyObject add_char_array(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
@@ -192,11 +214,13 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         return runtime.getSymbolTable().getSymbol(key.asJavaString());
     }
-    StructLayout.Member createMember(NativeParam type, long offset) {
+    StructLayout.Member createMember(Ruby runtime, Object type, long offset) {
         if (type instanceof NativeType) {
             return createMember((NativeType) type, offset);
         } else if (type instanceof CallbackInfo) {
             return CallbackMember.create((CallbackInfo) type, offset);
+        } else if (type instanceof RubyClass && Struct.isStruct(runtime, (RubyClass) type)) {
+            return StructMember.create((RubyClass) type, offset);
         } else {
             return null;
         }
@@ -245,11 +269,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putByte(offset, Util.int8Value(value));
+            getMemoryIO(ptr).putByte(getOffset(ptr), Util.int8Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newSigned8(runtime, getMemoryIO(ptr).getByte(offset));
+            return Util.newSigned8(runtime, getMemoryIO(ptr).getByte(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Signed8Member(offset); }
     }
@@ -258,11 +282,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putByte(offset, (byte) Util.uint8Value(value));
+            getMemoryIO(ptr).putByte(getOffset(ptr), (byte) Util.uint8Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newUnsigned8(runtime, getMemoryIO(ptr).getByte(offset));
+            return Util.newUnsigned8(runtime, getMemoryIO(ptr).getByte(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Unsigned8Member(offset); }
     }
@@ -271,11 +295,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putShort(offset, Util.int16Value(value));
+            getMemoryIO(ptr).putShort(getOffset(ptr), Util.int16Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newSigned16(runtime, getMemoryIO(ptr).getShort(offset));
+            return Util.newSigned16(runtime, getMemoryIO(ptr).getShort(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Signed16Member(offset); }
     }
@@ -284,11 +308,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putShort(offset, (short) Util.uint16Value(value));
+            getMemoryIO(ptr).putShort(getOffset(ptr), (short) Util.uint16Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newUnsigned16(runtime, getMemoryIO(ptr).getShort(offset));
+            return Util.newUnsigned16(runtime, getMemoryIO(ptr).getShort(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Unsigned16Member(offset); }
     }
@@ -297,11 +321,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putInt(offset, Util.int32Value(value));
+            getMemoryIO(ptr).putInt(getOffset(ptr), Util.int32Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newSigned32(runtime, getMemoryIO(ptr).getInt(offset));
+            return Util.newSigned32(runtime, getMemoryIO(ptr).getInt(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Signed32Member(offset); }
     }
@@ -310,11 +334,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putInt(offset, (int) Util.uint32Value(value));
+            getMemoryIO(ptr).putInt(getOffset(ptr), (int) Util.uint32Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newUnsigned32(runtime, getMemoryIO(ptr).getInt(offset));
+            return Util.newUnsigned32(runtime, getMemoryIO(ptr).getInt(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Unsigned32Member(offset); }
     }
@@ -323,11 +347,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putLong(offset, Util.int64Value(value));
+            getMemoryIO(ptr).putLong(getOffset(ptr), Util.int64Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newSigned64(runtime, getMemoryIO(ptr).getLong(offset));
+            return Util.newSigned64(runtime, getMemoryIO(ptr).getLong(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Signed64Member(offset); }
     }
@@ -336,11 +360,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putLong(offset, Util.uint64Value(value));
+            getMemoryIO(ptr).putLong(getOffset(ptr), Util.uint64Value(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Util.newUnsigned64(runtime, getMemoryIO(ptr).getLong(offset));
+            return Util.newUnsigned64(runtime, getMemoryIO(ptr).getLong(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Unsigned64Member(offset); }
     }
@@ -350,16 +374,16 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             if (value instanceof Pointer) {
-                getMemoryIO(ptr).putMemoryIO(offset, ((Pointer) value).getMemoryIO());
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Pointer) value).getMemoryIO());
             } else if (Platform.getPlatform().addressSize() == 32) {
-                getMemoryIO(ptr).putInt(offset, Util.int32Value(value));
+                getMemoryIO(ptr).putInt(getOffset(ptr), Util.int32Value(value));
             } else if (Platform.getPlatform().addressSize() == 64) {
-                getMemoryIO(ptr).putLong(offset, Util.int64Value(value));
+                getMemoryIO(ptr).putLong(getOffset(ptr), Util.int64Value(value));
             }
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return ((AbstractMemory) ptr).getPointer(runtime, offset);
+            return ((AbstractMemory) ptr).getPointer(runtime, getOffset(ptr));
         }
         static StructLayout.Member create(long offset) { return new PointerMember(offset); }
     }
@@ -368,11 +392,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putFloat(offset, Util.floatValue(value));
+            getMemoryIO(ptr).putFloat(getOffset(ptr), Util.floatValue(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return RubyFloat.newFloat(runtime, getMemoryIO(ptr).getFloat(offset));
+            return RubyFloat.newFloat(runtime, getMemoryIO(ptr).getFloat(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Float32Member(offset); }
     }
@@ -381,11 +405,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            getMemoryIO(ptr).putDouble(offset, Util.doubleValue(value));
+            getMemoryIO(ptr).putDouble(getOffset(ptr), Util.doubleValue(value));
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return RubyFloat.newFloat(runtime, getMemoryIO(ptr).getDouble(offset));
+            return RubyFloat.newFloat(runtime, getMemoryIO(ptr).getDouble(getOffset(ptr)));
         }
         static StructLayout.Member create(long offset) { return new Float64Member(offset); }
     }
@@ -394,7 +418,7 @@ public final class StructLayoutBuilder extends RubyObject {
             super(offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            MemoryIO io = getMemoryIO(ptr).getMemoryIO(offset);
+            MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
             if (!io.isNull()) {
                 ByteList bl = value.convertToString().getByteList();
                 io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
@@ -403,7 +427,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            MemoryIO io = getMemoryIO(ptr).getMemoryIO(offset);
+            MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
             if (io.isNull()) {
                 return runtime.getNil();
             }
@@ -427,13 +451,13 @@ public final class StructLayoutBuilder extends RubyObject {
             ByteList bl = value.convertToString().getByteList();
             // Clamp to no longer than 
             int len = Math.min(bl.length(), size - 1);
-            io.put(offset, bl.unsafeBytes(), bl.begin(), len);
-            io.putByte(offset + len, (byte) 0);
+            io.put(getOffset(ptr), bl.unsafeBytes(), bl.begin(), len);
+            io.putByte(getOffset(ptr) + len, (byte) 0);
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
             MemoryIO io = getMemoryIO(ptr);
-            int len = (int) io.indexOf(offset, (byte) 0, size);
+            int len = (int) io.indexOf(getOffset(ptr), (byte) 0, size);
             if (len < 0) {
                 len = size;
             }
@@ -455,10 +479,10 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             if (value.isNil()) {
-                getMemoryIO(ptr).putAddress(offset, 0L);
+                getMemoryIO(ptr).putAddress(getOffset(ptr), 0L);
             } else {
                 Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, cbInfo, value);
-                getMemoryIO(ptr).putMemoryIO(offset, cb.getMemoryIO());
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), cb.getMemoryIO());
             }
         }
 
@@ -466,5 +490,31 @@ public final class StructLayoutBuilder extends RubyObject {
             throw runtime.newNotImplementedError("Cannot get callback struct fields");
         }
         static StructLayout.Member create(CallbackInfo cbInfo, long offset) { return new CallbackMember(cbInfo, offset); }
+    }
+    static final class StructMember extends StructLayout.Member {
+        private final RubyClass klass;
+        StructMember(RubyClass klass, long offset) {
+            super(offset);
+            this.klass = klass;
+            System.out.println("Creating struct field of type " + klass + " offset=" + offset);
+        }
+        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+            throw runtime.newNotImplementedError("Cannot set Struct fields");
+        }
+
+        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+            return Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)));
+        }
+
+        @Override
+        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
+            IRubyObject s = cache.get(this);
+            if (s == null) {
+                cache.put(this, s = Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr))));
+            }
+            return s;
+        }
+
+        static StructLayout.Member create(RubyClass klass, long offset) { return new StructMember(klass, offset); }
     }
 }
