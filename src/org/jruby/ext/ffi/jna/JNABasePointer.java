@@ -84,12 +84,6 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Pointer address=0x%s>", hex));
     }
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return new JNABasePointer(context.getRuntime(),
-                FFIProvider.getModule(context.getRuntime()).fastGetClass(JNA_POINTER_NAME),
-                this, RubyNumeric.fix2long(value));
-    }
 
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
@@ -103,6 +97,13 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
         }
         ((JNAMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
         return this;
+    }
+
+    @Override
+    protected AbstractMemory slice(Ruby runtime, long offset) {
+        return new JNABasePointer(runtime,
+                FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
+                this, offset);
     }
 
     protected AbstractMemoryPointer getPointer(Ruby runtime, long offset) {

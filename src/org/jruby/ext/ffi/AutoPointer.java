@@ -44,6 +44,10 @@ public class AutoPointer extends Pointer {
         return new AutoPointer(context.getRuntime(), (Pointer) pointerArg, proc);
     }
     @Override
+    protected AbstractMemory slice(Ruby runtime, long offset) {
+        return pointer.slice(runtime, offset);
+    }
+    @Override
     protected Pointer getPointer(Ruby runtime, long offset) {
         return pointer.getPointer(runtime, offset);
     }

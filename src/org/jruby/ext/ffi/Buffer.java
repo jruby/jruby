@@ -8,7 +8,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -115,11 +114,6 @@ public final class Buffer extends AbstractMemory {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Buffer size=%d>", size));
     }
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return new Buffer(context.getRuntime(), getMetaClass(),
-                this, RubyNumeric.fix2long(value));
-    }
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
         if (value instanceof Pointer) {
@@ -133,6 +127,9 @@ public final class Buffer extends AbstractMemory {
     }
     ArrayMemoryIO getArrayMemoryIO() {
         return (ArrayMemoryIO) getMemoryIO();
+    }
+    protected AbstractMemory slice(Ruby runtime, long offset) {
+        return new Buffer(runtime, getMetaClass(), this, offset);
     }
     protected Pointer getPointer(Ruby runtime, long offset) {
         return factory.newPointer(runtime, getMemoryIO().getMemoryIO(this.offset + offset));

@@ -73,12 +73,6 @@ public class BasePointer extends Pointer {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Pointer address=0x%s>", hex));
     }
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return new BasePointer(context.getRuntime(),
-                FFIProvider.getModule(context.getRuntime()).fastGetClass(BASE_POINTER_NAME),
-                this, RubyNumeric.fix2long(value));
-    }
 
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
@@ -93,6 +87,13 @@ public class BasePointer extends Pointer {
 
         getMemoryIO().putAddress(getOffset(offset), ptr);
         return this;
+    }
+
+    @Override
+    protected AbstractMemory slice(Ruby runtime, long offset) {
+        return new BasePointer(runtime,
+                FFIProvider.getModule(runtime).fastGetClass(BASE_POINTER_NAME),
+                this, offset);
     }
 
     protected BasePointer getPointer(Ruby runtime, long offset) {

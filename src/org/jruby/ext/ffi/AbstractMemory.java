@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -767,5 +768,10 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().put(getOffset(off), bl.unsafeBytes(), bl.begin(), len);
         return context.getRuntime().newFixnum(len);
     }
+    @JRubyMethod(name = "+", required = 1)
+    public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
+        return slice(context.getRuntime(), RubyNumeric.fix2long(value));
+    }
+    abstract protected AbstractMemory slice(Ruby runtime, long offset);
     abstract protected Pointer getPointer(Ruby runtime, long offset);
 }
