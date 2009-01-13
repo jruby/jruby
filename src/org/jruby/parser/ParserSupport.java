@@ -75,6 +75,7 @@ import org.jruby.ast.CallThreeArgNode;
 import org.jruby.ast.CallTwoArgBlockNode;
 import org.jruby.ast.CallTwoArgBlockPassNode;
 import org.jruby.ast.CallTwoArgNode;
+import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.ClassVarNode;
@@ -147,6 +148,7 @@ import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.WhenNode;
+import org.jruby.ast.WhenOneArgNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
@@ -824,9 +826,49 @@ public class ParserSupport {
         
         return new OrNode(union(left, right), makeNullNil(left), makeNullNil(right));
     }
+
+    /**
+     * Ok I admit that this is somewhat ugly.  We post-process a chain of when nodes and analyze
+     * them to re-insert them back into our new CaseNode the way we want.  The grammar is being
+     * difficult and until I go back into the depths of that this is where things are.
+     *
+     * @param expression of the case node (e.g. case foo)
+     * @param firstWhenNode first when (which could also be the else)
+     * @return a new case node
+     */
+    public CaseNode newCaseNode(ISourcePosition position, Node expression, Node firstWhenNode) {
+        ArrayNode cases = new ArrayNode(firstWhenNode != null ? firstWhenNode.getPosition() : position);
+        CaseNode caseNode = new CaseNode(position, expression, cases);
+
+        for (Node current = firstWhenNode; current != null;) {
+            if (current instanceof WhenNode) {
+                cases.add(current);
+                current = ((WhenNode) current).getNextCase();
+            } else {
+                caseNode.setElseNode(current);
+                break;
+            }
+        }
+
+        return caseNode;
+    }
     
     public WhenNode newWhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
         if (bodyNode == null) bodyNode = NilImplicitNode.NIL;
+
+        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode) {
+            return new WhenNode(position, expressionNodes, bodyNode, nextCase);
+        }
+
+        ListNode list = (ListNode) expressionNodes;
+        
+        if (list.size() == 1) {
+            Node element = list.get(0);
+            
+            if (!(element instanceof SplatNode)) {
+                return new WhenOneArgNode(position, element, bodyNode, nextCase);
+            }
+        }
 
         return new WhenNode(position, expressionNodes, bodyNode, nextCase);
     }

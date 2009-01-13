@@ -52,20 +52,25 @@ public class CaseNode extends Node {
 	 **/
     private final Node caseNode;
 	/**
-	 * the body of the case.
+	 * A list of all choices including else
 	 */
-    private final Node caseBody;
+    private final ListNode cases;
+    private Node elseNode = null;
     
-    public CaseNode(ISourcePosition position, Node caseNode, Node caseBody) {
+    public CaseNode(ISourcePosition position, Node caseNode, ListNode cases) {
         super(position);
         
-        assert caseBody != null : "caseBody is not null";
+        assert cases != null : "caseBody is not null";
         // TODO: Rewriter and compiler assume case when empty expression.  In MRI this is just
         // a when.
 //        assert caseNode != null : "caseNode is not null";
         
         this.caseNode = caseNode;
-        this.caseBody = caseBody;
+        this.cases = cases;
+    }
+
+    public void setElseNode(Node elseNode) {
+        this.elseNode = elseNode;
     }
 
     public NodeType getNodeType() {
@@ -88,6 +93,14 @@ public class CaseNode extends Node {
     public Node getCaseNode() {
         return caseNode;
     }
+    
+    public ListNode getCases() {
+        return cases;
+    }
+
+    public Node getElseNode() {
+        return elseNode;
+    }
 
     /**
      * Gets the first whenNode.
@@ -95,56 +108,28 @@ public class CaseNode extends Node {
      * @return whenNode
      */
     public Node getFirstWhenNode() {
-        return caseBody;
+        return cases;
     }
     
     public List<Node> childNodes() {
-        return Node.createList(caseNode, caseBody);
+        return Node.createList(caseNode, cases);
     }
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject value = caseNode == null ? null : caseNode.interpret(runtime, context, self, aBlock);
+        IRubyObject expression = caseNode == null ? null : caseNode.interpret(runtime, context, self, aBlock);
 
         context.pollThreadEvents();
 
-        for (Node current = caseBody; current != null; current = ((WhenNode) current).getNextCase()) {
-            if (!(current instanceof WhenNode)) return current.interpret(runtime, context, self, aBlock);
-            
-            IRubyObject result = interpretExpressions((WhenNode) current, value, context, runtime, self, aBlock);
-            if (result != null) return result;
-
-            context.pollThreadEvents();            
-        }
-
-        return runtime.getNil();        
-    }
-    
-    private static IRubyObject interpretExpressions(WhenNode whenNode, IRubyObject value,
-            ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        assert whenIsArray(whenNode);
-
-        Node expressionNodes = whenNode.getExpressionNodes();
-        List<Node> childNodes;
-        if (expressionNodes instanceof SplatNode) {
-          childNodes = ((SplatNode) expressionNodes).childNodes();
-        } else {
-          childNodes = ((ArrayNode) expressionNodes).childNodes();
-        }
-        for (Node expression: childNodes) {
-            ISourcePosition position = expression.getPosition();
-            context.setFileAndLine(position.getFile(), position.getStartLine());
-
+        // We know all cases are when nodes...assert?
+        for (Node child : cases.childNodes()) {
+            WhenNode when = (WhenNode) child;
             if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
-
-            IRubyObject result = expression.when(whenNode, value, context, runtime, self, aBlock);
+            IRubyObject result = when.when(expression, context, runtime, self, aBlock);
             if (result != null) return result;
+            context.pollThreadEvents();
         }
-        
-        return null;
-    }
-    
-    private static boolean whenIsArray(WhenNode whenNode) {
-        return whenNode.getExpressionNodes() instanceof ArrayNode;
+
+        return elseNode != null ? elseNode.interpret(runtime, context, self, aBlock) : runtime.getNil();
     }
 }

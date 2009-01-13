@@ -226,7 +226,8 @@ public class DefaultRubyParser implements RubyParser {
 %type <Node>  mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args 
 %type <Node>  block_var opt_block_var lhs none
 %type <ListNode> qword_list word_list f_arg f_optarg 
-%type <ListNode> args when_args mlhs_head assocs assoc assoc_list 
+%type <ListNode> args mlhs_head assocs assoc assoc_list
+%type <Node> when_args
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
 %type <BlockArgNode> opt_f_block_arg f_block_arg 
 %type <IterNode> brace_block do_block cmd_brace_block 
@@ -1113,12 +1114,12 @@ primary       : literal
                   $$ = new UntilNode(getPosition($1), support.getConditionNode($3), body);
               }
               | kCASE expr_value opt_terms case_body kEND {
-                  $$ = new CaseNode(support.union($1, $5), $2, $4);
+                  $$ = support.newCaseNode(support.union($1, $5), $2, $4);
               }
               | kCASE opt_terms case_body kEND {
 // TODO: MRI is just a when node.  We need this extra logic for IDE consumers (null in casenode statement should be implicit nil)
 //                  if (support.getConfiguration().hasExtraPositionInformation()) {
-                      $$ = new CaseNode(support.union($1, $4), null, $3);
+                      $$ = support.newCaseNode(support.union($1, $4), null, $3);
 //                  } else {
 //                      $$ = $3;
 //                  }
@@ -1313,10 +1314,10 @@ case_body     : kWHEN when_args then compstmt cases {
 
 when_args     : args
               | args ',' tSTAR arg_value {
-                  $$ = $1.add(support.newWhenNode(getPosition($1), $4, null, null));
+                  $$ = support.arg_concat(support.union($1, $4), $1, $4);
               }
               | tSTAR arg_value {
-                  $$ = support.newArrayNode(getPosition($1), support.newWhenNode(getPosition($1), $2, null, null));
+                  $$ = new SplatNode(support.union($1, $2), $2);
               }
 
 cases         : opt_else | case_body

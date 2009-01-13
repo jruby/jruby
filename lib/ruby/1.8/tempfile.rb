@@ -32,6 +32,8 @@ class Tempfile < DelegateClass(File)
     begin
       Thread.critical = true
 
+      puts @@cleanlist.size
+
       begin
 	tmpname = File.join(tmpdir, make_tmpname(basename, n))
 	lock = tmpname + '.lock'

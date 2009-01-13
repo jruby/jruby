@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -45,7 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * represents 'nil'
  */
-public class NilNode extends Node implements INameNode {
+public class NilNode extends Node implements INameNode, IEqlNode {
     public NilNode(ISourcePosition position) {
         super(position);
     }
@@ -82,13 +83,8 @@ public class NilNode extends Node implements INameNode {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return "nil";
     }
-    
-    @Override
-    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        interpret(runtime, context, self, aBlock); // For thread polling...maybe we can remove
 
-        if (value != null && value.isNil()) return whenNode.interpret(runtime, context, self, aBlock);
-
-        return null;
+    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+        return otherValue == interpret(runtime, context, self, aBlock);
     }
 }

@@ -48,8 +48,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents a when condition
  */
 public class WhenNode extends Node {
-    private final Node expressionNodes;
-    private final Node bodyNode;
+    protected final Node expressionNodes;
+    protected final Node bodyNode;
     private final Node nextCase;
     public final CallSite eqq = MethodIndex.getFunctionalCallSite("===");
 
@@ -109,9 +109,7 @@ public class WhenNode extends Node {
         return bodyNode.interpret(runtime, context, self, aBlock);
     }
 
-    // Ruby grammar has nested whens in a case body because of productions case_body and when_args.
-    @Override
-    public IRubyObject when(WhenNode whenNode, IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
+    public IRubyObject when(IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         RubyArray expressions = RuntimeHelpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
 
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
@@ -119,9 +117,8 @@ public class WhenNode extends Node {
 
             if ((value != null && eqq.call(context, self, test, value).isTrue())
                     || (value == null && test.isTrue())) {
-                return whenNode.interpret(runtime, context, self, aBlock);
+                return bodyNode.interpret(runtime, context, self, aBlock);
             }
-
         }
 
         return null;
