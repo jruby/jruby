@@ -496,7 +496,6 @@ public final class StructLayoutBuilder extends RubyObject {
         StructMember(RubyClass klass, long offset) {
             super(offset);
             this.klass = klass;
-            System.out.println("Creating struct field of type " + klass + " offset=" + offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             throw runtime.newNotImplementedError("Cannot set Struct fields");
