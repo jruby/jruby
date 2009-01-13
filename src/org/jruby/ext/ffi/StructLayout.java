@@ -78,7 +78,9 @@ public final class StructLayout extends RubyObject {
                 Allocator.INSTANCE, module);
         result.defineAnnotatedMethods(StructLayout.class);
         result.defineAnnotatedConstants(StructLayout.class);
-
+        RubyClass array = runtime.defineClassUnder("Array", runtime.getObject(),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, result);
+        array.defineAnnotatedMethods(Array.class);
         return result;
     }
     
@@ -188,7 +190,7 @@ public final class StructLayout extends RubyObject {
      * @return A ruby value for the native value of the struct member.
      */
     IRubyObject get(Map<Object, IRubyObject> cache, ThreadContext context, IRubyObject ptr, IRubyObject name) {
-        return getMember(context.getRuntime(), name).get(context.getRuntime(), ptr);
+        return getMember(context.getRuntime(), name).get(cache, context.getRuntime(), ptr);
     }
     
     /**
@@ -278,5 +280,59 @@ public final class StructLayout extends RubyObject {
             return get(runtime, ptr);
         }
     }
-    
+    static abstract class ArrayMemberIO {
+        static final MemoryIO getMemoryIO(IRubyObject ptr) {
+            return ((AbstractMemory) ptr).getMemoryIO();
+        }
+        static final long getOffset(IRubyObject ptr, long offset) {
+            return ((AbstractMemory) ptr).getOffset() + offset;
+        }
+        abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
+        abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
+    }
+    @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
+    static final class Array extends RubyObject {
+        private final MemoryIO io;
+        private final ArrayMemberIO aio;
+        private final long offset;
+        private final int length, typeSize;
+        /**
+         * Creates a new <tt>StructLayout</tt> instance.
+         *
+         * @param runtime The runtime for the <tt>StructLayout</tt>
+         * @param klass the ruby class to use for the <tt>StructLayout</tt>
+         */
+        Array(Ruby runtime, RubyClass klass) {
+            this(runtime, null, 0, 0, 0, null);
+        }
+        Array(Ruby runtime, IRubyObject ptr, long offset, int length, int sizeBits, ArrayMemberIO aio) {
+            super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME).fastGetClass("Array"));
+            this.io = ((AbstractMemory) ptr).getMemoryIO();
+            this.offset = offset;
+            this.length = length;
+            this.aio = aio;
+            this.typeSize = sizeBits / 8;
+        }
+        private final long getOffset(IRubyObject index) {
+            return offset + (Util.uint32Value(index) * typeSize);
+        }
+        @JRubyMethod(name = "[]")
+        public IRubyObject get(ThreadContext context, IRubyObject index) {
+            return aio.get(context.getRuntime(), io, getOffset(index));
+        }
+        @JRubyMethod(name = "[]=")
+        public IRubyObject put(ThreadContext context, IRubyObject index, IRubyObject value) {
+            aio.put(context.getRuntime(), io, getOffset(index), value);
+            return value;
+        }
+        @JRubyMethod(name = "to_a")
+        public IRubyObject get(ThreadContext context) {
+            Ruby runtime = context.getRuntime();
+            IRubyObject[] elems = new IRubyObject[length];
+            for (int i = 0; i < elems.length; ++i) {
+                elems[i] = aio.get(runtime, io, offset + (i * typeSize));
+            }
+            return RubyArray.newArrayNoCopy(runtime, elems);
+        }
+    }
 }

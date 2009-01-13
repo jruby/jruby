@@ -105,6 +105,64 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         return off;
     }
+    private static int getAlignmentBits(NativeType type) {
+        switch (type) {
+            case INT8:
+            case UINT8:
+                return 8;
+            case INT16:
+            case UINT16:
+                return 16;
+            case INT32:
+            case UINT32:
+                return 32;
+            case INT64:
+            case UINT64:
+                return LONG_ALIGN;
+            case LONG:
+            case ULONG:
+                return LONG_ALIGN;
+            case FLOAT32:
+                return FLOAT_ALIGN;
+            case FLOAT64:
+                return DOUBLE_ALIGN;
+            case POINTER:
+            case STRING:
+            case RBXSTRING:
+                return ADDRESS_ALIGN;
+            default:
+                throw new UnsupportedOperationException("Cannot determine alignment of " + type);
+        }
+    }
+    private static int getSizeBits(NativeType type) {
+        switch (type) {
+            case INT8:
+            case UINT8:
+                return 8;
+            case INT16:
+            case UINT16:
+                return 16;
+            case INT32:
+            case UINT32:
+                return 32;
+            case INT64:
+            case UINT64:
+                return 64;
+            case LONG:
+            case ULONG:
+                return LONG_SIZE;
+            case FLOAT32:
+                return Float.SIZE;
+            case FLOAT64:
+                return Double.SIZE;
+            case POINTER:
+            case STRING:
+            case RBXSTRING:
+                return ADDRESS_SIZE;
+            default:
+                throw new UnsupportedOperationException("Cannot determine size of " + type);
+        }
+    }
     @JRubyMethod(name = "add_field", required = 2, optional = 1)
     public IRubyObject add(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
@@ -122,47 +180,8 @@ public final class StructLayoutBuilder extends RubyObject {
         } else {
             NativeType t = NativeType.valueOf(Util.int32Value(args[1]));
             type = t;
-            switch (t) {
-                case INT8:
-                case UINT8:
-                    align = 8; sizeBits = 8;
-                    break;
-                case INT16:
-                case UINT16:
-                    align = 16; sizeBits = 16;
-                    break;
-                case INT32:
-                case UINT32:
-                    align = 32; sizeBits = 32;
-                    break;
-                case INT64:
-                case UINT64:
-                    align = LONG_ALIGN;
-                    sizeBits = 64;
-                    break;
-                case LONG:
-                case ULONG:
-                    align = LONG_ALIGN;
-                    sizeBits = LONG_SIZE;
-                    break;
-                case FLOAT32:
-                    align = FLOAT_ALIGN;
-                    sizeBits = 32;
-                    break;
-                case FLOAT64:
-                    align = DOUBLE_ALIGN;
-                    sizeBits = 64;
-                    break;
-                case POINTER:
-                    align = Platform.getPlatform().addressSize();
-                    sizeBits = LONG_ALIGN;
-                    break;
-                case STRING:
-                case RBXSTRING:
-                    align = ADDRESS_ALIGN;
-                    sizeBits = ADDRESS_SIZE;
-                    break;
-            }
+            align = getAlignmentBits(t);
+            sizeBits = getSizeBits(t);
         }
         if (offset < 0) {
             offset = alignMember(this.size, align);
@@ -192,6 +211,30 @@ public final class StructLayoutBuilder extends RubyObject {
         
         fields.put(createKey(runtime, name), field);
         this.size = offset + sizeBytes;
+        this.maxAlign = Math.max(this.maxAlign, align);
+        return this;
+    }
+    @JRubyMethod(name = "add_array", required = 3, optional = 1)
+    public IRubyObject add_array(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.getRuntime();
+        IRubyObject name = args[0];
+        NativeType type = NativeType.valueOf(Util.int32Value(args[1]));
+        int length = Util.int32Value(args[2]);
+        int offset = args.length > 3 && !args[3].isNil() ? Util.int32Value(args[3]) : -1;
+        final int align = getAlignmentBits(type);
+        final int sizeBits = getSizeBits(type);
+        
+        if (offset < 0) {
+            offset = alignMember(this.size, align);
+        }
+        StructLayout.ArrayMemberIO io = getArrayMemberIO(type);
+        if (io == null) {
+            throw context.getRuntime().newNotImplementedError("Unsupported array field type: " + type);
+        }
+        StructLayout.Member field = new ArrayMember(offset, io, sizeBits, length);
+
+        fields.put(createKey(runtime, name), field);
+        this.size = offset + ((sizeBits / 8) * length);
         this.maxAlign = Math.max(this.maxAlign, align);
         return this;
     }
@@ -516,5 +559,135 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         static StructLayout.Member create(RubyClass klass, long offset) { return new StructMember(klass, offset); }
+    }
+    static final class ArrayMember extends StructLayout.Member {
+        private final StructLayout.ArrayMemberIO io;
+        private final int length, typeSize;
+        ArrayMember(long offset, StructLayout.ArrayMemberIO io, int typeSize, int length) {
+            super(offset);
+            this.io = io;
+            this.typeSize = typeSize;
+            this.length = length;
+        }
+        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+            throw runtime.newNotImplementedError("Cannot set Array fields");
+        }
+
+        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+            return new StructLayout.Array(runtime, ptr, offset, length, typeSize, io);
+        }
+
+        @Override
+        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
+            IRubyObject s = cache.get(this);
+            if (s == null) {
+                cache.put(this, s = new StructLayout.Array(runtime, ptr, offset, length, typeSize, io));
+            }
+            return s;
+        }
+    }
+    private static final StructLayout.ArrayMemberIO getArrayMemberIO(NativeType type) {
+        switch (type) {
+            case INT8:
+                return Signed8ArrayIO.INSTANCE;
+            case UINT8:
+                return Unsigned8ArrayIO.INSTANCE;
+            case INT16:
+                return Signed16ArrayIO.INSTANCE;
+            case UINT16:
+                return Unsigned16ArrayIO.INSTANCE;
+            case INT32:
+                return Signed32ArrayIO.INSTANCE;
+            case UINT32:
+                return Unsigned32ArrayIO.INSTANCE;
+            case INT64:
+                return Signed64ArrayIO.INSTANCE;
+            case UINT64:
+                return Unsigned64ArrayIO.INSTANCE;
+            default:
+                return null;
+        }
+
+    }
+    
+    static final class Signed8ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putByte(offset, Util.int8Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned8(runtime, io.getByte(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Signed8ArrayIO();
+    }
+    static final class Unsigned8ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putByte(offset, (byte) Util.uint8Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned8(runtime, io.getByte(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Unsigned8ArrayIO();
+    }
+    static final class Signed16ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putShort(offset, Util.int16Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned16(runtime, io.getShort(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Signed16ArrayIO();
+    }
+    static final class Unsigned16ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putShort(offset, (short) Util.uint16Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned16(runtime, io.getShort(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Unsigned16ArrayIO();
+    }
+    static final class Signed32ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, Util.int32Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned32(runtime, io.getInt(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Signed32ArrayIO();
+    }
+    static final class Unsigned32ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, (int) Util.uint32Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned32(runtime, io.getInt(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Unsigned32ArrayIO();
+    }
+    static final class Signed64ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putLong(offset, Util.int64Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned64(runtime, io.getLong(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Signed64ArrayIO();
+    }
+    static final class Unsigned64ArrayIO extends StructLayout.ArrayMemberIO {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putLong(offset, Util.uint64Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned64(runtime, io.getLong(offset));
+        }
+        static StructLayout.ArrayMemberIO INSTANCE = new Unsigned64ArrayIO();
     }
 }
