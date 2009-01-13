@@ -49,8 +49,9 @@ import org.jruby.util.ByteList;
 @JRubyClass(name=StructLayoutBuilder.CLASS_NAME, parent="Object")
 public final class StructLayoutBuilder extends RubyObject {
     public static final String CLASS_NAME = "StructLayoutBuilder";
-    private static final boolean isSparc() { 
-        return false; // FIXME: fix sparc support
+    private static final boolean isSparc() {
+        final Platform.CPU cpu = Platform.getPlatform().getCPU();
+        return cpu == Platform.CPU.SPARC || cpu == Platform.CPU.SPARCV9;
     }
     /*
      * Most arches align long/double on the same size as a native long (or a pointer)
