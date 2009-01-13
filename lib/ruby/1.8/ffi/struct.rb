@@ -56,8 +56,8 @@ module FFI
         
         # If the next param is a Integer, it specifies the offset
         if spec[i].kind_of?(Integer)
-          i += 1
           offset = spec[i]
+          i += 1
         else
           offset = nil
         end
