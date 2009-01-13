@@ -86,17 +86,15 @@ public class Platform {
         String osName = System.getProperty("os.name").split(" ")[0].toLowerCase();
         if (osName.startsWith("mac") || osName.startsWith("darwin")) {
             return OS.DARWIN;
-        } else if (osName.startsWith("linux")) {
-            return OS.LINUX;
         } else if (osName.startsWith("sunos") || osName.startsWith("solaris")) {
             return OS.SOLARIS;
-        } else if (osName.startsWith("openbsd")) {
-            return OS.OPENBSD;
-        } else if (osName.startsWith("freebsd")) {
-            return OS.FREEBSD;
-        } else {
-            throw new ExceptionInInitializerError("Unsupported operating system");
         }
+        for (OS os : OS.values()) {
+            if (osName.startsWith(os.toString().toLowerCase())) {
+                return os;
+            }
+        }
+        throw new ExceptionInInitializerError("Unsupported operating system");
     }
     private static final Platform determinePlatform(OS os) {
         switch (os) {
