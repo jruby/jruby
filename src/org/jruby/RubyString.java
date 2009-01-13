@@ -4234,6 +4234,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while (llen > 0) {
             if (padLen <= 1) { 
                 bytes[p++] = padBytes[padP];
+                llen--;
             } else if (llen > padCharLen) {
                 System.arraycopy(padBytes, padP, bytes, p, padLen);
                 p += padLen;
@@ -4253,6 +4254,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while (rlen > 0) {
             if (padLen <= 1) { 
                 bytes[p++] = padBytes[padP];
+                rlen--;
             } else if (rlen > padCharLen) {
                 System.arraycopy(padBytes, padP, bytes, p, padLen);
                 p += padLen;
