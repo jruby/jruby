@@ -62,7 +62,7 @@ public abstract class BlockBody implements JumpTarget {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
+        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
 
     // This should only be called by 1.8 (1.9 subclasses this to handle unusedBlock).
@@ -140,7 +140,7 @@ public abstract class BlockBody implements JumpTarget {
             if (argumentType == ARRAY && args.length != 1) {
                 context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
                 if (args.length == 0) {
-                    args = new IRubyObject[] {context.getRuntime().getNil()};
+                    args = context.getRuntime().getSingleNilArray();
                 } else {
                     args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
                 }

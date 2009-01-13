@@ -1015,6 +1015,7 @@ public final class Ruby {
 
         nilObject = new RubyNil(this);
         for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
+        singleNilArray = new IRubyObject[] {nilObject};
 
         falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
@@ -1526,6 +1527,10 @@ public final class Ruby {
      */
     public IRubyObject getNil() {
         return nilObject;
+    }
+
+    public IRubyObject[] getSingleNilArray() {
+        return singleNilArray;
     }
 
     public RubyClass getNilClass() {
@@ -3118,6 +3123,7 @@ public final class Ruby {
     // Default objects
     private IRubyObject topSelf;
     private RubyNil nilObject;
+    private IRubyObject[] singleNilArray;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];

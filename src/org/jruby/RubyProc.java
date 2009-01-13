@@ -195,7 +195,6 @@ public class RubyProc extends RubyObject implements JumpTarget {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
         
-        Ruby runtime = getRuntime();
         Block newBlock = block;
         JumpTarget jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
         
@@ -204,32 +203,44 @@ public class RubyProc extends RubyObject implements JumpTarget {
             
             return newBlock.call(context, args, passedBlock);
         } catch (JumpException.BreakJump bj) {
-            switch(block.type) {
-            case LAMBDA: if (bj.getTarget() == jumpTarget) {
-                return (IRubyObject) bj.getValue();
-            } else {
-                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-            }
-            case PROC:
-                if (newBlock.isEscaped()) {
-                    throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
-                } else {
-                    throw bj;
-                }
-            default: throw bj;
-            }
+            return handleBreakJump(getRuntime(), newBlock, bj, jumpTarget);
         } catch (JumpException.ReturnJump rj) {
-            Object target = rj.getTarget();
-            
-            if (target == jumpTarget && block.type == Block.Type.LAMBDA) return (IRubyObject) rj.getValue();
-
-            if (type == Block.Type.THREAD) {
-                throw runtime.newThreadError("return can't jump across threads");
-            }
-            throw rj;
+            return handleReturnJump(getRuntime(), rj, jumpTarget);
         } catch (JumpException.RetryJump rj) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, (IRubyObject)rj.getValue(), "retry not supported outside rescue");
+            return handleRetryJump(getRuntime(), rj);
         }
+    }
+
+    private IRubyObject handleBreakJump(Ruby runtime, Block newBlock, JumpException.BreakJump bj, JumpTarget jumpTarget) {
+        switch(newBlock.type) {
+        case LAMBDA: if (bj.getTarget() == jumpTarget) {
+            return (IRubyObject) bj.getValue();
+        } else {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
+        }
+        case PROC:
+            if (newBlock.isEscaped()) {
+                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
+            } else {
+                throw bj;
+            }
+        default: throw bj;
+        }
+    }
+
+    private IRubyObject handleReturnJump(Ruby runtime, JumpException.ReturnJump rj, JumpTarget jumpTarget) {
+        Object target = rj.getTarget();
+
+        if (target == jumpTarget && block.type == Block.Type.LAMBDA) return (IRubyObject) rj.getValue();
+
+        if (type == Block.Type.THREAD) {
+            throw runtime.newThreadError("return can't jump across threads");
+        }
+        throw rj;
+    }
+
+    private IRubyObject handleRetryJump(Ruby runtime, JumpException.RetryJump rj) {
+        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, (IRubyObject)rj.getValue(), "retry not supported outside rescue");
     }
 
     @JRubyMethod(name = "arity")
