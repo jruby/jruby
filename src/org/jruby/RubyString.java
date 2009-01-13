@@ -2285,7 +2285,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             byte[] bytes = value.bytes;
             int size = value.realSize;
-            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyMatchData match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
             match.use();
             RubyString repl = objAsString(context, block.yield(context, 
                     substr(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
@@ -2306,7 +2306,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub(repl, this, matcher, context.getRuntime().getKCode().getEncoding());
-            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
             return subBangCommon(context, pattern, matcher, repl, tained);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
@@ -2379,7 +2379,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             byte[] bytes = value.bytes;
             int size = value.realSize;
-            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyMatchData match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
             match.use();
 
             final RubyString repl;
@@ -2410,7 +2410,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub(repl, this, matcher, context.getRuntime().getKCode().getEncoding());
-            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
             return subBangCommon19(context, pattern, matcher, repl, tained);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
@@ -2573,7 +2573,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (repl == null) { // block given
                 byte[] bytes = value.bytes;
                 int size = value.realSize;
-                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+                match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
                 match.use();
                 val = objAsString(context, block.yield(context, substr(runtime, begz, endz - begz)));
                 modifyCheck(bytes, size);
@@ -2628,7 +2628,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (match != null) {
             frame.setBackRef(match);
         } else {
-            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
         }
 
         dest.realSize = bp - buf;
@@ -3883,7 +3883,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (pattern.numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+                match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
                 match.use();
                 IRubyObject substr = substr(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 if (tainted) { 
@@ -3896,7 +3896,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+                match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
                 match.use();
                 if (tainted) match.setTaint(true);
                 block.yield(context, populateCapturesForScan(runtime, matcher, range, tainted));
@@ -3928,7 +3928,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         Frame frame = context.getPreviousFrame();
         if (ary.size() > 0) {
-            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyMatchData match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
             if (tainted) match.setTaint(true);
         } else {
             frame.setBackRef(runtime.getNil());
@@ -4003,7 +4003,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (pattern.numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+                match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
                 match.regexp = regexp;
                 match.use();
                 IRubyObject substr = substr(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
@@ -4017,7 +4017,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+                match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
                 match.regexp = regexp;
                 match.use();
                 if (tainted) match.setTaint(true);
@@ -4051,7 +4051,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         Frame frame = context.getPreviousFrame();
         if (ary.size() > 0) {
-            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            RubyMatchData match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
             match.regexp = regexp;
             if (tainted) match.setTaint(true);
         } else {

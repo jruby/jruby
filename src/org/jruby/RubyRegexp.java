@@ -1237,13 +1237,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
-        RubyMatchData match = updateBackRefLazy(context, str, frame, matcher, pattern);
+        RubyMatchData match = updateBackRef(context, str, frame, matcher, pattern);
         match.regexp = this;
         match.infectBy(this);
         return match;
     }
 
-    static final RubyMatchData updateBackRefLazy(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern) {
+    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern) {
         Ruby runtime = context.getRuntime();
         IRubyObject backref = frame.getBackRef();
         final RubyMatchData match;
@@ -1265,10 +1265,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match;
     }
 
-    static final RubyMatchData updateBackRefLazy19(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern, RubyRegexp regexp) {
-        RubyMatchData match = updateBackRefLazy(context, str, frame, matcher, pattern);
+    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern) {
+        RubyMatchData match = updateBackRef(context, str, frame, matcher, pattern);
         match.charOffsetUpdated = false;
-        match.regexp = regexp;
         return match;
     }
 
