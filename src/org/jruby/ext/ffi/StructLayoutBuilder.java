@@ -32,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;

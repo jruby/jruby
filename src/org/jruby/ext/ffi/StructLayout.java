@@ -171,6 +171,19 @@ public final class StructLayout extends RubyObject {
         getMember(context.getRuntime(), name).put(context.getRuntime(), ptr, value);
         return value;
     }
+
+    /**
+     * Gets the value of the struct member corresponding to <tt>name</tt>.
+     *
+     * @param cache An object cache
+     * @param context The current ThreadContext
+     * @param ptr The address of the structure in memory.
+     * @param name The name of the member.
+     * @return A ruby value for the native value of the struct member.
+     */
+    IRubyObject get(Map<Object, IRubyObject> cache, ThreadContext context, IRubyObject ptr, IRubyObject name) {
+        return getMember(context.getRuntime(), name).get(context.getRuntime(), ptr);
+    }
     
     /**
      * Gets a ruby array of the names of all members of this struct.
@@ -241,6 +254,17 @@ public final class StructLayout extends RubyObject {
          * @return A ruby object equivalent to the native member value.
          */
         public abstract IRubyObject get(Ruby runtime, IRubyObject ptr);
+
+        /**
+         * Reads a ruby value from the struct member.
+         *
+         * @param cache The cache used to store
+         * @param ptr The memory area of the struct.
+         * @return A ruby object equivalent to the native member value.
+         */
+        IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
+            return get(runtime, ptr);
+        }
     }
     
 }

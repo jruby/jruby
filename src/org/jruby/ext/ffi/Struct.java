@@ -1,6 +1,8 @@
 
 package org.jruby.ext.ffi;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -16,6 +18,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Struct extends RubyObject {
     private final StructLayout layout;
     private final IRubyObject memory;
+    private final Map<Object, IRubyObject> cache = new HashMap<Object, IRubyObject>(1);
+    
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Struct(runtime, klass);
@@ -133,7 +137,7 @@ public class Struct extends RubyObject {
     }
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
-        return layout.get(context, memory, fieldName);
+        return layout.get(cache, context, memory, fieldName);
     }
     @JRubyMethod(name = "[]=")
     public IRubyObject setFieldValue(ThreadContext context, IRubyObject fieldName, IRubyObject fieldValue) {
