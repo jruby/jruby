@@ -2545,13 +2545,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return gsubCommon(context, bang, getQuotedPattern(arg0), block, repl, repl.isTaint());
     }
 
-    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, Regex regex, Block block, RubyString repl, boolean tainted) {
+    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, Regex pattern, Block block, RubyString repl, boolean tainted) {
         Ruby runtime = context.getRuntime();
         Frame frame = context.getPreviousFrame();
 
         int begin = value.begin;
         int range = begin + value.realSize;
-        Matcher matcher = regex.matcher(value.bytes, begin, range);
+        Matcher matcher = pattern.matcher(value.bytes, begin, range);
 
         int beg = matcher.search(begin, range, Option.NONE);
         if (beg < 0) {
@@ -2573,7 +2573,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (repl == null) { // block given
                 byte[] bytes = value.bytes;
                 int size = value.realSize;
-                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, regex);
+                match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
                 match.use();
                 val = objAsString(context, block.yield(context, substr(runtime, begz, endz - begz)));
                 modifyCheck(bytes, size);
@@ -2604,7 +2604,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             if (begz == endz) {
                 if (value.realSize <= endz) break;
-                len = regex.getEncoding().length(value.bytes, begin + endz, range);
+                len = pattern.getEncoding().length(value.bytes, begin + endz, range);
                 System.arraycopy(value.bytes, begin + endz, dest.bytes, bp, len);
                 bp += len;
                 offset = endz + len;
@@ -2628,7 +2628,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (match != null) {
             frame.setBackRef(match);
         } else {
-            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, regex);
+            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
         }
 
         dest.realSize = bp - buf;
