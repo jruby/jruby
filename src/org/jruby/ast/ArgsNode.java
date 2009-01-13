@@ -191,6 +191,18 @@ public class ArgsNode extends Node {
         return blockArgNode;
     }
 
+    public int getPostCount() {
+        return postCount;
+    }
+
+    public int getPostIndex() {
+        return postIndex;
+    }
+
+    public int getPreCount() {
+        return preCount;
+    }
+
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
         DynamicScope scope = context.getCurrentScope();
 

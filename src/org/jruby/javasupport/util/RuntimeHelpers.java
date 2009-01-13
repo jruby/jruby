@@ -927,6 +927,15 @@ public class RuntimeHelpers {
         }
     }
 
+    public static RubyArray createSubarray(IRubyObject[] input, Ruby runtime, int start, int exclude) {
+        int length = input.length - exclude - start;
+        if (length <= 0) {
+            return RubyArray.newEmptyArray(runtime);
+        } else {
+            return RubyArray.newArrayNoCopy(runtime, input, start, length);
+        }
+    }
+
     public static IRubyObject elementOrNull(IRubyObject[] input, int element) {
         if (element >= input.length) {
             return null;

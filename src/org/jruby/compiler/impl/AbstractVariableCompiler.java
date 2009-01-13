@@ -235,6 +235,100 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             blockAssignment.call(methodCompiler);
         }
     }
+
+    public void assignMethodArguments19(
+            Object preArgs,
+            int preArgsCount,
+            Object postArgs,
+            int postArgsCount,
+            int postArgsIndex,
+            Object optArgs,
+            int optArgsCount,
+            ArrayCallback requiredAssignment,
+            ArrayCallback optGivenAssignment,
+            ArrayCallback optNotGivenAssignment,
+            CompilerCallback restAssignment,
+            CompilerCallback blockAssignment) {
+        if (specificArity) {
+            int currentArgElement = 0;
+            for (; currentArgElement < scope.getRequiredArgs(); currentArgElement++) {
+                method.aload(argsIndex + currentArgElement);
+                requiredAssignment.nextValue(methodCompiler, preArgs, currentArgElement);
+            }
+        } else {
+            if (preArgsCount > 0 || postArgsCount > 0 || optArgsCount > 0 || restAssignment != null) {
+                // first, iterate over all pre args
+                int currentArgElement = 0;
+                for (; currentArgElement < preArgsCount; currentArgElement++) {
+                    // extract item from array
+                    method.aload(argsIndex);
+                    method.pushInt(currentArgElement); // index for the item
+                    method.arrayload();
+                    requiredAssignment.nextValue(methodCompiler, preArgs, currentArgElement);
+                }
+
+                // then optional args
+                if (optArgsCount > 0) {
+                    // prepare labels for opt logic
+                    Label doneWithOpt = new Label();
+                    Label[] optLabels = new Label[optArgsCount];
+                    for (int i = 0; i < optLabels.length; i ++) optLabels[i] = new Label();
+
+                    // next, iterate over all optional args, until no more arguments
+                    for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
+                        method.aload(argsIndex);
+                        method.pushInt(currentArgElement); // index for the item
+                        methodCompiler.invokeUtilityMethod("elementOrNull", sig(IRubyObject.class, IRubyObject[].class, int.class));
+                        method.dup();
+                        method.ifnull(optLabels[optArgElement]);
+
+                        optGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                    }
+                    method.go_to(doneWithOpt);
+
+                    // now logic for each optional value
+                    for (int optArgElement = 0; optArgElement < optArgsCount; optArgElement++) {
+                        // otherwise no items left available, use the code for default
+                        method.label(optLabels[optArgElement]);
+                        optNotGivenAssignment.nextValue(methodCompiler, optArgs, optArgElement);
+                    }
+
+                    // pop extra failed value from first cycle and we're done
+                    method.pop();
+                    method.label(doneWithOpt);
+                }
+
+                // if rest args, excluding post args
+                if (restAssignment != null) {
+                    // assign remaining elements as an array for rest args (or empty array)
+                    method.aload(argsIndex);
+                    methodCompiler.loadRuntime();
+                    method.pushInt(currentArgElement);
+                    method.aload(postArgsIndex);
+                    methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class, int.class));
+                    restAssignment.call(methodCompiler);
+                }
+
+                // finally, post args
+                for (; currentArgElement < postArgsCount; currentArgElement++) {
+                    // extract item from array
+                    method.aload(argsIndex);
+                    method.pushInt(currentArgElement); // index for the item
+                    method.arrayload();
+                    requiredAssignment.nextValue(methodCompiler, postArgs, currentArgElement);
+                }
+            }
+        }
+
+        // block argument assignment, if there's a block arg
+        if (blockAssignment != null) {
+            methodCompiler.loadRuntime();
+            method.aload(methodCompiler.getClosureIndex());
+
+            methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
+            blockAssignment.call(methodCompiler);
+        }
+    }
         
     public int grabTempLocal() {
         return tempVariableIndex++;

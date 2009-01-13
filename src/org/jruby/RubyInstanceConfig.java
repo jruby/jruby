@@ -175,6 +175,8 @@ public class RubyInstanceConfig {
 
     private String jrubyHome;
 
+    public static final boolean PEEPHOLE_OPTZ
+            = SafePropertyAccessor.getBoolean("jruby.peephole.optz", true);
     public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static boolean FASTOPS_COMPILE_ENABLED

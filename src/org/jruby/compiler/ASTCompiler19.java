@@ -29,10 +29,12 @@
 
 package org.jruby.compiler;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.LambdaNode;
+import org.jruby.ast.ListNode;
 
 /**
  *
@@ -52,6 +54,87 @@ public class ASTCompiler19 extends ASTCompiler {
             default:
                 super.compile(node, context, expr);
         }
+    }
+
+    @Override
+    public void compileArgs(Node node, BodyCompiler context, boolean expr) {
+        final ArgsNode argsNode = (ArgsNode) node;
+
+        final int required = argsNode.getRequiredArgsCount();
+        final int opt = argsNode.getOptionalArgsCount();
+        final int rest = argsNode.getRestArg();
+
+        ArrayCallback requiredAssignment = null;
+        ArrayCallback optionalGiven = null;
+        ArrayCallback optionalNotGiven = null;
+        CompilerCallback restAssignment = null;
+        CompilerCallback blockAssignment = null;
+
+        if (required > 0) {
+            requiredAssignment = new ArrayCallback() {
+
+                        public void nextValue(BodyCompiler context, Object object, int index) {
+                            // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
+                            context.getVariableCompiler().assignLocalVariable(index, false);
+                        }
+                    };
+        }
+
+        if (opt > 0) {
+            optionalGiven = new ArrayCallback() {
+
+                        public void nextValue(BodyCompiler context, Object object, int index) {
+                            Node optArg = ((ListNode) object).get(index);
+
+                            compileAssignment(optArg, context,true);
+                            context.consumeCurrentValue();
+                        }
+                    };
+            optionalNotGiven = new ArrayCallback() {
+
+                        public void nextValue(BodyCompiler context, Object object, int index) {
+                            Node optArg = ((ListNode) object).get(index);
+
+                            compile(optArg, context,true);
+                            context.consumeCurrentValue();
+                        }
+                    };
+        }
+
+        if (rest > -1) {
+            restAssignment = new CompilerCallback() {
+
+                        public void call(BodyCompiler context) {
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
+                        }
+                    };
+        }
+
+        if (argsNode.getBlock() != null) {
+            blockAssignment = new CompilerCallback() {
+
+                        public void call(BodyCompiler context) {
+                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
+                        }
+                    };
+        }
+
+        context.getVariableCompiler().checkMethodArity(required, opt, rest);
+        context.getVariableCompiler().assignMethodArguments19(
+                argsNode.getPre(),
+                argsNode.getPreCount(),
+                argsNode.getPost(),
+                argsNode.getPostCount(),
+                argsNode.getPostIndex(),
+                argsNode.getOptArgs(),
+                argsNode.getOptionalArgsCount(),
+                requiredAssignment,
+                optionalGiven,
+                optionalNotGiven,
+                restAssignment,
+                blockAssignment);
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     @Override
@@ -81,8 +164,8 @@ public class ASTCompiler19 extends ASTCompiler {
     public void compileLambda(Node node, BodyCompiler context, boolean expr) {
         final LambdaNode lambdaNode = (LambdaNode)node;
 
-        boolean doit = expr || !PEEPHOLE_OPTZ;
-        boolean popit = !PEEPHOLE_OPTZ && !expr;
+        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
+        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
 
         if (doit) {
             context.createNewLambda(new CompilerCallback() {

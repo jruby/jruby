@@ -66,6 +66,19 @@ public interface VariableCompiler {
             ArrayCallback optNotGivenAssignment,
             CompilerCallback restAssignment,
             CompilerCallback blockAssignment);
+    public void assignMethodArguments19(
+            Object preArgs,
+            int preArgsCount,
+            Object postArgs,
+            int postArgsCount,
+            int postArgsIndex,
+            Object optArgs,
+            int optArgsCount,
+            ArrayCallback requiredAssignment,
+            ArrayCallback optGivenAssignment,
+            ArrayCallback optNotGivenAssignment,
+            CompilerCallback restAssignment,
+            CompilerCallback blockAssignment);
     public int grabTempLocal();
     public void setTempLocal(int index);
     public void getTempLocal(int index);
