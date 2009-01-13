@@ -639,13 +639,7 @@ public class ASTCompiler {
     }
 
     public void compileArgsPush(Node node, BodyCompiler context, boolean expr) {
-        ArgsPushNode argsPush = (ArgsPushNode) node;
-
-        compile(argsPush.getFirstNode(), context,true);
-        compile(argsPush.getSecondNode(), context,true);
-        context.concatArrays();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
     }
 
     private void compileAttrAssign(Node node, BodyCompiler context, boolean expr) {

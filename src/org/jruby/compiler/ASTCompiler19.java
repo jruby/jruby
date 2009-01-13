@@ -30,6 +30,7 @@
 package org.jruby.compiler;
 
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.LambdaNode;
 
@@ -51,6 +52,17 @@ public class ASTCompiler19 extends ASTCompiler {
             default:
                 super.compile(node, context, expr);
         }
+    }
+
+    @Override
+    public void compileArgsPush(Node node, BodyCompiler context, boolean expr) {
+        ArgsPushNode argsPush = (ArgsPushNode) node;
+
+        compile(argsPush.getFirstNode(), context,true);
+        compile(argsPush.getSecondNode(), context,true);
+        context.appendToArray();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     @Override
