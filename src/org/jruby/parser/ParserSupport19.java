@@ -93,13 +93,17 @@ public class ParserSupport19 extends ParserSupport {
                 identifier + " is not valid to get", identifier);
     }
 
+    /**
+     * If node is a splat and it is splatting a literal array then return the literal array.
+     * Otherwise return null.  This allows grammar to not splat into a Ruby Array if splatting
+     * a literal array.
+     */
     public Node splat_array(Node node) {
-        if (node instanceof SplatNode) return ((SplatNode) node).getValue();
+        if (node instanceof SplatNode) node = ((SplatNode) node).getValue();
         if (node instanceof ArrayNode) return node;
         return null;
-
     }
-    
+
     public Node arg_append(Node node1, Node node2) {
         if (node1 == null) return new ArrayNode(node2.getPosition(), node2);
         if (node1 instanceof ListNode) return ((ListNode) node1).add(node2);
