@@ -2277,43 +2277,43 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return subBangNoIter(context, getQuotedPattern(arg0), arg1.convertToString());
     }
 
-    private IRubyObject subBangIter(ThreadContext context, Regex regex, Block block) {
+    private IRubyObject subBangIter(ThreadContext context, Regex pattern, Block block) {
         int range = value.begin + value.realSize;
-        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        Matcher matcher = pattern.matcher(value.bytes, value.begin, range);
 
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             byte[] bytes = value.bytes;
             int size = value.realSize;
-            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, regex);
+            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
             match.use();
             RubyString repl = objAsString(context, block.yield(context, 
                     substr(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
             frozenCheck();
             frame.setBackRef(match);            
-            return subBangCommon(context, regex, matcher, repl, false);
+            return subBangCommon(context, pattern, matcher, repl, false);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
         }
     }
 
-    private IRubyObject subBangNoIter(ThreadContext context, Regex regex, RubyString repl) {
+    private IRubyObject subBangNoIter(ThreadContext context, Regex pattern, RubyString repl) {
         boolean tained = repl.isTaint();
         int range = value.begin + value.realSize;
-        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        Matcher matcher = pattern.matcher(value.bytes, value.begin, range);
 
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub(repl, this, matcher, context.getRuntime().getKCode().getEncoding());
-            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, regex);
-            return subBangCommon(context, regex, matcher, repl, tained);
+            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            return subBangCommon(context, pattern, matcher, repl, tained);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
         }
     }
 
-    private IRubyObject subBangCommon(ThreadContext context, Regex regex, Matcher matcher, RubyString repl, boolean tainted) {
+    private IRubyObject subBangCommon(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, boolean tainted) {
         final int beg = matcher.getBegin();
         final int plen = matcher.getEnd() - beg;
 
@@ -2363,23 +2363,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, context.getRuntime().getHash(), "to_hash");
-        Regex regex = getQuotedPattern(arg0);
+        Regex pattern = getQuotedPattern(arg0);
         if (hash.isNil()) {
-            return subBangNoIter19(context, regex, arg1.convertToString());
+            return subBangNoIter19(context, pattern, arg1.convertToString());
         } else {
-            return subBangIter19(context, regex, (RubyHash)hash, block);
+            return subBangIter19(context, pattern, (RubyHash)hash, block);
         }
     }
 
-    private IRubyObject subBangIter19(ThreadContext context, Regex regex, RubyHash hash, Block block) {
+    private IRubyObject subBangIter19(ThreadContext context, Regex pattern, RubyHash hash, Block block) {
         int range = value.begin + value.realSize;
-        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        Matcher matcher = pattern.matcher(value.bytes, value.begin, range);
 
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             byte[] bytes = value.bytes;
             int size = value.realSize;
-            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, regex);
+            RubyMatchData match = RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
             match.use();
 
             final RubyString repl;
@@ -2396,28 +2396,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
             modifyCheck(bytes, size);
             frozenCheck();
             frame.setBackRef(match);            
-            return subBangCommon19(context, regex, matcher, repl, tainted);
+            return subBangCommon19(context, pattern, matcher, repl, tainted);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
         }
     }
 
-    private IRubyObject subBangNoIter19(ThreadContext context, Regex regex, RubyString repl) {
+    private IRubyObject subBangNoIter19(ThreadContext context, Regex pattern, RubyString repl) {
         boolean tained = repl.isTaint();
         int range = value.begin + value.realSize;
-        Matcher matcher = regex.matcher(value.bytes, value.begin, range);
+        Matcher matcher = pattern.matcher(value.bytes, value.begin, range);
 
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub(repl, this, matcher, context.getRuntime().getKCode().getEncoding());
-            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, regex);
-            return subBangCommon19(context, regex, matcher, repl, tained);
+            RubyRegexp.updateBackRefLazy(context, this, frame, matcher, pattern);
+            return subBangCommon19(context, pattern, matcher, repl, tained);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
         }
     }
 
-    private IRubyObject subBangCommon19(ThreadContext context, Regex regex, Matcher matcher, RubyString repl, boolean tainted) {
+    private IRubyObject subBangCommon19(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, boolean tainted) {
         final int beg = matcher.getBegin();       
         final int end = matcher.getEnd();
 
