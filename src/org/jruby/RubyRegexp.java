@@ -1216,10 +1216,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             frame.setBackRef(runtime.getNil());
             return -1;
         }
-        return performSearch(reverse, pos, value, frame, runtime, context, str);
+        return performSearch(runtime, context, str, value, pos, reverse, frame); 
     }
 
-    private int performSearch(boolean reverse, int pos, ByteList value, Frame frame, Ruby runtime, ThreadContext context, RubyString str) {
+    private int performSearch(Ruby runtime, ThreadContext context, RubyString str, ByteList value, int pos, boolean reverse, Frame frame) {
         check();
 
         int realSize = value.realSize;
