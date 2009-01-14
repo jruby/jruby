@@ -5,8 +5,10 @@ import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -198,8 +200,9 @@ public class FastIntMethodFactory {
                 ? 0xffffffffL : 0xffffffffffffffffL;
         public static final IntResultConverter INSTANCE = new PointerResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
+            final long address = ((long) value) & ADDRESS_MASK;
             return new BasePointer(context.getRuntime(),
-                    ((long) value) & PointerResultConverter.ADDRESS_MASK);
+                    address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(context.getRuntime()));
         }
     }
 

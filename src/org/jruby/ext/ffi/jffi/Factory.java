@@ -7,7 +7,6 @@ import org.jruby.RubyModule;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.ext.ffi.Pointer;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
 
@@ -24,12 +23,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         // Hook up the MemoryPointer class if its not already there
         //
         synchronized (ffi) {
-            if (ffi.fastGetClass("BasePointer") == null) {
-                BasePointer.createJNAPointerClass(runtime, ffi);
-            }
-            if (ffi.fastGetClass("MemoryPointer") == null) {
-                MemoryPointer.createMemoryPointerClass(runtime, ffi);
-            }
             if (ffi.fastGetClass("DynamicLibrary") == null) {
                 DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
             }
@@ -73,11 +66,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      */
     public AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear) {
         return AllocatedNativeMemoryIO.allocate(size, clear);
-    }
-
-    @Override
-    public Pointer newPointer(Ruby runtime, MemoryIO io) {
-        return new BasePointer(runtime, io, Long.MAX_VALUE);
     }
 
     @Override

@@ -30,7 +30,6 @@ package org.jruby.ext.ffi.jna;
 
 import com.sun.jna.CallbackProxy;
 import com.sun.jna.Function;
-import com.sun.jna.Pointer;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
@@ -38,9 +37,13 @@ import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.NullMemoryIO;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -111,7 +114,7 @@ final class CallbackMarshaller implements Marshaller {
             case FLOAT64:
                 return double.class;
             case POINTER:
-                return Pointer.class;
+                return com.sun.jna.Pointer.class;
             default:
                 return null;
         }
@@ -230,8 +233,14 @@ final class CallbackMarshaller implements Marshaller {
                 return (float) RubyNumeric.num2dbl(value);
             case FLOAT64:
                 return (double) RubyNumeric.num2dbl(value);
-            case POINTER:
-                return ((JNAMemoryPointer) value).getNativeMemory();
+            case POINTER: {
+                MemoryIO io = ((Pointer) value).getMemoryIO();
+                if (io instanceof NativeMemoryIO) {
+                    return ((NativeMemoryIO) io).getPointer();
+                } else {
+                    return null;
+                }
+            }
             default:
                 return Long.valueOf(0);
         }
@@ -262,7 +271,8 @@ final class CallbackMarshaller implements Marshaller {
             case FLOAT64:
                 return runtime.newFloat((Double) value);
             case POINTER:
-                return new JNABasePointer(runtime, (Pointer) value);
+                return new BasePointer(runtime, 
+                        value != null ? new NativeMemoryIO((com.sun.jna.Pointer) value) : new NullMemoryIO(runtime)) ;
             default:
                 throw new IllegalArgumentException("Invalid type " + type);
         }

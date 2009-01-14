@@ -121,6 +121,12 @@ public abstract class Factory {
             if (ffi.fastGetClass("AutoPointer") == null) {
                 AutoPointer.createAutoPointerClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("BasePointer") == null) {
+                BasePointer.createBasePointerClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass("MemoryPointer") == null) {
+                MemoryPointer.createMemoryPointerClass(runtime, ffi);
+            }
             if (ffi.fastGetClass("Struct") == null) {
                 Struct.createStructClass(runtime, ffi);
             }
@@ -181,15 +187,6 @@ public abstract class Factory {
      * @return A new <tt>MemoryIO</tt>.
      */
     public abstract AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear);
-
-    /**
-     * Creates a new FFI {@link Pointer} instance.
-     *
-     * @param runtime
-     * @param io
-     * @return
-     */
-    public abstract Pointer newPointer(Ruby runtime, MemoryIO io);
-
+    
     public abstract CallbackManager getCallbackManager();
 }

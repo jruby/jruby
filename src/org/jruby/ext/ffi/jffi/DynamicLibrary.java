@@ -11,6 +11,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;

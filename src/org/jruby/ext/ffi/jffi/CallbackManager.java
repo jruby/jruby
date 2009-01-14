@@ -17,12 +17,14 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -300,8 +302,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 return runtime.newFloat(buffer.getFloat(index));
             case FLOAT64:
                 return runtime.newFloat(buffer.getDouble(index));
-            case POINTER:
-                return new BasePointer(runtime, buffer.getAddress(index));
+            case POINTER: {
+                final long  address = buffer.getAddress(index);
+                return new BasePointer(runtime, address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(runtime));
+            }
             case STRING:
                 return getStringParameter(runtime, buffer, index);
             default:

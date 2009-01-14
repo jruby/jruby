@@ -13,6 +13,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.NativeParam;

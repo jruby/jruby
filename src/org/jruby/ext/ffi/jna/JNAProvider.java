@@ -311,7 +311,8 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class PointerInvoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
-            return new JNABasePointer(runtime, function.invokePointer(args));
+            com.sun.jna.Pointer ptr = function.invokePointer(args);
+            return new BasePointer(runtime, ptr != null ? new NativeMemoryIO(ptr) : new NullMemoryIO(runtime));
         }
         public static final FunctionInvoker INSTANCE = new PointerInvoker();
     }

@@ -1,5 +1,5 @@
 
-package org.jruby.ext.ffi.jffi;
+package org.jruby.ext.ffi;
 
 
 import org.jruby.Ruby;
@@ -11,7 +11,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -19,6 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::BasePointer")
 public class MemoryPointer extends BasePointer {
+    private static final Factory factory = Factory.getInstance();
     
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("MemoryPointer",
@@ -30,7 +30,7 @@ public class MemoryPointer extends BasePointer {
         return result;
     }
 
-    private MemoryPointer(Ruby runtime, IRubyObject klass, NativeMemoryIO io, long size) {
+    private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long size) {
         super(runtime, (RubyClass) klass, io, size);
     }
     
@@ -41,7 +41,7 @@ public class MemoryPointer extends BasePointer {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, size));
         }
-        AllocatedNativeMemoryIO io = AllocatedNativeMemoryIO.allocate(total > 0 ? total : 1, clear);
+        AllocatedDirectMemoryIO io = factory.allocateDirectMemory(total > 0 ? total : 1, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
             throw new RaiseException(runtime, runtime.getNoMemoryError(),

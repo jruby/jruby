@@ -11,10 +11,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
+import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -302,7 +307,8 @@ public final class DefaultMethodFactory {
      */
     private static final class PointerInvoker extends BaseInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return new BasePointer(runtime, invoker.invokeAddress(function, args));
+            final long address = invoker.invokeAddress(function, args);
+            return new BasePointer(runtime, address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(runtime));
         }
         public static final FunctionInvoker INSTANCE = new PointerInvoker();
     }
@@ -494,17 +500,20 @@ public final class DefaultMethodFactory {
                 buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(),
                         flags & bufferFlags((Buffer) parameter));
         }
+        private static final long getAddress(Pointer ptr) {
+            return ((DirectMemoryIO) ptr.getMemoryIO()).getAddress();
+        }
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof Buffer) {
                 addBufferParameter(buffer, parameter, flags);
-            } else if (parameter instanceof BasePointer) {
-                buffer.putAddress(((BasePointer) parameter).getAddress());
+            } else if (parameter instanceof Pointer) {
+                buffer.putAddress(getAddress((Pointer) parameter));
             } else if (parameter instanceof Struct) {
                 IRubyObject memory = ((Struct) parameter).getMemory();
                 if (memory instanceof Buffer) {
                     addBufferParameter(buffer, memory, flags);
-                } else if (memory instanceof BasePointer) {
-                    buffer.putAddress(((BasePointer) memory).getAddress());
+                } else if (memory instanceof Pointer) {
+                    buffer.putAddress(getAddress((Pointer) memory));
                 } else if (memory == null || memory.isNil()) {
                     buffer.putAddress(0L);
                 } else {
@@ -517,8 +526,8 @@ public final class DefaultMethodFactory {
                 buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ObjectBuffer.ZERO_TERMINATE);
             } else if (parameter.respondsTo("to_ptr")) {
                 IRubyObject ptr = parameter.callMethod(context, "to_ptr");
-                if (ptr instanceof BasePointer) {
-                    buffer.putAddress(((BasePointer) ptr).getAddress());
+                if (ptr instanceof Pointer) {
+                    buffer.putAddress(getAddress((Pointer) ptr));
                 } else if (ptr instanceof Buffer) {
                     addBufferParameter(buffer, ptr, flags);
                 } else if (ptr.isNil()) {

@@ -51,12 +51,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         // Hook up the MemoryPointer class if its not already there
         //
         synchronized (ffi) {
-            if (ffi.fastGetClass(JNABasePointer.JNA_POINTER_NAME) == null) {
-                JNABasePointer.createJNAPointerClass(runtime, ffi);
-            }
-            if (ffi.fastGetClass(JNAMemoryPointer.MEMORY_POINTER_NAME) == null) {
-                JNAMemoryPointer.createMemoryPointerClass(runtime, ffi);
-            }
             if (ffi.fastGetClass("DynamicLibrary") == null) {
                 DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
             }
@@ -100,12 +94,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      */
     public AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear) {
         return AllocatedNativeMemoryIO.allocate(size, clear);
-    }
-
-
-    @Override
-    public Pointer newPointer(Ruby runtime, MemoryIO io) {
-        return new JNABasePointer(runtime, io);
     }
 
     public CallbackManager getCallbackManager() {

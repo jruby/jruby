@@ -10,6 +10,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -31,7 +32,7 @@ public class DynamicLibrary extends RubyObject {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         RubyClass symClass = result.defineClassUnder("Symbol",
-                module.fastGetClass(JNABasePointer.JNA_POINTER_NAME), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+                module.fastGetClass(BasePointer.BASE_POINTER_NAME), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         symClass.defineAnnotatedMethods(Symbol.class);
         result.defineAnnotatedMethods(DynamicLibrary.class);
         result.defineAnnotatedConstants(DynamicLibrary.class);
@@ -74,12 +75,12 @@ public class DynamicLibrary extends RubyObject {
     public IRubyObject name(ThreadContext context) {
         return RubyString.newString(context.getRuntime(), name);
     }
-    static final class Symbol extends JNABasePointer {
+    static final class Symbol extends BasePointer {
         private final DynamicLibrary library;
         private final String name;
         public Symbol(Ruby runtime, DynamicLibrary library, String name, com.sun.jna.Pointer address) {
             super(runtime, FFIProvider.getModule(runtime).fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
-                    new NativeMemoryIO(address));
+                    new NativeMemoryIO(address), Long.MAX_VALUE);
             this.library = library;
             this.name = name;
         }
@@ -88,7 +89,7 @@ public class DynamicLibrary extends RubyObject {
         public IRubyObject inspect(ThreadContext context) {
             return RubyString.newString(context.getRuntime(),
                     String.format("#<Library Symbol library=%s symbol=%s address=%#x>", 
-                    library.name, name, ptr2long(getAddress())));
+                    library.name, name, getAddress()));
         }
         @Override
         public final String toString() {
