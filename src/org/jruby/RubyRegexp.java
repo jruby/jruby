@@ -1205,15 +1205,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "match", reads = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, Block block) {
-        return match19Internal(context, str, 0, block);
+        return match19Common(context, str, 0, block);
     }
 
     @JRubyMethod(name = "match", reads = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, IRubyObject pos, Block block) {
-        return match19Internal(context, str, RubyNumeric.num2int(pos), block);
+        return match19Common(context, str, RubyNumeric.num2int(pos), block);
     }
 
-    private IRubyObject match19Internal(ThreadContext context, IRubyObject arg, int pos, Block block) {
+    private IRubyObject match19Common(ThreadContext context, IRubyObject arg, int pos, Block block) {
         Frame frame = context.getCurrentFrame();
         if (arg.isNil()) {
             frame.setBackRef(arg);
