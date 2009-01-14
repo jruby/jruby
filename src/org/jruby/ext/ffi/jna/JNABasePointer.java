@@ -7,7 +7,6 @@ import com.sun.jna.ptr.PointerByReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -33,27 +32,23 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
     }
     
     JNABasePointer(Ruby runtime, MemoryIO io, long offset, long size) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
+        super(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
                 io, offset, size);
     }
+    JNABasePointer(Ruby runtime, MemoryIO io) {
+        this(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
+                io);
+    }
     JNABasePointer(Ruby runtime, Pointer value) {
-        this(runtime, value != null ? JNAMemoryIO.wrap(value) : new NullMemoryIO(runtime),
-                0, Long.MAX_VALUE);
+        this(runtime, value != null ? JNAMemoryIO.wrap(value) : new NullMemoryIO(runtime));
     }
-    JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
-        super(runtime, klass, io, offset, size);
+    JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
+        super(runtime, klass, io, 0, size);
     }
-    JNABasePointer(Ruby runtime, IRubyObject klass, Pointer value) {
-        this(runtime, klass, JNAMemoryIO.wrap(value), 0, Long.MAX_VALUE);
+    JNABasePointer(Ruby runtime, IRubyObject klass, MemoryIO io) {
+        super(runtime, (RubyClass) klass, io, 0, Long.MAX_VALUE);
     }
-    JNABasePointer(Ruby runtime, IRubyObject klass, JNABasePointer ptr, long offset) {
-        this(runtime, klass, ptr.io, ptr.offset + offset,
-                ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
-    }
-    JNABasePointer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
-        super(runtime, (RubyClass) klass, io, offset, size);
-    }
-
+    
     @Override
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
@@ -103,11 +98,11 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return new JNABasePointer(runtime,
                 FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
-                this, offset);
+                getMemoryIO().slice(offset), size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset);
     }
 
     protected AbstractMemoryPointer getPointer(Ruby runtime, long offset) {
         return new JNABasePointer(runtime,
-                getMemoryIO().getMemoryIO(this.offset + offset), 0, Long.MAX_VALUE);
+                getMemoryIO().getMemoryIO(this.offset + offset));
     }
 }

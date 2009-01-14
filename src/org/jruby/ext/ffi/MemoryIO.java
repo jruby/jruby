@@ -42,7 +42,16 @@ public interface MemoryIO {
      * @return <tt>true</tt> if the memory area is invalid.
      */
     public boolean isNull();
-    
+
+    /**
+     * Creates a new MemoryIO pointing to a subset of the memory area of this
+     * <tt>MemoryIO</tt>.
+     * @param offset The offset within the existing memory area to start the
+     * new <tt>MemoryIO</tt> at.
+     * @return A <tt>MemoryIO</tt> instance.
+     */
+    public MemoryIO slice(long offset);
+
     /**
      * Reads an 8 bit integer value from the memory area.
      * 

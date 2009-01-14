@@ -75,7 +75,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
         public Symbol(Ruby runtime, DynamicLibrary library, String name, com.sun.jna.Pointer address) {
             super(runtime, FFIProvider.getModule(runtime).fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
-                    JNAMemoryIO.wrap(address), 0, Long.MAX_VALUE);
+                    JNAMemoryIO.wrap(address));
             this.library = library;
             this.name = name;
         }

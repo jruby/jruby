@@ -23,7 +23,9 @@ public abstract class InvalidMemoryIO implements MemoryIO {
     private final RuntimeException ex() {
         return runtime.newRuntimeError(message);
     }
-
+    public MemoryIO slice(long offset) {
+        return this;
+    }
     public final byte getByte(long offset) {
         throw ex();
     }

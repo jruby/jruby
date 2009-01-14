@@ -14,6 +14,13 @@ public final class HeapMemoryIO extends ArrayMemoryIO {
     public HeapMemoryIO(int size) {
         super(size);
     }
+    protected HeapMemoryIO(byte[] buffer, int offset, int length) {
+        super(buffer, offset, length);
+    }
+
+    public HeapMemoryIO slice(long offset) {
+        return offset == 0 ? this : new HeapMemoryIO(array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
+    }
 
     public final JNAMemoryIO getMemoryIO(long offset) {
         return JNAMemoryIO.wrap(getPointer(offset));

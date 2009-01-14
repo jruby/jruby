@@ -5,6 +5,7 @@ import org.jruby.ext.ffi.MemoryIO;
 
 class DirectMemoryIO implements PointerMemoryIO {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+    final DirectMemoryIO parent; // keep a reference to avoid the memory being freed
     final long address;
 
     static final DirectMemoryIO allocate(int size, boolean clear) {
@@ -13,12 +14,20 @@ class DirectMemoryIO implements PointerMemoryIO {
     }
     DirectMemoryIO(long address) {
         this.address = address;
+        this.parent = null;
+    }
+    private DirectMemoryIO(DirectMemoryIO parent, long offset) {
+        this.parent = parent;
+        this.address = parent.address + offset;
     }
 
     public final long getAddress() {
         return address;
     }
 
+    public DirectMemoryIO slice(long offset) {
+        return offset == 0 ? this :new DirectMemoryIO(this, offset);
+    }
     @Override
     public final boolean equals(Object obj) {
         return (obj instanceof DirectMemoryIO) && ((DirectMemoryIO) obj).address == address;

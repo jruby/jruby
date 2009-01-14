@@ -91,7 +91,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
     @Override
     public Pointer newPointer(Ruby runtime, MemoryIO io) {
-        return new JNABasePointer(runtime, io, 0, Long.MAX_VALUE);
+        return new JNABasePointer(runtime, io);
     }
 
     public CallbackManager getCallbackManager() {

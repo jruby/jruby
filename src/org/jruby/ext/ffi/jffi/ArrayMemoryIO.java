@@ -9,7 +9,12 @@ public final class ArrayMemoryIO extends org.jruby.ext.ffi.ArrayMemoryIO {
     public ArrayMemoryIO(int size) {
         super(size);
     }
-
+    public ArrayMemoryIO(byte[] buffer, int offset, int length) {
+        super(buffer, offset, length);
+    }
+    public ArrayMemoryIO slice(long offset) {
+        return offset == 0 ? this : new ArrayMemoryIO(array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
+    }
     public final MemoryIO getMemoryIO(long offset) {
         return new DirectMemoryIO(getAddress(offset));
     }

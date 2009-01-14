@@ -7,8 +7,8 @@ import java.util.Arrays;
 public abstract class ArrayMemoryIO implements MemoryIO {
     protected static final ArrayIO IO = getArrayIO();
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
-    private final byte[] buffer;
-    private final int offset, length;
+    protected final byte[] buffer;
+    protected final int offset, length;
 
     protected ArrayMemoryIO(byte[] buffer, int offset, int length) {
         this.buffer = buffer;

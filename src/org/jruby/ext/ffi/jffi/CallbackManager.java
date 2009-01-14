@@ -174,7 +174,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         
         Callback(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, Object proc) {
             super(runtime, FFIProvider.getModule(runtime).fastGetClass("Callback"),
-                    new CallbackMemoryIO(runtime, handle), 0, Long.MAX_VALUE);
+                    new CallbackMemoryIO(runtime, handle), Long.MAX_VALUE);
             this.cbInfo = cbInfo;
             this.proc = proc;
         }

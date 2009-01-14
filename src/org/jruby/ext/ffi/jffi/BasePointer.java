@@ -5,7 +5,6 @@ import org.jruby.ext.ffi.*;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -30,28 +29,20 @@ public class BasePointer extends Pointer {
 
         return result;
     }
-    
-    BasePointer(Ruby runtime, MemoryIO io, long offset, long size) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass(BASE_POINTER_NAME),
-                io, offset, size);
+    private static final RubyClass getRubyClass(Ruby runtime) {
+        return FFIProvider.getModule(runtime).fastGetClass(BASE_POINTER_NAME);
+    }
+    BasePointer(Ruby runtime, MemoryIO io, long size) {
+        super(runtime, getRubyClass(runtime), io, size);
     }
     BasePointer(Ruby runtime, long address) {
-        this(runtime, 
-                address != 0 ? new DirectMemoryIO(address) : new NullMemoryIO(runtime),
-                0, Long.MAX_VALUE);
+        super(runtime, getRubyClass(runtime),
+                address != 0 ? new DirectMemoryIO(address) : new NullMemoryIO(runtime));
     }
-    BasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
-        super(runtime, klass, io, offset, size);
+    BasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
+        super(runtime, klass, io, size);
     }
-
-    BasePointer(Ruby runtime, IRubyObject klass, BasePointer ptr, long offset) {
-        this(runtime, klass, ptr.io, ptr.offset + offset,
-                ptr.size == Long.MAX_VALUE ? Long.MAX_VALUE : ptr.size - offset);
-    }
-    BasePointer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
-        super(runtime, (RubyClass) klass, io, offset, size);
-    }
-
+    
     @Override
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
@@ -91,13 +82,12 @@ public class BasePointer extends Pointer {
 
     @Override
     protected AbstractMemory slice(Ruby runtime, long offset) {
-        return new BasePointer(runtime,
-                FFIProvider.getModule(runtime).fastGetClass(BASE_POINTER_NAME),
-                this, offset);
+        return new BasePointer(runtime, getRubyClass(runtime),
+                getMemoryIO().slice(offset), size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset);
     }
 
     protected BasePointer getPointer(Ruby runtime, long offset) {
         return new BasePointer(runtime,
-                getMemoryIO().getMemoryIO(this.offset + offset), 0, Long.MAX_VALUE);
+                getMemoryIO().getMemoryIO(this.offset + offset), Long.MAX_VALUE);
     }
 }

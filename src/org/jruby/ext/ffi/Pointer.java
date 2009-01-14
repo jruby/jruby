@@ -28,6 +28,12 @@ public abstract class Pointer extends AbstractMemory {
 
         return result;
     }
+    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io) {
+        super(runtime, klass, io, 0, Long.MAX_VALUE);
+    }
+    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
+        super(runtime, klass, io, 0, size);
+    }
 
     protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
         super(runtime, klass, io, offset, size);

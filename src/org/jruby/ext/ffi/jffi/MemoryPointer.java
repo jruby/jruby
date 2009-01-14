@@ -9,7 +9,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -31,8 +30,8 @@ public class MemoryPointer extends BasePointer {
         return result;
     }
 
-    private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long offset, long size) {
-        super(runtime, (RubyClass) klass, io, offset, size);
+    private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long size) {
+        super(runtime, (RubyClass) klass, io, size);
     }
     
     private static final IRubyObject allocate(ThreadContext context, IRubyObject recv,
@@ -48,7 +47,7 @@ public class MemoryPointer extends BasePointer {
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", count, size), true);
         }
-        MemoryPointer ptr = new MemoryPointer(context.getRuntime(), recv, io, 0, total);
+        MemoryPointer ptr = new MemoryPointer(context.getRuntime(), recv, io, total);
         ptr.fastSetInstanceVariable("@type_size", sizeArg instanceof RubyFixnum ? sizeArg : context.getRuntime().newFixnum(size));
         if (block.isGiven()) {
             return block.yield(context, ptr);

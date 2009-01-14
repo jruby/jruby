@@ -60,8 +60,8 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
         return result;
     }
     
-    private JNAMemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size) {
-        super(runtime, (RubyClass) klass, io, offset, size);
+    private JNAMemoryPointer(Ruby runtime, IRubyObject klass, MemoryIO io, long size) {
+        super(runtime, (RubyClass) klass, io, size);
     }
     private static final IRubyObject allocate(ThreadContext context, IRubyObject recv,
             IRubyObject sizeArg, int count, boolean clear, Block block) {
@@ -79,7 +79,7 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", count, size), true);
         }
-        JNAMemoryPointer ptr = new JNAMemoryPointer(context.getRuntime(), recv, io, 0, total);
+        JNAMemoryPointer ptr = new JNAMemoryPointer(context.getRuntime(), recv, io, total);
         ptr.fastSetInstanceVariable("@type_size", context.getRuntime().newFixnum(size));
         if (block.isGiven()) {
             return block.yield(context, ptr);

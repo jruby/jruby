@@ -6,7 +6,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -48,14 +47,10 @@ public final class Buffer extends AbstractMemory {
     }
     Buffer(Ruby runtime, int size, int flags) {
         this(runtime, FFIProvider.getModule(runtime).fastGetClass("Buffer"),
-            factory.allocateHeapMemory(size, CLEAR_DEFAULT), 0, size, flags);
+            factory.allocateHeapMemory(size, CLEAR_DEFAULT), size, flags);
     }
-    private Buffer(Ruby runtime, IRubyObject klass, Buffer ptr, long offset) {
-        super(runtime, (RubyClass) klass, ptr.io, ptr.offset + offset, ptr.size - offset);
-        this.inout = ptr.inout;
-    }
-    private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long offset, long size, int inout) {
-        super(runtime, (RubyClass) klass, io, offset, size);
+    private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int inout) {
+        super(runtime, (RubyClass) klass, io, 0, size);
         this.inout = inout;
     }
     
@@ -66,7 +61,7 @@ public final class Buffer extends AbstractMemory {
             IRubyObject sizeArg, int count, int flags) {
         final int size = calculateSize(context, sizeArg) * count;
         final MemoryIO io = factory.allocateHeapMemory(size, true);
-        return new Buffer(context.getRuntime(), recv, io, 0, size, flags);
+        return new Buffer(context.getRuntime(), recv, io, size, flags);
     }
     @JRubyMethod(name = { "new", "alloc_inout", "__alloc_inout" }, meta = true)
     public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {
@@ -129,7 +124,7 @@ public final class Buffer extends AbstractMemory {
         return (ArrayMemoryIO) getMemoryIO();
     }
     protected AbstractMemory slice(Ruby runtime, long offset) {
-        return new Buffer(runtime, getMetaClass(), this, offset);
+        return new Buffer(runtime, getMetaClass(), this.io.slice(offset), this.size, this.inout);
     }
     protected Pointer getPointer(Ruby runtime, long offset) {
         return factory.newPointer(runtime, getMemoryIO().getMemoryIO(this.offset + offset));

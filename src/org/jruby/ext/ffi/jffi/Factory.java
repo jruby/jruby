@@ -65,7 +65,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
     @Override
     public Pointer newPointer(Ruby runtime, MemoryIO io) {
-        return new BasePointer(runtime, io, 0, Long.MAX_VALUE);
+        return new BasePointer(runtime, io, Long.MAX_VALUE);
     }
 
     @Override
