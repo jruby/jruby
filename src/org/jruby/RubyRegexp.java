@@ -1208,32 +1208,24 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_search
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
-        Ruby runtime = context.getRuntime();
-        Frame frame = context.getCurrentRubyFrame();
-
-        ByteList value = str.getByteList();
-        if (pos > value.realSize || pos < 0) {
-            frame.setBackRef(runtime.getNil());
-            return -1;
-        }
-        return performSearch(runtime, context, str, value, pos, reverse, frame); 
-    }
-
-    private int performSearch(Ruby runtime, ThreadContext context, RubyString str, ByteList value, int pos, boolean reverse, Frame frame) {
         check();
+        Frame frame = context.getCurrentRubyFrame();
+        ByteList value = str.getByteList();
+        
+        if (pos <= value.realSize && pos >= 0) {
+            int realSize = value.realSize;
+            int begin = value.begin;
+            Matcher matcher = pattern.matcher(value.bytes, begin, begin + realSize);
 
-        int realSize = value.realSize;
-        int begin = value.begin;
-
-        Matcher matcher = pattern.matcher(value.bytes, begin, begin + realSize);
-        int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
-
-        if (result < 0) {
-            frame.setBackRef(runtime.getNil());
-        } else {
-            updateBackRef(context, str, frame, matcher);
+            int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
+            if (result >= 0) {
+                updateBackRef(context, str, frame, matcher);
+                return result;
+            }
         }
-        return result;
+        
+        frame.setBackRef(context.getRuntime().getNil());
+        return -1;
     }
 
     final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
