@@ -32,6 +32,7 @@ import com.sun.jna.Native;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.MemoryIO;
@@ -95,6 +96,11 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     }
 
     public CallbackManager getCallbackManager() {
-        throw new UnsupportedOperationException("Not implemented");
+        return new CallbackManager() {
+            @Override
+            public Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+                throw runtime.newNotImplementedError("Not implemented");
+            }
+        };
     }
 }
