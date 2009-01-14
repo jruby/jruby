@@ -4,7 +4,8 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-public abstract class ArrayMemoryIO implements MemoryIO {
+public final class ArrayMemoryIO implements MemoryIO {
+    private static final Factory factory = Factory.getInstance();
     protected static final ArrayIO IO = getArrayIO();
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
     protected final byte[] buffer;
@@ -63,6 +64,17 @@ public abstract class ArrayMemoryIO implements MemoryIO {
         return false;
     }
 
+    public ArrayMemoryIO slice(long offset) {
+        return offset == 0 ? this : new ArrayMemoryIO(array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
+    }
+
+    public final MemoryIO getMemoryIO(long offset) {
+        return factory.wrapDirectMemory(getAddress(offset));
+    }
+
+    public final void putMemoryIO(long offset, MemoryIO value) {
+        putAddress(offset, ((DirectMemoryIO) value).getAddress());
+    }
     public final byte getByte(long offset) {
         return (byte) (buffer[index(offset)] & 0xff);
     }

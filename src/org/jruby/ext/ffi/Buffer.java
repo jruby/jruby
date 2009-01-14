@@ -21,10 +21,7 @@ public final class Buffer extends AbstractMemory {
 
     /** Indicates that the Buffer is used for data copied OUT from native memory */
     public static final int OUT = 0x2;
-
-    private static final Factory factory = Factory.getInstance();
-    private static final boolean CLEAR_DEFAULT = true;
-
+    
     private final int inout;
     public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Buffer",
@@ -39,7 +36,7 @@ public final class Buffer extends AbstractMemory {
     }
 
     public Buffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, factory.allocateHeapMemory(0, CLEAR_DEFAULT), 0);
+        super(runtime, klass, new ArrayMemoryIO(0), 0);
         this.inout = IN | OUT;
     }
     Buffer(Ruby runtime, int size) {
@@ -47,7 +44,7 @@ public final class Buffer extends AbstractMemory {
     }
     Buffer(Ruby runtime, int size, int flags) {
         this(runtime, FFIProvider.getModule(runtime).fastGetClass("Buffer"),
-            factory.allocateHeapMemory(size, CLEAR_DEFAULT), size, flags);
+            new ArrayMemoryIO(size), size, flags);
     }
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int inout) {
         super(runtime, (RubyClass) klass, io, size);
@@ -60,8 +57,7 @@ public final class Buffer extends AbstractMemory {
     private static Buffer allocate(ThreadContext context, IRubyObject recv, 
             IRubyObject sizeArg, int count, int flags) {
         final int size = calculateSize(context, sizeArg) * count;
-        final MemoryIO io = factory.allocateHeapMemory(size, true);
-        return new Buffer(context.getRuntime(), recv, io, size, flags);
+        return new Buffer(context.getRuntime(), recv, new ArrayMemoryIO(size), size, flags);
     }
     @JRubyMethod(name = { "new", "alloc_inout", "__alloc_inout" }, meta = true)
     public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {

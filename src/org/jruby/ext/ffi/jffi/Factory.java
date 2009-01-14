@@ -5,8 +5,8 @@ import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
-import org.jruby.ext.ffi.MemoryIO;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
 
@@ -52,11 +52,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    @Override
-    public MemoryIO allocateHeapMemory(int size, boolean clear) {
-        return new ArrayMemoryIO(size);
-    }
-
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
      *
@@ -68,6 +63,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return AllocatedNativeMemoryIO.allocate(size, clear);
     }
 
+    public DirectMemoryIO wrapDirectMemory(long address) {
+        return address != 0 ? new NativeMemoryIO(address) : null;
+    }
     @Override
     public CallbackManager getCallbackManager() {
         return CallbackManager.getInstance();

@@ -169,16 +169,7 @@ public abstract class Factory {
      * Wraps a {@link java.nio.ByteChannel} around a native file descriptor
      */
     public abstract ByteChannel newByteChannel(int fd);
-
-    /**
-     * Allocates memory on the java heap and wraps it in a <tt>MemoryIO</tt> accessor.
-     *
-     * @param size The number of bytes to allocate.
-     * @param clear If the memory should be cleared.
-     * @return A new <tt>MemoryIO</tt>.
-     */
-    public abstract MemoryIO allocateHeapMemory(int size, boolean clear);
-
+    
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
      *
@@ -187,6 +178,16 @@ public abstract class Factory {
      * @return A new <tt>MemoryIO</tt>.
      */
     public abstract AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear);
-    
+
+    /**
+     * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.
+     *
+     * @param address The native address to wrap.
+     * 
+     * @return A new <tt>MemoryIO</tt>.
+     */
+    public abstract DirectMemoryIO wrapDirectMemory(long address);
+
+
     public abstract CallbackManager getCallbackManager();
 }

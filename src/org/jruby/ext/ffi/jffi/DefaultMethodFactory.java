@@ -11,6 +11,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.DirectMemoryIO;

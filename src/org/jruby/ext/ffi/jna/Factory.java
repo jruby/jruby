@@ -28,13 +28,17 @@
 
 package org.jruby.ext.ffi.jna;
 
+import com.kenai.jffi.Platform;
 import com.sun.jna.Native;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.LongByReference;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
@@ -80,11 +84,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return new FileDescriptorByteChannel(fd);
     }
 
-    @Override
-    public MemoryIO allocateHeapMemory(int size, boolean clear) {
-        return new HeapMemoryIO(size);
-    }
-
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
      *
@@ -96,6 +95,17 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return AllocatedNativeMemoryIO.allocate(size, clear);
     }
 
+    public DirectMemoryIO wrapDirectMemory(long address) {
+        com.sun.jna.Pointer ptr;
+        if (Platform.getPlatform().longSize() == 32) {
+            IntByReference ref = new IntByReference((int) address);
+            ptr = ref.getPointer().getPointer(0);
+        } else {
+            LongByReference ref = new LongByReference(address);
+            ptr = ref.getPointer().getPointer(0);
+        }
+        return ptr != null ? new NativeMemoryIO(ptr) : null;
+    }
     public CallbackManager getCallbackManager() {
         return new CallbackManager() {
             @Override
