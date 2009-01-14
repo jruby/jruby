@@ -1228,7 +1228,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         IRubyObject backref = frame.getBackRef();
-        if (!backref.isNil() && backref instanceof RubyMatchData) {
+        if (backref instanceof RubyMatchData) {
             ((RubyMatchData)backref).use();
             if (block.isGiven()) return block.yield(context, backref);
         }
