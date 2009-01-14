@@ -1211,7 +1211,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         check();
         Frame frame = context.getCurrentRubyFrame();
         ByteList value = str.getByteList();
-        
+
         if (pos <= value.realSize && pos >= 0) {
             int realSize = value.realSize;
             int begin = value.begin;
@@ -1223,7 +1223,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 return result;
             }
         }
-        
+
         frame.setBackRef(context.getRuntime().getNil());
         return -1;
     }
@@ -1255,6 +1255,27 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         match.infectBy(str);
         return match;
+    }
+
+    public final int search19(ThreadContext context, RubyString str, int pos, boolean reverse) {
+        check();
+        Frame frame = context.getCurrentRubyFrame();
+        ByteList value = str.getByteList();
+
+        if (pos <= value.realSize && pos >= 0) {
+            int realSize = value.realSize;
+            int begin = value.begin;
+            Matcher matcher = preparePattern(str).matcher(value.bytes, begin, begin + realSize);
+
+            int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
+            if (result >= 0) {
+                updateBackRef(context, str, frame, matcher).charOffsetUpdated = false;;
+                return result;
+            }
+        }
+
+        frame.setBackRef(context.getRuntime().getNil());
+        return -1;
     }
 
     static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern) {
