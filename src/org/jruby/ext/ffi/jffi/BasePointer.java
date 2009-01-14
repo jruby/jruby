@@ -13,16 +13,16 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Base pointer class for all JNA pointers.
+ * Base pointer class for all JFFI pointers.
  */
-@JRubyClass(name = "FFI::BasePointer", parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
+@JRubyClass(name = "FFI::BasePointer", parent = "FFI::Pointer")
 public class BasePointer extends Pointer {
 
     public static final String BASE_POINTER_NAME = "BasePointer";
 
     public static RubyClass createJNAPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(BASE_POINTER_NAME,
-                module.getClass(AbstractMemoryPointer.className),
+                module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(BasePointer.class);
         result.defineAnnotatedConstants(BasePointer.class);

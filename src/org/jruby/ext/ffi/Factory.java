@@ -124,9 +124,6 @@ public abstract class Factory {
             if (ffi.fastGetClass("Struct") == null) {
                 Struct.createStructClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(AbstractMemoryPointer.className) == null) {
-                AbstractMemoryPointer.createMemoryPointerClass(runtime, ffi);
-            }
             if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);
             }

@@ -1,7 +1,6 @@
 
 package org.jruby.ext.ffi.jffi;
 
-import org.jruby.ext.ffi.*;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -17,7 +16,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name = "FFI::MemoryPointer", parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
+@JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::BasePointer")
 public class MemoryPointer extends BasePointer {
     
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {

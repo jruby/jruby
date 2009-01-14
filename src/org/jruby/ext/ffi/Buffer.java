@@ -14,7 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
-@JRubyClass(name = "FFI::Buffer", parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
+@JRubyClass(name = "FFI::Buffer", parent = "FFI::" + AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
 public final class Buffer extends AbstractMemory {
     /** Indicates that the Buffer is used for data copied IN to native memory */
     public static final int IN = 0x1;

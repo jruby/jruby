@@ -17,13 +17,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Base pointer class for all JNA pointers.
  */
-@JRubyClass(name = FFIProvider.MODULE_NAME + "::" + JNAMemoryPointer.MEMORY_POINTER_NAME, parent = FFIProvider.MODULE_NAME + "::" + AbstractMemoryPointer.className)
-public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
-    public static final String JNA_POINTER_NAME = "JNAPointer";
+@JRubyClass(name = "FFI::BasePointer", parent = "FFI::Pointer")
+public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemory {
+    public static final String JNA_POINTER_NAME = "BasePointer";
 
     public static RubyClass createJNAPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(JNA_POINTER_NAME,
-                module.getClass(AbstractMemoryPointer.className),
+                module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(JNABasePointer.class);
         result.defineAnnotatedConstants(JNABasePointer.class);
@@ -101,8 +101,7 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
                 getMemoryIO().slice(offset), size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset);
     }
 
-    protected AbstractMemoryPointer getPointer(Ruby runtime, long offset) {
-        return new JNABasePointer(runtime,
-                getMemoryIO().getMemoryIO(offset));
+    protected JNABasePointer getPointer(Ruby runtime, long offset) {
+        return new JNABasePointer(runtime, getMemoryIO().getMemoryIO(offset));
     }
 }
