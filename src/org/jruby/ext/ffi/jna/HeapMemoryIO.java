@@ -22,12 +22,12 @@ public final class HeapMemoryIO extends ArrayMemoryIO {
         return offset == 0 ? this : new HeapMemoryIO(array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
     }
 
-    public final JNAMemoryIO getMemoryIO(long offset) {
-        return JNAMemoryIO.wrap(getPointer(offset));
+    public final NativeMemoryIO getMemoryIO(long offset) {
+        return new NativeMemoryIO(getPointer(offset));
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        putPointer(offset, ((JNAMemoryIO) value).getAddress());
+        putPointer(offset, ((NativeMemoryIO) value).getPointer());
     }
     public final Pointer getPointer(long offset) {
         if (Platform.getPlatform().longSize() == 32) {

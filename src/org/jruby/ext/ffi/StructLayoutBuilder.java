@@ -463,16 +463,17 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
-            if (!io.isNull()) {
-                ByteList bl = value.convertToString().getByteList();
-                io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
-                io.putByte(bl.length(), (byte) 0);
+            if (io == null || io.isNull()) {
+                throw runtime.newRuntimeError("Invalid memory access");
             }
+            ByteList bl = value.convertToString().getByteList();
+            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
+            io.putByte(bl.length(), (byte) 0);
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
             MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
-            if (io.isNull()) {
+            if (io == null || io.isNull()) {
                 return runtime.getNil();
             }
             int len = (int) io.indexOf(0, (byte) 0, Integer.MAX_VALUE);

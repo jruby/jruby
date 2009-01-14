@@ -127,7 +127,8 @@ public final class Buffer extends AbstractMemory {
         return new Buffer(runtime, getMetaClass(), this.io.slice(offset), this.size, this.inout);
     }
     protected Pointer getPointer(Ruby runtime, long offset) {
-        return factory.newPointer(runtime, getMemoryIO().getMemoryIO(offset));
+        MemoryIO ptr = getMemoryIO().getMemoryIO(offset);
+        return factory.newPointer(runtime, ptr != null && !ptr.isNull() ? ptr : new NullMemoryIO(runtime));
     }
     public int getInOutFlags() {
         return inout;

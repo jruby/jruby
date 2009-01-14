@@ -30,8 +30,6 @@ package org.jruby.ext.ffi.jna;
 
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Pointer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -51,12 +49,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::BasePointer")
 public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
     public static final String MEMORY_POINTER_NAME = "MemoryPointer";
-    /**
-     * Used to hold a permanent reference to a memory pointer so it does not get
-     * garbage collected
-     */
-    private static final Map<JNAMemoryPointer, Object> pointerSet
-            = new ConcurrentHashMap();
 
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(MEMORY_POINTER_NAME, 
@@ -78,7 +70,7 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, size));
         }
-        JNAMemoryIO io = JNAMemoryIO.allocateDirect(total > 0 ? total : 1);
+        NativeMemoryIO io = NativeMemoryIO.allocateDirect(total > 0 ? total : 1);
         if (clear) {
             io.setMemory(0, size, (byte) 0);
         }
@@ -127,18 +119,13 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
 
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
-        // Just let the GC collect and free the pointer
-        pointerSet.remove(this);
-        return context.getRuntime().getNil();
+        ((NativeMemoryIO.Allocated) getMemoryIO()).free();
+        return this;
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        if (release.isTrue()) {
-            pointerSet.remove(this);
-        } else {
-            pointerSet.put(this, Boolean.TRUE);
-        }
-        return context.getRuntime().getNil();
+        ((NativeMemoryIO.Allocated) getMemoryIO()).autorelease(release.isTrue());
+        return this;
     }
 }

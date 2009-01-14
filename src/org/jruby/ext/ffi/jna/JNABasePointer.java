@@ -40,7 +40,7 @@ public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemo
                 io);
     }
     JNABasePointer(Ruby runtime, Pointer value) {
-        this(runtime, value != null ? JNAMemoryIO.wrap(value) : new NullMemoryIO(runtime));
+        this(runtime, value != null ? new NativeMemoryIO(value) : new NullMemoryIO(runtime));
     }
     JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         super(runtime, klass, io, size);
@@ -58,16 +58,20 @@ public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemo
     }
     Pointer getAddress() {
         return getMemoryIO() instanceof NullMemoryIO
-                ? Pointer.NULL : ((JNAMemoryIO) getMemoryIO()).getAddress();
+                ? Pointer.NULL : ((NativeMemoryIO) getMemoryIO()).getPointer();
     }
     public Object getNativeMemory() {
         return getMemoryIO() instanceof NullMemoryIO
-                ? Pointer.NULL : ((JNAMemoryIO) getMemoryIO()).getMemory();
+                ? Pointer.NULL : ((NativeMemoryIO) getMemoryIO()).getPointer();
     }
     static final long ptr2long(Pointer ptr) {
         return new PointerByReference(ptr).getPointer().getInt(0);
     }
-
+    final void nullCheck(Ruby runtime) {
+        if (getMemoryIO().isNull()) {
+            throw runtime.newRuntimeError("Attemped to access NULL memory address");
+        }
+    }
     @JRubyMethod(name = "address")
     public IRubyObject address(ThreadContext context) {
         return context.getRuntime().newFixnum(ptr2long(getAddress()));
@@ -82,6 +86,7 @@ public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemo
 
     @JRubyMethod(name = "put_pointer", required = 2)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
+        nullCheck(context.getRuntime());
         Pointer ptr;
         if (value instanceof JNABasePointer) {
             ptr = ((JNABasePointer) value).getAddress();
@@ -90,7 +95,7 @@ public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemo
         } else {
             throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
         }
-        ((JNAMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
+        ((NativeMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
         return this;
     }
 
@@ -102,6 +107,8 @@ public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemo
     }
 
     protected JNABasePointer getPointer(Ruby runtime, long offset) {
-        return new JNABasePointer(runtime, getMemoryIO().getMemoryIO(offset));
+        nullCheck(runtime);
+        MemoryIO ptr = getMemoryIO().getMemoryIO(offset);
+        return new JNABasePointer(runtime, ptr != null && !ptr.isNull() ? ptr : new NullMemoryIO(runtime));
     }
 }
