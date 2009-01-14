@@ -39,7 +39,7 @@ module FFI
           if type.kind_of?(Class) && type < Struct
             builder.add_struct(name, type)
           elsif type.kind_of?(Array)
-            builder.add_array(name, find_type(type[0]), type[1])
+            builder.add_array(name, find_type(type[0], mod), type[1])
           else
             builder.add_field(name, find_type(type, mod))
           end
@@ -64,7 +64,7 @@ module FFI
         if type.kind_of?(Class) && type < Struct
           builder.add_struct(name, type, offset)
         elsif type.kind_of?(Array)
-          builder.add_array(name, find_type(type[0]), type[1], offset)
+          builder.add_array(name, find_type(type[0], mod), type[1], offset)
         else
           builder.add_field(name, find_type(type, mod), offset)
         end 
