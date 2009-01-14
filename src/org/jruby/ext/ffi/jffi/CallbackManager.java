@@ -18,6 +18,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
@@ -212,7 +213,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             setReturnValue(runtime, cbInfo.getReturnType(), buffer, retVal);
         }
     }
-    static final class CallbackMemoryIO extends InvalidMemoryIO implements PointerMemoryIO {
+    static final class CallbackMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
         private final Closure.Handle handle;
         public CallbackMemoryIO(Ruby runtime,  Closure.Handle handle) {
             super(runtime);

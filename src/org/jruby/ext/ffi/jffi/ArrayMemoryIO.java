@@ -1,8 +1,8 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.ext.ffi.NullMemoryIO;
 
 public final class ArrayMemoryIO extends org.jruby.ext.ffi.ArrayMemoryIO {
     
@@ -20,12 +20,6 @@ public final class ArrayMemoryIO extends org.jruby.ext.ffi.ArrayMemoryIO {
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        if (value instanceof PointerMemoryIO) {
-            putAddress(offset, ((PointerMemoryIO) value).getAddress());
-        } else if (value instanceof NullMemoryIO) {
-            putAddress(offset, 0L);
-        } else {
-            throw new RuntimeException("Attempted to get address of non-direct MemoryIO");
-        }
+        putAddress(offset, ((DirectMemoryIO) value).getAddress());
     }
 }

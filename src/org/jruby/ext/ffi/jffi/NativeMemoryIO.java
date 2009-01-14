@@ -1,9 +1,10 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 
-class NativeMemoryIO implements PointerMemoryIO {
+class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     final NativeMemoryIO parent; // keep a reference to avoid the memory being freed
     final long address;
@@ -125,7 +126,7 @@ class NativeMemoryIO implements PointerMemoryIO {
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        IO.putAddress(address + offset, ((PointerMemoryIO) value).getAddress());
+        IO.putAddress(address + offset, ((DirectMemoryIO) value).getAddress());
     }
 
     public final void get(long offset, byte[] dst, int off, int len) {

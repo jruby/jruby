@@ -4,8 +4,8 @@ package org.jruby.ext.ffi.jna;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
-import com.sun.jna.ptr.PointerByReference;
 import org.jruby.ext.ffi.ArrayMemoryIO;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Platform;
 
@@ -23,11 +23,12 @@ public final class HeapMemoryIO extends ArrayMemoryIO {
     }
 
     public final NativeMemoryIO getMemoryIO(long offset) {
-        return new NativeMemoryIO(getPointer(offset));
+        com.sun.jna.Pointer ptr = getPointer(offset);
+        return ptr != null ? new NativeMemoryIO(ptr) : null;
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        putPointer(offset, ((NativeMemoryIO) value).getPointer());
+        putAddress(offset, ((DirectMemoryIO) value).getAddress());
     }
     public final Pointer getPointer(long offset) {
         if (Platform.getPlatform().longSize() == 32) {
@@ -36,16 +37,6 @@ public final class HeapMemoryIO extends ArrayMemoryIO {
         } else {
             LongByReference ref = new LongByReference(getLong(offset));
             return ref.getPointer().getPointer(0);
-        }
-    }
-
-
-    public final void putPointer(long offset, Pointer value) {
-        PointerByReference ref = new PointerByReference(value);
-        if (Platform.getPlatform().longSize() == 32) {
-            putInt(offset, ref.getPointer().getInt(0));
-        } else {
-            putLong(offset, ref.getPointer().getLong(0));
         }
     }
 }

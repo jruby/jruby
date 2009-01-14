@@ -50,7 +50,7 @@ public class BasePointer extends Pointer {
                 String.format("Pointer [address=%x]", getAddress()));
     }
     long getAddress() {
-        return ((PointerMemoryIO) getMemoryIO()).getAddress();
+        return ((DirectMemoryIO) getMemoryIO()).getAddress();
     }
     
     @JRubyMethod(name = "address")

@@ -7,7 +7,7 @@ import org.jruby.Ruby;
 /**
  * An implementation of MemoryIO that throws an exception on any access.
  */
-public class NullMemoryIO extends InvalidMemoryIO {
+public class NullMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
     public NullMemoryIO(Ruby runtime) {
         super(runtime, "NULL pointer access");
     }
@@ -19,6 +19,6 @@ public class NullMemoryIO extends InvalidMemoryIO {
         return true;
     }
     public final boolean isDirect() {
-        return false;
+        return true;
     }
 }

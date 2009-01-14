@@ -30,14 +30,15 @@ package org.jruby.ext.ffi.jna;
 import org.jruby.ext.ffi.*;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.PointerByReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JNA implementation of memory I/O operations.
  */
-public class NativeMemoryIO implements MemoryIO {
-
+public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
+    private static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
     /**
      * The native pointer.
      */
@@ -50,6 +51,13 @@ public class NativeMemoryIO implements MemoryIO {
     Pointer getPointer() {
         return ptr;
     }
+
+    public final long getAddress() {
+        PointerByReference ref = new PointerByReference(ptr);
+        return ADDRESS_SIZE == 32
+                ? ref.getPointer().getInt(0) : ref.getPointer().getLong(0);
+    }
+
     void free() {}
     void autorelease(boolean autorelease) {}
 
@@ -94,12 +102,13 @@ public class NativeMemoryIO implements MemoryIO {
     }
 
     public long getAddress(long offset) {
-        return Platform.getPlatform().addressSize() == 32
+        return ADDRESS_SIZE == 32
                 ? getInt(offset) : getLong(offset);
     }
 
-    public MemoryIO getMemoryIO(long offset) {
-        return new NativeMemoryIO(ptr.getPointer(offset));
+    public final MemoryIO getMemoryIO(long offset) {
+        Pointer p = ptr.getPointer(offset);
+        return p != null ? new NativeMemoryIO(p) : null;
     }
 
     public final float getFloat(long offset) {
