@@ -59,11 +59,15 @@ public class DynamicLibrary extends RubyObject {
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
         final String libName = libraryName.isNil() ? null : libraryName.toString();
         try {
+            Library library = Library.getCachedInstance(libName, getNativeLibraryFlags(libraryFlags));
+            if (library == null) {
+                throw new UnsatisfiedLinkError(Library.getLastError());
+            }
             return new DynamicLibrary(context.getRuntime(), (RubyClass) recv, 
-                    libName, Library.getCachedInstance(libName, getNativeLibraryFlags(libraryFlags)));
+                    libName, library);
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(String.format("Could not open library '%s' : %s",
-                    libName != null ? libName : "current process", Library.getLastError()));
+                    libName != null ? libName : "current process", ex.getMessage()));
         }
     }
     @JRubyMethod(name = {  "find_symbol" })
