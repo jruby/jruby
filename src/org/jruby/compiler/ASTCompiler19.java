@@ -38,6 +38,7 @@ import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.OptArgNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 
@@ -53,11 +54,13 @@ public class ASTCompiler19 extends ASTCompiler {
             return;
         }
         switch (node.getNodeType()) {
-            case LAMBDANODE:
-                compileLambda(node, context, expr);
-                break;
-            default:
-                super.compile(node, context, expr);
+        case LAMBDANODE:
+            compileLambda(node, context, expr);
+            break;
+        case MULTIPLEASGN19NODE:
+            throw new NotCompilableException("Can't compile 1.9 masgn yet");
+        default:
+            super.compile(node, context, expr);
         }
     }
 
@@ -88,51 +91,44 @@ public class ASTCompiler19 extends ASTCompiler {
 
         if (required > 0) {
             requiredAssignment = new ArrayCallback() {
-
-                        public void nextValue(BodyCompiler context, Object object, int index) {
-                            // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
-                            context.getVariableCompiler().assignLocalVariable(index, false);
-                        }
-                    };
+                public void nextValue(BodyCompiler context, Object object, int index) {
+                    // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
+                    context.getVariableCompiler().assignLocalVariable(index, false);
+                }
+            };
         }
 
         if (opt > 0) {
             optionalGiven = new ArrayCallback() {
+            public void nextValue(BodyCompiler context, Object object, int index) {
+                    OptArgNode optArg = (OptArgNode)((ListNode) object).get(index);
 
-                        public void nextValue(BodyCompiler context, Object object, int index) {
-                            Node optArg = ((ListNode) object).get(index);
-
-                            compileAssignment(optArg, context,true);
-                            context.consumeCurrentValue();
-                        }
-                    };
+                    compileAssignment(optArg.getValue(), context, false);
+                }
+            };
             optionalNotGiven = new ArrayCallback() {
+                public void nextValue(BodyCompiler context, Object object, int index) {
+                    OptArgNode optArg = (OptArgNode)((ListNode) object).get(index);
 
-                        public void nextValue(BodyCompiler context, Object object, int index) {
-                            Node optArg = ((ListNode) object).get(index);
-
-                            compile(optArg, context,true);
-                            context.consumeCurrentValue();
-                        }
-                    };
+                    compile(optArg.getValue(), context, false);
+                }
+            };
         }
 
         if (rest > -1) {
             restAssignment = new CompilerCallback() {
-
-                        public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
-                        }
-                    };
+                public void call(BodyCompiler context) {
+                    context.getVariableCompiler().assignLocalVariable(argsNode.getRestArg(), false);
+                }
+            };
         }
 
         if (argsNode.getBlock() != null) {
             blockAssignment = new CompilerCallback() {
-
-                        public void call(BodyCompiler context) {
-                            context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
-                        }
-                    };
+                public void call(BodyCompiler context) {
+                    context.getVariableCompiler().assignLocalVariable(argsNode.getBlock().getCount(), false);
+                }
+            };
         }
 
         context.getVariableCompiler().assignMethodArguments19(
@@ -161,19 +157,6 @@ public class ASTCompiler19 extends ASTCompiler {
         context.appendToArray();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
-    }
-
-    @Override
-    public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
-        switch (node.getNodeType()) {
-            case ARGSNODE:
-                if (((ArgsNode)node).getArity().getValue() != 0) {
-                    throw new NotCompilableException("Can't compile args arity > 0 yet (1.9): " + node);
-                }
-                break;
-            default:
-                super.compileAssignment(node, context, expr);
-        }
     }
 
     @Override

@@ -11,6 +11,7 @@ package org.jruby.compiler.impl;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -24,7 +25,7 @@ import org.objectweb.asm.util.TraceMethodVisitor;
  * @author headius
  */
 public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
-    private final static boolean DEBUG = false;
+    private final static boolean DEBUG = SafePropertyAccessor.getBoolean("jruby.compile.dump");
     private MethodVisitor method;
     
     /** Creates a new instance of SkinnyMethodAdapter */

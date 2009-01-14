@@ -306,7 +306,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     method.aload(argsIndex);
                     methodCompiler.loadRuntime();
                     method.pushInt(currentArgElement);
-                    method.aload(postArgsIndex);
+                    method.pushInt(postArgsIndex);
                     methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class, int.class));
                     restAssignment.call(methodCompiler);
                 }

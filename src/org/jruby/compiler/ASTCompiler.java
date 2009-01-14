@@ -422,7 +422,7 @@ public class ASTCompiler {
                 compileZSuper(node, context, expr);
                 break;
             default:
-                assert false : "Unknown node encountered in compiler: " + node;
+                throw new NotCompilableException("Unknown node encountered in compiler: " + node);
         }
     }
 
