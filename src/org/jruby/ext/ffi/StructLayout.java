@@ -40,6 +40,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -80,6 +81,7 @@ public final class StructLayout extends RubyObject {
         result.defineAnnotatedConstants(StructLayout.class);
         RubyClass array = runtime.defineClassUnder("Array", runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, result);
+        array.includeModule(runtime.getEnumerable());
         array.defineAnnotatedMethods(Array.class);
         return result;
     }
@@ -316,6 +318,12 @@ public final class StructLayout extends RubyObject {
         private final long getOffset(IRubyObject index) {
             return offset + (Util.uint32Value(index) * typeSize);
         }
+        private final long getOffset(int index) {
+            return offset + (index * typeSize);
+        }
+        private IRubyObject get(Ruby runtime, int index) {
+            return aio.get(runtime, io, getOffset(index));
+        }
         @JRubyMethod(name = "[]")
         public IRubyObject get(ThreadContext context, IRubyObject index) {
             return aio.get(context.getRuntime(), io, getOffset(index));
@@ -325,14 +333,27 @@ public final class StructLayout extends RubyObject {
             aio.put(context.getRuntime(), io, getOffset(index), value);
             return value;
         }
-        @JRubyMethod(name = "to_a")
+        @JRubyMethod(name = { "to_a", "to_ary" })
         public IRubyObject get(ThreadContext context) {
             Ruby runtime = context.getRuntime();
             IRubyObject[] elems = new IRubyObject[length];
             for (int i = 0; i < elems.length; ++i) {
-                elems[i] = aio.get(runtime, io, offset + (i * typeSize));
+                elems[i] = get(runtime, i);
             }
             return RubyArray.newArrayNoCopy(runtime, elems);
+        }
+        /**
+         * Needed for Enumerable implementation
+         */
+        @JRubyMethod(name = "each", frame = true)
+        public IRubyObject each(ThreadContext context, Block block) {
+            if (!block.isGiven()) {
+                throw context.getRuntime().newLocalJumpErrorNoBlock();
+            }
+            for (int i = 0; i < length; ++i) {
+                block.yield(context, get(context.getRuntime(), i));
+            }
+            return this;
         }
     }
 }
