@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi.jna;
 
+import java.io.File;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -48,11 +49,15 @@ public class DynamicLibrary extends RubyObject {
     }
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
-        final String libName = !libraryName.isNil() ? libraryName.toString() : "c"; // Ugly hack for JNA
+        String libName = !libraryName.isNil() ? libraryName.toString() : "c"; // Ugly hack for JNA
+        if (libName.indexOf(File.separatorChar) != -1) {
+            libName = new File(libName).getAbsolutePath();
+        }
         try {
             return new DynamicLibrary(context.getRuntime(), (RubyClass) recv, 
                     libName, com.sun.jna.NativeLibrary.getInstance(libName));
         } catch (UnsatisfiedLinkError ex) {
+            System.out.println("Failed to open " + libName + " " + ex);
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
     }
