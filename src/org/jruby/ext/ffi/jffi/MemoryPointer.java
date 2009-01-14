@@ -29,7 +29,7 @@ public class MemoryPointer extends BasePointer {
         return result;
     }
 
-    private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long size) {
+    private MemoryPointer(Ruby runtime, IRubyObject klass, NativeMemoryIO io, long size) {
         super(runtime, (RubyClass) klass, io, size);
     }
     
@@ -40,7 +40,7 @@ public class MemoryPointer extends BasePointer {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, size));
         }
-        DirectMemoryIO io = DirectMemoryIO.allocate(total > 0 ? total : 1, clear);
+        NativeMemoryIO io = NativeMemoryIO.allocate(total > 0 ? total : 1, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
@@ -84,13 +84,13 @@ public class MemoryPointer extends BasePointer {
 
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
-        ((DirectMemoryIO) getMemoryIO()).free();
+        ((NativeMemoryIO) getMemoryIO()).free();
         return context.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        ((DirectMemoryIO) getMemoryIO()).autorelease(release.isTrue());
+        ((NativeMemoryIO) getMemoryIO()).autorelease(release.isTrue());
         return context.getRuntime().getNil();
     }
 }

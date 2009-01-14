@@ -37,7 +37,7 @@ public class BasePointer extends Pointer {
     }
     BasePointer(Ruby runtime, long address) {
         super(runtime, getRubyClass(runtime),
-                address != 0 ? new DirectMemoryIO(address) : new NullMemoryIO(runtime));
+                address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(runtime));
     }
     BasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         super(runtime, klass, io, size);

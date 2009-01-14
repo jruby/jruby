@@ -16,7 +16,7 @@ public final class ArrayMemoryIO extends org.jruby.ext.ffi.ArrayMemoryIO {
         return offset == 0 ? this : new ArrayMemoryIO(array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
     }
     public final MemoryIO getMemoryIO(long offset) {
-        return new DirectMemoryIO(getAddress(offset));
+        return new NativeMemoryIO(getAddress(offset));
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {

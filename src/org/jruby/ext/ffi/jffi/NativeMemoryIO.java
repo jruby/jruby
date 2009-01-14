@@ -3,20 +3,20 @@ package org.jruby.ext.ffi.jffi;
 
 import org.jruby.ext.ffi.MemoryIO;
 
-class DirectMemoryIO implements PointerMemoryIO {
+class NativeMemoryIO implements PointerMemoryIO {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
-    final DirectMemoryIO parent; // keep a reference to avoid the memory being freed
+    final NativeMemoryIO parent; // keep a reference to avoid the memory being freed
     final long address;
 
-    static final DirectMemoryIO allocate(int size, boolean clear) {
+    static final NativeMemoryIO allocate(int size, boolean clear) {
         long memory = IO.allocateMemory(size, clear);
         return memory != 0 ? new Allocated(memory, size) : null;
     }
-    DirectMemoryIO(long address) {
+    NativeMemoryIO(long address) {
         this.address = address;
         this.parent = null;
     }
-    private DirectMemoryIO(DirectMemoryIO parent, long offset) {
+    private NativeMemoryIO(NativeMemoryIO parent, long offset) {
         this.parent = parent;
         this.address = parent.address + offset;
     }
@@ -25,12 +25,12 @@ class DirectMemoryIO implements PointerMemoryIO {
         return address;
     }
 
-    public DirectMemoryIO slice(long offset) {
-        return offset == 0 ? this :new DirectMemoryIO(this, offset);
+    public NativeMemoryIO slice(long offset) {
+        return offset == 0 ? this :new NativeMemoryIO(this, offset);
     }
     @Override
     public final boolean equals(Object obj) {
-        return (obj instanceof DirectMemoryIO) && ((DirectMemoryIO) obj).address == address;
+        return (obj instanceof NativeMemoryIO) && ((NativeMemoryIO) obj).address == address;
     }
 
     @Override
@@ -83,7 +83,7 @@ class DirectMemoryIO implements PointerMemoryIO {
     }
 
     public final MemoryIO getMemoryIO(long offset) {
-        return new DirectMemoryIO(IO.getAddress(address + offset));
+        return new NativeMemoryIO(IO.getAddress(address + offset));
     }
 
     public final void putByte(long offset, byte value) {
@@ -194,7 +194,7 @@ class DirectMemoryIO implements PointerMemoryIO {
     void free() {}
     void autorelease(boolean release) {}
 
-    private final static class Allocated extends DirectMemoryIO {
+    private final static class Allocated extends NativeMemoryIO {
         private volatile boolean released = false, autorelease = true;
         public Allocated(long address, long size) {
             super(address);

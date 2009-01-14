@@ -88,7 +88,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
         public Symbol(Ruby runtime, DynamicLibrary library, String name, long address) {
             super(runtime, FFIProvider.getModule(runtime).fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
-                    new DirectMemoryIO(address), Long.MAX_VALUE);
+                    new NativeMemoryIO(address), Long.MAX_VALUE);
             this.library = library;
             this.name = name;
         }
