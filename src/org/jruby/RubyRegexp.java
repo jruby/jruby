@@ -1194,15 +1194,56 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_match_m
      * 
      */
-    @JRubyMethod(name = "match", required = 1, reads = BACKREF)
+    @JRubyMethod(name = "match", required = 1, reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
         if (op_match(context, str).isNil()) return context.getRuntime().getNil();
 
         IRubyObject result =  context.getCurrentFrame().getBackRef();
-        if (result instanceof RubyMatchData) {
-            ((RubyMatchData)result).use();
-        }
+        if (result instanceof RubyMatchData) ((RubyMatchData)result).use();
         return result;
+    }
+
+    @JRubyMethod(name = "match", reads = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject match_m19(ThreadContext context, IRubyObject str, Block block) {
+        return match19Internal(context, str, 0, block);
+    }
+
+    @JRubyMethod(name = "match", reads = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject match_m19(ThreadContext context, IRubyObject str, IRubyObject pos, Block block) {
+        return match19Internal(context, str, RubyNumeric.num2int(pos), block);
+    }
+
+    private IRubyObject match19Internal(ThreadContext context, IRubyObject arg, int pos, Block block) {
+        Frame frame = context.getCurrentFrame();
+        if (arg.isNil()) {
+            frame.setBackRef(arg);
+            return arg;
+        }
+        Ruby runtime = context.getRuntime();
+        RubyString str = operandCheck(runtime, arg);
+
+        if (matchPos(context, str, pos) < 0) {
+            frame.setBackRef(runtime.getNil());
+            return runtime.getNil();
+        }
+
+        IRubyObject backref = frame.getBackRef();
+        if (!backref.isNil() && backref instanceof RubyMatchData) {
+            ((RubyMatchData)backref).use();
+            if (block.isGiven()) return block.yield(context, backref);
+        }
+        return backref;
+    }
+
+    private int matchPos(ThreadContext context, RubyString str, int pos) {
+        if (pos != 0) {
+            if (pos < 0) {
+                pos += str.strLength();
+                if (pos < 0) return pos;
+            }
+            pos = adjustStartPos19(str, pos, false);
+        }
+        return search19(context, str, pos, false);
     }
 
     /** rb_reg_search

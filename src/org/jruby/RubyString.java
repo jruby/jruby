@@ -296,7 +296,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return strLength(value, enc);
     }
 
-    private int strLength() {
+    final int strLength() {
         if (singleByteOptimizable()) return value.realSize;
         return strLength(value);
     }
