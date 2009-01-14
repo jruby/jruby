@@ -53,8 +53,6 @@ import org.jruby.util.ByteList;
 abstract public class AbstractMemory extends RubyObject {
     public final static String ABSTRACT_MEMORY_RUBY_CLASS = "AbstractMemory";
 
-    /** The offset from the base memory pointer */
-    protected final long offset;
     /** The total size of the memory area */
     protected final long size;
     /** The Memory I/O object */
@@ -82,10 +80,9 @@ abstract public class AbstractMemory extends RubyObject {
         }
     }
     
-    protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
+    protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         super(runtime, klass);
         this.io = io;
-        this.offset = offset;
         this.size = size;
     }
     /**
@@ -105,18 +102,9 @@ abstract public class AbstractMemory extends RubyObject {
      * @return The total offset from the base memory pointer.
      */
     protected final long getOffset(IRubyObject offset) {
-        return getOffset() + Util.longValue(offset);
+        return Util.longValue(offset);
     }
     
-    /**
-     * Gets the offset within the memory area.
-     *
-     * @return The offset within the original memory area.
-     */
-    protected final long getOffset() {
-        return this.offset;
-    }
-
     /**
      * Gets the size of the memory area.
      *
@@ -154,7 +142,7 @@ abstract public class AbstractMemory extends RubyObject {
             return false;
         }
         final AbstractMemory other = (AbstractMemory) obj;
-        return other.getMemoryIO().equals(getMemoryIO()) && other.offset == offset;
+        return other.getMemoryIO().equals(getMemoryIO());
     }
     
     @JRubyMethod(name = "==", required = 1)
@@ -173,7 +161,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @Override
     public int hashCode() {
-        return 67 * getMemoryIO().hashCode() + (int) (this.offset ^ (this.offset >>> 32));
+        return 67 * getMemoryIO().hashCode();
     }
 
     /**
@@ -181,7 +169,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context) {
-        getMemoryIO().setMemory(offset, size, (byte) 0);
+        getMemoryIO().setMemory(0, size, (byte) 0);
         return this;
     }
     /**
@@ -206,7 +194,7 @@ abstract public class AbstractMemory extends RubyObject {
     protected final long checkBounds(ThreadContext context, IRubyObject offArg, long len) {
         long off = Util.longValue(offArg);
         checkBounds(context, size, off, len);
-        return this.offset + off;
+        return off;
     }
     /**
      * Writes a 8 bit signed integer value to the memory area.

@@ -39,7 +39,7 @@ public final class Buffer extends AbstractMemory {
     }
 
     public Buffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, factory.allocateHeapMemory(0, CLEAR_DEFAULT), 0, 0);
+        super(runtime, klass, factory.allocateHeapMemory(0, CLEAR_DEFAULT), 0);
         this.inout = IN | OUT;
     }
     Buffer(Ruby runtime, int size) {
@@ -50,7 +50,7 @@ public final class Buffer extends AbstractMemory {
             factory.allocateHeapMemory(size, CLEAR_DEFAULT), size, flags);
     }
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int inout) {
-        super(runtime, (RubyClass) klass, io, 0, size);
+        super(runtime, (RubyClass) klass, io, size);
         this.inout = inout;
     }
     
@@ -127,7 +127,7 @@ public final class Buffer extends AbstractMemory {
         return new Buffer(runtime, getMetaClass(), this.io.slice(offset), this.size, this.inout);
     }
     protected Pointer getPointer(Ruby runtime, long offset) {
-        return factory.newPointer(runtime, getMemoryIO().getMemoryIO(this.offset + offset));
+        return factory.newPointer(runtime, getMemoryIO().getMemoryIO(offset));
     }
     public int getInOutFlags() {
         return inout;

@@ -50,7 +50,7 @@ public class BasePointer extends Pointer {
                 String.format("Pointer [address=%x]", getAddress()));
     }
     long getAddress() {
-        return ((PointerMemoryIO) getMemoryIO()).getAddress() + getOffset();
+        return ((PointerMemoryIO) getMemoryIO()).getAddress();
     }
     
     @JRubyMethod(name = "address")
@@ -88,6 +88,6 @@ public class BasePointer extends Pointer {
 
     protected BasePointer getPointer(Ruby runtime, long offset) {
         return new BasePointer(runtime,
-                getMemoryIO().getMemoryIO(this.offset + offset), Long.MAX_VALUE);
+                getMemoryIO().getMemoryIO(offset), Long.MAX_VALUE);
     }
 }

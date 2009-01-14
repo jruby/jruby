@@ -254,7 +254,7 @@ public final class StructLayout extends RubyObject {
         }
 
         final long getOffset(IRubyObject ptr) {
-            return ((AbstractMemory) ptr).getOffset() + offset;
+            return offset;
         }
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
@@ -287,7 +287,7 @@ public final class StructLayout extends RubyObject {
             return ((AbstractMemory) ptr).getMemoryIO();
         }
         static final long getOffset(IRubyObject ptr, long offset) {
-            return ((AbstractMemory) ptr).getOffset() + offset;
+            return offset;
         }
         abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
         abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);

@@ -31,9 +31,9 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
         return result;
     }
     
-    JNABasePointer(Ruby runtime, MemoryIO io, long offset, long size) {
+    JNABasePointer(Ruby runtime, MemoryIO io, long size) {
         super(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
-                io, offset, size);
+                io, size);
     }
     JNABasePointer(Ruby runtime, MemoryIO io) {
         this(runtime, FFIProvider.getModule(runtime).fastGetClass(JNA_POINTER_NAME),
@@ -43,10 +43,10 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
         this(runtime, value != null ? JNAMemoryIO.wrap(value) : new NullMemoryIO(runtime));
     }
     JNABasePointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
-        super(runtime, klass, io, 0, size);
+        super(runtime, klass, io, size);
     }
     JNABasePointer(Ruby runtime, IRubyObject klass, MemoryIO io) {
-        super(runtime, (RubyClass) klass, io, 0, Long.MAX_VALUE);
+        super(runtime, (RubyClass) klass, io, Long.MAX_VALUE);
     }
     
     @Override
@@ -62,7 +62,7 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
     }
     public Object getNativeMemory() {
         return getMemoryIO() instanceof NullMemoryIO
-                ? Pointer.NULL : ((JNAMemoryIO) getMemoryIO()).slice(offset).getMemory();
+                ? Pointer.NULL : ((JNAMemoryIO) getMemoryIO()).getMemory();
     }
     static final long ptr2long(Pointer ptr) {
         return new PointerByReference(ptr).getPointer().getInt(0);
@@ -75,7 +75,7 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        String hex = Long.toHexString(ptr2long(getAddress()) + offset);
+        String hex = Long.toHexString(ptr2long(getAddress()));
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Pointer address=0x%s>", hex));
     }
@@ -103,6 +103,6 @@ public class JNABasePointer extends AbstractMemoryPointer implements JNAMemory {
 
     protected AbstractMemoryPointer getPointer(Ruby runtime, long offset) {
         return new JNABasePointer(runtime,
-                getMemoryIO().getMemoryIO(this.offset + offset));
+                getMemoryIO().getMemoryIO(offset));
     }
 }

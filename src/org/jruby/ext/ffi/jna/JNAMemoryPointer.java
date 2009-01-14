@@ -112,7 +112,7 @@ public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
     @Override
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        String hex = Long.toHexString(ptr2long(getAddress()) + offset);
+        String hex = Long.toHexString(ptr2long(getAddress()));
         return RubyString.newString(context.getRuntime(), 
                 String.format("#<MemoryPointer address=0x%s size=%d>", hex, size));
     }

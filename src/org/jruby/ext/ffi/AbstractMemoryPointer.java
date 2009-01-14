@@ -66,9 +66,8 @@ public abstract class AbstractMemoryPointer extends Pointer {
 
         return result;
     }
-    
-    protected AbstractMemoryPointer(Ruby runtime, RubyClass klass, MemoryIO io, long offset, long size) {
-        super(runtime, klass, io, offset, size);
+    protected AbstractMemoryPointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
+        super(runtime, klass, io, size);
     }
     
     @JRubyMethod(name = "free")
