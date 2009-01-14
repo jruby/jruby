@@ -100,6 +100,69 @@ class BenchCase
     end
   end
 
+  def do_case_single_char_str
+    case 'j'
+    when 'a'
+    when 'b'
+    when 'c'
+    when 'd'
+    when 'e'
+    when 'f'
+    when 'g'
+    when 'h'
+    when 'i'
+    when 'j'
+    end
+    case 'j'
+    when 'a'
+    when 'b'
+    when 'c'
+    when 'd'
+    when 'e'
+    when 'f'
+    when 'g'
+    when 'h'
+    when 'i'
+    when 'j'
+    end
+    case 'j'
+    when 'a'
+    when 'b'
+    when 'c'
+    when 'd'
+    when 'e'
+    when 'f'
+    when 'g'
+    when 'h'
+    when 'i'
+    when 'j'
+    end
+    case 'j'
+    when 'a'
+    when 'b'
+    when 'c'
+    when 'd'
+    when 'e'
+    when 'f'
+    when 'g'
+    when 'h'
+    when 'i'
+    when 'j'
+    end
+    case 'j'
+    when 'a'
+    when 'b'
+    when 'c'
+    when 'd'
+    when 'e'
+    when 'f'
+    when 'g'
+    when 'h'
+    when 'i'
+    when 'j'
+    end
+  end
+
   def do_case_nil_false_true_else
     case 1
       when nil
@@ -191,10 +254,18 @@ def bench_case(bm)
     end
   end
 
-  bm.report "1m x5 cases with 10 whens" do
+  bm.report "1m x5 cases with 10 fixnum whens" do
     a = 0
     while a < 1_000_000
       bc.do_case3
+      a += 1
+    end
+  end
+
+  bm.report "1m x5 cases with 10 one-char whens" do
+    a = 0
+    while a < 1_000_000
+      bc.do_case_single_char_str
       a += 1
     end
   end

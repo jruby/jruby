@@ -2423,10 +2423,18 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 method.instance_of(p(fastPathClass));
                 method.ifeq(slowPath);
                 
-                getCaseValue.call(this);
-                method.checkcast(p(RubyFixnum.class));
-                method.invokevirtual(p(RubyFixnum.class), "getLongValue", sig(long.class));
-                method.l2i();
+                if (fastPathClass == RubyFixnum.class) {
+                    getCaseValue.call(this);
+                    method.checkcast(p(RubyFixnum.class));
+                    method.invokevirtual(p(RubyFixnum.class), "getLongValue", sig(long.class));
+                    method.l2i();
+                } else if (fastPathClass == RubyString.class) {
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("isFastSwitchableString", sig(boolean.class, IRubyObject.class));
+                    method.ifeq(slowPath);
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("getFastSwitchString", sig(int.class, IRubyObject.class));
+                }
 
                 method.lookupswitch(defaultCase, caseValues, caseLabels);
             }

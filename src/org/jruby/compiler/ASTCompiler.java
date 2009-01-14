@@ -104,6 +104,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.exceptions.JumpException;
 import org.jruby.RubyMatchData;
+import org.jruby.RubyString;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.BlockPassNode;
@@ -748,20 +749,17 @@ public class ASTCompiler {
         boolean hasCase = caseNode.getCaseNode() != null;
 
         // aggregate when nodes into a list, unfortunately, this is no
-        List<WhenNode> whenNodes = new ArrayList<WhenNode>();
-        for (Node childNode: caseNode.getCases().childNodes()) {
-            whenNodes.add((WhenNode) childNode);
-        }
+        List<Node> cases = caseNode.getCases().childNodes();
 
         // last node, either !instanceof WhenNode or null, is the else
         Node elseNode = caseNode.getElseNode();
 
-        compileWhen(caseNode.getCaseNode(), whenNodes, elseNode, context, expr, hasCase);
+        compileWhen(caseNode.getCaseNode(), cases, elseNode, context, expr, hasCase);
     }
 
-    private boolean caseIsAllIntRangedFixnums(List<WhenNode> whenNodes) {
-        boolean caseIsAllLiterals = true;
-       Outer: for (Node node : whenNodes) {
+    private Class getHomogeneousSwitchType(List<Node> whenNodes) {
+        Class foundType = null;
+        Outer: for (Node node : whenNodes) {
             WhenNode whenNode = (WhenNode)node;
             if (whenNode.getExpressionNodes() instanceof ArrayNode) {
                 ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
@@ -771,22 +769,44 @@ public class ASTCompiler {
                         FixnumNode fixnumNode = (FixnumNode)maybeFixnum;
                         long value = fixnumNode.getValue();
                         if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+                            if (foundType != null && foundType != RubyFixnum.class) return null;
+                            if (foundType == null) foundType = RubyFixnum.class;
                             continue;
                         } else {
-                            return false;
+                            return null;
                         }
                     } else {
-                        return false;
+                        return null;
                     }
                 }
+            } else if (whenNode.getExpressionNodes() instanceof FixnumNode) {
+                FixnumNode fixnumNode = (FixnumNode)whenNode.getExpressionNodes();
+                long value = fixnumNode.getValue();
+                if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+                    if (foundType != null && foundType != RubyFixnum.class) return null;
+                    if (foundType == null) foundType = RubyFixnum.class;
+                    continue;
+                } else {
+                    return null;
+                }
+            } else if (whenNode.getExpressionNodes() instanceof StrNode) {
+                StrNode strNode = (StrNode)whenNode.getExpressionNodes();
+                if (strNode.getValue().length() == 1) {
+                    if (foundType != null && foundType != RubyString.class) return null;
+                    if (foundType == null) foundType = RubyString.class;
+
+                    continue;
+                } else {
+                    return null;
+                }
             } else {
-                return false;
+                return null;
             }
         }
-        return caseIsAllLiterals;
+        return foundType;
     }
 
-    public void compileWhen(final Node value, List<WhenNode> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, final boolean hasCase) {
+    public void compileWhen(final Node value, List<Node> whenNodes, final Node elseNode, BodyCompiler context, final boolean expr, final boolean hasCase) {
         CompilerCallback caseValue = null;
         if (value != null) caseValue = new CompilerCallback() {
             public void call(BodyCompiler context) {
@@ -798,7 +818,8 @@ public class ASTCompiler {
         List<ArgumentsCallback> conditionals = new ArrayList<ArgumentsCallback>();
         List<CompilerCallback> bodies = new ArrayList<CompilerCallback>();
         Map<CompilerCallback, int[]> switchCases = null;
-        if (RubyInstanceConfig.FASTCASE_COMPILE_ENABLED && caseIsAllIntRangedFixnums(whenNodes)) {
+        Class switchType = getHomogeneousSwitchType(whenNodes);
+        if (RubyInstanceConfig.FASTCASE_COMPILE_ENABLED && switchType != null) {
             // NOTE: Currently this optimization is limited to the following situations:
             // * All expressions must be int-ranged literal fixnums
             // It also still emits the code for the "safe" when logic, which is rather
@@ -808,7 +829,8 @@ public class ASTCompiler {
             // to improve code reuse before it's generally available.
             switchCases = new HashMap<CompilerCallback, int[]>();
         }
-        for (final WhenNode whenNode : whenNodes) {
+        for (Node node : whenNodes) {
+            final WhenNode whenNode = (WhenNode)node;
             CompilerCallback body = new CompilerCallback() {
                 public void call(BodyCompiler context) {
                     compile(whenNode.getBodyNode(), context, expr);
@@ -824,7 +846,7 @@ public class ASTCompiler {
             }
         };
         
-        context.compileSequencedConditional(caseValue, RubyFixnum.class, switchCases, conditionals, bodies, fallback);
+        context.compileSequencedConditional(caseValue, switchType, switchCases, conditionals, bodies, fallback);
     }
 
     private int[] getOptimizedCases(WhenNode whenNode) {
@@ -847,6 +869,16 @@ public class ASTCompiler {
                 }
             }
             return cases;
+        } else if (whenNode.getExpressionNodes() instanceof FixnumNode) {
+            FixnumNode fixnumNode = (FixnumNode)whenNode.getExpressionNodes();
+            return new int[] {(int)fixnumNode.getValue()};
+        } else if (whenNode.getExpressionNodes() instanceof StrNode) {
+            StrNode strNode = (StrNode)whenNode.getExpressionNodes();
+            if (strNode.getValue().length() == 1) {
+                return new int[] {strNode.getValue().get(0)};
+            } else {
+                return null;
+            }
         }
         return null;
     }

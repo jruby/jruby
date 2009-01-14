@@ -1521,4 +1521,12 @@ public class RuntimeHelpers {
     public static void fillNil(IRubyObject[]arr, Ruby runtime) {
         fillNil(arr, 0, arr.length, runtime);
     }
+
+    public static boolean isFastSwitchableString(IRubyObject str) {
+        return ((RubyString)str).getByteList().length() == 1;
+    }
+
+    public static int getFastSwitchString(IRubyObject str) {
+        return ((RubyString)str).getByteList().get(0);
+    }
 }
