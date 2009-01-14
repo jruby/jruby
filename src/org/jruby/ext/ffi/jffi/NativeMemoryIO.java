@@ -5,14 +5,10 @@ import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 
 class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
-    private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+    protected static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     final NativeMemoryIO parent; // keep a reference to avoid the memory being freed
     final long address;
 
-    static final NativeMemoryIO allocate(int size, boolean clear) {
-        long memory = IO.allocateMemory(size, clear);
-        return memory != 0 ? new Allocated(memory, size) : null;
-    }
     NativeMemoryIO(long address) {
         this.address = address;
         this.parent = null;
@@ -191,36 +187,5 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public void clear() {
         throw new UnsupportedOperationException("Not supported yet.");
-    }
-    void free() {}
-    void autorelease(boolean release) {}
-
-    private final static class Allocated extends NativeMemoryIO {
-        private volatile boolean released = false, autorelease = true;
-        public Allocated(long address, long size) {
-            super(address);
-        }
-        @Override
-        void free() {
-            if (!released) {
-                IO.freeMemory(address);
-                released = true;
-            }
-        }
-        @Override
-        void autorelease(boolean release) {
-            this.autorelease = release;
-        }
-        @Override
-        protected void finalize() throws Throwable {
-            try {
-                if (!released && autorelease) {
-                    IO.freeMemory(address);
-                    released = true;
-                }
-            } finally {
-                super.finalize();
-            }
-        }
     }
 }

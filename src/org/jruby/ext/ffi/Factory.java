@@ -174,6 +174,15 @@ public abstract class Factory {
     public abstract MemoryIO allocateHeapMemory(int size, boolean clear);
 
     /**
+     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     *
+     * @param size The number of bytes to allocate.
+     * @param clear If the memory should be cleared.
+     * @return A new <tt>MemoryIO</tt>.
+     */
+    public abstract AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear);
+
+    /**
      * Creates a new FFI {@link Pointer} instance.
      *
      * @param runtime

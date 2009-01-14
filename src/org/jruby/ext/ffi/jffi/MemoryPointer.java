@@ -11,6 +11,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -40,7 +41,7 @@ public class MemoryPointer extends BasePointer {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, size));
         }
-        NativeMemoryIO io = NativeMemoryIO.allocate(total > 0 ? total : 1, clear);
+        AllocatedNativeMemoryIO io = AllocatedNativeMemoryIO.allocate(total > 0 ? total : 1, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
@@ -84,13 +85,13 @@ public class MemoryPointer extends BasePointer {
 
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
-        ((NativeMemoryIO) getMemoryIO()).free();
+        ((AllocatedDirectMemoryIO) getMemoryIO()).free();
         return context.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        ((NativeMemoryIO) getMemoryIO()).autorelease(release.isTrue());
+        ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
         return context.getRuntime().getNil();
     }
 }

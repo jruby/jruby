@@ -31,8 +31,6 @@ import org.jruby.ext.ffi.*;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JNA implementation of memory I/O operations.
@@ -42,7 +40,7 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     /**
      * The native pointer.
      */
-    final Pointer ptr;
+    protected final Pointer ptr;
 
     public NativeMemoryIO(Pointer ptr) {
         this.ptr = ptr;
@@ -57,22 +55,7 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return ADDRESS_SIZE == 32
                 ? ref.getPointer().getInt(0) : ref.getPointer().getLong(0);
     }
-
-    void free() {}
-    void autorelease(boolean autorelease) {}
-
-    /**
-     * Allocates a new block of native memory and wraps it in a {@link MemoryIO}
-     * accessor.
-     *
-     * @param size The size in bytes of memory to allocate.
-     *
-     * @return A new <tt>MemoryIO</tt> instance that can access the memory.
-     */
-    static final NativeMemoryIO allocateDirect(int size) {
-        return new Allocated(size);
-    }
-
+    
     public final boolean isNull() {
         return ptr == null;
     }
@@ -144,7 +127,7 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final void putAddress(long offset, long value) {
-        if (Platform.getPlatform().addressSize() == 32) {
+        if (ADDRESS_SIZE == 32) {
             ptr.setInt(offset, (int) value);
         } else {
             ptr.setLong(offset, value);
@@ -152,10 +135,11 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
-        if (!(value instanceof NativeMemoryIO)) {
-            throw new UnsupportedOperationException("Cannot put non-native MemoryIO");
+        if (value instanceof NativeMemoryIO) {
+            ptr.setPointer(offset, ((NativeMemoryIO) value).ptr);
+        } else {
+            putAddress(offset, ((DirectMemoryIO) value).getAddress());
         }
-        ptr.setPointer(offset, ((NativeMemoryIO) value).ptr);
     }
 
     public final void putFloat(long offset, float value) {
@@ -252,30 +236,5 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     @Override
     public int hashCode() {
         return ptr == null ? 0 : ptr.hashCode();
-    }
-    static final class Allocated extends NativeMemoryIO {
-        /**
-         * Used to hold a permanent reference to a memory pointer so it does not get
-         * garbage collected
-         */
-        private static final Map<Allocated, Object> pointerSet
-                = new ConcurrentHashMap<Allocated, Object>();
-
-        public Allocated(int size) {
-            super(new com.sun.jna.Memory(size));
-        }
-        @Override
-        void free() {
-            // Just let the GC collect and free the pointer
-            pointerSet.remove(this);
-        }
-        @Override
-        void autorelease(boolean autorelease) {
-            if (autorelease) {
-                pointerSet.remove(this);
-            } else {
-                pointerSet.put(this, Boolean.TRUE);
-            }
-        }
     }
 }

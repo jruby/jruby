@@ -70,10 +70,7 @@ public class JNAMemoryPointer extends JNABasePointer {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, size));
         }
-        NativeMemoryIO io = NativeMemoryIO.allocateDirect(total > 0 ? total : 1);
-        if (clear) {
-            io.setMemory(0, size, (byte) 0);
-        }
+        NativeMemoryIO io = AllocatedNativeMemoryIO.allocate(total > 0 ? total : 1, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
@@ -119,13 +116,13 @@ public class JNAMemoryPointer extends JNABasePointer {
 
     @JRubyMethod(name = "free")
     public IRubyObject free(ThreadContext context) {
-        ((NativeMemoryIO.Allocated) getMemoryIO()).free();
+        ((AllocatedNativeMemoryIO) getMemoryIO()).free();
         return this;
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        ((NativeMemoryIO.Allocated) getMemoryIO()).autorelease(release.isTrue());
+        ((AllocatedNativeMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
         return this;
     }
 }

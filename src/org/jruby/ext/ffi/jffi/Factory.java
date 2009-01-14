@@ -4,6 +4,7 @@ package org.jruby.ext.ffi.jffi;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
@@ -61,6 +62,17 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     @Override
     public MemoryIO allocateHeapMemory(int size, boolean clear) {
         return new ArrayMemoryIO(size);
+    }
+
+    /**
+     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     *
+     * @param size The number of bytes to allocate.
+     * @param clear If the memory should be cleared.
+     * @return A new <tt>MemoryIO</tt>.
+     */
+    public AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear) {
+        return AllocatedNativeMemoryIO.allocate(size, clear);
     }
 
     @Override
