@@ -83,22 +83,7 @@ public class JNABasePointer extends org.jruby.ext.ffi.Pointer {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Pointer address=0x%s>", hex));
     }
-
-    @JRubyMethod(name = "put_pointer", required = 2)
-    public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        nullCheck(context.getRuntime());
-        Pointer ptr;
-        if (value instanceof JNABasePointer) {
-            ptr = ((JNABasePointer) value).getAddress();
-        } else if (value.isNil()) {
-            ptr = Pointer.NULL;
-        } else {
-            throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
-        }
-        ((NativeMemoryIO) getMemoryIO()).putPointer(getOffset(offset), ptr);
-        return this;
-    }
-
+    
     @Override
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return new JNABasePointer(runtime,

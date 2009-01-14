@@ -69,6 +69,10 @@ public class NativeMemoryIO implements MemoryIO {
         return ptr == null;
     }
 
+    public final boolean isDirect() {
+        return true;
+    }
+
     public final byte getByte(long offset) {
         return ptr.getByte(offset);
     }

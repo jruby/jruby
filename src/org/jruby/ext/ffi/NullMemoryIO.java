@@ -18,4 +18,7 @@ public class NullMemoryIO extends InvalidMemoryIO {
     public boolean isNull() {
         return true;
     }
+    public final boolean isDirect() {
+        return false;
+    }
 }

@@ -59,6 +59,9 @@ public abstract class ArrayMemoryIO implements MemoryIO {
     public final boolean isNull() {
         return false;
     }
+    public final boolean isDirect() {
+        return false;
+    }
 
     public final byte getByte(long offset) {
         return (byte) (buffer[index(offset)] & 0xff);

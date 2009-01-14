@@ -64,22 +64,7 @@ public class BasePointer extends Pointer {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Pointer address=0x%s>", hex));
     }
-
-    @JRubyMethod(name = "put_pointer", required = 2)
-    public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        long ptr;
-        if (value instanceof BasePointer) {
-            ptr = ((BasePointer) value).getAddress();
-        } else if (value.isNil()) {
-            ptr = 0;
-        } else {
-            throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
-        }
-
-        getMemoryIO().putAddress(getOffset(offset), ptr);
-        return this;
-    }
-
+    
     @Override
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return new BasePointer(runtime, getRubyClass(runtime),

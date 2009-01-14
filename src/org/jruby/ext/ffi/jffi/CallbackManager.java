@@ -224,7 +224,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         public final boolean isNull() {
             return false;
         }
-
+        public final boolean isDirect() {
+            return true;
+        }
     }
     /**
      * Extracts the primitive value from a Ruby object.

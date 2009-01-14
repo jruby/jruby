@@ -739,8 +739,28 @@ abstract public class AbstractMemory extends RubyObject {
     }
     @JRubyMethod(name = "get_pointer", required = 1)
     public IRubyObject get_pointer(ThreadContext context, IRubyObject offset) {
-        return getPointer(context.getRuntime(), Util.int64Value(offset));
+        return getPointer(context.getRuntime(), getOffset(offset));
     }
+
+    @JRubyMethod(name = "put_pointer", required = 2)
+    public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
+        if (value instanceof Pointer) {
+            MemoryIO ptr = ((Pointer) value).getMemoryIO();
+            if (ptr.isDirect()) {
+                getMemoryIO().putMemoryIO(getOffset(offset), ptr);
+            } else if (ptr.isNull()) {
+                getMemoryIO().putAddress(getOffset(offset), 0L);
+            } else {
+                throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
+            }
+        } else if (value.isNil()) {
+            getMemoryIO().putAddress(getOffset(offset), 0L);
+        } else {
+            throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
+        }
+        return this;
+    }
+
     @JRubyMethod(name = "__get_buffer", required = 2)
     public IRubyObject get_buffer(ThreadContext context, IRubyObject off, IRubyObject len_) {
         int len = Util.int32Value(len_);

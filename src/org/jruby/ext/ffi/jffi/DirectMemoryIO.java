@@ -43,6 +43,10 @@ class DirectMemoryIO implements PointerMemoryIO {
     public final boolean isNull() {
         return address == 0;
     }
+    
+    public final boolean isDirect() {
+        return true;
+    }
 
     public final byte getByte(long offset) {
         return IO.getByte(address + offset);

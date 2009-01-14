@@ -109,17 +109,7 @@ public final class Buffer extends AbstractMemory {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Buffer size=%d>", size));
     }
-    @JRubyMethod(name = "put_pointer", required = 2)
-    public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        if (value instanceof Pointer) {
-            getMemoryIO().putMemoryIO(getOffset(offset), ((Pointer) value).getMemoryIO());
-        } else if (value.isNil()) {
-            getMemoryIO().putAddress(getOffset(offset), 0L);
-        } else {
-            throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
-        }
-        return this;
-    }
+    
     ArrayMemoryIO getArrayMemoryIO() {
         return (ArrayMemoryIO) getMemoryIO();
     }

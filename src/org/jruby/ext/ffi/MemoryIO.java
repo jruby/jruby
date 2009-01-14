@@ -44,6 +44,13 @@ public interface MemoryIO {
     public boolean isNull();
 
     /**
+     * Checks if the memory area is a native memory pointer.
+     *
+     * @return <tt>true</tt> if the memory area is a native pointer.
+     */
+    public boolean isDirect();
+
+    /**
      * Creates a new MemoryIO pointing to a subset of the memory area of this
      * <tt>MemoryIO</tt>.
      * @param offset The offset within the existing memory area to start the
