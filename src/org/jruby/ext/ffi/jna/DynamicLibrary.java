@@ -57,7 +57,6 @@ public class DynamicLibrary extends RubyObject {
             return new DynamicLibrary(context.getRuntime(), (RubyClass) recv, 
                     libName, com.sun.jna.NativeLibrary.getInstance(libName));
         } catch (UnsatisfiedLinkError ex) {
-            System.out.println("Failed to open " + libName + " " + ex);
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
     }
