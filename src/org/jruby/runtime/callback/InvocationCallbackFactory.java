@@ -50,6 +50,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.* ;
@@ -70,6 +71,8 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             Object.class, Object[].class));
     private final static String BLOCK_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
             ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject.class));
+    private final static String BLOCK_CALL_SIG19 = sig(RubyKernel.IRUBY_OBJECT, params(
+            ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
     private final static String IRUB = p(RubyKernel.IRUBY_OBJECT);
     
     
@@ -159,6 +162,24 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         mv.putfield(namePath, "$scriptObject", ci(fieldClass));
         mv.voidreturn();
         mv.end();
+
+        return cw;
+    }
+
+    private ClassWriter createBlockCtor19(String namePath, Class fieldClass) throws Exception {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {p(CompiledBlockCallback19.class)});
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
+        mv.start();
+        mv.aload(0);
+        mv.invokespecial(p(Object.class), "<init>", sig(void.class));
+        mv.aload(0);
+        mv.aload(1);
+        mv.checkcast(p(fieldClass));
+        mv.putfield(namePath, "$scriptObject", ci(fieldClass));
+        mv.voidreturn();
+        mv.end();
         
         return cw;
     }
@@ -235,6 +256,15 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG, null, null));
         
+        mv.visitCode();
+        Label line = new Label();
+        mv.visitLineNumber(0, line);
+        return mv;
+    }
+
+    private SkinnyMethodAdapter startBlockCall19(ClassWriter cw) {
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG19, null, null));
+
         mv.visitCode();
         Label line = new Label();
         mv.visitLineNumber(0, line);
@@ -554,6 +584,42 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     c = endCall(cw, mv, mname);
                 }
                 CompiledBlockCallback ic = (CompiledBlockCallback) c.getConstructor(Object.class).newInstance(scriptObject);
+                return ic;
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+    }
+
+    public CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject) {
+        Class typeClass = scriptObject.getClass();
+        String typePathString = p(typeClass);
+        String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
+        String mnamePath = typePathString + "BlockCallback$" + method + "xx1";
+        synchronized (classLoader) {
+            Class c = tryClass(mname);
+            try {
+                if (c == null) {
+                    ClassWriter cw = createBlockCtor19(mnamePath, typeClass);
+                    SkinnyMethodAdapter mv = startBlockCall19(cw);
+                    mv.aload(0);
+                    mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
+                    mv.aload(1);
+                    mv.aload(2);
+                    mv.aload(3);
+                    mv.aload(4);
+                    mv.invokevirtual(typePathString, method, sig(
+                            IRubyObject.class, params(ThreadContext.class,
+                                    IRubyObject.class, IRubyObject[].class, Block.class)));
+                    mv.areturn();
+
+                    mv.visitMaxs(2, 3);
+                    c = endCall(cw, mv, mname);
+                }
+                CompiledBlockCallback19 ic = (CompiledBlockCallback19) c.getConstructor(Object.class).newInstance(scriptObject);
                 return ic;
             } catch (IllegalArgumentException e) {
                 throw e;

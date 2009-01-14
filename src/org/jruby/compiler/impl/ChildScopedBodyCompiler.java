@@ -113,26 +113,6 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         method.athrow();
     }
 
-    public void processRequiredArgs(Arity arity, int requiredArgs, int optArgs, int restArg) {
-        throw new NotCompilableException("Shouldn\'t be calling this...");
-    }
-
-    public void assignOptionalArgs(Object object, int expectedArgsCount, int size, ArrayCallback optEval) {
-        throw new NotCompilableException("Shouldn\'t be calling this...");
-    }
-
-    public void processRestArg(int startIndex, int restArg) {
-        throw new NotCompilableException("Shouldn\'t be calling this...");
-    }
-
-    public void processBlockArgument(int index) {
-        loadRuntime();
-        loadThreadContext();
-        loadBlock();
-        method.pushInt(index);
-        invokeUtilityMethod("processBlockArgument", sig(void.class, params(Ruby.class, ThreadContext.class, Block.class, int.class)));
-    }
-
     public void issueBreakEvent(CompilerCallback value) {
         if (currentLoopLabels != null) {
             value.call(this);

@@ -32,9 +32,14 @@ package org.jruby.compiler;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.NodeType;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.BlockBody;
 
 /**
  *
@@ -58,6 +63,17 @@ public class ASTCompiler19 extends ASTCompiler {
 
     @Override
     public void compileArgs(Node node, BodyCompiler context, boolean expr) {
+        final ArgsNode argsNode = (ArgsNode) node;
+
+        final int required = argsNode.getRequiredArgsCount();
+        final int opt = argsNode.getOptionalArgsCount();
+        final int rest = argsNode.getRestArg();
+        
+        context.getVariableCompiler().checkMethodArity(required, opt, rest);
+        compileMethodArgs(node, context, expr);
+    }
+
+    public void compileMethodArgs(Node node, BodyCompiler context, boolean expr) {
         final ArgsNode argsNode = (ArgsNode) node;
 
         final int required = argsNode.getRequiredArgsCount();
@@ -119,7 +135,6 @@ public class ASTCompiler19 extends ASTCompiler {
                     };
         }
 
-        context.getVariableCompiler().checkMethodArity(required, opt, rest);
         context.getVariableCompiler().assignMethodArguments19(
                 argsNode.getPre(),
                 argsNode.getPreCount(),
@@ -158,6 +173,61 @@ public class ASTCompiler19 extends ASTCompiler {
                 break;
             default:
                 super.compileAssignment(node, context, expr);
+        }
+    }
+
+    @Override
+    public void compileIter(Node node, BodyCompiler context) {
+        final IterNode iterNode = (IterNode)node;
+        final ArgsNode argsNode = (ArgsNode)iterNode.getVarNode();
+
+        // create the closure class and instantiate it
+        final CompilerCallback closureBody = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                if (iterNode.getBodyNode() != null) {
+                    compile(iterNode.getBodyNode(), context, true);
+                } else {
+                    context.loadNil();
+                }
+            }
+        };
+
+        // create the closure class and instantiate it
+        final CompilerCallback closureArgs = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                if (iterNode.getVarNode() != null) {
+                    final int required = argsNode.getRequiredArgsCount();
+                    final int opt = argsNode.getOptionalArgsCount();
+                    final int rest = argsNode.getRestArg();
+                    if (iterNode instanceof LambdaNode) {
+
+                        context.getVariableCompiler().checkMethodArity(required, opt, rest);
+                        compileMethodArgs(argsNode, context, true);
+                    } else {
+                        compileMethodArgs(argsNode, context, true);
+                    }
+                }
+            }
+        };
+
+        boolean hasMultipleArgsHead = false;
+        if (iterNode.getVarNode() instanceof MultipleAsgnNode) {
+            hasMultipleArgsHead = ((MultipleAsgnNode) iterNode.getVarNode()).getHeadNode() != null;
+        }
+
+        NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
+
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(iterNode.getBodyNode());
+        inspector.inspect(iterNode.getVarNode());
+
+        if (argsNodeId == null) {
+            // no args, do not pass args processor
+            context.createNewClosure19(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
+        } else {
+            context.createNewClosure19(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
         }
     }
 

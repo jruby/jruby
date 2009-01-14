@@ -192,7 +192,8 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         }
         
         if (argsCallback != null) {
-            // load args[0] which will be the IRubyObject representing block args
+            // in 1.8 mode, this will be a RubyArray containing the arguments
+            // in 1.9 mode, this will be an IRubyObject[]
             method.aload(argsIndex);
             argsCallback.call(methodCompiler);
         }

@@ -195,6 +195,8 @@ public abstract class CallbackFactory {
 
     public abstract CompiledBlockCallback getBlockCallback(String method, Object scriptObject);
 
+    public abstract CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject);
+
     /**
      * gets a singleton (class) method with no mandatory argument and some optional arguments.
      * @param method name of the method

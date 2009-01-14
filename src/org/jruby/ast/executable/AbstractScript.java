@@ -130,6 +130,37 @@ public abstract class AbstractScript implements Script {
     public final BlockBody getBlockBody8(ThreadContext context, String descriptor) {return getBlockBody(context, 8, descriptor);}
     public final BlockBody getBlockBody9(ThreadContext context, String descriptor) {return getBlockBody(context, 9, descriptor);}
 
+    /**
+     * descriptor format is
+     *
+     * closure_method_name,arity,varname1;varname2;varname3,has_multi_args_head,arg_type,light
+     *
+     * @param context
+     * @param index
+     * @param descriptor
+     * @return
+     */
+    public final BlockBody getBlockBody19(ThreadContext context, int index, String descriptor) {
+        BlockBody body = blockBodies[index];
+
+        if (body == null) {
+            return createBlockBody19(context, index, descriptor);
+        }
+
+        return body;
+    }
+
+    public final BlockBody getBlockBody190(ThreadContext context, String descriptor) {return getBlockBody19(context, 0, descriptor);}
+    public final BlockBody getBlockBody191(ThreadContext context, String descriptor) {return getBlockBody19(context, 1, descriptor);}
+    public final BlockBody getBlockBody192(ThreadContext context, String descriptor) {return getBlockBody19(context, 2, descriptor);}
+    public final BlockBody getBlockBody193(ThreadContext context, String descriptor) {return getBlockBody19(context, 3, descriptor);}
+    public final BlockBody getBlockBody194(ThreadContext context, String descriptor) {return getBlockBody19(context, 4, descriptor);}
+    public final BlockBody getBlockBody195(ThreadContext context, String descriptor) {return getBlockBody19(context, 5, descriptor);}
+    public final BlockBody getBlockBody196(ThreadContext context, String descriptor) {return getBlockBody19(context, 6, descriptor);}
+    public final BlockBody getBlockBody197(ThreadContext context, String descriptor) {return getBlockBody19(context, 7, descriptor);}
+    public final BlockBody getBlockBody198(ThreadContext context, String descriptor) {return getBlockBody19(context, 8, descriptor);}
+    public final BlockBody getBlockBody199(ThreadContext context, String descriptor) {return getBlockBody19(context, 9, descriptor);}
+
     public final CompiledBlockCallback getBlockCallback(Ruby runtime, int index, String method) {
         CompiledBlockCallback callback = blockCallbacks[index];
 
@@ -441,6 +472,33 @@ public abstract class AbstractScript implements Script {
         }
 
         BlockBody body = RuntimeHelpers.createCompiledBlockBody(
+                context,
+                this,
+                firstSplit[0],
+                Integer.parseInt(firstSplit[1]),
+                secondSplit,
+                Boolean.valueOf(firstSplit[3]),
+                Integer.parseInt(firstSplit[4]),
+                Boolean.valueOf(firstSplit[5]));
+        return blockBodies[index] = body;
+    }
+
+    private BlockBody createBlockBody19(ThreadContext context, int index, String descriptor) throws NumberFormatException {
+        String[] firstSplit = descriptor.split(",");
+        String[] secondSplit;
+
+        if (firstSplit[2].length() == 0) {
+            secondSplit = new String[0];
+        } else {
+            secondSplit = firstSplit[2].split(";");
+
+            // FIXME: Big fat hack here, because scope names are expected to be interned strings by the parser
+            for (int i = 0; i < secondSplit.length; i++) {
+                secondSplit[i] = secondSplit[i].intern();
+            }
+        }
+
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(
                 context,
                 this,
                 firstSplit[0],

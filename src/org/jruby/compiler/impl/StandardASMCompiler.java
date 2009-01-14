@@ -79,6 +79,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}),
     };
     public static final String CLOSURE_SIGNATURE = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class});
+    public static final String CLOSURE_SIGNATURE19 = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
 
     public static final int THIS = 0;
     public static final int THREADCONTEXT_INDEX = 1;

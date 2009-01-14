@@ -31,8 +31,10 @@ package org.jruby.runtime.callback;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -161,6 +163,34 @@ public class ReflectionCallbackFactory extends CallbackFactory {
                 public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args) {
                     try {
                         return (IRubyObject)blockMethod.invoke(scriptObject, new Object[]{context, self, args});
+                    } catch (IllegalAccessException ex) {
+                        throw new RuntimeException(ex);
+                    } catch (IllegalArgumentException ex) {
+                        throw new RuntimeException(ex);
+                    } catch (InvocationTargetException ex) {
+                        Throwable cause = ex.getCause();
+                        if (cause instanceof RuntimeException) {
+                            throw (RuntimeException) cause;
+                        } else if (cause instanceof Error) {
+                            throw (Error) cause;
+                        } else {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+                }
+            };
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
+    }
+
+    public CompiledBlockCallback19 getBlockCallback19(String method, final Object scriptObject) {
+        try {
+            final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+            return new CompiledBlockCallback19() {
+                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+                    try {
+                        return (IRubyObject)blockMethod.invoke(scriptObject, new Object[]{context, self, args, block});
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     } catch (IllegalArgumentException ex) {

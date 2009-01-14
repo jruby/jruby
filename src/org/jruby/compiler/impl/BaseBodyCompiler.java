@@ -849,6 +849,35 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
     }
 
+    public void createNewClosure19(
+            int line,
+            StaticScope scope,
+            int arity,
+            CompilerCallback body,
+            CompilerCallback args,
+            boolean hasMultipleArgsHead,
+            NodeType argsNodeId,
+            ASTInspector inspector) {
+        String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$" + "__block__";
+
+        ChildScopedBodyCompiler19 closureCompiler = new ChildScopedBodyCompiler19(script, closureMethodName, inspector, scope);
+
+        closureCompiler.beginMethod(args, scope);
+
+        body.call(closureCompiler);
+
+        closureCompiler.endBody();
+
+        // Done with closure compilation
+
+        loadThreadContext();
+        loadSelf();
+        script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, hasMultipleArgsHead, argsNodeId, inspector);
+
+        invokeUtilityMethod("createBlock19", sig(Block.class,
+                params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
+    }
+
     public void runBeginBlock(StaticScope scope, CompilerCallback body) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__begin__";
 

@@ -30,8 +30,10 @@ public interface CacheCompiler {
     public void cacheRegexp(BaseBodyCompiler method, String pattern, int options);
 
     public void cacheDRegexp(BaseBodyCompiler method, CompilerCallback createStringCallback, int options);
-    
+
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
+
+    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
     public void cacheSpecialClosure(BaseBodyCompiler method, String closureMethod);
 

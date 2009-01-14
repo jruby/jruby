@@ -37,8 +37,11 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
+import org.jruby.runtime.CompiledBlock19;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.CompiledBlockLight;
+import org.jruby.runtime.CompiledBlockLight19;
 import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodFactory;
@@ -146,6 +149,14 @@ public class RuntimeHelpers {
         
         return factory.getBlockCallback(closureMethod, scriptObject);
     }
+
+    public static CompiledBlockCallback19 createBlockCallback19(Ruby runtime, Object scriptObject, String closureMethod) {
+        Class scriptClass = scriptObject.getClass();
+        ClassLoader scriptClassLoader = scriptClass.getClassLoader();
+        CallbackFactory factory = CallbackFactory.createFactory(runtime, scriptClass, scriptClassLoader);
+
+        return factory.getBlockCallback19(closureMethod, scriptObject);
+    }
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
@@ -165,9 +176,35 @@ public class RuntimeHelpers {
                     hasMultipleArgsHead, argsNodeType);
         }
     }
+
+    public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
+            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
+        StaticScope staticScope =
+            new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        staticScope.determineModule();
+
+        if (light) {
+            return CompiledBlockLight19.newCompiledBlockLight(
+                    Arity.createArity(arity), staticScope,
+                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod),
+                    hasMultipleArgsHead, argsNodeType);
+        } else {
+            return CompiledBlock19.newCompiledBlock(
+                    Arity.createArity(arity), staticScope,
+                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod),
+                    hasMultipleArgsHead, argsNodeType);
+        }
+    }
     
     public static Block createBlock(ThreadContext context, IRubyObject self, BlockBody body) {
         return CompiledBlock.newCompiledClosure(
+                context,
+                self,
+                body);
+    }
+
+    public static Block createBlock19(ThreadContext context, IRubyObject self, BlockBody body) {
+        return CompiledBlock19.newCompiledClosure(
                 context,
                 self,
                 body);
@@ -939,6 +976,14 @@ public class RuntimeHelpers {
     public static IRubyObject elementOrNull(IRubyObject[] input, int element) {
         if (element >= input.length) {
             return null;
+        } else {
+            return input[element];
+        }
+    }
+
+    public static IRubyObject elementOrNil(IRubyObject[] input, int element, IRubyObject nil) {
+        if (element >= input.length) {
+            return nil;
         } else {
             return input[element];
         }

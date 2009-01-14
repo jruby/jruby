@@ -263,7 +263,9 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     // extract item from array
                     method.aload(argsIndex);
                     method.pushInt(currentArgElement); // index for the item
-                    method.arrayload();
+                    // this could probably be more efficient, bailing out on assigning args past the end?
+                    methodCompiler.loadNil();
+                    methodCompiler.invokeUtilityMethod("elementOrNil", sig(IRubyObject.class, IRubyObject[].class, int.class, IRubyObject.class));
                     requiredAssignment.nextValue(methodCompiler, preArgs, currentArgElement);
                 }
 
@@ -314,7 +316,9 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     // extract item from array
                     method.aload(argsIndex);
                     method.pushInt(currentArgElement); // index for the item
-                    method.arrayload();
+                    // this could probably be more efficient, bailing out on assigning args past the end?
+                    methodCompiler.loadNil();
+                    methodCompiler.invokeUtilityMethod("elementOrNil", sig(IRubyObject.class, IRubyObject[].class, int.class, IRubyObject.class));
                     requiredAssignment.nextValue(methodCompiler, postArgs, currentArgElement);
                 }
             }
