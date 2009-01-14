@@ -238,7 +238,7 @@ end
 def bench_case(bm)
   bc = BenchCase.new
 
-  bm.report "1m x5 cases with 1 when" do
+  bm.report "1m x5 cases with 1 fixnum when" do
     a = 0
     while a < 1_000_000
       bc.do_case1
@@ -246,7 +246,7 @@ def bench_case(bm)
     end
   end
 
-  bm.report "1m x5 cases with 1 3-arg when" do
+  bm.report "1m x5 cases with 1 3-arg fixnum when" do
     a = 0
     while a < 1_000_000
       bc.do_case2
