@@ -31,6 +31,8 @@ package org.jruby;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
@@ -93,6 +95,7 @@ public class RubyJRuby {
 
     public static void createJRubyCoreExt(Ruby runtime) {
         runtime.getClassClass().defineAnnotatedMethods(JRubyClassExtensions.class);
+        runtime.getThread().defineAnnotatedMethods(JRubyThreadExtensions.class);
     }
 
     public static class ExtLibrary implements Library {
@@ -329,6 +332,21 @@ public class RubyJRuby {
             }
 
             return RubyArray.newArray(context.getRuntime(), clazz.subclasses(recursive)).freeze(context);
+        }
+    }
+
+    public static class JRubyThreadExtensions {
+        private static final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        
+        @JRubyMethod(name = "times", module = true)
+        public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
+            Ruby runtime = recv.getRuntime();
+            double system = threadBean.getCurrentThreadCpuTime() / 1000000000.0;
+            double user = threadBean.getCurrentThreadUserTime() / 1000000000.0;
+            RubyFloat zero = runtime.newFloat(0.0);
+            return RubyStruct.newStruct(runtime.getTmsStruct(),
+                    new IRubyObject[] { RubyFloat.newFloat(runtime, user), RubyFloat.newFloat(runtime, system), zero, zero },
+                    Block.NULL_BLOCK);
         }
     }
     
