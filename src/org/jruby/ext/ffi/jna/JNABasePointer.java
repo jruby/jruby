@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Base pointer class for all JNA pointers.
  */
 @JRubyClass(name = "FFI::BasePointer", parent = "FFI::Pointer")
-public class JNABasePointer extends org.jruby.ext.ffi.Pointer implements JNAMemory {
+public class JNABasePointer extends org.jruby.ext.ffi.Pointer {
     public static final String JNA_POINTER_NAME = "BasePointer";
 
     public static RubyClass createJNAPointerClass(Ruby runtime, RubyModule module) {

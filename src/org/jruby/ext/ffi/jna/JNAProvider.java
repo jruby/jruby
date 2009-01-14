@@ -33,7 +33,6 @@ import com.sun.jna.Function;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
-import com.sun.jna.Pointer;
 import java.nio.ByteBuffer;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
@@ -323,7 +322,7 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class StringInvoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
-            Pointer address = function.invokePointer(args);
+            com.sun.jna.Pointer address = function.invokePointer(args);
             if (address == null) {
                 return runtime.getNil();
             }
@@ -441,31 +440,36 @@ public final class JNAProvider extends FFIProvider {
         }
         public static final Marshaller INSTANCE = new Float64Marshaller();
     }
-    
+    private static final Object getNativeMemory(Pointer memory) {
+        MemoryIO io = memory.getMemoryIO();
+        return io instanceof NativeMemoryIO ? ((NativeMemoryIO) io).getPointer() : null;
+    }
+    private static final Object getNativeMemory(Ruby runtime, IRubyObject memory) {
+        if (memory instanceof Pointer) {
+            return getNativeMemory((Pointer) memory);
+        } else if (memory instanceof Buffer) {
+            ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) memory).getMemoryIO();
+            return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
+        } else if (memory == null || memory.isNil()) {
+            return com.sun.jna.Pointer.NULL;
+        } else {
+            throw runtime.newArgumentError("Invalid memory object");
+        }
+    }
     /**
      * Converts a ruby MemoryPointer into a native pointer.
      */
     static final class PointerMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
-            if (parameter instanceof JNAMemory) {
-                return (((JNAMemory) parameter).getNativeMemory());
+            if (parameter instanceof Pointer) {
+                return getNativeMemory((Pointer) parameter);
             } else if (parameter instanceof Buffer) {
                 ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
             } else if (parameter instanceof Struct) {
-                IRubyObject memory = ((Struct) parameter).getMemory();
-                if (memory instanceof JNAMemory) {
-                    return (((JNAMemory) memory).getNativeMemory());
-                } else if (memory instanceof Buffer) {
-                    ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) memory).getMemoryIO();
-                    return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
-                } else if (memory == null || memory.isNil()) {
-                    return Pointer.NULL;
-                } else {
-                    throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Struct memory");
-                }
+                return getNativeMemory(invocation.getThreadContext().getRuntime(), ((Struct) parameter).getMemory());
             } else if (parameter.isNil()) {
-                return Pointer.NULL;
+                return com.sun.jna.Pointer.NULL;
             } else if (parameter instanceof RubyString) {
                 // Handle a string being used as a inout buffer
                 final ByteList bl = ((RubyString) parameter).getByteList();
@@ -483,10 +487,8 @@ public final class JNAProvider extends FFIProvider {
                 });
                 return memory;
             } else if (parameter.respondsTo("to_ptr")) {
-                IRubyObject ptr = parameter.callMethod(invocation.getThreadContext(), "to_ptr");
-                if (ptr instanceof JNAMemory) {
-                    return (((JNAMemory) ptr).getNativeMemory());
-                }
+                return getNativeMemory(invocation.getThreadContext().getRuntime(), 
+                        parameter.callMethod(invocation.getThreadContext(), "to_ptr"));
             }
             throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Pointer argument");
         }
@@ -550,33 +552,21 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class BufferMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
-            if (parameter instanceof JNAMemory) {
-                return (((JNAMemory) parameter).getNativeMemory());
+            if (parameter instanceof Pointer) {
+                return getNativeMemory((Pointer) parameter);
             } else if (parameter instanceof Buffer) {
                 ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
             } else if (parameter instanceof Struct) {
-                IRubyObject memory = ((Struct) parameter).getMemory();
-                if (memory instanceof JNAMemory) {
-                    return (((JNAMemory) memory).getNativeMemory());
-                } else if (memory instanceof Buffer) {
-                    ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) memory).getMemoryIO();
-                    return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
-                } else if (memory == null || memory.isNil()) {
-                    return Pointer.NULL;
-                } else {
-                    throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Struct memory");
-                }
+                return getNativeMemory(invocation.getThreadContext().getRuntime(), ((Struct) parameter).getMemory());
             } else if (parameter.isNil()) {
-                return Pointer.NULL;
+                return com.sun.jna.Pointer.NULL;
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 return ByteBuffer.wrap(bl.unsafeBytes(), bl.begin(), bl.realSize);
             } else if (parameter.respondsTo("to_ptr")) {
-                IRubyObject ptr = parameter.callMethod(invocation.getThreadContext(), "to_ptr");
-                if (ptr instanceof JNAMemory) {
-                    return (((JNAMemory) ptr).getNativeMemory());
-                }
+                return getNativeMemory(invocation.getThreadContext().getRuntime(),
+                        parameter.callMethod(invocation.getThreadContext(), "to_ptr"));
             }
             throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid Buffer argument");
         }

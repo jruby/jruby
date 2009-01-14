@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::BasePointer")
-public class JNAMemoryPointer extends JNABasePointer implements JNAMemory {
+public class JNAMemoryPointer extends JNABasePointer {
     public static final String MEMORY_POINTER_NAME = "MemoryPointer";
 
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
