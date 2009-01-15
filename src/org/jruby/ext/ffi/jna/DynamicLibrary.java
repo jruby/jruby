@@ -12,6 +12,7 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.FFIProvider;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,7 +51,7 @@ public class DynamicLibrary extends RubyObject {
     }
     @JRubyMethod(name = {  "open" }, meta = true)
     public static final  IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject libraryName, IRubyObject libraryFlags) {
-        String libName = !libraryName.isNil() ? libraryName.toString() : "c"; // Ugly hack for JNA
+        String libName = !libraryName.isNil() ? libraryName.toString() : Platform.LIBC;
         if (libName.indexOf(File.separatorChar) != -1) {
             libName = new File(libName).getAbsolutePath();
         }
