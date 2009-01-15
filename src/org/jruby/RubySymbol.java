@@ -150,24 +150,44 @@ public class RubySymbol extends RubyObject {
         return runtime.getSymbolTable().getSymbol(name);
     }
 
-    @JRubyMethod(name = "to_i")
+    @Deprecated
     public RubyFixnum to_i() {
-        return getRuntime().newFixnum(id);
+        return to_i(getRuntime());
+    }
+    @JRubyMethod(name = "to_i")
+    public RubyFixnum to_i(ThreadContext context) {
+        return to_i(context.getRuntime());
+    }
+    private final RubyFixnum to_i(Ruby runtime) {
+        return runtime.newFixnum(id);
     }
 
-    @JRubyMethod(name = "to_int")
+    @Deprecated
     public RubyFixnum to_int() {
-        if (getRuntime().isVerbose()) {
-            getRuntime().getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
+        return to_int(getRuntime());
+    }
+    @JRubyMethod(name = "to_int")
+    public RubyFixnum to_int(ThreadContext context) {
+        return to_int(context.getRuntime());
+    }
+    private final RubyFixnum to_int(Ruby runtime) {
+        if (runtime.isVerbose()) {
+            runtime.getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
         }
-        return to_i();
+        return to_i(runtime);
     }
 
-    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
+    @Deprecated
     @Override
     public IRubyObject inspect() {
-        Ruby runtime = getRuntime();
-
+        return inspect(getRuntime());
+    }
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect(context.getRuntime());
+    }
+    private final IRubyObject inspect(Ruby runtime) {
+        
         final ByteList bytes;
         if (isSymbolName(symbol)) {
             bytes = symbolBytes;
@@ -181,9 +201,16 @@ public class RubySymbol extends RubyObject {
         return RubyString.newString(runtime, result);
     }
 
-    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    @Deprecated
     public IRubyObject inspect19() {
-        Ruby runtime = getRuntime();
+        return inspect19(getRuntime());
+    }
+    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    public IRubyObject inspect19(ThreadContext context) {
+        return inspect19(context.getRuntime());
+    }
+    private final IRubyObject inspect19(Ruby runtime) {
+        
         ByteList result = new ByteList(symbolBytes.realSize + 1);
         result.encoding = symbolBytes.encoding;
         result.append((byte)':');
@@ -201,15 +228,26 @@ public class RubySymbol extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "to_s")
+    @Deprecated
     @Override
     public IRubyObject to_s() {
-        return RubyString.newStringShared(getRuntime(), symbolBytes);
+        return to_s(getRuntime());
+    }
+    @JRubyMethod(name = "to_s")
+    public IRubyObject to_s(ThreadContext context) {
+        return to_s(context.getRuntime());
+    }
+    private final IRubyObject to_s(Ruby runtime) {
+        return RubyString.newStringShared(runtime, symbolBytes);
     }
 
-    @JRubyMethod(name = "id2name")
+    @Deprecated
     public IRubyObject id2name() {
-        return to_s();
+        return to_s(getRuntime());
+    }
+    @JRubyMethod(name = "id2name")
+    public IRubyObject id2name(ThreadContext context) {
+        return to_s(context);
     }
 
     @JRubyMethod(name = "===", required = 1)
@@ -218,9 +256,15 @@ public class RubySymbol extends RubyObject {
         return super.op_equal(context, other);
     }
 
+    @Deprecated
     @Override
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
+    }
+
+    @JRubyMethod(name = "hash")
+    public RubyFixnum hash(ThreadContext context) {
+        return context.getRuntime().newFixnum(hashCode());
     }
     
     @Override
@@ -505,6 +549,10 @@ public class RubySymbol extends RubyObject {
     }
     
     @JRubyMethod(name = "all_symbols", meta = true)
+    public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().getSymbolTable().all_symbols();
+    }
+    @Deprecated
     public static IRubyObject all_symbols(IRubyObject recv) {
         return recv.getRuntime().getSymbolTable().all_symbols();
     }
