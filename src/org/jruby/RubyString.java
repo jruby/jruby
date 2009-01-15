@@ -2833,6 +2833,37 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.lastIndexOf(sub.value, pos);
     }
 
+    private int strIndex19(RubyString sub, int offset) {
+        Encoding enc = checkEncoding(sub);
+        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+        int len = strLength();
+        int slen = sub.strLength();
+        if (offset < 0) {
+            offset += len;
+            if (offset < 0) return -1;
+        }
+        
+        if (len - offset < slen) return -1;
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+        if (offset != 0) {
+            offset = singleByteOptimizable() ? p + offset : StringSupport.offset(enc, bytes, p, end, offset);
+            p += offset;
+        }
+        if (slen == 0) return offset;
+
+        while (true) {
+            int pos = value.indexOf(sub.value, p - value.begin);
+            if (pos < 0) return pos;
+            int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
+            if (t == p + pos) return pos + offset;;
+            if ((len -= t - p) <= 0) return -1;
+            offset += t - p;
+            p = t;
+        }
+    }
+
     @Deprecated
     public final IRubyObject substr(int beg, int len) {
         return substr(getRuntime(), beg, len);
@@ -3017,6 +3048,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         
         len = end - start;
         replace(start, len, stringValue(repl));
+    }
+
+    private IRubyObject subpat(ThreadContext context, RubyRegexp regex, int nth) {
+        if (regex.search19(context, this, 0, false) >= 0) {
+            return RubyRegexp.nth_match(nth, context.getCurrentFrame().getBackRef());
+        }
+        return context.getRuntime().getNil();
     }
 
     /**
@@ -4374,6 +4412,35 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify19(arg0, arg1, 'c');
     }
 
+    @JRubyMethod(name = "partition", compat = CompatVersion.RUBY1_9)
+    public IRubyObject partition(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        final int pos;
+        final RubyString sep;
+        if (arg instanceof RubyRegexp) {
+            RubyRegexp regex = (RubyRegexp)arg;
+            pos = regex.search19(context, this, 0, false);
+            if (pos < 0) return partitionMismatch(runtime);
+            sep = (RubyString)subpat(context, regex, 0);
+            if (pos == 0 && sep.value.realSize == 0) return partitionMismatch(runtime);
+        } else {
+            IRubyObject tmp = arg.checkStringType();
+            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
+            sep = (RubyString)tmp;
+            pos = strIndex19(sep, 0);
+            if (pos < 0) return partitionMismatch(runtime);
+        }
+
+        return RubyArray.newArray(runtime, new IRubyObject[]{
+                makeShared19(runtime, 0, pos),
+                sep,
+                makeShared19(runtime, pos + sep.value.realSize, value.realSize - pos - sep.value.realSize)});
+    }
+    
+    private IRubyObject partitionMismatch(Ruby runtime) {
+        return RubyArray.newArray(runtime, new IRubyObject[]{ this, newEmptyString(runtime), newEmptyString(runtime)});
+    }
+    
     /** rb_str_chop / rb_str_chop_bang
      * 
      */
