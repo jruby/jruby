@@ -1784,11 +1784,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         ByteList value = str.getByteList();
         int len = value.realSize;
-        int range = reverse ? -pos : len - pos;
-
         if (pos > 0 && enc.maxLength() != 1 && pos < len) {
             int start = value.begin;
-            if (range > 0) {
+            if ((reverse ? -pos : len - pos) > 0) {
                 return enc.rightAdjustCharHead(value.bytes, start, start + pos, start + len) - start;
             } else {
                 return enc.leftAdjustCharHead(value.bytes, start, start + pos, start + len) - start;
