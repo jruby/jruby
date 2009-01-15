@@ -37,7 +37,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -137,24 +136,7 @@ public final class StructLayout extends RubyObject {
      * @return an immutable copy of <tt>fields</tt>
      */
     private static Map<IRubyObject, Member> immutableMap(Map<IRubyObject, Member> fields) {
-        Map<IRubyObject, Member> tmp = new LinkedHashMap<IRubyObject, Member>(fields.size());
-        for (Map.Entry<IRubyObject, Member> e : fields.entrySet()) {
-            tmp.put(convertKey(e.getKey().getRuntime(), e.getKey()), e.getValue());
-        }
-        return Collections.unmodifiableMap(tmp);
-    }
-    
-    /**
-     * Converts a non-symbol key into a <tt>RubySymbol</tt>.
-     * 
-     * @param key The key to convert to a <tt>RubySymbol</tt>.
-     * @return A <tt>RubySymbol</tt> equivalent to the key.
-     */
-    private static IRubyObject convertKey(Ruby runtime, IRubyObject key) {
-        if (key instanceof RubySymbol) {
-            return key;
-        }
-        return runtime.getSymbolTable().getSymbol(key.asJavaString());
+        return Collections.unmodifiableMap(new LinkedHashMap<IRubyObject, Member>(fields));
     }
     
     /**
@@ -221,7 +203,7 @@ public final class StructLayout extends RubyObject {
      * @return A <tt>Member</tt> descriptor.
      */
     private Member getMember(Ruby runtime, IRubyObject name) {
-        Member f = fields.get(convertKey(runtime, name));
+        Member f = fields.get(name);
         if (f != null) {
             return f;
         }

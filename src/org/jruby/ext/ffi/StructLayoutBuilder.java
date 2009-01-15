@@ -35,6 +35,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -163,6 +164,25 @@ public final class StructLayoutBuilder extends RubyObject {
                 throw new UnsupportedOperationException("Cannot determine size of " + type);
         }
     }
+    private static IRubyObject createSymbolKey(Ruby runtime, IRubyObject key) {
+        if (key instanceof RubySymbol) {
+            return key;
+        }
+        return runtime.getSymbolTable().getSymbol(key.asJavaString());
+    }
+    private static IRubyObject createStringKey(Ruby runtime, IRubyObject key) {
+        if (key instanceof RubyString) {
+            return key;
+        }
+        return RubyString.newString(runtime, key.asJavaString());
+    }
+    private final IRubyObject storeField(Ruby runtime, IRubyObject name, StructLayout.Member field, int align, int size) {
+        fields.put(createStringKey(runtime, name), field);
+        fields.put(createSymbolKey(runtime, name), field);
+        this.size = (int) field.offset + size;
+        this.maxAlign = Math.max(this.maxAlign, align);
+        return this;
+    }
     @JRubyMethod(name = "add_field", required = 2, optional = 1)
     public IRubyObject add(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
@@ -190,11 +210,7 @@ public final class StructLayoutBuilder extends RubyObject {
         if (field == null) {
             throw runtime.newArgumentError("Unknown field type: " + type);
         }
-        
-        fields.put(createKey(runtime, name), field);
-        this.size = offset + (sizeBits / 8);
-        this.maxAlign = Math.max(this.maxAlign, align);
-        return this;
+        return storeField(runtime, name, field, align, sizeBits / 8);
     }
 
     @JRubyMethod(name = "add_struct", required = 2, optional = 1)
@@ -203,16 +219,11 @@ public final class StructLayoutBuilder extends RubyObject {
         IRubyObject name = args[0];
         int offset = args.length > 2 && !args[2].isNil() ? Util.int32Value(args[2]) : -1;
         final int align = Struct.getStructLayout(runtime, args[1]).getMinimumAlignment();
-        final int sizeBytes = Struct.getStructSize(args[1]);
         if (offset < 0) {
             offset = alignMember(this.size, align);
         }
         StructLayout.Member field = StructMember.create((RubyClass) args[1], offset);
-        
-        fields.put(createKey(runtime, name), field);
-        this.size = offset + sizeBytes;
-        this.maxAlign = Math.max(this.maxAlign, align);
-        return this;
+        return storeField(runtime, name, field, align, Struct.getStructSize(args[1]));
     }
     @JRubyMethod(name = "add_array", required = 3, optional = 1)
     public IRubyObject add_array(ThreadContext context, IRubyObject[] args) {
@@ -233,10 +244,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         StructLayout.Member field = new ArrayMember(offset, io, sizeBits, length);
 
-        fields.put(createKey(runtime, name), field);
-        this.size = offset + ((sizeBits / 8) * length);
-        this.maxAlign = Math.max(this.maxAlign, align);
-        return this;
+        return storeField(runtime, name, field, align, ((sizeBits / 8) * length));
     }
     @JRubyMethod(name = "add_char_array", required = 2, optional = 1)
     public IRubyObject add_char_array(ThreadContext context, IRubyObject[] args) {
@@ -247,17 +255,9 @@ public final class StructLayoutBuilder extends RubyObject {
         if (offset < 0) {
             offset = alignMember(this.size, 8);
         }
-        StructLayout.Member field = CharArrayMember.create(offset, strlen);
-        fields.put(createKey(runtime, name), field);
-        this.size += strlen;
-        return runtime.getNil();
+        return storeField(runtime, name, CharArrayMember.create(offset, strlen), 8, strlen);
     }
-    private static IRubyObject createKey(Ruby runtime, IRubyObject key) {
-        if (key instanceof RubySymbol) {
-            return key;
-        }
-        return runtime.getSymbolTable().getSymbol(key.asJavaString());
-    }
+    
     StructLayout.Member createMember(Ruby runtime, Object type, long offset) {
         if (type instanceof NativeType) {
             return createMember((NativeType) type, offset);
