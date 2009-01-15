@@ -31,7 +31,7 @@ final class TypeSizeMapper {
                 case INT64:
                 case UINT64:
                 case FLOAT64:
-                    sz[i] = 4;
+                    sz[i] = 8;
                     break;
                 case LONG:
                 case ULONG:
