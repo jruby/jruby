@@ -2659,7 +2659,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
         return indexCommon(context, arg0, 0);
     }
@@ -2667,7 +2667,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
 
