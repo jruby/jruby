@@ -2661,7 +2661,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
-        return indexCommon(0, arg0, context);
+        return indexCommon(context, arg0, 0);
     }
 
     /** rb_str_index_m
@@ -2681,10 +2681,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
 
-        return indexCommon(pos, arg0, context);
+        return indexCommon(context, arg0, pos);
     }
 
-    private IRubyObject indexCommon(int pos, IRubyObject sub, ThreadContext context) throws RaiseException {
+    private IRubyObject indexCommon(ThreadContext context, IRubyObject sub, int pos) {
+        Ruby runtime = context.getRuntime();
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
 
@@ -2695,7 +2696,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (c_int < 0x00 || c_int > 0xFF) {
                 // out of byte range
                 // there will be no match for sure
-                return context.getRuntime().getNil();
+                return runtime.getNil();
             }
             byte c = (byte) c_int;
             byte[] bytes = value.bytes;
@@ -2703,23 +2704,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             pos += value.begin;
             for (; pos < end; pos++) {
-                if (bytes[pos] == c) {
-                    return RubyFixnum.newFixnum(context.getRuntime(), pos - value.begin);
-                }
+                if (bytes[pos] == c) return RubyFixnum.newFixnum(runtime, pos - value.begin);
             }
-            return context.getRuntime().getNil();
+            return runtime.getNil();
         } else if (sub instanceof RubyString) {
             pos = strIndex((RubyString) sub, pos);
         } else {
             IRubyObject tmp = sub.checkStringType();
-
-            if (tmp.isNil()) {
-                throw context.getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            }
+            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
             pos = strIndex((RubyString) tmp, pos);
         }
 
-        return pos == -1 ? context.getRuntime().getNil() : RubyFixnum.newFixnum(context.getRuntime(), pos);
+        return pos == -1 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, pos);
     }
     
     private int strIndex(RubyString sub, int offset) {
@@ -2759,7 +2755,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
-        return rindexCommon(arg0, value.realSize, context);
+        return rindexCommon(context, arg0, value.realSize);
     }
 
     /** rb_str_rindex_m
@@ -2780,28 +2776,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }            
         if (pos > value.realSize) pos = value.realSize;
 
-        return rindexCommon(arg0, pos, context);
+        return rindexCommon(context, arg0, pos);
     }
 
-    private IRubyObject rindexCommon(final IRubyObject sub, int pos, ThreadContext context) throws RaiseException {
+    private IRubyObject rindexCommon(ThreadContext context, final IRubyObject sub, int pos) {
+        Ruby runtime = context.getRuntime();
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
             if (regSub.length() > 0) {
                 pos = regSub.adjustStartPos(this, pos, true);
                 pos = regSub.search(context, this, pos, true);
             }
-            if (pos >= 0) {
-                return RubyFixnum.newFixnum(context.getRuntime(), pos);
-            }
+            if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         } else if (sub instanceof RubyString) {
             pos = strRindex((RubyString) sub, pos);
-            if (pos >= 0) return RubyFixnum.newFixnum(context.getRuntime(), pos);
+            if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         } else if (sub instanceof RubyFixnum) {
             int c_int = RubyNumeric.fix2int(sub);
             if (c_int < 0x00 || c_int > 0xFF) {
                 // out of byte range
                 // there will be no match for sure
-                return context.getRuntime().getNil();
+                return runtime.getNil();
             }
             byte c = (byte) c_int;
 
@@ -2810,26 +2805,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int p = pbeg + pos;
 
             if (pos == value.realSize) {
-                if (pos == 0) {
-                    return context.getRuntime().getNil();
-                }
+                if (pos == 0) return runtime.getNil();
                 --p;
             }
             while (pbeg <= p) {
-                if (bytes[p] == c) {
-                    return RubyFixnum.newFixnum(context.getRuntime(), p - value.begin);
-                }
+                if (bytes[p] == c) return RubyFixnum.newFixnum(runtime, p - value.begin);
                 p--;
             }
-            return context.getRuntime().getNil();
+            return runtime.getNil();
         } else {
             IRubyObject tmp = sub.checkStringType();
-            if (tmp.isNil()) throw context.getRuntime().newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
             pos = strRindex((RubyString) tmp, pos);
-            if (pos >= 0) return RubyFixnum.newFixnum(context.getRuntime(), pos);
+            if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         }
 
-        return context.getRuntime().getNil();
+        return runtime.getNil();
     }
 
     private int strRindex(RubyString sub, int pos) {
