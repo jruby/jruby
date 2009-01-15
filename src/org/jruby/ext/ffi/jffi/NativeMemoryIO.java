@@ -80,8 +80,9 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return IO.getAddress(address + offset);
     }
 
-    public final MemoryIO getMemoryIO(long offset) {
-        return new NativeMemoryIO(IO.getAddress(address + offset));
+    public final DirectMemoryIO getMemoryIO(long offset) {
+        final long ptr = IO.getAddress(address + offset);
+        return ptr != 0 ? new NativeMemoryIO(ptr) : null;
     }
 
     public final void putByte(long offset, byte value) {

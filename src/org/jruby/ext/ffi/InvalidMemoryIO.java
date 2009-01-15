@@ -54,7 +54,7 @@ public abstract class InvalidMemoryIO implements MemoryIO {
         throw ex();
     }
 
-    public final MemoryIO getMemoryIO(long offset) {
+    public final DirectMemoryIO getMemoryIO(long offset) {
         throw ex();
     }
 

@@ -89,7 +89,7 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
                 ? getInt(offset) : getLong(offset);
     }
 
-    public final MemoryIO getMemoryIO(long offset) {
+    public final DirectMemoryIO getMemoryIO(long offset) {
         Pointer p = ptr.getPointer(offset);
         return p != null ? new NativeMemoryIO(p) : null;
     }

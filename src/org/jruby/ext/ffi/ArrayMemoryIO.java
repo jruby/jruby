@@ -68,7 +68,7 @@ public final class ArrayMemoryIO implements MemoryIO {
         return offset == 0 ? this : new ArrayMemoryIO(array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
     }
 
-    public final MemoryIO getMemoryIO(long offset) {
+    public final DirectMemoryIO getMemoryIO(long offset) {
         return factory.wrapDirectMemory(getAddress(offset));
     }
 

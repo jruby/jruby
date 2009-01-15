@@ -136,10 +136,10 @@ public interface MemoryIO {
      * wraps it in an abstract memory accessor.
      * 
      * @param offset The offset within the memory area to read the value.
-     * @return A <tt>MemoryIO</tt> accessor that can be used to access the memory
+     * @return A <tt>DirectMemoryIO</tt> accessor that can be used to access the memory
      * pointed to by the address.
      */
-    public MemoryIO getMemoryIO(long offset);
+    public DirectMemoryIO getMemoryIO(long offset);
     
     /**
      * Writes an 8 bit integer value to the memory area at the specified offset.
