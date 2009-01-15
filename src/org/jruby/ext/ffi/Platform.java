@@ -220,14 +220,14 @@ public class Platform {
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
         RubyModule module = ffi.defineModuleUnder("Platform");
         Platform platform = Platform.getPlatform();
-        OS os = Platform.getPlatform().getOS();
+        OS os = platform.getOS();
         module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
         module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
         module.defineConstant("OS", runtime.newString(OS.toString()));
         module.defineConstant("ARCH", runtime.newString(platform.getCPU().toString()));
         module.defineConstant("NAME", runtime.newString(platform.getName()));
         module.defineConstant("IS_WINDOWS", runtime.newBoolean(os == OS.WINDOWS));
-        module.defineConstant("IS_BSD", runtime.newBoolean(Platform.getPlatform().isBSD()));
+        module.defineConstant("IS_BSD", runtime.newBoolean(platform.isBSD()));
         module.defineConstant("IS_FREEBSD", runtime.newBoolean(os == OS.FREEBSD));
         module.defineConstant("IS_OPENBSD", runtime.newBoolean(os == OS.OPENBSD));
         module.defineConstant("IS_SOLARIS", runtime.newBoolean(os == OS.SOLARIS));
