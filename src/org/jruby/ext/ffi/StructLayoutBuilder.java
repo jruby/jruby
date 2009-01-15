@@ -429,6 +429,23 @@ public final class StructLayoutBuilder extends RubyObject {
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
             return ((AbstractMemory) ptr).getPointer(runtime, getOffset(ptr));
         }
+
+        @Override
+        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
+            MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
+            IRubyObject old = cache.get(this);
+            if (old != null) {
+                MemoryIO oldMemory = ((AbstractMemory) old).getMemoryIO();
+                if ((memory != null && memory.equals(oldMemory)) || (memory == null && oldMemory.isNull())) {
+                    return old;
+                }
+            }
+            Pointer retval = new BasePointer(runtime,
+                    memory != null ? (DirectMemoryIO) memory : new NullMemoryIO(runtime));
+            cache.put(this, retval);
+            return retval;
+        }
+
         static StructLayout.Member create(long offset) { return new PointerMember(offset); }
     }
     static final class Float32Member extends StructLayout.Member {

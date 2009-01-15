@@ -256,6 +256,17 @@ public final class StructLayout extends RubyObject {
         final long getOffset(IRubyObject ptr) {
             return offset;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof Member && ((Member) obj).offset == offset;
+        }
+
+        @Override
+        public int hashCode() {
+            return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32));
+        }
+
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          * 
