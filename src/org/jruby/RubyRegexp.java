@@ -1285,7 +1285,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             frame.setBackRef(match);
         } else {
             match = (RubyMatchData)backref;
-            if (runtime.getSafeLevel() >= 3) match.setTaint(true);
+            match.setTaint(runtime.getSafeLevel() >= 3);
         }
 
         match.regs = matcher.getRegion(); // lazy, null when no groups defined
