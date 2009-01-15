@@ -183,8 +183,4 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public final void setMemory(long offset, long size, byte value) {
         IO.setMemory(address + offset, size, value);
     }
-
-    public void clear() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }

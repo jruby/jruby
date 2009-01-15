@@ -361,9 +361,4 @@ public interface MemoryIO {
      * @param value The value to set each byte to.
      */
     public void setMemory(long offset, long size, byte value);
-
-    /**
-     * Clears the contents of the memory area
-     */
-    public void clear();
 }

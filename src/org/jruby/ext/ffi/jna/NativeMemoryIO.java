@@ -214,9 +214,6 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         ptr.setMemory(offset, size, value);
     }
 
-    public void clear() {
-    }
-
     public NativeMemoryIO slice(long offset) {
         return offset == 0 ? this : new NativeMemoryIO(ptr.share(offset));
     }
