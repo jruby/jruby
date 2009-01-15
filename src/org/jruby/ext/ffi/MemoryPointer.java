@@ -50,7 +50,11 @@ public class MemoryPointer extends BasePointer {
         MemoryPointer ptr = new MemoryPointer(context.getRuntime(), recv, io, total);
         ptr.fastSetInstanceVariable("@type_size", sizeArg instanceof RubyFixnum ? sizeArg : context.getRuntime().newFixnum(size));
         if (block.isGiven()) {
-            return block.yield(context, ptr);
+            try {
+                return block.yield(context, ptr);
+            } finally {
+                io.free();
+            }
         } else {
             return ptr;
         }
