@@ -3,6 +3,7 @@ package org.jruby.ext.ffi.jffi;
 
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
+import org.jruby.ext.ffi.Platform;
 
 class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     protected static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
@@ -62,7 +63,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final long getNativeLong(long offset) {
-        return com.kenai.jffi.Platform.getPlatform().longSize() == 32
+        return Platform.getPlatform().longSize() == 32
                 ? IO.getInt(address + offset)
                 : IO.getLong(address + offset);
     }
@@ -100,18 +101,14 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final void putNativeLong(long offset, long value) {
-        if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
+        if (Platform.getPlatform().longSize() == 32) {
             IO.putInt(address + offset, (int) value);
         } else {
             IO.putLong(address + offset, value);
         }
     }
     public final void putAddress(long offset, long value) {
-        if (com.kenai.jffi.Platform.getPlatform().addressSize() == 32) {
-            IO.putInt(address + offset, (int) value);
-        } else {
-            IO.putLong(address + offset, value);
-        }
+        IO.putAddress(address + offset, value);
     }
     public final void putFloat(long offset, float value) {
         IO.putFloat(address + offset, value);
@@ -174,7 +171,9 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final int indexOf(long offset, byte value) {
-        return (int) IO.indexOf(address, value);
+        return value == 0
+                ? (int) IO.getStringLength(address + offset)
+                : (int) IO.indexOf(address + offset, value);
     }
 
     public final int indexOf(long offset, byte value, int maxlen) {
