@@ -33,6 +33,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -68,13 +69,20 @@ abstract public class AbstractMemory extends RubyObject {
 
         return result;
     }
+    
     protected static final int calculateSize(ThreadContext context, IRubyObject sizeArg) {
         if (sizeArg instanceof RubyFixnum) {
-            return RubyFixnum.fix2int(sizeArg);
+            return (int) ((RubyFixnum) sizeArg).getLongValue();
+
         } else if (sizeArg instanceof RubySymbol) {
-            return RubyFixnum.fix2int(FFIProvider.getModule(context.getRuntime()).callMethod(context, "type_size", sizeArg));
+            return TypeSizeMapper.getTypeSize(context, sizeArg);
+
+        } else if (sizeArg instanceof RubyClass && Struct.isStruct(context.getRuntime(), (RubyClass) sizeArg)) {
+            return Struct.getStructSize(sizeArg);
+
         } else if (sizeArg.respondsTo("size")) {
-            return RubyFixnum.fix2int(sizeArg.callMethod(context, "size"));
+            return (int) RubyFixnum.num2long(sizeArg.callMethod(context, "size"));
+
         } else {
             throw context.getRuntime().newArgumentError("Invalid size argument");
         }
