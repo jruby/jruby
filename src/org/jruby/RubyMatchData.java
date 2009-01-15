@@ -89,7 +89,7 @@ public class RubyMatchData extends RubyObject {
         super(runtime, metaClass);
     }
 
-    public final static int MATCH_BUSY = USER2_F;
+    private static final int MATCH_BUSY = USER2_F;
 
     // rb_match_busy
     public final void use() {

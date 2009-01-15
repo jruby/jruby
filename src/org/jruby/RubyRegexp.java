@@ -1269,7 +1269,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return -1;
     }
 
-    final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
+    private RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
         RubyMatchData match = updateBackRef(context, str, frame, matcher, pattern);
         match.regexp = this;
         match.infectBy(this);

@@ -1186,8 +1186,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             public void branch(BodyCompiler context) {
                 method.visitTypeInsn(CHECKCAST, p(RubyMatchData.class));
-                method.dup();
-                method.invokevirtual(p(RubyMatchData.class), "use", sig(void.class));
                 method.pushInt(number);
                 method.invokevirtual(p(RubyMatchData.class), "group", sig(IRubyObject.class, params(int.class)));
                 method.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
