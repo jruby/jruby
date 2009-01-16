@@ -2864,6 +2864,32 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
+    private int strRindex19(RubyString sub, int pos) {
+        Encoding enc = checkEncoding(sub);
+        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+        int len = strLength();
+        int slen = sub.strLength();
+
+        if (len < slen) return -1;
+        if (len - pos < slen) pos = len - slen;
+        if (len == 0) return pos;
+
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+
+        byte[]sbytes = sub.value.bytes;
+        int sp = sub.value.begin; 
+
+        while (true) {
+            int s = singleByteOptimizable() ? p + pos : StringSupport.nth(enc, bytes, p, end, pos);
+            if (s == -1) return -1;
+            if (ByteList.memcmp(bytes, s, sbytes, sp, slen) == 0) return pos;
+            if (pos == 0) return -1;
+            pos--;
+        }
+    }
+
     @Deprecated
     public final IRubyObject substr(int beg, int len) {
         return substr(getRuntime(), beg, len);
