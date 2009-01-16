@@ -260,10 +260,30 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return RubyEncoding.areCompatible(enc1, scanForCodeRange(), enc2, other.scanForCodeRange());
     }
 
+    final Encoding isCompatibleWith(EncodingCapable other) {
+        if (other instanceof RubyString) return checkEncoding((RubyString)other);
+        Encoding enc1 = value.encoding;;
+        Encoding enc2 = other.getEncoding();
+
+        if (enc1 == enc2) return enc1;
+        if (value.realSize == 0) return enc2;
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+        if (enc2 instanceof USASCIIEncoding) return enc1;
+        if (scanForCodeRange() == CR_7BIT) return enc2;
+        return null;
+    }
+
     final Encoding checkEncoding(RubyString other) {
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + 
                                 value.encoding + " and " + other.value.encoding);
+        return enc;
+    }
+
+    final Encoding checkEncoding(EncodingCapable other) {
+        Encoding enc = isCompatibleWith(other);
+        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + 
+                                value.encoding + " and " + other.getEncoding());
         return enc;
     }
 
@@ -2659,33 +2679,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_index_m
      *
      */
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
-        return indexCommon(context, arg0, 0);
+        return indexCommon(context.getRuntime(), context, arg0, 0);
     }
 
-    /** rb_str_index_m
-     *
-     */
-    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-
+        Ruby runtime = context.getRuntime();
         if (pos < 0) {
             pos += value.realSize;
             if (pos < 0) {
                 if (arg0 instanceof RubyRegexp) {
-                    context.getPreviousFrame().setBackRef(context.getRuntime().getNil());
+                    context.getPreviousFrame().setBackRef(runtime.getNil());
                 }
-                return context.getRuntime().getNil();
+                return runtime.getNil();
             }
         }
-
-        return indexCommon(context, arg0, pos);
+        return indexCommon(runtime, context, arg0, pos);
     }
 
-    private IRubyObject indexCommon(ThreadContext context, IRubyObject sub, int pos) {
-        Ruby runtime = context.getRuntime();
+    private IRubyObject indexCommon(Ruby runtime, ThreadContext context, IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
 
@@ -2717,21 +2732,97 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         return pos == -1 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, pos);
     }
-    
+
     private int strIndex(RubyString sub, int offset) {
         ByteList byteList = value;
         if (offset < 0) {
             offset += byteList.realSize;
             if (offset < 0) return -1;
         }
-        
+
         ByteList other = sub.value;
         if (sizeIsSmaller(byteList, offset, other)) return -1;
         if (other.realSize == 0) return offset;
         return byteList.indexOf(other, offset);
     }
+
     private static boolean sizeIsSmaller(ByteList byteList, int offset, ByteList other) {
         return byteList.realSize - offset < other.realSize;
+    }
+
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject index19(ThreadContext context, IRubyObject arg0) {
+        return indexCommon19(context.getRuntime(), context, arg0, 0);
+    }
+    
+    @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject index19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int pos = RubyNumeric.num2int(arg1);
+        Ruby runtime = context.getRuntime();
+        if (pos < 0) {
+            pos += strLength();
+            if (pos < 0) {
+                if (arg0 instanceof RubyRegexp) context.getPreviousFrame().setBackRef(runtime.getNil());
+                return runtime.getNil();
+            }
+        }
+        return indexCommon19(runtime, context, arg0, pos);
+    }
+
+    private IRubyObject indexCommon19(Ruby runtime, ThreadContext context, IRubyObject sub, int pos) {
+        if (sub instanceof RubyRegexp) {
+            RubyRegexp regSub = (RubyRegexp) sub;
+            pos = singleByteOptimizable() ? value.begin + pos : 
+                    StringSupport.nth(checkEncoding(regSub), 
+                            value.bytes,
+                            value.begin,
+                            value.begin + value.realSize,
+                            pos);
+            pos = regSub.adjustStartPos19(this, pos, false);
+            pos = regSub.search19(context, this, pos, false);
+            pos = subLength(pos);
+        } else if (sub instanceof RubyString) {
+            pos = strIndex19((RubyString) sub, pos);
+            pos = subLength(pos);
+        } else {
+            IRubyObject tmp = sub.checkStringType();
+            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            pos = strIndex19((RubyString) tmp, pos);
+            pos = subLength(pos);
+        }
+
+        return pos == -1 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, pos);
+    }
+
+    private int strIndex19(RubyString sub, int offset) {
+        Encoding enc = checkEncoding(sub);
+        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
+        int len = strLength(enc);
+        int slen = sub.strLength(enc);
+        if (offset < 0) {
+            offset += len;
+            if (offset < 0) return -1;
+        }
+
+        if (len - offset < slen) return -1;
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+        if (offset != 0) {
+            offset = singleByteOptimizable() ? p + offset : StringSupport.offset(enc, bytes, p, end, offset);
+            p += offset;
+        }
+        if (slen == 0) return offset;
+
+        while (true) {
+            int pos = value.indexOf(sub.value, p - value.begin);
+            if (pos < 0) return pos;
+            int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
+            if (t == p + pos) return pos + offset;;
+            if ((len -= t - p) <= 0) return -1;
+            offset += t - p;
+            p = t;
+        }
     }
 
     /**
@@ -2831,37 +2922,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.realSize - pos < subLength) pos = value.realSize - subLength;
 
         return value.lastIndexOf(sub.value, pos);
-    }
-
-    private int strIndex19(RubyString sub, int offset) {
-        Encoding enc = checkEncoding(sub);
-        if (sub.scanForCodeRange() == CR_BROKEN) return -1;
-        int len = strLength(enc);
-        int slen = sub.strLength(enc);
-        if (offset < 0) {
-            offset += len;
-            if (offset < 0) return -1;
-        }
-        
-        if (len - offset < slen) return -1;
-        byte[]bytes = value.bytes;
-        int p = value.begin;
-        int end = p + value.realSize;
-        if (offset != 0) {
-            offset = singleByteOptimizable() ? p + offset : StringSupport.offset(enc, bytes, p, end, offset);
-            p += offset;
-        }
-        if (slen == 0) return offset;
-
-        while (true) {
-            int pos = value.indexOf(sub.value, p - value.begin);
-            if (pos < 0) return pos;
-            int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
-            if (t == p + pos) return pos + offset;;
-            if ((len -= t - p) <= 0) return -1;
-            offset += t - p;
-            p = t;
-        }
     }
 
     private int strRindex19(RubyString sub, int pos) {
