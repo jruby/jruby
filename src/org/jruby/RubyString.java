@@ -2836,8 +2836,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private int strIndex19(RubyString sub, int offset) {
         Encoding enc = checkEncoding(sub);
         if (sub.scanForCodeRange() == CR_BROKEN) return -1;
-        int len = strLength();
-        int slen = sub.strLength();
+        int len = strLength(enc);
+        int slen = sub.strLength(enc);
         if (offset < 0) {
             offset += len;
             if (offset < 0) return -1;
