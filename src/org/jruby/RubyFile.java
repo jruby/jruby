@@ -453,8 +453,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         return this;
     }
-    
-    private void sysopenInternal(String path, ModeFlags modes, int perm) throws InvalidValueException {
+
+    protected void sysopenInternal(String path, ModeFlags modes, int perm) throws InvalidValueException {
         openFile = new OpenFile();
         
         openFile.setPath(path);
@@ -466,7 +466,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         registerDescriptor(descriptor);
     }
     
-    private void openInternal(String path, String modeString) throws InvalidValueException {
+    protected void openInternal(String path, String modeString) throws InvalidValueException {
         openFile = new OpenFile();
 
         openFile.setMode(getIOModes(getRuntime(), modeString).getOpenFileFlags());

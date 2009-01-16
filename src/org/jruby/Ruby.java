@@ -1293,6 +1293,7 @@ public final class Ruby {
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.libraries.JRubySerializationLibrary");
         addLazyBuiltin("ffi.so", "ffi", "org.jruby.ext.ffi.Factory$Service");
+        addLazyBuiltin("tempfile.rb", "tempfile", "org.jruby.libraries.TempfileLibrary");
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.libraries.NetProtocolBufferedIOLibrary");
         }
@@ -1311,7 +1312,7 @@ public final class Ruby {
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }
-        
+
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
         if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
