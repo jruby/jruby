@@ -93,6 +93,8 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.string.JavaCrypt;
 
+import com.sun.corba.se.impl.ior.ByteBuffer;
+
 /**
  * Implementation of Ruby String class
  * 
@@ -2846,7 +2848,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
-        return rindexCommon(context, arg0, value.realSize);
+        return rindexCommon(context.getRuntime(), context, arg0, value.realSize);
     }
 
     /** rb_str_rindex_m
@@ -2855,23 +2857,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-
+        Ruby runtime = context.getRuntime();
         if (pos < 0) {
             pos += value.realSize;
             if (pos < 0) {
-                if (arg0 instanceof RubyRegexp) { 
-                    context.getPreviousFrame().setBackRef(context.getRuntime().getNil());
-                }
-                return context.getRuntime().getNil();
+                if (arg0 instanceof RubyRegexp) context.getPreviousFrame().setBackRef(runtime.getNil());
+                return runtime.getNil();
             }
         }            
         if (pos > value.realSize) pos = value.realSize;
-
-        return rindexCommon(context, arg0, pos);
+        return rindexCommon(runtime, context, arg0, pos);
     }
 
-    private IRubyObject rindexCommon(ThreadContext context, final IRubyObject sub, int pos) {
-        Ruby runtime = context.getRuntime();
+    private IRubyObject rindexCommon(Ruby runtime, ThreadContext context, final IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
             if (regSub.length() > 0) {
