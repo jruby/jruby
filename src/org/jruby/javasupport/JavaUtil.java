@@ -63,7 +63,6 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
-import org.jruby.javasupport.proxy.JavaProxyInvocationHandler;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -986,9 +985,25 @@ public class JavaUtil {
         } else if (target == Object.class) {
             // for Object, default to natural wrapper type
             if (numeric instanceof RubyFixnum) {
-                return Long.valueOf(numeric.getLongValue());
+                long value = numeric.getLongValue();
+                if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+                    return Byte.valueOf((byte)value);
+                } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+                    return Short.valueOf((short)value);
+                } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+                    return Integer.valueOf((int)value);
+                } 
+
+                return Long.valueOf(value);
             } else if (numeric instanceof RubyFloat) {
-                return Double.valueOf(numeric.getDoubleValue());
+                double value = numeric.getDoubleValue();
+                if (value == 0.0 || value >= Float.MIN_VALUE && value <= Float.MAX_VALUE || 
+                        value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE ||
+                        Double.isNaN(value) || value == Double.POSITIVE_INFINITY || value == Double.NEGATIVE_INFINITY) {
+                    return Float.valueOf((float)value);
+                } 
+
+                return Double.valueOf(value);
             } else if (numeric instanceof RubyBignum) {
                 return ((RubyBignum)numeric).getValue();
             }

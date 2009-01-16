@@ -123,10 +123,43 @@ describe "Java String and primitive-typed methods" do
 end
 
 describe "Java Object-typed methods" do
-  it "coerce primitive Ruby types to their default boxed Java type" do
+  it "should coerce primitive Ruby types to the narrowest possible boxed Java type" do
     CoreTypeMethods.getObjectType("foo").should == "class java.lang.String"
-    CoreTypeMethods.getObjectType(1).should == "class java.lang.Long"
-    CoreTypeMethods.getObjectType(1.0).should == "class java.lang.Double"
+
+    CoreTypeMethods.getObjectType(0).should == "class java.lang.Byte"
+    CoreTypeMethods.getObjectType(java::lang::Byte::MAX_VALUE).should == "class java.lang.Byte"
+    CoreTypeMethods.getObjectType(java::lang::Byte::MIN_VALUE).should == "class java.lang.Byte"
+    CoreTypeMethods.getObjectType(java::lang::Byte::MAX_VALUE + 1).should == "class java.lang.Short"
+    CoreTypeMethods.getObjectType(java::lang::Byte::MIN_VALUE - 1).should == "class java.lang.Short"
+
+    CoreTypeMethods.getObjectType(java::lang::Short::MAX_VALUE).should == "class java.lang.Short"
+    CoreTypeMethods.getObjectType(java::lang::Short::MIN_VALUE).should == "class java.lang.Short"
+    CoreTypeMethods.getObjectType(java::lang::Short::MAX_VALUE + 1).should == "class java.lang.Integer"
+    CoreTypeMethods.getObjectType(java::lang::Short::MIN_VALUE - 1).should == "class java.lang.Integer"
+
+    CoreTypeMethods.getObjectType(java::lang::Integer::MAX_VALUE).should == "class java.lang.Integer"
+    CoreTypeMethods.getObjectType(java::lang::Integer::MIN_VALUE).should == "class java.lang.Integer"
+    CoreTypeMethods.getObjectType(java::lang::Integer::MAX_VALUE + 1).should == "class java.lang.Long"
+    CoreTypeMethods.getObjectType(java::lang::Integer::MIN_VALUE - 1).should == "class java.lang.Long"
+
+    CoreTypeMethods.getObjectType(java::lang::Long::MAX_VALUE).should == "class java.lang.Long"
+    CoreTypeMethods.getObjectType(java::lang::Long::MIN_VALUE).should == "class java.lang.Long"
+    CoreTypeMethods.getObjectType(java::lang::Long::MAX_VALUE + 1).should == "class java.math.BigInteger"
+    CoreTypeMethods.getObjectType(java::lang::Long::MIN_VALUE - 1).should == "class java.math.BigInteger"
+
+    CoreTypeMethods.getObjectType(java::lang::Float::MAX_VALUE).should == "class java.lang.Float"
+    CoreTypeMethods.getObjectType(java::lang::Float::MIN_VALUE).should == "class java.lang.Float"
+    CoreTypeMethods.getObjectType(-java::lang::Float::MAX_VALUE).should == "class java.lang.Float"
+    CoreTypeMethods.getObjectType(-java::lang::Float::MIN_VALUE).should == "class java.lang.Float"
+
+    CoreTypeMethods.getObjectType(java::lang::Float::NaN).should == "class java.lang.Float"
+    CoreTypeMethods.getObjectType(0.0).should == "class java.lang.Float"
+
+    CoreTypeMethods.getObjectType(java::lang::Double::MAX_VALUE).should == "class java.lang.Double"
+    CoreTypeMethods.getObjectType(java::lang::Double::MIN_VALUE).should == "class java.lang.Double"
+    CoreTypeMethods.getObjectType(-java::lang::Double::MAX_VALUE).should == "class java.lang.Double"
+    CoreTypeMethods.getObjectType(-java::lang::Double::MIN_VALUE).should == "class java.lang.Double"
+
     CoreTypeMethods.getObjectType(true).should == "class java.lang.Boolean"
     CoreTypeMethods.getObjectType(1 << 128).should == "class java.math.BigInteger"
   end
