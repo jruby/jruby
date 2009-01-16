@@ -78,16 +78,20 @@ public class RubyTempfile extends RubyFile {
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
-        String basename = args[0].convertToString().toString();
+        String basename = args[0].toString();
         String tmpdir = (args.length >= 2 && runtime.getSafeLevel() <= 0 && !args[1].isTaint()) ?
             args[1].convertToString().toString() : DEFAULT_TMP_DIR;
+
+        // Mild incompatibility - Java tempfile requires minimum of three for prefix.
+        for (int i = 0; i < 3 - basename.length(); i++) basename = basename + "_";
+
         try {
             tmpFile = File.createTempFile(basename, null, new File(tmpdir));
             path = tmpFile.getPath();
             tmpFile.deleteOnExit();
             initializeOpen();
         } catch (IOException e) {
-            runtime.newIOErrorFromException(e);
+            throw runtime.newIOErrorFromException(e);
         }
 
         return this;
@@ -161,7 +165,7 @@ public class RubyTempfile extends RubyFile {
             try {
                 block.yield(context, tempfile);
             } finally {
-                tempfile.close();
+                if (!tempfile.isClosed()) tempfile.close();
             }
             return runtime.getNil();
         }
