@@ -26,9 +26,6 @@ puts "#{COUNT} Tempfile.new(file);write;close"
         tf.write "hehheheheheheheehehe\n"
         j = j + 1
       end
-      tf.flush
-      puts tf.path
-      gets
       tf.close
       i = i + 1
     end
