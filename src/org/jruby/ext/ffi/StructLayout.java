@@ -190,12 +190,23 @@ public final class StructLayout extends RubyObject {
     /**
      * Gets the total size of the struct.
      * 
-     * @return The size of the struct.
+     * @return The size of the struct in bytes.
      */
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
         return RubyFixnum.newFixnum(context.getRuntime(), size);
     }
+
+    /**
+     * Gets the minimum alignment of the struct.
+     *
+     * @return The minimum alignment of the struct in bytes.
+     */
+    @JRubyMethod(name = "alignment")
+    public IRubyObject aligment(ThreadContext context) {
+        return RubyFixnum.newFixnum(context.getRuntime(), getMinimumAlignment());
+    }
+
     /**
      * Returns a {@link Member} descriptor for a struct field.
      * 

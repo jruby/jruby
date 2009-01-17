@@ -68,7 +68,10 @@ public final class StructLayoutBuilder extends RubyObject {
     static final int DOUBLE_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
     static final int FLOAT_ALIGN = isSparc() ? 64 : Float.SIZE;
     private final Map<IRubyObject, StructLayout.Member> fields = new LinkedHashMap<IRubyObject, StructLayout.Member>();
-    private int size = 0, maxAlign = 1;
+    /** The current size of the layout in bytes */
+    private int size = 0;
+    /** The current minimum alignment of the layout in bytes */
+    private int minAlign = 1;
     
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -96,7 +99,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     @JRubyMethod(name = "build")
     public StructLayout build(ThreadContext context) {
-        return new StructLayout(context.getRuntime(), fields, size, maxAlign);
+        return new StructLayout(context.getRuntime(), fields, size, minAlign);
     }
     @JRubyMethod(name = "size")
     public IRubyObject get_size(ThreadContext context) {
@@ -110,7 +113,8 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         return context.getRuntime().newFixnum(size);
     }
-    private static int alignMember(int offset, int alignBits) {
+    
+    private static int alignMemberBits(int offset, int alignBits) {
         int alignBytes = alignBits >> 3;
         int mask = alignBytes - 1;
         int off = offset;
@@ -193,7 +197,7 @@ public final class StructLayoutBuilder extends RubyObject {
         fields.put(createStringKey(runtime, name), field);
         fields.put(createSymbolKey(runtime, name), field);
         this.size = (int) field.offset + size;
-        this.maxAlign = Math.max(this.maxAlign, align);
+        this.minAlign = Math.max(this.minAlign, align);
         return this;
     }
     @JRubyMethod(name = "add_field", required = 2, optional = 1)
@@ -202,28 +206,24 @@ public final class StructLayoutBuilder extends RubyObject {
         IRubyObject name = args[0];
         Object type;
         int offset = args.length > 2 && !args[2].isNil() ? Util.int32Value(args[2]) : -1;
-        int align = 8, sizeBits = 8;
+        int alignBits = 8, sizeBits = 8;
         if (args[1] instanceof CallbackInfo) {
             type = (CallbackInfo) args[1];
-            align = ADDRESS_ALIGN; sizeBits = ADDRESS_SIZE;
-        } else if (args[1] instanceof RubyClass && Struct.isStruct(runtime, (RubyClass) args[1])) {
-            type = args[1];
-            align = Struct.getStructLayout(runtime, args[1]).getMinimumAlignment();
-            sizeBits = Struct.getStructSize(runtime, args[1]);
+            alignBits = ADDRESS_ALIGN; sizeBits = ADDRESS_SIZE;
         } else {
             NativeType t = NativeType.valueOf(Util.int32Value(args[1]));
             type = t;
-            align = getAlignmentBits(t);
+            alignBits = getAlignmentBits(t);
             sizeBits = getSizeBits(t);
         }
         if (offset < 0) {
-            offset = alignMember(this.size, align);
+            offset = alignMemberBits(this.size, alignBits);
         }
         StructLayout.Member field = createMember(context.getRuntime(), type, offset);
         if (field == null) {
             throw runtime.newArgumentError("Unknown field type: " + type);
         }
-        return storeField(runtime, name, field, align, sizeBits / 8);
+        return storeField(runtime, name, field, alignBits / 8, sizeBits / 8);
     }
 
     @JRubyMethod(name = "add_struct", required = 2, optional = 1)
@@ -232,12 +232,12 @@ public final class StructLayoutBuilder extends RubyObject {
         IRubyObject name = args[0];
         int offset = args.length > 2 && !args[2].isNil() ? Util.int32Value(args[2]) : -1;
         final StructLayout layout = Struct.getStructLayout(runtime, args[1]);
-        final int align = layout.getMinimumAlignment();
+        final int alignBits = layout.getMinimumAlignment() * 8;
         if (offset < 0) {
-            offset = alignMember(this.size, align);
+            offset = alignMemberBits(this.size, alignBits);
         }
         StructLayout.Member field = StructMember.create((RubyClass) args[1], offset);
-        return storeField(runtime, name, field, align, layout.getSize());
+        return storeField(runtime, name, field, alignBits / 8, layout.getSize());
     }
     @JRubyMethod(name = "add_array", required = 3, optional = 1)
     public IRubyObject add_array(ThreadContext context, IRubyObject[] args) {
@@ -246,11 +246,11 @@ public final class StructLayoutBuilder extends RubyObject {
         NativeType type = NativeType.valueOf(Util.int32Value(args[1]));
         int length = Util.int32Value(args[2]);
         int offset = args.length > 3 && !args[3].isNil() ? Util.int32Value(args[3]) : -1;
-        final int align = getAlignmentBits(type);
+        final int alignBits = getAlignmentBits(type);
         final int sizeBits = getSizeBits(type);
         
         if (offset < 0) {
-            offset = alignMember(this.size, align);
+            offset = alignMemberBits(this.size, alignBits);
         }
         StructLayout.ArrayMemberIO io = getArrayMemberIO(type);
         if (io == null) {
@@ -258,7 +258,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         StructLayout.Member field = new ArrayMember(offset, io, sizeBits, length);
 
-        return storeField(runtime, name, field, align, ((sizeBits / 8) * length));
+        return storeField(runtime, name, field, alignBits / 8, ((sizeBits / 8) * length));
     }
     @JRubyMethod(name = "add_char_array", required = 2, optional = 1)
     public IRubyObject add_char_array(ThreadContext context, IRubyObject[] args) {
@@ -266,10 +266,11 @@ public final class StructLayoutBuilder extends RubyObject {
         IRubyObject name = args[0];
         int strlen = Util.int32Value(args[1]);
         long offset = args.length > 2 ? Util.int64Value(args[2]) : -1;
+        int alignBits = 8;
         if (offset < 0) {
-            offset = alignMember(this.size, 8);
+            offset = alignMemberBits(this.size, alignBits);
         }
-        return storeField(runtime, name, CharArrayMember.create(offset, strlen), 8, strlen);
+        return storeField(runtime, name, CharArrayMember.create(offset, strlen), alignBits / 8, strlen);
     }
     
     StructLayout.Member createMember(Ruby runtime, Object type, long offset) {
