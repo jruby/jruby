@@ -209,7 +209,7 @@ public final class StructLayoutBuilder extends RubyObject {
         } else if (args[1] instanceof RubyClass && Struct.isStruct(runtime, (RubyClass) args[1])) {
             type = args[1];
             align = Struct.getStructLayout(runtime, args[1]).getMinimumAlignment();
-            sizeBits = Struct.getStructSize(args[1]);
+            sizeBits = Struct.getStructSize(runtime, args[1]);
         } else {
             NativeType t = NativeType.valueOf(Util.int32Value(args[1]));
             type = t;
@@ -231,12 +231,13 @@ public final class StructLayoutBuilder extends RubyObject {
         final Ruby runtime = context.getRuntime();
         IRubyObject name = args[0];
         int offset = args.length > 2 && !args[2].isNil() ? Util.int32Value(args[2]) : -1;
-        final int align = Struct.getStructLayout(runtime, args[1]).getMinimumAlignment();
+        final StructLayout layout = Struct.getStructLayout(runtime, args[1]);
+        final int align = layout.getMinimumAlignment();
         if (offset < 0) {
             offset = alignMember(this.size, align);
         }
         StructLayout.Member field = StructMember.create((RubyClass) args[1], offset);
-        return storeField(runtime, name, field, align, Struct.getStructSize(args[1]));
+        return storeField(runtime, name, field, align, layout.getSize());
     }
     @JRubyMethod(name = "add_array", required = 3, optional = 1)
     public IRubyObject add_array(ThreadContext context, IRubyObject[] args) {

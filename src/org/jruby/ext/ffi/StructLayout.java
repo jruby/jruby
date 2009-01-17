@@ -215,7 +215,7 @@ public final class StructLayout extends RubyObject {
     }
 
     public final int getSize() {
-        return align;
+        return size;
     }
     /**
      * A struct member.  This defines the offset within a chunk of memory to use

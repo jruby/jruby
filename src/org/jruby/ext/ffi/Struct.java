@@ -6,10 +6,10 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -75,14 +75,15 @@ public class Struct extends RubyObject {
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
         return klass.isKindOfModule(FFIProvider.getModule(runtime).getClass("Struct"));
     }
-    static final int getStructSize(IRubyObject structClass) {
-        return RubyNumeric.fix2int(((RubyClass) structClass).fastGetClassVar("@size"));
+    static final int getStructSize(Ruby runtime, IRubyObject structClass) {
+        return getStructLayout(runtime, structClass).getSize();
     }
     static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
-        RubyClass klass = (RubyClass) structClass;
-        return klass.fastIsClassVarDefined("@layout")
-                ? (StructLayout) klass.fastGetClassVar("@layout")
-                : new StructLayout(runtime);
+        try {
+            return (StructLayout) ((RubyClass) structClass).fastGetClassVar("@layout");
+        } catch (RaiseException ex) {
+            return new StructLayout(runtime);
+        }
     }
     
     private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {

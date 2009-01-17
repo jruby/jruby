@@ -78,7 +78,7 @@ abstract public class AbstractMemory extends RubyObject {
             return TypeSizeMapper.getTypeSize(context, sizeArg);
 
         } else if (sizeArg instanceof RubyClass && Struct.isStruct(context.getRuntime(), (RubyClass) sizeArg)) {
-            return Struct.getStructSize(sizeArg);
+            return Struct.getStructSize(context.getRuntime(), sizeArg);
 
         } else if (sizeArg.respondsTo("size")) {
             return (int) RubyFixnum.num2long(sizeArg.callMethod(context, "size"));
