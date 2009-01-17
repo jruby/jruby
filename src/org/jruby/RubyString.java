@@ -2437,7 +2437,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 repl = objAsString(context, block.yield(context, subStr));
             } else {
                 tainted = hash.isTaint();
-                repl = objAsString(context, hash.fastARef(subStr)); 
+                repl = objAsString(context, hash.op_aref(context, subStr));
             }
 
             modifyCheck(bytes, size);
