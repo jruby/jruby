@@ -2436,7 +2436,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final int beg = matcher.getBegin();       
         final int end = matcher.getEnd();
 
-        Encoding enc = RubyEncoding.areCompatible(this, repl);
+        Encoding enc = isCompatibleWith(repl); 
         if (enc == null) enc = subBangVerifyEncoding(context, repl, beg, end);
 
         final int plen = end - beg;
