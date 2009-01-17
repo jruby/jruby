@@ -396,6 +396,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!enc.isAsciiCompatible()) {
             if (enc != pattern.getEncoding()) encodingMatchError(runtime, pattern, enc);
         }
+        // TODO: check for isKCodeDefault() somehow
 //        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
 //            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
 //        }
