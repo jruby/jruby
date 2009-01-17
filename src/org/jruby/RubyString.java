@@ -2031,7 +2031,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private IRubyObject inspectCommon(final boolean is1_9) {
+    final IRubyObject inspectCommon(final boolean is1_9) {
         Ruby runtime = getRuntime();
 
         byte bytes[] = value.bytes;

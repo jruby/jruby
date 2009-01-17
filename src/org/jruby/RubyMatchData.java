@@ -147,7 +147,8 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject inspect() {
         if (str == null) return anyToString();
 
-        RubyString result = getRuntime().newString();
+        Ruby runtime = getRuntime();
+        RubyString result = runtime.newString();
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
 
@@ -175,7 +176,8 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat("nil".getBytes());
             } else {
-                result.append(v.inspect());
+                RubyString str = (RubyString)v;
+                result.append(str.inspectCommon(runtime.is1_9()));
             }
         }
 
