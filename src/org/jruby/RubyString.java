@@ -2843,12 +2843,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_rindex_m
      *
      */
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
         return rindexCommon(context.getRuntime(), context, arg0, value.realSize);
     }
 
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         Ruby runtime = context.getRuntime();
@@ -2913,12 +2913,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.lastIndexOf(sub.value, pos);
     }
 
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject rindex19(ThreadContext context, IRubyObject arg0) {
         return rindexCommon19(context.getRuntime(), context, arg0, strLength());
     }
 
-    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject rindex19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
         Ruby runtime = context.getRuntime();
@@ -4559,9 +4559,37 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 sep,
                 makeShared19(runtime, pos + sep.value.realSize, value.realSize - pos - sep.value.realSize)});
     }
-    
+
     private IRubyObject partitionMismatch(Ruby runtime) {
-        return RubyArray.newArray(runtime, new IRubyObject[]{ this, newEmptyString(runtime), newEmptyString(runtime)});
+        return RubyArray.newArray(runtime, new IRubyObject[]{this, newEmptyString(runtime), newEmptyString(runtime)});
+    }
+    
+    @JRubyMethod(name = "rpartition", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rpartition(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        final int pos;
+        final RubyString sep;
+        if (arg instanceof RubyRegexp) {
+            RubyRegexp regex = (RubyRegexp)arg;
+            pos = regex.search19(context, this, value.realSize, true);
+            if (pos < 0) return rpartitionMismatch(runtime);
+            sep = (RubyString)RubyRegexp.nth_match(0, context.getCurrentFrame().getBackRef());
+        } else {
+            IRubyObject tmp = arg.checkStringType();
+            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
+            sep = (RubyString)tmp;
+            pos = strRindex19(sep, subLength(value.realSize));
+            if (pos < 0) return rpartitionMismatch(runtime);
+        }
+
+        return RubyArray.newArray(runtime, new IRubyObject[]{
+                substr19(runtime, 0, pos),
+                sep,
+                substr19(runtime, pos + sep.strLength(), value.realSize)});
+    }
+
+    private IRubyObject rpartitionMismatch(Ruby runtime) {
+        return RubyArray.newArray(runtime, new IRubyObject[]{newEmptyString(runtime), newEmptyString(runtime), this});
     }
     
     /** rb_str_chop / rb_str_chop_bang
