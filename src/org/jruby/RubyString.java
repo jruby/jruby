@@ -2427,7 +2427,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             byte[] bytes = value.bytes;
             int size = value.realSize;
-            RubyMatchData match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
+            RubyMatchData match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
+            match.regexp = regexp;
             final RubyString repl;
             final boolean tainted;
             IRubyObject subStr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
@@ -2454,7 +2455,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub(repl, this, matcher, runtime.getKCode().getEncoding());
-            RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
+            RubyMatchData match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
+            match.regexp = regexp;
             return subBangCommon19(context, pattern, matcher, repl, tained);
         } else {
             return frame.setBackRef(runtime.getNil());
