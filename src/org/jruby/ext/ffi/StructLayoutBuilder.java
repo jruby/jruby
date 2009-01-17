@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -96,6 +97,18 @@ public final class StructLayoutBuilder extends RubyObject {
     @JRubyMethod(name = "build")
     public StructLayout build(ThreadContext context) {
         return new StructLayout(context.getRuntime(), fields, size, maxAlign);
+    }
+    @JRubyMethod(name = "size")
+    public IRubyObject get_size(ThreadContext context) {
+        return context.getRuntime().newFixnum(size);
+    }
+    @JRubyMethod(name = "size=")
+    public IRubyObject set_size(ThreadContext context, IRubyObject sizeArg) {
+        int newSize = RubyNumeric.num2int(sizeArg);
+        if (newSize > size) {
+            size = newSize;
+        }
+        return context.getRuntime().newFixnum(size);
     }
     private static int alignMember(int offset, int alignBits) {
         int alignBytes = alignBits >> 3;

@@ -210,7 +210,11 @@ public final class StructLayout extends RubyObject {
         throw runtime.newArgumentError("Unknown field: " + name);
     }
 
-    int getMinimumAlignment() {
+    public final int getMinimumAlignment() {
+        return align;
+    }
+
+    public final int getSize() {
         return align;
     }
     /**

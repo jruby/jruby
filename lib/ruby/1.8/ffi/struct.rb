@@ -2,9 +2,8 @@ require 'ffi'
 
 module FFI
   class Struct
-    Buffer = FFI::Buffer
     def self.size
-      @size
+      @layout.size
     end
     def self.members
       @layout.members
@@ -82,8 +81,7 @@ module FFI
 
     def self.config(base, *fields)
       config = FFI::Config::CONFIG
-      @size = config["#{base}.sizeof"]
-    
+      
       builder = FFI::StructLayoutBuilder.new
     
       fields.each do |field|
@@ -99,10 +97,12 @@ module FFI
           builder.add_field(field.to_s, code, offset)
         end
       end
+      size = config["#{base}.sizeof"]
+      builder.size = size if size > builder.size
       cspec = builder.build
     
       @layout = cspec
-      @size = cspec.size if @size < cspec.size
+      @size = cspec.size
     
       return cspec
     end

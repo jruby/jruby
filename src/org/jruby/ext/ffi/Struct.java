@@ -87,9 +87,10 @@ public class Struct extends RubyObject {
     
     private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
         Ruby runtime = context.getRuntime();
-        return new Struct(runtime, (RubyClass) klass,
-                getStructLayout(runtime, klass), new Buffer(runtime, getStructSize(klass), flags));
+        StructLayout layout = getStructLayout(runtime, klass);
+        return new Struct(runtime, (RubyClass) klass, layout, new Buffer(runtime, layout.getSize(), flags));
     }
+
     /*
      * This variant of newStruct is called from StructLayoutBuilder
      */
@@ -97,16 +98,16 @@ public class Struct extends RubyObject {
         return new Struct(runtime, (RubyClass) klass, getStructLayout(runtime, klass), ptr);
     }
     @JRubyMethod(name = "new", meta = true)
-    public static Struct newInstance(ThreadContext context, IRubyObject self) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject self) {
         return allocateStruct(context, self, Buffer.IN | Buffer.OUT);
     }
     @JRubyMethod(name = "new", meta = true)
-    public static Struct newInstance(ThreadContext context, IRubyObject self, IRubyObject ptr) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject self, IRubyObject ptr) {
         return new Struct(context.getRuntime(), (RubyClass) self, getStructLayout(context.getRuntime(), self), ptr);
     }
     
     @JRubyMethod(name = "new", meta = true, rest = true)
-    public static Struct newInstance(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         StructLayout layout = null;
 
         if (args.length > 1) {
@@ -117,7 +118,7 @@ public class Struct extends RubyObject {
             layout = getStructLayout(context.getRuntime(), self);
         }
         IRubyObject ptr = args.length > 0 && !args[0].isNil()
-                ? args[0] : new Buffer(context.getRuntime(), getStructSize(self));
+                ? args[0] : new Buffer(context.getRuntime(), layout.getSize());
         return new Struct(context.getRuntime(), (RubyClass) self, layout, ptr);
     }
 
