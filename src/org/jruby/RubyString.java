@@ -2848,9 +2848,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return rindexCommon(context.getRuntime(), context, arg0, value.realSize);
     }
 
-    /** rb_str_rindex_m
-     *
-     */
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
@@ -2873,10 +2870,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 pos = regSub.adjustStartPos(this, pos, true);
                 pos = regSub.search(context, this, pos, true);
             }
-            if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         } else if (sub instanceof RubyString) {
             pos = strRindex((RubyString) sub, pos);
-            if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         } else if (sub instanceof RubyFixnum) {
             int c_int = RubyNumeric.fix2int(sub);
             if (c_int < 0x00 || c_int > 0xFF) {
@@ -2903,9 +2898,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject tmp = sub.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
             pos = strRindex((RubyString) tmp, pos);
-            if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         }
-
+        if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
         return runtime.getNil();
     }
 
@@ -2917,6 +2911,52 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.realSize - pos < subLength) pos = value.realSize - subLength;
 
         return value.lastIndexOf(sub.value, pos);
+    }
+
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    public IRubyObject rindex19(ThreadContext context, IRubyObject arg0) {
+        return rindexCommon19(context.getRuntime(), context, arg0, strLength());
+    }
+
+    @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF)
+    public IRubyObject rindex19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        int pos = RubyNumeric.num2int(arg1);
+        Ruby runtime = context.getRuntime();
+        int length = strLength();
+        if (pos < 0) {
+            pos += length;
+            if (pos < 0) {
+                if (arg0 instanceof RubyRegexp) context.getPreviousFrame().setBackRef(runtime.getNil());
+                return runtime.getNil();
+            }
+        }            
+        if (pos > length) pos = length;
+        return rindexCommon19(runtime, context, arg0, pos);
+    }
+
+    private IRubyObject rindexCommon19(Ruby runtime, ThreadContext context, final IRubyObject sub, int pos) {
+        if (sub instanceof RubyRegexp) {
+            RubyRegexp regSub = (RubyRegexp) sub;
+            pos = singleByteOptimizable() ? value.begin + pos :
+                    StringSupport.nth(value.encoding, 
+                            value.bytes,
+                            value.begin,
+                            value.begin + value.realSize,
+                            pos);
+            if (regSub.length() > 0) {
+                pos = regSub.adjustStartPos(this, pos, true);
+                pos = regSub.search(context, this, pos, true);
+                pos = subLength(pos);
+            }
+        } else if (sub instanceof RubyString) {
+            pos = strRindex19((RubyString) sub, pos);
+        } else {
+            IRubyObject tmp = sub.checkStringType();
+            if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
+            pos = strRindex19((RubyString) tmp, pos);
+        }
+        if (pos >= 0) return RubyFixnum.newFixnum(runtime, pos);
+        return runtime.getNil();
     }
 
     private int strRindex19(RubyString sub, int pos) {
@@ -2934,10 +2974,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int end = p + value.realSize;
 
         byte[]sbytes = sub.value.bytes;
-        int sp = sub.value.begin; 
+        int sp = sub.value.begin;
+        slen = sub.value.realSize;
 
+        boolean singlebyte = singleByteOptimizable();
         while (true) {
-            int s = singleByteOptimizable() ? p + pos : StringSupport.nth(enc, bytes, p, end, pos);
+            int s = singlebyte ? p + pos : StringSupport.nth(enc, bytes, p, end, pos);
             if (s == -1) return -1;
             if (ByteList.memcmp(bytes, s, sbytes, sp, slen) == 0) return pos;
             if (pos == 0) return -1;
