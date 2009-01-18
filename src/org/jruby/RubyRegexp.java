@@ -409,25 +409,25 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static enum ErrorMode {RAISE, PREPROCESS, DESC} 
 
-    private static int raisePreprocessError(Ruby runtime, String err, ErrorMode mode) {
+    private static int raisePreprocessError(Ruby runtime, ByteList str, String err, ErrorMode mode) {
         switch (mode) {
         case RAISE:
-            throw runtime.newArgumentError("REGEXP RAISE ERROR");
+            raiseRegexpError19(runtime, str, str.encoding, 0, err);
         case PREPROCESS:
-            throw runtime.newArgumentError("REGEXP PREPROCESS ERROR");
+            throw runtime.newArgumentError("regexp preprocess failed: " + err);
         case DESC:
             // silent ?
         }
         return 0;
     }
 
-    private static int readEscapedByte(Ruby runtime, byte[]to, int toP, byte[]bytes, int p, int end, ErrorMode mode) {
-        if (p == end || bytes[p++] == (byte)'\\') raisePreprocessError(runtime, "too short escaped multibyte character", mode);
+    private static int readEscapedByte(Ruby runtime, byte[]to, int toP, byte[]bytes, int p, int end, ByteList str, ErrorMode mode) {
+        if (p == end || bytes[p++] == (byte)'\\') raisePreprocessError(runtime, str, "too short escaped multibyte character", mode);
 
         boolean metaPrefix = false, ctrlPrefix = false;
         int code = 0;
         while (true) {
-            if (p == end) raisePreprocessError(runtime, "too short escape sequence", mode);
+            if (p == end) raisePreprocessError(runtime, str, "too short escape sequence", mode);
 
             switch (bytes[p++]) {
             case '\\': code = '\\'; break;
@@ -450,12 +450,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             case 'x': /* \xHH */
                 code = StringSupport.scanHex(bytes, p, end, end < p + 2 ? end - p : 2);
                 int len = StringSupport.hexLength(code);
-                if (len < 1) raisePreprocessError(runtime, "invalid hex escape", mode);
+                if (len < 1) raisePreprocessError(runtime, str, "invalid hex escape", mode);
                 p += len;
                 break;
 
             case 'M': /* \M-X, \M-\C-X, \M-\cX */
-                if (metaPrefix) raisePreprocessError(runtime, "duplicate meta escape", mode);
+                if (metaPrefix) raisePreprocessError(runtime, str, "duplicate meta escape", mode);
                 metaPrefix = true;
                 if (p + 1 < end && bytes[p++] == (byte)'-' && (bytes[p] & 0x80) == 0) {
                     if (bytes[p] == (byte)'\\') {
@@ -466,13 +466,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         break;
                     }
                 }
-                raisePreprocessError(runtime, "too short meta escape", mode);
+                raisePreprocessError(runtime, str, "too short meta escape", mode);
 
             case 'C': /* \C-X, \C-\M-X */
-                if (p == end || bytes[p++] != (byte)'-') raisePreprocessError(runtime, "too short control escape", mode);
+                if (p == end || bytes[p++] != (byte)'-') raisePreprocessError(runtime, str, "too short control escape", mode);
 
             case 'c': /* \cX, \c\M-X */
-                if (ctrlPrefix) raisePreprocessError(runtime, "duplicate control escape", mode);
+                if (ctrlPrefix) raisePreprocessError(runtime, str, "duplicate control escape", mode);
                 ctrlPrefix = true;
                 if (p < end && (bytes[p] & 0x80) == 0) {
                     if (bytes[p] == (byte)'\\') {
@@ -483,12 +483,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         break;
                     }
                 }
-                raisePreprocessError(runtime, "too short control escape", mode);
+                raisePreprocessError(runtime, str, "too short control escape", mode);
             default:
-                raisePreprocessError(runtime, "unexpected escape sequence", mode);
+                raisePreprocessError(runtime, str, "unexpected escape sequence", mode);
             } // switch
 
-            if (code < 0 || code > 0xff) raisePreprocessError(runtime, "invalid escape code", mode);
+            if (code < 0 || code > 0xff) raisePreprocessError(runtime, str, "invalid escape code", mode);
 
             if (ctrlPrefix) code &= 0x1f;
             if (metaPrefix) code |= 0x80;
@@ -498,17 +498,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } // while
     }
 
-    private static int unescapeEscapedNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ErrorMode mode) {
+    private static int unescapeEscapedNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         byte[]chBuf = new byte[enc.maxLength()];
         int chLen = 0;
 
-        p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, mode);
+        p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, str, mode);
         while (chLen < enc.maxLength() && StringSupport.preciseLength(enc, chBuf, 0, chLen) < -1) { // MBCLEN_NEEDMORE_P
-            p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, mode);
+            p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, str, mode);
         }
 
         int cl = StringSupport.preciseLength(enc, chBuf, 0, chLen);
-        if (cl == -1) raisePreprocessError(runtime, "invalid multibyte escape", mode); // MBCLEN_INVALID_P
+        if (cl == -1) raisePreprocessError(runtime, str, "invalid multibyte escape", mode); // MBCLEN_INVALID_P
 
         if (chLen > 1 || (chBuf[0] & 0x80) != 0) {
             to.append(chBuf, 0, chLen);
@@ -516,7 +516,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (encp[0] == null) {
                 encp[0] = enc;
             } else if (encp[0] != enc) {
-                raisePreprocessError(runtime, "escaped non ASCII character in UTF-8 regexp", mode);
+                raisePreprocessError(runtime, str, "escaped non ASCII character in UTF-8 regexp", mode);
             }
         } else {
             Sprintf.sprintf(runtime, to, "\\x%02X", chBuf[0] & 0xff);
@@ -524,15 +524,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return p;
     }
 
-    private static void checkUnicodeRange(Ruby runtime, int code, ErrorMode mode) {
+    private static void checkUnicodeRange(Ruby runtime, int code, ByteList str, ErrorMode mode) {
         // Unicode is can be only 21 bits long, int is enough
         if ((0xd800 <= code && code <= 0xdfff) /* Surrogates */ || 0x10ffff < code) {
-            raisePreprocessError(runtime, "invalid Unicode range", mode);
+            raisePreprocessError(runtime, str, "invalid Unicode range", mode);
         }
     }
 
-    private static void appendUtf8(Ruby runtime, ByteList to, int code, Encoding[]enc, ErrorMode mode) {
-        checkUnicodeRange(runtime, code, mode);
+    private static void appendUtf8(Ruby runtime, ByteList to, int code, Encoding[]enc, ByteList str, ErrorMode mode) {
+        checkUnicodeRange(runtime, code, str, mode);
 
         if (code < 0x80) {
             Sprintf.sprintf(runtime, to, "\\x%02X", code);
@@ -542,12 +542,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (enc[0] == null) {
                 enc[0] = UTF8Encoding.INSTANCE;
             } else if (!(enc[0] instanceof UTF8Encoding)) { // do not load the class if not used
-                raisePreprocessError(runtime, "UTF-8 character in non UTF-8 regexp", mode);
+                raisePreprocessError(runtime, str, "UTF-8 character in non UTF-8 regexp", mode);
             }
         }
     }
     
-    private static int unescapeUnicodeList(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ErrorMode mode) {
+    private static int unescapeUnicodeList(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ByteList str, ErrorMode mode) {
         while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
 
         boolean hasUnicode = false; 
@@ -555,46 +555,46 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int code = StringSupport.scanHex(bytes, p, end, end - p);
             int len = StringSupport.hexLength(code);
             if (len == 0) break;
-            if (len > 6) raisePreprocessError(runtime, "invalid Unicode range", mode);
+            if (len > 6) raisePreprocessError(runtime, str, "invalid Unicode range", mode);
             p += len;
-            appendUtf8(runtime, to, code, encp, mode);
+            appendUtf8(runtime, to, code, encp, str, mode);
             hasUnicode = true;
             while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
         }
 
-        if (!hasUnicode) raisePreprocessError(runtime, "invalid Unicode list", mode); 
+        if (!hasUnicode) raisePreprocessError(runtime, str, "invalid Unicode list", mode); 
         return p;
     }
 
-    private static int unescapeUnicodeBmp(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ErrorMode mode) {
-        if (p + 4 > end) raisePreprocessError(runtime, "invalid Unicode escape", mode);
+    private static int unescapeUnicodeBmp(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ByteList str, ErrorMode mode) {
+        if (p + 4 > end) raisePreprocessError(runtime, str, "invalid Unicode escape", mode);
         int code = StringSupport.scanHex(bytes, p, end, 4);
         int len = StringSupport.hexLength(code);
-        if (len != 4) raisePreprocessError(runtime, "invalid Unicode escape", mode);
-        appendUtf8(runtime, to, code, encp, mode);
+        if (len != 4) raisePreprocessError(runtime, str, "invalid Unicode escape", mode);
+        appendUtf8(runtime, to, code, encp, str, mode);
         return p + 4;
     }
 
-    private static boolean unescapeNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ErrorMode mode) {
+    private static boolean unescapeNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         boolean hasProperty = false;
 
         while (p < end) {
             int cl = StringSupport.preciseLength(enc, bytes, p, end);
-            if (cl <= 0) raisePreprocessError(runtime, "invalid multibyte character", mode);
+            if (cl <= 0) raisePreprocessError(runtime, str, "invalid multibyte character", mode);
             if (cl > 1 || (bytes[p] & 0x80) != 0) {
                 to.append(bytes, p, cl);
                 p += cl;
                 if (encp[0] == null) {
                     encp[0] = enc;
                 } else if (encp[0] != enc) {
-                    raisePreprocessError(runtime, "non ASCII character in UTF-8 regexp", mode);
+                    raisePreprocessError(runtime, str, "non ASCII character in UTF-8 regexp", mode);
                 }
                 continue;
             }
             int c;
             switch (c = bytes[p++] & 0xff) {
             case '\\':
-                if (p == end) raisePreprocessError(runtime, "too short escape sequence", mode);
+                if (p == end) raisePreprocessError(runtime, str, "too short escape sequence", mode);
 
                 switch (c = bytes[p++] & 0xff) {
                 case '1': case '2': case '3':
@@ -609,17 +609,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 case 'c': /* \cX, \c\M-X */
                 case 'C': /* \C-X, \C-\M-X */
                 case 'M': /* \M-X, \M-\C-X, \M-\cX */
-                    p = unescapeEscapedNonAscii(runtime, to, bytes, p - 2, end, enc, encp, mode);
+                    p = unescapeEscapedNonAscii(runtime, to, bytes, p - 2, end, enc, encp, str, mode);
                     break;
 
                 case 'u':
-                    if (p == end) raisePreprocessError(runtime, "too short escape sequence", mode);
+                    if (p == end) raisePreprocessError(runtime, str, "too short escape sequence", mode);
                     if (bytes[p] == (byte)'{') { /* \\u{H HH HHH HHHH HHHHH HHHHHH ...} */
                         p++;
-                        p = unescapeUnicodeList(runtime, to, bytes, p, end, encp, mode);
-                        if (p == end || bytes[p++] != (byte)'}') raisePreprocessError(runtime, "invalid Unicode list", mode);
+                        p = unescapeUnicodeList(runtime, to, bytes, p, end, encp, str, mode);
+                        if (p == end || bytes[p++] != (byte)'}') raisePreprocessError(runtime, str, "invalid Unicode list", mode);
                     } else { /* \\uHHHH */
-                        p = unescapeUnicodeBmp(runtime, to, bytes, p, end, encp, mode);
+                        p = unescapeUnicodeBmp(runtime, to, bytes, p, end, encp, str, mode);
                     }
                     break;
                 case 'p': /* \p{Hiragana} */
@@ -650,7 +650,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             to.encoding = enc;
         }
 
-        boolean hasProperty = unescapeNonAscii(runtime, to, str.bytes, str.begin, str.begin + str.realSize, enc, fixedEnc, mode);
+        boolean hasProperty = unescapeNonAscii(runtime, to, str.bytes, str.begin, str.begin + str.realSize, enc, fixedEnc, str, mode);
         if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
         if (fixedEnc[0] != null) to.encoding = fixedEnc[0];
         return to;
@@ -1126,9 +1126,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
-            if ((kcodeBytes.realSize > 0 && kcodeBytes.bytes[kcodeBytes.realSize] == 'n') ||
-                (kcodeBytes.realSize > 1 && kcodeBytes.bytes[kcodeBytes.realSize + 1] == 'N')) {
-                return initializeCommon19(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, options | RE_OPTION_IGNORECASE);
+            if ((kcodeBytes.realSize > 0 && kcodeBytes.bytes[kcodeBytes.begin] == 'n') ||
+                (kcodeBytes.realSize > 1 && kcodeBytes.bytes[kcodeBytes.begin + 1] == 'N')) {
+                return initializeCommon19(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, options | ARG_ENCODING_NONE);
             } else {
                 getRuntime().getWarnings().warn("encoding option is ignored - " + kcodeBytes);
             }
