@@ -3131,41 +3131,58 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        if (arg1 instanceof RubyRegexp) {
-            if(((RubyRegexp)arg1).search(context, this, 0, false) >= 0) {
-                return RubyRegexp.nth_match(RubyNumeric.fix2int(arg2), context.getCurrentFrame().getBackRef());
-            }
-            return context.getRuntime().getNil();
-        }
-        return substr(context.getRuntime(), RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
+        Ruby runtime = context.getRuntime();
+        if (arg1 instanceof RubyRegexp) return subpat(runtime, context, (RubyRegexp)arg1, RubyNumeric.fix2int(arg2));
+        return substr(runtime, RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
     }
 
-    /** rb_str_aref, rb_str_aref_m
-     *
-     */
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
         if (arg instanceof RubyRegexp) {
-            if(((RubyRegexp)arg).search(context, this, 0, false) >= 0) {
-                return RubyRegexp.nth_match(0, context.getCurrentFrame().getBackRef());
-            }
-            return context.getRuntime().getNil();
+            return subpat(runtime, context, (RubyRegexp)arg, 0);
         } else if (arg instanceof RubyString) {
-            return value.indexOf(stringValue(arg).value) != -1 ?
-                arg : context.getRuntime().getNil();
+            return value.indexOf(stringValue(arg).value) != -1 ? arg : runtime.getNil();
         } else if (arg instanceof RubyRange) {
             int[] begLen = ((RubyRange) arg).begLenInt(value.length(), 0);
-            return begLen == null ? context.getRuntime().getNil() :
-                substr(context.getRuntime(), begLen[0], begLen[1]);
+            return begLen == null ? runtime.getNil() : substr(runtime, begLen[0], begLen[1]);
         }
         int idx = (int) arg.convertToInteger().getLongValue();
         
         if (idx < 0) idx += value.length();
-        if (idx < 0 || idx >= value.length()) return context.getRuntime().getNil();
+        if (idx < 0 || idx >= value.length()) return runtime.getNil();
 
-        return context.getRuntime().newFixnum(value.get(idx) & 0xFF);
+        return runtime.newFixnum(value.get(idx) & 0xFF);
+    }
+
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aref19(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.getRuntime();
+        if (arg1 instanceof RubyRegexp) return subpat19(runtime, context, (RubyRegexp)arg1, RubyNumeric.fix2int(arg2));
+        return substr19(runtime, RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
+    }
+
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aref19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        if (arg instanceof RubyFixnum) {
+            IRubyObject str = substr19(runtime, RubyNumeric.fix2int(arg), 1);
+            return !str.isNil() && ((RubyString)str).value.realSize == 0 ? runtime.getNil() : str;
+        } else if (arg instanceof RubyRegexp) {
+            return subpat19(runtime, context, (RubyRegexp)arg, 0);
+        } else if (arg instanceof RubyString) {
+            RubyString str = (RubyString)arg;
+            return strIndex19(str, 0) != -1 ? str.strDup(runtime) : runtime.getNil();
+        } else if (arg instanceof RubyRange) {
+            int len = strLength();
+            int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
+            return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+        } else {
+            IRubyObject str = substr19(runtime, RubyNumeric.num2int(arg), 1);
+            return !str.isNil() && ((RubyString)str).value.realSize == 0 ? runtime.getNil() : str;
+        }
     }
 
     /**
@@ -3203,11 +3220,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
         replace(start, len, stringValue(repl));
     }
 
-    private IRubyObject subpat(ThreadContext context, RubyRegexp regex, int nth) {
+    private IRubyObject subpat(Ruby runtime, ThreadContext context, RubyRegexp regex, int nth) {
+        if (regex.search(context, this, 0, false) >= 0) {
+            return RubyRegexp.nth_match(nth, context.getCurrentFrame().getBackRef());
+        }
+        return runtime.getNil();
+    }
+    
+    private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex, int nth) {
         if (regex.search19(context, this, 0, false) >= 0) {
             return RubyRegexp.nth_match(nth, context.getCurrentFrame().getBackRef());
         }
-        return context.getRuntime().getNil();
+        return runtime.getNil();
     }
 
     /**
@@ -4574,7 +4598,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             RubyRegexp regex = (RubyRegexp)arg;
             pos = regex.search19(context, this, 0, false);
             if (pos < 0) return partitionMismatch(runtime);
-            sep = (RubyString)subpat(context, regex, 0);
+            sep = (RubyString)subpat19(runtime, context, regex, 0);
             if (pos == 0 && sep.value.realSize == 0) return partitionMismatch(runtime);
         } else {
             IRubyObject tmp = arg.checkStringType();
