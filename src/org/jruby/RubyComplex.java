@@ -418,7 +418,7 @@ public class RubyComplex extends RubyNumeric {
     private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         Frame frame = context.getCurrentFrame();
         IRubyObject backref = frame.getBackRef();
-        if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
         if (a1 instanceof RubyString) a1 = str_to_c_strict(context, a1);
         if (a2 instanceof RubyString) a2 = str_to_c_strict(context, a2);
