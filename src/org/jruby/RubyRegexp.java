@@ -82,9 +82,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
 
-    private static final int REGEXP_LITERAL_F     = USER1_F;
-    private static final int REGEXP_KCODE_DEFAULT = USER2_F;
-    private static final int REGEXP_ENCODING_NONE = USER4_F;
+    private static final int REGEXP_LITERAL_F       =   USER1_F;
+    private static final int REGEXP_KCODE_DEFAULT   =   USER2_F;
+    private static final int REGEXP_ENCODING_NONE   =   USER3_F;
+    //private static final int REGEXP_ENCODING_FIXED  =   USER5_F;
+    
+    private static final int ARG_ENCODING_FIXED     =   16;
+    private static final int ARG_ENCODING_NONE      =   32;
 
     public void setLiteral() {
         flags |= REGEXP_LITERAL_F;
@@ -121,7 +125,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public boolean isEncodingNone() {
         return (flags & REGEXP_ENCODING_NONE) != 0;
     }
-
+//
+//    public void setEncodingFixed() {
+//        flags |= REGEXP_ENCODING_FIXED;
+//    }
+//
+//    public void clearEncodingFixed() {
+//        flags &= ~REGEXP_ENCODING_FIXED;
+//    }
+//
+//    public boolean isEncodingFixed() {
+//        return (flags & REGEXP_ENCODING_FIXED) != 0;
+//    }
+//    
     public KCode getKCode() {
         return kcode;
     }
@@ -1013,13 +1029,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return initializeCommon(regexp.str, regexp.getOptions());
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg) {
         if (arg instanceof RubyRegexp) return initializeByRegexp((RubyRegexp)arg);
         return initializeCommon(arg.convertToString().getByteList(), 0);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyRegexp) {
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
@@ -1030,14 +1046,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return initializeCommon(arg0.convertToString().getByteList(), options);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags and encoding ignored");            
             return initializeByRegexp((RubyRegexp)arg0);
         }
         int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
-        
+
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
             char first = kcodeBytes.length() > 0 ? kcodeBytes.charAt(0) : 0;
@@ -1087,6 +1103,94 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         setKCode(runtime, options);
         pattern = getRegexpFromCache(runtime, bytes, kcode.getEncoding(), options & 0xf);
+        str = bytes;
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize_m19(IRubyObject arg) {
+        if (arg instanceof RubyRegexp) return initializeByRegexp19((RubyRegexp)arg);
+        return initializeCommon19(arg.convertToString(), 0);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize_m19(IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubyRegexp) {
+            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
+            return initializeByRegexp19((RubyRegexp)arg0);
+        }
+        
+        int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
+        return initializeCommon19(arg0.convertToString(), options);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize_m19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (arg0 instanceof RubyRegexp) {
+            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
+            return initializeByRegexp19((RubyRegexp)arg0);
+        }
+        int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
+
+        if (!arg2.isNil()) {
+            ByteList kcodeBytes = arg2.convertToString().getByteList();
+            if ((kcodeBytes.realSize > 0 && kcodeBytes.bytes[kcodeBytes.realSize] == 'n') ||
+                (kcodeBytes.realSize > 1 && kcodeBytes.bytes[kcodeBytes.realSize + 1] == 'N')) {
+                return initializeCommon19(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, options | RE_OPTION_IGNORECASE);
+            } else {
+                getRuntime().getWarnings().warn("encoding option is ignored - " + kcodeBytes);
+            }
+        }
+        return initializeCommon19(arg0.convertToString(), options);
+    }
+
+    private IRubyObject initializeByRegexp19(RubyRegexp regexp) {
+        regexp.check();
+        return initializeCommon19(regexp.str, regexp.getEncoding(), regexp.pattern.getOptions());
+    }
+
+    // rb_reg_initialize_str
+    private RubyRegexp initializeCommon19(RubyString str, int options) {
+        ByteList bytes = str.getByteList();
+        Encoding enc = bytes.encoding;
+        if ((options & REGEXP_ENCODING_NONE) != 0) {
+            if (enc != ASCIIEncoding.INSTANCE) {
+                if (str.scanForCodeRange() != StringSupport.CR_7BIT) {
+                    raiseRegexpError19(getRuntime(), bytes, enc, options, "/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
+                }
+                enc = ASCIIEncoding.INSTANCE;
+            }
+        }
+        return initializeCommon19(bytes, enc, options);
+    }
+
+    // rb_reg_initialize
+    private RubyRegexp initializeCommon19(ByteList bytes, Encoding enc, int options) {
+        Ruby runtime = getRuntime();        
+        if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
+        checkFrozen();
+        if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
+        if (pattern != null) throw runtime.newTypeError("already initialized regexp");
+        if (enc.isDummy()) raiseRegexpError19(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
+        
+        Encoding[]fixedEnc = new Encoding[]{null};
+        ByteList unescaped = preprocess(runtime, bytes, enc, fixedEnc, ErrorMode.RAISE);
+        if (fixedEnc[0] != null) {
+            if ((fixedEnc[0] != enc && (options & ARG_ENCODING_FIXED) != 0) ||
+               (fixedEnc[0] != ASCIIEncoding.INSTANCE && (options & ARG_ENCODING_NONE) != 0)) {
+                   raiseRegexpError19(runtime, bytes, enc, options, "incompatible character encoding");
+               }
+            if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
+                options &= ~REGEXP_KCODE_DEFAULT;
+                enc = fixedEnc[0];
+            }
+        } else if ((options & ARG_ENCODING_FIXED) == 0) {
+            enc = USASCIIEncoding.INSTANCE;
+        }
+        
+        if ((options & ARG_ENCODING_FIXED) != 0 || fixedEnc[0] != null) clearKCodeDefault();
+        if ((options & ARG_ENCODING_NONE) != 0) setEncodingNone();
+        pattern = getRegexpFromCache(runtime, unescaped, enc, options & 0xf);
         str = bytes;
         return this;
     }
