@@ -3107,7 +3107,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (beg + len >= value.length()) len = value.length() - beg;
 
         modify();
-        value.unsafeReplace(beg,len,replaceWith.value);
+        value.unsafeReplace(beg, len, replaceWith.value);
 
         return infectBy(replaceWith);
     }
@@ -3226,7 +3226,29 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         return runtime.getNil();
     }
-    
+
+    private void subpatSet19(ThreadContext context, RubyRegexp regexp, int nth, IRubyObject repl) {
+        Ruby runtime = context.getRuntime();
+        if (regexp.search19(context, this, 0, false) < 0) throw runtime.newIndexError("regexp not matched");
+        RubyMatchData match = (RubyMatchData)context.getCurrentFrame().getBackRef();
+
+        nth = subpatSetCheck(runtime, nth, match.regs);
+
+        final int start, end;
+        if (match.regs == null) {
+            start = match.begin;
+            end = match.end;
+        } else {
+            start = match.regs.beg[nth];
+            end = match.regs.end[nth];
+        }
+        if (start == -1) throw runtime.newIndexError("regexp group " + nth + " not matched");
+        RubyString replStr =  repl.convertToString();
+        Encoding enc = checkEncoding(replStr);
+        replace(start, end - start, replStr); // TODO: rb_str_splice_0
+        associateEncoding(enc);
+    }
+
     private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex, int nth) {
         if (regex.search19(context, this, 0, false) >= 0) {
             return RubyRegexp.nth_match(nth, context.getCurrentFrame().getBackRef());
