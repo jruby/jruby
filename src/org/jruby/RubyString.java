@@ -1984,7 +1984,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result.infectBy(this);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "insert")
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
         // MRI behavior: first check for ability to convert to String...
         RubyString s = (RubyString)stringArg.convertToString();
