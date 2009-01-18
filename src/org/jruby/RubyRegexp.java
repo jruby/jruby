@@ -1772,6 +1772,150 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyString.newString(str.getRuntime(), val);
     }
 
+    static RubyString regsub19(RubyString str, RubyString src, Matcher matcher, Regex pattern) {
+        Region regs = matcher.getRegion();
+
+        int no = -1;
+        ByteList bs = str.getByteList();
+        int p = bs.begin;
+        int s = p;
+        int end = p + bs.realSize;
+        byte[]bytes = bs.bytes;
+        Encoding strEnc = bs.encoding;
+
+        ByteList srcbs = src.getByteList();
+        Encoding srcEnc = srcbs.encoding;
+
+        RubyString val = null;
+
+        while (s < end) {
+            int c, cl;
+            if (strEnc.isAsciiCompatible()) {
+                cl = 1;
+                c = bytes[s] & 0xff;
+            } else {
+                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
+                c = strEnc.mbcToCode(bytes, s, end);
+            }
+
+            if (!Encoding.isAscii(c)) {
+                s += StringSupport.length(strEnc, bytes, s, end);
+                continue;
+            }
+
+            int ss = s;
+            s += cl;
+
+            if (c != '\\' || s == end) continue;
+            if (val == null) val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
+
+            val.cat(bytes, p, ss - p, strEnc);
+
+            if (strEnc.isAsciiCompatible()) {
+                cl = 1;
+                c = bytes[s] & 0xff;
+            } else {
+                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
+                c = strEnc.mbcToCode(bytes, s, end);
+            }
+
+            if (!Encoding.isAscii(c)) {
+                s += StringSupport.length(strEnc, bytes, s, end);
+                val.cat(bytes, ss, s - ss, strEnc);
+                p = s;
+                continue;
+            }
+
+            s += cl;
+            p = s;
+
+            switch (c) {
+            case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                if (pattern.noNameGroupIsActive(Syntax.RUBY)) {
+                    no = c - '0';
+                    break;
+                }
+                continue;
+            case 'k':
+                if (s < end) {
+                    if (strEnc.isAsciiCompatible()) {
+                        cl = 1;
+                        c = bytes[s] & 0xff;
+                    } else {
+                        cl = StringSupport.preciseLength(strEnc, bytes, s, end);
+                        c = strEnc.mbcToCode(bytes, s, end);
+                    }
+                    if (c == '<') {
+                        int name = s + cl;
+                        int nameEnd = name;
+                        while (nameEnd < end) {
+                            if (strEnc.isAsciiCompatible()) {
+                                cl = 1;
+                                c = bytes[s] & 0xff;
+                            } else {
+                                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
+                                c = strEnc.mbcToCode(bytes, s, end);
+                            }
+                            if (c == '>') break;
+                            nameEnd += (!Encoding.isAscii(c)) ? StringSupport.length(strEnc, bytes, nameEnd, end) : cl;
+                        }
+                        if (nameEnd < end) {
+                            no = pattern.nameToBackrefNumber(bytes, name, nameEnd, regs);
+                            p = s = nameEnd + cl;
+                            break;
+                        } else {
+                            throw str.getRuntime().newRuntimeError("invalid group name reference format");
+                        }
+                    }
+                }
+                val.cat(bytes, ss, s - ss, strEnc);
+                continue;
+            case '0': case '&':
+                no = 0;
+                break;
+            case '`':
+                val.cat(srcbs.bytes, srcbs.begin, matcher.getBegin(), srcEnc);
+                continue;
+            case '\'':
+                val.cat(srcbs.bytes, srcbs.begin + matcher.getEnd(), srcbs.realSize - matcher.getEnd(), srcEnc);
+                continue;
+            case '+':
+                if (regs == null) {
+                    if (matcher.getBegin() == -1) {
+                        no = 0;
+                        continue;
+                    }
+                } else {
+                    no = regs.numRegs - 1;
+                    while (regs.beg[no] == -1 && no > 0) no--;
+                    if (no == 0) continue;
+                }
+                break;
+            case '\\':
+                val.cat(bytes, s - cl, cl, strEnc);
+                continue;
+            default:
+                val.cat(bytes, ss, s - ss, strEnc);
+                continue;
+            }
+
+            if (regs != null) {
+                if (no >= 0) {
+                    if (no >= regs.numRegs || regs.beg[no] == -1) continue;
+                    val.cat(srcbs.bytes, srcbs.begin + regs.beg[no], regs.end[no] - regs.beg[no], srcEnc);
+                }
+            } else {
+                if (no != 0 || matcher.getBegin() == -1) continue;
+                val.cat(srcbs.bytes, srcbs.begin + matcher.getBegin(), matcher.getEnd() - matcher.getBegin(), srcEnc);
+            }
+        }
+
+        if (val == null) return str;
+        if (p < end) val.cat(bytes, p, end - p, strEnc);
+        return val;
+    }
+
     final int adjustStartPos19(RubyString str, int pos, boolean reverse) {
         return adjustStartPosInternal(str, checkEncoding(str, false), pos, reverse);
     }
