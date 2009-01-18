@@ -85,8 +85,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private static final int REGEXP_LITERAL_F       =   USER1_F;
     private static final int REGEXP_KCODE_DEFAULT   =   USER2_F;
     private static final int REGEXP_ENCODING_NONE   =   USER3_F;
-    //private static final int REGEXP_ENCODING_FIXED  =   USER5_F;
-    
+
     private static final int ARG_ENCODING_FIXED     =   16;
     private static final int ARG_ENCODING_NONE      =   32;
 
@@ -125,19 +124,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public boolean isEncodingNone() {
         return (flags & REGEXP_ENCODING_NONE) != 0;
     }
-//
-//    public void setEncodingFixed() {
-//        flags |= REGEXP_ENCODING_FIXED;
-//    }
-//
-//    public void clearEncodingFixed() {
-//        flags &= ~REGEXP_ENCODING_FIXED;
-//    }
-//
-//    public boolean isEncodingFixed() {
-//        return (flags & REGEXP_ENCODING_FIXED) != 0;
-//    }
-//    
+
     public KCode getKCode() {
         return kcode;
     }
