@@ -2110,7 +2110,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 result.prefixEscapeCat('e');
             } else if (is1_9 && enc.isPrint(c)) {
                 result.cat(bytes, p - n, n, enc);
-                //out.cat(bytes, p - n, n); // TODO: rb_enc_str_buf_cat
             } else {
                 if (!is1_9) {
                     Sprintf.sprintf(runtime, result.value, "\\%03o", c & 0377);
