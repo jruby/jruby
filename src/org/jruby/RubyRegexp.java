@@ -1852,16 +1852,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         while (nameEnd < end) {
                             if (strEnc.isAsciiCompatible()) {
                                 cl = 1;
-                                c = bytes[s] & 0xff;
+                                c = bytes[nameEnd] & 0xff;
                             } else {
-                                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                                c = strEnc.mbcToCode(bytes, s, end);
+                                cl = StringSupport.preciseLength(strEnc, bytes, nameEnd, end);
+                                c = strEnc.mbcToCode(bytes, nameEnd, end);
                             }
                             if (c == '>') break;
                             nameEnd += (!Encoding.isAscii(c)) ? StringSupport.length(strEnc, bytes, nameEnd, end) : cl;
                         }
                         if (nameEnd < end) {
-                            no = pattern.nameToBackrefNumber(bytes, name, nameEnd, regs);
+                            try {
+                                no = pattern.nameToBackrefNumber(bytes, name, nameEnd, regs);
+                            } catch (JOniException je) {
+                                throw str.getRuntime().newIndexError(je.getMessage());
+                            }
                             p = s = nameEnd + cl;
                             break;
                         } else {

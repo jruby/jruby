@@ -2454,7 +2454,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         Frame frame = context.getPreviousFrame();
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
-            repl = RubyRegexp.regsub(repl, this, matcher, runtime.getKCode().getEncoding());
+            repl = RubyRegexp.regsub19(repl, this, matcher, pattern);
             RubyMatchData match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
             match.regexp = regexp;
             return subBangCommon19(context, pattern, matcher, repl, tained);
