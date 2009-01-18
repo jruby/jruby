@@ -656,6 +656,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return to;
     }
 
+    public static void preprocessCheck(Ruby runtime, IRubyObject obj) {
+        ByteList bytes = obj.convertToString().getByteList();
+        preprocess(runtime, bytes, bytes.encoding, new Encoding[]{null}, ErrorMode.RAISE); 
+    }
+
     private void check() {
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
