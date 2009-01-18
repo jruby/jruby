@@ -3190,34 +3190,34 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     private void subpatSet(ThreadContext context, RubyRegexp regexp, int nth, IRubyObject repl) {
-        RubyMatchData match;
-        int start, end, len;        
-        if (regexp.search(context, this, 0, false) < 0) throw context.getRuntime().newIndexError("regexp not matched");
+        Ruby runtime = context.getRuntime();
+        if (regexp.search(context, this, 0, false) < 0) throw runtime.newIndexError("regexp not matched");
+        RubyMatchData match = (RubyMatchData)context.getCurrentFrame().getBackRef();
 
-        match = (RubyMatchData)context.getCurrentFrame().getBackRef();
+        nth = subpatSetCheck(runtime, nth, match.regs);
 
+        final int start, end;
         if (match.regs == null) {
-            if (nth >= 1) throw context.getRuntime().newIndexError("index " + nth + " out of regexp");
-            if (nth < 0) {
-                if(-nth >= 1) throw context.getRuntime().newIndexError("index " + nth + " out of regexp");
-                nth += 1;
-            }
             start = match.begin;
-            if(start == -1) throw context.getRuntime().newIndexError("regexp group " + nth + " not matched");
             end = match.end;
         } else {
-            if(nth >= match.regs.numRegs) throw context.getRuntime().newIndexError("index " + nth + " out of regexp");
-            if(nth < 0) {
-                if(-nth >= match.regs.numRegs) throw context.getRuntime().newIndexError("index " + nth + " out of regexp");
-                nth += match.regs.numRegs;
-            }
             start = match.regs.beg[nth];
-            if(start == -1) throw context.getRuntime().newIndexError("regexp group " + nth + " not matched");
             end = match.regs.end[nth];
         }
-        
-        len = end - start;
-        replace(start, len, stringValue(repl));
+        if (start == -1) throw runtime.newIndexError("regexp group " + nth + " not matched");
+        replace(start, end - start, stringValue(repl));
+    }
+
+    private int subpatSetCheck(Ruby runtime, int nth, Region regs) {
+        int numRegs = regs == null ? 1 : regs.numRegs;
+        if (nth < numRegs) {
+            if (nth < 0) {
+                if (-nth < numRegs) return nth + numRegs;
+            } else {
+                return nth;
+            }
+        }
+        throw runtime.newIndexError("index " + nth + " out of regexp");
     }
 
     private IRubyObject subpat(Ruby runtime, ThreadContext context, RubyRegexp regex, int nth) {
@@ -3291,9 +3291,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         throw context.getRuntime().newTypeError("wrong argument type");
     }
 
-    /** rb_str_aset, rb_str_aset_m
-     *
-     */
     @JRubyMethod(name = "[]=", reads = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
@@ -3346,9 +3343,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    /** rb_str_slice_bang
-     *
-     */
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
