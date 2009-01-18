@@ -367,7 +367,7 @@ public class RubyRational extends RubyNumeric {
         
         Frame frame = context.getCurrentFrame();
         IRubyObject backref = frame.getBackRef();
-        if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
         
         if (a1 instanceof RubyFloat) {
             a1 = f_to_r(context, a1);
