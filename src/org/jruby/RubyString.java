@@ -6443,7 +6443,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         Frame frame = context.getCurrentFrame();
         IRubyObject backref = frame.getBackRef();
-        if (backref != null && backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
+        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
         IRubyObject s = RuntimeHelpers.invoke(
                 context, this, "gsub",
