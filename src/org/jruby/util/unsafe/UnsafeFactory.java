@@ -3,10 +3,11 @@ package org.jruby.util.unsafe;
 import java.lang.reflect.Field;
 
 public class UnsafeFactory {
-    private static Unsafe unsafe;
+    private static final Unsafe unsafe = loadUnsave();
     private static final boolean DEBUG = false;
-    
-    static {
+
+    private static Unsafe loadUnsave() {
+        Unsafe unsafe = null;
         // first try our custom-generated Unsafe
         try {
             Class unsafeClass = Class.forName("org.jruby.util.unsafe.GeneratedUnsafe");
@@ -29,8 +30,9 @@ public class UnsafeFactory {
         
         // else leave it null
         if (DEBUG && unsafe == null) System.err.println("No Unsafe implementation available");
+        return unsafe;
     }
-    
+
     public static Unsafe getUnsafe() {
         return unsafe;
     }
