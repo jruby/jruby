@@ -33,12 +33,28 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 
+import sun.misc.Unsafe;
+
 public final class StringSupport {
     public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;  
     public static final int CR_UNKNOWN   = 0;
     public static final int CR_7BIT      = RubyObject.USER0_F; 
     public static final int CR_VALID     = RubyObject.USER1_F;
     public static final int CR_BROKEN    = RubyObject.USER0_F | RubyObject.USER1_F;
+
+    public static final Object UNSAFE = getUnsafe();
+    private static final int OFFSET = UNSAFE != null ? ((Unsafe)UNSAFE).arrayBaseOffset(byte[].class) : 0;
+
+    private static Object getUnsafe() {
+        try {
+            Class sunUnsafe = Class.forName("sun.misc.Unsafe");
+            java.lang.reflect.Field f = sunUnsafe.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            return sun.misc.Unsafe.class.cast(f.get(sunUnsafe));
+        } catch (Exception ex) {
+            return null;
+        }
+    }
 
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
@@ -136,6 +152,41 @@ public final class StringSupport {
             }
         }
         return pack(p - s, p > end ? CR_BROKEN : CR_VALID);
+    }
+
+    private static final long NONASCII_MASK = 0x8080808080808080L;
+    private static int countUtf8leadBytes(long d) {
+        d |= ~(d >>> 1);
+        d >>>= 6;
+        d &= NONASCII_MASK >>> 7;
+        d += (d >>> 8);
+        d += (d >>> 16);
+        d += (d >>> 32);
+        return (int)(d & 0xf);
+    }
+
+    private static final int LONG_SIZE = 8;
+    private static final int LOWBITS = LONG_SIZE - 1;
+    @SuppressWarnings("deprecation")
+    public static int utf8Length(byte[]bytes, int p, int end) {
+        Unsafe us = (Unsafe)UNSAFE;
+        int len = 0;
+        if (end - p > LONG_SIZE * 2) {
+            int eend = ~LOWBITS & end;
+            while (p < eend) {
+                len += countUtf8leadBytes(us.getLong(bytes, OFFSET + p));
+                p += LONG_SIZE;
+            }
+        }
+        while (p < end) {
+            if ((bytes[p] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
+            p++;
+        }
+        return len;
+    }
+
+    public static int utf8Length(ByteList bytes) {
+        return utf8Length(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
     }
 
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
