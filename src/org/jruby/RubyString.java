@@ -3085,8 +3085,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (len == 0) {
                 p = 0;
             } else if (isCodeRangeValid() && enc instanceof UTF8Encoding) {
-                p = StringSupport.utf8Nth(enc, bytes, s, end, beg);
-                len = StringSupport.utf8Offset(enc, bytes, p, end, len);
+                p = StringSupport.utf8Nth(bytes, s, end, beg);
+                len = StringSupport.utf8Offset(bytes, p, end, len);
             } else if (enc.isFixedWidth()) {
                 int w = enc.maxLength();
                 p = s + beg * w;

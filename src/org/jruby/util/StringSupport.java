@@ -329,7 +329,7 @@ public final class StringSupport {
     }
 
     @SuppressWarnings("deprecation")
-    public static int utf8Nth(Encoding enc, byte[]bytes, int p, int end, int n) {
+    public static int utf8Nth(byte[]bytes, int p, int end, int n) {
         if (UNSAFE != null) {
             if (n > LONG_SIZE * 2) {
                 int ep = ~LOWBITS & (p + LOWBITS);
@@ -390,8 +390,8 @@ public final class StringSupport {
         return p;
     }
 
-    public static int utf8Offset(Encoding enc, byte[]bytes, int p, int end, int n) {
-        int pp = utf8Nth(enc, bytes, p, end, n);
+    public static int utf8Offset(byte[]bytes, int p, int end, int n) {
+        int pp = utf8Nth(bytes, p, end, n);
         return pp == -1 ? end - p : pp - p; 
     }
 
