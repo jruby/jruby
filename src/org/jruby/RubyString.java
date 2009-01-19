@@ -3058,7 +3058,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             } else {
                 p = value.begin + beg;
             }
-            return makeShared19(runtime, p, len);
         } else {
             int s = value.begin;
             int end = s + length;
@@ -3103,8 +3102,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             } else {
                 len = StringSupport.offset(enc, bytes, p, end, len); 
             }
-            return makeShared19(runtime, p, len);
         }
+        return makeShared19(runtime, p, len);
     }
 
     /* rb_str_replace */
