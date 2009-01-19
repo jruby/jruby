@@ -3283,35 +3283,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum || arg0.respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
             int idx = RubyNumeric.fix2int(arg0);
-            
             if (idx < 0) idx += value.length();
-
-            if (idx < 0 || idx >= value.length()) {
-                throw context.getRuntime().newIndexError("string index out of bounds");
-            }
+            if (idx < 0 || idx >= value.length()) throw context.getRuntime().newIndexError("string index out of bounds");
             if (arg1 instanceof RubyFixnum) {
                 modify();
-                value.set(idx, (byte) RubyNumeric.fix2int(arg1));
+                value.set(idx, RubyNumeric.fix2int(arg1));
             } else {
-                replace(idx, 1, stringValue(arg1));
+                replace(idx, 1, arg1.convertToString());
             }
             return arg1;
-        }
-        if (arg0 instanceof RubyRegexp) {
-            RubyString repl = stringValue(arg1);
+        } else if (arg0 instanceof RubyRegexp) {
+            RubyString repl = arg1.convertToString();
             subpatSet(context, (RubyRegexp) arg0, 0, repl);
             return repl;
-        }
-        if (arg0 instanceof RubyString) {
+        } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
             int beg = value.indexOf(orig.value);
             if (beg < 0) throw context.getRuntime().newIndexError("string not matched");
-            replace(beg, orig.value.length(), stringValue(arg1));
+            replace(beg, orig.value.length(), arg1.convertToString());
             return arg1;
-        }
-        if (arg0 instanceof RubyRange) {
+        } else if (arg0 instanceof RubyRange) {
             int[] begLen = ((RubyRange) arg0).begLenInt(value.realSize, 2);
-            replace(begLen[0], begLen[1], stringValue(arg1));
+            replace(begLen[0], begLen[1], arg1.convertToString());
             return arg1;
         }
         throw context.getRuntime().newTypeError("wrong argument type");
