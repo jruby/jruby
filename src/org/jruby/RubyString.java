@@ -324,9 +324,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private int strLength(ByteList bytes, Encoding enc) {
-        if (StringSupport.UNSAFE != null &&
-            isCodeRangeValid() &&
-            enc instanceof UTF8Encoding) return StringSupport.utf8Length(value);
+        if (isCodeRangeValid() && enc instanceof UTF8Encoding) return StringSupport.utf8Length(value);
 
         long lencr = strLengthWithCodeRange(bytes, enc);
         int cr = unpackArg(lencr);

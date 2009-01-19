@@ -155,7 +155,7 @@ public final class StringSupport {
     }
 
     private static final long NONASCII_MASK = 0x8080808080808080L;
-    private static int countUtf8leadBytes(long d) {
+    private static int countUtf8LeadBytes(long d) {
         d |= ~(d >>> 1);
         d >>>= 6;
         d &= NONASCII_MASK >>> 7;
@@ -169,18 +169,23 @@ public final class StringSupport {
     private static final int LOWBITS = LONG_SIZE - 1;
     @SuppressWarnings("deprecation")
     public static int utf8Length(byte[]bytes, int p, int end) {
-        Unsafe us = (Unsafe)UNSAFE;
         int len = 0;
-        if (end - p > LONG_SIZE * 2) {
-            int eend = ~LOWBITS & end;
-            while (p < eend) {
-                len += countUtf8leadBytes(us.getLong(bytes, OFFSET + p));
-                p += LONG_SIZE;
+        if (UNSAFE != null) {
+            if (end - p > LONG_SIZE * 2) {
+                int ep = ~LOWBITS & (p + LOWBITS);
+                while (p < ep) {
+                    if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
+                }
+                Unsafe us = (Unsafe)UNSAFE;
+                int eend = ~LOWBITS & end;
+                while (p < eend) {
+                    len += countUtf8LeadBytes(us.getLong(bytes, OFFSET + p));
+                    p += LONG_SIZE;
+                }
             }
         }
         while (p < end) {
-            if ((bytes[p] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
-            p++;
+            if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
         }
         return len;
     }
