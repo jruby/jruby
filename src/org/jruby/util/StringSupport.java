@@ -345,9 +345,10 @@ public final class StringSupport {
             }
         }
         while (p < end) {
-            if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) {
+            if ((bytes[p] & 0xc0 /*utf8 lead byte*/) != 0x80) {
                 if (n-- == 0) break;
             }
+            p++;
         }
         return p;
     }
