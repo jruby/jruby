@@ -328,6 +328,30 @@ public final class StringSupport {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
+    public static int utf8Nth(Encoding enc, byte[]bytes, int p, int end, int n) {
+        if (UNSAFE != null) {
+            if (n > LONG_SIZE * 2) {
+                int ep = ~LOWBITS & (p + LOWBITS);
+                while (p < ep) {
+                    if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) n--;
+                }
+                Unsafe us = (Unsafe)UNSAFE;
+                int eend = ~LOWBITS & end;
+                do {
+                    n -= countUtf8LeadBytes(us.getLong(bytes, OFFSET + p));
+                    p += LONG_SIZE;
+                } while (p < eend && n >= LONG_SIZE);
+            }
+        }
+        while (p < end) {
+            if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) {
+                if (n-- == 0) break;
+            }
+        }
+        return p;
+    }
+
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {
         if (enc.isSingleByte()) {
             p += n;
@@ -363,6 +387,11 @@ public final class StringSupport {
             p += length(enc, bytes, p, end);
         }
         return p;
+    }
+
+    public static int utf8Offset(Encoding enc, byte[]bytes, int p, int end, int n) {
+        int pp = utf8Nth(enc, bytes, p, end, n);
+        return pp == -1 ? end - p : pp - p; 
     }
 
     public static int offset(Encoding enc, byte[]bytes, int p, int end, int n) {
