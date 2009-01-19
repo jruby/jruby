@@ -3,10 +3,10 @@ package org.jruby.util.unsafe;
 import java.lang.reflect.Field;
 
 public class UnsafeFactory {
-    private static final Unsafe unsafe = loadUnsave();
+    private static final Unsafe unsafe = loadUnsafe();
     private static final boolean DEBUG = false;
 
-    private static Unsafe loadUnsave() {
+    private static Unsafe loadUnsafe() {
         Unsafe unsafe = null;
         // first try our custom-generated Unsafe
         try {
