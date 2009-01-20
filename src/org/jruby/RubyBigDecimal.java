@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -280,24 +281,29 @@ public class RubyBigDecimal extends RubyNumeric {
         return RoundingMode.valueOf((int)roundingMode.getLongValue());
     }
 
-    private RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
+    private static RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
         if(v instanceof RubyBigDecimal) {
             return (RubyBigDecimal)v;
         } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
             String s = v.toString();
-            return newInstance(getRuntime().fastGetClass("BigDecimal"),new IRubyObject[]{getRuntime().newString(s)});
+            return newInstance(v.getRuntime().fastGetClass("BigDecimal"),new IRubyObject[]{v.getRuntime().newString(s)});
         }
         if(must) {
             String err;
-            if (isImmediate()) {
-                ThreadContext context = getRuntime().getCurrentContext();
-                err = inspect(context, this).toString();
+            if (v.isImmediate()) {
+                ThreadContext context = v.getRuntime().getCurrentContext();
+                err = RubyObject.inspect(context, v).toString();
             } else {
-                err = getMetaClass().getBaseName();
+                err = v.getMetaClass().getBaseName();
             }
-            throw getRuntime().newTypeError(err + " can't be coerced into BigDecimal");
+            throw v.getRuntime().newTypeError(err + " can't be coerced into BigDecimal");
         }
         return null;
+    }
+
+    @JRubyMethod(name = "induced_from", required = 1, frame = true, meta = true)
+    public static IRubyObject induced_from(IRubyObject recv, IRubyObject arg) {
+        return getVpValue(arg, true);
     }
 
     private final static Pattern INFINITY_PATTERN = Pattern.compile("^([+-])?Infinity$");
@@ -441,7 +447,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
-        return mult2(context, arg, RubyFixnum.zero(context.getRuntime()));
+        return mult2(context, arg, getRuntime().fastGetClass("BigDecimal")
+                .searchInternalModuleVariable("vpPrecLimit"));
     }
 
     @JRubyMethod(name = "mult", required = 2)
@@ -514,7 +521,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "+", required = 1, frame=true)
     public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
-        return addInternal(context, b, "add", RubyFixnum.zero(context.getRuntime()));
+        return addInternal(context, b, "add", getRuntime().fastGetClass("BigDecimal")
+                .searchInternalModuleVariable("vpPrecLimit"));
     }
 
     @JRubyMethod(name = "add", required = 2, frame=true)
@@ -537,7 +545,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return callCoerced(context, "+", b, true);
         }
 
-        IRubyObject res = handleAddSpecialValues(val);
+        RubyBigDecimal res = handleAddSpecialValues(val);
         if (res != null) {
             return res;
         }
@@ -560,7 +568,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    private IRubyObject handleAddSpecialValues(RubyBigDecimal val) {
+    private RubyBigDecimal handleAddSpecialValues(RubyBigDecimal val) {
         if (isNaN() || val.isNaN) {
             return newNaN(getRuntime());
         }
