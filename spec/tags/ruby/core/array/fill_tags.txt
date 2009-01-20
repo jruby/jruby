@@ -1,2 +1,2 @@
 fails(JRUBY-3148):Array#fill with (filler, index, length) raises an ArgumentError or RangeError for too-large sizes
-fails(JRUBY-3148):Array#fill with (filler, range) raise an exception if some of the given range lies before the first of the array
+fails:Array#fill with (filler, index, length) raises an ArgumentError or RangeError for too-large sizes

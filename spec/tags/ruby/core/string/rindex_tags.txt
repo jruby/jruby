@@ -1,1 +1,0 @@
-fails(JRUBY-3141):String#rindex with Regexp returns nil if the substring isn't found

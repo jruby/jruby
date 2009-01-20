@@ -1,1 +1,0 @@
-fails(in Mac Java 5):File#flock should lock a file
