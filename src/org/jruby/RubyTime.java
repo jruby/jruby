@@ -83,66 +83,70 @@ public class RubyTime extends RubyObject {
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
     
     private static final ByteList TZ_STRING = ByteList.create("TZ");
-     
+
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
         IRubyObject tz = h.op_aref(runtime.getCurrentContext(), tzVar);
+
         if (tz == null || ! (tz instanceof RubyString)) {
             return DateTimeZone.getDefault();
         } else {
-            String zone = tz.toString();
-            DateTimeZone cachedZone = runtime.getLocalTimezoneCache().get(zone);
+            return getTimeZone(runtime, tz.toString());
+        }
+    }
+     
+    public static DateTimeZone getTimeZone(Ruby runtime, String zone) {
+        DateTimeZone cachedZone = runtime.getTimezoneCache().get(zone);
 
-            if (cachedZone != null) return cachedZone;
+        if (cachedZone != null) return cachedZone;
 
-            String originalZone = zone;
+        String originalZone = zone;
 
-            // Value of "TZ" property is of a bit different format,
-            // which confuses the Java's TimeZone.getTimeZone(id) method,
-            // and so, we need to convert it.
+        // Value of "TZ" property is of a bit different format,
+        // which confuses the Java's TimeZone.getTimeZone(id) method,
+        // and so, we need to convert it.
 
-            Matcher tzMatcher = TZ_PATTERN.matcher(zone);
-            if (tzMatcher.matches()) {                    
-                String sign = tzMatcher.group(2);
-                String hours = tzMatcher.group(3);
-                String minutes = tzMatcher.group(4);
+        Matcher tzMatcher = TZ_PATTERN.matcher(zone);
+        if (tzMatcher.matches()) {                    
+            String sign = tzMatcher.group(2);
+            String hours = tzMatcher.group(3);
+            String minutes = tzMatcher.group(4);
                 
-                // GMT+00:00 --> Etc/GMT, see "MRI behavior"
-                // comment below.
-                if (("00".equals(hours) || "0".equals(hours))
-                        && (minutes == null || ":00".equals(minutes) || ":0".equals(minutes))) {
-                    zone = "Etc/GMT";
-                } else {
-                    // Invert the sign, since TZ format and Java format
-                    // use opposite signs, sigh... Also, Java API requires
-                    // the sign to be always present, be it "+" or "-".
-                    sign = ("-".equals(sign)? "+" : "-");
+            // GMT+00:00 --> Etc/GMT, see "MRI behavior"
+            // comment below.
+            if (("00".equals(hours) || "0".equals(hours))
+                    && (minutes == null || ":00".equals(minutes) || ":0".equals(minutes))) {
+                zone = "Etc/GMT";
+            } else {
+                // Invert the sign, since TZ format and Java format
+                // use opposite signs, sigh... Also, Java API requires
+                // the sign to be always present, be it "+" or "-".
+                sign = ("-".equals(sign)? "+" : "-");
 
-                    // Always use "GMT" since that's required by Java API.
-                    zone = "GMT" + sign + hours;
+                // Always use "GMT" since that's required by Java API.
+                zone = "GMT" + sign + hours;
 
-                    if (minutes != null) {
-                        zone += minutes;
-                    }
+                if (minutes != null) {
+                    zone += minutes;
                 }
             }
-
-            // MRI behavior: With TZ equal to "GMT" or "UTC", Time.now
-            // is *NOT* considered as a proper GMT/UTC time:
-            //   ENV['TZ']="GMT"
-            //   Time.now.gmt? ==> false
-            //   ENV['TZ']="UTC"
-            //   Time.now.utc? ==> false
-            // Hence, we need to adjust for that.
-            if ("GMT".equalsIgnoreCase(zone) || "UTC".equalsIgnoreCase(zone)) {
-                zone = "Etc/" + zone;
-            }
-
-            DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
-            runtime.getLocalTimezoneCache().put(originalZone, dtz);
-            return dtz;
         }
+
+        // MRI behavior: With TZ equal to "GMT" or "UTC", Time.now
+        // is *NOT* considered as a proper GMT/UTC time:
+        //   ENV['TZ']="GMT"
+        //   Time.now.gmt? ==> false
+        //   ENV['TZ']="UTC"
+        //   Time.now.utc? ==> false
+        // Hence, we need to adjust for that.
+        if ("GMT".equalsIgnoreCase(zone) || "UTC".equalsIgnoreCase(zone)) {
+            zone = "Etc/" + zone;
+        }
+
+        DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
+        runtime.getTimezoneCache().put(originalZone, dtz);
+        return dtz;
     }
     
     public RubyTime(Ruby runtime, RubyClass rubyClass) {
@@ -736,8 +740,21 @@ public class RubyTime extends RubyObject {
     private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
         Ruby runtime = recv.getRuntime();
         int len = ARG_SIZE;
+        Boolean isDst = null;
 
+        DateTimeZone dtz;
+        if (gmt) {
+            dtz = DateTimeZone.UTC;
+        } else if (args.length == 10 && args[9] instanceof RubyString) {
+            dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
+        } else {
+            dtz = getLocalTimeZone(runtime);
+        }
+ 
         if (args.length == 10) {
+	    if(args[8] instanceof RubyBoolean) {
+	        isDst = ((RubyBoolean)args[8]).isTrue();
+	    }
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
@@ -809,23 +826,40 @@ public class RubyTime extends RubyObject {
             year += 1900;
         }
 
-        DateTimeZone dtz;
-        if (gmt) {
-            dtz = DateTimeZone.UTC;
-        } else {
-            dtz = getLocalTimeZone(runtime);
-        }
-
         DateTime dt;
         // set up with min values and then add to allow rolling over
         try {
-            dt = new DateTime(year, 1, 1, 0, 0 , 0, 0, dtz);
+            dt = new DateTime(year, 1, 1, 0, 0 , 0, 0, DateTimeZone.UTC);
 
             dt = dt.plusMonths(month - 1)
                     .plusDays(int_args[0] - 1)
                     .plusHours(int_args[1])
                     .plusMinutes(int_args[2])
                     .plusSeconds(int_args[3]);
+
+	    dt = dt.withZoneRetainFields(dtz);
+
+	    // we might need to perform a DST correction
+	    if(isDst != null) {
+                // the instant at which we will ask dtz what the difference between DST and
+                // standard time is
+                long offsetCalculationInstant = dt.getMillis();
+
+                // if we might be moving this time from !DST -> DST, the offset is assumed
+                // to be the same as it was just before we last moved from DST -> !DST
+                if(dtz.isStandardOffset(dt.getMillis()))
+                    offsetCalculationInstant = dtz.previousTransition(offsetCalculationInstant);
+
+                int offset = dtz.getStandardOffset(offsetCalculationInstant) -
+                             dtz.getOffset(offsetCalculationInstant);
+
+                if (!isDst && !dtz.isStandardOffset(dt.getMillis())) {
+                    dt = dt.minusMillis(offset);
+                }
+                if (isDst &&  dtz.isStandardOffset(dt.getMillis())) {
+                    dt = dt.plusMillis(offset);
+                }
+	    }
         } catch (org.joda.time.IllegalFieldValueException e) {
             throw runtime.newArgumentError("time out of range");
         }

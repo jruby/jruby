@@ -3079,8 +3079,8 @@ public final class Ruby {
         return executor;
     }
 
-    public Map<String, DateTimeZone> getLocalTimezoneCache() {
-        return localTimeZoneCache;
+    public Map<String, DateTimeZone> getTimezoneCache() {
+        return timeZoneCache;
     }
 
     public int getConstantGeneration() {
@@ -3241,7 +3241,7 @@ public final class Ruby {
     private Object respondToMethod;
     private Object objectToYamlMethod;
 
-    private Map<String, DateTimeZone> localTimeZoneCache = new HashMap<String,DateTimeZone>();
+    private Map<String, DateTimeZone> timeZoneCache = new HashMap<String,DateTimeZone>();
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
      * weakly referenced, to be executed on tearDown.
