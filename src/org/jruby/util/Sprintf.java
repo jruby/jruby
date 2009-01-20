@@ -1361,8 +1361,8 @@ public class Sprintf {
         if (arg instanceof RubyFixnum) {
             // relatively cheap test for 32-bit values
             longval = ((RubyFixnum)arg).getLongValue();
-            if (longval >= (long)Integer.MIN_VALUE << 1) {
-                return Convert.longToCharBytes((((long)Integer.MAX_VALUE + 1L) << 1) + longval);
+            if (longval >= Long.MIN_VALUE << 1) {
+                return Convert.longToCharBytes(((Long.MAX_VALUE + 1L) << 1) + longval);
             }
             // no such luck...
             bigval = BigInteger.valueOf(longval);

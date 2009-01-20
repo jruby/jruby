@@ -1185,11 +1185,11 @@ public class RubyKernel {
 
         // Not sure how well this works, but it works much better than
         // just currentTimeMillis by itself.
+        long oldRandomSeed = runtime.getRandomSeed();
         runtime.setRandomSeed(System.currentTimeMillis() ^
                recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
                runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed()))));
 
-        long oldRandomSeed = runtime.getRandomSeed();
         runtime.getRandom().setSeed(runtime.getRandomSeed());
         return runtime.newFixnum(oldRandomSeed);
     }
