@@ -228,7 +228,6 @@ public class RubySymbol extends RubyObject {
         }
     }
 
-    @Deprecated
     @Override
     public IRubyObject to_s() {
         return to_s(getRuntime());
@@ -241,7 +240,6 @@ public class RubySymbol extends RubyObject {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
 
-    @Deprecated
     public IRubyObject id2name() {
         return to_s(getRuntime());
     }
