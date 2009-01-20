@@ -1,2 +1,1 @@
 fails(JRUBY-2797,macos):File.expand_path expands ~ENV['USER'] to the user's home directory
-fails:File.expand_path expands ~ENV['USER'] to the user's home directory
