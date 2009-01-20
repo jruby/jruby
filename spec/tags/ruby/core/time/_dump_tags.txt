@@ -1,3 +1,0 @@
-fails(JRUBY-3146):Time#_dump dumps a Time object to a bytestring
-fails(JRUBY-3146):Time#_dump dumps an array with a date as first element
-fails(JRUBY-3146):Time#_dump dumps an array with a time as second element

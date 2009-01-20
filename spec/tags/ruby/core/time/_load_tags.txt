@@ -1,2 +1,0 @@
-fails(JRUBY-3147):Time#_load loads a time object in the new format
-fails(JRUBY-3147):Time#_load loads a time object in the old UNIX timestamp based format
