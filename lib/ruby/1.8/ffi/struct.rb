@@ -3,7 +3,11 @@ require 'ffi'
 module FFI
   class Struct
     def self.size
-      @layout.size
+      defined?(@layout) ? @layout.size : defined?(@size) ? @size : 0
+    end
+    def self.size=(size)
+      raise ArgumentError, "Size already set" if defined?(@size) || defined?(@layout)
+      @size = size
     end
     def self.members
       @layout.members

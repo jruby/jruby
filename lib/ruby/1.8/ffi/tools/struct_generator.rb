@@ -130,9 +130,10 @@ module FFI
 
     def generate_layout
       buf = ""
+      buf << "self.size = #{@size}\n"
 
       @fields.each_with_index do |field, i|
-        if buf.empty?
+        if i < 1
           buf << "layout :#{field.name}, :#{field.type}, #{field.offset}"
         else
           buf << "       :#{field.name}, :#{field.type}, #{field.offset}"
