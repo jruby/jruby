@@ -1,0 +1,2 @@
+fails(JRUBY-3321):Matrix#eql? returns true when the each corresponding elements are equal in the sense of Object#eql?
+fails(JRUBY-3321):Matrix#eql? returns false when there are a pair corresponding elements which are not equal in the sense of Object#eql?

@@ -1,1 +1,0 @@
-fails(http://rubyspec.org/issues/show/37):CGI::HtmlExtension#caption when passed a Hash returns a 'caption'-element, using the passed Hash for attributes

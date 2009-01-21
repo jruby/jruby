@@ -1,1 +1,0 @@
-fails(JRUBY-2839):BigDecimal.limit use the global limit if no precision is specified

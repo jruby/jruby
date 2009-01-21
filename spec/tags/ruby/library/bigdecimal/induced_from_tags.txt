@@ -1,5 +1,0 @@
-fails(JRUBY-2839):BigDecimal.induced_from returns the passed argument when passed a BigDecimal
-fails(JRUBY-2839):BigDecimal.induced_from converts passed Fixnums to BigDecimal
-fails(JRUBY-2839):BigDecimal.induced_from converts passed Bignums to BigDecimal
-fails(JRUBY-2839):BigDecimal.induced_from does not try to convert non-Integers to Integer using #to_i
-fails(JRUBY-2839):BigDecimal.induced_from raises a TypeError when passed a non-Integer

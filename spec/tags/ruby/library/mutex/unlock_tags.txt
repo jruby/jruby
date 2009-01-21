@@ -1,0 +1,2 @@
+fails(JRUBY-3322):Mutex#unlock should raise ThreadError unless Mutex is locked
+fails(JRUBY-3322):Mutex#unlock should raise ThreadError unless thread owns Mutex
