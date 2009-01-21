@@ -1,3 +1,4 @@
+require 'tmpdir'
 require 'tempfile'
 require 'open3'
 
