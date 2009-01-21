@@ -58,6 +58,8 @@ public class RubyTempfile extends RubyFile {
     public static RubyClass createTempfileClass(Ruby runtime) {
         RubyClass tempfileClass = runtime.defineClass("Tempfile", runtime.getFile(), TEMPFILE_ALLOCATOR);
 
+        RubyKernel.require(tempfileClass, runtime.newString("tmpdir"), Block.NULL_BLOCK);
+
         tempfileClass.defineAnnotatedMethods(RubyTempfile.class);
 
         return tempfileClass;
