@@ -33,6 +33,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -51,7 +52,7 @@ public final class CallManyArgsBlockPassNode extends CallNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
         IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
-        Block block = getBlock(runtime, context, self, aBlock);
+        Block block = RuntimeHelpers.getBlock(runtime, context, self, iterNode, aBlock);
         
         return callAdapter.call(context, self, receiver, args, block);
     }

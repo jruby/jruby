@@ -6,6 +6,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -28,8 +29,8 @@ public class FCallOneArgBlockPassNode extends FCallNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = getBlock(runtime, context, self, aBlock);
-        
-        return callAdapter.call(context, self, self, arg1.interpret(runtime, context, self, aBlock), block);
+        return callAdapter.call(context, self, self,
+                arg1.interpret(runtime, context, self, aBlock),
+                RuntimeHelpers.getBlock(runtime, context, self, iterNode, aBlock));
     }
 }

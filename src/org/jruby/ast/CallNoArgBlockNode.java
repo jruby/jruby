@@ -33,7 +33,9 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -56,16 +58,14 @@ public final class CallNoArgBlockNode extends CallNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        Block block = getBlock(context, self);
+        Block block = RuntimeHelpers.getBlock(context, self, iterNode);
             
-        while (true) {
-            try {
-                return callAdapter.call(context, self, receiver, block);
-            } catch (JumpException.RetryJump rj) {
-                // allow loop to retry
-            } finally {
-                block.escape();
-            }
-        }    
+        try {
+            return callAdapter.call(context, self, receiver, block);
+        } catch (JumpException.RetryJump rj) {
+            throw runtime.newLocalJumpError(Reason.RETRY, self, "retry is not supported outside rescue");
+        } finally {
+            block.escape();
+        }
     }
 }

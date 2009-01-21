@@ -7,6 +7,7 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -23,7 +24,7 @@ public class FCallSpecialArgBlockNode extends FCallNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject arg = getArgsNode().interpret(runtime, context, self, aBlock);
-        Block block = getBlock(context, self);
+        Block block = RuntimeHelpers.getBlock(context, self, iterNode);
         
         if (arg instanceof RubyArray) {
             RubyArray nodes = (RubyArray) arg;

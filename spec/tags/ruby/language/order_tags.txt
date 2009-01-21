@@ -1,1 +1,0 @@
-fails(ruby-core-15981):A method call evaluates block pass before receiver

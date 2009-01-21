@@ -17,6 +17,8 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
@@ -44,6 +46,8 @@ import org.jruby.runtime.CompiledBlockLight;
 import org.jruby.runtime.CompiledBlockLight19;
 import org.jruby.runtime.CompiledSharedScopeBlock;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Interpreted19Block;
+import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -1528,5 +1532,22 @@ public class RuntimeHelpers {
 
     public static int getFastSwitchString(IRubyObject str) {
         return ((RubyString)str).getByteList().get(0);
+    }
+
+    public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {
+        IterNode iter = (IterNode)node;
+        iter.getScope().determineModule();
+
+        // Create block for this iter node
+        // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
+        if (iter.getBlockBody() instanceof InterpretedBlock) {
+            return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
+        } else {
+            return Interpreted19Block.newInterpretedClosure(context, iter.getBlockBody(), self);
+        }
+    }
+
+    public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Node node, Block aBlock) {
+        return RuntimeHelpers.getBlockFromBlockPassBody(runtime, node.interpret(runtime, context, self, aBlock), aBlock);
     }
 }

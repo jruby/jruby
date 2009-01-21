@@ -47,8 +47,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Interpreted19Block;
-import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -60,7 +58,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private final Node receiverNode;
     private Node argsNode;
-    private Node iterNode;
+    protected Node iterNode;
     public CallSite callAdapter;
 
     @Deprecated
@@ -159,23 +157,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
         assert false: "No longer called";
 
         return null;
-    }
-    
-    public Block getBlock(ThreadContext context, IRubyObject self) {
-        IterNode iter = (IterNode) iterNode;
-        iter.getScope().determineModule();
-            
-        // Create block for this iter node
-        // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-        if (iter.getBlockBody() instanceof InterpretedBlock) {
-            return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
-        } else {
-            return Interpreted19Block.newInterpretedClosure(context, iter.getBlockBody(), self);
-        }
-    }
-    
-    public Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RuntimeHelpers.getBlockFromBlockPassBody(runtime, iterNode.interpret(runtime, context, self, aBlock), aBlock);
     }
     
     @Override
