@@ -47,6 +47,7 @@ module FFI
             builder.add_field(name, find_type(type, mod))
           end
         end
+        builder.size = @size if defined?(@size) && @size > builder.size
         builder.build
     end
     def self.array_layout(spec)
@@ -72,6 +73,7 @@ module FFI
           builder.add_field(name, find_type(type, mod), offset)
         end 
       end
+      builder.size = @size if defined?(@size) && @size > builder.size
       builder.build
     end
     def self.layout(*spec)
