@@ -12,19 +12,19 @@ arches = [ ]
 arch_options = {}
 conf_files = []
 
-if JRuby::FFI::Platform::IS_MAC
+if FFI::Platform.mac?
   osx_arches = [ "ppc", "i386" ]
   osx_arches << "x86_64" if `arch` == "x86_64"
   osx_arches.each do |arch|
     arches << arch
-    platform_dir = File.join(JRuby::FFI::Platform::FFI_DIR, "platform", "#{arch}-darwin")
+    platform_dir = File.join(FFI::Platform::FFI_DIR, "platform", "#{arch}-darwin")
     arch_options[arch] = { :platform_dir => platform_dir, :cppflags => "-arch #{arch}"}
   end
 
 else
-  arches = [ JRuby::FFI::Platform::ARCH ]
-  arch_options[JRuby::FFI::Platform::ARCH] = {
-    :platform_dir => JRuby::FFI::Platform::CONF_DIR,
+  arches = [ FFI::Platform::ARCH ]
+  arch_options[FFI::Platform::ARCH] = {
+    :platform_dir => FFI::Platform::CONF_DIR,
     :cppflags => ""
     }
 end
@@ -44,10 +44,10 @@ arches.each { |arch|
     end
   end
   task "gen_ffi_files_#{arch}" do |task|
-    Dir["#{File.join(JRuby::FFI::Platform::FFI_DIR, 'platform')}/*.rb.ffi"].each do |file|
+    Dir["#{File.join(FFI::Platform::FFI_DIR, 'platform')}/*.rb.ffi"].each do |file|
       rb_name = File.join(options[:platform_dir], File.basename(file, '.ffi'))
       FFI::Generator.new file, rb_name, { :cppflags => options[:cppflags] }
-    end unless JRuby::FFI::Platform::IS_WINDOWS
+    end unless FFI::Platform.windows?
   end
   task "#{arch}" => [ platform_conf, types_conf, "gen_ffi_files_#{arch}" ]
 }
