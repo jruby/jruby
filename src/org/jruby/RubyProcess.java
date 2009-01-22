@@ -833,13 +833,19 @@ public class RubyProcess {
         throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
     }
 
-    @JRubyMethod(name = "kill", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
+        return kill(recv.getRuntime(), args);
+    }
+    @JRubyMethod(name = "kill", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject kill(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return kill(context.getRuntime(), args);
+    }
+    public static IRubyObject kill(Ruby runtime, IRubyObject[] args) {
         if (args.length < 2) {
-            throw recv.getRuntime().newArgumentError("wrong number of arguments -- kill(sig, pid...)");
+            throw runtime.newArgumentError("wrong number of arguments -- kill(sig, pid...)");
         }
         
-        Ruby runtime = recv.getRuntime();
         int signal;
         if (args[0] instanceof RubyFixnum) {
             signal = (int) ((RubyFixnum) args[0]).getLongValue();
@@ -872,7 +878,7 @@ public class RubyProcess {
     @JRubyMethod(name = "detach", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject detach(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         final int pid = (int)arg.convertToInteger().getLongValue();
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.getRuntime();
         
         BlockCallback callback = new BlockCallback() {
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
@@ -888,10 +894,16 @@ public class RubyProcess {
                 IRubyObject.NULL_ARRAY,
                 CallBlock.newCallClosure(recv, (RubyModule)recv, Arity.NO_ARGUMENTS, callback, context));
     }
-    
-    @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
+
+    @Deprecated
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
-        Ruby runtime = recv.getRuntime();
+        return times(recv.getRuntime());
+    }
+    @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject times(ThreadContext context, IRubyObject recv, Block unusedBlock) {
+        return times(context.getRuntime());
+    }
+    public static IRubyObject times(Ruby runtime) {
         double currentTime = System.currentTimeMillis() / 1000.0;
         double startTime = runtime.getStartTime() / 1000.0;
         RubyFloat zero = runtime.newFloat(0.0);
@@ -900,9 +912,16 @@ public class RubyProcess {
                 Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject pid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpid());
+        return pid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject pid(ThreadContext context, IRubyObject recv) {
+        return pid(context.getRuntime());
+    }
+    public static IRubyObject pid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().getpid());
     }
     
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
