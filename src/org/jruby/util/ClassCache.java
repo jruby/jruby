@@ -56,27 +56,17 @@ public class ClassCache<T> {
         }
     }
     
-    private static class OneShotClassLoader extends URLClassLoader {
+    private static class OneShotClassLoader extends ClassLoader {
         private final static ProtectionDomain DEFAULT_DOMAIN = 
             JRubyClassLoader.class.getProtectionDomain();
         
         public OneShotClassLoader(ClassLoader parent) {
-            super(new URL[0], parent);
-        }
-        
-        // Change visibility so others can see it
-        @Override
-        public void addURL(URL url) {
-            super.addURL(url);
+            super(parent);
         }
 
         public Class<?> defineClass(String name, byte[] bytes) {
             return super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
          }
-
-        public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
-           return super.defineClass(name, bytes, 0, bytes.length, domain);
-        }
     }
     
     
