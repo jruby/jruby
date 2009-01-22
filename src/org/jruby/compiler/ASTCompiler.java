@@ -736,11 +736,38 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(callNode.getArgsNode());
         CompilerCallback closureArg = getBlock(callNode.getIterNode());
 
+        String name = callNode.getName();
+        CallType callType = CallType.NORMAL;
+
+        // if __send__ with a literal symbol, compile it as a direct fcall
+        if (RubyInstanceConfig.FASTSEND_COMPILE_ENABLED) {
+            String literalSend = getLiteralSend(callNode);
+            if (literalSend != null) {
+                name = literalSend;
+                callType = CallType.FUNCTIONAL;
+            }
+        }
+        
         context.getInvocationCompiler().invokeDynamic(
-                callNode.getName(), receiverCallback, argsCallback,
-                CallType.NORMAL, closureArg, callNode.getIterNode() instanceof IterNode);
+                name, receiverCallback, argsCallback,
+                callType, closureArg, callNode.getIterNode() instanceof IterNode);
+        
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+
+    private String getLiteralSend(CallNode callNode) {
+        if (callNode.getName().equals("__send__")) {
+            if (callNode.getArgsNode() instanceof ArrayNode) {
+                ArrayNode arrayNode = (ArrayNode)callNode.getArgsNode();
+                if (arrayNode.get(0) instanceof SymbolNode) {
+                    return ((SymbolNode)arrayNode.get(0)).getName();
+                } else if (arrayNode.get(0) instanceof StrNode) {
+                    return ((StrNode)arrayNode.get(0)).getValue().toString();
+                }
+            }
+        }
+        return null;
     }
 
     public void compileCase(Node node, BodyCompiler context, boolean expr) {

@@ -193,6 +193,8 @@ public class RubyInstanceConfig {
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
     public static boolean FASTCASE_COMPILE_ENABLED =
             SafePropertyAccessor.getBoolean("jruby.compile.fastcase");
+    public static boolean FASTSEND_COMPILE_ENABLED =
+            SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
     public static boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
     public static final boolean FORK_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
@@ -972,6 +974,7 @@ public class RubyInstanceConfig {
                         FRAMELESS_COMPILE_ENABLED = true;
                         POSITIONLESS_COMPILE_ENABLED = true;
                         FASTCASE_COMPILE_ENABLED = true;
+                        FASTSEND_COMPILE_ENABLED = true;
                         RubyException.TRACE_TYPE = RubyException.RAW;
                         break FOR;
                     } else {
