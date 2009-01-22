@@ -27,12 +27,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.platform.SocketLevel;
+import com.kenai.constantine.platform.SocketOption;
 import java.io.IOException;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+
+import static com.kenai.constantine.platform.AddressFamily.*;
+import static com.kenai.constantine.platform.ProtocolFamily.*;
+import static com.kenai.constantine.platform.Sock.*;
+import static com.kenai.constantine.platform.IPProto.*;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -238,14 +245,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         int status;
         fd = -1;
         try {
-            fd = INSTANCE.socket(RubySocket.AF_UNIX, RubySocket.SOCK_STREAM, 0);
+            fd = INSTANCE.socket(AF_UNIX.value(), SOCK_STREAM.value(), 0);
         } catch (UnsatisfiedLinkError ule) { }
         if (fd < 0) {
             rb_sys_fail(runtime, "socket(2)");
         }
 
         LibCSocket.sockaddr_un sockaddr = new LibCSocket.sockaddr_un();
-        sockaddr.setFamily(RubySocket.AF_UNIX);
+        sockaddr.setFamily(AF_UNIX.value());
 
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
@@ -288,10 +295,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         int level = RubyNumeric.fix2int(lev);
         int opt = RubyNumeric.fix2int(optname);
 
-        switch(level) {
-        case RubySocket.SOL_SOCKET:
-            switch(opt) {
-            case RubySocket.SO_KEEPALIVE: {
+        switch(SocketLevel.valueOf(level)) {
+        case SOL_SOCKET:
+            switch(SocketOption.valueOf(opt)) {
+            case SO_KEEPALIVE: {
                 int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
                 if(res == -1) {
                     rb_sys_fail(context.getRuntime(), openFile.getPath());
@@ -461,11 +468,11 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         if(tp instanceof RubyString) {
             String str = tp.toString();
             if("SOCK_STREAM".equals(str)) {
-                return RubySocket.SOCK_STREAM;
+                return SOCK_STREAM.value();
             } else if("SOCK_DGRAM".equals(str)) {
-                return RubySocket.SOCK_DGRAM;
+                return SOCK_DGRAM.value();
             } else if("SOCK_RAW".equals(str)) {
-                return RubySocket.SOCK_RAW;
+                return SOCK_RAW.value();
             } else {
                 return -1;
             }
@@ -478,14 +485,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) throws Exception {
-        int domain = RubySocket.PF_UNIX;
+        int domain = PF_UNIX.value();
         Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, 0, 2);
         
         int type;
 
         if(args.length == 0) { 
-            type = RubySocket.SOCK_STREAM;
+            type = SOCK_STREAM.value();
         } else {
             type = getSocketType(args[0]);
         }

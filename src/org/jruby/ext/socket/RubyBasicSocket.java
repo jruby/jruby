@@ -27,6 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.platform.SocketLevel;
+import com.kenai.constantine.platform.SocketOption;
+import static com.kenai.constantine.platform.Sock.*;
+import static com.kenai.constantine.platform.IPProto.*;
+import static com.kenai.constantine.platform.TCP.*;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.Channel;
@@ -247,6 +252,12 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
+    private void setTcpNoDelay(IRubyObject val) throws IOException {
+        Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+        if(socketChannel instanceof SocketChannel) {
+            asSocket().setTcpNoDelay(asBoolean(val));
+        }
+    }
     private void setReuseAddr(IRubyObject val) throws IOException {
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
         if(socketChannel instanceof ServerSocketChannel) {
@@ -393,14 +404,18 @@ public class RubyBasicSocket extends RubyIO {
     protected int getSoTypeDefault() {
         return 0;
     }
-
+    private int getChannelSoType(Channel channel) {
+        if (channel instanceof SocketChannel || channel instanceof ServerSocketChannel) {
+            return SOCK_STREAM.value();
+        } else if (channel instanceof DatagramChannel) {
+            return SOCK_DGRAM.value();
+        } else {
+            return getSoTypeDefault();
+        }
+    }
     private IRubyObject getSoType(Ruby runtime) throws IOException {
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-        return number(runtime,
-                      (socketChannel instanceof SocketChannel) ? RubySocket.SOCK_STREAM : 
-                      ((socketChannel instanceof ServerSocketChannel) ? RubySocket.SOCK_STREAM : 
-                       ((socketChannel instanceof DatagramChannel) ? RubySocket.SOCK_DGRAM : getSoTypeDefault()))
-                      );
+        return number(runtime, getChannelSoType(socketChannel));
     }
 
     private IRubyObject trueFalse(Ruby runtime, boolean val) {
@@ -424,41 +439,41 @@ public class RubyBasicSocket extends RubyIO {
         Ruby runtime = context.getRuntime();
 
         try {
-            switch(level) {
-            case RubySocket.SOL_IP:
-            case RubySocket.SOL_SOCKET:
-            case RubySocket.SOL_TCP:
-            case RubySocket.SOL_UDP:
-                switch(opt) {
-                case RubySocket.SO_BROADCAST:
+            switch(SocketLevel.valueOf(level)) {
+            case SOL_IP:
+            case SOL_SOCKET:
+            case SOL_TCP:
+            case SOL_UDP:
+                switch(SocketOption.valueOf(opt)) {
+                case SO_BROADCAST:
                     return getBroadcast(runtime);
-                case RubySocket.SO_KEEPALIVE:
+                case SO_KEEPALIVE:
                     return getKeepAlive(runtime);
-                case RubySocket.SO_LINGER:
+                case SO_LINGER:
                     return getLinger(runtime);
-                case RubySocket.SO_OOBINLINE:
+                case SO_OOBINLINE:
                     return getOOBInline(runtime);
-                case RubySocket.SO_RCVBUF:
+                case SO_RCVBUF:
                     return getRcvBuf(runtime);
-                case RubySocket.SO_REUSEADDR:
+                case SO_REUSEADDR:
                     return getReuseAddr(runtime);
-                case RubySocket.SO_SNDBUF:
+                case SO_SNDBUF:
                     return getSndBuf(runtime);
-                case RubySocket.SO_RCVTIMEO:
-                case RubySocket.SO_SNDTIMEO:
+                case SO_RCVTIMEO:
+                case SO_SNDTIMEO:
                     return getTimeout(runtime);
-                case RubySocket.SO_TYPE:
+                case SO_TYPE:
                     return getSoType(runtime);
 
                     // Can't support the rest with Java
-                case RubySocket.SO_RCVLOWAT:
+                case SO_RCVLOWAT:
                     return number(runtime, 1);
-                case RubySocket.SO_SNDLOWAT:
+                case SO_SNDLOWAT:
                     return number(runtime, 2048);
-                case RubySocket.SO_DEBUG:
-                case RubySocket.SO_ERROR:
-                case RubySocket.SO_DONTROUTE:
-                case RubySocket.SO_TIMESTAMP:
+                case SO_DEBUG:
+                case SO_ERROR:
+                case SO_DONTROUTE:
+                case SO_TIMESTAMP:
                     return trueFalse(runtime, false);
                 default:
                     throw context.getRuntime().newErrnoENOPROTOOPTError();
@@ -480,52 +495,60 @@ public class RubyBasicSocket extends RubyIO {
         int opt = RubyNumeric.fix2int(optname);
 
         try {
-            switch(level) {
-            case RubySocket.SOL_IP:
-            case RubySocket.SOL_SOCKET:
-            case RubySocket.SOL_TCP:
-            case RubySocket.SOL_UDP:
-                switch(opt) {
-                case RubySocket.SO_BROADCAST:
+            switch(SocketLevel.valueOf(level)) {
+            case SOL_IP:
+            case SOL_SOCKET:
+            case SOL_TCP:
+            case SOL_UDP:
+                switch(SocketOption.valueOf(opt)) {
+                case SO_BROADCAST:
                     setBroadcast(val);
                     break;
-                case RubySocket.SO_KEEPALIVE:
+                case SO_KEEPALIVE:
                     setKeepAlive(val);
                     break;
-                case RubySocket.SO_LINGER:
+                case SO_LINGER:
                     setLinger(val);
                     break;
-                case RubySocket.SO_OOBINLINE:
+                case SO_OOBINLINE:
                     setOOBInline(val);
                     break;
-                case RubySocket.SO_RCVBUF:
+                case SO_RCVBUF:
                     setRcvBuf(val);
                     break;
-                case RubySocket.SO_REUSEADDR:
+                case SO_REUSEADDR:
                     setReuseAddr(val);
                     break;
-                case RubySocket.SO_SNDBUF:
+                case SO_SNDBUF:
                     setSndBuf(val);
                     break;
-                case RubySocket.SO_RCVTIMEO:
-                case RubySocket.SO_SNDTIMEO:
+                case SO_RCVTIMEO:
+                case SO_SNDTIMEO:
                     setTimeout(val);
                     break;
                     // Can't support the rest with Java
-                case RubySocket.SO_TYPE:
-                case RubySocket.SO_RCVLOWAT:
-                case RubySocket.SO_SNDLOWAT:
-                case RubySocket.SO_DEBUG:
-                case RubySocket.SO_ERROR:
-                case RubySocket.SO_DONTROUTE:
-                case RubySocket.SO_TIMESTAMP:
+                case SO_TYPE:
+                case SO_RCVLOWAT:
+                case SO_SNDLOWAT:
+                case SO_DEBUG:
+                case SO_ERROR:
+                case SO_DONTROUTE:
+                case SO_TIMESTAMP:
                     break;
                 default:
-                    throw context.getRuntime().newErrnoENOPROTOOPTError();
+                    if (IPPROTO_TCP.value() == level && TCP_NODELAY.value() == opt) {
+                        setTcpNoDelay(val);
+                    } else {
+                        throw context.getRuntime().newErrnoENOPROTOOPTError();
+                    }
                 }
                 break;
             default:
-                throw context.getRuntime().newErrnoENOPROTOOPTError();
+                if (IPPROTO_TCP.value() == level && TCP_NODELAY.value() == opt) {
+                    setTcpNoDelay(val);
+                } else {
+                    throw context.getRuntime().newErrnoENOPROTOOPTError();
+                }
             }
         } catch(IOException e) {
             throw context.getRuntime().newErrnoENOPROTOOPTError();

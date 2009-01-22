@@ -27,6 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.platform.AddressFamily;
+import static com.kenai.constantine.platform.AddressFamily.*;
+import static com.kenai.constantine.platform.ProtocolFamily.*;
+import com.kenai.constantine.platform.Sock;
+import static com.kenai.constantine.platform.Sock.*;
+import static com.kenai.constantine.platform.NameInfo.*;
+import static com.kenai.constantine.platform.IPProto.*;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -92,57 +99,6 @@ public class RubySocket extends RubyBasicSocket {
             return new RubySocket(runtime, klass);
         }
     };
-
-    public static final int NI_DGRAM = 16;
-    public static final int NI_MAXHOST = 1025;
-    public static final int NI_MAXSERV = 32;
-    public static final int NI_NAMEREQD = 4;
-    public static final int NI_NOFQDN = 1;
-    public static final int NI_NUMERICHOST = 2;
-    public static final int NI_NUMERICSERV = 8;
-
-    public static final int SOL_IP = 0;
-    public static final int SOL_SOCKET = 65535;
-    public static final int SOL_TCP = 6;
-    public static final int SOL_UDP = 17;
-
-    public static final int SO_BROADCAST = 32;
-    public static final int SO_DEBUG = 1;
-    public static final int SO_DONTROUTE = 16;
-    public static final int SO_ERROR = 4103;
-    public static final int SO_KEEPALIVE = 8;
-    public static final int SO_LINGER = 128;
-    public static final int SO_OOBINLINE = 256;
-    public static final int SO_RCVBUF = 4098;
-    public static final int SO_RCVLOWAT = 4100;
-    public static final int SO_RCVTIMEO = 4102;
-    public static final int SO_REUSEADDR = 4;
-    public static final int SO_SNDBUF = 4097;
-    public static final int SO_SNDLOWAT = 4099;
-    public static final int SO_SNDTIMEO = 4101;
-    public static final int SO_TIMESTAMP = 1024;
-    public static final int SO_TYPE = 4104;
-
-    public static final int SOCK_STREAM = 1;
-    public static final int SOCK_DGRAM = 2;
-    public static final int SOCK_RAW = 3;
-    public static final int SOCK_RDM = 4;
-    public static final int SOCK_SEQPACKET = 5;
-
-    public static final int AF_UNSPEC = 0;
-    public static final int PF_UNSPEC = 0;
-    public static final int AF_UNIX = 1;
-    public static final int PF_UNIX = 1;
-    public static final int AF_INET = 2;
-    public static final int PF_INET = 2;
-    public static final int AF_IPX = 23;
-    public static final int PF_IPX = 23;
-    public static final int AF_INET6 = 30;
-
-    public static final int IPPROTO_IP = 0;
-    public static final int IPPROTO_ICMP = 1;
-    public static final int IPPROTO_TCP = 6;
-    public static final int IPPROTO_UDP = 17;
     
     public static final int MSG_OOB = 0x1;
     public static final int MSG_PEEK = 0x2;
@@ -156,80 +112,26 @@ public class RubySocket extends RubyBasicSocket {
         
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
-        
-        rb_mConstants.fastSetConstant("SOCK_STREAM", runtime.newFixnum(SOCK_STREAM));
-        rb_mConstants.fastSetConstant("SOCK_DGRAM", runtime.newFixnum(SOCK_DGRAM));
-        rb_mConstants.fastSetConstant("SOCK_RAW", runtime.newFixnum(SOCK_RAW));
-        rb_mConstants.fastSetConstant("SOCK_RDM", runtime.newFixnum(SOCK_RDM));
-        rb_mConstants.fastSetConstant("SOCK_SEQPACKET", runtime.newFixnum(SOCK_SEQPACKET));
-        rb_mConstants.fastSetConstant("PF_UNSPEC", runtime.newFixnum(PF_UNSPEC));
-        rb_mConstants.fastSetConstant("AF_UNSPEC", runtime.newFixnum(AF_UNSPEC));
-        rb_mConstants.fastSetConstant("PF_INET", runtime.newFixnum(PF_INET));
-        rb_mConstants.fastSetConstant("AF_INET", runtime.newFixnum(AF_INET));
-        rb_mConstants.fastSetConstant("PF_INET6", runtime.newFixnum(AF_INET6));
-        rb_mConstants.fastSetConstant("AF_INET6", runtime.newFixnum(AF_INET6));
-        rb_mConstants.fastSetConstant("PF_UNIX", runtime.newFixnum(PF_UNIX));
-        rb_mConstants.fastSetConstant("AF_UNIX", runtime.newFixnum(AF_UNIX));
-        rb_mConstants.fastSetConstant("PF_IPX", runtime.newFixnum(PF_IPX));
-        rb_mConstants.fastSetConstant("AF_IPX", runtime.newFixnum(AF_IPX));
+
+        runtime.loadConstantSet(rb_mConstants, "Sock");
+        runtime.loadConstantSet(rb_mConstants, "SocketOption");
+        runtime.loadConstantSet(rb_mConstants, "SocketLevel");
+        runtime.loadConstantSet(rb_mConstants, "ProtocolFamily");
+        runtime.loadConstantSet(rb_mConstants, "AddressFamily");
+        runtime.loadConstantSet(rb_mConstants, "INAddr");
+        runtime.loadConstantSet(rb_mConstants, "IPProto");
+        runtime.loadConstantSet(rb_mConstants, "Shutdown");
+        runtime.loadConstantSet(rb_mConstants, "TCP");
+        runtime.loadConstantSet(rb_mConstants, "NameInfo");
+
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
         rb_mConstants.fastSetConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
         rb_mConstants.fastSetConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
-        rb_mConstants.fastSetConstant("SOL_SOCKET", runtime.newFixnum(SOL_SOCKET));
-        rb_mConstants.fastSetConstant("SOL_IP", runtime.newFixnum(SOL_IP));
-        rb_mConstants.fastSetConstant("SOL_TCP", runtime.newFixnum(SOL_TCP));
-        rb_mConstants.fastSetConstant("SOL_UDP", runtime.newFixnum(SOL_UDP));
-        rb_mConstants.fastSetConstant("IPPROTO_IP", runtime.newFixnum(0));
-        rb_mConstants.fastSetConstant("IPPROTO_ICMP", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("IPPROTO_TCP", runtime.newFixnum(6));
-        rb_mConstants.fastSetConstant("IPPROTO_UDP", runtime.newFixnum(17));
-        //  IPPROTO_RAW = 255
-        rb_mConstants.fastSetConstant("INADDR_ANY", runtime.newFixnum(0x00000000));
-        rb_mConstants.fastSetConstant("INADDR_BROADCAST", runtime.newFixnum(0xffffffff));
-        rb_mConstants.fastSetConstant("INADDR_LOOPBACK", runtime.newFixnum(0x7f000001));
-        rb_mConstants.fastSetConstant("INADDR_UNSPEC_GROUP", runtime.newFixnum(0xe0000000));
-        rb_mConstants.fastSetConstant("INADDR_ALLHOSTS_GROUP", runtime.newFixnum(0xe0000001));
-        rb_mConstants.fastSetConstant("INADDR_MAX_LOCAL_GROUP", runtime.newFixnum(0xe00000ff));
-        rb_mConstants.fastSetConstant("INADDR_NONE", runtime.newFixnum(0xffffffff));
-        rb_mConstants.fastSetConstant("SHUT_RD", runtime.newFixnum(0));
-        rb_mConstants.fastSetConstant("SHUT_WR", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("SHUT_RDWR", runtime.newFixnum(2));
-    
+        
         // constants webrick crashes without
         rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
-
-        // constants from MacOS X 10.4
-        rb_mConstants.fastSetConstant("SO_BROADCAST", runtime.newFixnum(SO_BROADCAST));
-        rb_mConstants.fastSetConstant("SO_DEBUG", runtime.newFixnum(SO_DEBUG));
-        rb_mConstants.fastSetConstant("SO_DONTROUTE", runtime.newFixnum(SO_DONTROUTE));
-        rb_mConstants.fastSetConstant("SO_ERROR", runtime.newFixnum(SO_ERROR));
-        rb_mConstants.fastSetConstant("SO_KEEPALIVE", runtime.newFixnum(SO_KEEPALIVE));
-        rb_mConstants.fastSetConstant("SO_LINGER", runtime.newFixnum(SO_LINGER));
-        rb_mConstants.fastSetConstant("SO_OOBINLINE", runtime.newFixnum(SO_OOBINLINE));
-        rb_mConstants.fastSetConstant("SO_RCVBUF", runtime.newFixnum(SO_RCVBUF));
-        rb_mConstants.fastSetConstant("SO_RCVLOWAT", runtime.newFixnum(SO_RCVLOWAT));
-        rb_mConstants.fastSetConstant("SO_RCVTIMEO", runtime.newFixnum(SO_RCVTIMEO));
-        rb_mConstants.fastSetConstant("SO_REUSEADDR", runtime.newFixnum(SO_REUSEADDR));
-        rb_mConstants.fastSetConstant("SO_SNDBUF", runtime.newFixnum(SO_SNDBUF));
-        rb_mConstants.fastSetConstant("SO_SNDLOWAT", runtime.newFixnum(SO_SNDLOWAT));
-        rb_mConstants.fastSetConstant("SO_SNDTIMEO", runtime.newFixnum(SO_SNDTIMEO));
-        rb_mConstants.fastSetConstant("SO_TIMESTAMP", runtime.newFixnum(SO_TIMESTAMP));
-        rb_mConstants.fastSetConstant("SO_TYPE", runtime.newFixnum(SO_TYPE));
-
-        // drb needs defined
-        rb_mConstants.fastSetConstant("TCP_NODELAY", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("TCP_MAXSEG", runtime.newFixnum(2));
-
-        // flags/limits used by Net::SSH
-        rb_mConstants.fastSetConstant("NI_DGRAM", runtime.newFixnum(NI_DGRAM));
-        rb_mConstants.fastSetConstant("NI_MAXHOST", runtime.newFixnum(NI_MAXHOST));
-        rb_mConstants.fastSetConstant("NI_MAXSERV", runtime.newFixnum(NI_MAXSERV));
-        rb_mConstants.fastSetConstant("NI_NAMEREQD", runtime.newFixnum(NI_NAMEREQD));
-        rb_mConstants.fastSetConstant("NI_NOFQDN", runtime.newFixnum(NI_NOFQDN));
-        rb_mConstants.fastSetConstant("NI_NUMERICHOST", runtime.newFixnum(NI_NUMERICHOST));
-        rb_mConstants.fastSetConstant("NI_NUMERICSERV", runtime.newFixnum(NI_NUMERICSERV));
-       
+        
         // More constants needed by specs
         rb_mConstants.fastSetConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
         rb_mConstants.fastSetConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
@@ -276,14 +178,14 @@ public class RubySocket extends RubyBasicSocket {
             if (mainChannel instanceof SocketChannel) {
                 // ok, it's a socket...set values accordingly
                 // just using AF_INET since we can't tell from SocketChannel...
-                socket.soDomain = AF_INET;
-                socket.soType = SOCK_STREAM;
+                socket.soDomain = AddressFamily.AF_INET.value();
+                socket.soType = Sock.SOCK_STREAM.value();
                 socket.soProtocol = 0;
             } else if (mainChannel instanceof DatagramChannel) {
                 // datagram, set accordingly
                 // again, AF_INET
-                socket.soDomain = AF_INET;
-                socket.soType = SOCK_DGRAM;
+                socket.soDomain = AddressFamily.AF_INET.value();
+                socket.soType = Sock.SOCK_DGRAM.value();
                 socket.soProtocol = 0;
             } else {
                 throw context.getRuntime().newErrnoENOTSOCKError("can't Socket.new/for_fd against a non-socket");
@@ -303,9 +205,9 @@ public class RubySocket extends RubyBasicSocket {
             if(domain instanceof RubyString) {
                 String domainString = domain.toString();
                 if(domainString.equals("AF_INET")) {
-                    soDomain = AF_INET;
+                    soDomain = AF_INET.value();
                 } else if(domainString.equals("PF_INET")) {
-                    soDomain = PF_INET;
+                    soDomain = PF_INET.value();
                 } else {
                     throw sockerr(context.getRuntime(), "unknown socket domain " + domainString);
                 }
@@ -316,9 +218,9 @@ public class RubySocket extends RubyBasicSocket {
             if(type instanceof RubyString) {
                 String typeString = type.toString();
                 if(typeString.equals("SOCK_STREAM")) {
-                    soType = SOCK_STREAM;
+                    soType = SOCK_STREAM.value();
                 } else if(typeString.equals("SOCK_DGRAM")) {
-                    soType = SOCK_DGRAM;
+                    soType = SOCK_DGRAM.value();
                 } else {
                     throw sockerr(context.getRuntime(), "unknown socket type " + typeString);
                 }
@@ -329,9 +231,9 @@ public class RubySocket extends RubyBasicSocket {
             soProtocol = RubyNumeric.fix2int(protocol);
         
             Channel channel = null;
-            if(soType == SOCK_STREAM) {
+            if(soType == Sock.SOCK_STREAM.value()) {
                 channel = SocketChannel.open();
-            } else if(soType == SOCK_DGRAM) {
+            } else if(soType == Sock.SOCK_DGRAM.value()) {
                 channel = DatagramChannel.open();
             }
             
@@ -636,7 +538,7 @@ public class RubySocket extends RubyBasicSocket {
         } catch (UnknownHostException e) {
             throw sockerr(runtime, "unknown host: "+ host);
         }
-        if ((flags & NI_NUMERICHOST) == 0) {
+        if ((flags & NI_NUMERICHOST.value()) == 0) {
             host = addr.getCanonicalHostName();
         } else {
             host = addr.getHostAddress();

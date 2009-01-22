@@ -2544,6 +2544,10 @@ public final class Ruby {
         return RubyFixnum.newFixnum(this, value);
     }
 
+    public RubyFixnum newFixnum(Constant value) {
+        return RubyFixnum.newFixnum(this, value.value());
+    }
+
     public RubyFloat newFloat(double value) {
         return RubyFloat.newFloat(this, value);
     }
@@ -3089,6 +3093,12 @@ public final class Ruby {
 
     public synchronized void incrementConstantGeneration() {
         constantGeneration++;
+    }
+
+    public void loadConstantSet(RubyModule module, String constantSetName) {
+        for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
+            module.fastSetConstant(c.name(), newFixnum(c.value()));
+        }
     }
 
     private volatile int constantGeneration = 1;
