@@ -29,6 +29,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.kenai.constantine.Constant;
+import com.kenai.constantine.ConstantSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -72,15 +74,19 @@ public class RubyProcess {
         process_gid.defineAnnotatedMethods(GroupID.class);
         process_sys.defineAnnotatedMethods(Sys.class);
 
-        process.defineConstant("PRIO_PROCESS", runtime.newFixnum(0));
-        process.defineConstant("PRIO_PGRP", runtime.newFixnum(1));
-        process.defineConstant("PRIO_USER", runtime.newFixnum(2));
+        loadConstantSet(runtime, process, "PRIO");
+        loadConstantSet(runtime, process, "RLIM");
+        loadConstantSet(runtime, process, "RLIMIT");
         
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         
         return process;
     }
-
+    private static final void loadConstantSet(Ruby runtime, RubyModule module, String name) {
+        for (Constant c : ConstantSet.getConstantSet(name)) {
+            module.defineConstant(c.name(), runtime.newFixnum(c.value()));
+        }
+    }
     @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
         private long status = 0L;
