@@ -3,7 +3,7 @@ require 'benchmark'
 def bench_rescue(bm)
   bm.report("control") { 1_000_000.times { foo1 } }
   bm.report("one rescue") { 1_000_000.times { foo2a } }
-  bm.report("one rescue + raise") { 1_000_000.times { foo2a } }
+  bm.report("one rescue + raise") { 1_000_000.times { foo2b } }
   bm.report("five rescues") { 1_000_000.times { foo3a } }
   bm.report("five rescues + raise") { 1_000_000.times { foo3b } }
 end
