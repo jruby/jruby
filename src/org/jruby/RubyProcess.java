@@ -119,35 +119,64 @@ public class RubyProcess {
             return getRuntime().newFixnum(status);
         }
         
-        @JRubyMethod(name = ">>")
+        @Deprecated
         public IRubyObject op_rshift(IRubyObject other) {
-            long shiftValue = other.convertToInteger().getLongValue();
-            return getRuntime().newFixnum(status >> shiftValue);
+            return op_rshift(getRuntime(), other);
         }
-        
-        @JRubyMethod(name = "==")
-        public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-            return other.callMethod(context, "==", this.to_i());
+        @JRubyMethod(name = ">>")
+        public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
+            return op_rshift(context.getRuntime(), other);
+        }
+        public IRubyObject op_rshift(Ruby runtime, IRubyObject other) {
+            long shiftValue = other.convertToInteger().getLongValue();
+            return runtime.newFixnum(status >> shiftValue);
         }
 
-        @JRubyMethod
+        @Override
+        @JRubyMethod(name = "==")
+        public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+            return other.callMethod(context, "==", this.to_i(context.getRuntime()));
+        }
+        
+        @Deprecated
         public IRubyObject to_i() {
-            return getRuntime().newFixnum(shiftedValue());
+            return to_i(getRuntime());
+        }
+        @JRubyMethod
+        public IRubyObject to_i(ThreadContext context) {
+            return to_i(context.getRuntime());
+        }
+        public IRubyObject to_i(Ruby runtime) {
+            return runtime.newFixnum(shiftedValue());
         }
         
-        @JRubyMethod
+        @Override
         public IRubyObject to_s() {
-            return getRuntime().newString(String.valueOf(shiftedValue()));
+            return to_s(getRuntime());
+        }
+        @JRubyMethod
+        public IRubyObject to_s(ThreadContext context) {
+            return to_s(context.getRuntime());
+        }
+        public IRubyObject to_s(Ruby runtime) {
+            return runtime.newString(String.valueOf(shiftedValue()));
         }
         
-        @JRubyMethod
+        @Override
         public IRubyObject inspect() {
-            return getRuntime().newString("#<Process::Status: pid=????,exited(" + String.valueOf(status) + ")>");
+            return inspect(getRuntime());
+        }
+        @JRubyMethod
+        public IRubyObject inspect(ThreadContext context) {
+            return inspect(context.getRuntime());
+        }
+        public IRubyObject inspect(Ruby runtime) {
+            return runtime.newString("#<Process::Status: pid=????,exited(" + String.valueOf(status) + ")>");
         }
         
         @JRubyMethod(name = "success?")
-        public IRubyObject success_p() {
-            return getRuntime().newBoolean(status == EXIT_SUCCESS);
+        public IRubyObject success_p(ThreadContext context) {
+            return context.getRuntime().newBoolean(status == EXIT_SUCCESS);
         }
         
         private long shiftedValue() {
@@ -162,14 +191,25 @@ public class RubyProcess {
             throw self.getRuntime().newNotImplementedError("Process::UID::change_privilege not implemented yet");
         }
         
-        @JRubyMethod(name = "eid", module = true)
+        @Deprecated
         public static IRubyObject eid(IRubyObject self) {
-            return euid(self);
+            return euid(self.getRuntime());
         }
-        
-        @JRubyMethod(name = "eid=", module = true)
+        @JRubyMethod(name = "eid", module = true)
+        public static IRubyObject eid(ThreadContext context, IRubyObject self) {
+            return euid(context.getRuntime());
+        }
+
+        @Deprecated
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
-            return euid_set(self, arg);
+            return eid(self.getRuntime(), arg);
+        }
+        @JRubyMethod(name = "eid=", module = true)
+        public static IRubyObject eid(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            return eid(context.getRuntime(), arg);
+        }
+        public static IRubyObject eid(Ruby runtime, IRubyObject arg) {
+            return euid_set(runtime, arg);
         }
         
         @JRubyMethod(name = "grant_privilege", module = true)
@@ -186,10 +226,17 @@ public class RubyProcess {
         public static IRubyObject re_exchangeable_p(IRubyObject self) {
             throw self.getRuntime().newNotImplementedError("Process::UID::re_exchangeable? not implemented yet");
         }
-        
-        @JRubyMethod(name = "rid", module = true)
+
+        @Deprecated
         public static IRubyObject rid(IRubyObject self) {
-            return uid(self);
+            return rid(self.getRuntime());
+        }
+        @JRubyMethod(name = "rid", module = true)
+        public static IRubyObject rid(ThreadContext context, IRubyObject self) {
+            return rid(context.getRuntime());
+        }
+        public static IRubyObject rid(Ruby runtime) {
+            return uid(runtime);
         }
         
         @JRubyMethod(name = "sid_available?", module = true)
@@ -199,7 +246,7 @@ public class RubyProcess {
         
         @JRubyMethod(name = "switch", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
-            Ruby runtime = self.getRuntime();
+            Ruby runtime = context.getRuntime();
             int uid = runtime.getPosix().getuid();
             int euid = runtime.getPosix().geteuid();
             
@@ -228,15 +275,29 @@ public class RubyProcess {
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::GID::change_privilege not implemented yet");
         }
-        
-        @JRubyMethod(name = "eid", module = true)
+
+        @Deprecated
         public static IRubyObject eid(IRubyObject self) {
-            return egid(self);
+            return eid(self.getRuntime());
         }
-        
-        @JRubyMethod(name = "eid=", module = true)
+        @JRubyMethod(name = "eid", module = true)
+        public static IRubyObject eid(ThreadContext context, IRubyObject self) {
+            return eid(context.getRuntime());
+        }
+        public static IRubyObject eid(Ruby runtime) {
+            return egid(runtime);
+        }
+
+        @Deprecated
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
-            return RubyProcess.egid_set(self, arg);
+            return eid(self.getRuntime(), arg);
+        }
+        @JRubyMethod(name = "eid=", module = true)
+        public static IRubyObject eid(ThreadContext context, IRubyObject self, IRubyObject arg) {
+            return eid(context.getRuntime(), arg);
+        }
+        public static IRubyObject eid(Ruby runtime, IRubyObject arg) {
+            return RubyProcess.egid_set(runtime, arg);
         }
         
         @JRubyMethod(name = "grant_privilege", module = true)
@@ -253,10 +314,17 @@ public class RubyProcess {
         public static IRubyObject re_exchangeable_p(IRubyObject self) {
             throw self.getRuntime().newNotImplementedError("Process::GID::re_exchangeable? not implemented yet");
         }
-        
-        @JRubyMethod(name = "rid", module = true)
+
+        @Deprecated
         public static IRubyObject rid(IRubyObject self) {
-            return gid(self);
+            return rid(self.getRuntime());
+        }
+        @JRubyMethod(name = "rid", module = true)
+        public static IRubyObject rid(ThreadContext context, IRubyObject self) {
+            return rid(context.getRuntime());
+        }
+        public static IRubyObject rid(Ruby runtime) {
+            return gid(runtime);
         }
         
         @JRubyMethod(name = "sid_available?", module = true)
@@ -266,7 +334,7 @@ public class RubyProcess {
         
         @JRubyMethod(name = "switch", module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
-            Ruby runtime = self.getRuntime();
+            Ruby runtime = context.getRuntime();
             int gid = runtime.getPosix().getgid();
             int egid = runtime.getPosix().getegid();
             
@@ -291,44 +359,76 @@ public class RubyProcess {
     
     @JRubyModule(name="Process::Sys")
     public static class Sys {
-        @JRubyMethod(name = "getegid", module = true, visibility = Visibility.PRIVATE)
+        @Deprecated
         public static IRubyObject getegid(IRubyObject self) {
-            return egid(self);
+            return egid(self.getRuntime());
+        }
+        @JRubyMethod(name = "getegid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject getegid(ThreadContext context, IRubyObject self) {
+            return egid(context.getRuntime());
         }
         
-        @JRubyMethod(name = "geteuid", module = true, visibility = Visibility.PRIVATE)
+        @Deprecated
         public static IRubyObject geteuid(IRubyObject self) {
-            return euid(self);
+            return euid(self.getRuntime());
         }
-        
-        @JRubyMethod(name = "getgid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "geteuid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject geteuid(ThreadContext context, IRubyObject self) {
+            return euid(context.getRuntime());
+        }
+
+        @Deprecated
         public static IRubyObject getgid(IRubyObject self) {
-            return gid(self);
+            return gid(self.getRuntime());
         }
-        
-        @JRubyMethod(name = "getuid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "getgid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject getgid(ThreadContext context, IRubyObject self) {
+            return gid(context.getRuntime());
+        }
+
+        @Deprecated
         public static IRubyObject getuid(IRubyObject self) {
-            return uid(self);
+            return uid(self.getRuntime());
+        }
+        @JRubyMethod(name = "getuid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject getuid(ThreadContext context, IRubyObject self) {
+            return uid(context.getRuntime());
         }
 
-        @JRubyMethod(name = "setegid", module = true, visibility = Visibility.PRIVATE)
+        @Deprecated
         public static IRubyObject setegid(IRubyObject recv, IRubyObject arg) {
-            return egid_set(recv, arg);
+            return egid_set(recv.getRuntime(), arg);
+        }
+        @JRubyMethod(name = "setegid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject setegid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+            return egid_set(context.getRuntime(), arg);
         }
 
-        @JRubyMethod(name = "seteuid", module = true, visibility = Visibility.PRIVATE)
+        @Deprecated
         public static IRubyObject seteuid(IRubyObject recv, IRubyObject arg) {
-            return euid_set(recv, arg);
+            return euid_set(recv.getRuntime(), arg);
+        }
+        @JRubyMethod(name = "seteuid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject seteuid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+            return euid_set(context.getRuntime(), arg);
         }
 
-        @JRubyMethod(name = "setgid", module = true, visibility = Visibility.PRIVATE)
+        @Deprecated
         public static IRubyObject setgid(IRubyObject recv, IRubyObject arg) {
-            return gid_set(recv, arg);
+            return gid_set(recv.getRuntime(), arg);
+        }
+        @JRubyMethod(name = "setgid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject setgid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+            return gid_set(context.getRuntime(), arg);
         }
 
-        @JRubyMethod(name = "setuid", module = true, visibility = Visibility.PRIVATE)
+        @Deprecated
         public static IRubyObject setuid(IRubyObject recv, IRubyObject arg) {
-            return uid_set(recv, arg);
+            return uid_set(recv.getRuntime(), arg);
+        }
+        @JRubyMethod(name = "setuid", module = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject setuid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+            return uid_set(context.getRuntime(), arg);
         }
     }
 
@@ -352,9 +452,16 @@ public class RubyProcess {
         throw recv.getRuntime().newNotImplementedError("Process#setrlimit not yet implemented");
     }
 
-    @JRubyMethod(name = "getpgrp", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject getpgrp(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpgrp());
+        return getpgrp(recv.getRuntime());
+    }
+    @JRubyMethod(name = "getpgrp", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getpgrp(ThreadContext context, IRubyObject recv) {
+        return getpgrp(context.getRuntime());
+    }
+    public static IRubyObject getpgrp(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().getpgrp());
     }
 
     @JRubyMethod(name = "groups=", required = 1, module = true, visibility = Visibility.PRIVATE)
@@ -362,9 +469,15 @@ public class RubyProcess {
         throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
     }
 
-    @JRubyMethod(name = "waitpid", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject waitpid(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return waitpid(recv.getRuntime(), args);
+    }
+    @JRubyMethod(name = "waitpid", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject waitpid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return waitpid(context.getRuntime(), args);
+    }
+    public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
         int pid = -1;
         int flags = 0;
         if (args.length > 0) {
@@ -387,12 +500,18 @@ public class RubyProcess {
         return runtime.newFixnum(pid);
     }
 
-    @JRubyMethod(name = "wait", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject wait(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return wait(recv.getRuntime(), args);
+    }
+    @JRubyMethod(name = "wait", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return wait(context.getRuntime(), args);
+    }
+    public static IRubyObject wait(Ruby runtime, IRubyObject[] args) {
         
         if (args.length > 0) {
-            return waitpid(recv, args);
+            return waitpid(runtime, args);
         }
         
         int[] status = new int[1];
@@ -408,11 +527,18 @@ public class RubyProcess {
         return runtime.newFixnum(pid);
     }
 
-    @JRubyMethod(name = "waitall", module = true, visibility = Visibility.PRIVATE)
+
+    @Deprecated
     public static IRubyObject waitall(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+        return waitall(recv.getRuntime());
+    }
+    @JRubyMethod(name = "waitall", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject waitall(ThreadContext context, IRubyObject recv) {
+        return waitall(context.getRuntime());
+    }
+    public static IRubyObject waitall(Ruby runtime) {
         POSIX posix = runtime.getPosix();
-        RubyArray results = recv.getRuntime().newArray();
+        RubyArray results = runtime.newArray();
         
         int[] status = new int[1];
         int result = posix.wait(status);
@@ -424,36 +550,78 @@ public class RubyProcess {
         return results;
     }
 
-    @JRubyMethod(name = "setsid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject setsid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().setsid());
+        return setsid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "setsid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setsid(ThreadContext context, IRubyObject recv) {
+        return setsid(context.getRuntime());
+    }
+    public static IRubyObject setsid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().setsid());
     }
 
-    @JRubyMethod(name = "setpgrp", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject setpgrp(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().setpgid(0, 0));
+        return setpgrp(recv.getRuntime());
+    }
+    @JRubyMethod(name = "setpgrp", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setpgrp(ThreadContext context, IRubyObject recv) {
+        return setpgrp(context.getRuntime());
+    }
+    public static IRubyObject setpgrp(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().setpgid(0, 0));
     }
 
-    @JRubyMethod(name = "egid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject egid_set(IRubyObject recv, IRubyObject arg) {
-        recv.getRuntime().getPosix().setegid((int)arg.convertToInteger().getLongValue());
-        return RubyFixnum.zero(recv.getRuntime());
+        return egid_set(recv.getRuntime(), arg);
+    }
+    @JRubyMethod(name = "egid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject egid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return egid_set(context.getRuntime(), arg);
+    }
+    public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
+        runtime.getPosix().setegid((int)arg.convertToInteger().getLongValue());
+        return RubyFixnum.zero(runtime);
     }
 
-    @JRubyMethod(name = "euid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject euid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().geteuid());
+        return euid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "euid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject euid(ThreadContext context, IRubyObject recv) {
+        return euid(context.getRuntime());
+    }
+    public static IRubyObject euid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().geteuid());
     }
 
-    @JRubyMethod(name = "uid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject uid_set(IRubyObject recv, IRubyObject arg) {
-        recv.getRuntime().getPosix().setuid((int)arg.convertToInteger().getLongValue());
-        return RubyFixnum.zero(recv.getRuntime());
+        return uid_set(recv.getRuntime(), arg);
+    }
+    @JRubyMethod(name = "uid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject uid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return uid_set(context.getRuntime(), arg);
+    }
+    public static IRubyObject uid_set(Ruby runtime, IRubyObject arg) {
+        runtime.getPosix().setuid((int)arg.convertToInteger().getLongValue());
+        return RubyFixnum.zero(runtime);
     }
 
-    @JRubyMethod(name = "gid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject gid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getgid());
+        return gid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "gid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gid(ThreadContext context, IRubyObject recv) {
+        return gid(context.getRuntime());
+    }
+    public static IRubyObject gid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().getgid());
     }
 
     @JRubyMethod(name = "maxgroups", module = true, visibility = Visibility.PRIVATE)
@@ -461,23 +629,43 @@ public class RubyProcess {
         throw recv.getRuntime().newNotImplementedError("Process#maxgroups not yet implemented");
     }
 
-    @JRubyMethod(name = "getpriority", required = 2, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject getpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        return getpriority(recv.getRuntime(), arg1, arg2);
+    }
+    @JRubyMethod(name = "getpriority", required = 2, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getpriority(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        return getpriority(context.getRuntime(), arg1, arg2);
+    }
+    public static IRubyObject getpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
         int which = (int)arg1.convertToInteger().getLongValue();
         int who = (int)arg2.convertToInteger().getLongValue();
-        int result = recv.getRuntime().getPosix().getpriority(which, who);
+        int result = runtime.getPosix().getpriority(which, who);
         
-        return recv.getRuntime().newFixnum(result);
+        return runtime.newFixnum(result);
     }
 
-    @JRubyMethod(name = "uid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject uid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getuid());
+        return uid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "uid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject uid(ThreadContext context, IRubyObject recv) {
+        return uid(context.getRuntime());
+    }
+    public static IRubyObject uid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().getuid());
     }
 
-    @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return waitpid2(recv.getRuntime(), args);
+    }
+    @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject waitpid2(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return waitpid2(context.getRuntime(), args);
+    }
+    public static IRubyObject waitpid2(Ruby runtime, IRubyObject[] args) {
         int pid = -1;
         int flags = 0;
         if (args.length > 0) {
@@ -507,57 +695,117 @@ public class RubyProcess {
         throw recv.getRuntime().newNotImplementedError("Process#maxgroups_set not yet implemented");
     }
 
-    @JRubyMethod(name = "ppid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject ppid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getppid());
+        return ppid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "ppid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject ppid(ThreadContext context, IRubyObject recv) {
+        return ppid(context.getRuntime());
+    }
+    public static IRubyObject ppid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().getppid());
     }
 
-    @JRubyMethod(name = "gid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject gid_set(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().setgid((int)arg.convertToInteger().getLongValue()));
+        return gid_set(recv.getRuntime(), arg);
+    }
+    @JRubyMethod(name = "gid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject gid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return gid_set(context.getRuntime(), arg);
+    }
+    public static IRubyObject gid_set(Ruby runtime, IRubyObject arg) {
+        return runtime.newFixnum(runtime.getPosix().setgid((int)arg.convertToInteger().getLongValue()));
     }
 
-    @JRubyMethod(name = "wait2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject wait2(IRubyObject recv, IRubyObject[] args) {
-        return waitpid2(recv, args);
+        return waitpid2(recv.getRuntime(), args);
+    }
+    @JRubyMethod(name = "wait2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject wait2(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return waitpid2(context.getRuntime(), args);
     }
 
-    @JRubyMethod(name = "euid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject euid_set(IRubyObject recv, IRubyObject arg) {
-        recv.getRuntime().getPosix().seteuid((int)arg.convertToInteger().getLongValue());
-        return RubyFixnum.zero(recv.getRuntime());
+        return euid_set(recv.getRuntime(), arg);
+    }
+    @JRubyMethod(name = "euid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject euid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return euid_set(context.getRuntime(), arg);
+    }
+    public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
+        runtime.getPosix().seteuid((int)arg.convertToInteger().getLongValue());
+        return RubyFixnum.zero(runtime);
     }
 
-    @JRubyMethod(name = "setpriority", required = 3, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject setpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return setpriority(recv.getRuntime(), arg1, arg2, arg3);
+    }
+    @JRubyMethod(name = "setpriority", required = 3, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setpriority(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return setpriority(context.getRuntime(), arg1, arg2, arg3);
+    }
+    public static IRubyObject setpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         int which = (int)arg1.convertToInteger().getLongValue();
         int who = (int)arg2.convertToInteger().getLongValue();
         int prio = (int)arg3.convertToInteger().getLongValue();
-        int result = recv.getRuntime().getPosix().setpriority(which, who, prio);
+        int result = runtime.getPosix().setpriority(which, who, prio);
         
-        return recv.getRuntime().newFixnum(result);
+        return runtime.newFixnum(result);
     }
 
-    @JRubyMethod(name = "setpgid", required = 2, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject setpgid(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        return setpgid(recv.getRuntime(), arg1, arg2);
+    }
+    @JRubyMethod(name = "setpgid", required = 2, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject setpgid(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        return setpgid(context.getRuntime(), arg1, arg2);
+    }
+    public static IRubyObject setpgid(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
         int pid = (int)arg1.convertToInteger().getLongValue();
         int gid = (int)arg2.convertToInteger().getLongValue();
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().setpgid(pid, gid));
+        return runtime.newFixnum(runtime.getPosix().setpgid(pid, gid));
     }
 
-    @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject getpgid(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getpgid((int)arg.convertToInteger().getLongValue()));
+        return getpgid(recv.getRuntime(), arg);
+    }
+    @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getpgid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return getpgid(context.getRuntime(), arg);
+    }
+    public static IRubyObject getpgid(Ruby runtime, IRubyObject arg) {
+        return runtime.newFixnum(runtime.getPosix().getpgid((int)arg.convertToInteger().getLongValue()));
     }
 
-    @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject getrlimit(IRubyObject recv, IRubyObject arg) {
-        throw recv.getRuntime().newNotImplementedError("Process#getrlimit not yet implemented");
+        return getrlimit(recv.getRuntime(), arg);
+    }
+    @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject getrlimit(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return getrlimit(context.getRuntime(), arg);
+    }
+    public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
+        throw runtime.newNotImplementedError("Process#getrlimit not yet implemented");
     }
 
-    @JRubyMethod(name = "egid", module = true, visibility = Visibility.PRIVATE)
+    @Deprecated
     public static IRubyObject egid(IRubyObject recv) {
-        return recv.getRuntime().newFixnum(recv.getRuntime().getPosix().getegid());
+        return egid(recv.getRuntime());
+    }
+    @JRubyMethod(name = "egid", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject egid(ThreadContext context, IRubyObject recv) {
+        return egid(context.getRuntime());
+    }
+    public static IRubyObject egid(Ruby runtime) {
+        return runtime.newFixnum(runtime.getPosix().getegid());
     }
     
     private static String[] signals = new String[] {"EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", 
