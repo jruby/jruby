@@ -101,7 +101,6 @@ import org.jruby.management.ParserStats;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
-import org.jruby.platform.Errno;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -132,6 +131,7 @@ import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.io.ChannelDescriptor;
 
 import com.kenai.constantine.Constant;
+import com.kenai.constantine.ConstantSet;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1241,7 +1241,7 @@ public final class Ruby {
     private void initErrno() {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
-            for (Constant c : Errno.values()) {
+            for (Constant c : ConstantSet.getConstantSet("Errno")) {
                 createSysErr(c.value(), c.name());
             }
         }
