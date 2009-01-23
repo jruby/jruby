@@ -1704,7 +1704,12 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (defnNode.getBodyNode() != null) {
-                            compile(defnNode.getBodyNode(), context, true);
+                            if (defnNode.getBodyNode() instanceof RescueNode) {
+                                // if root of method is rescue, compile as a light rescue
+                                compileRescueInternal(defnNode.getBodyNode(), context, true);
+                            } else {
+                                compile(defnNode.getBodyNode(), context, true);
+                            }
                         } else {
                             context.loadNil();
                         }
@@ -1744,7 +1749,12 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (defsNode.getBodyNode() != null) {
-                            compile(defsNode.getBodyNode(), context, true);
+                            if (defsNode.getBodyNode() instanceof RescueNode) {
+                                // if root of method is rescue, compile as light rescue
+                                compileRescueInternal(defsNode.getBodyNode(), context, true);
+                            } else {
+                                compile(defsNode.getBodyNode(), context, true);
+                            }
                         } else {
                             context.loadNil();
                         }
@@ -3171,6 +3181,13 @@ public class ASTCompiler {
     }
 
     public void compileRescue(Node node, BodyCompiler context, boolean expr) {
+        compileRescueInternal(node, context, false);
+        
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    private void compileRescueInternal(Node node, BodyCompiler context, boolean light) {
         final RescueNode rescueNode = (RescueNode) node;
 
         BranchCallback body = new BranchCallback() {
@@ -3196,9 +3213,11 @@ public class ASTCompiler {
 
         ASTInspector rescueInspector = new ASTInspector();
         rescueInspector.inspect(rescueNode.getRescueNode());
-        context.performRescue(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
+        if (light) {
+            context.performRescueLight(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
+        } else {
+            context.performRescue(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
+        }
     }
 
     public void compileRescueBody(Node node, BodyCompiler context) {

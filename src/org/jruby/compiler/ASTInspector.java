@@ -82,6 +82,7 @@ import org.jruby.ast.OrNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RescueBodyNode;
+import org.jruby.ast.RescueNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
@@ -639,6 +640,10 @@ public class ASTInspector {
             inspect(rescueBody.getOptRescueNode());
             break;
         case RESCUENODE:
+            RescueNode rescueNode = (RescueNode)node;
+            inspect(rescueNode.getBodyNode());
+            inspect(rescueNode.getElseNode());
+            inspect(rescueNode.getRescueNode());
             disable();
             break;
         case RETRYNODE:

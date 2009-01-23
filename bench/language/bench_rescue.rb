@@ -15,5 +15,8 @@ def foo3a; rescue NameError; rescue NameError; rescue NameError; rescue NameErro
 def foo3b; raise; rescue NameError; rescue NameError; rescue NameError; rescue NameError; rescue RuntimeError; end
 
 if $0 == __FILE__
-  Benchmark.bmbm(40) {|bm| bench_rescue(bm)}
+  TIMES = (ARGV[0] || 1).to_i
+  TIMES.times {
+    Benchmark.bm(40) {|bm| bench_rescue(bm)}
+  }
 end

@@ -1406,8 +1406,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             mv.astore(getRuntimeIndex());
 
             // store previous exception for restoration if we rescue something
-            loadRuntime();
-            invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
+            loadThreadContext();
+            invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
             mv.astore(getPreviousExceptionIndex());
 
             // grab nil for local variables
@@ -1458,17 +1458,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             // and remaining jump exceptions should restore $!
             mv.trycatch(beforeBody, afterMethodBody, catchJumps, p(JumpException.class));
             mv.label(catchJumps);
-            loadRuntime();
-            mv.aload(getPreviousExceptionIndex());
-            invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+            loadThreadContext();
+            method.aload(getPreviousExceptionIndex());
+            invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+            method.pop();
             mv.athrow();
 
             mv.label(exitRescue);
 
             // restore the original exception
-            loadRuntime();
-            mv.aload(getPreviousExceptionIndex());
-            invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+            loadThreadContext();
+            method.aload(getPreviousExceptionIndex());
+            invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+            method.pop();
 
             mv.areturn();
             mv.end();
@@ -1495,18 +1497,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
         String mname = getNewRescueName();
         BaseBodyCompiler rescueMethod = outline(mname);
-        rescueMethod.performRescueInner(regularCode, rubyCatchCode, needsRetry);
+        rescueMethod.performRescueLight(regularCode, rubyCatchCode, needsRetry);
+        rescueMethod.endBody();
     }
 
-    private void performRescueInner(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
+    public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
         Label afterRubyCatchBody = new Label();
         Label catchRetry = new Label();
         Label catchJumps = new Label();
         Label exitRescue = new Label();
 
         // store previous exception for restoration if we rescue something
-        loadRuntime();
-        invokeUtilityMethod("getErrorInfo", sig(IRubyObject.class, Ruby.class));
+        loadThreadContext();
+        invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
         method.astore(getPreviousExceptionIndex());
 
         Label beforeBody = new Label();
@@ -1554,20 +1557,20 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.trycatch(beforeBody, afterRubyCatchBody, catchJumps, p(JumpException.FlowControlException.class));
         method.label(catchJumps);
         {
-            loadRuntime();
+            loadThreadContext();
             method.aload(getPreviousExceptionIndex());
-            invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
+            invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+            method.pop();
             method.athrow();
         }
 
         method.label(exitRescue);
 
         // restore the original exception
-        loadRuntime();
+        loadThreadContext();
         method.aload(getPreviousExceptionIndex());
-        invokeUtilityMethod("setErrorInfo", sig(void.class, Ruby.class, IRubyObject.class));
-
-        endBody();
+        invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+        method.pop();
     }
 
     public void wrapJavaException() {
