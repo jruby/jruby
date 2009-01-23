@@ -113,16 +113,16 @@ public class RubySocket extends RubyBasicSocket {
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
 
-        runtime.loadConstantSet(rb_mConstants, "Sock");
-        runtime.loadConstantSet(rb_mConstants, "SocketOption");
-        runtime.loadConstantSet(rb_mConstants, "SocketLevel");
-        runtime.loadConstantSet(rb_mConstants, "ProtocolFamily");
-        runtime.loadConstantSet(rb_mConstants, "AddressFamily");
-        runtime.loadConstantSet(rb_mConstants, "INAddr");
-        runtime.loadConstantSet(rb_mConstants, "IPProto");
-        runtime.loadConstantSet(rb_mConstants, "Shutdown");
-        runtime.loadConstantSet(rb_mConstants, "TCP");
-        runtime.loadConstantSet(rb_mConstants, "NameInfo");
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.Sock.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.SocketOption.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.SocketLevel.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.ProtocolFamily.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.AddressFamily.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.INAddr.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.IPProto.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.Shutdown.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.TCP.class);
+        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.NameInfo.class);
 
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));

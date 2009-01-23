@@ -132,6 +132,7 @@ import org.jruby.util.io.ChannelDescriptor;
 
 import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
+import java.util.EnumSet;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1241,8 +1242,11 @@ public final class Ruby {
     private void initErrno() {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
-            for (Constant c : ConstantSet.getConstantSet("Errno")) {
-                createSysErr(c.value(), c.name());
+            for (com.kenai.constantine.platform.Errno e : EnumSet.allOf(com.kenai.constantine.platform.Errno.class)) {
+                Constant c = (Constant) e;
+                if (Character.isUpperCase(c.name().charAt(0))) {
+                    createSysErr(c.value(), c.name());
+                }
             }
         }
     }
@@ -3095,9 +3099,19 @@ public final class Ruby {
         constantGeneration++;
     }
 
+    public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
+        for (E e : EnumSet.allOf(enumClass)) {
+            Constant c = (Constant) e;
+            if (Character.isUpperCase(c.name().charAt(0))) {
+                module.fastSetConstant(c.name(), newFixnum(c.value()));
+            }
+        }
+    }
     public void loadConstantSet(RubyModule module, String constantSetName) {
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
-            module.fastSetConstant(c.name(), newFixnum(c.value()));
+            if (Character.isUpperCase(c.name().charAt(0))) {
+                module.fastSetConstant(c.name(), newFixnum(c.value()));
+            }
         }
     }
 
