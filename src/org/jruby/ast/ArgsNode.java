@@ -65,6 +65,7 @@ public class ArgsNode extends Node {
     protected Arity arity;
     private final int requiredArgsCount;
     protected final boolean hasOptArgs;
+    protected final boolean hasMasgnArgs;
     protected int maxArgsCount;
 
     // Only in ruby 1.9 methods
@@ -98,6 +99,7 @@ public class ArgsNode extends Node {
         this.blockArgNode = blockArgNode;
         this.requiredArgsCount = preCount + postCount;
         this.hasOptArgs = getOptArgs() != null;
+        this.hasMasgnArgs = hasMasgnArgs();
         this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
     }
@@ -111,6 +113,16 @@ public class ArgsNode extends Node {
         if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
 
         return Arity.createArity(getRequiredArgsCount());
+    }
+
+    protected boolean hasMasgnArgs() {
+        if (preCount > 0) for (Node node : pre.childNodes()) {
+            if (node instanceof AssignableNode) return true;
+        }
+        if (postCount > 0) for (Node node : post.childNodes()) {
+            if (node instanceof AssignableNode) return true;
+        }
+        return false;
     }
     
     /**
@@ -207,12 +219,44 @@ public class ArgsNode extends Node {
         DynamicScope scope = context.getCurrentScope();
 
         // Bind 'normal' parameter values to the local scope for this method.
-        if (preCount > 0) scope.setArgValues(args, Math.min(args.length, preCount));
-        if (postCount > 0) scope.setEndArgValues(args, postIndex, postCount);
+        if (!hasMasgnArgs) {
+            // no arg grouping, just use bulk assignment methods
+            if (preCount > 0) scope.setArgValues(args, Math.min(args.length, preCount));
+            if (postCount > 0) scope.setEndArgValues(args, postIndex, postCount);
+        } else {
+            masgnAwareArgAssign(context, runtime, self, args, block, scope);
+        }
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) prepareOptOrRestArgs(context, runtime, scope, self, args);
         if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+
+    private void masgnAwareArgAssign(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block, DynamicScope scope) {
+        // arg grouping, use slower arg walking logic
+        if (preCount > 0) {
+            int size = pre.size();
+            for (int i = 0; i < size; i++) {
+                Node next = pre.get(i);
+                if (next instanceof AssignableNode) {
+                    ((AssignableNode)next).assign(runtime, context, self, args[i], block, false);
+                } else {
+                    scope.setValue(i, args[i], 0);
+                }
+            }
+        }
+        if (postCount > 0) {
+            int size = post.size();
+            int argsLength = args.length;
+            for (int i = 0; i < size; i++) {
+                Node next = post.get(i);
+                if (next instanceof AssignableNode) {
+                    ((AssignableNode)next).assign(runtime, context, self, args[argsLength - postCount + i], block, false);
+                } else {
+                    scope.setValue(i + postIndex, args[argsLength - postCount + i], 0);
+                }
+            }
+        }
     }
 
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, Block block) {
