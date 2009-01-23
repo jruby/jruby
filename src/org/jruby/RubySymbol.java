@@ -116,6 +116,11 @@ public class RubySymbol extends RubyObject {
         return symbol;
     }
 
+    @Override
+    public String toString() {
+        return symbol;
+    }
+
     final ByteList getBytes() {
         return symbolBytes;
     }

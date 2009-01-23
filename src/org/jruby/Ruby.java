@@ -1335,11 +1335,11 @@ public final class Ruby {
         }
     }
 
-    Object getRespondToMethod() {
+    public Object getRespondToMethod() {
         return respondToMethod;
     }
 
-    void setRespondToMethod(Object rtm) {
+    public void setRespondToMethod(Object rtm) {
         this.respondToMethod = rtm;
     }
 

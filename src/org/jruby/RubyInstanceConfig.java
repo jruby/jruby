@@ -217,6 +217,8 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
     public static boolean nativeEnabled = true;
     
+    public static final boolean YEHUDA_FAIL
+            = SafePropertyAccessor.getBoolean("yehuda.fail");
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
