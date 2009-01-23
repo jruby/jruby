@@ -1727,7 +1727,17 @@ public class ASTCompiler {
         ASTInspector inspector = new ASTInspector();
         // check args first, since body inspection can depend on args
         inspector.inspect(defnNode.getArgsNode());
-        inspector.inspect(defnNode.getBodyNode());
+
+        // if body is a rescue node, inspect its pieces separately to avoid it disabling all optz
+        // TODO: this is gross.
+        if (defnNode.getBodyNode() instanceof RescueNode) {
+            RescueNode rescueNode = (RescueNode)defnNode.getBodyNode();
+            inspector.inspect(rescueNode.getBodyNode());
+            inspector.inspect(rescueNode.getElseNode());
+            inspector.inspect(rescueNode.getRescueNode());
+        } else {
+            inspector.inspect(defnNode.getBodyNode());
+        }
 
         context.defineNewMethod(defnNode.getName(), defnNode.getArgsNode().getArity().getValue(), defnNode.getScope(), body, args, null, inspector, isAtRoot);
         // TODO: don't require pop
@@ -1771,7 +1781,17 @@ public class ASTCompiler {
         // inspect body and args
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(defsNode.getArgsNode());
-        inspector.inspect(defsNode.getBodyNode());
+
+        // if body is a rescue node, inspect its pieces separately to avoid it disabling all optz
+        // TODO: this is gross.
+        if (defsNode.getBodyNode() instanceof RescueNode) {
+            RescueNode rescueNode = (RescueNode)defsNode.getBodyNode();
+            inspector.inspect(rescueNode.getBodyNode());
+            inspector.inspect(rescueNode.getElseNode());
+            inspector.inspect(rescueNode.getRescueNode());
+        } else {
+            inspector.inspect(defsNode.getBodyNode());
+        }
 
         context.defineNewMethod(defsNode.getName(), defsNode.getArgsNode().getArity().getValue(), defsNode.getScope(), body, args, receiver, inspector, false);
         // TODO: don't require pop
@@ -3187,7 +3207,7 @@ public class ASTCompiler {
         if (!expr) context.consumeCurrentValue();
     }
 
-    private void compileRescueInternal(Node node, BodyCompiler context, boolean light) {
+    private void compileRescueInternal(Node node, BodyCompiler context, final boolean light) {
         final RescueNode rescueNode = (RescueNode) node;
 
         BranchCallback body = new BranchCallback() {
@@ -3207,7 +3227,7 @@ public class ASTCompiler {
 
         BranchCallback rubyHandler = new BranchCallback() {
             public void branch(BodyCompiler context) {
-                compileRescueBody(rescueNode.getRescueNode(), context);
+                compileRescueBodyInternal(rescueNode.getRescueNode(), context, light);
             }
         };
 
@@ -3220,7 +3240,7 @@ public class ASTCompiler {
         }
     }
 
-    public void compileRescueBody(Node node, BodyCompiler context) {
+    private void compileRescueBodyInternal(Node node, BodyCompiler context, final boolean light) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
 
         context.loadException();
@@ -3236,7 +3256,7 @@ public class ASTCompiler {
                 context.loadStandardError();
             }
         };
-        
+
         context.checkIsExceptionHandled(rescueArgs);
 
         BranchCallback trueBranch = new BranchCallback() {
@@ -3255,9 +3275,13 @@ public class ASTCompiler {
                     context.clearErrorInfo();
                 } else {
                     context.storeExceptionInErrorInfo();
-                    BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
-                    compile(rescueBodyNode.getBodyNode(), nestedBody, true);
-                    nestedBody.endBody();
+                    if (light) {
+                        compile(rescueBodyNode.getBodyNode(), context, true);
+                    } else {
+                        BodyCompiler nestedBody = context.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
+                        compile(rescueBodyNode.getBodyNode(), nestedBody, true);
+                        nestedBody.endBody();
+                    }
 
                     // FIXME: this should reset to what it was before
                     context.clearErrorInfo();
@@ -3268,7 +3292,7 @@ public class ASTCompiler {
         BranchCallback falseBranch = new BranchCallback() {
             public void branch(BodyCompiler context) {
                 if (rescueBodyNode.getOptRescueNode() != null) {
-                    compileRescueBody(rescueBodyNode.getOptRescueNode(), context);
+                    compileRescueBodyInternal(rescueBodyNode.getOptRescueNode(), context, light);
                 } else {
                     context.rethrowException();
                 }
