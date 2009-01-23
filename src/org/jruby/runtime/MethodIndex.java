@@ -129,11 +129,9 @@ public class MethodIndex {
     }
     
     public synchronized static CallSite getCallSite(String name) {
-        if (RubyInstanceConfig.YEHUDA_FAIL) {
-          if (name.equals("respond_to?")) {
-            return new RespondToCallSite();
-          }
-        }
+        // fast and safe respond_to? call site logic
+        if (name.equals("respond_to?")) return new RespondToCallSite();
+        
         if (!RubyInstanceConfig.FASTOPS_COMPILE_ENABLED) {
             return new NormalCachingCallSite(name);
         } else {
