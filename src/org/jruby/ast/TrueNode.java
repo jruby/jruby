@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2001-2002, 2009 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
@@ -85,6 +85,6 @@ public class TrueNode extends Node implements INameNode, IEqlNode {
     }
 
     public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        return otherValue == interpret(runtime, context, self, aBlock) || otherValue.isTrue();
+        return otherValue == interpret(runtime, context, self, aBlock);
     }
 }
