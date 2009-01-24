@@ -563,7 +563,7 @@
     run-junit-compiled,
     run-junit-compiled-1.9,
     coverage-report"
-  	description="Runs unit tests with weaved jruby classes.">
+  	description="Runs unit tests with 1.4-weaved jruby classes.">
   </target>
 
   <target name="test-all-1.4" depends="
