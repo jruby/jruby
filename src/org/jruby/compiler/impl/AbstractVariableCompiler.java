@@ -249,6 +249,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             ArrayCallback optNotGivenAssignment,
             CompilerCallback restAssignment,
             CompilerCallback blockAssignment) {
+        
         if (specificArity) {
             int currentArgElement = 0;
             for (; currentArgElement < scope.getRequiredArgs(); currentArgElement++) {
@@ -306,7 +307,7 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     method.aload(argsIndex);
                     methodCompiler.loadRuntime();
                     method.pushInt(currentArgElement);
-                    method.pushInt(postArgsIndex);
+                    method.pushInt(postArgsCount);
                     methodCompiler.invokeUtilityMethod("createSubarray", sig(RubyArray.class, IRubyObject[].class, Ruby.class, int.class, int.class));
                     restAssignment.call(methodCompiler);
                 }
