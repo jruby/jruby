@@ -32,13 +32,16 @@ package org.jruby.compiler;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.ArrayNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
+import org.jruby.ast.StarNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 
@@ -58,7 +61,8 @@ public class ASTCompiler19 extends ASTCompiler {
             compileLambda(node, context, expr);
             break;
         case MULTIPLEASGN19NODE:
-            throw new NotCompilableException("Can't compile 1.9 masgn yet");
+            compileMultipleAsgn19(node, context, expr);
+            break;
         default:
             super.compile(node, context, expr);
         }
@@ -229,5 +233,117 @@ public class ASTCompiler19 extends ASTCompiler {
         }
 
         if (popit) context.consumeCurrentValue();
+    }
+
+    public void compileMultipleAsgn19(Node node, BodyCompiler context, boolean expr) {
+        MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node) node;
+
+        if (expr) {
+            // need the array, use unoptz version
+            compileUnoptimizedMultipleAsgn19(multipleAsgn19Node, context, expr);
+        } else {
+            // try optz version
+            compileOptimizedMultipleAsgn19(multipleAsgn19Node, context, expr);
+        }
+    }
+
+    private void compileOptimizedMultipleAsgn19(MultipleAsgn19Node multipleAsgn19Node, BodyCompiler context, boolean expr) {
+        // expect value to be an array of nodes
+        if (multipleAsgn19Node.getValueNode() instanceof ArrayNode) {
+            // head must not be null and there must be no "args" (like *arg)
+            if (multipleAsgn19Node.getPreCount() > 0 && multipleAsgn19Node.getPostCount() == 0 && multipleAsgn19Node.getRest() == null) {
+                // sizes must match
+                if (multipleAsgn19Node.getPreCount() == ((ArrayNode)multipleAsgn19Node.getValueNode()).size()) {
+                    // "head" must have no non-trivial assigns (array groupings, basically)
+                    boolean normalAssigns = true;
+                    for (Node asgn : multipleAsgn19Node.getPre().childNodes()) {
+                        if (asgn instanceof ListNode) {
+                            normalAssigns = false;
+                            break;
+                        }
+                    }
+
+                    if (normalAssigns) {
+                        // only supports simple parallel assignment of up to 4 values to the same number of assignees
+                        int size = multipleAsgn19Node.getPreCount();
+                        if (size >= 2 && size <= 10) {
+                            ArrayNode values = (ArrayNode)multipleAsgn19Node.getValueNode();
+                            for (Node value : values.childNodes()) {
+                                compile(value, context, true);
+                            }
+                            context.reverseValues(size);
+                            for (Node asgn : multipleAsgn19Node.getPre().childNodes()) {
+                                compileAssignment(asgn, context, false);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // if we get here, no optz cases work; fall back on unoptz.
+        compileUnoptimizedMultipleAsgn19(multipleAsgn19Node, context, expr);
+    }
+
+    private void compileUnoptimizedMultipleAsgn19(MultipleAsgn19Node multipleAsgn19Node, BodyCompiler context, boolean expr) {
+        compile(multipleAsgn19Node.getValueNode(), context, true);
+
+        compileMultipleAsgn19Assignment(multipleAsgn19Node, context, expr);
+    }
+
+    public void compileMultipleAsgn19Assignment(Node node, BodyCompiler context, boolean expr) {
+        final MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node) node;
+
+        // normal items at the front or back of the masgn
+        ArrayCallback preAssignCallback = new ArrayCallback() {
+
+                    public void nextValue(BodyCompiler context, Object sourceArray,
+                            int index) {
+                        ListNode nodes = (ListNode) sourceArray;
+                        Node assignNode = nodes.get(index);
+
+                        // perform assignment for the next node
+                        compileAssignment(assignNode, context, false);
+                    }
+                };
+
+        CompilerCallback restCallback = new CompilerCallback() {
+
+                    public void call(BodyCompiler context) {
+                        Node argsNode = multipleAsgn19Node.getRest();
+                        if (argsNode instanceof StarNode) {
+                            // done processing args
+                            context.consumeCurrentValue();
+                        } else {
+                            // assign to appropriate variable
+                            compileAssignment(argsNode, context, false);
+                        }
+                    }
+                };
+
+        if (multipleAsgn19Node.getPreCount() == 0 && multipleAsgn19Node.getPostCount() == 0) {
+            if (multipleAsgn19Node.getRest() == null) {
+                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgn19Node.getPosition());
+            } else {
+                if (multipleAsgn19Node.getRest() instanceof StarNode) {
+                    // do nothing
+                } else {
+                    context.ensureMultipleAssignableRubyArray(multipleAsgn19Node.getPreCount() != 0 || multipleAsgn19Node.getPostCount() != 0);
+
+                    context.forEachInValueArray(0, 0, null, null, restCallback);
+                }
+            }
+        } else {
+            context.ensureMultipleAssignableRubyArray(multipleAsgn19Node.getPreCount() != 0 || multipleAsgn19Node.getPostCount() != 0);
+
+            if (multipleAsgn19Node.getRest() == null) {
+                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), preAssignCallback, null);
+            } else {
+                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), preAssignCallback, restCallback);
+            }
+        }
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 }

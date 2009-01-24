@@ -1099,6 +1099,48 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
     }
 
+    public void forEachInValueArray(int start, int preCount, Object preSource, int postCount, Object postSource, ArrayCallback callback, CompilerCallback argsCallback) {
+        if (start < preCount || argsCallback != null) {
+            int tempLocal = getVariableCompiler().grabTempLocal();
+            getVariableCompiler().setTempLocal(tempLocal);
+
+            for (; start < preCount; start++) {
+                getVariableCompiler().getTempLocal(tempLocal);
+                switch (start) {
+                case 0:
+                    invokeUtilityMethod("arrayEntryOrNilZero", sig(IRubyObject.class, RubyArray.class));
+                    break;
+                case 1:
+                    invokeUtilityMethod("arrayEntryOrNilOne", sig(IRubyObject.class, RubyArray.class));
+                    break;
+                case 2:
+                    invokeUtilityMethod("arrayEntryOrNilTwo", sig(IRubyObject.class, RubyArray.class));
+                    break;
+                default:
+                    method.pushInt(start);
+                    invokeUtilityMethod("arrayEntryOrNil", sig(IRubyObject.class, RubyArray.class, int.class));
+                    break;
+                }
+                callback.nextValue(this, preSource, start);
+            }
+
+            if (argsCallback != null) {
+                getVariableCompiler().getTempLocal(tempLocal);
+                loadRuntime();
+                method.pushInt(start);
+                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class));
+                argsCallback.call(this);
+            }
+
+            if (postCount > 0) {
+                throw new NotCompilableException("1.9 mode can't handle post variables in masgn yet");
+            }
+
+            getVariableCompiler().getTempLocal(tempLocal);
+            getVariableCompiler().releaseTempLocal();
+        }
+    }
+
     public void asString() {
         method.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
     }
