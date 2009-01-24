@@ -581,7 +581,7 @@ public interface BodyCompiler {
 
     public void compileSequencedConditional(
             CompilerCallback inputValue,
-            Class fastPathClass,
+            FastSwitchType fastSwitchType,
             Map<CompilerCallback, int[]> switchCases,
             List<ArgumentsCallback> conditionals,
             List<CompilerCallback> bodies,

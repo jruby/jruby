@@ -52,6 +52,7 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 /**
@@ -1527,11 +1528,39 @@ public class RuntimeHelpers {
     }
 
     public static boolean isFastSwitchableString(IRubyObject str) {
-        return ((RubyString)str).getByteList().length() == 1;
+        return str instanceof RubyString;
+    }
+
+    public static boolean isFastSwitchableSingleCharString(IRubyObject str) {
+        return str instanceof RubyString && ((RubyString)str).getByteList().length() == 1;
     }
 
     public static int getFastSwitchString(IRubyObject str) {
-        return ((RubyString)str).getByteList().get(0);
+        ByteList byteList = ((RubyString)str).getByteList();
+        return byteList.hashCode();
+    }
+
+    public static int getFastSwitchSingleCharString(IRubyObject str) {
+        ByteList byteList = ((RubyString)str).getByteList();
+        return byteList.get(0);
+    }
+
+    public static boolean isFastSwitchableSymbol(IRubyObject sym) {
+        return sym instanceof RubySymbol;
+    }
+
+    public static boolean isFastSwitchableSingleCharSymbol(IRubyObject sym) {
+        return sym instanceof RubySymbol && ((RubySymbol)sym).asJavaString().length() == 1;
+    }
+
+    public static int getFastSwitchSymbol(IRubyObject sym) {
+        String str = ((RubySymbol)sym).asJavaString();
+        return str.hashCode();
+    }
+
+    public static int getFastSwitchSingleCharSymbol(IRubyObject sym) {
+        String str = ((RubySymbol)sym).asJavaString();
+        return (int)str.charAt(0);
     }
 
     public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {

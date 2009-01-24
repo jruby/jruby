@@ -784,8 +784,8 @@ public class ASTCompiler {
         compileWhen(caseNode.getCaseNode(), cases, elseNode, context, expr, hasCase);
     }
 
-    private Class getHomogeneousSwitchType(List<Node> whenNodes) {
-        Class foundType = null;
+    private FastSwitchType getHomogeneousSwitchType(List<Node> whenNodes) {
+        FastSwitchType foundType = null;
         Outer: for (Node node : whenNodes) {
             WhenNode whenNode = (WhenNode)node;
             if (whenNode.getExpressionNodes() instanceof ArrayNode) {
@@ -796,8 +796,8 @@ public class ASTCompiler {
                         FixnumNode fixnumNode = (FixnumNode)maybeFixnum;
                         long value = fixnumNode.getValue();
                         if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-                            if (foundType != null && foundType != RubyFixnum.class) return null;
-                            if (foundType == null) foundType = RubyFixnum.class;
+                            if (foundType != null && foundType != FastSwitchType.FIXNUM) return null;
+                            if (foundType == null) foundType = FastSwitchType.FIXNUM;
                             continue;
                         } else {
                             return null;
@@ -810,8 +810,8 @@ public class ASTCompiler {
                 FixnumNode fixnumNode = (FixnumNode)whenNode.getExpressionNodes();
                 long value = fixnumNode.getValue();
                 if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-                    if (foundType != null && foundType != RubyFixnum.class) return null;
-                    if (foundType == null) foundType = RubyFixnum.class;
+                    if (foundType != null && foundType != FastSwitchType.FIXNUM) return null;
+                    if (foundType == null) foundType = FastSwitchType.FIXNUM;
                     continue;
                 } else {
                     return null;
@@ -819,12 +819,28 @@ public class ASTCompiler {
             } else if (whenNode.getExpressionNodes() instanceof StrNode) {
                 StrNode strNode = (StrNode)whenNode.getExpressionNodes();
                 if (strNode.getValue().length() == 1) {
-                    if (foundType != null && foundType != RubyString.class) return null;
-                    if (foundType == null) foundType = RubyString.class;
+                    if (foundType != null && foundType != FastSwitchType.SINGLE_CHAR_STRING) return null;
+                    if (foundType == null) foundType = FastSwitchType.SINGLE_CHAR_STRING;
 
                     continue;
                 } else {
-                    return null;
+                    if (foundType != null && foundType != FastSwitchType.STRING) return null;
+                    if (foundType == null) foundType = FastSwitchType.STRING;
+
+                    continue;
+                }
+            } else if (whenNode.getExpressionNodes() instanceof SymbolNode) {
+                SymbolNode symbolNode = (SymbolNode)whenNode.getExpressionNodes();
+                if (symbolNode.getName().length() == 1) {
+                    if (foundType != null && foundType != FastSwitchType.SINGLE_CHAR_SYMBOL) return null;
+                    if (foundType == null) foundType = FastSwitchType.SINGLE_CHAR_SYMBOL;
+
+                    continue;
+                } else {
+                    if (foundType != null && foundType != FastSwitchType.SYMBOL) return null;
+                    if (foundType == null) foundType = FastSwitchType.SYMBOL;
+
+                    continue;
                 }
             } else {
                 return null;
@@ -845,8 +861,8 @@ public class ASTCompiler {
         List<ArgumentsCallback> conditionals = new ArrayList<ArgumentsCallback>();
         List<CompilerCallback> bodies = new ArrayList<CompilerCallback>();
         Map<CompilerCallback, int[]> switchCases = null;
-        Class switchType = getHomogeneousSwitchType(whenNodes);
-        if (RubyInstanceConfig.FASTCASE_COMPILE_ENABLED && switchType != null) {
+        FastSwitchType switchType = getHomogeneousSwitchType(whenNodes);
+        if (switchType != null) {
             // NOTE: Currently this optimization is limited to the following situations:
             // * All expressions must be int-ranged literal fixnums
             // It also still emits the code for the "safe" when logic, which is rather
@@ -904,7 +920,14 @@ public class ASTCompiler {
             if (strNode.getValue().length() == 1) {
                 return new int[] {strNode.getValue().get(0)};
             } else {
-                return null;
+                return new int[] {strNode.getValue().hashCode()};
+            }
+        } else if (whenNode.getExpressionNodes() instanceof SymbolNode) {
+            SymbolNode symbolNode = (SymbolNode)whenNode.getExpressionNodes();
+            if (symbolNode.getName().length() == 1) {
+                return new int[] {symbolNode.getName().charAt(0)};
+            } else {
+                return new int[] {symbolNode.getName().hashCode()};
             }
         }
         return null;

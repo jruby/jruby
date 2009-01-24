@@ -45,6 +45,7 @@ import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.BodyCompiler;
+import org.jruby.compiler.FastSwitchType;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.exceptions.JumpException;
@@ -2374,7 +2375,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void compileSequencedConditional(
             CompilerCallback inputValue,
-            Class fastPathClass,
+            FastSwitchType fastSwitchType,
             Map<CompilerCallback, int[]> switchCases,
             List<ArgumentsCallback> conditionals,
             List<CompilerCallback> bodies,
@@ -2421,20 +2422,44 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
                 // checkcast the value; if match, fast path; otherwise proceed to slow logic
                 getCaseValue.call(this);
-                method.instance_of(p(fastPathClass));
+                method.instance_of(p(fastSwitchType.getAssociatedClass()));
                 method.ifeq(slowPath);
-                
-                if (fastPathClass == RubyFixnum.class) {
+
+                switch (fastSwitchType) {
+                case FIXNUM:
                     getCaseValue.call(this);
                     method.checkcast(p(RubyFixnum.class));
                     method.invokevirtual(p(RubyFixnum.class), "getLongValue", sig(long.class));
                     method.l2i();
-                } else if (fastPathClass == RubyString.class) {
+                    break;
+                case SINGLE_CHAR_STRING:
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("isFastSwitchableSingleCharString", sig(boolean.class, IRubyObject.class));
+                    method.ifeq(slowPath);
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("getFastSwitchSingleCharString", sig(int.class, IRubyObject.class));
+                    break;
+                case STRING:
                     getCaseValue.call(this);
                     invokeUtilityMethod("isFastSwitchableString", sig(boolean.class, IRubyObject.class));
                     method.ifeq(slowPath);
                     getCaseValue.call(this);
                     invokeUtilityMethod("getFastSwitchString", sig(int.class, IRubyObject.class));
+                    break;
+                case SINGLE_CHAR_SYMBOL:
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("isFastSwitchableSingleCharSymbol", sig(boolean.class, IRubyObject.class));
+                    method.ifeq(slowPath);
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("getFastSwitchSingleCharSymbol", sig(int.class, IRubyObject.class));
+                    break;
+                case SYMBOL:
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("isFastSwitchableSymbol", sig(boolean.class, IRubyObject.class));
+                    method.ifeq(slowPath);
+                    getCaseValue.call(this);
+                    invokeUtilityMethod("getFastSwitchSymbol", sig(int.class, IRubyObject.class));
+                    break;
                 }
 
                 method.lookupswitch(defaultCase, caseValues, caseLabels);
