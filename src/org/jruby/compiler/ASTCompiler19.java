@@ -182,12 +182,15 @@ public class ASTCompiler19 extends ASTCompiler {
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
             public void call(BodyCompiler context) {
+                // FIXME: This is temporary since the variable compilers assume we want
+                // args already on stack for assignment. We just pop and continue with
+                // 1.9 args logic.
+                context.consumeCurrentValue();
                 if (iterNode.getVarNode() != null) {
                     final int required = argsNode.getRequiredArgsCount();
                     final int opt = argsNode.getOptionalArgsCount();
                     final int rest = argsNode.getRestArg();
                     if (iterNode instanceof LambdaNode) {
-
                         context.getVariableCompiler().checkMethodArity(required, opt, rest);
                         compileMethodArgs(argsNode, context, true);
                     } else {

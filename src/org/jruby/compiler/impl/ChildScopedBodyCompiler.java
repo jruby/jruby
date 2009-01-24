@@ -2,12 +2,10 @@ package org.jruby.compiler.impl;
 
 import org.jruby.Ruby;
 import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
