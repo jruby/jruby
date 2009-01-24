@@ -187,10 +187,10 @@ public class ASTCompiler19 extends ASTCompiler {
                 // 1.9 args logic.
                 context.consumeCurrentValue();
                 if (iterNode.getVarNode() != null) {
-                    final int required = argsNode.getRequiredArgsCount();
-                    final int opt = argsNode.getOptionalArgsCount();
-                    final int rest = argsNode.getRestArg();
                     if (iterNode instanceof LambdaNode) {
+                        final int required = argsNode.getRequiredArgsCount();
+                        final int opt = argsNode.getOptionalArgsCount();
+                        final int rest = argsNode.getRestArg();
                         context.getVariableCompiler().checkMethodArity(required, opt, rest);
                         compileMethodArgs(argsNode, context, true);
                     } else {

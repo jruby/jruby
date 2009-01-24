@@ -106,7 +106,7 @@ public class CompiledBlock19 extends BlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
-        IRubyObject[] realArgs = setupBlockArgs(value);
+        IRubyObject[] realArgs = setupBlockArg(context.getRuntime(), value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, null, binding);
         
@@ -200,23 +200,28 @@ public class CompiledBlock19 extends BlockBody {
                     length + " for 1)");
     }
 
-    protected IRubyObject setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
+    protected IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
         case ZERO_ARGS:
             return null;
         case MULTIPLE_ASSIGNMENT:
         case SINGLE_RESTARG:
-            return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead);
+            return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead).toJavaArray();
         default:
             return defaultArgLogic(ruby, value);
         }
     }
     
-    private IRubyObject defaultArgLogic(Ruby ruby, IRubyObject value) {
+    private IRubyObject[] defaultArgLogic(Ruby ruby, IRubyObject value) {
         if (value == null) {
             return warnMultiReturnNil(ruby);
         }
-        return value;
+        return new IRubyObject[] {value};
+    }
+
+    private IRubyObject[] warnMultiReturnNil(Ruby ruby) {
+        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
+        return IRubyObject.NULL_ARRAY;
     }
     
     public StaticScope getStaticScope() {
@@ -236,10 +241,5 @@ public class CompiledBlock19 extends BlockBody {
     @Override
     public Arity arity() {
         return arity;
-    }
-
-    private IRubyObject warnMultiReturnNil(Ruby ruby) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-        return ruby.getNil();
     }
 }
