@@ -79,4 +79,8 @@ public @interface JRubyMethod {
      * What, if anything, method writes to caller's frame
      */
     FrameField[] writes() default {};
+    /**
+     * Argument types to coerce to before calling
+     */
+    Class[] argTypes() default {};
 }

@@ -7,6 +7,7 @@ package org.jruby.anno;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import org.jruby.util.CodegenUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -34,6 +35,7 @@ public class JavaMethodDescriptor {
     public final String declaringClassPath;
     public final String name;
     public final String signature;
+    public final Class[] argumentTypes;
     
     public JavaMethodDescriptor(Method method) {
         anno = method.getAnnotation(JRubyMethod.class);
@@ -68,6 +70,8 @@ public class JavaMethodDescriptor {
                 hasVarArgs = parameters.length > 0 && parameters[parameters.length - 1] == IRubyObject[].class;
             }
         }
+
+        argumentTypes = Arrays.copyOfRange(parameters, (hasContext ? 1 : 0), parameters.length - (hasBlock ? 1 : 0));
         
         optional = anno.optional();
         rest = anno.rest();

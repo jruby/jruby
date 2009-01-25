@@ -39,6 +39,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -943,7 +944,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void loadArguments(SkinnyMethodAdapter mv, JRubyMethod jrubyMethod, int specificArity) {
+    private void loadArguments(SkinnyMethodAdapter mv, JavaMethodDescriptor desc, int specificArity) {
         switch (specificArity) {
         default:
         case -1:
@@ -953,17 +954,28 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // no args
             break;
         case 1:
-            mv.aload(ARGS_INDEX);
+            loadArgumentWithCast(mv, 1, desc.argumentTypes[0]);
             break;
         case 2:
-            mv.aload(ARGS_INDEX);
-            mv.aload(ARGS_INDEX + 1);
+            loadArgumentWithCast(mv, 1, desc.argumentTypes[0]);
+            loadArgumentWithCast(mv, 2, desc.argumentTypes[1]);
             break;
         case 3:
-            mv.aload(ARGS_INDEX);
-            mv.aload(ARGS_INDEX + 1);
-            mv.aload(ARGS_INDEX + 2);
+            loadArgumentWithCast(mv, 1, desc.argumentTypes[0]);
+            loadArgumentWithCast(mv, 2, desc.argumentTypes[1]);
+            loadArgumentWithCast(mv, 3, desc.argumentTypes[2]);
             break;
+        }
+    }
+
+    private void loadArgumentWithCast(SkinnyMethodAdapter mv, int argNumber, Class coerceType) {
+        mv.aload(ARGS_INDEX + (argNumber - 1));
+        if (coerceType != IRubyObject.class && coerceType != IRubyObject[].class) {
+            if (coerceType == RubyString.class) {
+                mv.invokeinterface(p(IRubyObject.class), "convertToString", sig(RubyString.class));
+            } else {
+                throw new RuntimeException("Unknown coercion target: " + coerceType);
+            }
         }
     }
 
@@ -1220,7 +1232,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         {
             loadReceiver(typePath, desc, method);
             
-            loadArguments(method, desc.anno, specificArity);
+            loadArguments(method, desc, specificArity);
             
             loadBlock(method, specificArity, block);
 

@@ -876,22 +876,26 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return other.callMethod(context, "==", this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_8)
-    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        RubyString str = other.convertToString();
+    @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_8, argTypes = RubyString.class)
+    public IRubyObject op_plus(ThreadContext context, RubyString str) {
         RubyString resultStr = newString(context.getRuntime(), addByteLists(value, str.value));
         if (isTaint() || str.isTaint()) resultStr.setTaint(true);
         return resultStr;
     }
+    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
+        return op_plus(context, other.convertToString());
+    }
 
     @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
-        RubyString str = other.convertToString();
+    public IRubyObject op_plus19(ThreadContext context, RubyString str) {
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.getRuntime(), addByteLists(value, str.value),
                                     enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
         if (isTaint() || str.isTaint()) resultStr.setTaint(true);
         return resultStr;
+    }
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+        return op_plus19(context, other.convertToString());
     }
 
     private ByteList addByteLists(ByteList value1, ByteList value2) {
