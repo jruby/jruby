@@ -8,7 +8,7 @@ require 'stringio'
 
 # [ruby-core:01946]
 module YAML_Tests
-    StructTest = Struct::new( :c )
+  StructTest = Struct::new( :c )
 end
 
 class TestYaml < Test::Unit::TestCase
@@ -46,11 +46,11 @@ class TestYaml < Test::Unit::TestCase
 	def assert_to_yaml( obj, yaml )
 		assert_equal( obj, YAML::load( yaml ) )
 		assert_equal( obj, YAML::parse( yaml ).transform )
-        assert_equal( obj, YAML::load( obj.to_yaml ) )
+    assert_equal( obj, YAML::load( obj.to_yaml ) )
 		assert_equal( obj, YAML::parse( obj.to_yaml ).transform )
-        assert_equal( obj, YAML::load(
-			obj.to_yaml( :UseVersion => true, :UseHeader => true, :SortKeys => true ) 
-		) )
+    assert_equal( obj, YAML::load(
+        obj.to_yaml( :UseVersion => true, :UseHeader => true, :SortKeys => true )
+      ) )
 	end
 
 	#
@@ -61,22 +61,22 @@ class TestYaml < Test::Unit::TestCase
 		assert_equal( obj, YAML::parse( yaml ).transform )
 	end
 
-    def assert_cycle( obj )
-        assert_equal( obj, YAML::load( obj.to_yaml ) )
-    end
+  def assert_cycle( obj )
+    assert_equal( obj, YAML::load( obj.to_yaml ) )
+  end
 
-    def assert_path_segments( path, segments )
-        YAML::YPath.each_path( path ) { |choice|
-            assert_equal( choice.segments, segments.shift )
-        }
-        assert_equal( segments.length, 0, "Some segments leftover: #{ segments.inspect }" )
-    end
+  def assert_path_segments( path, segments )
+    YAML::YPath.each_path( path ) { |choice|
+      assert_equal( choice.segments, segments.shift )
+    }
+    assert_equal( segments.length, 0, "Some segments leftover: #{ segments.inspect }" )
+  end
 
 	#
 	# Make a time with the time zone
 	#
 	def mktime( year, mon, day, hour, min, sec, usec, zone = "Z" )
-        usec = usec.to_s.to_f * 1000000
+    usec = usec.to_s.to_f * 1000000
 		val = Time::utc( year.to_i, mon.to_i, day.to_i, hour.to_i, min.to_i, sec.to_i, usec )
 		if zone != "Z"
 			hour = zone[0,3].to_i * 3600
@@ -110,7 +110,7 @@ EOY
 			{ 1 => 'simple string', 2 => 42, 3 => '1 Single Quoted String',
 			  4 => 'YAML\'s Double "Quoted" String', 5 => "A block\n  with several\n    lines.\n",
 			  6 => "A \"chomped\" block", 7 => "A folded\n string\n", 8 => ": started string" },
-			  <<EOY
+      <<EOY
 1: simple string
 2: 42
 3: '1 Single Quoted String'
@@ -137,7 +137,7 @@ EOY
 	#
 
 	def test_spec_simple_implicit_sequence
-	  	# Simple implicit sequence
+    # Simple implicit sequence
 		assert_to_yaml(
 			[ 'Mark McGwire', 'Sammy Sosa', 'Ken Griffey' ], <<EOY
 - Mark McGwire
@@ -162,9 +162,9 @@ EOY
 		# Simple mapping with nested sequences
 		assert_to_yaml(
 			{ 'american' => 
-			  [ 'Boston Red Sox', 'Detroit Tigers', 'New York Yankees' ],
+          [ 'Boston Red Sox', 'Detroit Tigers', 'New York Yankees' ],
 			  'national' =>
-			  [ 'New York Mets', 'Chicago Cubs', 'Atlanta Braves' ] }, <<EOY
+          [ 'New York Mets', 'Chicago Cubs', 'Atlanta Braves' ] }, <<EOY
 american:
   - Boston Red Sox
   - Detroit Tigers
@@ -182,7 +182,7 @@ EOY
 		assert_to_yaml(
 		  [
 		    {'name' => 'Mark McGwire', 'hr' => 65, 'avg' => 0.278},
-			{'name' => 'Sammy Sosa', 'hr' => 63, 'avg' => 0.288}
+        {'name' => 'Sammy Sosa', 'hr' => 63, 'avg' => 0.288}
 		  ], <<EOY
 -
   avg: 0.278
@@ -201,8 +201,8 @@ EOY
 		assert_parse_only(
 		  [ 
 		  	[ 'name', 'hr', 'avg' ],
-			[ 'Mark McGwire', 65, 0.278 ],
-			[ 'Sammy Sosa', 63, 0.288 ]
+        [ 'Mark McGwire', 65, 0.278 ],
+        [ 'Sammy Sosa', 63, 0.288 ]
 		  ], <<EOY
 - [ name         , hr , avg   ]
 - [ Mark McGwire , 65 , 0.278 ]
@@ -215,9 +215,9 @@ EOY
 		# Simple map with inline maps
 		assert_parse_only(
 		  { 'Mark McGwire' =>
-		    { 'hr' => 65, 'avg' => 0.278 },
-			'Sammy Sosa' =>
-		    { 'hr' => 63, 'avg' => 0.288 }
+          { 'hr' => 65, 'avg' => 0.278 },
+        'Sammy Sosa' =>
+          { 'hr' => 63, 'avg' => 0.288 }
 		  }, <<EOY
 Mark McGwire: {hr: 65, avg: 0.278}
 Sammy Sosa:   {hr: 63,
@@ -226,12 +226,12 @@ EOY
 		)
 	end
 
-    def test_ambiguous_comments
-        # [ruby-talk:88012]
-        assert_to_yaml( "Call the method #dave", <<EOY )
+  def test_ambiguous_comments
+    # [ruby-talk:88012]
+    assert_to_yaml( "Call the method #dave", <<EOY )
 --- "Call the method #dave"
 EOY
-    end
+  end
 
 	def test_spec_nested_comments
 		# Map and sequences with comments
@@ -253,9 +253,9 @@ EOY
 		# Anchors and aliases
 		assert_parse_only(
 			{ 'hr' =>
-			  [ 'Mark McGwire', 'Sammy Sosa' ],
+          [ 'Mark McGwire', 'Sammy Sosa' ],
 			  'rbi' =>
-			  [ 'Sammy Sosa', 'Ken Griffey' ] }, <<EOY
+          [ 'Sammy Sosa', 'Ken Griffey' ] }, <<EOY
 hr:
    - Mark McGwire
    # Name "Sammy Sosa" scalar SS
@@ -267,8 +267,8 @@ rbi:
 EOY
 	 	)
 
-        assert_to_yaml(
-            [{"arrival"=>"EDI", "departure"=>"LAX", "fareref"=>"DOGMA", "currency"=>"GBP"}, {"arrival"=>"MEL", "departure"=>"SYD", "fareref"=>"MADF", "currency"=>"AUD"}, {"arrival"=>"MCO", "departure"=>"JFK", "fareref"=>"DFSF", "currency"=>"USD"}], <<EOY
+    assert_to_yaml(
+      [{"arrival"=>"EDI", "departure"=>"LAX", "fareref"=>"DOGMA", "currency"=>"GBP"}, {"arrival"=>"MEL", "departure"=>"SYD", "fareref"=>"MADF", "currency"=>"AUD"}, {"arrival"=>"MCO", "departure"=>"JFK", "fareref"=>"DFSF", "currency"=>"USD"}], <<EOY
   -   
     &F fareref: DOGMA
     &C currency: GBP
@@ -277,10 +277,10 @@ EOY
   - { *F: MADF, *C: AUD, *D: SYD, *A: MEL }
   - { *F: DFSF, *C: USD, *D: JFK, *A: MCO }
 EOY
-        )
+    )
 
-        assert_to_yaml(
-            {"ALIASES"=>["fareref", "currency", "departure", "arrival"], "FARES"=>[{"arrival"=>"EDI", "departure"=>"LAX", "fareref"=>"DOGMA", "currency"=>"GBP"}, {"arrival"=>"MEL", "departure"=>"SYD", "fareref"=>"MADF", "currency"=>"AUD"}, {"arrival"=>"MCO", "departure"=>"JFK", "fareref"=>"DFSF", "currency"=>"USD"}]}, <<EOY
+    assert_to_yaml(
+      {"ALIASES"=>["fareref", "currency", "departure", "arrival"], "FARES"=>[{"arrival"=>"EDI", "departure"=>"LAX", "fareref"=>"DOGMA", "currency"=>"GBP"}, {"arrival"=>"MEL", "departure"=>"SYD", "fareref"=>"MADF", "currency"=>"AUD"}, {"arrival"=>"MCO", "departure"=>"JFK", "fareref"=>"DFSF", "currency"=>"USD"}]}, <<EOY
 ---
 ALIASES: [&f fareref, &c currency, &d departure, &a arrival]
 FARES:
@@ -300,7 +300,7 @@ FARES:
   *a: MCO
 
 EOY
-        )
+    )
 
 	end
 
@@ -326,10 +326,10 @@ EOY
 		# Complex key #2
 		assert_parse_only(
 		  { [ 'New York Yankees', 'Atlanta Braves' ] =>
-		    [ Date.new( 2001, 7, 2 ), Date.new( 2001, 8, 12 ),
-			  Date.new( 2001, 8, 14 ) ],
-			[ 'Detroit Tigers', 'Chicago Cubs' ] =>
-			[ Date.new( 2001, 7, 23 ) ]
+          [ Date.new( 2001, 7, 2 ), Date.new( 2001, 8, 12 ),
+          Date.new( 2001, 8, 14 ) ],
+        [ 'Detroit Tigers', 'Chicago Cubs' ] =>
+          [ Date.new( 2001, 7, 23 ) ]
 		  }, <<EOY
 ?
     - New York Yankees
@@ -352,9 +352,9 @@ EOY
 		assert_parse_only(
 		  { 'invoice' => 34843, 'date' => Date.new( 2001, 1, 23 ),
 		    'bill-to' => 'Chris Dumars', 'product' =>
-			[ { 'item' => 'Super Hoop', 'quantity' => 1 },
-			  { 'item' => 'Basketball', 'quantity' => 4 },
-			  { 'item' => 'Big Shoes', 'quantity' => 1 } ] }, <<EOY
+          [ { 'item' => 'Super Hoop', 'quantity' => 1 },
+          { 'item' => 'Basketball', 'quantity' => 4 },
+          { 'item' => 'Big Shoes', 'quantity' => 1 } ] }, <<EOY
 invoice: 34843
 date   : 2001-01-23
 bill-to: Chris Dumars
@@ -369,28 +369,28 @@ EOY
 		)
 	end
 
-    def test_spec_sequence_in_sequence_shortcut
-        # Seq-in-seq
-        assert_parse_only( [ [ [ 'one', 'two', 'three' ] ] ], <<EOY )
+  def test_spec_sequence_in_sequence_shortcut
+    # Seq-in-seq
+    assert_parse_only( [ [ [ 'one', 'two', 'three' ] ] ], <<EOY )
 - - - one
     - two
     - three
 EOY
-    end
+  end
 
-    def test_spec_sequence_shortcuts
-        # Sequence shortcuts combined
-        assert_parse_only( 
-[
-  [ 
-    [ [ 'one' ] ],
-    [ 'two', 'three' ],
-    { 'four' => nil },
-    [ { 'five' => [ 'six' ] } ],
-    [ 'seven' ]
-  ],
-  [ 'eight', 'nine' ]
-], <<EOY )
+  def test_spec_sequence_shortcuts
+    # Sequence shortcuts combined
+    assert_parse_only(
+      [
+        [
+          [ [ 'one' ] ],
+          [ 'two', 'three' ],
+          { 'four' => nil },
+          [ { 'five' => [ 'six' ] } ],
+          [ 'seven' ]
+        ],
+        [ 'eight', 'nine' ]
+      ], <<EOY )
 - - - - one
   - - two
     - three
@@ -401,7 +401,7 @@ EOY
 - - eight
   - nine
 EOY
-    end
+  end
 
 	def test_spec_single_literal
 		# Literal scalar block
@@ -480,7 +480,7 @@ hexadecimal: 0xC
 EOY
 		)
 		assert_parse_only(
-            { 'canonical' => 685230, 'decimal' => 685230, 'octal' => 02472256, 'hexadecimal' => 0x0A74AE, 'sexagesimal' => 685230 }, <<EOY)
+      { 'canonical' => 685230, 'decimal' => 685230, 'octal' => 02472256, 'hexadecimal' => 0x0A74AE, 'sexagesimal' => 685230 }, <<EOY)
 canonical: 685230
 decimal: +685,230
 octal: 02472256
@@ -518,15 +518,15 @@ EOY
 	def test_spec_complex_invoice
 		# Complex invoice type
 		id001 = { 'given' => 'Chris', 'family' => 'Dumars', 'address' =>
-			{ 'lines' => "458 Walkman Dr.\nSuite #292\n", 'city' => 'Royal Oak',
+        { 'lines' => "458 Walkman Dr.\nSuite #292\n", 'city' => 'Royal Oak',
 			  'state' => 'MI', 'postal' => 48046 } }
 		assert_parse_only(
 			{ 'invoice' => 34843, 'date' => Date.new( 2001, 1, 23 ),
 			  'bill-to' => id001, 'ship-to' => id001, 'product' =>
-			  [ { 'sku' => 'BL394D', 'quantity' => 4,
+          [ { 'sku' => 'BL394D', 'quantity' => 4,
 			      'description' => 'Basketball', 'price' => 450.00 },
-				{ 'sku' => 'BL4438H', 'quantity' => 1,
-				  'description' => 'Super Hoop', 'price' => 2392.00 } ],
+          { 'sku' => 'BL4438H', 'quantity' => 1,
+            'description' => 'Super Hoop', 'price' => 2392.00 } ],
 			  'tax' => 251.42, 'total' => 4443.52,
 			  'comments' => "Late afternoon is best. Backup contact is Nancy Billsmer @ 338-4338.\n" }, <<EOY
 invoice: 34843
@@ -594,14 +594,14 @@ Stack:
 EOY
 		) { |doc|
 			case doc_ct
-				when 0
-					assert_equal( doc, { 'Time' => mktime( 2001, 11, 23, 15, 01, 42, 00, "-05:00" ),
+      when 0
+        assert_equal( doc, { 'Time' => mktime( 2001, 11, 23, 15, 01, 42, 00, "-05:00" ),
 						'User' => 'ed', 'Warning' => "This is an error message for the log file\n" } )
-				when 1
-					assert_equal( doc, { 'Time' => mktime( 2001, 11, 23, 15, 02, 31, 00, "-05:00" ),
+      when 1
+        assert_equal( doc, { 'Time' => mktime( 2001, 11, 23, 15, 02, 31, 00, "-05:00" ),
 						'User' => 'ed', 'Warning' => "A slightly different error message.\n" } )
-				when 2
-					assert_equal( doc, { 'Date' => mktime( 2001, 11, 23, 15, 03, 17, 00, "-05:00" ),
+      when 2
+        assert_equal( doc, { 'Date' => mktime( 2001, 11, 23, 15, 03, 17, 00, "-05:00" ),
 						'User' => 'ed', 'Fatal' => "Unknown variable \"bar\"\n",
 						'Stack' => [
 							{ 'file' => 'TopClass.py', 'line' => 23, 'code' => "x = MoreObject(\"345\\n\")\n" },
@@ -647,12 +647,12 @@ EOY
 EOY
 		) { |doc|
 			case doc_ct
-				when 0
-					assert_equal( doc, {} )
-				when 1
-					assert_equal( doc, [] )
-				when 2
-					assert_equal( doc, '' )
+      when 0
+        assert_equal( doc, {} )
+      when 1
+        assert_equal( doc, [] )
+      when 2
+        assert_equal( doc, '' )
 			end
 			doc_ct += 1
 		}
@@ -660,17 +660,17 @@ EOY
 	end
 
 	def _test_spec_domain_prefix
-        customer_proc = proc { |type, val|
-            if Hash === val
-                scheme, domain, type = type.split( ':', 3 )
-                val['type'] = "domain #{type}"
-                val
-            else
-                raise ArgumentError, "Not a Hash in domain.tld,2002/invoice: " + val.inspect
-            end
-        }
-        YAML.add_domain_type( "domain.tld,2002", 'invoice', &customer_proc )
-        YAML.add_domain_type( "domain.tld,2002", 'customer', &customer_proc )
+    customer_proc = proc { |type, val|
+      if Hash === val
+        scheme, domain, type = type.split( ':', 3 )
+        val['type'] = "domain #{type}"
+        val
+      else
+        raise ArgumentError, "Not a Hash in domain.tld,2002/invoice: " + val.inspect
+      end
+    }
+    YAML.add_domain_type( "domain.tld,2002", 'invoice', &customer_proc )
+    YAML.add_domain_type( "domain.tld,2002", 'customer', &customer_proc )
 		assert_parse_only( { "invoice"=> { "customers"=> [ { "given"=>"Chris", "type"=>"domain customer", "family"=>"Dumars" } ], "type"=>"domain invoice" } }, <<EOY
 # 'http://domain.tld,2002/invoice' is some type family.
 invoice: !domain.tld,2002/^invoice
@@ -729,12 +729,12 @@ bearing: !!ball
 EOY
 		) { |doc|
 			case doc_ct
-				when 0
-					assert_equal( doc['pool'].type_id, 'x-private:ball' )
-					assert_equal( doc['pool'].transform.value, { 'number' => 8, 'color' => 'black' } )
-				when 1
-					assert_equal( doc['bearing'].type_id, 'x-private:ball' ) 
-					assert_equal( doc['bearing'].transform.value, { 'material' => 'steel' } )
+      when 0
+        assert_equal( doc['pool'].type_id, 'x-private:ball' )
+        assert_equal( doc['pool'].transform.value, { 'number' => 8, 'color' => 'black' } )
+      when 1
+        assert_equal( doc['bearing'].type_id, 'x-private:ball' )
+        assert_equal( doc['bearing'].transform.value, { 'material' => 'steel' } )
 			end
 			doc_ct += 1
 		}
@@ -774,9 +774,9 @@ EOY
 	end
 
 	def _test_spec_explicit_families
-        YAML.add_domain_type( "somewhere.com,2002", 'type' ) { |type, val|
-            "SOMEWHERE: #{val}"
-        }
+    YAML.add_domain_type( "somewhere.com,2002", 'type' ) { |type, val|
+      "SOMEWHERE: #{val}"
+    }
 		assert_parse_only(
 			{ 'not-date' => '2002-04-28', 'picture' => "GIF89a\f\000\f\000\204\000\000\377\377\367\365\365\356\351\351\345fff\000\000\000\347\347\347^^^\363\363\355\216\216\216\340\340\340\237\237\237\223\223\223\247\247\247\236\236\236i^\020' \202\n\001\000;", 'hmm' => "SOMEWHERE: family above is short for\nhttp://somewhere.com/type\n" }, <<EOY
 not-date: !str 2002-04-28
@@ -805,7 +805,7 @@ EOY
 		}
 		one_shape_proc = Proc.new { |type, val|
 			if Hash === val
-                type = type.split( /:/ )
+        type = type.split( /:/ )
 				val['TYPE'] = "Shape: #{type[2]}"
 				val
 			else
@@ -875,11 +875,11 @@ EOY
 			{ 'empty' => {}, 'in-line' => { 'one' => 1, 'two' => 2 },
 			  'spanning' => { 'one' => 1, 'two' => 2 },
 			  'nested' => { 'first' => 'First entry', 'second' =>
-			  	{ 'key' => 'Subordinate mapping' }, 'third' =>
-				  [ 'Subordinate sequence', {}, 'Previous mapping is empty.',
-					{ 'A key' => 'value pair in a sequence.', 'A second' => 'key:value pair.' },
-					'The previous entry is equal to the following one.',
-					{ 'A key' => 'value pair in a sequence.', 'A second' => 'key:value pair.' } ],
+            { 'key' => 'Subordinate mapping' }, 'third' =>
+            [ 'Subordinate sequence', {}, 'Previous mapping is empty.',
+            { 'A key' => 'value pair in a sequence.', 'A second' => 'key:value pair.' },
+            'The previous entry is equal to the following one.',
+            { 'A key' => 'value pair in a sequence.', 'A second' => 'key:value pair.' } ],
 				  12.0 => 'This key is a float.', "?\n" => 'This key had to be protected.',
 				  "\a" => 'This key had to be escaped.',
 				  "This is a multi-line folded key\n" => "Whose value is also multi-line.\n",
@@ -1026,8 +1026,8 @@ EOY
 	end
 
 	# this test has been changed, from ".10" to ".00" since JvYAML can't really set usec values right now
-    # this shall get fixed later.
-    def test_spec_builtin_time
+  # this shall get fixed later.
+  def test_spec_builtin_time
 		# Time
 		assert_parse_only(
 			{ "space separated" => mktime( 2001, 12, 14, 21, 59, 43, ".00", "-05:00" ), 
@@ -1044,10 +1044,10 @@ EOY
 
 	def test_spec_builtin_binary
 		arrow_gif = "GIF89a\f\000\f\000\204\000\000\377\377\367\365\365\356\351\351\345fff\000\000\000\347\347\347^^^\363\363\355\216\216\216\340\340\340\237\237\237\223\223\223\247\247\247\236\236\236iiiccc\243\243\243\204\204\204\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371!\376\016Made with GIMP\000,\000\000\000\000\f\000\f\000\000\005,  \216\2010\236\343@\024\350i\020\304\321\212\010\034\317\200M$z\357\3770\205p\270\2601f\r\e\316\001\303\001\036\020' \202\n\001\000;"
-#       puts({ 'canonical' => arrow_gif, 'base64' => arrow_gif, 
-# 			  'description' => "The binary value above is a tiny arrow encoded as a gif image.\n" }.to_yaml)
+    #       puts({ 'canonical' => arrow_gif, 'base64' => arrow_gif,
+    # 			  'description' => "The binary value above is a tiny arrow encoded as a gif image.\n" }.to_yaml)
       
-      assert_parse_only(
+    assert_parse_only(
 			{ 'canonical' => arrow_gif, 'base64' => arrow_gif, 
 			  'description' => "The binary value above is a tiny arrow encoded as a gif image.\n" }, <<EOY
 canonical: !binary "\\
@@ -1084,27 +1084,27 @@ EOY
 		)
 	end
 
-    #
-    # Test of Ranges
-    #
-    def test_ranges
+  #
+  # Test of Ranges
+  #
+  def test_ranges
 
-        # Simple numeric
-        assert_to_yaml( 1..3, <<EOY )
+    # Simple numeric
+    assert_to_yaml( 1..3, <<EOY )
 --- !ruby/range 1..3
 EOY
 
-        # Simple alphabetic
-        assert_to_yaml( 'a'..'z', <<EOY )
+    # Simple alphabetic
+    assert_to_yaml( 'a'..'z', <<EOY )
 --- !ruby/range a..z
 EOY
 
-        # Float
-        assert_to_yaml( 10.5...30.3, <<EOY )
+    # Float
+    assert_to_yaml( 10.5...30.3, <<EOY )
 --- !ruby/range 10.5...30.3
 EOY
 
-    end
+  end
 
 	def test_ruby_struct
 		# Ruby structures
@@ -1112,7 +1112,7 @@ EOY
 		assert_to_yaml(
 			[ book_struct.new( "Yukihiro Matsumoto", "Ruby in a Nutshell", 2002, "0-596-00214-9" ),
 			  book_struct.new( [ 'Dave Thomas', 'Andy Hunt' ], "The Pickaxe", 2002, 
-				book_struct.new( "This should be the ISBN", "but I have another struct here", 2002, "None" ) 
+          book_struct.new( "This should be the ISBN", "but I have another struct here", 2002, "None" )
 			  ) ], <<EOY
 - !ruby/struct:BookStruct
   author: Yukihiro Matsumoto
@@ -1133,7 +1133,7 @@ EOY
 EOY
 		)
 
-        assert_to_yaml( YAML_Tests::StructTest.new( 123 ), <<EOY )
+    assert_to_yaml( YAML_Tests::StructTest.new( 123 ), <<EOY )
 --- !ruby/struct:YAML_Tests::StructTest
 c: 123
 EOY
@@ -1154,7 +1154,7 @@ EOY
 		y = YAML::Stream.new( :Indent => 2, :UseVersion => 0 )
 		y.add( 
 			{ 'hi' => 'hello', 'map' =>
-				{ 'good' => 'two' },
+          { 'good' => 'two' },
 			  'time' => Time.now,
 			  'try' => /^po(.*)$/,
 			  'bye' => 'goodbye'
@@ -1166,185 +1166,203 @@ EOY
 		y.add( [ true, false, false ] )
 	end
 
-    #
-    # Test YPath choices parsing
-    #
-    def _test_ypath_parsing
-        assert_path_segments( "/*/((one|three)/name|place)|//place",
-          [ ["*", "one", "name"],
-            ["*", "three", "name"],
-            ["*", "place"],
-            ["/", "place"] ]
-        )
-    end
+  #
+  # Test YPath choices parsing
+  #
+  def _test_ypath_parsing
+    assert_path_segments( "/*/((one|three)/name|place)|//place",
+      [ ["*", "one", "name"],
+        ["*", "three", "name"],
+        ["*", "place"],
+        ["/", "place"] ]
+    )
+  end
 
-    #
-    # Tests from Tanaka Akira on [ruby-core]
-    #
-    def test_akira
+  #
+  # Tests from Tanaka Akira on [ruby-core]
+  #
+  def test_akira
 
-        # Commas in plain scalars [ruby-core:1066]
-        assert_to_yaml(
-            {"A"=>"A,","B"=>"B"}, <<EOY
+    # Commas in plain scalars [ruby-core:1066]
+    assert_to_yaml(
+      {"A"=>"A,","B"=>"B"}, <<EOY
 A: "A,"
 B: B
 EOY
-        )
+    )
 
-        # Double-quoted keys [ruby-core:1069]
-        assert_to_yaml(
-            {"1"=>2, "2"=>3}, <<EOY
+    # Double-quoted keys [ruby-core:1069]
+    assert_to_yaml(
+      {"1"=>2, "2"=>3}, <<EOY
 '1': 2
 "2": 3
 EOY
-        )
+    )
 
-        # Anchored mapping [ruby-core:1071]
-        assert_to_yaml(
-            [{"a"=>"b"}] * 2, <<EOY
+    # Anchored mapping [ruby-core:1071]
+    assert_to_yaml(
+      [{"a"=>"b"}] * 2, <<EOY
 - &id001
   a: b
 - *id001
 EOY
-        )
+    )
 
-        # Stress test [ruby-core:1071]
-        # a = []; 1000.times { a << {"a"=>"b", "c"=>"d"} }
-        # YAML::load( a.to_yaml )
+    # Stress test [ruby-core:1071]
+    # a = []; 1000.times { a << {"a"=>"b", "c"=>"d"} }
+    # YAML::load( a.to_yaml )
 
+  end
+
+  #
+  # Test Time.now cycle
+  #
+  def test_time_now_cycle
+    #
+    # From Minero Aoki [ruby-core:2305]
+    #
+    require 'yaml'
+    t = Time.now
+    5.times do
+      assert_cycle(t)
+    end
+  end
+
+  #
+  # Test Range cycle
+  #
+  def test_range_cycle
+    #
+    # From Minero Aoki [ruby-core:02306]
+    #
+    assert_cycle("a".."z")
+
+    #
+    # From Nobu Nakada [ruby-core:02311]
+    #
+    assert_cycle(0..1)
+    assert_cycle(1.0e20 .. 2.0e20)
+    assert_cycle("0".."1")
+    assert_cycle(".."..."...")
+    assert_cycle(".rb"..".pl")
+    assert_cycle(".rb"...".pl")
+    assert_cycle('"'...".")
+    assert_cycle("'"...".")
+  end
+
+  #
+  # Circular references
+  #
+  def test_circular_references
+    a = []; a[0] = a; a[1] = a
+    inspect_str = "[[...], [...]]"
+    assert_equal( inspect_str, YAML::load( a.to_yaml ).inspect )
+  end
+
+  #
+  # Test Symbol cycle
+  #
+  def test_symbol_cycle
+    #
+    # From Aaron Schrab [ruby-Bugs:2535]
+    #
+    assert_cycle(:"^foo")
+  end
+
+  #
+  # Test Numeric cycle
+  #
+  class NumericTest < Numeric
+    def initialize(value)
+      @value = value
+    end
+    def ==(other)
+      @value == other.instance_eval{ @value }
+    end
+  end
+  def test_numeric_cycle
+    assert_cycle(1) # Fixnum
+    assert_cycle(111111111111111111111111111111111) # Bignum
+    assert_cycle(NumericTest.new(3)) # Subclass of Numeric
+  end
+
+  #
+  # Test empty map/seq in map cycle
+  #
+  def test_empty_map_key
+    #
+    # empty seq as key
+    #
+    o = YAML.load({[]=>""}.to_yaml)
+    assert_equal(Hash, o.class)
+    assert_equal([[]], o.keys)
+
+    #
+    # empty map as key
+    #
+    o = YAML.load({{}=>""}.to_yaml)
+    assert_equal(Hash, o.class)
+    assert_equal([{}], o.keys)
+  end
+
+  def test_negative_float
+    a = -1.0
+    yml = YAML::dump( a )
+    b = YAML::load( yml )
+    assert_equal a,b
+  end
+
+  def test_negative_integer
+    a = -1
+    yml = YAML::dump( a )
+    b = YAML::load( yml )
+    assert_equal a,b
+  end
+
+  # JRUBY-1768: yaml_initialize not getting called
+  class MyType
+    attr_accessor :yaml_init_called
+    attr_accessor :tag
+    attr_accessor :values
+
+    def initialize
+      @value = "hello"
     end
 
-    #
-    # Test Time.now cycle
-    #
-    def test_time_now_cycle
-        #
-        # From Minero Aoki [ruby-core:2305]
-        #
-        require 'yaml'
-        t = Time.now
-        5.times do
-        assert_cycle(t)
+    def yaml_initialize(tag, values)
+      @yaml_init_called = true
+      @tag = tag
+      @values = values
+    end
+  end
+
+  def test_yaml_initialize
+    obj = MyType.new
+    yaml = obj.to_yaml
+    obj2 = YAML::load(yaml)
+
+    assert(obj2.class == MyType)
+    assert(obj2.yaml_init_called)
+    assert_equal({"value" => "hello"}, obj2.values)
+  end
+
+  # JRUBY-3269
+  def test_yaml_dump_monkey
+    begin
+      class << YAML
+        alias old_dump dump
+        def dump(*args)
+          fail "to_yaml should not dispatch to dump"
         end
-    end
-
-    #
-    # Test Range cycle
-    #
-    def test_range_cycle
-      #
-      # From Minero Aoki [ruby-core:02306]
-      #
-      assert_cycle("a".."z")
-
-      #
-      # From Nobu Nakada [ruby-core:02311]
-      #
-      assert_cycle(0..1)
-      assert_cycle(1.0e20 .. 2.0e20)
-      assert_cycle("0".."1")
-      assert_cycle(".."..."...")
-      assert_cycle(".rb"..".pl")
-      assert_cycle(".rb"...".pl")
-      assert_cycle('"'...".")
-      assert_cycle("'"...".")
-    end
-
-    #
-    # Circular references
-    #
-    def test_circular_references
-        a = []; a[0] = a; a[1] = a
-        inspect_str = "[[...], [...]]"
-        assert_equal( inspect_str, YAML::load( a.to_yaml ).inspect )
-    end
-
-    #
-    # Test Symbol cycle
-    #
-    def test_symbol_cycle
-      #
-      # From Aaron Schrab [ruby-Bugs:2535]
-      #
-      assert_cycle(:"^foo")
-    end
-
-    #
-    # Test Numeric cycle
-    #
-    class NumericTest < Numeric
-      def initialize(value)
-        @value = value
-      end
-      def ==(other)
-        @value == other.instance_eval{ @value }
-      end
-    end
-    def test_numeric_cycle
-      assert_cycle(1) # Fixnum
-      assert_cycle(111111111111111111111111111111111) # Bignum
-      assert_cycle(NumericTest.new(3)) # Subclass of Numeric
-    end
-
-    #
-    # Test empty map/seq in map cycle
-    #
-    def test_empty_map_key
-      #
-      # empty seq as key
-      #
-      o = YAML.load({[]=>""}.to_yaml)
-      assert_equal(Hash, o.class)
-      assert_equal([[]], o.keys)
-
-      #
-      # empty map as key
-      #
-      o = YAML.load({{}=>""}.to_yaml)
-      assert_equal(Hash, o.class)
-      assert_equal([{}], o.keys)
-    end
-
-    def test_negative_float
-      a = -1.0
-      yml = YAML::dump( a )
-      b = YAML::load( yml )
-      assert_equal a,b
-    end
-
-    def test_negative_integer
-      a = -1
-      yml = YAML::dump( a )
-      b = YAML::load( yml )
-      assert_equal a,b
-    end
-
-    # JRUBY-1768: yaml_initialize not getting called
-    class MyType
-      attr_accessor :yaml_init_called
-      attr_accessor :tag
-      attr_accessor :values
-
-      def initialize
-        @value = "hello"
       end
 
-      def yaml_initialize(tag, values)
-        @yaml_init_called = true
-        @tag = tag
-        @values = values
+      assert_nothing_raised {Object.new.to_yaml}
+    ensure
+      class << YAML
+        alias dump old_dump
       end
     end
-
-    def test_yaml_initialize
-      obj = MyType.new
-      yaml = obj.to_yaml
-      obj2 = YAML::load(yaml)
-
-      assert(obj2.class == MyType)
-      assert(obj2.yaml_init_called)
-      assert_equal({"value" => "hello"}, obj2.values)
-    end
+  end
 end
 
 #if $0 == __FILE__

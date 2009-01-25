@@ -146,16 +146,19 @@ public class RubyYAML {
         return result;
     }
 
-    @JRubyMethod(name = "dump", required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject dump(IRubyObject self, IRubyObject[] args) {
-        IRubyObject obj = args[0];
+    @JRubyMethod(name = "dump", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject dump(IRubyObject self, IRubyObject arg0) {
+        Ruby runtime = self.getRuntime();
+        IRubyObject val = runtime.newArray(arg0);
+        return self.callMethod(runtime.getCurrentContext(),"dump_all", val);
+    }
+
+    @JRubyMethod(name = "dump", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject dump(IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject obj = arg0;
         Ruby runtime = self.getRuntime();
         IRubyObject val = runtime.newArray(obj);
-        if(args.length>1) {
-            return RuntimeHelpers.invoke(runtime.getCurrentContext(), self,"dump_all", val, args[1]);
-        } else {
-            return self.callMethod(runtime.getCurrentContext(),"dump_all", val);
-        }
+        return RuntimeHelpers.invoke(runtime.getCurrentContext(), self,"dump_all", val, arg1);
     }
 
     @JRubyMethod(name = "dump_all", required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
@@ -430,10 +433,13 @@ public class RubyYAML {
             }
             return RuntimeHelpers.invoke(context, arg, "map", self.callMethod(context, "taguri"), (IRubyObject)mep, self.callMethod(context, "to_yaml_style"));
         }
-        @JRubyMethod(name = "to_yaml", rest = true)
-        public static IRubyObject obj_to_yaml(IRubyObject self, IRubyObject[] args) {
-            ThreadContext context = self.getRuntime().getCurrentContext();
-            return self.getRuntime().fastGetModule("YAML").callMethod(context,"dump", self);
+        @JRubyMethod(name = "to_yaml")
+        public static IRubyObject obj_to_yaml(IRubyObject self) {
+            return dump(self.getRuntime().fastGetModule("YAML"), self);
+        }
+        @JRubyMethod(name = "to_yaml")
+        public static IRubyObject obj_to_yaml(IRubyObject self, IRubyObject opts) {
+            return dump(self.getRuntime().fastGetModule("YAML"), self);
         }
         @JRubyMethod(name = "taguri")
         public static IRubyObject obj_taguri(IRubyObject self) {
