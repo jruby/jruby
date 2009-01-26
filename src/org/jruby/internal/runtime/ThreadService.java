@@ -35,11 +35,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import java.util.WeakHashMap;
+import java.util.concurrent.Future;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
@@ -49,7 +49,7 @@ public class ThreadService {
     private ThreadContext mainContext;
     private ThreadLocal<SoftReference<ThreadContext>> localContext;
     private ThreadGroup rubyThreadGroup;
-    private Map<Thread, RubyThread> rubyThreadMap;
+    private Map<Object, RubyThread> rubyThreadMap;
     
     private ReentrantLock criticalLock = new ReentrantLock();
 
@@ -58,7 +58,7 @@ public class ThreadService {
         this.mainContext = ThreadContext.newContext(runtime);
         this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
         this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
-        this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Thread, RubyThread>());
+        this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
         
         // Must be called from main thread (it is currently, but this bothers me)
         localContext.set(new SoftReference<ThreadContext>(mainContext));
@@ -137,10 +137,19 @@ public class ThreadService {
         synchronized(rubyThreadMap) {
             List<RubyThread> rtList = new ArrayList<RubyThread>(rubyThreadMap.size());
         
-            for (Map.Entry<Thread, RubyThread> entry : rubyThreadMap.entrySet()) {
-                Thread t = entry.getKey();
-            
-                if (!t.isAlive()) continue;
+            for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
+                Object key = entry.getKey();
+                if (key instanceof Thread) {
+                    Thread t = (Thread)key;
+
+                    // thread is not alive, skip it
+                    if (!t.isAlive()) continue;
+                } else if (key instanceof Future) {
+                    Future f = (Future)key;
+
+                    // future is done or cancelled, skip it
+                    if (f.isDone() || f.isCancelled()) continue;
+                }
             
                 rtList.add(entry.getValue());
             }
@@ -164,13 +173,11 @@ public class ThreadService {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference(context));
         getCurrentContext().setThread(thread);
-        // This requires register to be called from within the registree thread
-        associateThread(Thread.currentThread(), thread);
         return context;
     }
 
-    public synchronized void associateThread(Thread javaThread, RubyThread rubyThread) {
-        rubyThreadMap.put(javaThread, rubyThread);
+    public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
+        rubyThreadMap.put(threadOrFuture, rubyThread);
     }
     
     public synchronized void unregisterThread(RubyThread thread) {

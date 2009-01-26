@@ -204,12 +204,16 @@ public class RubyThread extends RubyObject {
 
         RubyRunnable runnable = new RubyRunnable(this, args, block);
         if (RubyInstanceConfig.POOLING_ENABLED) {
-            threadImpl = new FutureThread(this, runnable);
+            FutureThread futureThread = new FutureThread(this, runnable);
+            threadImpl = futureThread;
 
             // set to default thread group
             runtime.getDefaultThreadGroup().addDirectly(this);
 
             threadImpl.start();
+
+            // JRUBY-2380, associate future early so it shows up in Thread.list right away, in case it doesn't run immediately
+            runtime.getThreadService().associateThread(futureThread.getFuture(), this);
         } else {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);

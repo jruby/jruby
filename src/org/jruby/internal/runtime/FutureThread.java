@@ -47,6 +47,10 @@ public class FutureThread implements ThreadLike {
         this.rubyThread = rubyThread;
         this.runnable = runnable;
     }
+
+    public Future getFuture() {
+        return future;
+    }
     
     /**
      * Starting a new thread in terms of a thread pool is just submitting it as
