@@ -2747,8 +2747,9 @@ public class RubyIO extends RubyObject {
            w.addAll(unselectable_writes);
            
            // make all sockets blocking as configured again
-           for (Iterator i = selector.keys().iterator(); i.hasNext(); ) {
-               SelectionKey key = (SelectionKey) i.next();
+           Set<SelectionKey> keys = selector.keys(); // get keys before close
+           selector.close(); // close unregisters all channels, so we can safely reset blocking modes
+           for (SelectionKey key : keys) {
                SelectableChannel channel = key.channel();
                synchronized(channel.blockingLock()) {
                    RubyIO originalIO = (RubyIO) TypeConverter.convertToType(
@@ -2758,7 +2759,6 @@ public class RubyIO extends RubyObject {
                    channel.configureBlocking(blocking);
                }
            }
-           selector.close();
            
            if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
                return runtime.getNil();
