@@ -71,7 +71,10 @@ public class JavaMethodDescriptor {
             }
         }
 
-        argumentTypes = Arrays.copyOfRange(parameters, (hasContext ? 1 : 0), parameters.length - (hasBlock ? 1 : 0));
+        int start = (hasContext ? 1 : 0) + (isStatic ? 1 : 0);
+        int end = parameters.length - (hasBlock ? 1 : 0);
+        argumentTypes = new Class[end - start];
+        System.arraycopy(parameters, start, argumentTypes, 0, end - start);
         
         optional = anno.optional();
         rest = anno.rest();
