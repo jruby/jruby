@@ -1176,7 +1176,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private RubyString replaceCommon(IRubyObject other) {
         modifyCheck();
-        RubyString otherStr =  other.convertToString();
+        RubyString otherStr = other.convertToString();
         otherStr.shareLevel = shareLevel = SHARE_LEVEL_BYTELIST;
         value = otherStr.value;
         infectBy(other);
@@ -3110,8 +3110,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return makeShared19(runtime, p, len);
     }
 
-    /* rb_str_replace */
-    public IRubyObject replace(int beg, int len, RubyString replaceWith) {
+    /* rb_str_splice */
+    private IRubyObject replaceInternal(int beg, int len, RubyString replaceWith) {
         if (beg + len >= value.length()) len = value.length() - beg;
 
         modify();
@@ -3213,7 +3213,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             end = match.regs.end[nth];
         }
         if (start == -1) throw runtime.newIndexError("regexp group " + nth + " not matched");
-        replace(start, end - start, stringValue(repl));
+        replaceInternal(start, end - start, repl.convertToString());
     }
 
     private int subpatSetCheck(Ruby runtime, int nth, Region regs) {
@@ -3253,7 +3253,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (start == -1) throw runtime.newIndexError("regexp group " + nth + " not matched");
         RubyString replStr =  repl.convertToString();
         Encoding enc = checkEncoding(replStr);
-        replace(start, end - start, replStr); // TODO: rb_str_splice_0
+        replaceInternal(start, end - start, replStr); // TODO: rb_str_splice_0
         associateEncoding(enc);
     }
 
@@ -3285,17 +3285,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "[]=", reads = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        if (arg0 instanceof RubyFixnum || arg0.respondsTo("to_int")) { // FIXME: RubyNumeric or RubyInteger instead?
-            int idx = RubyNumeric.fix2int(arg0);
-            if (idx < 0) idx += value.length();
-            if (idx < 0 || idx >= value.length()) throw context.getRuntime().newIndexError("string index out of bounds");
-            if (arg1 instanceof RubyFixnum) {
-                modify();
-                value.set(idx, RubyNumeric.fix2int(arg1));
-            } else {
-                replace(idx, 1, arg1.convertToString());
-            }
-            return arg1;
+        if (arg0 instanceof RubyFixnum) {
+            return op_aset(context, RubyNumeric.fix2int(arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
             RubyString repl = arg1.convertToString();
             subpatSet(context, (RubyRegexp) arg0, 0, repl);
@@ -3304,38 +3295,46 @@ public class RubyString extends RubyObject implements EncodingCapable {
             RubyString orig = (RubyString)arg0;
             int beg = value.indexOf(orig.value);
             if (beg < 0) throw context.getRuntime().newIndexError("string not matched");
-            replace(beg, orig.value.length(), arg1.convertToString());
+            replaceInternal(beg, orig.value.realSize, arg1.convertToString());
             return arg1;
         } else if (arg0 instanceof RubyRange) {
             int[] begLen = ((RubyRange) arg0).begLenInt(value.realSize, 2);
-            replace(begLen[0], begLen[1], arg1.convertToString());
+            replaceInternal(begLen[0], begLen[1], arg1.convertToString());
             return arg1;
         }
-        throw context.getRuntime().newTypeError("wrong argument type");
+        return op_aset(context, RubyNumeric.fix2int(arg0), arg1);
+    }
+
+    private IRubyObject op_aset(ThreadContext context, int idx, IRubyObject arg1) {
+        if (idx < 0) idx += value.realSize;
+        if (idx < 0 || idx >= value.realSize) throw context.getRuntime().newIndexError("string index out of bounds");
+        if (arg1 instanceof RubyFixnum) {
+            modify();
+            value.set(idx, RubyNumeric.fix2int(arg1));
+        } else {
+            replaceInternal(idx, 1, arg1.convertToString());
+        }
+        return arg1;
     }
 
     @JRubyMethod(name = "[]=", reads = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
-            RubyString repl = stringValue(arg2);
-            int nth = RubyNumeric.fix2int(arg1);
-            subpatSet(context, (RubyRegexp) arg0, nth, repl);
-            return repl;
-        }
-        RubyString repl = stringValue(arg2);
-        int beg = RubyNumeric.fix2int(arg0);
-        int len = RubyNumeric.fix2int(arg1);
-        if (len < 0) throw context.getRuntime().newIndexError("negative length");
-        int strLen = value.length();
-        if (beg < 0) beg += strLen;
+            subpatSet(context, (RubyRegexp)arg0, RubyNumeric.fix2int(arg1), arg2);
+        } else {
+            RubyString repl = arg2.convertToString();
+            int beg = RubyNumeric.fix2int(arg0);
+            int len = RubyNumeric.fix2int(arg1);
+            if (len < 0) throw context.getRuntime().newIndexError("negative length");
+            int strLen = value.realSize;
+            if (beg < 0) beg += strLen;
 
-        if (beg < 0 || (beg > 0 && beg > strLen)) {
-            throw context.getRuntime().newIndexError("string index out of bounds");
-        }
-        if (beg + len > strLen) len = strLen - beg;
+            if (beg < 0 || (beg > 0 && beg > strLen)) throw context.getRuntime().newIndexError("string index out of bounds");
+            if (beg + len > strLen) len = strLen - beg;
 
-        replace(beg, len, repl);
-        return repl;
+            replaceInternal(beg, len, repl);
+        }
+        return arg2;
     }
 
     /**
