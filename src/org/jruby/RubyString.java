@@ -3439,18 +3439,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref(context, arg0);
-        if (result.isNil()) return result;
-
-        op_aset(context, arg0, RubyString.newEmptyString(context.getRuntime()));
+        if (!result.isNil()) op_aset(context, arg0, RubyString.newEmptyString(context.getRuntime()));
         return result;
     }
 
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
-        if (result.isNil()) return result;
-
-        op_aset(context, arg0, arg1, RubyString.newEmptyString(context.getRuntime()));
+        if (!result.isNil()) op_aset(context, arg0, arg1, RubyString.newEmptyString(context.getRuntime()));
         return result;
     }
 
