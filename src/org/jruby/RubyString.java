@@ -1993,8 +1993,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "insert")
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
         // MRI behavior: first check for ability to convert to String...
-        RubyString s = (RubyString)stringArg.convertToString();
-        ByteList insert = s.value;
+        RubyString str = stringArg.convertToString();
 
         // ... and then the index
         int index = (int) indexArg.convertToInteger().getLongValue();
@@ -2006,8 +2005,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         modify();
 
-        value.unsafeReplace(index, 0, insert);
-        this.infectBy(s);
+        value.unsafeReplace(index, 0, str.value);
+        this.infectBy(str);
         return this;
     }
 
@@ -3111,13 +3110,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     /* rb_str_splice */
-    private IRubyObject replaceInternal(int beg, int len, RubyString replaceWith) {
-        if (beg + len >= value.length()) len = value.length() - beg;
+    private IRubyObject replaceInternal(int beg, int len, RubyString repl) {
+        int oldLength = value.realSize;
+        if (beg + len >= oldLength) len = oldLength - beg;
+        ByteList replBytes = repl.value;
+        int replLength = replBytes.realSize;
+        int newLength = oldLength + replLength - len;
 
-        modify();
-        value.unsafeReplace(beg, len, replaceWith.value);
+        byte[]oldBytes = value.bytes;
+        int oldBegin = value.begin;
 
-        return infectBy(replaceWith);
+        modify(newLength);
+        if (replLength != len) {
+            System.arraycopy(oldBytes, oldBegin + beg + len, value.bytes, beg + replLength, oldLength - (beg + len));
+        }
+
+        if (replLength > 0) System.arraycopy(replBytes.bytes, replBytes.begin, value.bytes, beg, replLength);
+        value.realSize = newLength;
+        return infectBy(repl);
     }
 
     /**
