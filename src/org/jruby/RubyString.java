@@ -3142,6 +3142,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         int cr = getCodeRange();
         replaceInternal(p - value.begin, e - p, repl);
+        associateEncoding(enc);
         cr = codeRangeAnd(cr, repl.getCodeRange());
         if (cr != CR_BROKEN) setCodeRange(cr);
     }
@@ -3279,6 +3280,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (start == -1) throw runtime.newIndexError("regexp group " + nth + " not matched");
         RubyString replStr =  repl.convertToString();
         Encoding enc = checkEncoding(replStr);
+        // TODO: keep cr
         replaceInternal(start, end - start, replStr); // TODO: rb_str_splice_0
         associateEncoding(enc);
     }
@@ -3309,13 +3311,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    @JRubyMethod(name = "[]=", reads = BACKREF)
+    @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum) {
             return op_aset(context, RubyNumeric.fix2int(arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
             RubyString repl = arg1.convertToString();
-            subpatSet(context, (RubyRegexp) arg0, 0, repl);
+            subpatSet(context, (RubyRegexp)arg0, 0, repl);
             return repl;
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
@@ -3343,7 +3345,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return arg1;
     }
 
-    @JRubyMethod(name = "[]=", reads = BACKREF)
+    @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp)arg0, RubyNumeric.fix2int(arg1), arg2);
@@ -3359,6 +3361,58 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (beg + len > strLen) len = strLen - beg;
 
             replaceInternal(beg, len, repl);
+        }
+        return arg2;
+    }
+
+    @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubyFixnum) {
+            return op_aset19(context, RubyNumeric.fix2int(arg0), arg1);
+        } else if (arg0 instanceof RubyRegexp) {
+            RubyString repl = arg1.convertToString();
+            subpatSet19(context, (RubyRegexp)arg0, 0, repl);
+            return repl;
+        } else if (arg0 instanceof RubyString) {
+            RubyString orig = (RubyString)arg0;
+            int beg = strIndex19(orig, 0);
+            if (beg < 0) throw context.getRuntime().newIndexError("string not matched");
+            beg = subLength(beg);
+            replaceInternal19(beg, orig.strLength(), arg1.convertToString());
+            return arg1;
+        } else if (arg0 instanceof RubyRange) {
+            int[] begLen = ((RubyRange) arg0).begLenInt(strLength(), 2);
+            replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
+            return arg1;
+        }
+        return op_aset19(context, RubyNumeric.fix2int(arg0), arg1);
+    }
+
+    private IRubyObject op_aset19(ThreadContext context, int idx, IRubyObject arg1) {
+        int len = strLength();
+        if (idx < 0) idx += len;
+        if (idx < 0 || idx >= len) throw context.getRuntime().newIndexError("string index out of bounds");
+        replaceInternal19(idx, 1, arg1.convertToString());
+        return arg1;
+    }
+
+    @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (arg0 instanceof RubyRegexp) {
+            System.out.println("!");
+            subpatSet19(context, (RubyRegexp)arg0, RubyNumeric.fix2int(arg1), arg2);
+        } else {
+            RubyString repl = arg2.convertToString();
+            int beg = RubyNumeric.fix2int(arg0);
+            int len = RubyNumeric.fix2int(arg1);
+            if (len < 0) throw context.getRuntime().newIndexError("negative length");
+            int strLen = strLength();
+            if (beg < 0) beg += strLen;
+
+            if (beg < 0 || (beg > 0 && beg > strLen)) throw context.getRuntime().newIndexError("string index out of bounds");
+            if (beg + len > strLen) len = strLen - beg;
+
+            replaceInternal19(beg, len, repl);
         }
         return arg2;
     }
