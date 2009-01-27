@@ -3315,7 +3315,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum) {
-            return op_aset(context, RubyNumeric.fix2int(arg0), arg1);
+            return op_aset(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp)arg0, 0, arg1.convertToString());
             return arg1;
@@ -3368,7 +3368,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum) {
-            return op_aset19(context, RubyNumeric.fix2int(arg0), arg1);
+            return op_aset19(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
             subpatSet19(context, (RubyRegexp)arg0, 0, arg1.convertToString());
             return arg1;

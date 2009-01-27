@@ -256,7 +256,12 @@ public class RubyNumeric extends RubyObject {
 
     public static int fix2int(IRubyObject arg) {
         long num = arg instanceof RubyFixnum ? fix2long(arg) : num2long(arg);
+        checkInt(arg, num);
+        return (int) num;
+    }
 
+    public static int fix2int(RubyFixnum arg) {
+        long num = arg.getLongValue();
         checkInt(arg, num);
         return (int) num;
     }
