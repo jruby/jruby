@@ -3132,13 +3132,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private void replaceInternal19(int beg, int len, RubyString repl) {
         Encoding enc = checkEncoding(repl);
         int p = value.begin;
-        int end = p + value.realSize;
-        byte[]bytes = value.bytes;
-
-        p = StringSupport.nth(enc, bytes, p, end, beg);
-        if (p == -1) p = end;
-        int e = StringSupport.nth(enc, bytes, p, end, len);
-        if (e == -1) e = end;
+        int e;
+        if (singleByteOptimizable()) {
+            p += beg;
+            e = p + len;
+        } else {
+            int end = p + value.realSize;
+            byte[]bytes = value.bytes;
+            p = StringSupport.nth(enc, bytes, p, end, beg);
+            if (p == -1) p = end;
+            e = StringSupport.nth(enc, bytes, p, end, len);
+            if (e == -1) e = end;
+        }
 
         int cr = getCodeRange();
         if (cr == CR_BROKEN) clearCodeRange();
