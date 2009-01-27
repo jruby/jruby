@@ -3130,6 +3130,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return infectBy(repl);
     }
 
+    private void replaceInternal19(int beg, int len, RubyString repl) {
+        Encoding enc = checkEncoding(repl);
+        int p = value.begin;
+        int end = p + value.realSize;
+        byte[]bytes = value.bytes;
+
+        p = StringSupport.nth(enc, bytes, p, end, beg);
+        if (p == -1) p = end;
+        int e = StringSupport.nth(enc, bytes, p, end, len);
+        if (e == -1) e = end;
+
+        int cr = getCodeRange();
+        replaceInternal(p - value.begin, e - p, repl);
+        cr = codeRangeAnd(cr, repl.getCodeRange());
+        if (cr != CR_BROKEN) setCodeRange(cr);
+    }
+
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.
      * @deprecated Use the versions with one or two args
