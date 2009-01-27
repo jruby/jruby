@@ -3141,6 +3141,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (e == -1) e = end;
 
         int cr = getCodeRange();
+        if (cr == CR_BROKEN) clearCodeRange();
         replaceInternal(p - value.begin, e - p, repl);
         associateEncoding(enc);
         cr = codeRangeAnd(cr, repl.getCodeRange());
