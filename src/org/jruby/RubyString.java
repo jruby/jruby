@@ -1273,7 +1273,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "reverse!", compat = CompatVersion.RUBY1_9)
     public RubyString reverse_bang19(ThreadContext context) {
         if (value.realSize > 1) {
-            modify();
+            modify19();
             byte[]bytes = value.bytes;
             int p = value.begin;
             int len = value.realSize;
@@ -2208,7 +2208,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             Encoding enc = value.encoding;
             int c = RubyNumeric.num2int(other);
             int cl = codeLength(context.getRuntime(), enc, c);
-            modify(value.realSize + cl);
+            modify19(value.realSize + cl);
             enc.codeToMbc(c, value.bytes, value.begin + value.realSize);
             value.realSize += cl;
             return this;
@@ -6540,7 +6540,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     
     @JRubyMethod(name = "force_encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
-        modify();
+        modify19();
         associateEncoding(enc.convertToString().toEncoding(context.getRuntime()));
         return this;
     }
