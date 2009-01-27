@@ -1272,7 +1272,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "reverse!", compat = CompatVersion.RUBY1_9)
     public RubyString reverse_bang19(ThreadContext context) {
         if (value.realSize > 1) {
-            modify19();
+            modifyAndKeepCodeRange();
             byte[]bytes = value.bytes;
             int p = value.begin;
             int len = value.realSize;
@@ -3399,7 +3399,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
-            System.out.println("!");
             subpatSet19(context, (RubyRegexp)arg0, RubyNumeric.fix2int(arg1), arg2);
         } else {
             RubyString repl = arg2.convertToString();
