@@ -1038,7 +1038,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public final RubyString cat(RubyString str) {
         ByteList strValue = str.value;
-        modify(value.realSize + strValue.realSize);
         int strCr = str.getCodeRange();
         strCr = cat(strValue.bytes, strValue.begin, strValue.realSize, strValue.encoding, strCr, strCr);
         infectBy(str);
