@@ -3317,9 +3317,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg0 instanceof RubyFixnum) {
             return op_aset(context, RubyNumeric.fix2int(arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
-            RubyString repl = arg1.convertToString();
-            subpatSet(context, (RubyRegexp)arg0, 0, repl);
-            return repl;
+            subpatSet(context, (RubyRegexp)arg0, 0, arg1.convertToString());
+            return arg1;
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
             int beg = value.indexOf(orig.value);
@@ -3371,9 +3370,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg0 instanceof RubyFixnum) {
             return op_aset19(context, RubyNumeric.fix2int(arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
-            RubyString repl = arg1.convertToString();
-            subpatSet19(context, (RubyRegexp)arg0, 0, repl);
-            return repl;
+            subpatSet19(context, (RubyRegexp)arg0, 0, arg1.convertToString());
+            return arg1;
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
             int beg = strIndex19(orig, 0);
