@@ -357,15 +357,9 @@ public class RubyMatchData extends RubyObject {
     private IRubyObject beginCommon(ThreadContext context, int i) {
         check();
         Ruby runtime = context.getRuntime();
-        if (regs == null) {
-            if (i != 0) throw runtime.newIndexError("index " + i + " out of matches");
-            if (begin < 0) return runtime.getNil();
-            return RubyFixnum.newFixnum(runtime, begin);
-        } else {
-            if (i < 0 || regs.numRegs <= i) throw runtime.newIndexError("index " + i + " out of matches");
-            if (regs.beg[i] < 0) return runtime.getNil();
-            return RubyFixnum.newFixnum(runtime, regs.beg[i]);
-        }
+        if (i < 0 || (regs == null ? 0 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        int e = regs == null ? begin : regs.beg[i];
+        return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
     }
 
     /** match_end
