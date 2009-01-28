@@ -383,16 +383,10 @@ public class RubyMatchData extends RubyObject {
 
     private IRubyObject endCommon(ThreadContext context, int i) {
         check();
-        Ruby runtime = context.getRuntime(); 
-        if (regs == null) {
-            if (i != 0) throw runtime.newIndexError("index " + i + " out of matches");
-            if (end < 0) return runtime.getNil();
-            return RubyFixnum.newFixnum(runtime, end);
-        } else {
-            if (i < 0 || regs.numRegs <= i) throw runtime.newIndexError("index " + i + " out of matches");
-            if (regs.end[i] < 0) return runtime.getNil();
-            return RubyFixnum.newFixnum(runtime, regs.end[i]);
-        }
+        Ruby runtime = context.getRuntime();
+        if (i < 0 || (regs == null ? 0 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        int e = regs == null ? end : regs.end[i];
+        return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
     }
 
     /** match_offset
