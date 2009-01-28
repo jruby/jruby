@@ -400,17 +400,19 @@ public class RubyMatchData extends RubyObject {
     private IRubyObject offsetCommon(ThreadContext context, int i) {
         check();
         Ruby runtime = context.getRuntime();
-
+        if (i < 0 || (regs == null ? 0 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        final int b, e;
         if (regs == null) {
-            if (i != 0) throw runtime.newIndexError("index " + i + " out of matches");
-            if (begin < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
-            return runtime.newArray(RubyFixnum.newFixnum(runtime, begin),RubyFixnum.newFixnum(runtime, end));            
+            b = begin;
+            e = end;
         } else {
-            if (i < 0 || regs.numRegs <= i) throw runtime.newIndexError("index " + i + " out of matches");
-            if (regs.beg[i] < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
-            return runtime.newArray(RubyFixnum.newFixnum(runtime, regs.beg[i]),RubyFixnum.newFixnum(runtime, regs.end[i]));
+            b = regs.beg[i];
+            e = regs.end[i];
         }
+        return b < 0 ? runtime.newArray(runtime.getNil(), runtime.getNil()) :
+            runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
     }
+
     /** match_pre_match
      *
      */
