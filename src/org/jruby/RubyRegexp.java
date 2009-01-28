@@ -86,6 +86,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private static final int REGEXP_KCODE_DEFAULT   =   USER2_F;
     private static final int REGEXP_ENCODING_NONE   =   USER3_F;
 
+    private static final int ARG_OPTION_MASK        =   RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED | RE_OPTION_MULTILINE; 
     private static final int ARG_ENCODING_FIXED     =   16;
     private static final int ARG_ENCODING_NONE      =   32;
 
@@ -1171,18 +1172,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if ((fixedEnc[0] != enc && (options & ARG_ENCODING_FIXED) != 0) ||
                (fixedEnc[0] != ASCIIEncoding.INSTANCE && (options & ARG_ENCODING_NONE) != 0)) {
                    raiseRegexpError19(runtime, bytes, enc, options, "incompatible character encoding");
-               }
+            }
             if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
-                options &= ~REGEXP_KCODE_DEFAULT;
+                options |= ARG_ENCODING_FIXED;
                 enc = fixedEnc[0];
             }
         } else if ((options & ARG_ENCODING_FIXED) == 0) {
             enc = USASCIIEncoding.INSTANCE;
         }
-        
-        if ((options & ARG_ENCODING_FIXED) != 0 || fixedEnc[0] != null) clearKCodeDefault();
+
+        if ((options & ARG_ENCODING_FIXED) == 0 && fixedEnc[0] == null) setKCodeDefault();
         if ((options & ARG_ENCODING_NONE) != 0) setEncodingNone();
-        pattern = getRegexpFromCache(runtime, unescaped, enc, options & 0xf);
+        pattern = getRegexpFromCache(runtime, unescaped, enc, options & ARG_OPTION_MASK);
         str = bytes;
         return this;
     }
