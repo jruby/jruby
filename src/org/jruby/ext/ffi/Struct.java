@@ -1,7 +1,7 @@
 
 package org.jruby.ext.ffi;
 
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Struct extends RubyObject {
     private final StructLayout layout;
     private final IRubyObject memory;
-    private final Map<Object, IRubyObject> cache = new HashMap<Object, IRubyObject>(1);
+    private Map<StructLayout.Member, IRubyObject> cache;
     
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -149,13 +149,13 @@ public class Struct extends RubyObject {
     }
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
-        return layout.get(cache, context, memory, fieldName);
+        return layout.get(context.getRuntime(), this, fieldName);
     }
     @JRubyMethod(name = "[]=")
     public IRubyObject setFieldValue(ThreadContext context, IRubyObject fieldName, IRubyObject fieldValue) {
         return layout.put(context, memory, fieldName, fieldValue);
     }
-    @JRubyMethod(name = "cspec")
+    @JRubyMethod(name = { "cspec", "layout" })
     public IRubyObject getLayout(ThreadContext context) {
         return layout;
     }
@@ -170,5 +170,15 @@ public class Struct extends RubyObject {
 
     public final IRubyObject getMemory() {
         return memory;
+    }
+
+    final IRubyObject getCachedValue(StructLayout.Member member) {
+        return cache != null ? cache.get(member) : null;
+    }
+    final void putCachedValue(StructLayout.Member member, IRubyObject value) {
+        if (cache == null) {
+            cache = new IdentityHashMap<StructLayout.Member, IRubyObject>(layout.getFieldCount());
+        }
+        cache.put(member, value);
     }
 }

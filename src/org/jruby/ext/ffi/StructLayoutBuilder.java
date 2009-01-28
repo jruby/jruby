@@ -446,9 +446,10 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         @Override
-        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
+        public IRubyObject get(Ruby runtime, Struct struct) {
+            IRubyObject ptr = struct.getMemory();
             MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
-            IRubyObject old = cache.get(this);
+            IRubyObject old = struct.getCachedValue(this);
             if (old != null) {
                 MemoryIO oldMemory = ((AbstractMemory) old).getMemoryIO();
                 if ((memory != null && memory.equals(oldMemory)) || (memory == null && oldMemory.isNull())) {
@@ -457,7 +458,7 @@ public final class StructLayoutBuilder extends RubyObject {
             }
             Pointer retval = new BasePointer(runtime,
                     memory != null ? (DirectMemoryIO) memory : new NullMemoryIO(runtime));
-            cache.put(this, retval);
+            struct.putCachedValue(this, retval);
             return retval;
         }
 
@@ -583,10 +584,12 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         @Override
-        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
-            IRubyObject s = cache.get(this);
+        public IRubyObject get(Ruby runtime, Struct struct) {
+            IRubyObject s = struct.getCachedValue(this);
             if (s == null) {
-                cache.put(this, s = Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr))));
+                IRubyObject ptr = struct.getMemory();
+                s = Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)));
+                struct.putCachedValue(this, s);
             }
             return s;
         }
@@ -611,10 +614,11 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         @Override
-        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
-            IRubyObject s = cache.get(this);
+        public IRubyObject get(Ruby runtime, Struct struct) {
+            IRubyObject s = struct.getCachedValue(this);
             if (s == null) {
-                cache.put(this, s = new StructLayout.Array(runtime, ptr, offset, length, typeSize, io));
+                s = new StructLayout.Array(runtime, struct.getMemory(), offset, length, typeSize, io);
+                struct.putCachedValue(this, s);
             }
             return s;
         }

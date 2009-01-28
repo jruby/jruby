@@ -167,14 +167,13 @@ public final class StructLayout extends RubyObject {
     /**
      * Gets the value of the struct member corresponding to <tt>name</tt>.
      *
-     * @param cache An object cache
-     * @param context The current ThreadContext
-     * @param ptr The address of the structure in memory.
+     * @param runtime The ruby runtime.
+     * @param struct The struct to read the field for
      * @param name The name of the member.
      * @return A ruby value for the native value of the struct member.
      */
-    IRubyObject get(Map<Object, IRubyObject> cache, ThreadContext context, IRubyObject ptr, IRubyObject name) {
-        return getMember(context.getRuntime(), name).get(cache, context.getRuntime(), ptr);
+    IRubyObject get(Ruby runtime, Struct struct, IRubyObject name) {
+        return getMember(runtime, name).get(runtime, struct);
     }
     
     /**
@@ -228,6 +227,11 @@ public final class StructLayout extends RubyObject {
     public final int getSize() {
         return size;
     }
+
+    public final int getFieldCount() {
+        return fields.size();
+    }
+
     /**
      * A struct member.  This defines the offset within a chunk of memory to use
      * when reading/writing the member, as well as how to convert between the 
@@ -283,11 +287,11 @@ public final class StructLayout extends RubyObject {
          * Reads a ruby value from the struct member.
          *
          * @param cache The cache used to store
-         * @param ptr The memory area of the struct.
+         * @param struct The struct to fetch the field for
          * @return A ruby object equivalent to the native member value.
          */
-        public IRubyObject get(Map<Object, IRubyObject> cache, Ruby runtime, IRubyObject ptr) {
-            return get(runtime, ptr);
+        public IRubyObject get(Ruby runtime, Struct struct) {
+            return get(runtime, struct.getMemory());
         }
     }
     static abstract class ArrayMemberIO {
