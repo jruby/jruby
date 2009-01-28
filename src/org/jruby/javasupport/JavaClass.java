@@ -51,6 +51,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -473,6 +474,14 @@ public class JavaClass extends JavaObject {
             int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers)) addField(staticCallbacks, staticNames, field, Modifier.isFinal(modifiers), true);
         }
+
+        // Now add all aliases for the static methods (fields) as appropriate
+        for (Map.Entry<String, NamedInstaller> entry : staticCallbacks.entrySet()) {
+            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
+                assignAliases((MethodInstaller)entry.getValue(), staticNames);
+            }
+        }
+
         this.staticAssignedNames = staticNames;
         this.staticInstallers = staticCallbacks;        
         this.constantFields = constants;
@@ -500,11 +509,11 @@ public class JavaClass extends JavaObject {
         setupClassMethods(javaClass, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
         setupClassConstructors(javaClass);
         
-        this.staticAssignedNames = staticNames;
-        this.instanceAssignedNames = instanceNames;
-        this.staticInstallers = staticCallbacks;
-        this.instanceInstallers = instanceCallbacks;
-        this.constantFields = constantFields;
+        this.staticAssignedNames = Collections.unmodifiableMap(staticNames);
+        this.instanceAssignedNames = Collections.unmodifiableMap(instanceNames);
+        this.staticInstallers = Collections.unmodifiableMap(staticCallbacks);
+        this.instanceInstallers = Collections.unmodifiableMap(instanceCallbacks);
+        this.constantFields = Collections.unmodifiableList(constantFields);
     }
     
     public void setupProxy(final RubyClass proxy) {
@@ -640,17 +649,11 @@ public class JavaClass extends JavaObject {
 
     private synchronized void installClassMethods(final RubyClass proxy) {
         for (NamedInstaller installer : staticInstallers.values()) {
-            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller) installer, staticAssignedNames);
-            }
             installer.install(proxy);            
         }
         staticInstallers = null;
         
         for (NamedInstaller installer : instanceInstallers.values()) {
-            if (installer.type == NamedInstaller.INSTANCE_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller) installer, instanceAssignedNames);
-            }
             installer.install(proxy);
         }
         instanceInstallers = null;
@@ -753,6 +756,18 @@ public class JavaClass extends JavaObject {
                 installInstanceMethods(instanceCallbacks, javaClass, method, name);
             }
         }
+
+        // now iterate over all installers and make sure they also have appropriate aliases
+        for (Map.Entry<String, NamedInstaller> entry : staticCallbacks.entrySet()) {
+            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
+                assignAliases((MethodInstaller) entry.getValue(), staticNames);
+            }
+        }
+        for (Map.Entry<String, NamedInstaller> entry : instanceCallbacks.entrySet()) {
+            if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD && entry.getValue().hasLocalMethod()) {
+                assignAliases((MethodInstaller) entry.getValue(), instanceNames);
+            }
+        }
     }
 
     private void installInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
@@ -793,11 +808,8 @@ public class JavaClass extends JavaObject {
             field.install(module);
         }
         for (NamedInstaller installer : staticInstallers.values()) {
-            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller)installer,staticAssignedNames);
-            }
             installer.install(module);
-        }        
+        }
         // setup constants for public inner classes
         Class<?>[] classes = getClasses(javaClass);
 
