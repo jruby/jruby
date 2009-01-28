@@ -60,16 +60,19 @@
             <export>
                 <type>folder</type>
                 <location>${jruby.classes.dir}</location>
+                <script>nbproject/nbjdk.xml</script>
                 <build-target>jar</build-target>
             </export>
             <export>
                 <type>jar</type>
                 <location>${lib.dir}/jruby.jar</location>
+                <script>nbproject/nbjdk.xml</script>
                 <build-target>jar</build-target>
             </export>
             <export>
                 <type>folder</type>
                 <location>${test.classes.dir}</location>
+                <script>nbproject/nbjdk.xml</script>
                 <build-target>jar</build-target>
             </export>
             <view>
