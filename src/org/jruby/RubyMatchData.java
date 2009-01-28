@@ -357,7 +357,7 @@ public class RubyMatchData extends RubyObject {
     private IRubyObject beginCommon(ThreadContext context, int i) {
         check();
         Ruby runtime = context.getRuntime();
-        if (i < 0 || (regs == null ? 0 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
         int e = regs == null ? begin : regs.beg[i];
         return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
     }
@@ -378,7 +378,7 @@ public class RubyMatchData extends RubyObject {
     private IRubyObject endCommon(ThreadContext context, int i) {
         check();
         Ruby runtime = context.getRuntime();
-        if (i < 0 || (regs == null ? 0 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
         int e = regs == null ? end : regs.end[i];
         return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
     }
@@ -400,7 +400,7 @@ public class RubyMatchData extends RubyObject {
     private IRubyObject offsetCommon(ThreadContext context, int i) {
         check();
         Ruby runtime = context.getRuntime();
-        if (i < 0 || (regs == null ? 0 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
         final int b, e;
         if (regs == null) {
             b = begin;
