@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Struct extends RubyObject {
     private final StructLayout layout;
     private final IRubyObject memory;
-    private Map<StructLayout.Member, IRubyObject> cache;
+    private StructLayout.Cache cache;
     
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -177,7 +177,7 @@ public class Struct extends RubyObject {
     }
     final void putCachedValue(StructLayout.Member member, IRubyObject value) {
         if (cache == null) {
-            cache = new IdentityHashMap<StructLayout.Member, IRubyObject>(layout.getFieldCount());
+            cache = new StructLayout.Cache(layout);
         }
         cache.put(member, value);
     }

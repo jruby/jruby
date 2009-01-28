@@ -61,6 +61,9 @@ public final class StructLayout extends RubyObject {
     /** The minimum alignment of memory allocated for structs of this type */
     private final int align;
 
+    private final int cacheableFieldCount;
+    private final int[] cacheIndexMap;
+    
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new StructLayout(runtime, klass);
@@ -105,6 +108,8 @@ public final class StructLayout extends RubyObject {
         this.size = 0;
         this.align = 1;
         this.fields = Collections.emptyMap();
+        this.cacheableFieldCount = 0;
+        this.cacheIndexMap = new int[0];
     }
     
     /**
@@ -123,6 +128,18 @@ public final class StructLayout extends RubyObject {
         this.fields = immutableMap(fields);
         this.size = size;
         this.align = minAlign;
+        this.cacheIndexMap = new int[fields.size()];
+
+        int i = 0, cfCount = 0;
+        for (Member m : fields.values()) {
+            if (m.isCacheable()) {
+                cacheIndexMap[m.index] = i++;
+                ++cfCount;
+            } else {
+                cacheIndexMap[m.index] = -1;
+            }
+        }
+        this.cacheableFieldCount = cfCount;
     }
     
     /**
@@ -241,8 +258,11 @@ public final class StructLayout extends RubyObject {
         /** The offset within the memory area of this member */
         protected final long offset;
         
+        /** The index of this member within the struct */
+        protected final int index;
         /** Initializes a new Member instance */
-        protected Member(long offset) {
+        protected Member(int index, long offset) {
+            this.index = index;
             this.offset = offset;
         }
         /**
@@ -258,6 +278,10 @@ public final class StructLayout extends RubyObject {
             return offset;
         }
 
+        final int getIndex() {
+            return index;
+        }
+        
         @Override
         public boolean equals(Object obj) {
             return obj instanceof Member && ((Member) obj).offset == offset;
@@ -293,7 +317,35 @@ public final class StructLayout extends RubyObject {
         public IRubyObject get(Ruby runtime, Struct struct) {
             return get(runtime, struct.getMemory());
         }
+
+        /**
+         * Gets the cacheable status of this Struct member
+         *
+         * @return <tt>true</tt> if this member type is cacheable
+         */
+        protected boolean isCacheable() {
+            return false;
+        }
     }
+
+    static final class Cache {
+        private final int[] cacheIndexMap;
+        private final IRubyObject[] array;
+
+        Cache(StructLayout layout) {
+            this.cacheIndexMap = layout.cacheIndexMap;
+            this.array = new IRubyObject[layout.cacheableFieldCount];
+        }
+        public IRubyObject get(Member member) {
+            return cacheIndexMap[member.index] != -1 ? array[cacheIndexMap[member.index]] : null;
+        }
+        public void put(Member member, IRubyObject value) {
+            if (cacheIndexMap[member.index] != -1) {
+                array[cacheIndexMap[member.index]] = value;
+            }
+        }
+    }
+
     static abstract class ArrayMemberIO {
         static final MemoryIO getMemoryIO(IRubyObject ptr) {
             return ((AbstractMemory) ptr).getMemoryIO();
