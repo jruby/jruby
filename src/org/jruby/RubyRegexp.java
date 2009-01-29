@@ -1247,7 +1247,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) {
-                context.getCurrentFrame().setBackRef(runtime.getNil());
+                context.getCurrentFrame().setBackRef(tmp);
                 return runtime.getFalse();
             }
             str = (RubyString)tmp;
@@ -1262,7 +1262,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Ruby runtime = context.getRuntime();
         arg = operandNoCheck(arg);
         if (arg.isNil()) {
-            context.getCurrentFrame().setBackRef(runtime.getNil());
+            context.getCurrentFrame().setBackRef(arg);
             return runtime.getFalse();
         }
         int start = search19(context, (RubyString)arg, 0, false);
