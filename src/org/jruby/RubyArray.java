@@ -854,7 +854,11 @@ public class RubyArray extends RubyObject implements List {
         if (beg >= realLength) {
             len = beg + rlen;
             if (len >= valuesLength) spliceRealloc((int)len, valuesLength);
-            RuntimeHelpers.fillNil(values, begin + realLength, begin + ((int)beg), getRuntime());
+            try {
+                RuntimeHelpers.fillNil(values, begin + realLength, begin + ((int)beg), getRuntime());
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+            }
             realLength = (int) len;
         } else {
             if (beg + len > realLength) len = realLength - beg;
