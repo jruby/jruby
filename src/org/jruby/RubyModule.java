@@ -981,7 +981,7 @@ public class RubyModule extends RubyObject {
         return superClass == null ? null : superClass.searchMethodInner(name);
     }
 
-    protected synchronized void invalidateCacheDescendants() {
+    protected void invalidateCacheDescendants() {
         generation.update();
         // update all hierarchies into which this module has been included
         if (includingHierarchies != null) for (RubyClass includingHierarchy : includingHierarchies) {
@@ -989,7 +989,7 @@ public class RubyModule extends RubyObject {
         }
     }
     
-    protected synchronized void invalidateConstantCache() {
+    protected void invalidateConstantCache() {
         getRuntime().incrementConstantGeneration();
     }    
 

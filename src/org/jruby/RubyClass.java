@@ -666,7 +666,7 @@ public class RubyClass extends RubyModule {
         subclasses.remove(subclass);
     }
 
-    protected synchronized void invalidateCacheDescendants() {
+    protected void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
         // update all subclasses
         if (subclasses != null) for (RubyClass subclass : subclasses) {
