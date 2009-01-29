@@ -1265,9 +1265,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             context.getCurrentFrame().setBackRef(runtime.getNil());
             return runtime.getFalse();
         }
-        RubyString str = (RubyString)arg;
-
-        int start = search(context, (RubyString)str, 0, false);
+        int start = search19(context, (RubyString)arg, 0, false);
         return (start < 0) ? runtime.getFalse() : runtime.getTrue();
     }
     
