@@ -337,7 +337,7 @@ public class RubySymbol extends RubyObject {
     @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
-        return newShared(runtime).op_aref(context, arg1, arg2);
+        return newShared(runtime).op_aref19(context, arg1, arg2);
     }
 
     @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_9)
