@@ -1,18 +1,20 @@
 module FFI::Library
   DEFAULT = FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY)
 
-  # TODO: Rubinius does *names here and saves the array. Multiple libs?
   def ffi_lib(*names)
-    mapped_names = names.map { |name| FFI.map_library_name(name) }
-    errors = Hash.new
-    ffi_libs = mapped_names.map do |name|
-      begin
-        FFI::DynamicLibrary.open(name, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL)
-      rescue LoadError => ex
-        errors[name] = ex
-        nil
-  end
-    end.compact
+    ffi_libs = []
+    names.each do |name|
+      [ name, FFI.map_library_name(name) ].each do |libname|
+        begin
+          lib = FFI::DynamicLibrary.open(libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL)
+          if lib
+            ffi_libs << lib
+            break
+          end
+        rescue LoadError => ex
+        end
+      end
+    end
     raise LoadError, "Could not open any of [#{mapped_names.join(", ")}]" if ffi_libs.empty?
     @ffi_libs = ffi_libs
   end
