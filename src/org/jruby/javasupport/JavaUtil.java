@@ -1010,7 +1010,8 @@ public class JavaUtil {
         }
         throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
     }
-    
+
+    // FIXME: This doesn't actually support anything but String
     public static Object coerceStringToType(RubyString string, Class target) {
         try {
             ByteList bytes = string.getByteList();
