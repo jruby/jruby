@@ -167,17 +167,21 @@ public class RubyBignum extends RubyInteger {
      * This is faster, and mostly correct (?)
      */
     static double convertToDouble(BigInteger bigint) {
+        boolean negative = bigint.signum() == -1;
+        if (negative) bigint = bigint.abs();
         byte[] arr = bigint.toByteArray();
         double res = 0;
-        double acc = 1;
-        for (int i = arr.length - 1; i > 0 ; i--)
-        {
+        double acc = 1d;
+        for (int i = arr.length - 1; i > 0 ; i--) {
             res += (double) (arr[i] & 0xff) * acc;
             acc *= 256;
         }
-        res += (double) arr[0] * acc; // final byte sign is significant
-        return res;
+        if (arr[0] != 0) {
+            res += (double) (arr[0] & 0xff) * acc;
+        }
+        return (negative) ? -res : res ;
     }
+
     
     /** rb_int2big
      * 
