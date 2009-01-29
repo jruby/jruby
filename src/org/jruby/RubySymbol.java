@@ -325,7 +325,7 @@ public class RubySymbol extends RubyObject {
     @JRubyMethod(name = {"=~", "match"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        return newShared(runtime).op_match(context, other);
+        return newShared(runtime).op_match19(context, other);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
