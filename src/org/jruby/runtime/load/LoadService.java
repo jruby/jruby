@@ -699,17 +699,24 @@ public class LoadService {
     }
     
     private LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
-        // if a jar URL, return load service resource directly without further searching
+        // if a jar or file URL, return load service resource directly without further searching
         LoadServiceResource foundResource = null;
-        for (String suffix : suffixType.getSuffixes()) {
-            String namePlusSuffix = baseName + suffix;
-            if (namePlusSuffix.startsWith("jar:")) {
+        if (baseName.startsWith("jar:")) {
+            for (String suffix : suffixType.getSuffixes()) {
+                String namePlusSuffix = baseName + suffix;
                 try {
                     foundResource = new LoadServiceResource(new URL(namePlusSuffix), namePlusSuffix);
                 } catch (MalformedURLException e) {
                     throw runtime.newIOErrorFromException(e);
                 }
-            } else if(namePlusSuffix.startsWith("file:") && namePlusSuffix.indexOf("!/") != -1) {
+                if (foundResource != null) {
+                    state.loadName = namePlusSuffix;
+                    break; // end suffix iteration
+                }
+            }
+        } else if(baseName.startsWith("file:") && baseName.indexOf("!/") != -1) {
+            for (String suffix : suffixType.getSuffixes()) {
+                String namePlusSuffix = baseName + suffix;
                 try {
                     JarFile file = new JarFile(namePlusSuffix.substring(5, namePlusSuffix.indexOf("!/")));
                     String filename = namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2);
@@ -717,11 +724,11 @@ public class LoadService {
                         foundResource = new LoadServiceResource(new URL("jar:" + namePlusSuffix), namePlusSuffix);
                     }
                 } catch(Exception e) {}
+                if (foundResource != null) {
+                    state.loadName = namePlusSuffix;
+                    break; // end suffix iteration
+                }
             }    
-            if (foundResource != null) {
-                state.loadName = namePlusSuffix;
-                break; // end suffix iteration
-            }
         }
         
         return foundResource;
