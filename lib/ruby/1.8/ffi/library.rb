@@ -15,7 +15,7 @@ module FFI::Library
         end
       end
     end
-    raise LoadError, "Could not open any of [#{mapped_names.join(", ")}]" if ffi_libs.empty?
+    raise LoadError, "Could not open any of [#{names.join(", ")}]" if ffi_libs.empty?
     @ffi_libs = ffi_libs
   end
   def ffi_convention(convention)
