@@ -84,17 +84,19 @@ public final class Block {
         return body.yield(context, value, binding, type);
     }
     
-    public IRubyObject yield(ThreadContext context, boolean aValue) {
-        return body.yield(context, null, null, null, aValue, binding, type);
-    }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
-        return body.yield(context, value, null, null, aValue, binding, type);
-    }
-    
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue) {
         return body.yield(context, value, self, klass, aValue, binding, type);
+    }
+
+    @Deprecated
+    public IRubyObject yield(ThreadContext context, IRubyObject value, boolean aValue) {
+        return body.yield(context, value, null, null, aValue, binding, type);
+    }
+
+    @Deprecated
+    public IRubyObject yield(ThreadContext context, boolean aValue) {
+        return body.yield(context, null, null, null, aValue, binding, type);
     }
     
     public Block cloneBlock() {

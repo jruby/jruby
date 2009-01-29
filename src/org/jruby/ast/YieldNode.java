@@ -95,7 +95,11 @@ public class YieldNode extends Node {
         
         if (argsNode != null) result = argsNode.interpret(runtime, context, self, aBlock);
 
-        return context.getCurrentFrame().getBlock().yield(context, result, null, null, checkState);
+        if (checkState) {
+            return context.getCurrentFrame().getBlock().yield(context, result, null, null, true);
+        } else {
+            return context.getCurrentFrame().getBlock().yield(context, result);
+        }
     }
     
     @Override

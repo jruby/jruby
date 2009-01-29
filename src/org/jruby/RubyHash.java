@@ -996,7 +996,7 @@ public class RubyHash extends RubyObject implements Map {
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 // rb_assoc_new equivalent
-                block.yield(context, RubyArray.newArray(runtime, key, value), null, null, false);
+                block.yield(context, RubyArray.newArray(runtime, key, value));
             }
         });
 

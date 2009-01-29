@@ -729,7 +729,7 @@ public class RubyEnumerable {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     checkContext(localContext, ctx, "max{}");
                     if (result[0] == null || RubyComparable.cmpint(ctx, block.yield(ctx, 
-                            runtime.newArray(largs[0], result[0]), true), largs[0], result[0]) > 0) {
+                            runtime.newArray(largs[0], result[0]), null, null, true), largs[0], result[0]) > 0) {
                         result[0] = largs[0];
                     }
                     return runtime.getNil();
