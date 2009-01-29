@@ -342,7 +342,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject length() {
-        return newShared(getRuntime()).length();
+        return newShared(getRuntime()).length19();
     }
 
     @JRubyMethod(name = "empty?", compat = CompatVersion.RUBY1_9)
