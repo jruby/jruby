@@ -1012,9 +1012,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @Override
     public String asJavaString() {
-        // TODO: This used to intern; but it didn't appear to change anything
-        // turning that off, and it's unclear if it was needed. Plus, we intern
-        // 
         return toString();
     }
 
