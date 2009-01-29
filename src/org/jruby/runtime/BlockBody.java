@@ -74,6 +74,8 @@ public abstract class BlockBody implements JumpTarget {
     public int getArgumentType() {
         return argumentType;
     }
+
+    public abstract IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type);
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
     
@@ -174,6 +176,11 @@ public abstract class BlockBody implements JumpTarget {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
             throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
         }
 
         @Override

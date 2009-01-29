@@ -78,6 +78,13 @@ public interface InvocationCompiler {
      * empty args will be used.
      */
     public void yield(CompilerCallback argsCallback, boolean unwrap);
+
+    /**
+     * Invoke the block passed into this method, or throw an error if no block is present.
+     * If arguments have been prepared for the block, specify true. Otherwise the default
+     * empty args will be used. Use specific-arity call paths if possible.
+     */
+    public void yieldSpecific(ArgumentsCallback argsCallback);
     
     /**
      * Used for when nodes with a case; assumes stack is ..., case_value, when_cond_array

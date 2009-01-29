@@ -114,6 +114,10 @@ public class Interpreted19Block  extends BlockBody {
         return yield(context, value, null, null, true, binding, type, block);
     }
 
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
+        return yield(context, null, binding, type);
+    }
+
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 

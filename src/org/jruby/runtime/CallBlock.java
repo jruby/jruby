@@ -64,6 +64,10 @@ public class CallBlock extends BlockBody {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
+
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
+        throw new RuntimeException("This path is not valid yet for CallBlock");
+    }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[] {value}, Block.NULL_BLOCK);

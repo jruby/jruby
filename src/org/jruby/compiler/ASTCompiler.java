@@ -3609,16 +3609,21 @@ public class ASTCompiler {
     public void compileYield(Node node, BodyCompiler context, boolean expr) {
         final YieldNode yieldNode = (YieldNode) node;
 
-        CompilerCallback argsCallback = null;
-        if (yieldNode.getArgsNode() != null) {
-            argsCallback = new CompilerCallback() {
-                public void call(BodyCompiler context) {
-                    compile(yieldNode.getArgsNode(), context,true);
-                }
-            };
-        }
+        ArgumentsCallback argsCallback = getArgsCallback(yieldNode.getArgsNode());
+        if (!yieldNode.getCheckState() && (argsCallback == null || argsCallback.getArity() == 0)) {
+            context.getInvocationCompiler().yieldSpecific(argsCallback);
+        } else {
+            CompilerCallback argsCallback2 = null;
+            if (yieldNode.getArgsNode() != null) {
+                argsCallback2 = new CompilerCallback() {
+                    public void call(BodyCompiler context) {
+                        compile(yieldNode.getArgsNode(), context,true);
+                    }
+                };
+            }
 
-        context.getInvocationCompiler().yield(argsCallback, yieldNode.getCheckState());
+            context.getInvocationCompiler().yield(argsCallback2, yieldNode.getCheckState());
+        }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

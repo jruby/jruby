@@ -79,6 +79,10 @@ public final class Block {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
         return body.call(context, args, binding, type, block);
     }
+
+    public IRubyObject yieldSpecific(ThreadContext context) {
+        return body.yieldSpecific(context, binding, type);
+    }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
         return body.yield(context, value, binding, type);

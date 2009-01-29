@@ -44,13 +44,9 @@ import org.objectweb.asm.Label;
  *
  * @author headius
  */
-public class InvokeDynamicInvocationCompiler implements InvocationCompiler {
-    private BaseBodyCompiler methodCompiler;
-    private SkinnyMethodAdapter method;
-
+public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler {
     public InvokeDynamicInvocationCompiler(BaseBodyCompiler methodCompiler, SkinnyMethodAdapter method) {
-        this.methodCompiler = methodCompiler;
-        this.method = method;
+        super(methodCompiler, method);
     }
 
     public SkinnyMethodAdapter getMethodAdapter() {

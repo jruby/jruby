@@ -103,6 +103,11 @@ public class CompiledBlock19 extends BlockBody {
     }
 
     @Override
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
+        return yield(context, null, binding, type);
+    }
+
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 

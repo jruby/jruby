@@ -36,7 +36,6 @@ import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
@@ -79,6 +78,10 @@ public abstract class MethodBlock extends BlockBody {
     
     protected void post(ThreadContext context, Binding binding, Frame lastFrame) {
         context.postYieldNoScope(lastFrame);
+    }
+
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
+        return yield(context, null, null, null, false, binding, type);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {

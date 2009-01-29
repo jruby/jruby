@@ -45,8 +45,8 @@ import org.objectweb.asm.Label;
  * @author headius
  */
 public class StandardInvocationCompiler implements InvocationCompiler {
-    private BaseBodyCompiler methodCompiler;
-    private SkinnyMethodAdapter method;
+    protected BaseBodyCompiler methodCompiler;
+    protected SkinnyMethodAdapter method;
 
     public StandardInvocationCompiler(BaseBodyCompiler methodCompiler, SkinnyMethodAdapter method) {
         this.methodCompiler = methodCompiler;
@@ -583,6 +583,23 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.ldc(unwrap);
 
         method.invokevirtual(p(Block.class), "yield", signature);
+    }
+
+    public void yieldSpecific(ArgumentsCallback argsCallback) {
+        methodCompiler.loadBlock();
+        methodCompiler.loadThreadContext();
+
+        String signature;
+        if (argsCallback == null) {
+            signature = sig(IRubyObject.class, ThreadContext.class);
+        } else {
+            switch (argsCallback.getArity()) {
+            default:
+                throw new NotCompilableException("Can't do specific-arity call for > 0 args yet");
+            }
+        }
+
+        method.invokevirtual(p(Block.class), "yieldSpecific", signature);
     }
 
     public void invokeEqq(ArgumentsCallback receivers, CompilerCallback argument) {

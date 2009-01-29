@@ -138,6 +138,10 @@ public class InterpretedBlock extends BlockBody {
         binding.getFrame().setVisibility(vis);
         context.postYield(binding, lastFrame);
     }
+
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
+        return yield(context, null, binding, type);
+    }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
