@@ -1303,9 +1303,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "match", required = 1, reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
-        if (op_match(context, str).isNil()) return context.getRuntime().getNil();
-
-        IRubyObject result =  context.getCurrentFrame().getBackRef();
+        IRubyObject result = op_match(context, str);
+        if (result.isNil()) return result;
+        result = context.getCurrentFrame().getBackRef();
         ((RubyMatchData)result).use();
         return result;
     }
