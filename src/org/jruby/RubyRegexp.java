@@ -1272,7 +1272,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_match
      * 
      */
-    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         Ruby runtime = context.getRuntime();
@@ -1280,11 +1280,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             context.getCurrentFrame().setBackRef(runtime.getNil());
             return str;
         }
-
         int start = search(context, str.convertToString(), 0, false);
         if (start < 0) return runtime.getNil();
-
         return RubyFixnum.newFixnum(runtime, start);
+    }
+    
+    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        if (arg.isNil()) {
+            context.getCurrentFrame().setBackRef(arg);
+            return arg;
+        }
+        RubyString str = operandCheck(runtime, arg);
+        int pos = matchPos(context, str, 0);
+        if (pos < 0) return runtime.getNil();
+        return RubyFixnum.newFixnum(runtime, str.subLength(pos));
     }
 
     /** rb_reg_match_m

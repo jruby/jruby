@@ -332,7 +332,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return unpackResult(lencr);
     }
 
-    private int subLength(int pos) {
+    final int subLength(int pos) {
         if (singleByteOptimizable() || pos < 0) return pos;
         return StringSupport.strLength(value.encoding, value.bytes, value.begin, value.begin + pos);
     }
@@ -1409,16 +1409,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_match
      *
      */
-    @JRubyMethod(name = "=~")
+    @JRubyMethod(name = "=~", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
-        if (other instanceof RubyString) {
-            throw context.getRuntime().newTypeError("type mismatch: String given");
-        }
+        if (other instanceof RubyString) throw context.getRuntime().newTypeError("type mismatch: String given");
         return other.callMethod(context, "=~", this);
     }
 
+    @JRubyMethod(name = "=~", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match19(context, this);
+        if (other instanceof RubyString) throw context.getRuntime().newTypeError("type mismatch: String given");
+        return other.callMethod(context, "=~", this);
+    }
     /**
      * String#match(pattern)
      *
