@@ -1306,7 +1306,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (op_match(context, str).isNil()) return context.getRuntime().getNil();
 
         IRubyObject result =  context.getCurrentFrame().getBackRef();
-        if (result instanceof RubyMatchData) ((RubyMatchData)result).use();
+        ((RubyMatchData)result).use();
         return result;
     }
 
@@ -1335,10 +1335,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         IRubyObject backref = frame.getBackRef();
-        if (backref instanceof RubyMatchData) {
-            ((RubyMatchData)backref).use();
-            if (block.isGiven()) return block.yield(context, backref);
-        }
+        ((RubyMatchData)backref).use();
+        if (block.isGiven()) return block.yield(context, backref);
         return backref;
     }
 
