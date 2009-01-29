@@ -202,7 +202,8 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public String toString() {
-        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s").toString();
+        RubyString rubyString = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "to_s").convertToString();
+        return rubyString.getUnicodeValue();
     }
 
     /**
