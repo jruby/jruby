@@ -904,10 +904,10 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short" depends="run-specs-compiled-short, jar">
+  <target name="run-specs-short" depends="run-specs-precompiled-short, jar">
     <condition property="spec.status.combined.OK">
       <and>
-        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
+        <equals arg1="${spec.status.PRECOMPILED}"    arg2="0"/>
       </and>
     </condition>
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
