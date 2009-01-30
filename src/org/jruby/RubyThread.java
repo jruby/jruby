@@ -733,6 +733,14 @@ public class RubyThread extends RubyObject {
         }
     }
 
+    public void enterSleep() {
+        isStopped = true;
+    }
+
+    public void exitSleep() {
+        isStopped = false;
+    }
+
     @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
     	// need to reexamine this

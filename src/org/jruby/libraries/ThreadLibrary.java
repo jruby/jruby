@@ -125,18 +125,23 @@ public class ThreadLibrary implements Library {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
             //}
-            synchronized (this) {
-                try {
-                    while ( owner != null ) {
-                        wait();
+            try {
+                context.getThread().enterSleep();
+                synchronized (this) {
+                    try {
+                        while ( owner != null ) {
+                            wait();
+                        }
+                        owner = context.getThread();
+                    } catch (InterruptedException ex) {
+                        if ( owner == null ) {
+                            notify();
+                        }
+                        throw ex;
                     }
-                    owner = context.getThread();
-                } catch (InterruptedException ex) {
-                    if ( owner == null ) {
-                        notify();
-                    }
-                    throw ex;
                 }
+            } finally {
+                context.getThread().exitSleep();
             }
             return this;
         }
