@@ -1,0 +1,4 @@
+fails(not possible on current JVMs):Kernel#callcc is possible to call a continuation multiple times
+fails(not possible on current JVMs):Kernel#callcc returns the results of continuation once called
+fails(not possible on current JVMs):Kernel#callcc preserves changes to block-local scope
+fails(not possible on current JVMs):Kernel#callcc preserves changes to method-local scope
