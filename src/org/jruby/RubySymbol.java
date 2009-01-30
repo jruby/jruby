@@ -159,10 +159,12 @@ public class RubySymbol extends RubyObject {
     public RubyFixnum to_i() {
         return to_i(getRuntime());
     }
-    @JRubyMethod(name = "to_i")
+
+    @JRubyMethod(name = "to_i", compat = CompatVersion.RUBY1_8)
     public RubyFixnum to_i(ThreadContext context) {
         return to_i(context.getRuntime());
     }
+
     private final RubyFixnum to_i(Ruby runtime) {
         return runtime.newFixnum(id);
     }
@@ -171,10 +173,12 @@ public class RubySymbol extends RubyObject {
     public RubyFixnum to_int() {
         return to_int(getRuntime());
     }
-    @JRubyMethod(name = "to_int")
+
+    @JRubyMethod(name = "to_int", compat = CompatVersion.RUBY1_8)
     public RubyFixnum to_int(ThreadContext context) {
         return to_int(context.getRuntime());
     }
+
     private final RubyFixnum to_int(Ruby runtime) {
         if (runtime.isVerbose()) {
             runtime.getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
