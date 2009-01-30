@@ -104,19 +104,35 @@ public class CompiledBlock19 extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
-        return yield(context, null, binding, type);
+        return yieldSpecificInternal(context, IRubyObject.NULL_ARRAY, binding, type);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        return yield(context, arg0, binding, type);
+        return yieldSpecificInternal(context, new IRubyObject[] {arg0}, binding, type);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yieldSpecificInternal(context, new IRubyObject[] {arg0, arg1}, binding, type);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yieldSpecificInternal(context, new IRubyObject[] {arg0, arg1, arg2}, binding, type);
+    }
+
+    private IRubyObject yieldSpecificInternal(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        IRubyObject self = prepareSelf(binding);
+
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, null, binding);
+
+        try {
+            return callback.call(context, self, args, Block.NULL_BLOCK);
+        } catch (JumpException.NextJump nj) {
+            // A 'next' is like a local return from the block, ending this call or yield.
+            return handleNextJump(context, nj, type);
+        } finally {
+            post(context, binding, oldVis, lastFrame);
+        }
     }
 
     @Override
@@ -231,7 +247,8 @@ public class CompiledBlock19 extends BlockBody {
     
     private IRubyObject[] defaultArgLogic(Ruby ruby, IRubyObject value) {
         if (value == null) {
-            return warnMultiReturnNil(ruby);
+//            return warnMultiReturnNil(ruby);
+            return new IRubyObject[] {ruby.getNil()};
         }
         return new IRubyObject[] {value};
     }
