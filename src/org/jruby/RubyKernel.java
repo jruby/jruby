@@ -60,7 +60,12 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Block.Type;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
@@ -883,11 +888,8 @@ public class RubyKernel {
 
     @JRubyMethod(name = "callcc", frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject callcc(ThreadContext context, IRubyObject recv, Block block) {
-        Ruby runtime = context.getRuntime();
-        runtime.getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "Kernel#callcc: Continuations are not implemented in JRuby and will not work", "Kernel#callcc");
-        IRubyObject cc = runtime.getContinuation().callMethod(context, "new");
-        cc.dataWrapStruct(block);
-        return block.yield(context, cc);
+        RubyContinuation continuation = new RubyContinuation(context.getRuntime());
+        return continuation.enter(context, block);
     }
 
     @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE)

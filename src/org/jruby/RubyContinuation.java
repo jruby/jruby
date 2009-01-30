@@ -30,6 +30,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -38,15 +39,59 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="Continuation")
-public class RubyContinuation {
+public class RubyContinuation extends RubyObject {
+    public static class Continuation extends Error {
+        public IRubyObject[] args;
+        
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    private final Continuation continuation;
+    private boolean disabled;
+    
     public static void createContinuation(Ruby runtime) {
         RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
         cContinuation.defineAnnotatedMethods(RubyContinuation.class);
+        cContinuation.getSingletonClass().undefineMethod("new");
+        
         runtime.setContinuation(cContinuation);
     }
 
+    public RubyContinuation(Ruby runtime) {
+        super(runtime, runtime.getContinuation());
+        this.continuation = new Continuation();
+    }
+
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
-    public static IRubyObject call(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        throw recv.getRuntime().newNotImplementedError("Continuations are not implemented in JRuby and will not work");
+    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        if (disabled) {
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, this, "continuations can not be called from outside their scope");
+        }
+        continuation.args = args;
+        throw continuation;
+    }
+
+    public IRubyObject enter(ThreadContext context, Block block) {
+        try {
+            return block.yield(context, this);
+        } catch (Continuation c) {
+            if (c == continuation) {
+                if (continuation.args.length == 0) {
+                    return context.getRuntime().getNil();
+                } else if (continuation.args.length == 1) {
+                    return continuation.args[0];
+                } else {
+                    return context.getRuntime().newArrayNoCopy(continuation.args);
+                }
+            } else {
+                throw c;
+            }
+        } finally {
+            disabled = true;
+        }
     }
 }// RubyContinuation
