@@ -2508,15 +2508,15 @@ public final class Ruby {
         return RubyArray.newArray(this, car, cdr);
     }
 
-    public RubyArray newArray(IRubyObject[] objects) {
+    public RubyArray newArray(IRubyObject... objects) {
         return RubyArray.newArray(this, objects);
     }
     
-    public RubyArray newArrayNoCopy(IRubyObject[] objects) {
+    public RubyArray newArrayNoCopy(IRubyObject... objects) {
         return RubyArray.newArrayNoCopy(this, objects);
     }
     
-    public RubyArray newArrayNoCopyLight(IRubyObject[] objects) {
+    public RubyArray newArrayNoCopyLight(IRubyObject... objects) {
         return RubyArray.newArrayNoCopyLight(this, objects);
     }
     

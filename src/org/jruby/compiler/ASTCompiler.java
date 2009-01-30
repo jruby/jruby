@@ -3610,7 +3610,12 @@ public class ASTCompiler {
         final YieldNode yieldNode = (YieldNode) node;
 
         ArgumentsCallback argsCallback = getArgsCallback(yieldNode.getArgsNode());
-        if (!yieldNode.getCheckState() && (argsCallback == null || argsCallback.getArity() == 0)) {
+
+        // TODO: This filtering is kind of gross...it would be nice to get some parser help here
+        if (argsCallback == null || argsCallback.getArity() == 0) {
+            context.getInvocationCompiler().yieldSpecific(argsCallback);
+        } else if ((argsCallback.getArity() == 1 || argsCallback.getArity() == 2 || argsCallback.getArity() == 3) && yieldNode.getExpandArguments()) {
+            // send it along as arity-specific, we don't need the array
             context.getInvocationCompiler().yieldSpecific(argsCallback);
         } else {
             CompilerCallback argsCallback2 = null;
@@ -3622,7 +3627,7 @@ public class ASTCompiler {
                 };
             }
 
-            context.getInvocationCompiler().yield(argsCallback2, yieldNode.getCheckState());
+            context.getInvocationCompiler().yield(argsCallback2, yieldNode.getExpandArguments());
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();

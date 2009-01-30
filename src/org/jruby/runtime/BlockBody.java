@@ -76,6 +76,9 @@ public abstract class BlockBody implements JumpTarget {
     }
 
     public abstract IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type);
+    public abstract IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type);
+    public abstract IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type);
+    public abstract IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type);
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
     
@@ -175,22 +178,44 @@ public abstract class BlockBody implements JumpTarget {
     public static final BlockBody NULL_BODY = new BlockBody(ZERO_ARGS) {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
         }
 
         @Override
         public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopyLight(arg0), "yield called out of block");
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Type type) {
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopyLight(arg0, arg1), "yield called out of block");
+        }
+
+        @Override
+        public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, value, "yield called out of block");
         }
 
         @Override
         public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, (IRubyObject)value, "yield called out of block");
+            throw context.getRuntime().newLocalJumpError(
+                    RubyLocalJumpError.Reason.NOREASON, value, "yield called out of block");
         }
         
         @Override

@@ -83,6 +83,18 @@ public final class Block {
     public IRubyObject yieldSpecific(ThreadContext context) {
         return body.yieldSpecific(context, binding, type);
     }
+
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0) {
+        return body.yieldSpecific(context, arg0, binding, type);
+    }
+
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return body.yieldSpecific(context, arg0, arg1, binding, type);
+    }
+
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return body.yieldSpecific(context, arg0, arg1, arg2, binding, type);
+    }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
         return body.yield(context, value, binding, type);

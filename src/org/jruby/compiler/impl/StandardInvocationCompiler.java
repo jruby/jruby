@@ -593,9 +593,19 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         if (argsCallback == null) {
             signature = sig(IRubyObject.class, ThreadContext.class);
         } else {
+            argsCallback.call(methodCompiler);
             switch (argsCallback.getArity()) {
+            case 1:
+                signature = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class);
+                break;
+            case 2:
+                signature = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+                break;
+            case 3:
+                signature = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
+                break;
             default:
-                throw new NotCompilableException("Can't do specific-arity call for > 0 args yet");
+                throw new NotCompilableException("Can't do specific-arity call for > 3 args yet");
             }
         }
 

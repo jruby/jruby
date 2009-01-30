@@ -45,9 +45,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class YieldNode extends Node {
     private final Node argsNode;
-    private final boolean checkState;
+    private final boolean expandedArguments;
 
-    public YieldNode(ISourcePosition position, Node argsNode, boolean checkState) {
+    /**
+     * Construct a new YieldNode.
+     *
+     * @param position position of the node in the source
+     * @param argsNode the arguments to the yield
+     * @param expandedArguments whether the arguments should be treated as directly-passed args
+     *                          as in yield 1, 2, 3 (expandArguments = true) versus
+     *                          yield [1, 2, 3] (expandArguments = false).
+     */
+    public YieldNode(ISourcePosition position, Node argsNode, boolean expandedArguments) {
         super(position);
         
         // block.yield depends on null to represent empty and nil to represent nil - [nil] vs []
@@ -58,7 +67,7 @@ public class YieldNode extends Node {
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
-        this.checkState = checkState;
+        this.expandedArguments = expandedArguments;
     }
 
     public NodeType getNodeType() {
@@ -80,9 +89,14 @@ public class YieldNode extends Node {
     public Node getArgsNode() {
         return argsNode;
     }
-    
+
+    @Deprecated
     public boolean getCheckState() {
-        return checkState;
+        return expandedArguments;
+    }
+
+    public boolean getExpandArguments() {
+        return expandedArguments;
     }
 
     public List<Node> childNodes() {
@@ -95,7 +109,7 @@ public class YieldNode extends Node {
         
         if (argsNode != null) result = argsNode.interpret(runtime, context, self, aBlock);
 
-        if (checkState) {
+        if (expandedArguments) {
             return context.getCurrentFrame().getBlock().yield(context, result, null, null, true);
         } else {
             return context.getCurrentFrame().getBlock().yield(context, result);
