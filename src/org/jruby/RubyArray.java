@@ -1312,30 +1312,42 @@ public class RubyArray extends RubyObject implements List {
 
     /** rb_ary_aref
      */
-    @JRubyMethod(name = {"[]", "slice"})
+    @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject aref(IRubyObject arg0) {
+        assert !arg0.getRuntime().is1_9();
         if (arg0 instanceof RubyFixnum) return entry(((RubyFixnum)arg0).getLongValue());
         if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
-            
-        long[] beglen;
-        if (!(arg0 instanceof RubyRange)) {
-        } else if ((beglen = ((RubyRange) arg0).begLen(realLength, 0)) == null) {
-            return getRuntime().getNil();
-        } else {
-            return subseq(beglen[0], beglen[1]);
+        return arefCommon(arg0);
+    }
+
+    @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject aref19(IRubyObject arg0) {
+        return arg0 instanceof RubyFixnum ? entry(((RubyFixnum)arg0).getLongValue()) : arefCommon(arg0); 
+    }
+
+    private IRubyObject arefCommon(IRubyObject arg0) {
+        if (arg0 instanceof RubyRange) {
+            long[] beglen = ((RubyRange) arg0).begLen(realLength, 0);
+            return beglen == null ? getRuntime().getNil() : subseq(beglen[0], beglen[1]);
         }
-        return entry(RubyNumeric.num2long(arg0));            
-    }        
+        return entry(RubyNumeric.num2long(arg0));
+    }
 
-    /** rb_ary_aref
-     */
-    @JRubyMethod(name = {"[]", "slice"})
+    @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject aref(IRubyObject arg0, IRubyObject arg1) {
+        assert !arg0.getRuntime().is1_9();
         if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
+        return arefCommon(arg0, arg1);
+    }
 
+    @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject aref19(IRubyObject arg0, IRubyObject arg1) {
+        return arefCommon(arg0, arg1);
+    }
+
+    private IRubyObject arefCommon(IRubyObject arg0, IRubyObject arg1) {
         long beg = RubyNumeric.num2long(arg0);
         if (beg < 0) beg += realLength;
-
         return subseq(beg, RubyNumeric.num2long(arg1));
     }
 
