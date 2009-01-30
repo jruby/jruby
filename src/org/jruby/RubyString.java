@@ -227,7 +227,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         setCodeRange(from.getCodeRange());
     }
 
-    // rb_str_is_ascii_only_p
+    // rb_enc_str_coderange
     final int scanForCodeRange() {
         int cr = getCodeRange();
         if (cr == CR_UNKNOWN) {
@@ -3805,19 +3805,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_include
      *
      */
-    @JRubyMethod(name = "include?", required = 1)
+    @JRubyMethod(name = "include?", compat = CompatVersion.RUBY1_8)
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.getRuntime();
         if (obj instanceof RubyFixnum) {
-            int c = RubyNumeric.fix2int(obj);
-            for (int i = 0; i < value.length(); i++) {
-                if (value.get(i) == (byte)c) {
-                    return context.getRuntime().getTrue();
-                }
+            int c = RubyNumeric.fix2int((RubyFixnum)obj);
+            for (int i = 0; i < value.realSize; i++) {
+                if (value.get(i) == (byte)c) return runtime.getTrue();
             }
-            return context.getRuntime().getFalse();
+            return runtime.getFalse();
         }
-        ByteList str = stringValue(obj).value;
-        return context.getRuntime().newBoolean(value.indexOf(str) != -1);
+        return value.indexOf(obj.convertToString().value) == -1 ? runtime.getFalse() : runtime.getTrue();
+    }
+
+    @JRubyMethod(name = "include?", compat = CompatVersion.RUBY1_9)
+    public RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.getRuntime();
+        return strIndex19(obj.convertToString(), 0) == -1 ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
