@@ -1366,33 +1366,49 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    /** rb_ary_aset
-     *
-     */
-    @JRubyMethod(name = "[]=")
+    @JRubyMethod(name = "[]=", compat = CompatVersion.RUBY1_8)
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1) {
+        assert !getRuntime().is1_9();
         if (arg0 instanceof RubyFixnum) {
             store(((RubyFixnum)arg0).getLongValue(), arg1);
-            return arg1;
-        }
-        if (arg0 instanceof RubyRange) {
+        } else if (arg0 instanceof RubyRange) {
             long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
             splice(beglen[0], beglen[1], arg1);
-            return arg1;
+        } else if(arg0 instanceof RubySymbol) {
+            throw getRuntime().newTypeError("Symbol as array index");
+        } else {
+            store(RubyNumeric.num2long(arg0), arg1);
         }
-        if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
+        return arg1;
+    }
 
-        store(RubyNumeric.num2long(arg0), arg1);
+    @JRubyMethod(name = "[]=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1) {
+        if (arg0 instanceof RubyFixnum) {
+            store(((RubyFixnum)arg0).getLongValue(), arg1);
+        } else if (arg0 instanceof RubyRange) {
+            long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
+            splice(beglen[0], beglen[1], arg1);
+        } else {
+            store(RubyNumeric.num2long(arg0), arg1);
+        }
         return arg1;
     }
 
     /** rb_ary_aset
     *
     */
-    @JRubyMethod(name = "[]=")
+    @JRubyMethod(name = "[]=", compat = CompatVersion.RUBY1_8)
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        assert !getRuntime().is1_9();
         if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
         if (arg1 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as subarray length");
+        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2);
+        return arg2;
+    }
+
+    @JRubyMethod(name = "[]=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2);
         return arg2;
     }
