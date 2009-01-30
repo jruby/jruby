@@ -237,11 +237,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return cr;
     }
 
-    private boolean singleByteOptimizable() {
+    final boolean singleByteOptimizable() {
         return getCodeRange() == CR_7BIT || value.encoding.isSingleByte();
     }
 
-    private boolean singleByteOptimizable(Encoding enc) {
+    final boolean singleByteOptimizable(Encoding enc) {
         return getCodeRange() == CR_7BIT || enc.isSingleByte();
     }
 

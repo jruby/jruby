@@ -33,8 +33,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
+import org.jcodings.Encoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
@@ -47,6 +49,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * @author olabini
@@ -59,6 +62,7 @@ public class RubyMatchData extends RubyObject {
     Regex pattern;
     RubyRegexp regexp;
     boolean charOffsetUpdated;
+    Region charOffsets;
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
@@ -87,6 +91,72 @@ public class RubyMatchData extends RubyObject {
 
     public RubyMatchData(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
+    }
+
+    private static final class Pair implements Comparable {
+        int bytePos, charPos;
+        public int compareTo(Object o) {
+            return bytePos - ((Pair)o).bytePos;
+        }
+    }
+
+    private void updateCharOffset() {
+        if (charOffsetUpdated) return;
+
+        int numRegs = regs == null ? 1 : regs.numRegs;
+        if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
+
+        Pair[]pairs = new Pair[numRegs * 2];
+        for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
+
+        int numPos = 0;
+        if (regs == null) {
+            pairs[numPos++].bytePos = begin;
+            pairs[numPos++].bytePos = end;
+        } else {
+            for (int i = 0; i < numRegs; i++) {
+                if (regs.beg[i] < 0) continue;
+                pairs[numPos++].bytePos = regs.beg[i];
+                pairs[numPos++].bytePos = regs.end[i];
+            }
+        }
+
+        Arrays.sort(pairs);
+
+        ByteList value = str.getByteList();
+        Encoding enc = value.encoding;
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int s = p;
+
+        int c = 0;
+        for (int i = 0; i < numPos; i++) {
+            int q = s + pairs[i].bytePos;
+            c += StringSupport.strLength(enc, bytes, p, q);
+            pairs[i].charPos = c;
+            p = q;
+        }
+
+        Pair key = new Pair();
+        if (regs == null) {
+            key.bytePos = begin;
+            charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            key.bytePos = end;
+            charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        } else {
+            for (int i = 0; i < numRegs; i++) {
+                if (regs.beg[i] < 0) {
+                    charOffsets.beg[i] = charOffsets.end[i] = -1;
+                    continue;
+                }
+                key.bytePos = regs.beg[i];
+                charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+                key.bytePos = regs.end[i];
+                charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            }
+
+        }
+        charOffsetUpdated = true;
     }
 
     private static final int MATCH_BUSY = USER2_F;
@@ -344,64 +414,82 @@ public class RubyMatchData extends RubyObject {
     /** match_begin
      *
      */
-    @JRubyMethod(name = "begin")
+    @JRubyMethod(name = "begin", compat = CompatVersion.RUBY1_8)
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
-        return beginCommon(context, RubyNumeric.num2int(index));
+        int i = RubyNumeric.num2int(index);
+        Ruby runtime = context.getRuntime();
+        int b = beginCommon(runtime, i);
+        return b < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, b);
     }
 
     @JRubyMethod(name = "begin", compat = CompatVersion.RUBY1_9)
     public IRubyObject begin19(ThreadContext context, IRubyObject index) {
-       return beginCommon(context, backrefNumber(index));
+        int i = backrefNumber(index);
+        Ruby runtime = context.getRuntime();
+        int b = beginCommon(runtime, i);
+        if (b < 0) return runtime.getNil();
+        if (!str.singleByteOptimizable()) {
+            updateCharOffset();
+            b = charOffsets.beg[i];
+        }
+        return RubyFixnum.newFixnum(runtime, b);
     }
 
-    private IRubyObject beginCommon(ThreadContext context, int i) {
+    private int beginCommon(Ruby runtime, int i) {
         check();
-        Ruby runtime = context.getRuntime();
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
-        int e = regs == null ? begin : regs.beg[i];
-        return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
+        return regs == null ? begin : regs.beg[i];
     }
 
     /** match_end
      *
      */
-    @JRubyMethod(name = "end")
+    @JRubyMethod(name = "end", compat = CompatVersion.RUBY1_8)
     public IRubyObject end(ThreadContext context, IRubyObject index) {
-        return endCommon(context, RubyNumeric.num2int(index));
+        int i = RubyNumeric.num2int(index);
+        Ruby runtime = context.getRuntime();
+        int e = endCommon(runtime, i);
+        return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
     }
 
     @JRubyMethod(name = "end", compat = CompatVersion.RUBY1_9)
     public IRubyObject end19(ThreadContext context, IRubyObject index) {
-       return endCommon(context, backrefNumber(index));
+        int i = backrefNumber(index);
+        Ruby runtime = context.getRuntime();
+        int e = endCommon(runtime, i);
+        if (e < 0) return runtime.getNil();
+        if (!str.singleByteOptimizable()) {
+            updateCharOffset();
+            e = charOffsets.end[i];
+        }
+        return RubyFixnum.newFixnum(runtime, e);
     }
 
-    private IRubyObject endCommon(ThreadContext context, int i) {
+    private int endCommon(Ruby runtime, int i) {
         check();
-        Ruby runtime = context.getRuntime();
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
-        int e = regs == null ? end : regs.end[i];
-        return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
+        return regs == null ? end : regs.end[i];
     }
 
     /** match_offset
      *
      */
-    @JRubyMethod(name = "offset")
+    @JRubyMethod(name = "offset", compat = CompatVersion.RUBY1_8)
     public IRubyObject offset(ThreadContext context, IRubyObject index) {
-        return offsetCommon(context, RubyNumeric.num2int(index));
+        return offsetCommon(context, RubyNumeric.num2int(index), false);
 
     }
 
     @JRubyMethod(name = "offset", compat = CompatVersion.RUBY1_9)
     public IRubyObject offset19(ThreadContext context, IRubyObject index) {
-        return offsetCommon(context, backrefNumber(index));
+        return offsetCommon(context, backrefNumber(index), true);
     }
 
-    private IRubyObject offsetCommon(ThreadContext context, int i) {
+    private IRubyObject offsetCommon(ThreadContext context, int i, boolean is_19) {
         check();
         Ruby runtime = context.getRuntime();
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
-        final int b, e;
+        int b, e;
         if (regs == null) {
             b = begin;
             e = end;
@@ -409,8 +497,13 @@ public class RubyMatchData extends RubyObject {
             b = regs.beg[i];
             e = regs.end[i];
         }
-        return b < 0 ? runtime.newArray(runtime.getNil(), runtime.getNil()) :
-            runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
+        if (b < 0) return runtime.newArray(runtime.getNil(), runtime.getNil());
+        if (is_19 && !str.singleByteOptimizable()) {
+            updateCharOffset();
+            b = charOffsets.beg[i];
+            e = charOffsets.end[i];
+        }
+        return runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
     }
 
     /** match_pre_match
