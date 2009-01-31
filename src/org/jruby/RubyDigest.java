@@ -15,6 +15,7 @@
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  * Copyright (C) 2008 Vladimir Sizikov <vsizikov@gmail.com>
+ * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -137,10 +138,34 @@ public class RubyDigest {
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_256.setInternalModuleVariable("metadata",runtime.newString("SHA-256"));
+        cDigest_SHA2_256.defineFastMethod("block_length", new Callback() {
+            public Arity getArity() {
+                return Arity.NO_ARGUMENTS;
+            }
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return RubyFixnum.newFixnum(recv.getRuntime(), 64);
+            }
+        });
         RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_384.setInternalModuleVariable("metadata",runtime.newString("SHA-384"));
+        cDigest_SHA2_384.defineFastMethod("block_length", new Callback() {
+            public Arity getArity() {
+                return Arity.NO_ARGUMENTS;
+            }
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return RubyFixnum.newFixnum(recv.getRuntime(), 128);
+            }
+        });
         RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_512.setInternalModuleVariable("metadata",runtime.newString("SHA-512"));
+        cDigest_SHA2_512.defineFastMethod("block_length", new Callback() {
+            public Arity getArity() {
+                return Arity.NO_ARGUMENTS;
+            }
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                return RubyFixnum.newFixnum(recv.getRuntime(), 128);
+            }
+        });
     }
 
     @JRubyClass(name="Digest::Base")
