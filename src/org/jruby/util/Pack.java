@@ -1475,7 +1475,7 @@ public class Pack {
                     if ("@XxumM".indexOf(type) != -1) {
                         occurrences = 0;
                     } else {
-                        occurrences = listSize;
+                        occurrences = listSize - idx;
                         isStar = true;
                     }
                     next = safeGet(format);
