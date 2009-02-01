@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -65,7 +66,20 @@ public class RubyTempfile extends RubyFile {
         return tempfileClass;
     }
 
-    private final static String DEFAULT_TMP_DIR = "/tmp";
+    private final static String DEFAULT_TMP_DIR;
+
+    static {
+        String tmpDir;
+        if (Platform.IS_WINDOWS) {
+           tmpDir = System.getProperty("java.io.tmpdir");
+           if (tmpDir == null) tmpDir = System.getenv("TEMP");
+           if (tmpDir == null) tmpDir = System.getenv("TMP");
+           if (tmpDir == null) tmpDir = "C:\\Windows\\Temp";
+        } else {
+            tmpDir = "/tmp";
+        }
+        DEFAULT_TMP_DIR = tmpDir;
+    }
 
     private File tmpFile = null;
 
