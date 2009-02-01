@@ -145,11 +145,11 @@ class TestTraceFunc < Test::Unit::TestCase
     set_trace_func nil
 
     line = __LINE__ - 4
-    expected = ["test/tracing/test_trace_func.rb line #{line} test_require_trace_full_paths TestTraceFunc",
+    expected = ["#{__FILE__} line #{line} test_require_trace_full_paths TestTraceFunc",
       "./test/tracing/dummy1.rb line 1 nil false",
       "./test/tracing/dummy1.rb class 1 nil false",
       "./test/tracing/dummy1.rb end 1 nil false",
-      "test/tracing/test_trace_func.rb line #{line + 2} test_require_trace_full_paths TestTraceFunc"]
+      "#{__FILE__} line #{line + 2} test_require_trace_full_paths TestTraceFunc"]
 
     assert_equal(expected, output);
   end

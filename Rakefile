@@ -58,6 +58,7 @@ namespace :test do
     Rake::TestTask.new('test:tracing') do |t|
       t.pattern = 'test/tracing/test_*.rb'
       t.verbose = true
+      t.ruby_opts << '--debug'
     end
   end
 end
