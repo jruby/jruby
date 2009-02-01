@@ -67,7 +67,7 @@ module FFI::Library
       end
     end
     raise FFI::NotFoundError.new(cname, libraries) if address.nil?
-    case find_type(type)
+    case ffi_type = find_type(type)
     when :pointer, FFI::NativeType::POINTER
       op = :pointer
     when :char, FFI::NativeType::INT8
@@ -91,20 +91,37 @@ module FFI::Library
     when :ulong_long, FFI::NativeType::UINT64
       op = :uint64
     else
-      raise ArgError, "Cannot access library variable of type #{type}"
+      if ffi_type.is_a?(FFI::CallbackInfo)
+        op = :callback
+      else
+        raise FFI::TypeError, "Cannot access library variable of type #{type}"
+      end
     end
     #
     # Attach to this module as mname/mname=
     #
-    self.module_eval <<-code
-      @@ffi_gvar_#{mname} = address
-      def self.#{mname}
-        @@ffi_gvar_#{mname}.get_#{op.to_s}(0)
-      end
-      def self.#{mname}=(value)
-        @@ffi_gvar_#{mname}.put_#{op.to_s}(0, value)
-      end
-    code
+    if op == :callback
+      self.module_eval <<-code
+        @@ffi_gvar_#{mname} = address
+        @@ffi_gvar_#{mname}_cbinfo = ffi_type
+        def self.#{mname}
+          raise ArgError, "Cannot get callback fields"
+        end
+        def self.#{mname}=(value)
+          @@ffi_gvar_#{mname}.put_callback(0, value, @@ffi_gvar_#{mname}_cbinfo)
+        end
+        code
+    else
+      self.module_eval <<-code
+        @@ffi_gvar_#{mname} = address
+        def self.#{mname}
+          @@ffi_gvar_#{mname}.get_#{op.to_s}(0)
+        end
+        def self.#{mname}=(value)
+          @@ffi_gvar_#{mname}.put_#{op.to_s}(0, value)
+        end
+        code
+    end
     address
   end
   def callback(name, args, ret)

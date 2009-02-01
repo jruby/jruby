@@ -769,6 +769,15 @@ abstract public class AbstractMemory extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "put_callback", required = 3)
+    public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
+        if (!(cbInfo instanceof CallbackInfo)) {
+            throw context.getRuntime().newArgumentError("invalid CallbackInfo");
+        }
+        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.getRuntime(), (CallbackInfo) cbInfo, proc);
+        getMemoryIO().putMemoryIO(getOffset(offset), ((AbstractMemory) ptr).getMemoryIO());
+        return this;
+    }
     @JRubyMethod(name = "__get_buffer", required = 2)
     public IRubyObject get_buffer(ThreadContext context, IRubyObject off, IRubyObject len_) {
         int len = Util.int32Value(len_);
