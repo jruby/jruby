@@ -102,7 +102,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     @JRubyMethod(name = "build")
     public StructLayout build(ThreadContext context) {
-        return new StructLayout(context.getRuntime(), fields, size, minAlign);
+        return new StructLayout(context.getRuntime(), fields, minAlign + ((size - 1) & ~(minAlign - 1)), minAlign);
     }
     @JRubyMethod(name = "size")
     public IRubyObject get_size(ThreadContext context) {
@@ -118,13 +118,8 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     
     private static int alignMemberBits(int offset, int alignBits) {
-        int alignBytes = alignBits >> 3;
-        int mask = alignBytes - 1;
-        int off = offset;
-        if ((off & mask) != 0) {
-            off = (off & ~mask) + alignBytes;
-        }
-        return off;
+        final int align = alignBits >> 3;
+        return align + ((offset - 1) & ~(align - 1));
     }
     private static int getAlignmentBits(NativeType type) {
         switch (type) {
