@@ -28,7 +28,6 @@
 
 package org.jruby.ext.ffi.jna;
 
-import com.kenai.jffi.Platform;
 import com.sun.jna.Native;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
@@ -40,7 +39,7 @@ import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
-import org.jruby.ext.ffi.MemoryIO;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 
 /**
@@ -97,7 +96,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
     public DirectMemoryIO wrapDirectMemory(long address) {
         com.sun.jna.Pointer ptr;
-        if (Platform.getPlatform().longSize() == 32) {
+        if (Platform.getPlatform().addressSize() == 32) {
             IntByReference ref = new IntByReference((int) address);
             ptr = ref.getPointer().getPointer(0);
         } else {
