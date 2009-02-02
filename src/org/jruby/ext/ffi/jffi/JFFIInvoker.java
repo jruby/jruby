@@ -98,7 +98,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         DynamicMethod dm;
-        if (convention == CallingConvention.DEFAULT
+        if (false && convention == CallingConvention.DEFAULT
             && FastIntMethodFactory.getFactory().isFastIntMethod(returnType, parameterTypes)) {
             dm = FastIntMethodFactory.getFactory().createMethod(module,
                     function, returnType, parameterTypes);
