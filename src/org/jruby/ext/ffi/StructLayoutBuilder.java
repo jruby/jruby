@@ -76,6 +76,9 @@ public final class StructLayoutBuilder extends RubyObject {
     /** The number of fields in the struct */
     private int fieldCount = 0;
     
+    /** Whether the StructLayout is for a structure or union */
+    private boolean isUnion = false;
+
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new StructLayoutBuilder(runtime, klass);
@@ -194,10 +197,17 @@ public final class StructLayoutBuilder extends RubyObject {
     private final IRubyObject storeField(Ruby runtime, IRubyObject name, StructLayout.Member field, int align, int size) {
         fields.put(createStringKey(runtime, name), field);
         fields.put(createSymbolKey(runtime, name), field);
-        this.size = (int) field.offset + size;
+        this.size = Math.max(this.size, (int) field.offset + size);
         this.minAlign = Math.max(this.minAlign, align);
         return this;
     }
+
+    @JRubyMethod(name = "union=")
+    public IRubyObject set_union(ThreadContext context, IRubyObject isUnion) {
+        this.isUnion = isUnion.isTrue();
+        return this;
+    }
+
     @JRubyMethod(name = "add_field", required = 2, optional = 1)
     public IRubyObject add(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
@@ -215,7 +225,7 @@ public final class StructLayoutBuilder extends RubyObject {
             sizeBits = getSizeBits(t);
         }
         if (offset < 0) {
-            offset = alignMemberBits(this.size, alignBits);
+            offset = isUnion ? 0 : alignMemberBits(this.size, alignBits);
         }
         StructLayout.Member field = createMember(context.getRuntime(), type, fieldCount++, offset);
         if (field == null) {
@@ -232,7 +242,7 @@ public final class StructLayoutBuilder extends RubyObject {
         final StructLayout layout = Struct.getStructLayout(runtime, args[1]);
         final int alignBits = layout.getMinimumAlignment() * 8;
         if (offset < 0) {
-            offset = alignMemberBits(this.size, alignBits);
+            offset = isUnion ? 0 : alignMemberBits(this.size, alignBits);
         }
         StructLayout.Member field = StructMember.create((RubyClass) args[1], fieldCount++, offset);
         return storeField(runtime, name, field, alignBits / 8, layout.getSize());
@@ -248,7 +258,7 @@ public final class StructLayoutBuilder extends RubyObject {
         final int sizeBits = getSizeBits(type);
         
         if (offset < 0) {
-            offset = alignMemberBits(this.size, alignBits);
+            offset = isUnion ? 0 : alignMemberBits(this.size, alignBits);
         }
         StructLayout.ArrayMemberIO io = getArrayMemberIO(type);
         if (io == null) {
@@ -266,7 +276,7 @@ public final class StructLayoutBuilder extends RubyObject {
         long offset = args.length > 2 ? Util.int64Value(args[2]) : -1;
         int alignBits = 8;
         if (offset < 0) {
-            offset = alignMemberBits(this.size, alignBits);
+            offset = isUnion ? 0 : alignMemberBits(this.size, alignBits);
         }
         return storeField(runtime, name, CharArrayMember.create(fieldCount++, offset, strlen), alignBits / 8, strlen);
     }

@@ -34,9 +34,9 @@ module FFI
     def to_ptr
       pointer
     end
-
-    def self.hash_layout(spec)
-        builder = FFI::StructLayoutBuilder.new
+    
+    private
+    def self.hash_layout(builder, spec)
         mod = enclosing_module
         spec[0].each do |name,type|
           if type.kind_of?(Class) && type < Struct
@@ -47,11 +47,8 @@ module FFI
             builder.add_field(name, find_type(type, mod))
           end
         end
-        builder.size = @size if defined?(@size) && @size > builder.size
-        builder.build
     end
-    def self.array_layout(spec)
-      builder = FFI::StructLayoutBuilder.new
+    def self.array_layout(builder, spec)
       mod = enclosing_module
       i = 0
       while i < spec.size
@@ -73,13 +70,20 @@ module FFI
           builder.add_field(name, find_type(type, mod), offset)
         end 
       end
-      builder.size = @size if defined?(@size) && @size > builder.size
-      builder.build
     end
+    protected
     def self.layout(*spec)
       return @layout if spec.size == 0
 
-      cspec = spec[0].kind_of?(Hash) ? hash_layout(spec) : array_layout(spec)
+      builder = FFI::StructLayoutBuilder.new
+      builder.union = self < Union
+      if spec[0].kind_of?(Hash)
+        hash_layout(builder, spec)
+      else
+        array_layout(builder, spec)
+      end
+      builder.size = @size if defined?(@size) && @size > builder.size
+      cspec = builder.build
       @layout = cspec unless self == FFI::Struct
       @size = cspec.size
       return cspec
@@ -126,5 +130,8 @@ module FFI
       end
       return mod ? mod.find_type(type) : FFI.find_type(type)
     end
+  end
+  class Union < Struct
+    # Nothing to do here
   end
 end
