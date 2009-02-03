@@ -76,6 +76,15 @@ def bench_yield(bm)
       i += 1;
     end
   end
+  
+  bm.report "1m x10 yield to { }" do
+    a = 5;
+    i = 0;
+    while i < 1000000
+      bbi.foo3 {}
+      i += 1;
+    end
+  end
 
   bm.report "1m x10 yield 1 to {|j| j}" do
     a = 5;
