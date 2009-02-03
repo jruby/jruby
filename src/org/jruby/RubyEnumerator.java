@@ -230,13 +230,12 @@ public class RubyEnumerator extends RubyObject {
             return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_with_index"));
         }
 
-        @JRubyMethod(name = "each_slice", required = 1, frame = true)
+        @JRubyMethod(name = "each_slice", frame = true, compat = CompatVersion.RUBY1_8)
         public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-            final int size = (int)RubyNumeric.num2long(arg);
-
-            if (size <= 0) throw self.getRuntime().newArgumentError("invalid slice size");
-
+            final int size = RubyNumeric.num2int(arg);
             final Ruby runtime = self.getRuntime();
+            if (size <= 0) throw runtime.newArgumentError("invalid slice size");
+
             final RubyArray result[] = new RubyArray[]{runtime.newArray(size)};
 
             RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
@@ -252,6 +251,11 @@ public class RubyEnumerator extends RubyObject {
 
             if (result[0].size() > 0) block.yield(context, result[0]);
             return self.getRuntime().getNil();
+        }
+
+        @JRubyMethod(name = "each_slice", compat = CompatVersion.RUBY1_9)
+        public static IRubyObject each_slice19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+            return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "each_slice", arg);
         }
 
         @JRubyMethod(name = "each_cons", required = 1, frame = true)
