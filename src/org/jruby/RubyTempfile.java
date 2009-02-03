@@ -67,7 +67,8 @@ public class RubyTempfile extends RubyFile {
     }
 
     private final static String DEFAULT_TMP_DIR;
-    private final static int MAX_TRY = 10;
+    private static final Object tmpFileLock = new Object();
+    private static int counter = -1;
 
     static {
         String tmpDir;
@@ -98,24 +99,30 @@ public class RubyTempfile extends RubyFile {
         IRubyObject dir = defaultTmpDir(runtime, args);
 
         File tmp = null;
-        for (int i = 0; i < MAX_TRY; i++) {
-            try {
-                // We do this b/c make_tmpname might be overridden
-                IRubyObject tmpname = callMethod(runtime.getCurrentContext(),
-                        "make_tmpname", new IRubyObject[] {basename, runtime.newFixnum(i)});
-                tmp = new File(dir.convertToString().toString(), tmpname.convertToString().toString());
-                if (tmp.createNewFile()) {
-                    tmpFile = tmp;
-                    path = tmp.getPath();
-                    tmpFile.deleteOnExit();
-                    initializeOpen();
-                    return this;
+        synchronized(tmpFileLock) {
+            while (true) {
+                try {
+                    if (counter == -1) {
+                        counter = new java.util.Random().nextInt() & 0xffff;
+                    }
+                    counter++;
+
+                    // We do this b/c make_tmpname might be overridden
+                    IRubyObject tmpname = callMethod(runtime.getCurrentContext(),
+                                                     "make_tmpname", new IRubyObject[] {basename, runtime.newFixnum(counter)});
+                    tmp = new File(dir.convertToString().toString(), tmpname.convertToString().toString());
+                    if (tmp.createNewFile()) {
+                        tmpFile = tmp;
+                        path = tmp.getPath();
+                        tmpFile.deleteOnExit();
+                        initializeOpen();
+                        return this;
+                    }
+                } catch (IOException e) {
+                    throw runtime.newIOErrorFromException(e);
                 }
-            } catch (IOException e) {
-                throw runtime.newIOErrorFromException(e);
             }
         }
-        throw runtime.newRuntimeError("cannot generate tempfile `" + tmp.getPath() + "'");
     }
 
     private IRubyObject defaultTmpDir(Ruby runtime, IRubyObject[] args) {
