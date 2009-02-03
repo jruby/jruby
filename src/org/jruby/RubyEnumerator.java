@@ -261,10 +261,9 @@ public class RubyEnumerator extends RubyObject {
         @JRubyMethod(name = "each_cons", frame = true, compat = CompatVersion.RUBY1_8)
         public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = (int)RubyNumeric.num2long(arg);
-
-            if (size <= 0) throw self.getRuntime().newArgumentError("invalid size");
-
             final Ruby runtime = self.getRuntime();
+            if (size <= 0) throw runtime.newArgumentError("invalid size");
+
             final RubyArray result = runtime.newArray(size);
 
             RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
