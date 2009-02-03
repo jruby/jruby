@@ -23,6 +23,6 @@ describe "Struct aligns fields correctly" do
     class LLIStruct < FFI::Struct
       layout :l => :long_long, :i => :int
     end
-    LLIStruct.size.should == 12
+    LLIStruct.size.should == (FFI::Platform::LONG_SIZE == 32 ? 12 : 64)
   end
 end
