@@ -340,8 +340,9 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) {
             throw getRuntime().newTypeError("time + time ?");
         }
-        long adjustment = (long) (RubyNumeric.num2dbl(other) * 1000000);
-        int micro = (int) (adjustment % 1000);
+        
+        long adjustment = Math.round(RubyNumeric.num2dbl(other) * 1000000);
+        long micro = adjustment % 1000;
         adjustment = adjustment / 1000;
 
         time += adjustment;
@@ -366,8 +367,8 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) return opMinus((RubyTime) other);
         
         long time = getTimeInMillis();
-        long adjustment = (long) (RubyNumeric.num2dbl(other) * 1000000);
-        int micro = (int) (adjustment % 1000);
+        long adjustment = Math.round(RubyNumeric.num2dbl(other) * 1000000);
+        long micro = adjustment % 1000;
         adjustment = adjustment / 1000;
 
         time -= adjustment;
