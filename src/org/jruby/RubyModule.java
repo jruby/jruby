@@ -1193,8 +1193,7 @@ public class RubyModule extends RubyObject {
         }
         final String variableName = ("@" + internedName).intern();
         if (readable) {
-            // FIXME: should visibility be set to current visibility?
-            addMethod(internedName, new JavaMethodZero(this, PUBLIC, CallConfiguration.FrameNoneScopeNone) {
+            addMethod(internedName, new JavaMethodZero(this, attributeScope, CallConfiguration.FrameNoneScopeNone) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                     IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(variableName);
 
@@ -1205,8 +1204,7 @@ public class RubyModule extends RubyObject {
         }
         if (writeable) {
             internedName = (internedName + "=").intern();
-            // FIXME: should visibility be set to current visibility?
-            addMethod(internedName, new JavaMethodOne(this, PUBLIC, CallConfiguration.FrameNoneScopeNone) {
+            addMethod(internedName, new JavaMethodOne(this, attributeScope, CallConfiguration.FrameNoneScopeNone) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
                     return self.getInstanceVariables().fastSetInstanceVariable(variableName, arg1);
                 }

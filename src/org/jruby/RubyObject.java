@@ -107,11 +107,6 @@ public class RubyObject extends RubyBasicObject {
         super(runtime, metaClass, useObjectSpace);
     }
 
-    private void addToObjectSpace(Ruby runtime) {
-        assert runtime.isObjectSpaceEnabled();
-        runtime.getObjectSpace().add(this);
-    }
-
     /**
      * Will create the Ruby class Object in the runtime
      * specified. This method needs to take the actual class as an
