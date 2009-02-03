@@ -347,6 +347,13 @@ public class RubyTime extends RubyObject {
 
         time += adjustment;
 
+        if ((getUSec() + micro) >= 1000) {
+            time++;
+            micro = (getUSec() + micro) - 1000;
+        } else {
+            micro = getUSec() + micro;
+        }
+
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
         newTime.dt = new DateTime(time).withZone(dt.getZone());
         newTime.setUSec(micro);
@@ -372,6 +379,13 @@ public class RubyTime extends RubyObject {
         adjustment = adjustment / 1000;
 
         time -= adjustment;
+
+        if (getUSec() < micro) {
+            time--;
+            micro = 1000 - (micro - getUSec());
+        } else {
+            micro = getUSec() - micro;
+        }
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
         newTime.dt = new DateTime(time).withZone(dt.getZone());
