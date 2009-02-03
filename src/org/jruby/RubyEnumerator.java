@@ -258,7 +258,7 @@ public class RubyEnumerator extends RubyObject {
             return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "each_slice", arg);
         }
 
-        @JRubyMethod(name = "each_cons", required = 1, frame = true)
+        @JRubyMethod(name = "each_cons", frame = true, compat = CompatVersion.RUBY1_8)
         public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = (int)RubyNumeric.num2long(arg);
 
@@ -279,6 +279,11 @@ public class RubyEnumerator extends RubyObject {
             return runtime.getNil();        
         }
 
+        @JRubyMethod(name = "each_cons", compat = CompatVersion.RUBY1_9)
+        public static IRubyObject each_cons19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+            return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "each_cons", arg);
+        }
+ 
         @JRubyMethod(name = "enum_slice", required = 1, compat = CompatVersion.RUBY1_8)
         public static IRubyObject enum_slice(ThreadContext context, IRubyObject self, IRubyObject arg) {
             IRubyObject enumerator = self.getRuntime().getEnumerator();
