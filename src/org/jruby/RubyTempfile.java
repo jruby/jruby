@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2009 Thomas E Enebo <enebo@acm.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -67,6 +67,7 @@ public class RubyTempfile extends RubyFile {
     }
 
     private final static String DEFAULT_TMP_DIR;
+    private final static int MAX_TRY = 10;
 
     static {
         String tmpDir;
@@ -89,40 +90,71 @@ public class RubyTempfile extends RubyFile {
         super(runtime, type);
     }
 
-
     @JRubyMethod(required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
-        String basename = args[0].toString();
-        String tmpdir = (args.length >= 2 && runtime.getSafeLevel() <= 0 && !args[1].isTaint()) ?
-            args[1].convertToString().toString() : DEFAULT_TMP_DIR;
+        IRubyObject basename = args[0];
+        IRubyObject dir = defaultTmpDir(runtime, args);
 
-        // Mild incompatibility - Java tempfile requires minimum of three for prefix.
-        for (int i = 0; i < 3 - basename.length(); i++) basename = basename + "_";
-
-        try {
-            tmpFile = File.createTempFile(basename, null, new File(tmpdir));
-            path = tmpFile.getPath();
-            tmpFile.deleteOnExit();
-            initializeOpen();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
+        File tmp = null;
+        for (int i = 0; i < MAX_TRY; i++) {
+            try {
+                // We do this b/c make_tmpname might be overridden
+                IRubyObject tmpname = callMethod(runtime.getCurrentContext(),
+                        "make_tmpname", new IRubyObject[] {basename, runtime.newFixnum(i)});
+                tmp = new File(dir.convertToString().toString(), tmpname.convertToString().toString());
+                if (tmp.createNewFile()) {
+                    tmpFile = tmp;
+                    path = tmp.getPath();
+                    tmpFile.deleteOnExit();
+                    initializeOpen();
+                    return this;
+                }
+            } catch (IOException e) {
+                throw runtime.newIOErrorFromException(e);
+            }
         }
+        throw runtime.newRuntimeError("cannot generate tempfile `" + tmp.getPath() + "'");
+    }
 
-        return this;
+    private IRubyObject defaultTmpDir(Ruby runtime, IRubyObject[] args) {
+        IRubyObject dir = null;
+        if (args.length == 2) {
+            dir = args[1];
+        } else {
+            // Dir::tmpdir
+            runtime.getLoadService().require("tmpdir");
+            dir = runtime.getDir().callMethod(runtime.getCurrentContext(), "tmpdir");
+        }
+        if (runtime.getSafeLevel() > 0 && dir.isTaint()) {
+            dir = runtime.newString(DEFAULT_TMP_DIR);
+        }
+        return dir;
     }
 
     private void initializeOpen() {
         try {
-            // Static initiailization possible
-            // No need for CREAT since createTempFile creates the file
             ModeFlags modeFlags = new ModeFlags(ModeFlags.RDWR | ModeFlags.EXCL);
-
+            getRuntime().getPosix().chmod(path, 0600);
             sysopenInternal(path, modeFlags, 0600);
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
+    }
+
+    /**
+     * Compatibility with Tempfile#make_tmpname(basename, n) in MRI
+     */
+    @JRubyMethod(frame = true, required = 2, visibility = Visibility.PRIVATE)
+    public IRubyObject make_tmpname(ThreadContext context, IRubyObject basename, IRubyObject n, Block block) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject[] newargs = new IRubyObject[4];
+        newargs[0] = runtime.newString("%s.%d.%d");
+        newargs[1] = basename;
+        newargs[2] = runtime.getGlobalVariables().get("$$"); // PID
+        newargs[3] = n;
+        return callMethod(context, "sprintf", newargs);
     }
 
     @JRubyMethod(frame = true, visibility = Visibility.PUBLIC)
@@ -163,11 +195,11 @@ public class RubyTempfile extends RubyFile {
 
     @JRubyMethod(name = {"size", "length"}, frame = true)
     public IRubyObject size(ThreadContext context) {
-        if (!isClosed()) { 
+        if (!isClosed()) {
             flush();
             return context.getRuntime().newFileStat(path, false).size();
         }
-        
+
         return RubyFixnum.zero(context.getRuntime());
     }
 

@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-1 -*-
 require 'test/unit'
 require 'rbconfig'
 require 'fileutils'
@@ -812,6 +813,25 @@ class TestFile < Test::Unit::TestCase
     assert_equal(mask, File.umask)
   ensure
     File.umask(orig_mask)
+  end
+
+  def test_allow_override_of_make_tmpname
+    require 'tempfile'
+    # mimics behavior of attachment_fu, which overrides private #make_tmpname
+    Tempfile.class_eval do
+      def make_tmpname(basename, n)
+        ext = nil
+        sprintf("%s%d-%d%s", basename.to_s.gsub(/\.\w+$/) { |s| ext = s; '' }, $$, n, ext)
+      end
+    end
+
+    t = Tempfile.new "tcttac.jpg", File.dirname(__FILE__)
+    assert t.path =~ /\.jpg$/
+  end
+
+  def test_mode_of_tempfile_is_600
+    t = Tempfile.new "tcttac.jpg"
+    assert_equal 0100600, File.stat(t.path).mode
   end
 
   # See JRUBY-2694; we don't have 1.8.7 support yet
