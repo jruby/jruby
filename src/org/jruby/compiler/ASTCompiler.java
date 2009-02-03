@@ -132,6 +132,7 @@ import org.jruby.ast.UndefNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.WhenNode;
+import org.jruby.ast.WhenOneArgNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.parser.StaticScope;
@@ -934,8 +935,27 @@ public class ASTCompiler {
     }
 
     private void addConditionalForWhen(final WhenNode whenNode, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback body) {
-        conditionals.add(getArgsCallback(whenNode.getExpressionNodes()));
         bodies.add(body);
+
+        // If it's a single-arg when but contains an array, we know it's a real literal array
+        // FIXME: This is a gross way to figure it out; parser help similar to yield argument passing (expandArguments) would be better
+        if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+            if (whenNode instanceof WhenOneArgNode) {
+                // one arg but it's an array, treat it as a proper array
+                conditionals.add(new ArgumentsCallback() {
+                    public int getArity() {
+                        return 1;
+                    }
+
+                    public void call(BodyCompiler context) {
+                        compile(whenNode.getExpressionNodes(), context, true);
+                    }
+                });
+                return;
+            }
+        }
+        // otherwise, use normal args compiler
+        conditionals.add(getArgsCallback(whenNode.getExpressionNodes()));
     }
 
     public void compileClass(Node node, BodyCompiler context, boolean expr) {
