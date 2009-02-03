@@ -245,11 +245,7 @@ public final class Frame implements JumpTarget {
      * @return A new frame with duplicate information to the target frame
      */
     public Frame duplicate() {
-        Frame newFrame = new Frame(this);
-        
-        newFrame.updateFrame(this);
-        
-        return newFrame;
+        return new Frame(this);
     }
 
     /**
