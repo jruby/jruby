@@ -54,6 +54,7 @@ import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -75,8 +76,16 @@ public class UnmarshalStream extends BufferedInputStream {
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
 
-        in.read(); // Major
-        in.read(); // Minor
+        int major = in.read(); // Major
+        int minor = in.read(); // Minor
+
+        if(major == -1 || minor == -1) {
+            throw new EOFException("Unexpected end of stream");
+        }
+        
+        if(major != Constants.MARSHAL_MAJOR || minor > Constants.MARSHAL_MINOR) {
+            throw runtime.newTypeError(String.format("incompatible marshal file format (can't be read)\n\tformat version %d.%d required; %d.%d given", Constants.MARSHAL_MAJOR, Constants.MARSHAL_MINOR, major, minor));
+        }
     }
 
     public IRubyObject unmarshalObject() throws IOException {

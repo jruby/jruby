@@ -482,3 +482,10 @@ class Time
   end
   alias_method :dump, :_original_dump
 end
+
+# JRUBY-3366
+# test wrong marshalling version
+test_exception(TypeError) do 
+  Marshal.load("\266q`?<??WO??<\376O\020?e\r\221D\e\200?_\210H\006:\037@marshal_with_utc_coercionF:\tsome\"\tdata")
+end
+
