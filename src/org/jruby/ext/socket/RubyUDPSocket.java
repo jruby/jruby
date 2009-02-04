@@ -188,6 +188,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             int length = RubyNumeric.fix2int(args[0]);
             ByteBuffer buf = ByteBuffer.allocate(length);
+            context.getThread().select(this, SelectionKey.OP_READ);
             ((DatagramChannel) this.getChannel()).receive(buf);
             return context.getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
         } catch (IOException e) {
