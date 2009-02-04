@@ -1,2 +1,1 @@
 fails:The next statement raises a LocalJumpError if used not within block or while/for loop
-fails(JRUBY-1872):The next statement from within the block returns the argument passed

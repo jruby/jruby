@@ -182,9 +182,9 @@ public class CompiledBlock19 extends BlockBody {
         
         return self;
     }
-    
+
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+        return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
     
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {

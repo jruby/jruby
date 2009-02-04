@@ -233,7 +233,7 @@ public class InterpretedBlock extends BlockBody {
     }
     
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return type == Block.Type.LAMBDA ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+        return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
 
     private void setupBlockArgs(ThreadContext context, Node varNode, IRubyObject value, IRubyObject self) {
