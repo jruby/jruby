@@ -29,7 +29,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +65,7 @@ import org.jruby.runtime.Visibility;
  */
 @JRubyModule(name = "Readline", include = "Enumerable")
 public class Readline {
+    private final static boolean DEBUG = false;
 
     public static class Service implements Library {
 
@@ -143,17 +147,30 @@ public class Readline {
     }
 
     // We lazily initialize this in case Readline.readline has been overridden in ruby (s_readline)
-    protected static void initReadline(Ruby runtime, ConsoleHolder holder) throws IOException {
+    protected static void initReadline(Ruby runtime, final ConsoleHolder holder) throws IOException {
         holder.readline = new ConsoleReader();
         holder.readline.setUseHistory(false);
         holder.readline.setUsePagination(true);
-        holder.readline.setBellEnabled(false);
+        holder.readline.setBellEnabled(true);
         ((CandidateListCompletionHandler) holder.readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
         if (holder.currentCompletor == null) {
             holder.currentCompletor = new RubyFileNameCompletor();
         }
         holder.readline.addCompletor(holder.currentCompletor);
         holder.readline.setHistory(holder.history);
+
+        // JRUBY-852, ignore escape key (it causes IRB to quit if we pass it out through readline)
+        holder.readline.addTriggeredAction((char)27, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    holder.readline.beep();
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+        });
+
+        if (DEBUG) holder.readline.setDebug(new PrintWriter(System.err));
     }
 
     public static History getHistory(ConsoleHolder holder) {
@@ -189,6 +206,7 @@ public class Readline {
         holder.readline.getTerminal().disableEcho();
         String v = holder.readline.readLine(prompt.toString());
         holder.readline.getTerminal().enableEcho();
+        
         if (null != v) {
             if (add_to_hist.isTrue()) {
                 holder.readline.getHistory().addToHistory(v);
@@ -386,7 +404,7 @@ public class Readline {
 
     // Fix FileNameCompletor to work mid-line
     public static class RubyFileNameCompletor extends FileNameCompletor {
-
+        @Override
         public int complete(String buffer, int cursor, List candidates) {
             buffer = buffer.substring(0, cursor);
             int index = buffer.lastIndexOf(" ");
