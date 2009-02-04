@@ -25,17 +25,17 @@ module CMath
   alias atanh! atanh
 
   def exp(z)
-    if Complex.generic?(z)
+    if z.real?
       exp!(z)
     else
-      Complex(exp!(z.real) * cos!(z.image),
-	      exp!(z.real) * sin!(z.image))
+      Complex(exp!(z.real) * cos!(z.imag),
+	      exp!(z.real) * sin!(z.imag))
     end
   end
 
   def log(*args)
     z, b = args
-    if Complex.generic?(z) and z >= 0 and (b.nil? or b >= 0)
+    if z.real? and z >= 0 and (b.nil? or b >= 0)
       log!(*args)
     else
       r, theta = z.polar
@@ -48,7 +48,7 @@ module CMath
   end
 
   def log10(z)
-    if Complex.generic?(z)
+    if z.real?
       log10!(z)
     else
       log(z) / log!(10)
@@ -56,14 +56,14 @@ module CMath
   end
 
   def sqrt(z)
-    if Complex.generic?(z)
-      if z >= 0
-	sqrt!(z)
+    if z.real?
+      if z < 0
+	Complex(0, sqrt!(-z))
       else
-	Complex(0,sqrt!(-z))
+	sqrt!(z)
       end
     else
-      if z.image < 0
+      if z.imag < 0
 	sqrt(z.conjugate).conjugate
       else
 	r = z.abs
@@ -74,25 +74,25 @@ module CMath
   end
 
   def sin(z)
-    if Complex.generic?(z)
+    if z.real?
       sin!(z)
     else
-      Complex(sin!(z.real) * cosh!(z.image),
-	      cos!(z.real) * sinh!(z.image))
+      Complex(sin!(z.real) * cosh!(z.imag),
+	      cos!(z.real) * sinh!(z.imag))
     end
   end
 
   def cos(z)
-    if Complex.generic?(z)
+    if z.real?
       cos!(z)
     else
-      Complex(cos!(z.real) * cosh!(z.image),
-	      -sin!(z.real) * sinh!(z.image))
+      Complex(cos!(z.real) * cosh!(z.imag),
+	      -sin!(z.real) * sinh!(z.imag))
     end
   end
 
   def tan(z)
-    if Complex.generic?(z)
+    if z.real?
       tan!(z)
     else
       sin(z)/cos(z)
@@ -100,25 +100,25 @@ module CMath
   end
 
   def sinh(z)
-    if Complex.generic?(z)
+    if z.real?
       sinh!(z)
     else
-      Complex(sinh!(z.real) * cos!(z.image),
-	      cosh!(z.real) * sin!(z.image))
+      Complex(sinh!(z.real) * cos!(z.imag),
+	      cosh!(z.real) * sin!(z.imag))
     end
   end
 
   def cosh(z)
-    if Complex.generic?(z)
+    if z.real?
       cosh!(z)
     else
-      Complex(cosh!(z.real) * cos!(z.image),
-	      sinh!(z.real) * sin!(z.image))
+      Complex(cosh!(z.real) * cos!(z.imag),
+	      sinh!(z.real) * sin!(z.imag))
     end
   end
 
   def tanh(z)
-    if Complex.generic?(z)
+    if z.real?
       tanh!(z)
     else
       sinh(z) / cosh(z)
@@ -126,39 +126,39 @@ module CMath
   end
 
   def asin(z)
-    if Complex.generic?(z) and z >= -1 and z <= 1
+    if z.real? and z >= -1 and z <= 1
       asin!(z)
     else
-      -1.0.im * log(1.0.im * z + sqrt(1.0 - z * z))
+      Complex(0, -1.0) * log(Complex(0, 1.0) * z + sqrt(1.0 - z * z))
     end
   end
 
   def acos(z)
-    if Complex.generic?(z) and z >= -1 and z <= 1
+    if z.real? and z >= -1 and z <= 1
       acos!(z)
     else
-      -1.0.im * log(z + 1.0.im * sqrt(1.0 - z * z))
+      Complex(0, -1.0) * log(z + Complex(0, 1.0) * sqrt(1.0 - z * z))
     end
   end
 
   def atan(z)
-    if Complex.generic?(z)
+    if z.real?
       atan!(z)
     else
-      1.0.im * log((1.0.im + z) / (1.0.im - z)) / 2.0
+      Complex(0, 1.0) * log((Complex(0, 1.0) + z) / (Complex(0, 1.0) - z)) / 2.0
     end
   end
 
   def atan2(y,x)
-    if Complex.generic?(y) and Complex.generic?(x)
+    if y.real? and x.real?
       atan2!(y,x)
     else
-      -1.0.im * log((x + 1.0.im * y) / sqrt(x * x + y * y))
+      Complex(0, -1.0) * log((x + Complex(0, 1.0) * y) / sqrt(x * x + y * y))
     end
   end
 
   def acosh(z)
-    if Complex.generic?(z) and z >= 1
+    if z.real? and z >= 1
       acosh!(z)
     else
       log(z + sqrt(z * z - 1.0))
@@ -166,7 +166,7 @@ module CMath
   end
 
   def asinh(z)
-    if Complex.generic?(z)
+    if z.real?
       asinh!(z)
     else
       log(z + sqrt(1.0 + z * z))
@@ -174,7 +174,7 @@ module CMath
   end
 
   def atanh(z)
-    if Complex.generic?(z) and z >= -1 and z <= 1
+    if z.real? and z >= -1 and z <= 1
       atanh!(z)
     else
       log((1.0 + z) / (1.0 - z)) / 2.0
@@ -219,5 +219,15 @@ module CMath
   module_function :acosh
   module_function :atanh!
   module_function :atanh
+
+  module_function :log2
+  module_function :cbrt
+  module_function :frexp
+  module_function :ldexp
+  module_function :hypot
+  module_function :erf
+  module_function :erfc
+  module_function :gamma
+  module_function :lgamma
 
 end

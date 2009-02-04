@@ -203,7 +203,7 @@
 #
 class OptionParser
   # :stopdoc:
-  RCSID = %w$Id: optparse.rb 19735 2008-10-09 15:21:42Z nobu $[1..-1].each {|s| s.freeze}.freeze
+  RCSID = %w$Id: optparse.rb 21070 2008-12-26 11:16:16Z yugui $[1..-1].each {|s| s.freeze}.freeze
   Version = (RCSID[1].split('.').collect {|s| s.to_i}.extend(Comparable).freeze if RCSID[1])
   LastModified = (Time.gm(*RCSID[2, 2].join('-').scan(/\d+/).collect {|s| s.to_i}) if RCSID[2])
   Release = RCSID[2]
@@ -631,17 +631,21 @@ class OptionParser
     # method which is called on every option.
     #
     def summarize(*args, &block)
-      list.each do |opt|
+      sum = []
+      list.reverse_each do |opt|
         if opt.respond_to?(:summarize) # perhaps OptionParser::Switch
-          opt.summarize(*args, &block)
+          s = []
+          opt.summarize(*args) {|l| s << l}
+          sum.concat(s.reverse)
         elsif !opt or opt.empty?
-          yield("")
+          sum << ""
         elsif opt.respond_to?(:each_line)
-          opt.each_line(&block)
+          sum.concat([*opt.each_line].reverse)
         else
-          opt.each(&block)
+          sum.concat([*opt.each].reverse)
         end
       end
+      sum.reverse_each(&block)
     end
 
     def add_banner(to)  # :nodoc:
@@ -964,7 +968,8 @@ class OptionParser
   # +indent+:: Indentation, defaults to @summary_indent.
   #
   def summarize(to = [], width = @summary_width, max = width - 1, indent = @summary_indent, &blk)
-    visit(:summarize, {}, {}, width, max, indent, &(blk || proc {|l| to << l + $/}))
+    blk ||= proc {|l| to << (l.index($/, -1) ? l : l + $/)}
+    visit(:summarize, {}, {}, width, max, indent, &blk)
     to
   end
 
@@ -996,6 +1001,7 @@ class OptionParser
   end
   private :notwice
 
+  SPLAT_PROC = proc {|*a| a.length <= 1 ? a.first : a}
   #
   # Creates an OptionParser::Switch from the parameters. The parsed argument
   # value is passed to the given block, where it can be processed.
@@ -1074,9 +1080,13 @@ class OptionParser
       end
 
       # directly specified pattern(any object possible to match)
-      if !(String === o) and o.respond_to?(:match)
+      if (!(String === o || Symbol === o)) and o.respond_to?(:match)
         pattern = notwice(o, pattern, 'pattern')
-        conv = pattern.method(:convert).to_proc if pattern.respond_to?(:convert)
+        if pattern.respond_to?(:convert)
+          conv = pattern.method(:convert).to_proc
+        else
+          conv = SPLAT_PROC
+        end
         next
       end
 
