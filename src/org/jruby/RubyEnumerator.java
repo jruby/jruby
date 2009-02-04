@@ -224,12 +224,6 @@ public class RubyEnumerator extends RubyObject {
 
     public static final class RubyEnumeratorEnumerable {
 
-        @JRubyMethod(name = "enum_with_index")
-        public static IRubyObject each_with_index(ThreadContext context, IRubyObject self) {
-            IRubyObject enumerator = self.getRuntime().getEnumerator();
-            return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_with_index"));
-        }
-
         @JRubyMethod(name = "each_slice", frame = true, compat = CompatVersion.RUBY1_8)
         public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = RubyNumeric.num2int(arg);
@@ -294,5 +288,12 @@ public class RubyEnumerator extends RubyObject {
             IRubyObject enumerator = self.getRuntime().getEnumerator();
             return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_cons"), arg);
         }
+
+        @JRubyMethod(name = "enum_with_index")
+        public static IRubyObject each_with_index(ThreadContext context, IRubyObject self) {
+            IRubyObject enumerator = self.getRuntime().getEnumerator();
+            return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_with_index"));
+        }
+
     }
 }
