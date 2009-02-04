@@ -432,7 +432,7 @@ public class Dir {
         while (pattern.bytes[i] != '}') {
             middleRegionIndex = i + 1;
             for(i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}' && pattern.bytes[i] != ','; i++) {
-                if (pattern.bytes[i] == '{') pattern.findClosingIndexOf(i); // skip inner braces
+                if (pattern.bytes[i] == '{') i = pattern.findClosingIndexOf(i); // skip inner braces
             }
 
             buf.length(0);
