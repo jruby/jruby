@@ -62,6 +62,10 @@
 #define MIN(a,b) ((a<b)?(a):(b))
 #endif
 
+#ifndef MSG_WAITALL
+#define MSG_WAITALL 0x40 /* wait for full request or error */
+#endif
+
 #ifdef WIN32
 	#define NAILGUN_FILESEPARATOR "NAILGUN_FILESEPARATOR=\\"
 	#define NAILGUN_PATHSEPARATOR "NAILGUN_PATHSEPARATOR=;"
