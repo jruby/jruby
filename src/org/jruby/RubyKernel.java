@@ -1266,7 +1266,10 @@ public class RubyKernel {
             throw runtime.newErrnoENOENTError("cannot execute");
         }
         
-        return exit(recv, new IRubyObject[] {runtime.newFixnum(resultCode)});
+        exit(runtime, new IRubyObject[] {runtime.newFixnum(resultCode)}, true);
+
+        // not reached
+        return runtime.getNil();
     }
 
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE)
