@@ -880,6 +880,8 @@ public class RubyYaccLexer {
                     }
                 }
 
+                if (c == -1) return EOF;
+
                 src.unread(c);
                 getPosition();
 
