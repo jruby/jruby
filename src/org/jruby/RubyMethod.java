@@ -155,7 +155,6 @@ public class RubyMethod extends RubyObject {
     @JRubyMethod(name = "to_proc", frame = true)
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         Ruby runtime = context.getRuntime();
-        CallbackFactory f = runtime.callbackFactory(RubyMethod.class);
         DynamicScope currentScope = context.getCurrentScope();
         MethodBlock mb = new MethodBlock(this, currentScope.getStaticScope()) {
             @Override
