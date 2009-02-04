@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ext.posix.POSIX;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -840,6 +841,12 @@ public class RubyProcess {
     public static IRubyObject kill(Ruby runtime, IRubyObject[] args) {
         if (args.length < 2) {
             throw runtime.newArgumentError("wrong number of arguments -- kill(sig, pid...)");
+        }
+
+        // Windows does not support these functions, so we won't even try
+        // This also matches Ruby behavior for JRUBY-2353.
+        if (Platform.IS_WINDOWS) {
+            return runtime.getNil();
         }
         
         int signal;
