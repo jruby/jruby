@@ -690,9 +690,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, Block block) {
-        RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, context.getRuntime().getEnumerable(), 
-                Arity.noArguments(), new EachWithIndex(context, block), context));
-        
+        callEach(context.getRuntime(), context, self, new EachWithIndex(context, block));
         return self;
     }
 
