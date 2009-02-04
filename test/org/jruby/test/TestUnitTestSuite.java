@@ -118,6 +118,17 @@ public class TestUnitTestSuite extends TestSuite {
         runtime.defineGlobalConstant("ARGV", runtime.newArray());
     }
 
+    protected String generateTestScript(String scriptName, String testClass) {
+        StringBuffer script = new StringBuffer();
+        script.append("require 'test/junit_testrunner.rb'\n");
+        script.append("require '" + scriptName + "'\n");
+        script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(" + testClass + ")\n");
+        script.append("runner.start\n");
+        script.append("runner.faults\n");
+
+        return script.toString();
+    }
+
     private class ScriptTest extends TestCase {
         private final String filename;
         private final File testDir;
@@ -180,20 +191,13 @@ public class TestUnitTestSuite extends TestSuite {
         }
 
         public void runTest() throws Throwable {
-            StringBuffer script = new StringBuffer();
 
             List<String> testClassNames = getTestClassNamesFromReadingTestScript(filename);
 
             // there might be more test classes in a single file, so we iterate over them
             for (String testClass : testClassNames) {
                 try {
-                    script.append("require 'test/junit_testrunner.rb'\n");
-                    script.append("require '" + scriptName() + "'\n");
-                    script.append("runner = Test::Unit::UI::JUnit::TestRunner.new(" + testClass + ")\n");
-                    script.append("runner.start\n");
-                    script.append("runner.faults\n");
-    
-                    RubyArray faults = (RubyArray)runtime.executeScript(script.toString(), scriptName() + "_generated_test.rb");
+                    RubyArray faults = (RubyArray)runtime.executeScript(generateTestScript(scriptName(), testClass), scriptName() + "_generated_test.rb");
     
                     if (!faults.isEmpty()) {
                         StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
