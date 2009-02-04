@@ -25,6 +25,7 @@ import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -247,6 +248,25 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         }
         return 0;
     }
+
+    /**
+     * Extracts the primitive value from a Ruby object.
+     * This is similar to Util.longValue(), except it won't throw exceptions for
+     * invalid values.
+     *
+     * @param value The Ruby object to convert
+     * @return a java long value.
+     */
+    private static final long addressValue(IRubyObject value) {
+        if (value instanceof RubyNumeric) {
+            return ((RubyNumeric) value).getLongValue();
+        } else if (value instanceof BasePointer) {
+            return ((BasePointer) value).getAddress();
+        } else if (value.isNil()) {
+            return 0L;
+        }
+        return 0;
+    }
     private static final void setReturnValue(Ruby runtime, NativeType type,
             Closure.Buffer buffer, IRubyObject value) {
         switch ((NativeType) type) {
@@ -273,7 +293,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             case FLOAT64:
                 buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
             case POINTER:
-                buffer.setAddressReturn(longValue(value)); break;
+                buffer.setAddressReturn(addressValue(value)); break;
             default:
         }
     }
