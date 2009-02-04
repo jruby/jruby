@@ -262,12 +262,14 @@ public class RubyFileTest {
         return filename.getRuntime().newBoolean(file.exists() && file.length() == 0L);
     }
 
-    private static JRubyFile file(IRubyObject path) {
-        //String filename = path.convertToString().toString();
-        String filename = path.convertToString().getUnicodeValue();
-        
-        
-        return JRubyFile.create(path.getRuntime().getCurrentDirectory(), filename);
+    private static JRubyFile file(IRubyObject pathOrFile) {
+        Ruby runtime = pathOrFile.getRuntime();
+
+        if (pathOrFile instanceof RubyFile) {
+            return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile)pathOrFile).getPath());
+        } else {
+            return JRubyFile.create(runtime.getCurrentDirectory(), pathOrFile.convertToString().getUnicodeValue());
+        }
     }
     
     private static void noFileError(IRubyObject filename) {

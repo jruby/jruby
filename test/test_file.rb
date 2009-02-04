@@ -844,4 +844,10 @@ class TestFile < Test::Unit::TestCase
     }
   end
 =end
+
+  def test_file_size
+    size = File.size('build.xml')
+    assert(size > 0)
+    assert_equal(size, File.size(File.new('build.xml')))
+  end
 end

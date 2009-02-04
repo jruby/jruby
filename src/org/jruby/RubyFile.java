@@ -183,6 +183,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     };
 
+    public String getPath() {
+        return path;
+    }
+
     @JRubyModule(name="File::Constants")
     public static class Constants {}
     
