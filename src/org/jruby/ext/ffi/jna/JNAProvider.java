@@ -511,6 +511,13 @@ public final class JNAProvider extends FFIProvider {
                 throw invocation.getThreadContext().getRuntime().newSecurityError("Unsafe string parameter");
             }
             ByteList bl = s.getByteList();
+            final byte[] array = bl.unsafeBytes();
+            final int end = bl.length();
+            for (int i = bl.begin(); i < end; ++i) {
+                if (array[i] == (byte) 0) {
+                    throw invocation.getThreadContext().getRuntime().newArgumentError("string contains null byte");
+                }
+            }
             final Memory memory = new Memory(bl.length() + 1);
             memory.write(0, bl.unsafeBytes(), bl.begin(), bl.length());
             memory.setByte(bl.length(), (byte) 0);

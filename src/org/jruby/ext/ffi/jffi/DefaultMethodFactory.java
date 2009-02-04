@@ -552,8 +552,14 @@ public final class DefaultMethodFactory {
         
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             ByteList bl = ((RubyString) parameter).getByteList();
-            buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(),
-                    ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
+            final byte[] array = bl.unsafeBytes();
+            final int end = bl.length();
+            for (int i = bl.begin(); i < end; ++i) {
+                if (array[i] == (byte) 0) {
+                    throw context.getRuntime().newArgumentError("string contains null byte");
+                }
+            }
+            buffer.putArray(array, bl.begin(), bl.length(), ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
         }
 
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
