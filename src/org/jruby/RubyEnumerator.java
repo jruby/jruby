@@ -276,7 +276,21 @@ public class RubyEnumerator extends RubyObject {
         public static IRubyObject each_cons19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "each_cons", arg);
         }
- 
+
+        @JRubyMethod(name = "each_with_object", frame = true, compat = CompatVersion.RUBY1_9)
+        public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
+            final Ruby runtime = context.getRuntime();
+            if (!block.isGiven()) return enumeratorize(runtime, self , "each_with_object", arg);
+
+            RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    block.call(ctx, new IRubyObject[]{runtime.newArray(largs[0], arg)});
+                    return runtime.getNil();
+                }
+            });
+            return arg;
+        }
+
         @JRubyMethod(name = "enum_slice", required = 1, compat = CompatVersion.RUBY1_8)
         public static IRubyObject enum_slice(ThreadContext context, IRubyObject self, IRubyObject arg) {
             IRubyObject enumerator = self.getRuntime().getEnumerator();
