@@ -688,10 +688,15 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod(name = "each_with_index", frame = true)
+    @JRubyMethod(name = "each_with_index", frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, Block block) {
         callEach(context.getRuntime(), context, self, new EachWithIndex(context, block));
         return self;
+    }
+
+    @JRubyMethod(name = "each_with_index", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each_with_index19(ThreadContext context, IRubyObject self, Block block) {
+        return block.isGiven() ? each_with_index(context, self, block) : enumeratorize(context.getRuntime(), self, "each_with_index");
     }
 
     @JRubyMethod(name = {"include?", "member?"}, required = 1, frame = true)
