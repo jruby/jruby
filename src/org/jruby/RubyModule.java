@@ -1665,12 +1665,23 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr
      *
      */
-    @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_8)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
         addAccessor(context, args[0].asJavaString().intern(), true, writeable);
 
+        return getRuntime().getNil();
+    }
+    
+    /** rb_mod_attr/1.9
+     *
+     */
+    @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_9)
+    public IRubyObject attr_1_9(ThreadContext context, IRubyObject[] args) {
+        for (int i = 0; i < args.length; i++) {
+            addAccessor(context, args[i].asJavaString().intern(), true, true);
+        }
         return getRuntime().getNil();
     }
 
