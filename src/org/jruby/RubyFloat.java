@@ -46,16 +46,17 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
+import org.jruby.util.Sprintf;
 
 /**
   * A representation of a float object
@@ -179,30 +180,28 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s() {
-        if (Double.isInfinite(value)) {
-            return RubyString.newString(getRuntime(), value < 0 ? "-Infinity" : "Infinity");
+        Ruby runtime = getRuntime();
+        if (Double.isInfinite(value)) return RubyString.newString(runtime, value < 0 ? "-Infinity" : "Infinity");
+        if (Double.isNaN(value)) return RubyString.newString(runtime, "NaN");
+
+        ByteList buf = new ByteList();
+        Sprintf.sprintf(buf, Locale.US, "%#.15g", this);
+        int e = buf.indexOf('e');
+        if (e == -1) e = buf.realSize;
+        ASCIIEncoding ascii = ASCIIEncoding.INSTANCE; 
+
+        if (!ascii.isDigit(buf.get(e - 1))) {
+            buf.realSize = 0;
+            Sprintf.sprintf(buf, Locale.US, "%#.14e", this);
+            e = buf.indexOf('e');
+            if (e == -1) e = buf.realSize;
         }
 
-        if (Double.isNaN(value)) {
-            return RubyString.newString(getRuntime(), "NaN");
-        }
-
-        String val = ""+value;
-
-        if(val.indexOf('E') != -1) {
-            String v2 = FORMAT.format(value);
-            int ix = v2.length()-1;
-            while(v2.charAt(ix) == '0' && v2.charAt(ix-1) != '.') {
-                ix--;
-            }
-            if(ix > 16 || (v2.charAt(0) != '-' && ix > 15) || "0.0".equals(v2.substring(0,ix+1))) {
-                val = val.replaceFirst("E(\\d)","e+$1").replaceFirst("E-","e-");
-            } else {
-                val = v2.substring(0,ix+1);
-            }
-        }
-
-        return RubyString.newString(getRuntime(), val);
+        int p = e;
+        while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
+        System.arraycopy(buf.bytes, e, buf.bytes, p, buf.realSize - e);
+        buf.realSize = p + buf.realSize - e;
+        return runtime.newString(buf);
     }
 
     /** flo_coerce
@@ -636,17 +635,30 @@ public class RubyFloat extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
+    private String marshalDump() {
+        if (Double.isInfinite(value)) return value < 0 ? "-inf" : "inf";
+        if (Double.isNaN(value)) return "nan";
+
+        String val = String.valueOf(value);
+
+        if(val.indexOf('E') != -1) {
+            String v2 = FORMAT.format(value);
+            int ix = v2.length()-1;
+            while(v2.charAt(ix) == '0' && v2.charAt(ix-1) != '.') {
+                ix--;
+            }
+            if(ix > 16 || (v2.charAt(0) != '-' && ix > 15) || "0.0".equals(v2.substring(0,ix+1))) {
+                val = val.replaceFirst("E(\\d)", "e+$1").replaceFirst("E-","e-");
+            } else {
+                val = v2.substring(0,ix+1);
+            }
+        }
+        return val;
+    }
+
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(aFloat);
-
-        String strValue = aFloat.toString();
-    
-        if (Double.isInfinite(aFloat.value)) {
-            strValue = aFloat.value < 0 ? "-inf" : "inf";
-        } else if (Double.isNaN(aFloat.value)) {
-            strValue = "nan";
-        }
-        output.writeString(strValue);
+        output.writeString(aFloat.marshalDump());
     }
         
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
