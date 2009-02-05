@@ -358,7 +358,7 @@ public final class StructLayout extends RubyObject {
     }
     @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
     static final class Array extends RubyObject {
-        private final MemoryIO io;
+        private final AbstractMemory ptr;
         private final ArrayMemberIO aio;
         private final long offset;
         private final int length, typeSize;
@@ -373,7 +373,7 @@ public final class StructLayout extends RubyObject {
         }
         Array(Ruby runtime, IRubyObject ptr, long offset, int length, int sizeBits, ArrayMemberIO aio) {
             super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME).fastGetClass("Array"));
-            this.io = ((AbstractMemory) ptr).getMemoryIO();
+            this.ptr = (AbstractMemory) ptr;
             this.offset = offset;
             this.length = length;
             this.aio = aio;
@@ -386,15 +386,15 @@ public final class StructLayout extends RubyObject {
             return offset + (index * typeSize);
         }
         private IRubyObject get(Ruby runtime, int index) {
-            return aio.get(runtime, io, getOffset(index));
+            return aio.get(runtime, ptr.getMemoryIO(), getOffset(index));
         }
         @JRubyMethod(name = "[]")
         public IRubyObject get(ThreadContext context, IRubyObject index) {
-            return aio.get(context.getRuntime(), io, getOffset(index));
+            return aio.get(context.getRuntime(), ptr.getMemoryIO(), getOffset(index));
         }
         @JRubyMethod(name = "[]=")
         public IRubyObject put(ThreadContext context, IRubyObject index, IRubyObject value) {
-            aio.put(context.getRuntime(), io, getOffset(index), value);
+            aio.put(context.getRuntime(), ptr.getMemoryIO(), getOffset(index), value);
             return value;
         }
         @JRubyMethod(name = { "to_a", "to_ary" })
@@ -405,6 +405,14 @@ public final class StructLayout extends RubyObject {
                 elems[i] = get(runtime, i);
             }
             return RubyArray.newArrayNoCopy(runtime, elems);
+        }
+        @JRubyMethod(name = { "to_ptr" })
+        public IRubyObject to_ptr(ThreadContext context) {
+            return ptr.slice(context.getRuntime(), offset);
+        }
+        @JRubyMethod(name = { "size" })
+        public IRubyObject size(ThreadContext context) {
+            return context.getRuntime().newFixnum(length * typeSize);
         }
         /**
          * Needed for Enumerable implementation
