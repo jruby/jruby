@@ -11,12 +11,12 @@
             </properties>
             <folders>
                 <source-folder>
-                    <label>Sources</label>
+                    <label>src</label>
                     <type>java</type>
                     <location>${src.dir}</location>
                 </source-folder>
                 <source-folder>
-                    <label>Tests</label>
+                    <label>test</label>
                     <type>java</type>
                     <location>${test.dir}</location>
                 </source-folder>
@@ -24,6 +24,41 @@
                     <label>spec</label>
                     <type>java</type>
                     <location>spec</location>
+                </source-folder>
+                <source-folder>
+                    <label>bin</label>
+                    <type>java</type>
+                    <location>bin</location>
+                </source-folder>
+                <source-folder>
+                    <label>samples</label>
+                    <type>java</type>
+                    <location>samples</location>
+                </source-folder>
+                <source-folder>
+                    <label>bench</label>
+                    <type>java</type>
+                    <location>bench</location>
+                </source-folder>
+                <source-folder>
+                    <label>tool</label>
+                    <type>java</type>
+                    <location>tool</location>
+                </source-folder>
+                <source-folder>
+                    <label>lib/ruby/1.8</label>
+                    <type>java</type>
+                    <location>lib/ruby/1.8</location>
+                </source-folder>
+                <source-folder>
+                    <label>lib/ruby/1.9</label>
+                    <type>java</type>
+                    <location>lib/ruby/1.9</location>
+                </source-folder>
+                <source-folder>
+                    <label>lib/ruby/site_ruby</label>
+                    <type>java</type>
+                    <location>lib/ruby/site_ruby</location>
                 </source-folder>
             </folders>
             <ide-actions>
@@ -78,16 +113,44 @@
             <view>
                 <items>
                     <source-folder style="packages">
-                        <label>Sources</label>
+                        <label>src</label>
                         <location>${src.dir}</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>Tests</label>
+                        <label>test</label>
                         <location>${test.dir}</location>
                     </source-folder>
                     <source-folder style="packages">
                         <label>spec</label>
                         <location>spec</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>bin</label>
+                        <location>bin</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>samples</label>
+                        <location>samples</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>bench</label>
+                        <location>bench</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>tool</label>
+                        <location>tool</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>lib/ruby/1.8</label>
+                        <location>lib/ruby/1.8</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>lib/ruby/1.9</label>
+                        <location>lib/ruby/1.9</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>lib/ruby/site_ruby</label>
+                        <location>lib/ruby/site_ruby</location>
                     </source-folder>
                     <source-file>
                         <location>build.xml</location>
@@ -124,6 +187,35 @@
             <compilation-unit>
                 <package-root>spec</package-root>
                 <unit-tests/>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>bin</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>samples</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>bench</package-root>
+                <unit-tests/>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>tool</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>lib/ruby/1.8</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>lib/ruby/1.9</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>lib/ruby/site_ruby</package-root>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
