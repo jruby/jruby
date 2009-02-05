@@ -1994,21 +1994,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_8)
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
         assert !context.getRuntime().is1_9();
-        // MRI behavior: first check for ability to convert to String...
-        RubyString str = stringArg.convertToString();
-
-        // ... and then the index
-        int index = (int) indexArg.convertToInteger().getLongValue();
-        if (index < 0) index += value.length() + 1;
-
-        if (index < 0 || index > value.length()) {
-            throw context.getRuntime().newIndexError("index " + index + " out of range");
-        }
-
-        modify();
-
-        value.unsafeReplace(index, 0, str.value);
-        this.infectBy(str);
+        int index = RubyNumeric.num2int(indexArg);
+        if (index == -1) return append(stringArg);
+        if (index < 0) index++;
+        replaceInternal(checkIndex(index, value.realSize), 0, stringArg.convertToString());
         return this;
     }
 
@@ -2017,11 +2006,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) return append19(stringArg);
         if (index < 0) index++;
-        replaceInternal19(checkIndex19(index, strLength()), 0, stringArg.convertToString());
+        replaceInternal19(checkIndex(index, strLength()), 0, stringArg.convertToString());
         return this;
     }
 
-    private int checkIndex19(int beg, int len) {
+    private int checkIndex(int beg, int len) {
         if (beg > len) raiseIndexOutOfString(beg);
         if (beg < 0) {
             if (-beg > len) raiseIndexOutOfString(beg);
@@ -3404,7 +3393,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject op_aset19(ThreadContext context, int idx, IRubyObject arg1) {
-        replaceInternal19(checkIndex19(idx, strLength()), 1, arg1.convertToString());
+        replaceInternal19(checkIndex(idx, strLength()), 1, arg1.convertToString());
         return arg1;
     }
 
