@@ -120,4 +120,10 @@ public class YieldNode extends Node {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return aBlock.isGiven() ? "yield" : null;
     }
+
+    @Override
+    public String toString() {
+        return "YieldNode[" + (argsNode != null ? argsNode : "") + "]";
+
+    }
 }
