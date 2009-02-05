@@ -1852,11 +1852,12 @@ public class RubyYaccLexer {
         if (isOneEight) {
             yaccValue = new FixnumNode(getPosition(), c);
         } else {
-            // this isn't handling multibyte yet
+            // TODO: this isn't handling multibyte yet
             ByteList oneCharBL = new ByteList(1);
             oneCharBL.append(c);
             yaccValue = new StrNode(getPosition(), oneCharBL);
         }
+        // TODO: This should be something else like a tCHAR
         return Tokens.tINTEGER;
     }
     
