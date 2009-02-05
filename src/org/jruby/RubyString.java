@@ -3184,7 +3184,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
-        if (arg instanceof RubyRegexp) {
+        if (arg instanceof RubyFixnum) {
+            return op_aref(runtime, RubyFixnum.fix2int((RubyFixnum)arg));
+        } if (arg instanceof RubyRegexp) {
             return subpat(runtime, context, (RubyRegexp)arg, 0);
         } else if (arg instanceof RubyString) {
             return value.indexOf(stringValue(arg).value) != -1 ? arg : runtime.getNil();
@@ -3192,12 +3194,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int[] begLen = ((RubyRange) arg).begLenInt(value.length(), 0);
             return begLen == null ? runtime.getNil() : substr(runtime, begLen[0], begLen[1]);
         }
-        int idx = (int) arg.convertToInteger().getLongValue();
-        
-        if (idx < 0) idx += value.length();
-        if (idx < 0 || idx >= value.length()) return runtime.getNil();
+        return op_aref(runtime, RubyFixnum.fix2int(arg));
+    }
 
-        return runtime.newFixnum(value.get(idx) & 0xFF);
+    private IRubyObject op_aref(Ruby runtime, int idx) {
+        if (idx < 0) idx += value.realSize;
+        return idx < 0 || idx >= value.realSize ? runtime.getNil() : runtime.newFixnum(value.get(idx) & 0xff);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
