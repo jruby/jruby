@@ -37,6 +37,7 @@ import org.jruby.RubyString;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -171,5 +172,19 @@ public final class Util {
         ByteBuffer tmp = buf.duplicate();
         tmp.position((int) offset);
         return tmp.slice();
+    }
+    public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
+        RubyString s = value.asString();
+        if (runtime.getSafeLevel() > 0 && s.isTaint()) {
+            throw runtime.newSecurityError("Unsafe string parameter");
+        }
+        ByteList bl = s.getByteList();
+        final byte[] array = bl.unsafeBytes();
+        final int end = bl.length();
+        for (int i = bl.begin(); i < end; ++i) {
+            if (array[i] == (byte) 0) {
+                throw runtime.newSecurityError("string contains null byte");
+            }
+        }
     }
 }

@@ -551,15 +551,10 @@ public final class DefaultMethodFactory {
     static final class StringMarshaller extends BaseMarshaller {
         
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            Util.checkStringSafety(context.getRuntime(), parameter);
             ByteList bl = ((RubyString) parameter).getByteList();
-            final byte[] array = bl.unsafeBytes();
-            final int end = bl.length();
-            for (int i = bl.begin(); i < end; ++i) {
-                if (array[i] == (byte) 0) {
-                    throw context.getRuntime().newArgumentError("string contains null byte");
-                }
-            }
-            buffer.putArray(array, bl.begin(), bl.length(), ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
+            buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(),
+                    ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
         }
 
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
