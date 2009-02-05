@@ -1994,19 +1994,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_8)
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
         assert !context.getRuntime().is1_9();
+        RubyString str = stringArg.convertToString();
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) return append(stringArg);
         if (index < 0) index++;
-        replaceInternal(checkIndex(index, value.realSize), 0, stringArg.convertToString());
+        replaceInternal(checkIndex(index, value.realSize), 0, str);
         return this;
     }
 
     @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_9)
     public IRubyObject insert19(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
+        RubyString str = stringArg.convertToString();
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) return append19(stringArg);
         if (index < 0) index++;
-        replaceInternal19(checkIndex(index, strLength()), 0, stringArg.convertToString());
+        replaceInternal19(checkIndex(index, strLength()), 0, str);
         return this;
     }
 
