@@ -28,6 +28,7 @@
 package org.jruby.yaml;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -49,7 +50,27 @@ import org.jvyamlb.Serializer;
 import org.jvyamlb.Representer;
 import org.jvyamlb.YAMLConfig;
 import org.jvyamlb.YAMLNodeCreator;
+import org.jvyamlb.Representer;
+import org.jvyamlb.Constructor;
+import org.jvyamlb.ParserImpl;
+import org.jvyamlb.Scanner;
+import org.jvyamlb.ScannerImpl;
+import org.jvyamlb.Composer;
+import org.jvyamlb.ComposerImpl;
+import org.jvyamlb.PositioningScannerImpl;
+import org.jvyamlb.PositioningComposerImpl;
+import org.jvyamlb.Serializer;
+import org.jvyamlb.Resolver;
+import org.jvyamlb.ResolverImpl;
+import org.jvyamlb.EmitterImpl;
+import org.jvyamlb.exceptions.YAMLException;
+import org.jvyamlb.YAMLConfig;
+import org.jvyamlb.YAML;
+import org.jvyamlb.PositioningScanner;
+import org.jvyamlb.Positionable;
+import org.jvyamlb.Position;
 import org.jvyamlb.nodes.Node;
+import org.jvyamlb.nodes.ScalarNode;
 import org.jvyamlb.nodes.MappingNode;
 
 import org.jruby.util.ByteList;
@@ -151,23 +172,34 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
                 IRubyObject val = data.callMethod(context, "to_yaml", JavaEmbedUtils.javaToRuby(runtime, representer));
 
                 if(!outClass.isInstance(val)) {
-                    throw runtime.newTypeError("wrong argument type " + val.getMetaClass().getRealClass() + " (expected YAML::JvYAML::Node)");
-                }
+                    if(val instanceof RubyString && ((RubyString)val).getByteList().length() > 4) {
+                        ByteList bl = ((RubyString)val).getByteList();
+                        int subst = 4;
+                        if(bl.get(4) == '\n') subst++;
+                        int len = (bl.length()-subst)-1;
+                        Resolver res = new ResolverImpl();
+                        res.descendResolver(null, null);
+                        String detectedTag = res.resolve(ScalarNode.class,bl.makeShared(subst, len),new boolean[]{true,false});
+                        return ((JRubyRepresenter)representer).scalar(detectedTag, bl.makeShared(subst, len), null);
+                    }
 
-                IRubyObject value = val.callMethod(context, "value");
-                IRubyObject style = val.callMethod(context, "style");
-                IRubyObject type_id = val.callMethod(context, "type_id");
-                String s = null;
-                if(!style.isNil()) {
-                    s = style.toString();
-                }
-                String t = type_id.toString();
-                if(value instanceof RubyHash) {
-                    return ((JRubyRepresenter)representer).map(t, (RubyHash)value, s);
-                } else if(value instanceof RubyArray) {
-                    return ((JRubyRepresenter)representer).seq(t, (RubyArray)value, s);
+                    throw runtime.newTypeError("wrong argument type " + val.getMetaClass().getRealClass() + " (expected YAML::JvYAML::Node)");
                 } else {
-                    return ((JRubyRepresenter)representer).scalar(t, ((RubyString)value).getByteList(), s);
+                    IRubyObject value = val.callMethod(context, "value");
+                    IRubyObject style = val.callMethod(context, "style");
+                    IRubyObject type_id = val.callMethod(context, "type_id");
+                    String s = null;
+                    if(!style.isNil()) {
+                        s = style.toString();
+                    }
+                    String t = type_id.toString();
+                    if(value instanceof RubyHash) {
+                        return ((JRubyRepresenter)representer).map(t, (RubyHash)value, s);
+                    } else if(value instanceof RubyArray) {
+                        return ((JRubyRepresenter)representer).seq(t, (RubyArray)value, s);
+                    } else {
+                        return ((JRubyRepresenter)representer).scalar(t, ((RubyString)value).getByteList(), s);
+                    }
                 }
             }
 

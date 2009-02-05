@@ -2,6 +2,16 @@ require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a
 require 'date'
 require 'yaml_internal'
 
+class Java::OrgJrubyYaml::JRubyRepresenter
+  def kind_of?(other)
+    if other == YAML::Emitter
+      return true
+    else
+      super
+    end
+  end
+end
+
 module YAML
   #
   # Default settings
