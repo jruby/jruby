@@ -505,14 +505,20 @@ public final class JNAProvider extends FFIProvider {
      */
     private static final class StringMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
-            Util.checkStringSafety(invocation.getThreadContext().getRuntime(), parameter);
-            // Ruby strings are UTF-8, so should be able to just copy directly
-            RubyString s = parameter.asString();
-            ByteList bl = s.getByteList();
-            final Memory memory = new Memory(bl.length() + 1);
-            memory.write(0, bl.unsafeBytes(), bl.begin(), bl.length());
-            memory.setByte(bl.length(), (byte) 0);
-            return memory;
+            if (parameter instanceof RubyString) {
+                Util.checkStringSafety(invocation.getThreadContext().getRuntime(), parameter);
+                // Ruby strings are UTF-8, so should be able to just copy directly
+                RubyString s = parameter.asString();
+                ByteList bl = s.getByteList();
+                final Memory memory = new Memory(bl.length() + 1);
+                memory.write(0, bl.unsafeBytes(), bl.begin(), bl.length());
+                memory.setByte(bl.length(), (byte) 0);
+                return memory;
+            } else if (parameter.isNil()) {
+                return null;
+            } else {
+                throw invocation.getThreadContext().getRuntime().newArgumentError("Invalid string parameter");
+            }
         }
         public static final Marshaller INSTANCE = new StringMarshaller();
     }

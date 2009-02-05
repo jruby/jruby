@@ -551,10 +551,16 @@ public final class DefaultMethodFactory {
     static final class StringMarshaller extends BaseMarshaller {
         
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            Util.checkStringSafety(context.getRuntime(), parameter);
-            ByteList bl = ((RubyString) parameter).getByteList();
-            buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(),
-                    ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
+            if (parameter instanceof RubyString) {
+                Util.checkStringSafety(context.getRuntime(), parameter);
+                ByteList bl = ((RubyString) parameter).getByteList();
+                buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(),
+                        ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
+            } else if (parameter.isNil()) {
+                buffer.putAddress(0);
+            } else {
+                throw context.getRuntime().newArgumentError("Invalid string parameter");
+            }
         }
 
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
