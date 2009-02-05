@@ -1849,7 +1849,14 @@ public class RubyYaccLexer {
         
         c &= 0xff;
         lex_state = LexState.EXPR_END;
-        yaccValue = new FixnumNode(getPosition(), c);
+        if (isOneEight) {
+            yaccValue = new FixnumNode(getPosition(), c);
+        } else {
+            // this isn't handling multibyte yet
+            ByteList oneCharBL = new ByteList(1);
+            oneCharBL.append(c);
+            yaccValue = new StrNode(getPosition(), oneCharBL);
+        }
         return Tokens.tINTEGER;
     }
     
