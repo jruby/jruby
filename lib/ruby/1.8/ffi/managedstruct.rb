@@ -48,7 +48,7 @@ module FFI
     def self.new(pointer=nil)
       raise NoMethodError, "release() not implemented for class #{self}" unless self.respond_to? :release
       raise ArgumentError, "Must supply a pointer to memory for the Struct" unless pointer
-      Struct.new(FFI::AutoPointer.new(pointer, self.method(:release)))
+      super FFI::AutoPointer.new(pointer, self.method(:release))
     end
 
   end
