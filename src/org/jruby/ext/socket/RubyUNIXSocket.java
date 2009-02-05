@@ -27,6 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
+import com.kenai.constantine.ConstantSet;
+import com.kenai.constantine.platform.Fcntl;
+import com.kenai.constantine.platform.OpenFlags;
 import com.kenai.constantine.platform.SocketLevel;
 import com.kenai.constantine.platform.SocketOption;
 import java.io.IOException;
@@ -236,10 +239,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    protected final static int F_GETFL = 3;
-    protected final static int F_SETFL = 4;
+    protected final static int F_GETFL = Fcntl.F_GETFL.value();
+    protected final static int F_SETFL = Fcntl.F_SETFL.value();
 
-    protected final static int O_NONBLOCK = 0x0004;
+    protected final static int O_NONBLOCK = OpenFlags.O_NONBLOCK.value();
 
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) throws Exception {
         int status;
