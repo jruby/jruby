@@ -1033,7 +1033,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    public final RubyString cat(RubyString str) {
+    // // rb_str_buf_append
+    public final RubyString cat19(RubyString str) {
         ByteList strValue = str.value;
         int strCr = str.getCodeRange();
         strCr = cat(strValue.bytes, strValue.begin, strValue.realSize, strValue.encoding, strCr, strCr);
@@ -2187,7 +2188,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             infectBy(other);
             return this;
         }
-        return cat(otherStr); // rb_str_buf_append
+        return cat19(otherStr);
     }
 
     /** rb_str_concat
