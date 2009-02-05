@@ -213,6 +213,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         return context.getRuntime().getNil();
     }
 
+    protected static void checkArgumentCount(JavaMethod method, ThreadContext context, String name, IRubyObject[] args, int num) {
+        if (args.length != num) raiseArgumentError(method, context, name, args.length, num, num);
+    }
+
     // promise to implement N with block
     public static abstract class JavaMethodNBlock extends JavaMethod {
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {

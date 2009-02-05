@@ -226,13 +226,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.start();
                         
                         // check arity
+                        mv.aload(0);
                         mv.aload(1);
-                        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                        mv.aload(4);
                         mv.aload(5);
                         mv.pushInt(scope.getRequiredArgs());
-                        mv.pushInt(scope.getRequiredArgs());
-                        mv.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-                        mv.pop();
+                        mv.invokestatic(p(JavaMethod.class), "checkArgumentCount", sig(void.class, JavaMethod.class, ThreadContext.class, String.class, IRubyObject[].class, int.class));
                         
                         mv.aload(0);
                         mv.aload(1);
