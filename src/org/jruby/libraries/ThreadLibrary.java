@@ -120,7 +120,7 @@ public class ThreadLibrary implements Library {
             return context.getRuntime().getTrue();
         }
 
-        @JRubyMethod
+        @JRubyMethod(frame = true)
         public IRubyObject lock(ThreadContext context) throws InterruptedException {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
@@ -129,6 +129,9 @@ public class ThreadLibrary implements Library {
                 context.getThread().enterSleep();
                 synchronized (this) {
                     try {
+                        if (owner == context.getThread()) {
+                            throw context.getRuntime().newThreadError("Mutex relocking by same thread");
+                        }
                         while ( owner != null ) {
                             wait();
                         }
