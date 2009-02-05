@@ -1,8 +1,6 @@
 
 package org.jruby.ext.ffi;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -171,7 +169,9 @@ public class Struct extends RubyObject {
     public final IRubyObject getMemory() {
         return memory;
     }
-
+    final MemoryIO getMemoryIO() {
+        return ((AbstractMemory) memory).getMemoryIO();
+    }
     final IRubyObject getCachedValue(StructLayout.Member member) {
         return cache != null ? cache.get(member) : null;
     }

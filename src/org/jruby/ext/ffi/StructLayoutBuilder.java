@@ -33,6 +33,7 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -442,10 +443,19 @@ public final class StructLayoutBuilder extends RubyObject {
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             if (value instanceof Pointer) {
                 getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Pointer) value).getMemoryIO());
-            } else if (Platform.getPlatform().addressSize() == 32) {
-                getMemoryIO(ptr).putInt(getOffset(ptr), Util.int32Value(value));
-            } else if (Platform.getPlatform().addressSize() == 64) {
-                getMemoryIO(ptr).putLong(getOffset(ptr), Util.int64Value(value));
+            } else if (value instanceof Struct) {
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Struct) value).getMemoryIO());
+            } else if (value instanceof RubyInteger) {
+                getMemoryIO(ptr).putAddress(offset, Util.int64Value(ptr));
+            } else if (value.respondsTo("to_ptr")) {
+                IRubyObject addr = value.callMethod(runtime.getCurrentContext(), "to_ptr");
+                if (addr instanceof Pointer) {
+                    getMemoryIO(ptr).putMemoryIO(offset, ((Pointer) addr).getMemoryIO());
+                } else {
+                    throw runtime.newArgumentError("Invalid pointer value");
+                }
+            } else {
+                throw runtime.newArgumentError("Invalid pointer value");
             }
         }
 
