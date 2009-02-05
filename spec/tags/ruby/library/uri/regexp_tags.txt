@@ -1,1 +1,0 @@
-fails(JRUBY-2603):URI.regexp behaves according to the MatzRuby tests
