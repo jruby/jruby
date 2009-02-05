@@ -1991,8 +1991,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result.infectBy(this);
     }
 
-    @JRubyMethod(name = "insert")
+    @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_8)
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
+        assert !context.getRuntime().is1_9();
         // MRI behavior: first check for ability to convert to String...
         RubyString str = stringArg.convertToString();
 
@@ -2009,6 +2010,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
         value.unsafeReplace(index, 0, str.value);
         this.infectBy(str);
         return this;
+    }
+
+    @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_9)
+    public IRubyObject insert19(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
+        int index = RubyNumeric.num2int(indexArg);
+        if (index == -1) return append19(stringArg);
+        if (index < 0) index++;
+        replaceInternal19(checkIndex19(index, strLength()), 0, stringArg.convertToString());
+        return this;
+    }
+
+    private int checkIndex19(int beg, int len) {
+        if (beg > len) raiseIndexOutOfString(beg);
+        if (beg < 0) {
+            if (-beg > len) raiseIndexOutOfString(beg);
+            beg += len;
+        }
+        return beg;
+    }
+
+    private void raiseIndexOutOfString(int index) {
+        throw getRuntime().newIndexError("index " + index + " out of string");
     }
 
     /** rb_str_inspect
@@ -2174,21 +2197,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public RubyString append19(IRubyObject other) {
-        RubyString otherStr = other.convertToString();
-        ByteList otherValue = otherStr.value;
-
-        if (otherValue.realSize > 0) {
-            Encoding enc = checkEncoding(otherStr);
-            int cr = getCodeRange();
-            int otherCr = otherStr.getCodeRange();
-            if (otherCr > cr) cr = otherCr;
-            cat(otherValue);
-            associateEncoding(enc);
-            setCodeRange(cr);
-            infectBy(other);
-            return this;
-        }
-        return cat19(otherStr);
+        return cat19(other.convertToString());
     }
 
     /** rb_str_concat
@@ -3395,10 +3404,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject op_aset19(ThreadContext context, int idx, IRubyObject arg1) {
-        int len = strLength();
-        if (idx < 0) idx += len;
-        if (idx < 0 || idx >= len) throw context.getRuntime().newIndexError("string index out of bounds");
-        replaceInternal19(idx, 1, arg1.convertToString());
+        replaceInternal19(checkIndex19(idx, strLength()), 1, arg1.convertToString());
         return arg1;
     }
 
