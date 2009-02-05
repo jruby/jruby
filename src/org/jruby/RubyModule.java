@@ -1680,7 +1680,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_9)
     public IRubyObject attr_1_9(ThreadContext context, IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), true, true);
+            addAccessor(context, args[i].asJavaString().intern(), true, false);
         }
         return getRuntime().getNil();
     }
