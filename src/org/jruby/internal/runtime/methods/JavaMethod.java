@@ -202,6 +202,17 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         return true;
     }
 
+    protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {
+        try {
+            method.preBacktraceOnly(context, name);
+            Arity.raiseArgumentError(context.getRuntime(), given, min, max);
+        } finally {
+            postBacktraceOnly(context);
+        }
+        // never reached
+        return context.getRuntime().getNil();
+    }
+
     // promise to implement N with block
     public static abstract class JavaMethodNBlock extends JavaMethod {
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {
@@ -400,7 +411,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 0) throw context.getRuntime().newArgumentError(args.length, 0);
+            if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name, block);
         }
     }
@@ -420,8 +431,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 1:
                 return call(context, self, clazz, name, args[0], block);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 1);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 0, 1);
             }
         }
     }
@@ -443,8 +453,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 2:
                 return call(context, self, clazz, name, args[0], args[1], block);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 0, 2);
             }
         }
     }
@@ -468,8 +477,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2], block);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 3);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 0, 3);
             }
         }
     }
@@ -484,7 +492,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 1) throw context.getRuntime().newArgumentError(args.length, 1);
+            if (args.length != 1) return raiseArgumentError(this, context, name, args.length, 1, 1);
             return call(context, self, clazz, name, args[0], block);
         }
 
@@ -507,8 +515,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 2:
                 return call(context, self, clazz, name, args[0], args[1], block);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 1, 2);
             }
         }
     }
@@ -527,7 +534,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 1: return call(context, self, clazz, name, args[0], block);
             case 2: return call(context, self, clazz, name, args[0], args[1], block);
             case 3: return call(context, self, clazz, name, args[0], args[1], args[2], block);
-            default: throw context.getRuntime().newArgumentError(args.length, 3);
+            default: return raiseArgumentError(this, context, name, args.length, 3, 3);
             }
         }
     }
@@ -543,7 +550,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
+            if (args.length != 2) return raiseArgumentError(this, context, name, args.length, 2, 2);
             return call(context, self, clazz, name, args[0], args[1], block);
         }
     }
@@ -563,8 +570,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2], block);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 2, 3);
             }
         }
     }
@@ -580,7 +586,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 3) throw context.getRuntime().newArgumentError(args.length, 3);
+            if (args.length != 3) return raiseArgumentError(this, context, name, args.length, 3, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2], block);
         }
     }
@@ -812,7 +818,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 0) throw context.getRuntime().newArgumentError(args.length, 0);
+            if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
     }
@@ -833,8 +839,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 1:
                 return call(context, self, clazz, name, args[0]);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 1);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 0, 1);
             }
         }
     }
@@ -857,8 +862,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 2:
                 return call(context, self, clazz, name, args[0], args[1]);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 0, 2);
             }
         }
     }
@@ -882,8 +886,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2]);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 3);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 0, 3);
             }
         }
     }
@@ -899,7 +902,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 1) throw context.getRuntime().newArgumentError(args.length, 1);
+            if (args.length != 1) return raiseArgumentError(this, context, name, args.length, 1, 1);
             return call(context, self, clazz, name, args[0]);
         }
     }
@@ -919,8 +922,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 2:
                 return call(context, self, clazz, name, args[0], args[1]);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 1, 2);
             }
         }
     }
@@ -942,8 +944,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2]);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 3);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 1, 3);
             }
         }
     }
@@ -959,7 +960,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 2) throw context.getRuntime().newArgumentError(args.length, 2);
+            if (args.length != 2) return raiseArgumentError(this, context, name, args.length, 2, 2);
             return call(context, self, clazz, name, args[0], args[1]);
         }
     }
@@ -979,8 +980,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2]);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3);
-                return null; // never reached
+                return raiseArgumentError(this, context, name, args.length, 2, 3);
             }
         }
     }
@@ -996,7 +996,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 3) throw context.getRuntime().newArgumentError(args.length, 3);
+            if (args.length != 3) return raiseArgumentError(this, context, name, args.length, 3, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
     }
