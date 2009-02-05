@@ -310,92 +310,97 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         // null channel always succeeds for all locking operations
         if (descriptor.isNull()) return RubyFixnum.zero(context.getRuntime());
-        
-        FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-        int lockMode = RubyNumeric.num2int(lockingConstant);
 
-        // Exclusive locks in Java require the channel to be writable, otherwise
-        // an exception is thrown (terminating JRuby execution).
-        // But flock behavior of MRI is that it allows
-        // exclusive locks even on non-writable file. So we convert exclusive
-        // lock to shared lock if the channel is not writable, to better match
-        // the MRI behavior.
-        if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
-            lockMode = (lockMode ^ LOCK_EX) | LOCK_SH;
+        if (descriptor.getChannel() instanceof FileChannel) {
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            int lockMode = RubyNumeric.num2int(lockingConstant);
+
+            // Exclusive locks in Java require the channel to be writable, otherwise
+            // an exception is thrown (terminating JRuby execution).
+            // But flock behavior of MRI is that it allows
+            // exclusive locks even on non-writable file. So we convert exclusive
+            // lock to shared lock if the channel is not writable, to better match
+            // the MRI behavior.
+            if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
+                lockMode = (lockMode ^ LOCK_EX) | LOCK_SH;
+            }
+
+            try {
+                switch (lockMode) {
+                    case LOCK_UN:
+                    case LOCK_UN | LOCK_NB:
+                        if (currentLock != null) {
+                            currentLock.release();
+                            currentLock = null;
+
+                            return RubyFixnum.zero(context.getRuntime());
+                        }
+                        break;
+                    case LOCK_EX:
+                        if (currentLock != null) {
+                            currentLock.release();
+                            currentLock = null;
+                        }
+                        currentLock = fileChannel.lock();
+                        if (currentLock != null) {
+                            return RubyFixnum.zero(context.getRuntime());
+                        }
+
+                        break;
+                    case LOCK_EX | LOCK_NB:
+                        if (currentLock != null) {
+                            currentLock.release();
+                            currentLock = null;
+                        }
+                        currentLock = fileChannel.tryLock();
+                        if (currentLock != null) {
+                            return RubyFixnum.zero(context.getRuntime());
+                        }
+
+                        break;
+                    case LOCK_SH:
+                        if (currentLock != null) {
+                            currentLock.release();
+                            currentLock = null;
+                        }
+
+                        currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
+                        if (currentLock != null) {
+                            return RubyFixnum.zero(context.getRuntime());
+                        }
+
+                        break;
+                    case LOCK_SH | LOCK_NB:
+                        if (currentLock != null) {
+                            currentLock.release();
+                            currentLock = null;
+                        }
+
+                        currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
+                        if (currentLock != null) {
+                            return RubyFixnum.zero(context.getRuntime());
+                        }
+
+                        break;
+                    default:
+                }
+            } catch (IOException ioe) {
+                if (context.getRuntime().getDebug().isTrue()) {
+                    ioe.printStackTrace(System.err);
+                }
+                // Return false here
+            } catch (java.nio.channels.OverlappingFileLockException ioe) {
+                if (context.getRuntime().getDebug().isTrue()) {
+                    ioe.printStackTrace(System.err);
+                }
+                // Return false here
+            }
+
+            return context.getRuntime().getFalse();
+        } else {
+            // We're not actually a real file, so we can't flock
+            return context.getRuntime().getFalse();
         }
-
-        try {
-            switch (lockMode) {
-                case LOCK_UN:
-                case LOCK_UN | LOCK_NB:
-                    if (currentLock != null) {
-                        currentLock.release();
-                        currentLock = null;
-
-                        return RubyFixnum.zero(context.getRuntime());
-                    }
-                    break;
-                case LOCK_EX:
-                    if (currentLock != null) {
-                        currentLock.release();
-                        currentLock = null;
-                    }
-                    currentLock = fileChannel.lock();
-                    if (currentLock != null) {
-                        return RubyFixnum.zero(context.getRuntime());
-                    }
-
-                    break;
-                case LOCK_EX | LOCK_NB:
-                    if (currentLock != null) {
-                        currentLock.release();
-                        currentLock = null;
-                    }
-                    currentLock = fileChannel.tryLock();
-                    if (currentLock != null) {
-                        return RubyFixnum.zero(context.getRuntime());
-                    }
-
-                    break;
-                case LOCK_SH:
-                    if (currentLock != null) {
-                        currentLock.release();
-                        currentLock = null;
-                    }
-
-                    currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
-                    if (currentLock != null) {
-                        return RubyFixnum.zero(context.getRuntime());
-                    }
-
-                    break;
-                case LOCK_SH | LOCK_NB:
-                    if (currentLock != null) {
-                        currentLock.release();
-                        currentLock = null;
-                    }
-
-                    currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
-                    if (currentLock != null) {
-                        return RubyFixnum.zero(context.getRuntime());
-                    }
-
-                    break;
-                default:
-            }
-        } catch (IOException ioe) {
-            if (context.getRuntime().getDebug().isTrue()) {
-                ioe.printStackTrace(System.err);
-            }
-            // Return false here
-        } catch (java.nio.channels.OverlappingFileLockException ioe) {
-            if (context.getRuntime().getDebug().isTrue()) {
-                ioe.printStackTrace(System.err);
-            }
-            // Return false here
-        }
-
-        return context.getRuntime().getFalse();
     }
 
     @JRubyMethod(required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE)
