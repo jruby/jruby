@@ -18,6 +18,15 @@ if [ "$1" != "" ]; then
   YYTABLE_PREFIX=$1
 fi
 
+if [ "$DEBUG" != "" ]; then
+  DEBUG_FLAG=-t
+  # Nonesence...my script-fu is weak
+  DEBUG_STRIP="xdyhbk"
+else
+  DEBUG_FLAG=
+  DEBUG_STRIP="^//t"
+fi
+
 echo "Generating Parser '$PARSER_BASE' w/ YYTable prefix of '$YYTABLE_PREFIX'"
 
 PARSER_DIR=src/org/jruby/parser
@@ -25,7 +34,7 @@ PARSER_DIR=src/org/jruby/parser
 pushd $PARSER_DIR
 
 # Generate grammar as intermediate file
-$JAY $PARSER_BASE.y < skeleton.parser | grep -v "^//t" >$PARSER_BASE.out
+$JAY $DEBUG_FLAG $PARSER_BASE.y < skeleton.parser | grep -v $DEBUG_STRIP >$PARSER_BASE.out
 
 # Patch file to get around Java static initialization issues plus extract
 # a bunch of stuff to seperate file (yytables).
