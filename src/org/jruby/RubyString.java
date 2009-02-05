@@ -3339,11 +3339,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject op_aset(ThreadContext context, int idx, IRubyObject arg1) {
-        if (idx < 0) idx += value.realSize;
-        if (idx < 0 || idx >= value.realSize) throw context.getRuntime().newIndexError("string index out of bounds");
+        idx = checkIndex(idx, value.realSize);
         if (arg1 instanceof RubyFixnum) {
             modify();
-            value.set(idx, RubyNumeric.fix2int(arg1));
+            value.set(idx, RubyNumeric.fix2int((RubyFixnum)arg1));
         } else {
             replaceInternal(idx, 1, arg1.convertToString());
         }
