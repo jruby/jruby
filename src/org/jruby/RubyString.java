@@ -3194,7 +3194,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int[] begLen = ((RubyRange) arg).begLenInt(value.length(), 0);
             return begLen == null ? runtime.getNil() : substr(runtime, begLen[0], begLen[1]);
         }
-        return op_aref(runtime, RubyFixnum.fix2int(arg));
+        return op_aref(runtime, RubyFixnum.num2int(arg));
     }
 
     private IRubyObject op_aref(Ruby runtime, int idx) {
@@ -3213,8 +3213,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject op_aref19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         if (arg instanceof RubyFixnum) {
-            IRubyObject str = substr19(runtime, RubyNumeric.fix2int(arg), 1);
-            return !str.isNil() && ((RubyString)str).value.realSize == 0 ? runtime.getNil() : str;
+            return op_aref19(runtime, RubyNumeric.fix2int((RubyFixnum)arg));
         } else if (arg instanceof RubyRegexp) {
             return subpat19(runtime, context, (RubyRegexp)arg, 0);
         } else if (arg instanceof RubyString) {
@@ -3224,10 +3223,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
             return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
-        } else {
-            IRubyObject str = substr19(runtime, RubyNumeric.num2int(arg), 1);
-            return !str.isNil() && ((RubyString)str).value.realSize == 0 ? runtime.getNil() : str;
         }
+        return op_aref19(runtime, RubyNumeric.num2int(arg));
+    }
+
+    private IRubyObject op_aref19(Ruby runtime, int idx) {
+        IRubyObject str = substr19(runtime, idx, 1);
+        return !str.isNil() && ((RubyString)str).value.realSize == 0 ? runtime.getNil() : str;
     }
 
     /**
