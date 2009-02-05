@@ -642,7 +642,7 @@ public class Sprintf {
                     double dval = ((RubyFloat)arg).getDoubleValue();
                     boolean nan = dval != dval;
                     boolean inf = dval == Double.POSITIVE_INFINITY || dval == Double.NEGATIVE_INFINITY;
-                    boolean negative = dval < 0.0d;
+                    boolean negative = dval < 0.0d || (dval == 0.0d && (new Float(dval)).equals(new Float(-0.0)));
                     byte[] digits;
                     int nDigits = 0;
                     int exponent = 0;
