@@ -2024,6 +2024,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return beg;
     }
 
+    private int checkIndexForRef(int beg, int len) {
+        if (beg >= len) raiseIndexOutOfString(beg);
+        if (beg < 0) {
+            if (-beg > len) raiseIndexOutOfString(beg);
+            beg += len;
+        }
+        return beg;
+    }
+
     private void raiseIndexOutOfString(int index) {
         throw getRuntime().newIndexError("index " + index + " out of string");
     }
@@ -3349,7 +3358,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject op_aset(ThreadContext context, int idx, IRubyObject arg1) {
-        idx = checkIndex(idx, value.realSize);
+        idx = checkIndexForRef(idx, value.realSize);
         if (arg1 instanceof RubyFixnum) {
             modify();
             value.set(idx, RubyNumeric.fix2int((RubyFixnum)arg1));
@@ -3368,13 +3377,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int beg = RubyNumeric.num2int(arg0);
             int len = RubyNumeric.num2int(arg1);
             if (len < 0) throw context.getRuntime().newIndexError("negative length");
-            int strLen = value.realSize;
-            if (beg < 0) beg += strLen;
-
-            if (beg < 0 || (beg > 0 && beg > strLen)) throw context.getRuntime().newIndexError("string index out of bounds");
-            if (beg + len > strLen) len = strLen - beg;
-
-            replaceInternal(beg, len, repl);
+            replaceInternal(checkIndex(beg, value.realSize), len, repl);
         }
         return arg2;
     }
