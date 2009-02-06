@@ -26,12 +26,17 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Yielder")
 public class RubyYielder extends RubyObject {
+    private RubyProc proc; 
 
     public static RubyClass createYielderClass(Ruby runtime) {
         RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
@@ -60,5 +65,24 @@ public class RubyYielder extends RubyObject {
 
     public RubyYielder(Ruby runtime) {
         super(runtime, runtime.getYielder());
+    }
+
+    private void checkInit() {
+        if (proc == null) throw getRuntime().newArgumentError("uninitializer yielder");
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) throw runtime.newLocalJumpErrorNoBlock();
+        proc = runtime.newProc(Block.Type.PROC, block);
+        return this;
+    }
+
+    @JRubyMethod(name = {"yield", "<<"}, rest = true)
+    public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
+        checkInit();
+        proc.call(context, args);
+        return this;
     }
 }
