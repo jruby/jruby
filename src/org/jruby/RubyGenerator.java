@@ -26,12 +26,19 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.ext.posix.POSIXHandler.WARNING_ID;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Generator")
 public class RubyGenerator extends RubyObject {
+    private RubyProc proc;
 
     public static RubyClass createGeneratorClass(Ruby runtime) {
         RubyClass generatorc = runtime.defineClassUnder("Generator", runtime.getObject(), GENERATOR_ALLOCATOR, runtime.getEnumerator());
@@ -61,4 +68,42 @@ public class RubyGenerator extends RubyObject {
     public RubyGenerator(Ruby runtime) {
         super(runtime, runtime.getGenerator());
     }
+
+    private void checkInit() {
+        if (proc == null) throw getRuntime().newArgumentError("uninitializer generator");
+    }
+
+    private static RubyGenerator checkGenerator(IRubyObject obj) {
+        if (!(obj instanceof RubyGenerator)) { 
+            throw obj.getRuntime().newTypeError("wrong argument type " +
+                    obj.getMetaClass().getRealClass().getName() + " (expected Data)"); 
+        }
+        RubyGenerator generator = (RubyGenerator)obj;
+        generator.checkInit();
+        return generator;
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) throw runtime.newLocalJumpErrorNoBlock();
+        proc = runtime.newProc(Block.Type.PROC, block);
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!(arg instanceof RubyProc)) throw runtime.newThreadError("wrong argument type " + arg.getMetaClass() + " (expected Proc)");
+        if (block.isGiven()) runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
+        proc = (RubyProc)arg;
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject obj) {
+        proc = checkGenerator(obj).proc;
+        return this;
+    }
+
 }
