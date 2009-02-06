@@ -2033,6 +2033,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return beg;
     }
 
+    private int checkLength(int len) {
+        if (len < 0) throw getRuntime().newIndexError("negative length " + len);
+        return len;
+    }
+
     private void raiseIndexOutOfString(int index) {
         throw getRuntime().newIndexError("index " + index + " out of string");
     }
@@ -3373,10 +3378,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp)arg0, RubyNumeric.num2int(arg1), arg2);
         } else {
-            RubyString repl = arg2.convertToString();
             int beg = RubyNumeric.num2int(arg0);
             int len = RubyNumeric.num2int(arg1);
-            if (len < 0) throw context.getRuntime().newIndexError("negative length");
+            checkLength(len);
+            RubyString repl = arg2.convertToString();
             replaceInternal(checkIndex(beg, value.realSize), len, repl);
         }
         return arg2;
@@ -3414,10 +3419,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg0 instanceof RubyRegexp) {
             subpatSet19(context, (RubyRegexp)arg0, RubyNumeric.num2int(arg1), arg2);
         } else {
-            RubyString repl = arg2.convertToString();
             int beg = RubyNumeric.num2int(arg0);
             int len = RubyNumeric.num2int(arg1);
-            if (len < 0) throw context.getRuntime().newIndexError("negative length");
+            checkLength(len);
+            RubyString repl = arg2.convertToString();
             replaceInternal19(checkIndex(beg, strLength()), len, repl);
         }
         return arg2;
