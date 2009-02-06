@@ -34,7 +34,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Yielder")
+@JRubyClass(name = "Enumerator::Yielder")
 public class RubyYielder extends RubyObject {
     private RubyProc proc; 
 

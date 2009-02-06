@@ -28,7 +28,6 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.ext.posix.POSIXHandler.WARNING_ID;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -36,7 +35,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Generator")
+@JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
     private RubyProc proc;
 
