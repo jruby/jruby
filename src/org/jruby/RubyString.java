@@ -2742,7 +2742,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
         } else if (sub instanceof RubyFixnum) {
-            int c_int = RubyNumeric.fix2int(sub);
+            int c_int = RubyNumeric.fix2int((RubyFixnum)sub);
             if (c_int < 0x00 || c_int > 0xFF) {
                 // out of byte range
                 // there will be no match for sure
@@ -2909,7 +2909,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else if (sub instanceof RubyString) {
             pos = strRindex((RubyString) sub, pos);
         } else if (sub instanceof RubyFixnum) {
-            int c_int = RubyNumeric.fix2int(sub);
+            int c_int = RubyNumeric.fix2int((RubyFixnum)sub);
             if (c_int < 0x00 || c_int > 0xFF) {
                 // out of byte range
                 // there will be no match for sure
@@ -3177,8 +3177,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
-        if (arg1 instanceof RubyRegexp) return subpat(runtime, context, (RubyRegexp)arg1, RubyNumeric.fix2int(arg2));
-        return substr(runtime, RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
+        if (arg1 instanceof RubyRegexp) return subpat(runtime, context, (RubyRegexp)arg1, RubyNumeric.num2int(arg2));
+        return substr(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
@@ -3205,8 +3205,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref19(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
-        if (arg1 instanceof RubyRegexp) return subpat19(runtime, context, (RubyRegexp)arg1, RubyNumeric.fix2int(arg2));
-        return substr19(runtime, RubyNumeric.fix2int(arg1), RubyNumeric.fix2int(arg2));
+        if (arg1 instanceof RubyRegexp) return subpat19(runtime, context, (RubyRegexp)arg1, RubyNumeric.num2int(arg2));
+        return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
@@ -3341,7 +3341,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             replaceInternal(begLen[0], begLen[1], arg1.convertToString());
             return arg1;
         }
-        return op_aset(context, RubyNumeric.fix2int(arg0), arg1);
+        return op_aset(context, RubyNumeric.num2int(arg0), arg1);
     }
 
     private IRubyObject op_aset(ThreadContext context, int idx, IRubyObject arg1) {
@@ -3358,11 +3358,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
-            subpatSet(context, (RubyRegexp)arg0, RubyNumeric.fix2int(arg1), arg2);
+            subpatSet(context, (RubyRegexp)arg0, RubyNumeric.num2int(arg1), arg2);
         } else {
             RubyString repl = arg2.convertToString();
-            int beg = RubyNumeric.fix2int(arg0);
-            int len = RubyNumeric.fix2int(arg1);
+            int beg = RubyNumeric.num2int(arg0);
+            int len = RubyNumeric.num2int(arg1);
             if (len < 0) throw context.getRuntime().newIndexError("negative length");
             int strLen = value.realSize;
             if (beg < 0) beg += strLen;
@@ -3394,7 +3394,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             replaceInternal19(begLen[0], begLen[1], arg1.convertToString());
             return arg1;
         }
-        return op_aset19(context, RubyNumeric.fix2int(arg0), arg1);
+        return op_aset19(context, RubyNumeric.num2int(arg0), arg1);
     }
 
     private IRubyObject op_aset19(ThreadContext context, int idx, IRubyObject arg1) {
@@ -3405,11 +3405,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
-            subpatSet19(context, (RubyRegexp)arg0, RubyNumeric.fix2int(arg1), arg2);
+            subpatSet19(context, (RubyRegexp)arg0, RubyNumeric.num2int(arg1), arg2);
         } else {
             RubyString repl = arg2.convertToString();
-            int beg = RubyNumeric.fix2int(arg0);
-            int len = RubyNumeric.fix2int(arg1);
+            int beg = RubyNumeric.num2int(arg0);
+            int len = RubyNumeric.num2int(arg1);
             if (len < 0) throw context.getRuntime().newIndexError("negative length");
             int strLen = strLength();
             if (beg < 0) beg += strLen;
@@ -3975,7 +3975,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        final int lim = RubyNumeric.fix2int(arg1);
+        final int lim = RubyNumeric.num2int(arg1);
         if (lim <= 0) {
             return splitCommon(arg0, false, lim, 1, context);
         } else {
