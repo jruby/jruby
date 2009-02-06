@@ -3192,7 +3192,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } if (arg instanceof RubyRegexp) {
             return subpat(runtime, context, (RubyRegexp)arg, 0);
         } else if (arg instanceof RubyString) {
-            return value.indexOf(stringValue(arg).value) != -1 ? arg : runtime.getNil();
+            RubyString str = (RubyString)arg;
+            return value.indexOf(str.value) != -1 ? str.strDup(runtime) : runtime.getNil();
         } else if (arg instanceof RubyRange) {
             int[] begLen = ((RubyRange) arg).begLenInt(value.length(), 0);
             return begLen == null ? runtime.getNil() : substr(runtime, begLen[0], begLen[1]);
