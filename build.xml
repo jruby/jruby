@@ -831,7 +831,9 @@
       description="Runs known good version of rubyspecs."/>
   <target name="spec-short" depends="fetch-stable-specs, run-specs-short"
       description="Runs known good version of rubyspecs, excluding unstable library specs."/>
-  <target name="spec-ci" depends="fetch-stable-specs, run-specs-ci"
+  <target name="spec-short-1.9" depends="fetch-stable-specs, run-specs-short-1.9"
+      description="Runs known good version of rubyspecs, excluding unstable library specs."/>
+  <target name="spec-ci-1.9" depends="fetch-stable-specs, run-specs-ci-1.9"
       description="Runs known good version of rubyspecs interpreted, compiled, and precompile, excluding unstable library specs."/>
   <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
       description="Runs known good version of rubyspecs without exclusions."/>
@@ -913,7 +915,27 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
+  <target name="run-specs-short-1.9" depends="run-specs-precompiled-short-1.9, jar">
+    <condition property="spec.status.combined.OK">
+      <and>
+        <equals arg1="${spec.status.PRECOMPILED}"    arg2="0"/>
+      </and>
+    </condition>
+    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
+  </target>
+
   <target name="run-specs-ci" depends="run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short, jar">
+    <condition property="spec.status.combined.OK">
+      <and>
+        <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
+        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
+        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
+      </and>
+    </condition>
+    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
+  </target>
+
+  <target name="run-specs-ci-1.9" depends="run-specs-compiled-short-1.9, run-specs-interpreted-short-1.9, run-specs-precompiled-short-1.9, jar">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
@@ -944,6 +966,16 @@
   </target>
   <target name="run-specs-interpreted-short" depends="jar">
     <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/no-library.mspec"/>
+  </target>
+
+  <target name="run-specs-compiled-short-1.9" depends="jar">
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec" compat="RUBY1_9"/>
+  </target>
+  <target name="run-specs-precompiled-short-1.9" depends="jar">
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec" compat="RUBY1_9"/>
+  </target>
+  <target name="run-specs-interpreted-short-1.9" depends="jar">
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/no-library.mspec" compat="RUBY1_9"/>
   </target>
 
   <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
@@ -992,9 +1024,10 @@
     <attribute name="reflection" default="false"/>
     <attribute name="mode.name"/>
     <attribute name="spec.config"/>
+    <attribute name="compat" default="RUBY1_8"/>
 
     <sequential>
-      <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
+      <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} compat=@{compat}"/>
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" resultproperty="spec.status.@{mode.name}" dir="${base.dir}">
 	<classpath refid="build.classpath"/>
@@ -1005,14 +1038,6 @@
 	<sysproperty key="jruby.home" value="${basedir}"/>
 	<sysproperty key="jruby.launch.inproc" value="false"/>
 
-	<!-- properties tweaked for individual runs -->
-	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
-	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
-	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
-	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
-	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
-	<sysproperty key="jruby.reflection" value="@{reflection}"/>
-
 	<arg line="${mspec.dir}/bin/mspec ci"/>
 	<arg line="-T -J-ea"/>
 	<arg line="-T -J-Djruby.launch.inproc=false"/>
@@ -1022,6 +1047,7 @@
 	<arg line="-T -J-Djruby.objectspace.enabled=@{objectspace.enabled}"/>
 	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
 	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
+    <arg line="-T -J-Djruby.compat.version=@{compat}"/>
 	<arg line="-f m"/>
 	<arg line="-B @{spec.config}"/>
       </java>
@@ -1033,12 +1059,13 @@
     <attribute name="jit.threshold" default="20"/>
     <attribute name="mode.name"/>
     <attribute name="spec.config" default="${spec.dir}/default.mspec"/>
+    <attribute name="compat" default="RUBY1_8"/>
 
     <sequential>
       <echo message="Excludes: ${spec.tags.dir}"/>
       <run-specs mode.name="@{mode.name}"
         compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
-        spec.config="@{spec.config}"/>
+        spec.config="@{spec.config}" compat="@{compat}"/>
     </sequential>
   </macrodef>
 
