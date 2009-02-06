@@ -119,8 +119,9 @@ module FFI
     private
     def self.enclosing_module
       begin
-        Object.const_get(self.name.split("::")[0..-2].join("::"))
-      rescue Exception
+        mod = self.name.split("::")[0..-2].inject(Object) { |obj, c| obj.const_get(c) }
+        mod.respond_to?(:find_type) ? mod : nil
+      rescue Exception => ex
         nil
       end
     end
