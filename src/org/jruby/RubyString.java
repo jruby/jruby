@@ -627,15 +627,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     /* rb_str_subseq */
     public final RubyString makeShared(Ruby runtime, int index, int len) {
+        final RubyString shared;
+        RubyClass meta = getMetaClass();
         if (len == 0) {
-            RubyString empty = newEmptyString(runtime, getMetaClass());
-            empty.infectBy(this);
-            return empty;
+            shared = newEmptyString(runtime, meta);
+        } else if (len == 1) {
+            shared = newStringShared(runtime, meta, 
+                    RubyInteger.SINGLE_CHAR_BYTELISTS[value.bytes[value.begin + index] & 0xff]);
+        } else {
+            if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
+            shared = new RubyString(runtime, meta, value.makeShared(index, len));
+            shared.shareLevel = SHARE_LEVEL_BUFFER;
         }
-
-        if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
-        RubyString shared = new RubyString(runtime, getMetaClass(), value.makeShared(index, len));
-        shared.shareLevel = SHARE_LEVEL_BUFFER;
 
         shared.infectBy(this);
         return shared;
