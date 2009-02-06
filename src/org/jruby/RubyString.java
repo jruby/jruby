@@ -3418,13 +3418,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int beg = RubyNumeric.num2int(arg0);
             int len = RubyNumeric.num2int(arg1);
             if (len < 0) throw context.getRuntime().newIndexError("negative length");
-            int strLen = strLength();
-            if (beg < 0) beg += strLen;
-
-            if (beg < 0 || (beg > 0 && beg > strLen)) throw context.getRuntime().newIndexError("string index out of bounds");
-            if (beg + len > strLen) len = strLen - beg;
-
-            replaceInternal19(beg, len, repl);
+            replaceInternal19(checkIndex(beg, strLength()), len, repl);
         }
         return arg2;
     }
