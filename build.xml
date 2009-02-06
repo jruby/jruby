@@ -833,6 +833,8 @@
       description="Runs known good version of rubyspecs, excluding unstable library specs."/>
   <target name="spec-short-1.9" depends="fetch-stable-specs, run-specs-short-1.9"
       description="Runs known good version of rubyspecs, excluding unstable library specs."/>
+  <target name="spec-ci" depends="fetch-stable-specs, run-specs-ci"
+      description="Runs known good version of rubyspecs interpreted, compiled, and precompile, excluding unstable library specs."/>
   <target name="spec-ci-1.9" depends="fetch-stable-specs, run-specs-ci-1.9"
       description="Runs known good version of rubyspecs interpreted, compiled, and precompile, excluding unstable library specs."/>
   <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
