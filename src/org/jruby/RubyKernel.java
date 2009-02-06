@@ -892,8 +892,19 @@ public class RubyKernel {
         return continuation.enter(context, block);
     }
 
-    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
+
+        if (level < 0) {
+            throw context.getRuntime().newArgumentError("negative level(" + level + ')');
+        }
+
+        return context.createCallerBacktrace(context.getRuntime(), level);
+    }
+
+    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject caller1_9(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
         if (level < 0) {

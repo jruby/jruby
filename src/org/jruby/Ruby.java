@@ -1320,6 +1320,7 @@ public final class Ruby {
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
         if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+            getLoadService().require("builtin/prelude.rb");
             getLoadService().require("builtin/core_ext/symbol");
             getLoadService().require("enumerator");
         }

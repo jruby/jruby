@@ -627,6 +627,10 @@ public final class ThreadContext {
         RubyString traceLine;
         if (previousFrame.getName() != null) {
             traceLine = RubyString.newString(runtime, frame.getFile() + ':' + (frame.getLine() + 1) + ":in `" + previousFrame.getName() + '\'');
+        } else if (runtime.is1_9()) {
+            // TODO: This probably isn't the best hack, but it works until we can have different
+            // root frame setup for 1.9 easily.
+            traceLine = RubyString.newString(runtime, frame.getFile() + ':' + (frame.getLine() + 1) + ":in `<main>'");
         } else {
             traceLine = RubyString.newString(runtime, frame.getFile() + ':' + (frame.getLine() + 1));
         }
