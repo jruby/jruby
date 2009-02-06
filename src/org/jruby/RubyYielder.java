@@ -30,35 +30,35 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name="Generator")
-public class RubyGenerator extends RubyObject {
+@JRubyClass(name="Yielder")
+public class RubyYielder extends RubyObject {
 
-    public static RubyClass createGeneratorClass(Ruby runtime) {
-        RubyClass generatorc = runtime.defineClassUnder("Generator", runtime.getObject(), GENERATOR_ALLOCATOR, runtime.getEnumerator());
-        runtime.setGenerator(generatorc);
-        generatorc.index = ClassIndex.GENERATOR;
-        generatorc.kindOf = new RubyModule.KindOf() {
+    public static RubyClass createYielderClass(Ruby runtime) {
+        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
+        runtime.setYielder(yielderc);
+        yielderc.index = ClassIndex.YIELDER;
+        yielderc.kindOf = new RubyModule.KindOf() {
             @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof RubyGenerator;
+                return obj instanceof RubyYielder;
             }
         };
 
-        generatorc.defineAnnotatedMethods(RubyGenerator.class);
-        return generatorc;
+        yielderc.defineAnnotatedMethods(RubyYielder.class);
+        return yielderc;
     }
 
-    private static ObjectAllocator GENERATOR_ALLOCATOR = new ObjectAllocator() {
+    private static ObjectAllocator YIELDER_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyGenerator(runtime, klass);
+            return new RubyYielder(runtime, klass);
         }
     };
 
-    public RubyGenerator(Ruby runtime, RubyClass klass) {
+    public RubyYielder(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
 
-    public RubyGenerator(Ruby runtime) {
-        super(runtime, runtime.getGenerator());
+    public RubyYielder(Ruby runtime) {
+        super(runtime, runtime.getYielder());
     }
 }

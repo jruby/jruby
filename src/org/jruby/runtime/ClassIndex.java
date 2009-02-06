@@ -40,7 +40,8 @@ public final class ClassIndex {
     public static final int ENCODING = 22;
     public static final int CONVERTER = 23;
     public static final int GENERATOR = 24;
-    public static final int MAX_CLASSES = 25;
+    public static final int YIELDER = 25;
+    public static final int MAX_CLASSES = 26;
 
     /** Creates a new instance of ClassIndex */
     private ClassIndex() {
