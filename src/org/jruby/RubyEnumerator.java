@@ -61,14 +61,18 @@ public class RubyEnumerator extends RubyObject {
         final RubyClass enmr;
         if (runtime.is1_9()) {
             enmr = runtime.defineClass("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
-            runtime.setEnumerator(enmr);
-            RubyGenerator.createGeneratorClass(runtime);
-            RubyYielder.createYielderClass(runtime);
         } else {
             enmr = enm.defineClassUnder("Enumerator", runtime.getObject(), ENUMERATOR_ALLOCATOR);
         }
+
         enmr.includeModule(enm);
         enmr.defineAnnotatedMethods(RubyEnumerator.class);
+        runtime.setEnumerator(enmr);
+
+        if (runtime.is1_9()) {
+            RubyGenerator.createGeneratorClass(runtime);
+            RubyYielder.createYielderClass(runtime);
+        }
     }
 
     private static ObjectAllocator ENUMERATOR_ALLOCATOR = new ObjectAllocator() {
