@@ -41,11 +41,6 @@
                     <location>bench</location>
                 </source-folder>
                 <source-folder>
-                    <label>tool</label>
-                    <type>java</type>
-                    <location>tool</location>
-                </source-folder>
-                <source-folder>
                     <label>lib/ruby/1.8</label>
                     <type>java</type>
                     <location>lib/ruby/1.8</location>
@@ -137,10 +132,6 @@
                         <location>bench</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>tool</label>
-                        <location>tool</location>
-                    </source-folder>
-                    <source-folder style="packages">
                         <label>lib/ruby/1.8</label>
                         <location>lib/ruby/1.8</location>
                     </source-folder>
@@ -200,10 +191,6 @@
             <compilation-unit>
                 <package-root>bench</package-root>
                 <unit-tests/>
-                <source-level>1.5</source-level>
-            </compilation-unit>
-            <compilation-unit>
-                <package-root>tool</package-root>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
