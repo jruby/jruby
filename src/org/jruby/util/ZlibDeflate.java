@@ -81,16 +81,19 @@ public class ZlibDeflate {
     }
 
     public void append(ByteList obj) throws IOException {
-        collected.append(obj);
+        flater.setInput(obj.unsafeBytes(), obj.begin, obj.realSize);
+        run();
     }
 
     public void params(int level, int strategy) {
         flater.setLevel(level);
         flater.setStrategy(strategy);
+        run();
     }
 
     public IRubyObject set_dictionary(IRubyObject str) throws UnsupportedEncodingException {
         flater.setDictionary(str.convertToString().getBytes());
+        run();
         return str;
     }
 
@@ -111,21 +114,21 @@ public class ZlibDeflate {
     }
     
     public IRubyObject finish() throws IOException {
-        ByteList result = new ByteList(collected.realSize);
-        byte[] outp = new byte[64 * 1024];
-        ByteList buf = collected;
-        collected = new ByteList(BASE_SIZE);
-        flater.setInput(buf.bytes, buf.begin, buf.realSize);
         flater.finish();
+        run();
+        return RubyString.newString(runtime, collected);
+    }
+
+    private void run() {
+        byte[] outp = new byte[1024];
         int resultLength = -1;
         while (!flater.finished() && resultLength != 0) {
             resultLength = flater.deflate(outp);
-            result.append(outp, 0, resultLength);
+            collected.append(outp, 0, resultLength);
             if (resultLength == outp.length) {
                 outp = new byte[outp.length * 2];
             }
         }
-        return RubyString.newString(runtime, result);
     }
     
     public void close() {
