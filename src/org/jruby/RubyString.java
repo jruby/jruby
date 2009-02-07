@@ -3847,13 +3847,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "setbyte", compat = CompatVersion.RUBY1_9)
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
-        Ruby runtime = context.getRuntime();
         int i = RubyNumeric.num2int(index);
         int b = RubyNumeric.num2int(val);
-
-        if (i < -value.realSize || i >= value.realSize) throw runtime.newIndexError("index " + i + "out of string");
-        if (i < 0) i += value.realSize;
-        value.bytes[i] = (byte)b;
+        value.bytes[checkIndexForRef(i, value.realSize)] = (byte)b;
         return val;
     }
 
