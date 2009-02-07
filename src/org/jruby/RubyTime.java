@@ -145,6 +145,11 @@ public class RubyTime extends RubyObject {
             zone = "Etc/" + zone;
         }
 
+        // For JRUBY-2759, when MET choose CET timezone to work around Joda
+        if ("MET".equalsIgnoreCase(zone)) {
+            zone = "CET";
+        }
+
         DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
         runtime.getTimezoneCache().put(originalZone, dtz);
         return dtz;
