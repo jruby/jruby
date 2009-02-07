@@ -458,7 +458,11 @@ public class ChannelDescriptor {
      */
     public int read(ByteBuffer buffer) throws IOException, BadDescriptorException {
         checkOpen();
-        
+
+        // TODO: It would be nice to throw a better error for this
+        if (!(channel instanceof ReadableByteChannel)) {
+            throw new BadDescriptorException();
+        }
         ReadableByteChannel readChannel = (ReadableByteChannel) channel;
         int bytesRead = 0;
         bytesRead = readChannel.read(buffer);
@@ -477,6 +481,11 @@ public class ChannelDescriptor {
      */
     public int internalWrite(ByteBuffer buffer) throws IOException, BadDescriptorException {
         checkOpen();
+
+        // TODO: It would be nice to throw a better error for this
+        if (!(channel instanceof WritableByteChannel)) {
+            throw new BadDescriptorException();
+        }
         
         WritableByteChannel writeChannel = (WritableByteChannel)channel;
         
