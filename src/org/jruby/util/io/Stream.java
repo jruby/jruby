@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import org.jruby.util.ByteList;
+import org.jruby.Ruby;
 
 /**
  */
@@ -136,5 +137,5 @@ public interface Stream {
     
     public void setBlocking(boolean blocking) throws IOException;
     
-    public void freopen(String cwd, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
+    public void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
 }

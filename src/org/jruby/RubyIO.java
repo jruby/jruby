@@ -511,7 +511,7 @@ public class RubyIO extends RubyObject {
                     return this;
                 } else {
                     // TODO: This is an freopen in MRI, this is close, but not quite the same
-                    openFile.getMainStream().freopen(runtime.getCurrentDirectory(), path, getIOModes(runtime, openFile.getModeAsString(runtime)));
+                    openFile.getMainStream().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
 
                     // re-register
                     registerDescriptor(openFile.getMainStream().getDescriptor());

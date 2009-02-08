@@ -630,7 +630,12 @@ public class ChannelStream implements Stream, Finalizable {
     private void ensureReadNonBuffered() throws IOException, BadDescriptorException {
         if (reading) {
             if (buffer.hasRemaining()) {
-                throw getRuntime().newIOError("sysread for buffered IO");
+                Ruby localRuntime = getRuntime();
+                if (localRuntime != null) {
+                    throw localRuntime.newIOError("sysread for buffered IO");
+                } else {
+                    throw new IOException("sysread for buffered IO");
+                }
             }
         } else {
             // libc flushes writes on any read from the actual file, so we flush here
@@ -1071,7 +1076,7 @@ public class ChannelStream implements Stream, Finalizable {
         return blocking;
     }
 
-    public synchronized void freopen(String cwd, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         // flush first
         flushWrite();
 
@@ -1090,18 +1095,19 @@ public class ChannelStream implements Stream, Finalizable {
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             descriptor = new ChannelDescriptor(new NullChannel(), descriptor.getFileno(), modes, new FileDescriptor());
         } else {
+            String cwd = runtime.getCurrentDirectory();
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
             if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
 
             if (modes.isCreate()) {
                 if (theFile.exists() && modes.isExclusive()) {
-                    throw getRuntime().newErrnoEEXISTError("File exists - " + path);
+                    throw runtime.newErrnoEEXISTError("File exists - " + path);
                 }
                 theFile.createNewFile();
             } else {
                 if (!theFile.exists()) {
-                    throw getRuntime().newErrnoENOENTError("file not found - " + path);
+                    throw runtime.newErrnoENOENTError("file not found - " + path);
                 }
             }
 
