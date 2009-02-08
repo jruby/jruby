@@ -37,7 +37,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 import org.jruby.exceptions.MainExitException;
@@ -181,6 +184,11 @@ public class Main {
 
         InputStream in   = config.getScriptSource();
         String filename  = config.displayedFileName();
+
+        String[] args = parseShebangOptions(in);
+        if (args.length > 0) {
+            config.processArguments(args);
+        }
         Ruby runtime     = Ruby.newInstance(config);
         
         // set thread context JRuby classloader here, for the main thread
@@ -257,5 +265,32 @@ public class Main {
     
     public void printProperties() {
         config.getOutput().print(config.getPropertyHelp());
+    }
+    
+    private String[] parseShebangOptions(InputStream in) {
+        BufferedReader reader = null;
+        String[] result = new String[0];
+        if (in == null) return result;
+        try {
+            in.mark(1024);
+            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"));
+            String firstLine = reader.readLine();
+            if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
+                int index = firstLine.indexOf("ruby", 2);
+                if (firstLine.length() < index + 5) {
+                    in.reset();
+                    return result;
+                }
+                String option = firstLine.substring(index + 5);
+                result = option.split("\\s");
+            }
+        } catch (Exception ex) {
+            // ignore error
+        } finally {
+            try {
+                in.reset();
+            } catch (IOException ex) {}
+        }
+        return result;
     }
 }
