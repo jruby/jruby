@@ -33,6 +33,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -46,6 +52,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.IOInputStream;
 
 /**
  *
@@ -88,14 +96,12 @@ public class JavaObject extends RubyObject {
     public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
         // FIXME: Ideally JavaObject instances should be marshallable, which means that
         // the JavaObject metaclass should have an appropriate allocator. JRUBY-414
-        RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject(), JAVA_OBJECT_ALLOCATOR);
 
         registerRubyMethods(runtime, result);
 
         result.getMetaClass().undefineMethod("new");
         result.getMetaClass().undefineMethod("allocate");
-
-        result.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
 
         return result;
     }
@@ -212,4 +218,47 @@ public class JavaObject extends RubyObject {
             return block.yield(context, null);
         }
     }
+    
+    @JRubyMethod(frame = true)
+    public IRubyObject marshal_dump() {
+        if (Serializable.class.isAssignableFrom(getJavaClass())) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+
+                oos.writeObject(getValue());
+
+                return getRuntime().newString(new ByteList(baos.toByteArray()));
+            } catch (IOException ioe) {
+                throw getRuntime().newIOErrorFromException(ioe);
+            }
+        } else {
+            throw getRuntime().newTypeError("no marshal_dump is defined for class " + getJavaClass());
+        }
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject marshal_load(ThreadContext context, IRubyObject str) {
+        try {
+            ByteList byteList = str.convertToString().getByteList();
+            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.bytes, byteList.begin, byteList.realSize);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+
+            dataWrapStruct(ois.readObject());
+
+            return this;
+        } catch (IOException ioe) {
+            throw context.getRuntime().newIOErrorFromException(ioe);
+        } catch (ClassNotFoundException cnfe) {
+            throw context.getRuntime().newTypeError("Class not found unmarshaling Java type: " + cnfe.getLocalizedMessage());
+        }
+    }
+
+
+    private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new JavaObject(runtime, klazz, null);
+        }
+    };
+
 }
