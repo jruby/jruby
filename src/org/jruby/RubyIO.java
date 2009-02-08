@@ -698,6 +698,7 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
+            e.printStackTrace();
             throw runtime.newIOError(e.getMessage());
         }
     }
@@ -1029,29 +1030,39 @@ public class RubyIO extends RubyObject {
             return false;
         }
        
-        Selector selector = Selector.open();
+        Selector selector = null;
+        try {
+            selector = Selector.open();
 
-        ((SelectableChannel) channel).configureBlocking(false);
-        int real_ops = ((SelectableChannel) channel).validOps() & SelectionKey.OP_WRITE;
-        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
-       
-        if (key == null) {
-            ((SelectableChannel) channel).register(selector, real_ops, descriptor);
-        } else {
-            key.interestOps(key.interestOps()|real_ops);
-        }
+            ((SelectableChannel) channel).configureBlocking(false);
+            int real_ops = ((SelectableChannel) channel).validOps() & SelectionKey.OP_WRITE;
+            SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
 
-        while(selector.select() == 0);
+            if (key == null) {
+                ((SelectableChannel) channel).register(selector, real_ops, descriptor);
+            } else {
+                key.interestOps(key.interestOps()|real_ops);
+            }
 
-        for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-            SelectionKey skey = (SelectionKey) i.next();
-            if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
-                if(skey.attachment() == descriptor) {
-                    return true;
+            while(selector.select() == 0);
+
+            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+                SelectionKey skey = (SelectionKey) i.next();
+                if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
+                    if(skey.attachment() == descriptor) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } finally {
+            if (selector != null) {
+                try {
+                    selector.close();
+                } catch (Exception e) {
                 }
             }
         }
-        return false;
     }
 
     protected boolean waitReadable(ChannelDescriptor descriptor) throws IOException {
@@ -1060,29 +1071,39 @@ public class RubyIO extends RubyObject {
             return false;
         }
        
-        Selector selector = Selector.open();
+        Selector selector = null;
+        try {
+            selector = Selector.open();
 
-        ((SelectableChannel) channel).configureBlocking(false);
-        int real_ops = ((SelectableChannel) channel).validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
-       
-        if (key == null) {
-            ((SelectableChannel) channel).register(selector, real_ops, descriptor);
-        } else {
-            key.interestOps(key.interestOps()|real_ops);
-        }
+            ((SelectableChannel) channel).configureBlocking(false);
+            int real_ops = ((SelectableChannel) channel).validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+            SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
 
-        while(selector.select() == 0);
+            if (key == null) {
+                ((SelectableChannel) channel).register(selector, real_ops, descriptor);
+            } else {
+                key.interestOps(key.interestOps()|real_ops);
+            }
 
-        for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-            SelectionKey skey = (SelectionKey) i.next();
-            if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
-                if(skey.attachment() == descriptor) {
-                    return true;
+            while(selector.select() == 0);
+
+            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+                SelectionKey skey = (SelectionKey) i.next();
+                if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
+                    if(skey.attachment() == descriptor) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } finally {
+            if (selector != null) {
+                try {
+                    selector.close();
+                } catch (Exception e) {
                 }
             }
         }
-        return false;
     }
     
     protected int fwrite(ByteList buffer) {
@@ -2647,133 +2668,139 @@ public class RubyIO extends RubyObject {
     }
 
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
+        Selector selector = null;
        try {
-           Set pending = new HashSet();
-           Set unselectable_reads = new HashSet();
-           Set unselectable_writes = new HashSet();
-           Selector selector = Selector.open();
-           if (!args[0].isNil()) {
-               // read
-               checkArrayType(runtime, args[0]);
-               for (Iterator i = ((RubyArray) args[0]).getList().iterator(); i.hasNext(); ) {
-                   IRubyObject obj = (IRubyObject) i.next();
-                   RubyIO ioObj = convertToIO(context, obj);
-                   if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
-                       if (ioObj.writeDataBuffered()) {
-                           pending.add(obj);
-                       }
-                   } else {
-                       if (( ioObj.openFile.getMode() & OpenFile.READABLE ) != 0) {
-                           unselectable_reads.add(obj);
-                       }
-                   }
-               }
-           }
+            Set pending = new HashSet();
+            Set unselectable_reads = new HashSet();
+            Set unselectable_writes = new HashSet();
+            selector = Selector.open();
+            if (!args[0].isNil()) {
+                // read
+                checkArrayType(runtime, args[0]);
+                for (Iterator i = ((RubyArray)args[0]).getList().iterator(); i.hasNext();) {
+                    IRubyObject obj = (IRubyObject)i.next();
+                    RubyIO ioObj = convertToIO(context, obj);
+                    if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+                        if (ioObj.writeDataBuffered()) {
+                            pending.add(obj);
+                        }
+                    } else {
+                        if ((ioObj.openFile.getMode() & OpenFile.READABLE) != 0) {
+                            unselectable_reads.add(obj);
+                        }
+                    }
+                }
+            }
 
-           if (args.length > 1 && !args[1].isNil()) {
-               // write
-               checkArrayType(runtime, args[1]);
-               for (Iterator i = ((RubyArray) args[1]).getList().iterator(); i.hasNext(); ) {
-                   IRubyObject obj = (IRubyObject) i.next();
-                   RubyIO ioObj = convertToIO(context, obj);
-                   if (!registerSelect(context, selector, obj, ioObj, SelectionKey.OP_WRITE)) {
-                       if (( ioObj.openFile.getMode() & OpenFile.WRITABLE ) != 0) {
-                           unselectable_writes.add(obj);
-                       }
-                   }
-               }
-           }
+            if (args.length > 1 && !args[1].isNil()) {
+                // write
+                checkArrayType(runtime, args[1]);
+                for (Iterator i = ((RubyArray)args[1]).getList().iterator(); i.hasNext();) {
+                    IRubyObject obj = (IRubyObject)i.next();
+                    RubyIO ioObj = convertToIO(context, obj);
+                    if (!registerSelect(context, selector, obj, ioObj, SelectionKey.OP_WRITE)) {
+                        if ((ioObj.openFile.getMode() & OpenFile.WRITABLE) != 0) {
+                            unselectable_writes.add(obj);
+                        }
+                    }
+                }
+            }
 
-           if (args.length > 2 && !args[2].isNil()) {
-               checkArrayType(runtime, args[2]);
-               // Java's select doesn't do anything about this, so we leave it be.
-           }
+            if (args.length > 2 && !args[2].isNil()) {
+                checkArrayType(runtime, args[2]);
+            // Java's select doesn't do anything about this, so we leave it be.
+            }
 
-           final boolean has_timeout = ( args.length > 3 && !args[3].isNil() );
-           long timeout = 0;
-           if(has_timeout) {
-               IRubyObject timeArg = args[3];
-               if (timeArg instanceof RubyFloat) {
-                   timeout = Math.round(((RubyFloat) timeArg).getDoubleValue() * 1000);
-               } else if (timeArg instanceof RubyFixnum) {
-                   timeout = Math.round(((RubyFixnum) timeArg).getDoubleValue() * 1000);
-               } else { // TODO: MRI also can hadle Bignum here
-                   throw runtime.newTypeError("can't convert "
-                           + timeArg.getMetaClass().getName() + " into time interval");
-               }
+            final boolean has_timeout = (args.length > 3 && !args[3].isNil());
+            long timeout = 0;
+            if (has_timeout) {
+                IRubyObject timeArg = args[3];
+                if (timeArg instanceof RubyFloat) {
+                    timeout = Math.round(((RubyFloat)timeArg).getDoubleValue() * 1000);
+                } else if (timeArg instanceof RubyFixnum) {
+                    timeout = Math.round(((RubyFixnum)timeArg).getDoubleValue() * 1000);
+                } else { // TODO: MRI also can hadle Bignum here
+                    throw runtime.newTypeError("can't convert " + timeArg.getMetaClass().getName() + " into time interval");
+                }
 
-               if (timeout < 0) {
-                   throw runtime.newArgumentError("negative timeout given");
-               }
-           }
-           
-           if (pending.isEmpty() && unselectable_reads.isEmpty() && unselectable_writes.isEmpty()) {
-               if (has_timeout) {
-                   if (timeout==0) {
-                       selector.selectNow();
-                   } else {
-                       selector.select(timeout);                       
-                   }
-               } else {
-                   selector.select();
-               }
-           } else {
-               selector.selectNow();               
-           }
-           
-           List r = new ArrayList();
-           List w = new ArrayList();
-           List e = new ArrayList();
-           for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-               SelectionKey key = (SelectionKey) i.next();
-               try {
-                   int interestAndReady = key.interestOps() & key.readyOps();
-                   if ((interestAndReady
-                           & (SelectionKey.OP_READ|SelectionKey.OP_ACCEPT|SelectionKey.OP_CONNECT)) != 0) {
-                       r.add(key.attachment());
-                       pending.remove(key.attachment());
-                   }
-                   if ((interestAndReady & (SelectionKey.OP_WRITE)) != 0) {
-                       w.add(key.attachment());
-                   }
-               } catch (CancelledKeyException cke) {
-                   // TODO: is this the right thing to do?
-                   pending.remove(key.attachment());
-                   e.add(key.attachment());
-               }
-           }
-           r.addAll(pending);
-           r.addAll(unselectable_reads);
-           w.addAll(unselectable_writes);
-           
-           // make all sockets blocking as configured again
-           Set<SelectionKey> keys = selector.keys(); // get keys before close
-           selector.close(); // close unregisters all channels, so we can safely reset blocking modes
-           for (SelectionKey key : keys) {
-               SelectableChannel channel = key.channel();
-               synchronized(channel.blockingLock()) {
-                   RubyIO originalIO = (RubyIO) TypeConverter.convertToType(
-                           (IRubyObject) key.attachment(), runtime.getIO(), "to_io");
-                   boolean blocking = originalIO.getBlocking();
-                   key.cancel();
-                   channel.configureBlocking(blocking);
-               }
-           }
-           
-           if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
-               return runtime.getNil();
-           }
-           
-           List ret = new ArrayList();
-           
-           ret.add(RubyArray.newArray(runtime, r));
-           ret.add(RubyArray.newArray(runtime, w));
-           ret.add(RubyArray.newArray(runtime, e));
-           
-           return RubyArray.newArray(runtime, ret);
-       } catch(IOException e) {
-           throw runtime.newIOError(e.getMessage());
-       }
+                if (timeout < 0) {
+                    throw runtime.newArgumentError("negative timeout given");
+                }
+            }
+
+            if (pending.isEmpty() && unselectable_reads.isEmpty() && unselectable_writes.isEmpty()) {
+                if (has_timeout) {
+                    if (timeout == 0) {
+                        selector.selectNow();
+                    } else {
+                        selector.select(timeout);
+                    }
+                } else {
+                    selector.select();
+                }
+            } else {
+                selector.selectNow();
+            }
+
+            List r = new ArrayList();
+            List w = new ArrayList();
+            List e = new ArrayList();
+            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext();) {
+                SelectionKey key = (SelectionKey)i.next();
+                try {
+                    int interestAndReady = key.interestOps() & key.readyOps();
+                    if ((interestAndReady & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT)) != 0) {
+                        r.add(key.attachment());
+                        pending.remove(key.attachment());
+                    }
+                    if ((interestAndReady & (SelectionKey.OP_WRITE)) != 0) {
+                        w.add(key.attachment());
+                    }
+                } catch (CancelledKeyException cke) {
+                    // TODO: is this the right thing to do?
+                    pending.remove(key.attachment());
+                    e.add(key.attachment());
+                }
+            }
+            r.addAll(pending);
+            r.addAll(unselectable_reads);
+            w.addAll(unselectable_writes);
+
+            // make all sockets blocking as configured again
+            Set<SelectionKey> keys = selector.keys(); // get keys before close
+            selector.close(); // close unregisters all channels, so we can safely reset blocking modes
+            for (SelectionKey key : keys) {
+                SelectableChannel channel = key.channel();
+                synchronized (channel.blockingLock()) {
+                    RubyIO originalIO = (RubyIO)TypeConverter.convertToType(
+                            (IRubyObject)key.attachment(), runtime.getIO(), "to_io");
+                    boolean blocking = originalIO.getBlocking();
+                    key.cancel();
+                    channel.configureBlocking(blocking);
+                }
+            }
+
+            if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
+                return runtime.getNil();
+            }
+
+            List ret = new ArrayList();
+
+            ret.add(RubyArray.newArray(runtime, r));
+            ret.add(RubyArray.newArray(runtime, w));
+            ret.add(RubyArray.newArray(runtime, e));
+
+            return RubyArray.newArray(runtime, ret);
+        } catch (IOException e) {
+            throw runtime.newIOError(e.getMessage());
+        } finally {
+            if (selector != null) {
+                try {
+                    selector.close();
+                } catch (Exception e) {
+                }
+            }
+        }
    }
    
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {

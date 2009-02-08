@@ -202,7 +202,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         } finally {
             try {
                 if (selector != null) selector.close();
-            } catch (IOException ioe) {
+            } catch (Exception e) {
             }
         }
     }

@@ -119,7 +119,7 @@ public class NetProtocolBufferedIO {
                 if (selector != null) {
                     try {
                         selector.close();
-                    } catch (IOException ioe) {
+                    } catch (Exception e) {
                     }
                 }
             }

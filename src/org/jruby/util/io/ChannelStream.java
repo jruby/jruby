@@ -852,25 +852,32 @@ public class ChannelStream implements Stream, Finalizable {
 
     public int ready() throws IOException {
         if (descriptor.getChannel() instanceof SelectableChannel) {
-	    int ready_stat = 0;
-	    java.nio.channels.Selector sel = java.nio.channels.Selector.open();
-	    SelectableChannel selchan = (SelectableChannel)descriptor.getChannel();
-	    boolean is_block = selchan.isBlocking();
+            int ready_stat = 0;
+            java.nio.channels.Selector sel = java.nio.channels.Selector.open();
+            SelectableChannel selchan = (SelectableChannel)descriptor.getChannel();
+            boolean is_block = selchan.isBlocking();
             try {
                 synchronized (selchan.blockingLock()) {
-		    selchan.configureBlocking(false);
-		    selchan.register(sel, java.nio.channels.SelectionKey.OP_READ);
-		    ready_stat = sel.selectNow();
-		    sel.close();
-		    selchan.configureBlocking( is_block );
+                    selchan.configureBlocking(false);
+                    selchan.register(sel, java.nio.channels.SelectionKey.OP_READ);
+                    ready_stat = sel.selectNow();
+                    sel.close();
+                    selchan.configureBlocking(is_block);
                 }
-	    }catch(Throwable ex){
-		ex.printStackTrace();
-	    }
-	    return ready_stat;
-	} else {
-	    return newInputStream().available();
-	}
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+            } finally {
+                if (sel != null) {
+                    try {
+                        sel.close();
+                    } catch (Exception e) {
+                    }
+                }
+            }
+            return ready_stat;
+        } else {
+            return newInputStream().available();
+        }
     }
 
     public synchronized void fputc(int c) throws IOException, BadDescriptorException {
