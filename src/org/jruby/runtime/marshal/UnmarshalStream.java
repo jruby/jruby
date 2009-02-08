@@ -127,6 +127,7 @@ public class UnmarshalStream extends BufferedInputStream {
                 rubyObj = unmarshalObject();
                 if (ivarsWaiting) {
                     defaultVariablesUnmarshal(rubyObj);
+                    ivarsWaiting = false;
                 }
                 break;
             case '0' :

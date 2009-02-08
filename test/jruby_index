@@ -49,6 +49,7 @@ test_jruby_internals
 compiler/test_jrubyc
 test_launching_by_shell_script
 #test_local_jump_error
+test_marshal_with_instance_variables
 test_marshal_gemspec
 test_method_missing
 test_methods
