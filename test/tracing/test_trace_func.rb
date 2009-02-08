@@ -206,5 +206,34 @@ class TestTraceFunc < Test::Unit::TestCase
     assert_equal(expected, output);
   end
 
+  # JRUBY-2815
+  def test_trace_over_system_call
+    output = []
+    set_trace_func(proc do |event, file, line, id, binding, classname|
+      unless file =~ /path_helper\.rb/
+        output << sprintf("%s %s %d %s %s", File.basename(file), event, line, id ? id : 'nil', classname)
+      end
+    end)
+  
+    system('echo "give me all resources!"')
+    set_trace_func nil
+
+    line = __LINE__ - 3
+    expected = ["test_trace_func.rb line #{line} test_trace_over_system_call TestTraceFunc",
+       "test_trace_func.rb c-call #{line} system Kernel",
+       "<script> line 1 test_trace_over_system_call TestTraceFunc",
+       "<script> c-call 1 require Kernel",
+       "<script> c-return 1 require Kernel",
+       "<script> line 1 test_trace_over_system_call TestTraceFunc",
+       "<script> c-call 1 [] Hash",
+       "<script> c-return 1 [] Hash",
+       " c-call 1 write IO",
+       " c-return 1 write IO",
+       "<script> c-return 1 system Kernel",
+       "test_trace_func.rb line #{line + 1} test_trace_over_system_call TestTraceFunc",
+       "test_trace_func.rb c-call #{line + 1} set_trace_func Kernel"]
+    assert_equal expected, output
+  end
+
 end
 
