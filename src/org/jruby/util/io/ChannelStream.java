@@ -401,7 +401,11 @@ public class ChannelStream implements Stream, Finalizable {
             if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
                     + descriptor.getFileno() + " closed by stream");
         } finally {
-            if (!finalizing) getRuntime().removeInternalFinalizer(this);
+            Ruby localRuntime = getRuntime();
+            if (!finalizing && localRuntime != null) localRuntime.removeInternalFinalizer(this);
+            
+            // clear runtime so it doesn't get stuck in memory (JRUBY-2933)
+            runtime = null;
         }
     }
 
@@ -753,7 +757,6 @@ public class ChannelStream implements Stream, Finalizable {
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
-        getRuntime().secure(4);
         checkWritable();
         ensureWrite();
         
@@ -785,7 +788,6 @@ public class ChannelStream implements Stream, Finalizable {
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(int c) throws IOException, BadDescriptorException {
-        getRuntime().secure(4);
         checkWritable();
         ensureWrite();
 
@@ -919,7 +921,6 @@ public class ChannelStream implements Stream, Finalizable {
         return bufferedWrite(string);
     }
     public synchronized int writenonblock(ByteList buf) throws IOException, BadDescriptorException {
-        getRuntime().secure(4);
         checkWritable();
         ensureWrite();
         
@@ -1070,7 +1071,7 @@ public class ChannelStream implements Stream, Finalizable {
         return blocking;
     }
 
-    public synchronized void freopen(String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void freopen(String cwd, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         // flush first
         flushWrite();
 
@@ -1089,7 +1090,6 @@ public class ChannelStream implements Stream, Finalizable {
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             descriptor = new ChannelDescriptor(new NullChannel(), descriptor.getFileno(), modes, new FileDescriptor());
         } else {
-            String cwd = getRuntime().getCurrentDirectory();
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
             if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();

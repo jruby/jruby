@@ -136,5 +136,5 @@ public interface Stream {
     
     public void setBlocking(boolean blocking) throws IOException;
     
-    public void freopen(String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
+    public void freopen(String cwd, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
 }
