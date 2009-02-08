@@ -410,9 +410,16 @@ public class ShellLauncher {
         @Override
         public void destroy() {
             try {
-                input.close();
-                inerr.close();
-                output.close();
+                child.destroy();
+                if (input != null) input.close();
+                if (inerr != null) inerr.close();
+                if (output != null) output.close();
+                if (inputChannel != null) inputChannel.close();
+                if (inerrChannel != null) inerrChannel.close();
+                if (outputChannel != null) outputChannel.close();
+                if (inputPumper != null) inputPumper.quit();
+                if (inerrPumper != null) inerrPumper.quit();
+                if (outputPumper != null) outputPumper.quit();
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

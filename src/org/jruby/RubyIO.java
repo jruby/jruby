@@ -1717,6 +1717,7 @@ public class RubyIO extends RubyObject {
         
         if (openFile.getProcess() != null) {
             try {
+                openFile.getProcess().destroy();
                 IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().waitFor());
                 runtime.getGlobalVariables().set("$?", processResult);
             } catch (InterruptedException ie) {
