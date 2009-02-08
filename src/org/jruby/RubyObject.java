@@ -42,8 +42,10 @@ package org.jruby;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashSet;
 import java.util.List;
 
+import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -953,19 +955,21 @@ public class RubyObject extends RubyBasicObject {
         if (args.length == 1) {
             all = args[0].isTrue();
         }
+        
+        Ruby runtime = getRuntime();
+        RubyArray singletonMethods = runtime.newArray();
+        Set<String> seen = new HashSet<String>();
 
-        RubyArray singletonMethods = null;
         if (getMetaClass().isSingleton()) {
-            singletonMethods =
-                getMetaClass().instance_methods(new IRubyObject[] {context.getRuntime().getFalse()});
+            getMetaClass().populateInstanceMethodNames(seen, singletonMethods, Visibility.PRIVATE, true, false, false);
             if (all) {
-                singletonMethods.concat(getMetaClass().getSuperClass().instance_methods(new IRubyObject[] {context.getRuntime().getTrue()}));
+                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, singletonMethods, Visibility.PRIVATE, true, false, true);
             }
         } else {
             if (all) {
-                singletonMethods = getMetaClass().instance_methods(new IRubyObject[] {context.getRuntime().getTrue()});
+                getMetaClass().populateInstanceMethodNames(seen, singletonMethods, Visibility.PRIVATE, true, false, true);
             } else {
-                singletonMethods = context.getRuntime().newEmptyArray();
+                // do nothing, leave empty
             }
         }
 

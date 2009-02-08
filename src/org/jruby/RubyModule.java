@@ -1750,6 +1750,14 @@ public class RubyModule extends RubyObject {
         RubyArray ary = runtime.newArray();
         Set<String> seen = new HashSet<String>();
 
+        populateInstanceMethodNames(seen, ary, visibility, not, useSymbols, includeSuper);
+
+        return ary;
+    }
+
+    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, final Visibility visibility, boolean not, boolean useSymbols, boolean includeSuper) {
+        Ruby runtime = getRuntime();
+
         for (RubyModule type = this; type != null; type = type.getSuperClass()) {
             RubyModule realType = type.getNonIncludedClass();
             for (Map.Entry entry : type.getMethods().entrySet()) {
@@ -1772,8 +1780,6 @@ public class RubyModule extends RubyObject {
                 break;
             }
         }
-
-        return ary;
     }
 
     @JRubyMethod(name = "instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)

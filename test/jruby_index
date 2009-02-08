@@ -41,6 +41,7 @@ test_io
 test_load
 test_math
 test_method_cache
+test_method_override_and_caching
 test_nkf
 test_java_accessible_object
 test_java_extension
