@@ -66,6 +66,7 @@ import org.jruby.runtime.Visibility;
  */
 @JRubyModule(name = "Readline", include = "Enumerable")
 public class Readline {
+    public static final char ESC_KEY_CODE = (char)27;
     private final static boolean DEBUG = false;
 
     public static class Service implements Library {
@@ -161,7 +162,7 @@ public class Readline {
         holder.readline.setHistory(holder.history);
 
         // JRUBY-852, ignore escape key (it causes IRB to quit if we pass it out through readline)
-        holder.readline.addTriggeredAction((char)27, new ActionListener() {
+        holder.readline.addTriggeredAction(ESC_KEY_CODE, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
                     holder.readline.beep();
@@ -209,18 +210,26 @@ public class Readline {
         }
         
         IRubyObject line = runtime.getNil();
-        holder.readline.getTerminal().disableEcho();
         String v = null;
         while (true) {
             try {
+                holder.readline.getTerminal().disableEcho();
                 v = holder.readline.readLine(prompt.toString());
                 break;
             } catch (IOException ioe) {
-                if (RubyIO.restartSystemCall(ioe)) continue;
+                if (RubyIO.restartSystemCall(ioe)) {
+                    continue;
+                }
                 throw runtime.newIOErrorFromException(ioe);
+            } finally {
+                // This is for JRUBY-2988, since after a suspend the terminal seems
+                // to need to be reinitialized. Since we can't easily detect suspension,
+                // initialize after every readline. Probably not fast, but this is for
+                // interactive terminals anyway...so who cares?
+                try {holder.readline.getTerminal().initializeTerminal();} catch (Exception e) {}
+                holder.readline.getTerminal().enableEcho();
             }
         }
-        holder.readline.getTerminal().enableEcho();
         
         if (null != v) {
             if (add_to_hist.isTrue()) {
