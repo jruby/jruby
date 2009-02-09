@@ -735,15 +735,17 @@
     <attribute name="inproc" default="true"/>
     <attribute name="jruby.args" default=""/>
     <attribute name="rake.targets"/>
+    <attribute name="dir" default="${base.dir}"/>
+    <attribute name="jvm.args" default="-ea"/>
 
     <sequential>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
 
-      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${base.dir}">
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="@{dir}">
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
 
-        <jvmarg value="-ea"/>
+        <jvmarg line="@{jvm.args}"/>
 
         <sysproperty key="jruby.home" value="${basedir}"/>
         <sysproperty key="jruby.launch.inproc" value="false"/>
@@ -1382,7 +1384,7 @@
   </target>
 
   <target name="do-update-rails" if="rails-repo-exists">
-      <echo message="Updading rubyspec repo -- ${rails.dir}"/>
+      <echo message="Updating rubyspec repo -- ${rails.dir}"/>
       <exec dir="${rails.dir}" executable="git">
         <arg value="pull"/>
       </exec>
@@ -1392,16 +1394,12 @@
       <delete dir="${rails.dir}"/>
   </target>
 
-  <target name="test-rails" depends="jar,install-build-gems,fetch-rails">
-      <java dir="${rails.dir}" classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-        <classpath>
-          <pathelement location="${jruby.classes.dir}"/>
-          <pathelement location="${build.dir}/jar-complete"/>
-          <path refid="build.classpath"/>
-        </classpath>
-        <sysproperty key="jruby.home" value="${base.dir}"/>
-        <arg value="${base.dir}/bin/rake"/>
-        <arg value="test"/>
-      </java>
+  <target name="test-rails-stable" depends="jar,install-build-gems,fetch-rails">
+      <!-- Need to disable assertions because of a rogue one in OpenSSL -->
+      <run-rake dir="${rails.dir}/activesupport" rake.targets="test" jvm.args="-da"/>
+      
+      <run-rake dir="${rails.dir}/actionmailer" rake.targets="test"/>
+      <run-rake dir="${rails.dir}/activemodel" rake.targets="test"/>
+      <run-rake dir="${rails.dir}/railties" rake.targets="test"/>
   </target>
 </project>
