@@ -54,6 +54,7 @@ public class RaiseException extends JumpException {
     private static final long serialVersionUID = -7612079169559973951L;
     
     private RubyException exception;
+    private String providedMessage;
 
     public RaiseException(RubyException actException) {
         this(actException, false);
@@ -64,6 +65,7 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
+        providedMessage = msg;
         if (DEBUG) {
             Thread.dumpStack();
         }
@@ -102,7 +104,16 @@ public class RaiseException extends JumpException {
 
     public RaiseException(Throwable cause, NativeException nativeException) {
         super(buildMessage(cause), cause);
+        providedMessage = buildMessage(cause);
         setException(nativeException, false);
+    }
+
+    @Override
+    public String getMessage() {
+        if (providedMessage == null) {
+            providedMessage = exception.message(exception.getRuntime().getCurrentContext()).asJavaString();
+        }
+        return providedMessage;
     }
 
     /**
