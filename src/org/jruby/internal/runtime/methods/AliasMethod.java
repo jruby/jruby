@@ -44,54 +44,59 @@ public class AliasMethod extends DynamicMethod {
     private DynamicMethod oldMethod;
     private String oldName;
 
-    /*
-     * This code used to try and optimize the case of when oldMethod is an aliasMethod.
-     * This seems a little overkill.
-     */
-
     public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
         super(implementationClass, oldMethod.getVisibility(), null);
 
         this.oldName = oldName;
         this.oldMethod = oldMethod;
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         return oldMethod.call(context, self, klazz, oldName);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
         return oldMethod.call(context, self, klazz, oldName, arg);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
         return oldMethod.call(context, self, klazz, oldName, arg1, arg2);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
         return oldMethod.call(context, self, klazz, oldName, args);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         return oldMethod.call(context, self, klazz, oldName, block);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
         return oldMethod.call(context, self, klazz, oldName, arg1, block);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
         return oldMethod.call(context, self, klazz, oldName, arg1, arg2, block);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3, block);
     }
-    
+
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         return oldMethod.call(context, self, klazz, oldName, args, block);
     }
