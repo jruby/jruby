@@ -215,7 +215,7 @@ class TestTraceFunc < Test::Unit::TestCase
       end
     end)
   
-    system('echo "give me all resources!"')
+    system('echo')
     set_trace_func nil
 
     line = __LINE__ - 3
