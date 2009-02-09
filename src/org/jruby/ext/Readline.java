@@ -53,6 +53,7 @@ import jline.Completor;
 import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
 import jline.History;
+import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -195,16 +196,30 @@ public class Readline {
         return holder.currentCompletor;
     }
 
-    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
-        ConsoleHolder holder = getHolder(recv.getRuntime());
-        if (holder.readline == null) {
-            initReadline(recv.getRuntime(), holder); // not overridden, let's go
+        return s_readline(recv.getRuntime().getCurrentContext(), recv, prompt, add_to_hist);
+    }
 
+    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject s_readline(ThreadContext context, IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) throws IOException {
+        Ruby runtime = context.getRuntime();
+        ConsoleHolder holder = getHolder(runtime);
+        if (holder.readline == null) {
+            initReadline(runtime, holder); // not overridden, let's go
         }
-        IRubyObject line = recv.getRuntime().getNil();
+        
+        IRubyObject line = runtime.getNil();
         holder.readline.getTerminal().disableEcho();
-        String v = holder.readline.readLine(prompt.toString());
+        String v = null;
+        while (true) {
+            try {
+                v = holder.readline.readLine(prompt.toString());
+                break;
+            } catch (IOException ioe) {
+                if (RubyIO.restartSystemCall(ioe)) continue;
+                throw runtime.newIOErrorFromException(ioe);
+            }
+        }
         holder.readline.getTerminal().enableEcho();
         
         if (null != v) {

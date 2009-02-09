@@ -698,7 +698,6 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
-            e.printStackTrace();
             throw runtime.newIOError(e.getMessage());
         }
     }
@@ -731,6 +730,14 @@ public class RubyIO extends RubyObject {
         } while (c != -1);
         
         return false;
+    }
+    
+    private static String vendor;
+    static { String v = System.getProperty("java.vendor") ; vendor = (v == null) ? "" : v; };
+    private static String msgEINTR = "Interrupted system call";
+
+    public static boolean restartSystemCall(Exception e) {
+        return vendor.startsWith("Apple") && e.getMessage().equals(msgEINTR);
     }
     
     public IRubyObject getlineFast(Ruby runtime, int delim) throws IOException, BadDescriptorException {
