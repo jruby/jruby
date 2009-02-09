@@ -1751,6 +1751,8 @@ public class RubyIO extends RubyObject {
                 // n is result of fclose; but perhaps having a SysError below is enough?
                 // if (n != 0) rb_sys_fail(fptr->path);
             }
+        } catch (BadDescriptorException bde) {
+            throw context.getRuntime().newErrnoEBADFError();
         } catch (IOException ioe) {
             // hmmmm
         }

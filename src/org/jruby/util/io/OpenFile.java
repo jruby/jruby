@@ -34,7 +34,7 @@ public class OpenFile {
         return mainStream;
     }
 
-    public void setMainStream(Stream mainStream) {
+    public synchronized void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
     }
 
@@ -42,7 +42,7 @@ public class OpenFile {
         return pipeStream;
     }
 
-    public void setPipeStream(Stream pipeStream) {
+    public synchronized void setPipeStream(Stream pipeStream) {
         this.pipeStream = pipeStream;
     }
 
@@ -232,36 +232,40 @@ public class OpenFile {
             ChannelDescriptor main = null;
             ChannelDescriptor pipe = null;
 
-            if (pipeStream != null) {
-                pipe = pipeStream.getDescriptor();
+            synchronized (this) {
+                Stream ps = pipeStream;
+                if (ps != null) {
+                    pipe = ps.getDescriptor();
 
-                // TODO: Ruby logic is somewhat more complicated here, see comments after
-                try {
-                    pipeStream.fflush();
-                    pipeStream.fclose();
-                } finally {
-                    // make sure the pipe stream is set to null
-                    pipeStream = null;
-                    runtime.getDescriptors().remove(Integer.valueOf(pipe.getFileno()));
+                    // TODO: Ruby logic is somewhat more complicated here, see comments after
+                    try {
+                        ps.fflush();
+                        ps.fclose();
+                    } finally {
+                        // make sure the pipe stream is set to null
+                        pipeStream = null;
+                        runtime.getDescriptors().remove(Integer.valueOf(pipe.getFileno()));
+                    }
                 }
-            }
-            if (mainStream != null) {
-                // TODO: Ruby logic is somewhat more complicated here, see comments after
-                main = mainStream.getDescriptor();
-                try {
-                    if (pipe == null && isWriteBuffered()) {
-                        mainStream.fflush();
+                Stream ms = mainStream;
+                if (ms != null) {
+                    // TODO: Ruby logic is somewhat more complicated here, see comments after
+                    main = ms.getDescriptor();
+                    try {
+                        if (pipe == null && isWriteBuffered()) {
+                            ms.fflush();
+                        }
+                        ms.fclose();
+                    } catch (BadDescriptorException bde) {
+                        if (main == pipe) {
+                        } else {
+                            throw bde;
+                        }
+                    } finally {
+                        // make sure the main stream is set to null
+                        mainStream = null;
+                        runtime.getDescriptors().remove(Integer.valueOf(main.getFileno()));
                     }
-                    mainStream.fclose();
-                } catch (BadDescriptorException bde) {
-                    if (main == pipe) {
-                    } else {
-                        throw bde;
-                    }
-                } finally {
-                    // make sure the main stream is set to null
-                    mainStream = null;
-                    runtime.getDescriptors().remove(Integer.valueOf(main.getFileno()));
                 }
             }
         } catch (IOException ex) {
