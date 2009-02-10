@@ -48,7 +48,6 @@ import org.jruby.javasupport.ParameterTypes;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -238,10 +237,13 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
         try {
             return JavaObject.wrap(getRuntime(), newInstance(args, handler));
-        } catch (Exception e) {
+        } catch (Throwable t) {
+            while (t.getCause() != null) {
+                t = t.getCause();
+            }
             RaiseException ex = getRuntime().newArgumentError(
-                    "Constructor invocation failed: " + e.getMessage());
-            ex.initCause(e);
+                    "Constructor invocation failed: " + t.getMessage());
+            ex.initCause(t);
             throw ex;
         }
     }

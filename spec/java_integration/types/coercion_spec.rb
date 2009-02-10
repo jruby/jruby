@@ -430,17 +430,14 @@ describe "Java primitive-box-typed interface methods" do
 end
 
 describe "Java types with package or private constructors" do
-  it "should not be construcible" do
+  it "should not be constructible" do
     lambda { PackageConstructor.new }.should raise_error(TypeError)
     lambda { PrivateConstructor.new }.should raise_error(TypeError)
   end
 end
 
 describe "Java types with protected constructors" do
-  it "should not be construcible" do
-    pc = nil
-    lambda { pc = ProtectedConstructor.new }.should_not raise_error(TypeError)
-    ProtectedConstructor.should === pc
-    pc.java_class.name.should == "java_integration.fixtures.ProtectedConstructor"
+  it "should not be constructible" do
+    lambda { ProtectedConstructor.new }.should raise_error(TypeError)
   end
 end

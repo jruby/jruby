@@ -342,18 +342,7 @@ public class JavaProxyClassFactory {
         for (int i = 0; i < cons.length; i++) {
             Constructor constructor = cons[i];
 
-            int acc = constructor.getModifiers();
-            if (Modifier.isProtected(acc) || Modifier.isPublic(acc)) {
-                // ok, it's publix or protected
-            } else if (!Modifier.isPrivate(acc)
-                    && packageName(constructor.getDeclaringClass()).equals(
-                            packageName(selfType.getClassName()))) {
-                // ok, it's package scoped and we're in the same package
-            } else {
-                // it's unaccessible
-                continue;
-            }
-
+            // We generate all constructors and let some fail during invocation later
             generateConstructor(selfType, constructor, cw);
         }
     }

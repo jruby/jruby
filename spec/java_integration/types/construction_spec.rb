@@ -3,6 +3,10 @@ require File.dirname(__FILE__) + "/../spec_helper"
 import "java_integration.fixtures.ArrayReceiver"
 import "java_integration.fixtures.ArrayReturningInterface"
 import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
+import "java_integration.fixtures.PublicConstructor"
+import "java_integration.fixtures.ProtectedConstructor"
+import "java_integration.fixtures.PackageConstructor"
+import "java_integration.fixtures.PrivateConstructor"
 
 describe "A Java primitive Array of type" do
   describe "boolean" do 
@@ -788,5 +792,48 @@ describe "A Ruby class implementing an interface returning a Java Object[]" do
     ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class.name.should == 'Java::JavaArray'
     ArrayReturningInterfaceConsumer.new.eat(Bar.new).java_object.class.should == Java::JavaArray
   end
+end
+
+describe "A Ruby class extending a Java class" do
+  it "should fail when constructing through private superclass constructor" do
+    cls = Class.new(PrivateConstructor) do
+      def initialize
+        super()
+      end
+    end
+
+    lambda {cls.new}.should raise_error
+  end
+
+  it "should fail when constructing through package superclass constructor" do
+    cls = Class.new(PackageConstructor) do
+      def initialize
+        super()
+      end
+    end
+
+    lambda {cls.new}.should raise_error
+  end
+
+  it "should succeed when constructing through public superclass constructor" do
+    cls = Class.new(PublicConstructor) do
+      def initialize
+        super()
+      end
+    end
+
+    lambda {cls.new}.should_not raise_error
+  end
+
+  it "should succeed when constructing through protected superclass constructor" do
+    cls = Class.new(ProtectedConstructor) do
+      def initialize
+        super()
+      end
+    end
+
+    lambda {cls.new}.should_not raise_error
+  end
+
 end
 
