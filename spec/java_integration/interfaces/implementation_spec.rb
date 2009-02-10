@@ -9,6 +9,8 @@ import "java_integration.fixtures.BeanLikeInterfaceHandler"
 import "java_integration.fixtures.ConstantHoldingInterface"
 import "java_integration.fixtures.ReturnsInterface"
 import "java_integration.fixtures.ReturnsInterfaceConsumer"
+import "java_integration.fixtures.AnotherRunnable"
+import "java.lang.Runnable"
 
 describe "Single-method Java interfaces implemented in Ruby" do
   before :all do
@@ -567,3 +569,19 @@ describe "Calling methods through interface on Ruby objects with methods defined
   end
 end
 
+# JRUBY-2999
+describe "A Ruby class implementing Java interfaces with overlapping methods" do
+  it "should implement without error" do
+    cls = Class.new do
+      include AnotherRunnable
+      include Runnable
+      attr_accessor :foo
+      def run
+        @foo = 'success'
+      end
+    end
+
+    obj = nil
+    lambda {obj = cls.new}.should_not raise_error
+  end
+end
