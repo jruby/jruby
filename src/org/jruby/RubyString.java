@@ -2822,12 +2822,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public IRubyObject index(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
-        case 1:
-            return index(context, args[0]);
-        case 2:
-            return index(context, args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+        case 1: return index(context, args[0]);
+        case 2: return index(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
             return null; // not reached
         }
     }
