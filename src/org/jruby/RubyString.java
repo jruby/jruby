@@ -1327,19 +1327,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         newString.callInit(args, block);
         return newString;
     }
-    
+
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.
      * @deprecated Use the versions with zero or one arguments
      */
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         switch (args.length) {
-        case 0:
-            return this;
-        case 1:
-            return initialize(args[0]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+        case 0: return this;
+        case 1: return initialize(args[0]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
             return null; // not reached
         }
     }
