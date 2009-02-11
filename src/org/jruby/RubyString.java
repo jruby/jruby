@@ -2276,23 +2276,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two arguments.
-     */
     public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
         switch (args.length) {
-        case 1:
-            return sub_bang(context, args[0], block);
-        case 2:
-            return sub_bang(context, args[0], args[1], block);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+        case 1: return sub_bang(context, args[0], block);
+        case 2: return sub_bang(context, args[0], args[1], block);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
             return null; // not reached
         }
     }
 
-    /** rb_str_sub
+    /** rb_str_sub / rb_str_sub_bang
      *
      */
     @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_8)
@@ -2309,18 +2302,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return str;
     }
 
-    /** rb_str_sub_bang
-     *
-     */
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         if (block.isGiven()) return subBangIter(context, getQuotedPattern(arg0), block);
         throw context.getRuntime().newArgumentError(1, 2);
     }
 
-    /** rb_str_sub_bang
-     *
-     */
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return subBangNoIter(context, getQuotedPattern(arg0), arg1.convertToString());
@@ -2385,9 +2372,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    /** rb_str_sub
-    *
-    */
     @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub19(ThreadContext context, IRubyObject arg0, Block block) {
         RubyString str = strDup(context.getRuntime());
