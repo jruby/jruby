@@ -2684,8 +2684,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         final int begin = value.begin;
-        final int range = begin + value.realSize;
-        final Matcher matcher = pat.matcher(value.bytes, begin, range);
+        int slen = value.realSize;
+        final int range = begin + slen;
+        byte[]bytes = value.bytes;
+        final Matcher matcher = pat.matcher(bytes, begin, range);
 
         final Frame frame = context.getPreviousFrame();
         int beg = matcher.search(begin, range, Option.NONE);
@@ -2694,11 +2696,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
-        int offset = 0;
-        byte[]bytes = value.bytes;
-        int slen = value.realSize;
         RubyString dest = new RubyString(runtime, getMetaClass(), new ByteList(slen + 30));
-        int cp = begin;
+        int offset = 0, cp = begin;
         Encoding enc = value.encoding;
 
         RubyMatchData match = null;
@@ -2730,13 +2729,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             offset = endz;
             if (begz == endz) {
                 if (slen <= endz) break;
-                int cl = StringSupport.length(enc, bytes, begin + endz, range);
-                dest.cat(bytes, begin + endz, cl, enc);
-                offset = endz + cl;
+                len = StringSupport.length(enc, bytes, begin + endz, range);
+                dest.cat(bytes, begin + endz, len, enc);
+                offset = endz + len;
             }
             cp = begin + offset;
             if (offset > slen) break;
-            beg = matcher.search(offset, range, Option.NONE);
+            beg = matcher.search(cp, range, Option.NONE);
         } while (beg >= 0);
 
         if (slen > offset) dest.cat(bytes, cp, slen - offset, enc);
