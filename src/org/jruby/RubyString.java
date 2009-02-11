@@ -1328,19 +1328,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return newString;
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with zero or one arguments
-     */
-    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        switch (args.length) {
-        case 0: return this;
-        case 1: return initialize(args[0]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
-            return null; // not reached
-        }
-    }
-
     @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize() {
@@ -2263,25 +2250,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             object.convertToString());
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two args.
-     */
-    public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyString str = strDup(context.getRuntime());
-        str.sub_bang(context, args, block);
-        return str;
-    }
-
-    public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1: return sub_bang(context, args[0], block);
-        case 2: return sub_bang(context, args[0], args[1], block);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_sub / rb_str_sub_bang
      *
      */
@@ -2527,28 +2495,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     "incompatible character encodings " + strEnc + " and " + repl.value.encoding);
         }
         return repl.value.encoding;        
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two arguments.
-     */
-    public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1: return gsub(context, args[0], block);
-        case 2: return gsub(context, args[0], args[1], block);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
-    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1: return gsub_bang(context, args[0], block);
-        case 2: return gsub_bang(context, args[0], args[1], block);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
     }
 
     /** rb_str_gsub / rb_str_gsub_bang
@@ -2816,19 +2762,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two args.
-     */
-    public IRubyObject index(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return index(context, args[0]);
-        case 2: return index(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_index_m
      *
      */
@@ -2975,19 +2908,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if ((len -= t - p) <= 0) return -1;
             offset += t - p;
             p = t;
-        }
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two arguments.
-     */
-    public IRubyObject rindex(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return rindex(context, args[0]);
-        case 2: return rindex(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
         }
     }
 
@@ -3270,19 +3190,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (cr != CR_BROKEN) setCodeRange(cr);
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two args
-     */
-    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return op_aref(context, args[0]);
-        case 2: return op_aref(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_aref, rb_str_aref_m
      *
      */
@@ -3417,19 +3324,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();
     }
 
-    /**
-     * Variable arity version for compatibility. Not bound to a Ruby method.
-     * @deprecated Use the versions with two or three args.
-     */
-    public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 2: return op_aset(context, args[0], args[1]);
-        case 3: return op_aset(context, args[0], args[1], args[2]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_aset, rb_str_aset_m
      *
      */
@@ -3518,19 +3412,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             replaceInternal19(checkIndex(beg, strLength()), len, repl);
         }
         return arg2;
-    }
-
-    /**
-     * Variable arity version for compatibility. Not bound as a Ruby method.
-     * @deprecated Use the versions with one or two args.
-     */
-    public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return slice_bang(context, args[0]);
-        case 2: return slice_bang(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
     }
 
     /** rb_str_slice_bang
@@ -3942,19 +3823,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return val;
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound as a Ruby method.
-     * @deprecated Use the versions with zero or one args.
-     */
-    public IRubyObject to_i(IRubyObject[] args) {
-        switch (args.length) {
-        case 0: return to_i();
-        case 1: return to_i(args[0]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_to_i
      *
      */
@@ -4028,24 +3896,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f() {
         return RubyNumeric.str2fnum(getRuntime(), this);
-    }
-
-    /**
-     * Variable arity version for compatibility. Not bound to a Ruby method.
-     * @deprecated Use the versions with zero, one, or two args.
-     */
-    public RubyArray split(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return split(context);
-        case 1:
-            return split(context, args[0]);
-        case 2:
-            return split(context, args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2);
-            return null; // not reached
-        }
     }
 
     /** rb_str_split_m
@@ -4683,22 +4533,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated use the one or two argument versions.
-     */
-    public IRubyObject ljust(IRubyObject [] args) {
-        switch (args.length) {
-        case 1:
-            return ljust(args[0]);
-        case 2:
-            return ljust(args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_ljust
      *
      */
@@ -4722,22 +4556,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify19(arg0, arg1, 'l');
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated use the one or two argument versions.
-     */
-    public IRubyObject rjust(IRubyObject [] args) {
-        switch (args.length) {
-        case 1:
-            return rjust(args[0]);
-        case 2:
-            return rjust(args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
     /** rb_str_rjust
      *
      */
@@ -4759,22 +4577,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "rjust", compat = CompatVersion.RUBY1_9)
     public IRubyObject rjust19(IRubyObject arg0, IRubyObject arg1) {
         return justify19(arg0, arg1, 'r');
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated use the one or two argument versions.
-     */
-    public IRubyObject center(IRubyObject [] args) {
-        switch (args.length) {
-        case 1:
-            return center(args[0]);
-        case 2:
-            return center(args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
     }
 
     /** rb_str_center
@@ -4912,37 +4714,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
         }
         return s - p;
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby
-     * 
-     * @param args
-     * @return
-     * @deprecated Use the zero or one argument versions.
-     */
-    public RubyString chomp(IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return chomp(getRuntime().getCurrentContext());
-        case 1:
-            return chomp(getRuntime().getCurrentContext(), args[0]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
-            return null; // not reached
-        }
-    }
-
-    public IRubyObject chomp_bang(IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return chomp_bang(getRuntime().getCurrentContext());
-        case 1:
-            return chomp_bang(getRuntime().getCurrentContext(), args[0]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
-            return null; // not reached
-        }
     }
 
     /** rb_str_chop
@@ -6691,7 +6462,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /**
      * @see org.jruby.util.Pack#unpack
      */
-    @JRubyMethod
+    @JRubyMethod(name = "unpack")
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }
@@ -6765,5 +6536,162 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public IRubyObject to_java() {
         return MiniJava.javaToRuby(getRuntime(), new String(getBytes()));
+    }
+
+    /**
+     * Variable-arity versions for compatibility. Not bound to Ruby.
+     * @deprecated Use the versions with zero or one arguments
+     */
+
+    @Deprecated
+    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
+        switch (args.length) {
+        case 0: return this;
+        case 1: return initialize(args[0]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyString str = strDup(context.getRuntime());
+        str.sub_bang(context, args, block);
+        return str;
+    }
+
+    @Deprecated
+    public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1: return sub_bang(context, args[0], block);
+        case 2: return sub_bang(context, args[0], args[1], block);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1: return gsub(context, args[0], block);
+        case 2: return gsub(context, args[0], args[1], block);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1: return gsub_bang(context, args[0], block);
+        case 2: return gsub_bang(context, args[0], args[1], block);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject index(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1: return index(context, args[0]);
+        case 2: return index(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject rindex(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1: return rindex(context, args[0]);
+        case 2: return rindex(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1: return op_aref(context, args[0]);
+        case 2: return op_aref(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 2: return op_aset(context, args[0], args[1]);
+        case 3: return op_aset(context, args[0], args[1], args[2]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 1: return slice_bang(context, args[0]);
+        case 2: return slice_bang(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject to_i(IRubyObject[] args) {
+        switch (args.length) {
+        case 0: return to_i();
+        case 1: return to_i(args[0]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public RubyArray split(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+        case 0: return split(context);
+        case 1: return split(context, args[0]);
+        case 2: return split(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject ljust(IRubyObject [] args) {
+        switch (args.length) {
+        case 1: return ljust(args[0]);
+        case 2: return ljust(args[0], args[1]);
+        default: Arity.raiseArgumentError(getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject rjust(IRubyObject [] args) {
+        switch (args.length) {
+        case 1: return rjust(args[0]);
+        case 2: return rjust(args[0], args[1]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject center(IRubyObject [] args) {
+        switch (args.length) {
+        case 1: return center(args[0]);
+        case 2: return center(args[0], args[1]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 1, 2); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public RubyString chomp(IRubyObject[] args) {
+        switch (args.length) {
+        case 0:return chomp(getRuntime().getCurrentContext());
+        case 1:return chomp(getRuntime().getCurrentContext(), args[0]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject chomp_bang(IRubyObject[] args) {
+        switch (args.length) {
+        case 0: return chomp_bang(getRuntime().getCurrentContext());
+        case 1: return chomp_bang(getRuntime().getCurrentContext(), args[0]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
+        }
     }
 }
