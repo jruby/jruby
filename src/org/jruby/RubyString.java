@@ -3526,12 +3526,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
-        case 1:
-            return slice_bang(context, args[0]);
-        case 2:
-            return slice_bang(context, args[0], args[1]);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+        case 1: return slice_bang(context, args[0]);
+        case 2: return slice_bang(context, args[0], args[1]);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
             return null; // not reached
         }
     }
@@ -3951,12 +3948,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public IRubyObject to_i(IRubyObject[] args) {
         switch (args.length) {
-        case 0:
-            return to_i();
-        case 1:
-            return to_i(args[0]);
-        default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+        case 0: return to_i();
+        case 1: return to_i(args[0]);
+        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
             return null; // not reached
         }
     }
