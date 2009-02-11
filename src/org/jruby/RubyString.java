@@ -2554,57 +2554,41 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
         switch (args.length) {
-        case 1:
-            return gsub(context, args[0], block);
-        case 2:
-            return gsub(context, args[0], args[1], block);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+        case 1: return gsub(context, args[0], block);
+        case 2: return gsub(context, args[0], args[1], block);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
             return null; // not reached
         }
     }
-    
-    /** rb_str_gsub
+
+    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
+        switch (args.length) {
+        case 1: return gsub_bang(context, args[0], block);
+        case 2: return gsub_bang(context, args[0], args[1], block);
+        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
+            return null; // not reached
+        }
+    }
+
+    /** rb_str_gsub / rb_str_gsub_bang
      *
      */
-    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block) {
         return gsub(context, arg0, block, false);
     }
 
-    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsub(context, arg0, arg1, block, false);
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with one or two arguments.
-     */
-    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1:
-            return gsub_bang(context, args[0], block);
-        case 2:
-            return gsub_bang(context, args[0], args[1], block);
-        default:
-            Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-            return null; // not reached
-        }
-    }
-
-    /** rb_str_gsub_bang
-     *
-     */
-    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         return gsub(context, arg0, block, true);
     }
 
-    /** rb_str_gsub_bang
-     *
-     */
-    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF)
+    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject gsub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return gsub(context, arg0, arg1, block, true);
     }
@@ -2719,7 +2703,137 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return destStr;
         }
     }
-    
+
+    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, Block block) {
+        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, false) : enumeratorize(context.getRuntime(), this, "gsub", arg0);
+    }
+
+    @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsub19(context, arg0, arg1, block, false);
+    }
+
+    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
+        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true) : enumeratorize(context.getRuntime(), this, "gsub!", arg0);
+    }
+
+    @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return gsub19(context, arg0, arg1, block, true);
+    }
+
+    private final IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
+
+        final RubyHash hash;
+        final RubyString str;
+
+        if (tryHash.isNil()) {
+            hash = null;
+            str = arg1.convertToString();
+        } else {
+            hash = (RubyHash)tryHash;
+            str = null;
+        }
+
+        return gsubCommon19(context, block, str, hash, arg0, bang);
+    }
+
+    private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl, RubyHash hash, IRubyObject arg0, final boolean bang) {
+        boolean tainted = arg0 != null && arg0.isTaint();
+        Ruby runtime = context.getRuntime();
+
+        final Regex pattern, pat;
+        final RubyRegexp regexp;
+        if (arg0 instanceof RubyRegexp) {
+            regexp = (RubyRegexp)arg0;
+            pattern = regexp.getPattern();
+            pat = regexp.preparePattern(this);
+        } else {
+            regexp = null;
+            pattern = getStringPattern19(runtime, arg0);
+            pat = RubyRegexp.preparePattern(runtime, pattern, this);
+        }
+
+        final int begin = value.begin;
+        final int range = begin + value.realSize;
+        final Matcher matcher = pat.matcher(value.bytes, begin, range);
+
+        final Frame frame = context.getPreviousFrame();
+        int beg = matcher.search(begin, range, Option.NONE);
+        if (beg < 0) {
+            frame.setBackRef(runtime.getNil());
+            return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
+        }
+
+        int offset = 0;
+        byte[]bytes = value.bytes;
+        int slen = value.realSize;
+        RubyString dest = new RubyString(runtime, getMetaClass(), new ByteList(slen + 30));
+        int cp = begin;
+        Encoding enc = value.encoding;
+
+        RubyMatchData match = null;
+        do {
+            final RubyString val;
+            int begz = matcher.getBegin();
+            int endz = matcher.getEnd();
+
+            if (repl != null) {     // string given
+                val = RubyRegexp.regsub19(repl, this, matcher, pattern);
+            } else {
+                final RubyString substr = makeShared19(runtime, begz, endz - begz);  
+                if (hash != null) { // hash given
+                    val = objAsString(context, hash.op_aref(context, substr)); 
+                } else {            // block given
+                    match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
+                    match.regexp = regexp;
+                    val = objAsString(context, block.yield(context, substr));
+                }
+                modifyCheck(bytes, slen, enc);
+                if (bang) frozenCheck();
+            }
+
+            if (val.isTaint()) tainted = true;
+
+            int len = beg - offset;
+            if (len != 0) dest.cat(bytes, cp, len, enc);
+            dest.cat19(val);
+            offset = endz;
+            if (begz == endz) {
+                if (slen <= endz) break;
+                int cl = StringSupport.length(enc, bytes, begin + endz, range);
+                dest.cat(bytes, begin + endz, cl, enc);
+                offset = endz + cl;
+            }
+            cp = begin + offset;
+            if (offset > slen) break;
+            beg = matcher.search(offset, range, Option.NONE);
+        } while (beg >= 0);
+
+        if (slen > offset) dest.cat(bytes, cp, slen - offset, enc);
+
+        if (match != null) { // block given
+            frame.setBackRef(match);
+        } else {
+            match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
+            match.regexp = regexp;
+        }
+
+        if (bang) {
+            view(dest.value);
+            setCodeRange(dest.getCodeRange());
+            if (tainted) setTaint(true);
+            return this;
+        } else {
+            if (tainted) dest.setTaint(true);
+            dest.infectBy(this);
+            return dest;
+        }
+    }
 
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.
