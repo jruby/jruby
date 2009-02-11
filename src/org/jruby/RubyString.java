@@ -2538,8 +2538,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Frame frame = context.getPreviousFrame();
 
         int begin = value.begin;
-        int range = begin + value.realSize;
-        Matcher matcher = pattern.matcher(value.bytes, begin, range);
+        int slen = value.realSize;
+        int range = begin + slen;
+        byte[]bytes = value.bytes;
+        Matcher matcher = pattern.matcher(bytes, begin, range);
 
         int beg = matcher.search(begin, range, Option.NONE);
         if (beg < 0) {
@@ -2547,7 +2549,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
-        int blen = value.realSize + 30; /* len + margin */
+        int blen = slen + 30; /* len + margin */
         ByteList dest = new ByteList(blen);
         dest.realSize = blen;
         int offset = 0, buf = 0, bp = 0, cp = begin;
@@ -2555,15 +2557,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyMatchData match = null;
         while (beg >= 0) {
             final RubyString val;
-            int begz = matcher.getBegin();
-            int endz = matcher.getEnd();
+            final int begz = matcher.getBegin();
+            final int endz = matcher.getEnd();
 
             if (repl == null) { // block given
-                byte[] bytes = value.bytes;
-                int size = value.realSize;
                 match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
                 val = objAsString(context, block.yield(context, substr(runtime, begz, endz - begz)));
-                modifyCheck(bytes, size);
+                modifyCheck(bytes, slen);
                 if (bang) frozenCheck();
             } else {
                 val = RubyRegexp.regsub(repl, this, matcher, runtime.getKCode().getEncoding());
@@ -2574,30 +2574,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
             ByteList vbuf = val.value;
             int len = (bp - buf) + (beg - offset) + vbuf.realSize + 3;
             if (blen < len) {
-                while (blen < len) {
-                    blen <<= 1;
-                }
+                while (blen < len) blen <<= 1;
                 len = bp - buf;
                 dest.realloc(blen);
                 dest.realSize = blen;
                 bp = buf + len;
             }
             len = beg - offset; /* copy pre-match substr */
-            System.arraycopy(value.bytes, cp, dest.bytes, bp, len);
+            System.arraycopy(bytes, cp, dest.bytes, bp, len);
             bp += len;
             System.arraycopy(vbuf.bytes, vbuf.begin, dest.bytes, bp, vbuf.realSize);
             bp += vbuf.realSize;
             offset = endz;
 
             if (begz == endz) {
-                if (value.realSize <= endz) break;
-                len = pattern.getEncoding().length(value.bytes, begin + endz, range);
-                System.arraycopy(value.bytes, begin + endz, dest.bytes, bp, len);
+                if (slen <= endz) break;
+                len = pattern.getEncoding().length(bytes, begin + endz, range);
+                System.arraycopy(bytes, begin + endz, dest.bytes, bp, len);
                 bp += len;
                 offset = endz + len;
             }
             cp = begin + offset;
-            if (offset > value.realSize) break;
+            if (offset > slen) break;
             beg = matcher.search(cp, range, Option.NONE);
         }
 
@@ -2607,15 +2605,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
             RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
         }
 
-        if (value.realSize > offset) {
+        if (slen > offset) {
             int len = bp - buf;
-            if (blen - len < value.realSize - offset) {
-                blen = len + value.realSize - offset;
+            if (blen - len < slen - offset) {
+                blen = len + slen - offset;
                 dest.realloc(blen);
                 bp = buf + len;
             }
-            System.arraycopy(value.bytes, cp, dest.bytes, bp, value.realSize - offset);
-            bp += value.realSize - offset;
+            System.arraycopy(bytes, cp, dest.bytes, bp, slen - offset);
+            bp += slen - offset;
         }
 
         dest.realSize = bp - buf;
