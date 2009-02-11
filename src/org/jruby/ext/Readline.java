@@ -218,15 +218,15 @@ public class Readline {
                 break;
             } catch (IOException ioe) {
                 if (RubyIO.restartSystemCall(ioe)) {
+                    // This is for JRUBY-2988, since after a suspend the terminal seems
+                    // to need to be reinitialized. Since we can't easily detect suspension,
+                    // initialize after every readline. Probably not fast, but this is for
+                    // interactive terminals anyway...so who cares?
+                    try {holder.readline.getTerminal().initializeTerminal();} catch (Exception e) {}
                     continue;
                 }
                 throw runtime.newIOErrorFromException(ioe);
             } finally {
-                // This is for JRUBY-2988, since after a suspend the terminal seems
-                // to need to be reinitialized. Since we can't easily detect suspension,
-                // initialize after every readline. Probably not fast, but this is for
-                // interactive terminals anyway...so who cares?
-                try {holder.readline.getTerminal().initializeTerminal();} catch (Exception e) {}
                 holder.readline.getTerminal().enableEcho();
             }
         }
