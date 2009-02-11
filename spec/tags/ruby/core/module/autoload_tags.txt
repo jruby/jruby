@@ -1,1 +1,1 @@
-fails(JRUBY-3144):Module#autoload uses dup copies for autoloaded constants
+fails(JRUBY-3144):Module#autoload shares the autoload request across dup'ed copies of modules
