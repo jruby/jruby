@@ -100,27 +100,32 @@ public class NetProtocolBufferedIO {
             NativeImpl nim = (NativeImpl)recv.dataGetStruct();
 
             Selector selector = null;
-            try {
-                selector = Selector.open();
-                nim.channel.configureBlocking(false);
-                SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
-                int n = selector.select(timeout);
+            synchronized (nim.channel.blockingLock()) {
+                boolean oldBlocking = nim.channel.isBlocking();
 
-                if(n > 0) {
-                    IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(1024*16)});
-                    return buf.concat(readItems);
-                } else {
-                    RubyClass exc = (RubyClass)(recv.getRuntime().getModule("Timeout").getConstant("Error"));
-                    throw new RaiseException(RubyException.newException(recv.getRuntime(), exc, "execution expired"),false);
-                }
-            } catch(IOException exception) {
-                throw recv.getRuntime().newIOErrorFromException(exception);
-            } finally {
-                if (selector != null) {
-                    try {
-                        selector.close();
-                    } catch (Exception e) {
+                try {
+                    selector = Selector.open();
+                    nim.channel.configureBlocking(false);
+                    SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
+                    int n = selector.select(timeout);
+
+                    if(n > 0) {
+                        IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(1024*16)});
+                        return buf.concat(readItems);
+                    } else {
+                        RubyClass exc = (RubyClass)(recv.getRuntime().getModule("Timeout").getConstant("Error"));
+                        throw new RaiseException(RubyException.newException(recv.getRuntime(), exc, "execution expired"),false);
                     }
+                } catch(IOException exception) {
+                    throw recv.getRuntime().newIOErrorFromException(exception);
+                } finally {
+                    if (selector != null) {
+                        try {
+                            selector.close();
+                        } catch (Exception e) {
+                        }
+                    }
+                    try {nim.channel.configureBlocking(oldBlocking);} catch (IOException ioe) {}
                 }
             }
         }

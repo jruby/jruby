@@ -862,23 +862,23 @@ public class ChannelStream implements Stream, Finalizable {
             int ready_stat = 0;
             java.nio.channels.Selector sel = java.nio.channels.Selector.open();
             SelectableChannel selchan = (SelectableChannel)descriptor.getChannel();
-            boolean is_block = selchan.isBlocking();
-            try {
-                synchronized (selchan.blockingLock()) {
+            synchronized (selchan.blockingLock()) {
+                boolean is_block = selchan.isBlocking();
+                try {
                     selchan.configureBlocking(false);
                     selchan.register(sel, java.nio.channels.SelectionKey.OP_READ);
                     ready_stat = sel.selectNow();
                     sel.close();
-                    selchan.configureBlocking(is_block);
-                }
-            } catch (Throwable ex) {
-                ex.printStackTrace();
-            } finally {
-                if (sel != null) {
-                    try {
-                        sel.close();
-                    } catch (Exception e) {
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                } finally {
+                    if (sel != null) {
+                        try {
+                            sel.close();
+                        } catch (Exception e) {
+                        }
                     }
+                    selchan.configureBlocking(is_block);
                 }
             }
             return ready_stat;

@@ -49,9 +49,11 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1036,38 +1038,43 @@ public class RubyIO extends RubyObject {
         if (channel == null || !(channel instanceof SelectableChannel)) {
             return false;
         }
-       
+
+        SelectableChannel selectable = (SelectableChannel)channel;
         Selector selector = null;
-        try {
-            selector = Selector.open();
+        synchronized (selectable.blockingLock()) {
+            boolean oldBlocking = selectable.isBlocking();
+            try {
+                selector = Selector.open();
 
-            ((SelectableChannel) channel).configureBlocking(false);
-            int real_ops = ((SelectableChannel) channel).validOps() & SelectionKey.OP_WRITE;
-            SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
+                selectable.configureBlocking(false);
+                int real_ops = selectable.validOps() & SelectionKey.OP_WRITE;
+                SelectionKey key = selectable.keyFor(selector);
 
-            if (key == null) {
-                ((SelectableChannel) channel).register(selector, real_ops, descriptor);
-            } else {
-                key.interestOps(key.interestOps()|real_ops);
-            }
+                if (key == null) {
+                    selectable.register(selector, real_ops, descriptor);
+                } else {
+                    key.interestOps(key.interestOps()|real_ops);
+                }
 
-            while(selector.select() == 0);
+                while(selector.select() == 0);
 
-            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-                SelectionKey skey = (SelectionKey) i.next();
-                if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
-                    if(skey.attachment() == descriptor) {
-                        return true;
+                for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+                    SelectionKey skey = (SelectionKey) i.next();
+                    if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
+                        if(skey.attachment() == descriptor) {
+                            return true;
+                        }
                     }
                 }
-            }
-            return false;
-        } finally {
-            if (selector != null) {
-                try {
-                    selector.close();
-                } catch (Exception e) {
+                return false;
+            } finally {
+                if (selector != null) {
+                    try {
+                        selector.close();
+                    } catch (Exception e) {
+                    }
                 }
+                selectable.configureBlocking(oldBlocking);
             }
         }
     }
@@ -1077,38 +1084,43 @@ public class RubyIO extends RubyObject {
         if (channel == null || !(channel instanceof SelectableChannel)) {
             return false;
         }
-       
+
+        SelectableChannel selectable = (SelectableChannel)channel;
         Selector selector = null;
-        try {
-            selector = Selector.open();
+        synchronized (selectable.blockingLock()) {
+            boolean oldBlocking = selectable.isBlocking();
+            try {
+                selector = Selector.open();
 
-            ((SelectableChannel) channel).configureBlocking(false);
-            int real_ops = ((SelectableChannel) channel).validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-            SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
+                selectable.configureBlocking(false);
+                int real_ops = selectable.validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+                SelectionKey key = selectable.keyFor(selector);
 
-            if (key == null) {
-                ((SelectableChannel) channel).register(selector, real_ops, descriptor);
-            } else {
-                key.interestOps(key.interestOps()|real_ops);
-            }
+                if (key == null) {
+                    selectable.register(selector, real_ops, descriptor);
+                } else {
+                    key.interestOps(key.interestOps()|real_ops);
+                }
 
-            while(selector.select() == 0);
+                while(selector.select() == 0);
 
-            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-                SelectionKey skey = (SelectionKey) i.next();
-                if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
-                    if(skey.attachment() == descriptor) {
-                        return true;
+                for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+                    SelectionKey skey = (SelectionKey) i.next();
+                    if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
+                        if(skey.attachment() == descriptor) {
+                            return true;
+                        }
                     }
                 }
-            }
-            return false;
-        } finally {
-            if (selector != null) {
-                try {
-                    selector.close();
-                } catch (Exception e) {
+                return false;
+            } finally {
+                if (selector != null) {
+                    try {
+                        selector.close();
+                    } catch (Exception e) {
+                    }
                 }
+                selectable.configureBlocking(oldBlocking);
             }
         }
     }
@@ -2223,7 +2235,7 @@ public class RubyIO extends RubyObject {
         }
         
         RubyString str = null;
-
+        
         return readNotAll(context, myOpenFile, length, str);
     }
     
@@ -2683,6 +2695,8 @@ public class RubyIO extends RubyObject {
             Set pending = new HashSet();
             Set unselectable_reads = new HashSet();
             Set unselectable_writes = new HashSet();
+            Map<RubyIO, Boolean> blocking = new HashMap();
+            
             selector = Selector.open();
             if (!args[0].isNil()) {
                 // read
@@ -2690,6 +2704,10 @@ public class RubyIO extends RubyObject {
                 for (Iterator i = ((RubyArray)args[0]).getList().iterator(); i.hasNext();) {
                     IRubyObject obj = (IRubyObject)i.next();
                     RubyIO ioObj = convertToIO(context, obj);
+
+                    // save blocking state
+                    if (ioObj.getChannel() instanceof SelectableChannel) blocking.put(ioObj, ((SelectableChannel)ioObj.getChannel()).isBlocking());
+                    
                     if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
                         if (ioObj.writeDataBuffered()) {
                             pending.add(obj);
@@ -2708,6 +2726,10 @@ public class RubyIO extends RubyObject {
                 for (Iterator i = ((RubyArray)args[1]).getList().iterator(); i.hasNext();) {
                     IRubyObject obj = (IRubyObject)i.next();
                     RubyIO ioObj = convertToIO(context, obj);
+
+                    // save blocking state
+                    if (!blocking.containsKey(ioObj) && ioObj.getChannel() instanceof SelectableChannel) blocking.put(ioObj, ((SelectableChannel)ioObj.getChannel()).isBlocking());
+
                     if (!registerSelect(context, selector, obj, ioObj, SelectionKey.OP_WRITE)) {
                         if ((ioObj.openFile.getMode() & OpenFile.WRITABLE) != 0) {
                             unselectable_writes.add(obj);
@@ -2777,16 +2799,11 @@ public class RubyIO extends RubyObject {
             w.addAll(unselectable_writes);
 
             // make all sockets blocking as configured again
-            Set<SelectionKey> keys = selector.keys(); // get keys before close
             selector.close(); // close unregisters all channels, so we can safely reset blocking modes
-            for (SelectionKey key : keys) {
-                SelectableChannel channel = key.channel();
+            for (Map.Entry blockingEntry : blocking.entrySet()) {
+                SelectableChannel channel = (SelectableChannel)((RubyIO)blockingEntry.getKey()).getChannel();
                 synchronized (channel.blockingLock()) {
-                    RubyIO originalIO = (RubyIO)TypeConverter.convertToType(
-                            (IRubyObject)key.attachment(), runtime.getIO(), "to_io");
-                    boolean blocking = originalIO.getBlocking();
-                    key.cancel();
-                    channel.configureBlocking(blocking);
+                    channel.configureBlocking((Boolean)blockingEntry.getValue());
                 }
             }
 

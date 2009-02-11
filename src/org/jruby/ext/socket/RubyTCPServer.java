@@ -179,30 +179,35 @@ public class RubyTCPServer extends RubyTCPSocket {
     public IRubyObject accept_nonblock(ThreadContext context) {
         RubyTCPSocket socket = new RubyTCPSocket(context.getRuntime(), context.getRuntime().fastGetClass("TCPSocket"));
         Selector selector = null;
-        try {
-            ssc.configureBlocking(false);
-            selector = Selector.open();
-            SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
-            
-            int selected = selector.selectNow();
-            if (selected == 0) {
-                // no connection immediately accepted, let them try again
-                throw context.getRuntime().newErrnoEAGAINError("Resource temporarily unavailable");
-            } else {
-                try {
-                    // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(context.getRuntime(), new ChannelDescriptor(ssc.accept(), RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
-                } catch (InvalidValueException ex) {
-                    throw context.getRuntime().newErrnoEINVALError();
-                }
-                return socket;
-            }
-        } catch(IOException e) {
-            throw sockerr(context.getRuntime(), "problem when accepting");
-        } finally {
+        synchronized (ssc.blockingLock()) {
+            boolean oldBlocking = ssc.isBlocking();
+
             try {
-                if (selector != null) selector.close();
-            } catch (Exception e) {
+                ssc.configureBlocking(false);
+                selector = Selector.open();
+                SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
+
+                int selected = selector.selectNow();
+                if (selected == 0) {
+                    // no connection immediately accepted, let them try again
+                    throw context.getRuntime().newErrnoEAGAINError("Resource temporarily unavailable");
+                } else {
+                    try {
+                        // otherwise one key has been selected (ours) so we get the channel and hand it off
+                        socket.initSocket(context.getRuntime(), new ChannelDescriptor(ssc.accept(), RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                    } catch (InvalidValueException ex) {
+                        throw context.getRuntime().newErrnoEINVALError();
+                    }
+                    return socket;
+                }
+            } catch(IOException e) {
+                throw sockerr(context.getRuntime(), "problem when accepting");
+            } finally {
+                try {
+                    if (selector != null) selector.close();
+                } catch (Exception e) {
+                }
+                try {ssc.configureBlocking(oldBlocking);} catch (IOException ioe) {}
             }
         }
     }
