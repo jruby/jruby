@@ -787,32 +787,16 @@
     </condition>
   </target>
 
-  <target name="fetch-stable-specs" depends="prepare, detect-stable-specs-need-update" if="stable-specs-need-update">
-    <echo message="Downloading stable mspec..."/>
-    <exec command="wget">
-        <arg value="http://github.com/rubyspec/mspec/zipball/${mspec.revision}"/>
-        <arg line="-O ${build.dir}/rubyspec-mspec.zip"/>
-    </exec>
-    <echo message="Downloading stable rubyspecs..."/>
-    <exec command="wget">
-        <arg value="http://github.com/rubyspec/rubyspec/zipball/${rubyspecs.revision}"/>
-        <arg line="-O ${build.dir}/rubyspec-rubyspec.zip"/>
-    </exec>
+  <target name="fetch-stable-specs" depends="fetch-specs, detect-stable-specs-need-update" if="stable-specs-need-update">
+      <echo message="Rolling rubyspec to stable version"/>
+      <exec dir="${rubyspec.dir}" executable="git">
+          <arg line="co ${rubyspecs.revision}"/>
+      </exec>
 
-    <!-- Wipe the old mspec/rubyspecs, if any, and exctract new ones -->
-
-    <delete dir="${mspec.dir}"/>
-    <mkdir dir="${mspec.dir}"/>
-    <unzip src="${build.dir}/rubyspec-mspec.zip" dest="${mspec.dir}">
-      <globmapper from="rubyspec-mspec-${mspec.revision}/*" to="*"/>
-    </unzip>
-    <chmod file="${mspec.dir}/bin/mspec" perm="755"/>
-
-    <delete dir="${rubyspec.dir}"/>
-    <mkdir dir="${rubyspec.dir}"/>
-    <unzip src="${build.dir}/rubyspec-rubyspec.zip" dest="${rubyspec.dir}">
-        <globmapper from="rubyspec-rubyspec-${rubyspecs.revision}/*" to="*"/>
-    </unzip>
+      <echo message="Rolling mspec to stable version"/>
+      <exec dir="${mspec.dir}" executable="git">
+          <arg line="co ${mspec.revision}"/>
+      </exec>
 
   	<!-- Write down the revision of downloaded specs -->
     <propertyfile file="${spec.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
@@ -867,7 +851,6 @@
       <echo message="Cloning rubyspec repo to: ${rubyspec.dir}"/>
       <exec dir="${spec.dir}" executable="git">
           <arg value="clone"/>
-          <arg value="--depth"/><arg value="1"/>
           <arg value="git://github.com/rubyspec/rubyspec.git"/>
           <arg value="${rubyspec.dir}"/>
       </exec>
@@ -875,20 +858,19 @@
       <echo message="Cloning mspec repo to: ${mspec.dir}"/>
       <exec dir="${spec.dir}" executable="git">
                 <arg value="clone"/>
-                <arg value="--depth"/><arg value="1"/>
                 <arg value="git://github.com/rubyspec/mspec.git"/>
                 <arg value="${mspec.dir}"/>
       </exec>
   </target>
 
   <target name="do-update-specs" if="rubyspec-repo-exists">
-      <echo message="Updading rubyspec repo -- ${rubyspec.dir}"/>
+      <echo message="Updating rubyspec repo -- ${rubyspec.dir}"/>
       <exec dir="${rubyspec.dir}" executable="git">
-        <arg value="pull"/>
+        <arg value="fetch"/>
       </exec>
-      <echo message="Updading mspec repo -- ${mspec.dir}"/>
+      <echo message="Updating mspec repo -- ${mspec.dir}"/>
       <exec dir="${mspec.dir}" executable="git">
-        <arg value="pull"/>
+        <arg value="fetch"/>
       </exec>
   </target>
 

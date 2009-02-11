@@ -1,0 +1,1 @@
+fails(JRUBY-3387):Array#== does not call #to_ary on its argument

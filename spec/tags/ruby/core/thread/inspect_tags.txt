@@ -1,0 +1,1 @@
+fails(JRUBY-3391):Thread#inspect reports aborting on a killed thread
