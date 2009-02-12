@@ -31,9 +31,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.math.BigInteger;
 import java.security.Provider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
@@ -201,11 +203,9 @@ public class RubyDigest {
         }
 
         private MessageDigest algo;
-        private StringBuffer data;
 
         public Base(Ruby runtime, RubyClass type) {
             super(runtime,type);
-            data = new StringBuffer();
 
             if(type == runtime.fastGetModule("Digest").fastGetClass("Base")) {
                 throw runtime.newNotImplementedError("Digest::Base is an abstract class");
@@ -236,84 +236,75 @@ public class RubyDigest {
             }
             ((RubyObject)obj).checkFrozen();
 
-            data = new StringBuffer(((Base)obj).data.toString());
             String name = ((Base)obj).algo.getAlgorithm();
             try {
-                algo = createMessageDigest(getRuntime(), name);
-            } catch(NoSuchAlgorithmException e) {
-                throw getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
+                algo = (MessageDigest)((Base)obj).algo.clone();
+            } catch(CloneNotSupportedException e) {
+                throw getRuntime().newTypeError("Could not initialize copy of digest (" + name + ")");
             }
             return this;
         }
 
         @JRubyMethod(name = {"update", "<<"}, required = 1)
         public IRubyObject update(IRubyObject obj) {
-            data.append(obj);
+            ByteList bytes = obj.convertToString().getByteList();
+            algo.update(bytes.bytes, bytes.begin, bytes.realSize);
             return this;
         }
 
         @JRubyMethod(name = "digest", optional = 1)
         public IRubyObject digest(IRubyObject[] args) {
             if (args.length == 1) {
-                reset();
-                data.append(args[0]);
+                algo.reset();
+                update(args[0]);
             }
 
-            IRubyObject digest = getDigest();
+            IRubyObject digest = getDigestString();
 
             if (args.length == 1) {
-                reset();
+                algo.reset();
             }
             return digest;
         }
         
-        private IRubyObject getDigest() {
-            algo.reset();
-            return RubyString.newStringShared(getRuntime(), algo.digest(ByteList.plain(data)));
-        }
-        
         @JRubyMethod(name = "digest!")
         public IRubyObject digest_bang() {
-            algo.reset();            
-            byte[] digest = algo.digest(ByteList.plain(data));
+            IRubyObject digest = getDigestStringNoClone();
             reset();
-            return RubyString.newStringShared(getRuntime(), digest);
+            return digest;
         }
 
         @JRubyMethod(name = {"hexdigest"}, optional = 1)
         public IRubyObject hexdigest(IRubyObject[] args) {
-            algo.reset();
             if (args.length == 1) {
-                reset();
-                data.append(args[0]);
+                algo.reset();
+                update(args[0]);
             }
 
-            byte[] digest = ByteList.plain(toHex(algo.digest(ByteList.plain(data)))); 
+            IRubyObject digest = getDigestHexString();
 
             if (args.length == 1) {
-                reset();
+                algo.reset();
             }
-            return RubyString.newStringShared(getRuntime(), digest);
+            
+            return digest;
         }
         
         @JRubyMethod(name = {"to_s"})
         public IRubyObject to_s() {
-            algo.reset();
-            return RubyString.newStringNoCopy(getRuntime(), ByteList.plain(toHex(algo.digest(ByteList.plain(data)))));
+            return getDigestHexString();
         }
 
         @JRubyMethod(name = {"hexdigest!"})
         public IRubyObject hexdigest_bang() {
-            algo.reset();
-            byte[] digest = ByteList.plain(toHex(algo.digest(ByteList.plain(data))));
+            IRubyObject digest = getDigestHexStringNoClone();
             reset();
-            return RubyString.newStringShared(getRuntime(), digest);
+            return digest;
         }
         
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect() {
-            algo.reset();
-            return RubyString.newStringNoCopy(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + toHex(algo.digest(ByteList.plain(data))) + ">"));
+            return RubyString.newStringNoCopy(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + getDigestHex() + ">"));
         }
 
         @JRubyMethod(name = "==", required = 1)
@@ -323,7 +314,7 @@ public class RubyDigest {
                 if (oth instanceof Base) {
                     Base b = (Base)oth;
                     ret = this.algo.getAlgorithm().equals(b.algo.getAlgorithm()) &&
-                            this.getDigest().equals(b.getDigest());
+                            Arrays.equals(getDigest(), b.getDigest());
                 } else {
                     IRubyObject str = oth.convertToString();
                     ret = this.to_s().equals(str);
@@ -347,7 +338,6 @@ public class RubyDigest {
         @JRubyMethod(name = {"reset"})
         public IRubyObject reset() {
             algo.reset();
-            data = new StringBuffer();
             return getRuntime().getNil();
         }
 
@@ -355,16 +345,62 @@ public class RubyDigest {
            this.algo = createMessageDigest(getRuntime(), algo.toString());
         }
 
-        private static String toHex(byte[] val) {
-            StringBuilder out = new StringBuilder();
-            for(int i=0,j=val.length;i<j;i++) {
-                String ve = Integer.toString((((int)((char)val[i])) & 0xFF),16);
-                if(ve.length() == 1) {
-                    ve = "0" + ve;
-                }
-                out.append(ve);
+        final static byte[] digits = {
+        '0' , '1' , '2' , '3' , '4' , '5' ,
+        '6' , '7' , '8' , '9' , 'a' , 'b' ,
+        'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
+        'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
+        'o' , 'p' , 'q' , 'r' , 's' , 't' ,
+        'u' , 'v' , 'w' , 'x' , 'y' , 'z'
+        };
+
+        private byte[] getDigest() {
+            MessageDigest copy;
+            try {
+                copy = (MessageDigest)algo.clone();
+            } catch (CloneNotSupportedException cnse) {
+                copy = algo;
             }
-            return out.toString();
+            return copy.digest();
         }
+
+        private byte[] getDigestNoClone() {
+            return algo.digest();
+        }
+
+        private ByteList getDigestHex() {
+            return toHex(getDigest());
+        }
+
+        private ByteList getDigestHexNoClone() {
+            return toHex(getDigestNoClone());
+        }
+
+        private IRubyObject getDigestString() {
+            return RubyString.newStringNoCopy(getRuntime(), getDigest());
+        }
+
+        private IRubyObject getDigestStringNoClone() {
+            return RubyString.newStringNoCopy(getRuntime(), getDigestNoClone());
+        }
+
+        private IRubyObject getDigestHexString() {
+            return RubyString.newStringNoCopy(getRuntime(), getDigestHex());
+        }
+
+        private IRubyObject getDigestHexStringNoClone() {
+            return RubyString.newStringNoCopy(getRuntime(), getDigestHexNoClone());
+        }
+
+        private static ByteList toHex(byte[] val) {
+            ByteList byteList = new ByteList(val.length * 2);
+            for(int i=0,j=val.length;i<j;i++) {
+                int b = val[i] & 0xFF;
+                byteList.append(digits[b >> 4]);
+                byteList.append(digits[b & 0xF]);
+            }
+            return byteList;
+        }
+
     }
 }// RubyDigest
