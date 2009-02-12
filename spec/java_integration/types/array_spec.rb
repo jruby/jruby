@@ -790,3 +790,14 @@ describe "A Ruby class implementing an interface returning a Java Object[]" do
   end
 end
 
+# JRUBY-3175: Cloning java byte array returns incorrect object
+describe "A Java byte array" do
+  it "should clone to another usable Java byte array" do
+    s = "switch me to bytes".to_java_bytes
+    c = s.clone
+    String.from_java_bytes(s).should == "switch me to bytes"
+    String.from_java_bytes(c).should == "switch me to bytes"
+    String.from_java_bytes(s).should == String.from_java_bytes(c)
+  end
+end
+
