@@ -253,26 +253,31 @@ public class LoadService {
         }
     }
 
-    public boolean smartLoad(final String file) {
-        checkEmptyLoad(file);
-
+    public SearchState findFileForLoad(String file) throws AlreadyLoaded {
         SearchState state = new SearchState(file);
         state.prepareRequireSearch(file);
 
-        try {
-            for (LoadSearcher searcher : searchers) {
-                if (searcher.shouldTrySearch(state)) {
-                    searcher.trySearch(state);
-                } else {
-                    continue;
-                }
+        for (LoadSearcher searcher : searchers) {
+            if (searcher.shouldTrySearch(state)) {
+                searcher.trySearch(state);
+            } else {
+                continue;
             }
+        }
+
+        return state;
+    }
+
+    public boolean smartLoad(final String file) {
+        checkEmptyLoad(file);
+
+        try {
+            SearchState state = findFileForLoad(file);
+            return tryLoadingLibraryOrScript(runtime, state);
         } catch (AlreadyLoaded al) {
             // Library has already been loaded in some form, bail out
             return false;
         }
-
-        return tryLoadingLibraryOrScript(runtime, state);
     }
 
     public boolean require(String file) {
