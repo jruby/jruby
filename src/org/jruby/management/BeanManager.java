@@ -81,6 +81,9 @@ public class BeanManager {
         } catch (AccessControlException ex) {
             // ignore...bean doesn't get registered
             // TODO: Why does that bother me?
+        } catch (SecurityException ex) {
+            // ignore...bean doesn't get registered
+            // TODO: Why does that bother me?
         }
     }
 
@@ -97,6 +100,12 @@ public class BeanManager {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NullPointerException ex) {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (AccessControlException ex) {
+            // ignore...bean doesn't get registered
+            // TODO: Why does that bother me?
+        } catch (SecurityException ex) {
+            // ignore...bean doesn't get registered
+            // TODO: Why does that bother me?
         }
     }
 }
