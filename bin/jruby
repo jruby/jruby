@@ -155,12 +155,14 @@ do
      -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
      --profile) 
-       PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-ruby.properties" 
+       PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-ruby.properties"
+       JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C")
        VERIFY_JRUBY="yes"
        ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
      --profile-all) 
-       PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-all.properties" 
+       PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-all.properties"
+       JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C")
        VERIFY_JRUBY="yes"
        ;;
      # Run with JMX management enabled
@@ -258,6 +260,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Profiling results:"
       cat profile.txt
+      rm profile.txt
   fi
 
   exit $JRUBY_STATUS
