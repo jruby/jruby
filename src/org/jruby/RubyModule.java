@@ -1178,22 +1178,20 @@ public class RubyModule extends RubyObject {
     }
 
     // FIXME: create AttrReaderMethod, AttrWriterMethod, for faster attr access
-    private void addAccessor(ThreadContext context, String internedName, boolean readable, boolean writeable) {
+    private void addAccessor(ThreadContext context, String internedName, Visibility visibility, boolean readable, boolean writeable) {
         assert internedName == internedName.intern() : internedName + " is not interned";
 
         final Ruby runtime = context.getRuntime();
 
-        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility attributeScope = context.getCurrentVisibility();
-        if (attributeScope == PRIVATE) {
+        if (visibility == PRIVATE) {
             //FIXME warning
-        } else if (attributeScope == MODULE_FUNCTION) {
-            attributeScope = PRIVATE;
+        } else if (visibility == MODULE_FUNCTION) {
+            visibility = PRIVATE;
             // FIXME warning
         }
         final String variableName = ("@" + internedName).intern();
         if (readable) {
-            addMethod(internedName, new JavaMethodZero(this, attributeScope, CallConfiguration.FrameNoneScopeNone) {
+            addMethod(internedName, new JavaMethodZero(this, visibility, CallConfiguration.FrameNoneScopeNone) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                     IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(variableName);
 
@@ -1204,7 +1202,7 @@ public class RubyModule extends RubyObject {
         }
         if (writeable) {
             internedName = (internedName + "=").intern();
-            addMethod(internedName, new JavaMethodOne(this, attributeScope, CallConfiguration.FrameNoneScopeNone) {
+            addMethod(internedName, new JavaMethodOne(this, visibility, CallConfiguration.FrameNoneScopeNone) {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
                     return self.getInstanceVariables().fastSetInstanceVariable(variableName, arg1);
                 }
@@ -1651,15 +1649,15 @@ public class RubyModule extends RubyObject {
     }
     
     public void addReadWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), true, true);
+        addAccessor(context, name.intern(), Visibility.PUBLIC, true, true);
     }
     
     public void addReadAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), true, false);
+        addAccessor(context, name.intern(), Visibility.PUBLIC, true, false);
     }
     
     public void addWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), false, true);
+        addAccessor(context, name.intern(), Visibility.PUBLIC, false, true);
     }
 
     /** rb_mod_attr
@@ -1669,7 +1667,10 @@ public class RubyModule extends RubyObject {
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
-        addAccessor(context, args[0].asJavaString().intern(), true, writeable);
+        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
+        Visibility visibility = context.getCurrentVisibility();
+        
+        addAccessor(context, args[0].asJavaString().intern(), visibility, true, writeable);
 
         return getRuntime().getNil();
     }
@@ -1679,8 +1680,11 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_9)
     public IRubyObject attr_1_9(ThreadContext context, IRubyObject[] args) {
+        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
+        Visibility visibility = context.getCurrentVisibility();
+
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), true, false);
+            addAccessor(context, args[i].asJavaString().intern(), visibility, true, false);
         }
         return getRuntime().getNil();
     }
@@ -1695,8 +1699,11 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "attr_reader", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
+        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
+        Visibility visibility = context.getCurrentVisibility();
+
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), true, false);
+            addAccessor(context, args[i].asJavaString().intern(), visibility, true, false);
         }
 
         return context.getRuntime().getNil();
@@ -1707,8 +1714,11 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "attr_writer", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
+        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
+        Visibility visibility = context.getCurrentVisibility();
+
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), false, true);
+            addAccessor(context, args[i].asJavaString().intern(), visibility, false, true);
         }
 
         return context.getRuntime().getNil();
@@ -1725,11 +1735,14 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "attr_accessor", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
+        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
+        Visibility visibility = context.getCurrentVisibility();
+
         for (int i = 0; i < args.length; i++) {
             // This is almost always already interned, since it will be called with a symbol in most cases
             // but when created from Java code, we might get an argument that needs to be interned.
             // addAccessor has as a precondition that the string MUST be interned
-            addAccessor(context, args[i].asJavaString().intern(), true, true);
+            addAccessor(context, args[i].asJavaString().intern(), visibility, true, true);
         }
 
         return context.getRuntime().getNil();
