@@ -3090,7 +3090,7 @@ public class RubyArray extends RubyObject implements List {
             permute(context, n, r,
                     new int[n], 0,
                     new boolean[n],
-                    makeShared(0, realLength, getMetaClass()), block);
+                    makeShared(begin, n, getMetaClass()), block);
         }
         return this;
     }
