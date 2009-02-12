@@ -218,6 +218,7 @@ public class ThreadLibrary implements Library {
             }
             boolean success = false;
             try {
+                context.getThread().enterSleep();
                 synchronized (this) {
                     mutex.unlock(context);
                     try {
@@ -233,6 +234,7 @@ public class ThreadLibrary implements Library {
                 }
             } finally {
                 mutex.lock(context);
+                context.getThread().exitSleep();
             }
             if (timeout != null) {
                 return context.getRuntime().newBoolean(success);
@@ -245,13 +247,13 @@ public class ThreadLibrary implements Library {
         @JRubyMethod
         public synchronized IRubyObject broadcast(ThreadContext context) {
             notifyAll();
-            return context.getRuntime().getNil();
+            return this;
         }
 
         @JRubyMethod
         public synchronized IRubyObject signal(ThreadContext context) {
             notify();
-            return context.getRuntime().getNil();
+            return this;
         }
     }
 
