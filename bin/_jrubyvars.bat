@@ -50,6 +50,7 @@ set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Boot Classpath ----------------------------------------
 
 for %%i in ("%JRUBY_HOME%\lib\jruby*.jar") do @call :setjrubycp %%i
+for %%i in ("%JRUBY_HOME%\lib\bsf.jar") do @call :setjrubycp %%i
 
 rem ----- Set Up The System Classpath ----------------------------------------
 
