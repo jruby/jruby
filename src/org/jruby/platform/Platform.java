@@ -43,6 +43,10 @@ public class Platform {
     protected Platform() {
     }
 
+    public static void main(String[] args) {
+        System.out.println(System.getProperties());
+    }
+
     public String getPackageName() {
         return String.format("%s.%s.%s", Platform.class.getPackage().getName(), OS, ARCH);
     }
@@ -56,6 +60,8 @@ public class Platform {
     private static final String FREEBSD = "freebsd";
     private static final String OPENBSD = "openbsd";
     private static final String SOLARIS = "solaris";
+
+    private static final String GCJ = "GNU libgcj";
 
     public static final Map<String, String> OS_NAMES = new HashMap<String, String>() {{
         put("Mac OS X", DARWIN);
@@ -86,7 +92,7 @@ public class Platform {
     }
     public static final String ARCH = initArchitecture();
     public static final String OS = initOperatingSystem();
-
+    public static final String JVM = System.getProperty("java.vm.name");
 
     public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
 
@@ -100,6 +106,8 @@ public class Platform {
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
+
+    public static final boolean IS_GCJ = JVM.equals(GCJ);
     
     /**
      * An extension over <code>System.getProperty</code> method.

@@ -46,6 +46,7 @@ import java.io.PrintStream;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
@@ -81,6 +82,12 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        // Ensure we're not running on GCJ, since it's not supported and leads to weird errors
+        if (Platform.IS_GCJ) {
+            System.err.println("Fatal: GCJ (GNU Compiler for Java) is not supported by JRuby.");
+            System.exit(1);
+        }
+        
         Main main = new Main();
         
         try {
