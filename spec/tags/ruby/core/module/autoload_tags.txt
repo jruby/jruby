@@ -1,1 +1,2 @@
 fails(JRUBY-3144):Module#autoload shares the autoload request across dup'ed copies of modules
+fails(JRUBY-3399):Module#autoload does not load the file when refering to the constant in defined?
