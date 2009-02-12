@@ -1,1 +1,0 @@
-fails(JRUBY-2795,macos):Process.setpriority sets the scheduling priority for a specified process

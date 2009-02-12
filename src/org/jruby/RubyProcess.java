@@ -31,6 +31,7 @@ package org.jruby;
 
 import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
+import com.kenai.constantine.platform.Errno;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -750,7 +751,13 @@ public class RubyProcess {
         int which = (int)arg1.convertToInteger().getLongValue();
         int who = (int)arg2.convertToInteger().getLongValue();
         int prio = (int)arg3.convertToInteger().getLongValue();
+        runtime.getPosix().errno(0);
         int result = runtime.getPosix().setpriority(which, who, prio);
+        if (result == -1) {
+            if (runtime.getPosix().errno() == Errno.EACCES.value()) {
+                throw runtime.newErrnoEACCESError("Permission denied");
+            }
+        }
         
         return runtime.newFixnum(result);
     }
