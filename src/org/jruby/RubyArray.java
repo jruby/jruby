@@ -426,6 +426,10 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_make_shared
     *
     */
+    private RubyArray makeShared() {
+        return makeShared(begin, realLength, getMetaClass());
+    }
+
     private RubyArray makeShared(int beg, int len, RubyClass klass) {
         return makeShared(beg, len, klass, klass.getRuntime().isObjectSpaceEnabled());
     }
@@ -2741,7 +2745,6 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "uniq!")
     public IRubyObject uniq_bang() {
         RubyHash hash = makeHash(null);
-
         if (realLength == hash.size()) return getRuntime().getNil();
 
         int j = 0;
@@ -2753,14 +2756,21 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_uniq
+    /** rb_ary_uniq 
      *
      */
     @JRubyMethod(name = "uniq")
     public IRubyObject uniq() {
-        RubyArray ary = aryDup();
-        ary.uniq_bang();
-        return ary;
+        RubyHash hash = makeHash(null);
+        if (realLength == hash.size()) return makeShared();
+
+        RubyArray result = new RubyArray(getRuntime(), getMetaClass(), hash.size()); 
+
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject v = elt(i);
+            if (hash.fastDelete(v)) result.append(v);
+        }
+        return result;
     }
 
     /** rb_ary_diff
