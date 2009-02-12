@@ -310,11 +310,10 @@ public class RubyArray extends RubyObject implements List {
         super(runtime, runtime.getArray(), objectSpace);
     }
 
-    public RubyArray(Ruby runtime, RubyClass klass) {
+    private RubyArray(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        alloc(ARRAY_DEFAULT_SIZE);
     }
-    
+
     /* Array constructors taking the MetaClass to fulfil MRI Array subclass behaviour
      * 
      */
@@ -431,9 +430,18 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private RubyArray makeShared(int beg, int len, RubyClass klass) {
-        return makeShared(beg, len, klass, klass.getRuntime().isObjectSpaceEnabled());
+        return makeShared(beg, len, new RubyArray(klass.getRuntime(), klass));
     }
-    
+
+    private RubyArray makeShared(int beg, int len, RubyArray sharedArray) {
+        isShared = true;
+        sharedArray.values = values;
+        sharedArray.isShared = true;
+        sharedArray.begin = beg;
+        sharedArray.realLength = len;
+        return sharedArray;
+    }
+
     /** ary_shared_first
      * 
      */
@@ -447,20 +455,6 @@ public class RubyArray extends RubyObject implements List {
         }
         
         return makeShared(last ? realLength - n : 0, n, getMetaClass());
-    }
-    
-    
-    /** rb_ary_make_shared
-     *
-     */
-    private RubyArray makeShared(int beg, int len, RubyClass klass, boolean objectSpace) {
-        RubyArray sharedArray = new RubyArray(getRuntime(), klass, objectSpace);
-        isShared = true;
-        sharedArray.values = values;
-        sharedArray.isShared = true;
-        sharedArray.begin = beg;
-        sharedArray.realLength = len;
-        return sharedArray;
     }
 
     /** rb_ary_modify_check
@@ -1083,17 +1077,16 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject subseqLight(long beg, long len) {
-        if (beg > realLength || beg < 0 || len < 0) return getRuntime().getNil();
+        Ruby runtime = getRuntime();
+        if (beg > realLength || beg < 0 || len < 0) return runtime.getNil();
 
         if (beg + len > realLength) {
             len = realLength - beg;
-            
             if (len < 0) len = 0;
         }
-        
-        if (len == 0) return new RubyArray(getRuntime(), getMetaClass(), IRubyObject.NULL_ARRAY, false);
 
-        return makeShared(begin + (int) beg, (int) len, getMetaClass(), false);
+        if (len == 0) return new RubyArray(runtime, getMetaClass(), IRubyObject.NULL_ARRAY, false);
+        return makeShared(begin + (int) beg, (int) len, new RubyArray(runtime, getMetaClass(), false));
     }
 
     /** rb_ary_length
@@ -2771,6 +2764,7 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject v = elt(i);
             if (hash.fastDelete(v)) result.values[j++] = v;
         }
+        result.realLength = j;
         return result;
     }
 
