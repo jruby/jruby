@@ -2857,7 +2857,22 @@ public class RubyArray extends RubyObject implements List {
         }
         return this;
     }
-    
+
+    /** rb_ary_take
+     * 
+     */
+    @JRubyMethod(name = "sort_by!", compat = CompatVersion.RUBY1_9, frame = true)
+    public IRubyObject sort_by_bang(ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "sort_by!");
+
+        modifyCheck();
+        RubyArray sorted = RuntimeHelpers.invoke(context, this, "sort_by", block).convertToArray();
+        values = sorted.values;
+        isShared = false;
+        begin = 0;
+        return this;
+    }
+
     /** rb_ary_take
      * 
      */
