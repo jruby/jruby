@@ -525,7 +525,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
-        if (getClass() == other.getClass()) return getRuntime().newArray(other, this);
+        if (getMetaClass() == other.getMetaClass()) return getRuntime().newArray(other, this);
 
         IRubyObject cdr = RubyKernel.new_float(this, this);
         IRubyObject car = RubyKernel.new_float(this, other);
