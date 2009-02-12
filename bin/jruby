@@ -69,6 +69,10 @@ else
   JAVA_CMD="$JAVA_HOME/bin/java"
 fi
 
+# If you're seeing odd exceptions, you may have a bad JVM install.
+# Uncomment this and report the version to the JRuby team along with error.
+#$JAVA_CMD -version
+
 JRUBY_SHELL=/bin/sh
 
 # ----- Set Up The Boot Classpath -------------------------------------------
