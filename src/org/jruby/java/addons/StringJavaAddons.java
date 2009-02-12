@@ -15,4 +15,9 @@ public class StringJavaAddons {
     public static IRubyObject from_java_bytes(ThreadContext context, IRubyObject self, IRubyObject bytes) {
         return JavaArrayUtilities.bytes_to_ruby_string(bytes, bytes);
     }
+
+    @JRubyMethod
+    public static IRubyObject to_java_string(ThreadContext context, IRubyObject self) {
+        return Java.getInstance(context.getRuntime(), self.convertToString().asJavaString());
+    }
 }
