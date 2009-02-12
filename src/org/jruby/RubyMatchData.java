@@ -183,17 +183,17 @@ public class RubyMatchData extends RubyObject {
         if (regs == null) {
             if (start != 0) return runtime.newEmptyArray();
             if (begin == -1) {
-                return getRuntime().newArray(runtime.getNil());
+                return runtime.newArray(runtime.getNil());
             } else {
                 RubyString ss = str.makeShared(runtime, begin, end - begin);
                 if (isTaint()) ss.setTaint(true);
-                return getRuntime().newArray(ss);
+                return runtime.newArray(ss);
             }
         } else {
-            RubyArray arr = getRuntime().newArray(regs.numRegs - start);
+            RubyArray arr = runtime.newArray(regs.numRegs - start);
             for (int i=start; i<regs.numRegs; i++) {
                 if (regs.beg[i] == -1) {
-                    arr.append(getRuntime().getNil());
+                    arr.append(runtime.getNil());
                 } else {
                     RubyString ss = str.makeShared(runtime, regs.beg[i], regs.end[i] - regs.beg[i]);
                     if (isTaint()) ss.setTaint(true); 
