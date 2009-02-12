@@ -552,7 +552,7 @@ public class RubyObject extends RubyBasicObject {
      * equality, and then calling the "eql?" method.
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        return that == other || that.callMethod(context, "eql?", other).isTrue();
+        return that.callMethod(context, "eql?", other).isTrue();
     }
 
     /** rb_obj_init_copy
