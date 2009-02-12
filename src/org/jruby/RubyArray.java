@@ -2766,9 +2766,10 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray result = new RubyArray(getRuntime(), getMetaClass(), hash.size()); 
 
+        int j = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) result.append(v);
+            if (hash.fastDelete(v)) result.values[j++] = v;
         }
         return result;
     }
