@@ -1738,7 +1738,7 @@ public class RubyArray extends RubyObject implements List {
             if (!obj.respondsTo("to_ary")) {
                 return runtime.getFalse();
             } else {
-                if (equalInternal(context, obj.callMethod(context, "to_ary"), this)) return runtime.getTrue();
+                if (equalInternal(context, obj, this)) return runtime.getTrue();
                 return runtime.getFalse();                
             }
         }
