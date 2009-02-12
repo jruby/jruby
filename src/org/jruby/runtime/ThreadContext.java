@@ -549,18 +549,9 @@ public final class ThreadContext {
     }
     
     public boolean getConstantDefined(String internedName) {
-        IRubyObject result;
-        
-        // flipped from while to do to search current class first
-        for (StaticScope scope = getCurrentScope().getStaticScope(); scope != null; scope = scope.getPreviousCRefScope()) {
-            RubyModule module = scope.getModule();
-            if ((result = module.fastFetchConstant(internedName)) != null) {
-                if (result != RubyObject.UNDEF) return true;
-                return runtime.getLoadService().autoloadFor(module.getName() + "::" + internedName) != null;
-            }
-        }
-        
-        return getCurrentScope().getStaticScope().getModule().fastIsConstantDefined(internedName);
+        IRubyObject value = getConstant(internedName);
+
+        return value != null;
     }
     
     /**
