@@ -4080,8 +4080,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     if (spatEnc.isAsciiCompatible()) {
                         c = len == 1 ? bytes[p] & 0xff : -1;
                     } else {
-                        int l = StringSupport.preciseLength(spatEnc, bytes, p, p + len);
-                        c = len == l ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
+                        c = len == StringSupport.preciseLength(spatEnc, bytes, p, p + len) ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
                     }
                     result = c == ' ' ? awkSplit19(limit, lim, i) : regexSplit19(context, spat, limit, lim, i);
                 }
@@ -4101,54 +4100,39 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private RubyArray regexSplit19(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
-
         final Regex pattern = getQuotedPattern(pat);
 
         int begin = value.begin;
         int len = value.realSize;
-        final Matcher matcher = pattern.matcher(value.bytes, begin, begin + len);
+        int range = begin + len;
+        byte[]bytes = value.bytes;
+
+        final Matcher matcher = pattern.matcher(bytes, begin, range);
 
         RubyArray result = runtime.newArray();
-        final Encoding enc = pattern.getEncoding();
+        Encoding enc = value.encoding;
+        boolean captures = pattern.numberOfCaptures() != 0;
 
-        int beg = regexSplit19(runtime, result, matcher, enc, limit, lim, i, pattern.numberOfCaptures() != 0);
-
-        // only this case affects backrefs 
-        context.getCurrentFrame().setBackRef(runtime.getNil());
-
-        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
-        return result;
-    }
-
-    private int regexSplit19(Ruby runtime, RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, boolean captures) {
-        byte[]bytes = value.bytes;
-        int begin = value.begin;
-        int start = begin;
-        int range = begin + value.realSize;
         int end, beg = 0;
         boolean lastNull = false;
-
+        int start = begin;
         while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
             if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
-                if (value.realSize == 0) {
+                if (len == 0) {
                     result.append(newEmptyString(runtime, getMetaClass()));
                     break;
                 } else if (lastNull) {
-                    result.append(makeShared19(runtime, beg, enc.length(bytes, begin + beg, range)));
+                    result.append(makeShared19(runtime, beg, StringSupport.length(enc, bytes, begin + beg, range)));
                     beg = start - begin;
                 } else {
-                    if (start == range) {
-                        start++;
-                    } else {
-                        start += enc.length(bytes, start, range);
-                    }
+                    start += start == range ? 1 : StringSupport.length(enc, bytes, start, range);
                     lastNull = true;
                     continue;
                 }
             } else {
                 result.append(makeShared19(runtime, beg, end - beg));
                 beg = matcher.getEnd();
-                start = begin + matcher.getEnd();
+                start = begin + beg;
             }
             lastNull = false;
 
@@ -4156,7 +4140,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             if (limit && lim <= ++i) break;
         }
-        return beg;
+
+        // only this case affects backrefs 
+        context.getCurrentFrame().setBackRef(runtime.getNil());
+
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
+        return result;
     }
 
     private void populateCapturesForSplit19(Ruby runtime, RubyArray result, Matcher matcher) {
