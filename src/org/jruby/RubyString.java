@@ -4105,9 +4105,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         // only this case affects backrefs 
         context.getCurrentFrame().setBackRef(runtime.getNil());
 
-        if (len > 0 && (limit || len > beg || lim < 0)) {
-            result.append(len == beg ? newEmptyString(runtime, getMetaClass(), enc) : makeShared19(runtime, beg, len - beg));
-        }
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
         return result;
     }
 
