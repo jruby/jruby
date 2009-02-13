@@ -4068,12 +4068,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
             result = awkSplit19(limit, lim, i);
         } else {
             if (spat instanceof RubyString && ((RubyString) spat).value.realSize == 1) {
-                RubyString strSpat = (RubyString) spat;
-                if (strSpat.value.bytes[strSpat.value.begin] == (byte)' ') {
-                    result = awkSplit19(limit, lim, i);
+                ByteList spatValue = ((RubyString)spat).value;
+                final int c;
+                if (spatValue.encoding.isAsciiCompatible()) {
+                    c = spatValue.bytes[spatValue.begin] & 0xff;
                 } else {
-                    result = regexSplit19(context, spat, limit, lim, i);
+                    c = StringSupport.preciseCodePoint(spatValue.encoding, spatValue.bytes, spatValue.begin, spatValue.begin + spatValue.realSize);
                 }
+                result = c == ' ' ? awkSplit19(limit, lim, i) : regexSplit19(context, spat, limit, lim, i); 
             } else {
                 result = regexSplit19(context, spat, limit, lim, i);
             }
