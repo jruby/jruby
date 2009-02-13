@@ -4026,40 +4026,36 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyArray result = runtime.newArray();
 
         byte[]bytes = value.bytes;
-        int p = value.begin; 
-        int endp = p + value.realSize;
+        int p = value.begin;
+        int len = value.realSize;
+        int end = p + len;
 
         boolean skip = true;
 
-        int end, beg = 0;        
-        for (end = beg = 0; p < endp; p++) {
+        int e = 0, b = 0;        
+        while (p < end) {
+            int c = bytes[p++] & 0xff;
             if (skip) {
-                if (ASCII.isSpace(bytes[p] & 0xff)) {
-                    beg++;
+                if (ASCII.isSpace(c)) {
+                    b++;
                 } else {
-                    end = beg + 1;
+                    e = b + 1;
                     skip = false;
                     if (limit && lim <= i) break;
                 }
             } else {
-                if (ASCII.isSpace(bytes[p] & 0xff)) {
-                    result.append(makeShared(runtime, beg, end - beg));
+                if (ASCII.isSpace(c)) {
+                    result.append(makeShared(runtime, b, e - b));
                     skip = true;
-                    beg = end + 1;
+                    b = e + 1;
                     if (limit) i++;
                 } else {
-                    end++;
+                    e++;
                 }
             }
         }
 
-        if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
-            if (value.realSize == beg) {
-                result.append(newEmptyString(runtime, getMetaClass()));
-            } else {
-                result.append(makeShared(runtime, beg, value.realSize - beg));
-            }
-        }
+        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeShared(runtime, b, len - b));
         return result;
     }
 
