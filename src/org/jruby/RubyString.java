@@ -3950,7 +3950,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Regex pattern = getQuotedPattern(pat);
 
         int begin = value.begin;
-        final Matcher matcher = pattern.matcher(value.bytes, begin, begin + value.realSize);
+        int len = value.realSize;
+        final Matcher matcher = pattern.matcher(value.bytes, begin, begin + len);
 
         RubyArray result = runtime.newArray();
         final Encoding enc = pattern.getEncoding();
@@ -3960,13 +3961,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         // only this case affects backrefs 
         context.getCurrentFrame().setBackRef(runtime.getNil());
 
-        if (value.realSize > 0 && (limit || value.realSize > beg || lim < 0)) {
-            if (value.realSize == beg) {
-                result.append(newEmptyString(runtime, getMetaClass()));
-            } else {
-                result.append(substr(runtime, beg, value.realSize - beg));
-            }
-        }
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
         return result;
     }
 
@@ -3984,7 +3979,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     result.append(newEmptyString(runtime, getMetaClass()));
                     break;
                 } else if (lastNull) {
-                    result.append(substr(runtime, beg, enc.length(bytes, begin + beg, range)));
+                    result.append(makeShared(runtime, beg, enc.length(bytes, begin + beg, range)));
                     beg = start - begin;
                 } else {
                     if (start == range) {
@@ -3996,7 +3991,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     continue;
                 }
             } else {
-                result.append(substr(runtime, beg, end - beg));
+                result.append(makeShared(runtime, beg, end - beg));
                 beg = matcher.getEnd();
                 start = begin + matcher.getEnd();
             }
@@ -4012,12 +4007,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher) {
         Region region = matcher.getRegion();
         for (int i = 1; i < region.numRegs; i++) {
-            if (region.beg[i] == -1) continue;
-            if (region.beg[i] == region.end[i]) {
-                result.append(newEmptyString(runtime, getMetaClass()));
-            } else {
-                result.append(substr(runtime , region.beg[i], region.end[i] - region.beg[i]));
-            }
+            int beg = region.beg[i];
+            if (beg == -1) continue;
+            result.append(makeShared(runtime, beg, region.end[i] - beg));
         }
     }
 
