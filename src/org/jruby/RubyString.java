@@ -4171,10 +4171,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = value.encoding;
         boolean skip = true;
 
-        int e = 0, b = 0;        
+        int e = 0, b = 0;
+        boolean singlebyte = singleByteOptimizable(enc);
         while (p < end) {
-            int c = StringSupport.codePoint(runtime, enc, bytes, p, end);
-            p += StringSupport.length(enc, bytes, p, end);
+            final int c;
+            if (singlebyte) {
+                c = bytes[p++] & 0xff;
+            } else {
+                c = StringSupport.codePoint(runtime, enc, bytes, p, end);
+                p += StringSupport.length(enc, bytes, p, end);
+            }
+
             if (skip) {
                 if (enc.isSpace(c)) {
                     b = p - ptr;
@@ -4195,9 +4202,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
 
-        if (len > 0 && (limit || len > b || lim < 0)) {
-            result.append(len == b ? newEmptyString(runtime, getMetaClass(), enc) : makeShared19(runtime, b, len - b));
-        }
+        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeShared19(runtime, b, len - b));
         return result;
     }
 
