@@ -1,7 +1,12 @@
 module Java
  class << self
    def const_missing(sym)
-     JavaUtilities.get_top_level_proxy_or_package sym
+     result = JavaUtilities.get_top_level_proxy_or_package(sym)
+     if const_defined? sym
+       result
+     else
+       const_set(sym, result)
+     end
    end
 
    def method_missing(sym, *args)

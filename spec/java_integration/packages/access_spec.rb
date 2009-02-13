@@ -1,5 +1,8 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
+# for DefaultPackageClass
+$CLASSPATH << File.dirname(__FILE__) + "/../../../build/classes/test"
+
 describe "A Java package" do
   it 'is accessible directly when starting with java, javax, com, or org' do
     # Using static methods here for simplicity; avoiding construction.
@@ -36,5 +39,16 @@ describe "A Java package" do
   it "can be imported using 'import \"package.module\"'" do
     m = Module.new { import 'java.lang' }
     m::System.should respond_to 'getProperty'
+  end
+end
+
+describe "A class in the default package" do
+  it "can be opened using Java::Foo syntax" do
+    Java::DefaultPackageClass.new.foo.should == "foo"
+    class Java::DefaultPackageClass
+      def bar; 'bar'; end
+    end
+    Java::DefaultPackageClass.new.bar.should == "bar"
+    Java::DefaultPackageClass.new.foo.should == "foo"
   end
 end
