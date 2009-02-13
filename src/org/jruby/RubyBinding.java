@@ -72,6 +72,7 @@ public class RubyBinding extends RubyObject {
         runtime.setBinding(bindingClass);
         
         bindingClass.defineAnnotatedMethods(RubyBinding.class);
+        bindingClass.getSingletonClass().undefineMethod("new");
         
         return bindingClass;
     }
@@ -81,66 +82,24 @@ public class RubyBinding extends RubyObject {
     }
 
     // Proc class
-    
+
     public static RubyBinding newBinding(Ruby runtime, Binding binding) {
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
+    @Deprecated
     public static RubyBinding newBinding(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        
-        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        Frame frame = context.getCurrentFrame();
-        Binding binding = new Binding(frame, context.getImmediateBindingRubyClass(), context.getCurrentScope());
-        
-        return new RubyBinding(runtime, runtime.getBinding(), binding);
+        return newBinding(runtime, runtime.getCurrentContext().currentBinding());
     }
 
-    public static RubyBinding newBinding(Ruby runtime, IRubyObject recv) {
-        ThreadContext context = runtime.getCurrentContext();
-
-        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        Frame frame = context.getCurrentFrame();
-        Binding binding = new Binding(recv, frame, frame.getVisibility(), context.getImmediateBindingRubyClass(), context.getCurrentScope());
-
-        return new RubyBinding(runtime, runtime.getBinding(), binding);
-    }
-
-    /**
-     * Create a binding appropriate for a bare "eval", by using the previous (caller's) frame and current
-     * scope.
-     */
-    public static RubyBinding newBindingForEval(ThreadContext context) {
-        // This requires some explaining.  We use Frame values when executing blocks to fill in 
-        // various values in ThreadContext and EvalState.eval like rubyClass, cref, and self.
-        // Largely, for an eval that is using the logical binding at a place where the eval is 
-        // called we mostly want to use the current frames value for this.  Most importantly, 
-        // we need that self (JRUBY-858) at this point.  We also need to make sure that returns
-        // jump to the right place (which happens to be the previous frame).  Lastly, we do not
-        // want the current frames klazz since that will be the klazz represented of self.  We
-        // want the class right before the eval (well we could use cref class for this too I think).
-        // Once we end up having Frames created earlier I think the logic of stuff like this will
-        // be better since we won't be worried about setting Frame to setup other variables/stacks
-        // but just making sure Frame itself is correct...
-        
-        Frame previousFrame = context.getPreviousFrame();
-        Frame currentFrame = context.getCurrentFrame();
-        currentFrame.setKlazz(previousFrame.getKlazz());
-        
-        // Set jump target to whatever the previousTarget thinks is good.
-//        currentFrame.setJumpTarget(previousFrame.getJumpTarget() != null ? previousFrame.getJumpTarget() : previousFrame);
-        
-        Binding binding = new Binding(previousFrame, context.getEvalBindingRubyClass(), context.getCurrentScope());
-        Ruby runtime = context.getRuntime();
-        
-        return new RubyBinding(runtime, runtime.getBinding(), binding);
+    @Deprecated
+    public static RubyBinding newBinding(Ruby runtime, IRubyObject self) {
+       return newBinding(runtime, runtime.getCurrentContext().currentBinding(self));
     }
     
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
-        // FIXME: We should be cloning, not reusing: frame, scope, dynvars, and potentially iter/block info
-        Frame frame = context.getCurrentFrame();
-        binding = new Binding(frame, context.getImmediateBindingRubyClass(), context.getCurrentScope());
+        binding = context.currentBinding();
         
         return this;
     }

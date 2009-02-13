@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -42,8 +43,6 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyException;
-import org.jruby.RubyObject;
 import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -523,28 +522,14 @@ public final class ThreadContext {
     }
     
     public RubyModule getRubyClass() {
-        assert !(parentIndex == -1) : "Trying to get RubyClass from empty stack";
-        
+        assert parentIndex != -1 : "Trying to get RubyClass from empty stack";
         RubyModule parentModule = parentStack[parentIndex];
-        
-        return parentModule.getNonIncludedClass();
-    }
-    
-    public RubyModule getImmediateBindingRubyClass() {
-        int index = parentIndex;
-        RubyModule parentModule = null;
-        parentModule = parentStack[index];
         return parentModule.getNonIncludedClass();
     }
 
-    public RubyModule getEvalBindingRubyClass() {
-        int index = parentIndex;
-        RubyModule parentModule = null;
-        if(index == 0) {
-            parentModule = parentStack[index];
-        } else {
-            parentModule = parentStack[index-1];
-        }
+    public RubyModule getPreviousRubyClass() {
+        assert parentIndex != 0 : "Trying to get RubyClass from too-shallow stack";
+        RubyModule parentModule = parentStack[parentIndex - 1];
         return parentModule.getNonIncludedClass();
     }
     
@@ -923,8 +908,21 @@ public final class ThreadContext {
     private Frame pushFrameForBlock(Binding binding) {
         Frame lastFrame = getNextFrame();
         Frame f = pushFrame(binding.getFrame());
-        f.setFile(file);
-        f.setLine(line);
+
+        // set the binding's frame's "previous" file and line to current, so
+        // trace will show who called the block
+        f.setFileAndLine(file, line);
+        
+        setFileAndLine(binding.getFile(), binding.getLine());
+        f.setVisibility(binding.getVisibility());
+        
+        return lastFrame;
+    }
+
+    private Frame pushFrameForEval(Binding binding) {
+        Frame lastFrame = getNextFrame();
+        Frame f = pushFrame(binding.getFrame());
+        setFileAndLine(binding.getFile(), binding.getLine());
         f.setVisibility(binding.getVisibility());
         return lastFrame;
     }
@@ -1286,11 +1284,8 @@ public final class ThreadContext {
     }
     
     public Frame preEvalWithBinding(Binding binding) {
-        Frame lastFrame = getNextFrame();
-        Frame frame = binding.getFrame();
-        frame.setIsBindingFrame(true);
-        pushFrame(frame);
-        getCurrentFrame().setVisibility(binding.getVisibility());
+        binding.getFrame().setIsBindingFrame(true);
+        Frame lastFrame = pushFrameForEval(binding);
         pushRubyClass(binding.getKlass());
         return lastFrame;
     }
@@ -1362,5 +1357,84 @@ public final class ThreadContext {
      */
     public void setWithinDefined(boolean isWithinDefined) {
         this.isWithinDefined = isWithinDefined;
+    }
+
+    /**
+     * Return a binding representing the current call's state
+     * @return the current binding
+     */
+    public Binding currentBinding() {
+        Frame frame = getCurrentFrame();
+        return new Binding(frame, getRubyClass(), getCurrentScope(), file, line);
+    }
+
+    /**
+     * Return a binding representing the current call's state but with a specified self
+     * @param self the self object to use
+     * @return the current binding, using the specified self
+     */
+    public Binding currentBinding(IRubyObject self) {
+        Frame frame = getCurrentFrame();
+        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), getCurrentScope(), file, line);
+    }
+
+    /**
+     * Return a binding representing the current call's state but with the
+     * specified visibility and self.
+     * @param self the self object to use
+     * @param visibility the visibility to use
+     * @return the current binding using the specified self and visibility
+     */
+    public Binding currentBinding(IRubyObject self, Visibility visibility) {
+        Frame frame = getCurrentFrame();
+        return new Binding(self, frame, visibility, getRubyClass(), getCurrentScope(), file, line);
+    }
+
+    /**
+     * Return a binding representing the current call's state but with the
+     * specified scope and self.
+     * @param self the self object to use
+     * @param visibility the scope to use
+     * @return the current binding using the specified self and scope
+     */
+    public Binding currentBinding(IRubyObject self, DynamicScope scope) {
+        Frame frame = getCurrentFrame();
+        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), scope, file, line);
+    }
+
+    /**
+     * Return a binding representing the current call's state but with the
+     * specified visibility, scope, and self. For shared-scope binding
+     * consumers like for loops.
+     * 
+     * @param self the self object to use
+     * @param visibility the visibility to use
+     * @param scope the scope to use
+     * @return the current binding using the specified self, scope, and visibility
+     */
+    public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
+        Frame frame = getCurrentFrame();
+        return new Binding(self, frame, visibility, getRubyClass(), scope, file, line);
+    }
+
+    /**
+     * Return a binding representing the previous call's state
+     * @return the current binding
+     */
+    public Binding previousBinding() {
+        Frame frame = getPreviousFrame();
+        Frame current = getCurrentFrame();
+        return new Binding(frame, getPreviousRubyClass(), getCurrentScope(), current.getFile(), current.getLine());
+    }
+
+    /**
+     * Return a binding representing the previous call's state but with a specified self
+     * @param self the self object to use
+     * @return the current binding, using the specified self
+     */
+    public Binding previousBinding(IRubyObject self) {
+        Frame frame = getPreviousFrame();
+        Frame current = getCurrentFrame();
+        return new Binding(self, frame, frame.getVisibility(), getPreviousRubyClass(), getCurrentScope(), current.getFile(), current.getLine());
     }
 }

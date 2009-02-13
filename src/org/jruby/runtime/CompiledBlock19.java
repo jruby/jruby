@@ -47,31 +47,16 @@ public class CompiledBlock19 extends BlockBody {
     protected final Arity arity;
     protected final StaticScope scope;
     
-    public static Block newCompiledClosure(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        Binding binding = new Binding(self, frame, visibility, klass, dynamicScope);
+    public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
+            StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType);
-        
+
         return new Block(body, binding);
     }
     
-    public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
-            StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        return newCompiledClosure(
-                self,
-                context.getCurrentFrame(),
-                Visibility.PUBLIC,
-                context.getRubyClass(),
-                context.getCurrentScope(),
-                arity,
-                scope,
-                callback,
-                hasMultipleArgsHead,
-                argumentType);
-    }
-    
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, BlockBody body) {
-        Binding binding = new Binding(self, context.getCurrentFrame(), Visibility.PUBLIC, context.getRubyClass(), context.getCurrentScope());
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         return new Block(body, binding);
     }
     
@@ -263,11 +248,7 @@ public class CompiledBlock19 extends BlockBody {
     }
 
     public Block cloneBlock(Binding binding) {
-        binding = new Binding(binding.getSelf(),
-                binding.getFrame(),
-                binding.getVisibility(),
-                binding.getKlass(),
-                binding.getDynamicScope());
+        binding = binding.clone();
         
         return new Block(this, binding);
     }

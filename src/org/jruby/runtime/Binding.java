@@ -33,7 +33,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -57,22 +56,37 @@ public class Binding {
      * A reference to all variable values (and names) that are in-scope for this block.
      */
     private final DynamicScope dynamicScope;
+
+    private String file;
+    private int line;
     
     public Binding(IRubyObject self, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope, String file, int line) {
         this.self = self;
         this.frame = frame.duplicate();
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
+        this.file = file;
+        this.line = line;
     }
     
-    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope) {
+    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, String file, int line) {
         this.self = frame.getSelf();
         this.frame = frame.duplicate();
         this.visibility = frame.getVisibility();
         this.klass = bindingClass;
         this.dynamicScope = dynamicScope;
+        this.file = file;
+        this.line = line;
+    }
+
+    public Binding clone() {
+        return new Binding(self, frame, visibility, klass, dynamicScope, file, line);
+    }
+
+    public Binding clone(Visibility visibility) {
+        return new Binding(self, frame, visibility, klass, dynamicScope, file, line);
     }
 
     public Visibility getVisibility() {
@@ -116,5 +130,21 @@ public class Binding {
      */
     public RubyModule getKlass() {
         return klass;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public void setLine(int line) {
+        this.line = line;
     }
 }

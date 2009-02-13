@@ -2320,7 +2320,7 @@ public final class Ruby {
                 if (file == null) file = "(ruby)";
                 if (type == null) type = getFalse();
                 
-                RubyBinding binding = RubyBinding.newBinding(Ruby.this);
+                RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
 
                 context.preTrace();
                 try {
@@ -2600,7 +2600,7 @@ public final class Ruby {
     }
 
     public RubyBinding newBinding() {
-        return RubyBinding.newBinding(this);
+        return RubyBinding.newBinding(this, getCurrentContext().currentBinding());
     }
 
     public RubyBinding newBinding(Binding binding) {

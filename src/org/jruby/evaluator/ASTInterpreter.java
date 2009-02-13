@@ -83,31 +83,9 @@ public class ASTInterpreter {
      * @param lineNumber is the line number to pretend we are starting from
      * @return An IRubyObject result from the evaluation
      */
-    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, IRubyObject scope, 
-            String file, int lineNumber) {
-        // both of these are ensured by the (very few) callers
-        assert !scope.isNil();
-        //assert file != null;
-
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
-        String savedFile = context.getFile();
-        int savedLine = context.getLine();
-
-        if (!(scope instanceof RubyBinding)) {
-            if (scope instanceof RubyProc) {
-                scope = ((RubyProc) scope).binding();
-            } else {
-                // bomb out, it's not a binding or a proc
-                throw runtime.newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
-            }
-        }
-
-        Binding binding = ((RubyBinding)scope).getBinding();
         DynamicScope evalScope = binding.getDynamicScope().getEvalScope();
-
-        // If no explicit file passed in we will use the bindings location
-        if (file == null) file = binding.getFrame().getFile();
-        if (lineNumber == -1) lineNumber = binding.getFrame().getLine();
         
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
@@ -117,7 +95,7 @@ public class ASTInterpreter {
             // Binding provided for scope, use it
             IRubyObject newSelf = binding.getSelf();
             RubyString source = src.convertToString();
-            Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
+            Node node = runtime.parseEval(source.getByteList(), binding.getFile(), evalScope, binding.getLine());
 
             return node.interpret(runtime, context, newSelf, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
@@ -128,10 +106,6 @@ public class ASTInterpreter {
             throw runtime.newSystemStackError("stack level too deep", soe);
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
-
-            // restore position
-            context.setFile(savedFile);
-            context.setLine(savedLine);
         }
     }
 

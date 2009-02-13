@@ -75,44 +75,18 @@ public class InterpretedBlock extends BlockBody {
     private final Arity arity;
 
     public static Block newInterpretedClosure(ThreadContext context, IterNode iterNode, IRubyObject self) {
-        Frame f = context.getCurrentFrame();
+        Binding binding = context.currentBinding(self);
+        NodeType argsNodeId = getArgumentTypeWackyHack(iterNode);
 
-        return newInterpretedClosure(iterNode,
-                         self,
-                         Arity.procArityOf(iterNode.getVarNode()),
-                         f,
-                         f.getVisibility(),
-                         context.getRubyClass(),
-                         context.getCurrentScope());
+        BlockBody body = new InterpretedBlock(
+                iterNode,
+                Arity.procArityOf(iterNode.getVarNode()),
+                asArgumentType(argsNodeId));
+        return new Block(body, binding);
     }
 
     public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
-        Frame f = context.getCurrentFrame();
-
-        Binding binding = new Binding(self,
-                         f,
-                         f.getVisibility(),
-                         context.getRubyClass(),
-                         context.getCurrentScope());
-        return new Block(body, binding);
-    }
-    
-    public static Block newInterpretedClosure(IterNode iterNode, IRubyObject self, Arity arity, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
-        NodeType argsNodeId = getArgumentTypeWackyHack(iterNode);
-        
-        BlockBody body = new InterpretedBlock(
-                iterNode,
-                arity,
-                asArgumentType(argsNodeId));
-        
-        Binding binding = new Binding(
-                self, 
-                frame,
-                visibility,
-                klass,
-                dynamicScope);
-        
+        Binding binding = context.currentBinding(self);
         return new Block(body, binding);
     }
 
@@ -297,13 +271,7 @@ public class InterpretedBlock extends BlockBody {
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        binding = new Binding(
-                binding.getSelf(),
-                binding.getFrame(),
-                binding.getVisibility(),
-                binding.getKlass(), 
-                binding.getDynamicScope());
-        
+        binding = binding.clone();
         return new Block(this, binding);
     }
 

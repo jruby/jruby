@@ -42,11 +42,7 @@ public class CallBlock extends BlockBody {
     private final ThreadContext context;
     
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
-        Binding binding = new Binding(self,
-                context.getCurrentFrame(),
-                Visibility.PUBLIC,
-                context.getRubyClass(),
-                context.getCurrentScope());
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock(imClass, arity, callback, context);
         
         return new Block(body, binding);
@@ -105,10 +101,7 @@ public class CallBlock extends BlockBody {
     }
 
     public Block cloneBlock(Binding binding) {
-        binding = new Binding(binding.getSelf(), binding.getFrame(),
-                Visibility.PUBLIC,
-                binding.getKlass(),
-                binding.getDynamicScope());
+        binding = binding.clone(Visibility.PUBLIC);
         return new Block(this, binding);
     }
 

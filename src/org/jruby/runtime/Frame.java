@@ -371,6 +371,14 @@ public final class Frame implements JumpTarget {
         this.line = line;
     }
 
+    /**
+     * Set both the file and line
+     */
+    public void setFileAndLine(String file, int line) {
+        this.fileName = file;
+        this.line = line;
+    }
+
     /** 
      * Return class that we are calling against
      * 

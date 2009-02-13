@@ -57,13 +57,7 @@ public class Interpreted19Block  extends BlockBody {
     private final Arity arity;
 
     public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
-        Frame frame = context.getCurrentFrame();
-
-        Binding binding = new Binding(self,
-                         frame,
-                         frame.getVisibility(),
-                         context.getRubyClass(),
-                         context.getCurrentScope());
+        Binding binding = context.currentBinding(self);
         return new Block(body, binding);
     }
 
@@ -231,12 +225,7 @@ public class Interpreted19Block  extends BlockBody {
         // captured instances of this block may still be around and we do not want to start
         // overwriting those values when we create a new one.
         // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        binding = new Binding(
-                binding.getSelf(),
-                binding.getFrame(),
-                binding.getVisibility(),
-                binding.getKlass(),
-                binding.getDynamicScope());
+        binding = binding.clone();
 
         return new Block(this, binding);
     }

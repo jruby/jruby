@@ -37,27 +37,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Java code.
  */
 public class CompiledBlockLight19 extends CompiledBlock19 {
-    public static Block newCompiledClosureLight(IRubyObject self, Frame frame, Visibility visibility, RubyModule klass,
-        DynamicScope dynamicScope, Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        Binding binding = new Binding(self, frame, visibility, klass, dynamicScope);
-        BlockBody body = new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType);
-        
-        return new Block(body, binding);
-    }
-    
     public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        return newCompiledClosureLight(
-                self,
-                context.getCurrentFrame(),
-                Visibility.PUBLIC,
-                context.getRubyClass(),
-                context.getCurrentScope(),
-                arity,
-                scope, 
-                callback,
-                hasMultipleArgsHead,
-                argumentType);
+        Binding binding = context.currentBinding(self, Visibility.PUBLIC);
+        BlockBody body = new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType);
+
+        return new Block(body, binding);
     }
     
     public static BlockBody newCompiledBlockLight(Arity arity,
