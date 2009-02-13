@@ -4067,22 +4067,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (spat.isNil() && (spat = context.getRuntime().getGlobalVariables().get("$;")).isNil()) {
             result = awkSplit19(limit, lim, i);
         } else {
-            if (spat instanceof RubyString && ((RubyString) spat).value.realSize == 1) {
+            if (spat instanceof RubyString) {
                 ByteList spatValue = ((RubyString)spat).value;
-                final int c;
-                if (spatValue.encoding.isAsciiCompatible()) {
-                    c = spatValue.bytes[spatValue.begin] & 0xff;
+                int len = spatValue.realSize;
+                if (len == 0) {
+                    result = regexSplit19(context, spat, limit, lim, i);
                 } else {
-                    c = StringSupport.preciseCodePoint(spatValue.encoding, spatValue.bytes, spatValue.begin, spatValue.begin + spatValue.realSize);
+                    final int c;
+                    byte[]bytes = spatValue.bytes;
+                    int p = spatValue.begin;
+                    Encoding spatEnc = spatValue.encoding;
+                    if (spatEnc.isAsciiCompatible()) {
+                        c = len == 1 ? bytes[p] & 0xff : -1;
+                    } else {
+                        int l = StringSupport.preciseLength(spatEnc, bytes, p, p + len);
+                        c = len == l ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
+                    }
+                    result = c == ' ' ? awkSplit19(limit, lim, i) : regexSplit19(context, spat, limit, lim, i);
                 }
-                result = c == ' ' ? awkSplit19(limit, lim, i) : regexSplit19(context, spat, limit, lim, i); 
             } else {
                 result = regexSplit19(context, spat, limit, lim, i);
             }
         }
 
         if (!limit && lim == 0) {
-            while (result.size() > 0 && ((RubyString) result.eltInternal(result.size() - 1)).value.realSize == 0) {
+            while (result.size() > 0 && ((RubyString)result.eltInternal(result.size() - 1)).value.realSize == 0) {
                 result.pop(context);
             }
         }
