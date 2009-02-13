@@ -3898,17 +3898,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_split_m
      *
      */
-    @JRubyMethod(writes = BACKREF)
+    @JRubyMethod(name = "split", writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public RubyArray split(ThreadContext context) {
         return split(context, context.getRuntime().getNil());
     }
 
-    @JRubyMethod(writes = BACKREF)
+    @JRubyMethod(name = "split", writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
         return splitCommon(arg0, false, 0, 0, context);
     }
 
-    @JRubyMethod(writes = BACKREF)
+    @JRubyMethod(name = "split", writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
         if (lim <= 0) {
@@ -4060,6 +4060,169 @@ public class RubyString extends RubyObject implements EncodingCapable {
             } else {
                 result.append(makeShared(runtime, beg, value.realSize - beg));
             }
+        }
+        return result;
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public RubyArray split19(ThreadContext context) {
+        return split19(context, context.getRuntime().getNil());
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public RubyArray split19(ThreadContext context, IRubyObject arg0) {
+        return splitCommon19(arg0, false, 0, 0, context);
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public RubyArray split19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        final int lim = RubyNumeric.num2int(arg1);
+        if (lim <= 0) {
+            return splitCommon19(arg0, false, lim, 1, context);
+        } else {
+            if (lim == 1) return value.realSize == 0 ? context.getRuntime().newArray() : context.getRuntime().newArray(this);
+            return splitCommon19(arg0, true, lim, 1, context);
+        }
+    }
+
+    private RubyArray splitCommon19(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context) {
+        final RubyArray result;
+        if (spat.isNil() && (spat = context.getRuntime().getGlobalVariables().get("$;")).isNil()) {
+            result = awkSplit19(limit, lim, i);
+        } else {
+            if (spat instanceof RubyString && ((RubyString) spat).value.realSize == 1) {
+                RubyString strSpat = (RubyString) spat;
+                if (strSpat.value.bytes[strSpat.value.begin] == (byte)' ') {
+                    result = awkSplit19(limit, lim, i);
+                } else {
+                    result = regexSplit19(context, spat, limit, lim, i);
+                }
+            } else {
+                result = regexSplit19(context, spat, limit, lim, i);
+            }
+        }
+
+        if (!limit && lim == 0) {
+            while (result.size() > 0 && ((RubyString) result.eltInternal(result.size() - 1)).value.realSize == 0) {
+                result.pop(context);
+            }
+        }
+
+        return result;
+    }
+
+    private RubyArray regexSplit19(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
+        Ruby runtime = context.getRuntime();
+
+        final Regex pattern = getQuotedPattern(pat);
+
+        int begin = value.begin;
+        int len = value.realSize;
+        final Matcher matcher = pattern.matcher(value.bytes, begin, begin + len);
+
+        RubyArray result = runtime.newArray();
+        final Encoding enc = pattern.getEncoding();
+
+        int beg = regexSplit19(runtime, result, matcher, enc, limit, lim, i, pattern.numberOfCaptures() != 0);
+
+        // only this case affects backrefs 
+        context.getCurrentFrame().setBackRef(runtime.getNil());
+
+        if (len > 0 && (limit || len > beg || lim < 0)) {
+            result.append(len == beg ? newEmptyString(runtime, getMetaClass(), enc) : makeShared19(runtime, beg, len - beg));
+        }
+        return result;
+    }
+
+    private int regexSplit19(Ruby runtime, RubyArray result, Matcher matcher, Encoding enc, boolean limit, int lim, int i, boolean captures) {
+        byte[]bytes = value.bytes;
+        int begin = value.begin;
+        int start = begin;
+        int range = begin + value.realSize;
+        int end, beg = 0;
+        boolean lastNull = false;
+
+        while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
+            if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
+                if (value.realSize == 0) {
+                    result.append(newEmptyString(runtime, getMetaClass()));
+                    break;
+                } else if (lastNull) {
+                    result.append(makeShared19(runtime, beg, enc.length(bytes, begin + beg, range)));
+                    beg = start - begin;
+                } else {
+                    if (start == range) {
+                        start++;
+                    } else {
+                        start += enc.length(bytes, start, range);
+                    }
+                    lastNull = true;
+                    continue;
+                }
+            } else {
+                result.append(makeShared19(runtime, beg, end - beg));
+                beg = matcher.getEnd();
+                start = begin + matcher.getEnd();
+            }
+            lastNull = false;
+
+            if (captures) populateCapturesForSplit19(runtime, result, matcher);
+
+            if (limit && lim <= ++i) break;
+        }
+        return beg;
+    }
+
+    private void populateCapturesForSplit19(Ruby runtime, RubyArray result, Matcher matcher) {
+        Region region = matcher.getRegion();
+        for (int i = 1; i < region.numRegs; i++) {
+            if (region.beg[i] == -1) continue;
+            if (region.beg[i] == region.end[i]) {
+                result.append(newEmptyString(runtime, getMetaClass()));
+            } else {
+                result.append(makeShared19(runtime , region.beg[i], region.end[i] - region.beg[i]));
+            }
+        }
+    }
+
+    private RubyArray awkSplit19(boolean limit, int lim, int i) {
+        Ruby runtime = getRuntime();
+        RubyArray result = runtime.newArray();
+
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int ptr = p;
+        int len = value.realSize;
+        int end = p + len;
+        Encoding enc = value.encoding;
+        boolean skip = true;
+
+        int e = 0, b = 0;        
+        while (p < end) {
+            int c = StringSupport.codePoint(runtime, enc, bytes, p, end);
+            p += StringSupport.length(enc, bytes, p, end);
+            if (skip) {
+                if (enc.isSpace(c)) {
+                    b = p - ptr;
+                } else {
+                    e = p - ptr;
+                    skip = false;
+                    if (limit && lim <= i) break;
+                }
+            } else {
+                if (enc.isSpace(c)) {
+                    result.append(makeShared19(runtime, b, e - b));
+                    skip = true;
+                    b = p - ptr;
+                    if (limit) i++;
+                } else {
+                    e = p - ptr;
+                }
+            }
+        }
+
+        if (len > 0 && (limit || len > b || lim < 0)) {
+            result.append(len == b ? newEmptyString(runtime, getMetaClass(), enc) : makeShared19(runtime, b, len - b));
         }
         return result;
     }
