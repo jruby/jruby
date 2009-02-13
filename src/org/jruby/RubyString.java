@@ -4153,12 +4153,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private void populateCapturesForSplit19(Ruby runtime, RubyArray result, Matcher matcher) {
         Region region = matcher.getRegion();
         for (int i = 1; i < region.numRegs; i++) {
-            if (region.beg[i] == -1) continue;
-            if (region.beg[i] == region.end[i]) {
-                result.append(newEmptyString(runtime, getMetaClass()));
-            } else {
-                result.append(makeShared19(runtime , region.beg[i], region.end[i] - region.beg[i]));
-            }
+            int beg = region.beg[i];
+            if (beg == -1) continue;
+            result.append(makeShared19(runtime , beg, region.end[i] - beg));
         }
     }
 
