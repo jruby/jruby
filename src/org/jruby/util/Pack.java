@@ -1046,6 +1046,49 @@ public class Pack {
                       }
 
                      break;
+                case 'w':
+                    if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+                        occurrences = encode.remaining();
+                    }
+
+                    long ul = 0;
+                    long ulmask = (0xfe << 56) & 0xffffffff;
+                    RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
+                    int pos = encode.position();
+
+                    while (occurrences > 0 && pos < encode.limit()) {
+                        ul <<= 7;
+                        ul |= encode.get(pos) & 0x7f;
+                        if((encode.get(pos++) & 0x80) == 0) {
+                            result.append(RubyFixnum.newFixnum(runtime, ul));
+                            occurrences--;
+                            ul = 0;
+                        } else if((ul & ulmask) == 0) {
+                            RubyBignum big = RubyBignum.newBignum(runtime, ul);
+                            while(occurrences > 0 && pos < encode.limit()) {
+                                big = (RubyBignum)big.op_mul(runtime.getCurrentContext(), big128);
+                                IRubyObject v = big.op_plus(runtime.getCurrentContext(),
+                                        RubyBignum.newBignum(runtime, encode.get(pos) & 0x7f));
+                                if(v instanceof RubyFixnum) {
+                                    big = RubyBignum.newBignum(runtime, RubyNumeric.fix2long(v));
+                                } else if (v instanceof RubyBignum) {
+                                    big = (RubyBignum)v;
+                                }
+                                if((encode.get(pos++) & 0x80) == 0) {
+                                    result.add(big);
+                                    occurrences--;
+                                    ul = 0;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    try {
+                        encode.position(pos);
+                    } catch (IllegalArgumentException e) {
+                        throw runtime.newArgumentError("in `unpack': poorly encoded input");
+                    }
+                    break;
             }
         }
         return result;

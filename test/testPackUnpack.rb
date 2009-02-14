@@ -37,6 +37,12 @@ test_equal([987.654321098/100.0], [987.654321098/100.0].pack("E*").unpack("E*"))
 test_equal([987.654321098/100.0], [987.654321098/100.0].pack("G*").unpack("G*"))
 test_equal(["123"], ["123"].pack("m").unpack("m"))
 test_equal(["12"], ["12"].pack("m").unpack("m"))
+test_equal([9799], [9799].pack('w').unpack('w'))
+test_equal([9979, 888 , 12], [9979, 888 , 12].pack('www').unpack('www'))
+test_equal([9997, 888 , 12], [9997, 888 , 12].pack('w3').unpack('w3'))
+test_equal([888 , 12], [888 , 12].pack('ww').unpack('ww'))
+test_equal([19999999999999999999699999], [19999999999999999999699999].pack('w').unpack('w'))
+test_equal([9999, 888, 77, 12], [9999, 888, 77, 12].pack('w*').unpack('w*'))
 # TODO: Missing more tests for double precision.  
 # TODO: Missing all single precision tests.
 test_exception(ArgumentError) { ["A"].pack("X2") }
