@@ -56,7 +56,7 @@ import org.jruby.util.TypeCoercer;
  * Implementation of the Fixnum class.
  */
 @JRubyClass(name="Fixnum", parent="Integer", include="Precision")
-public class RubyFixnum extends RubyInteger {
+public class RubyFixnum extends RubyInteger implements Comparable<IRubyObject> {
     
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getInteger(),
@@ -627,26 +627,27 @@ public class RubyFixnum extends RubyInteger {
         return super.op_num_equal(context, other);
     }
 
+    public final int compareTo(IRubyObject other) {
+        if (other instanceof RubyFixnum) {
+            long otherValue = ((RubyFixnum)other).value;
+            return value == otherValue ? 0 : value > otherValue ? 1 : -1; 
+        }
+        return (int)coerceCmp(getRuntime().getCurrentContext(), "<=>", other).convertToInteger().getLongValue();
+    }
+
     /** fix_cmp
      * 
      */
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return compareFixnum(context, (RubyFixnum)other);
-        }
+        if (other instanceof RubyFixnum) return compareFixnum(context.getRuntime(), (RubyFixnum)other);
         return coerceCmp(context, "<=>", other);
     }
     
-    private IRubyObject compareFixnum(ThreadContext context, RubyFixnum other) {
+    private IRubyObject compareFixnum(Ruby runtime, RubyFixnum other) {
         long otherValue = ((RubyFixnum) other).value;
-        if (value == otherValue) {
-            return RubyFixnum.zero(context.getRuntime());
-        }
-        if (value > otherValue) {
-            return RubyFixnum.one(context.getRuntime());
-        }
-        return RubyFixnum.minus_one(context.getRuntime());
+        return value == otherValue ? RubyFixnum.zero(runtime) : value > otherValue ?
+                RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
     }
 
     /** fix_gt
@@ -656,7 +657,7 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.getRuntime(), value > ((RubyFixnum) other).value);
-    }
+        }
         return coerceRelOp(context, ">", other);
     }
 
@@ -667,7 +668,7 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.getRuntime(), value >= ((RubyFixnum) other).value);
-            }
+        }
         return coerceRelOp(context, ">=", other);
     }
 
@@ -679,7 +680,6 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.getRuntime(), value < ((RubyFixnum) other).value);
         }
-        
         return coerceRelOp(context, "<", other);
     }
         
@@ -691,7 +691,6 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.getRuntime(), value <= ((RubyFixnum) other).value);
         }
-        
         return coerceRelOp(context, "<=", other);
     }
 
