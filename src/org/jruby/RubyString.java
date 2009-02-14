@@ -2287,7 +2287,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int size = value.realSize;
             RubyMatchData match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
             RubyString repl = objAsString(context, block.yield(context, 
-                    substr(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
+                    makeShared(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
             frozenCheck();
             frame.setBackRef(match);
@@ -4282,7 +4282,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
                 match = RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
-                IRubyObject substr = substr(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+                IRubyObject substr = makeShared(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 if (tainted) { 
                     substr.setTaint(true);
                     match.setTaint(true);
@@ -4311,7 +4311,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (pattern.numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                IRubyObject substr = substr(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+                IRubyObject substr = makeShared(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 if (tainted) substr.setTaint(true);
                 ary.append(substr);
             }
@@ -4353,7 +4353,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (beg == -1) {
                 result.append(runtime.getNil());
             } else {
-                IRubyObject substr = substr(runtime, beg, region.end[i] - beg);
+                IRubyObject substr = makeShared(runtime, beg, region.end[i] - beg);
                 if (tainted) substr.setTaint(true);
                 result.append(substr);
             }
@@ -4401,7 +4401,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 end = positionEnd(matcher, enc, begin, range);
                 match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
                 match.regexp = regexp;
-                IRubyObject substr = substr(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+                IRubyObject substr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 if (tainted) {
                     substr.setTaint(true);
                     match.setTaint(true);
@@ -4432,7 +4432,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (pattern.numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                IRubyObject substr = substr(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+                IRubyObject substr = makeShared(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 if (tainted) substr.setTaint(true);
                 ary.append(substr);
             }
