@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ext.posix.POSIX;
 import org.jruby.ext.posix.util.Platform;
 
 import org.jruby.javasupport.JavaUtil;
@@ -541,25 +542,32 @@ public class RubyDir extends RubyObject {
          * TODO: /etc/passwd is also inadequate for MacOSX since it does not
          *       use /etc/passwd for regular user accounts
          */
-
-        String passwd = null;
+        
         try {
-            FileInputStream stream = new FileInputStream("/etc/passwd");
-            int totalBytes = stream.available();
-            byte[] bytes = new byte[totalBytes];
-            stream.read(bytes);
-            stream.close();
-            passwd = new String(bytes);
-        } catch (IOException e) {
-            return context.getRuntime().getNil();
-        }
+            // try to use POSIX for this first
+            String home = context.getRuntime().getPosix().getpwnam(user).getHome();
+            return context.getRuntime().newString(home);
+        } catch (Exception e) {
+            // otherwise fall back on the old way
+            String passwd = null;
+            try {
+                FileInputStream stream = new FileInputStream("/etc/passwd");
+                int totalBytes = stream.available();
+                byte[] bytes = new byte[totalBytes];
+                stream.read(bytes);
+                stream.close();
+                passwd = new String(bytes);
+            } catch (IOException ioe) {
+                return context.getRuntime().getNil();
+            }
 
-        String[] rows = passwd.split("\n");
-        int rowCount = rows.length;
-        for (int i = 0; i < rowCount; i++) {
-            String[] fields = rows[i].split(":");
-            if (fields[0].equals(user)) {
-                return context.getRuntime().newString(fields[5]);
+            String[] rows = passwd.split("\n");
+            int rowCount = rows.length;
+            for (int i = 0; i < rowCount; i++) {
+                String[] fields = rows[i].split(":");
+                if (fields[0].equals(user)) {
+                    return context.getRuntime().newString(fields[5]);
+                }
             }
         }
 
