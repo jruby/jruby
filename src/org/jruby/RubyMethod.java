@@ -36,7 +36,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
@@ -200,9 +199,11 @@ public class RubyMethod extends RubyObject {
      */
     public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1,
             IRubyObject self, Block unusedBlock) {
-        ThreadContext context = blockArg.getRuntime().getCurrentContext();
-        
-        if (blockArg instanceof RubyArray) {
+        ThreadContext context = arg1.getRuntime().getCurrentContext();
+
+        if (blockArg == null) {
+            return ((RubyMethod) arg1).call(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        } else if (blockArg instanceof RubyArray) {
             // ENEBO: Very wrong
             return ((RubyMethod) arg1).call(context, ((RubyArray) blockArg).toJavaArray(), Block.NULL_BLOCK);
         }
