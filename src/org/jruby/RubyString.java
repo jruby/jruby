@@ -100,7 +100,7 @@ import org.jruby.util.string.JavaCrypt;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements EncodingCapable {
+public class RubyString extends RubyObject implements Comparable<IRubyObject>, EncodingCapable{
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
 
     // string doesn't share any resources
@@ -822,6 +822,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return strDup(runtime, runtime.getString());
         }
         return this;
+    }
+
+    public final int compareTo(IRubyObject other) {
+        Ruby runtime = getRuntime();
+        if (other instanceof RubyString) {
+            RubyString otherString = (RubyString)other;
+            return runtime.is1_9() ? op_cmp19(otherString) : op_cmp(otherString);
+        }
+        return (int)op_cmpCommon(runtime.getCurrentContext(), other).convertToInteger().getLongValue();
     }
 
     /* rb_str_cmp_m */
