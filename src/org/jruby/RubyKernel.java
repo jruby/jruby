@@ -414,14 +414,24 @@ public class RubyKernel {
         return getLastlineString(context, context.getRuntime()).sub_bang(context, args, block);
     }
 
-    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE)
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         return getLastlineString(context, context.getRuntime()).sub_bang(context, arg0, block);
     }
 
-    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE)
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         return getLastlineString(context, context.getRuntime()).sub_bang(context, arg0, arg1, block);
+    }
+
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject sub_bang19(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        return getLastlineString(context, context.getRuntime()).sub_bang19(context, arg0, block);
+    }
+
+    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject sub_bang19(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return getLastlineString(context, context.getRuntime()).sub_bang19(context, arg0, arg1, block);
     }
 
     /**
