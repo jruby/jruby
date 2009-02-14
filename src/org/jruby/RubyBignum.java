@@ -51,7 +51,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  * @author  jpetersen
  */
 @JRubyClass(name="Bignum", parent="Integer")
-public class RubyBignum extends RubyInteger implements Comparable<IRubyObject> {
+public class RubyBignum extends RubyInteger {
     public static RubyClass createBignumClass(Ruby runtime) {
         RubyClass bignum = runtime.defineClass("Bignum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -646,6 +646,7 @@ public class RubyBignum extends RubyInteger implements Comparable<IRubyObject> {
         return value.testBit((int)position) ? RubyFixnum.one(getRuntime()) : RubyFixnum.zero(getRuntime());
     }
 
+    @Override
     public final int compareTo(IRubyObject other) {
         if (other instanceof RubyBignum) {
             return value.compareTo(((RubyBignum)other).value);

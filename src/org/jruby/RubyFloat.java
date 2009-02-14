@@ -62,7 +62,7 @@ import org.jruby.util.Sprintf;
   * A representation of a float object
  */
 @JRubyClass(name="Float", parent="Numeric", include="Precision")
-public class RubyFloat extends RubyNumeric implements Comparable<IRubyObject> {
+public class RubyFloat extends RubyNumeric {
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -380,6 +380,7 @@ public class RubyFloat extends RubyNumeric implements Comparable<IRubyObject> {
         }
     }
 
+    @Override
     public final int compareTo(IRubyObject other) {
         switch (other.getMetaClass().index) {
         case ClassIndex.FIXNUM:

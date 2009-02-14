@@ -56,7 +56,7 @@ import org.jruby.util.TypeConverter;
  *
  * @author enebo
  */
-public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, CoreObjectType, InstanceVariables, InternalVariables {
+public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
 
     // The class of this object
     protected transient RubyClass metaClass;
@@ -867,6 +867,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @JRubyMethod(name = "!=", required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
         return context.getRuntime().newBoolean(!equalInternal(context, this, other));
+    }
+
+    public int compareTo(IRubyObject other) {
+        return (int)callMethod(getRuntime().getCurrentContext(), "<=>", other).convertToInteger().getLongValue();
     }
 
     /** rb_obj_equal

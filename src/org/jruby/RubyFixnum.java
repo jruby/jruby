@@ -56,7 +56,7 @@ import org.jruby.util.TypeCoercer;
  * Implementation of the Fixnum class.
  */
 @JRubyClass(name="Fixnum", parent="Integer", include="Precision")
-public class RubyFixnum extends RubyInteger implements Comparable<IRubyObject> {
+public class RubyFixnum extends RubyInteger {
     
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getInteger(),
@@ -627,6 +627,7 @@ public class RubyFixnum extends RubyInteger implements Comparable<IRubyObject> {
         return super.op_num_equal(context, other);
     }
 
+    @Override
     public final int compareTo(IRubyObject other) {
         if (other instanceof RubyFixnum) {
             long otherValue = ((RubyFixnum)other).value;

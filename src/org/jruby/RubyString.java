@@ -100,7 +100,7 @@ import org.jruby.util.string.JavaCrypt;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements Comparable<IRubyObject>, EncodingCapable{
+public class RubyString extends RubyObject implements EncodingCapable {
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
 
     // string doesn't share any resources
@@ -824,6 +824,7 @@ public class RubyString extends RubyObject implements Comparable<IRubyObject>, E
         return this;
     }
 
+    @Override
     public final int compareTo(IRubyObject other) {
         Ruby runtime = getRuntime();
         if (other instanceof RubyString) {
