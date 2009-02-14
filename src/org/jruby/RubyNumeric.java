@@ -238,16 +238,9 @@ public class RubyNumeric extends RubyObject {
      * 
      */
     public static IRubyObject dbl_cmp(Ruby runtime, double a, double b) {
-        if (Double.isNaN(a) || Double.isNaN(b)) {
-            return runtime.getNil();
-        }
-        if (a > b) {
-            return RubyFixnum.one(runtime);
-        }
-        if (a < b) {
-            return RubyFixnum.minus_one(runtime);
-        }
-        return RubyFixnum.zero(runtime);
+        if (Double.isNaN(a) || Double.isNaN(b)) return runtime.getNil();
+        return a == b ? RubyFixnum.zero(runtime) : a > b ?
+                RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
     }
 
     public static long fix2long(IRubyObject arg) {
