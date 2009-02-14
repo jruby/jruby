@@ -284,6 +284,13 @@ else
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
       org.jruby.Main $JRUBY_OPTS "$@"
+
+    # Record the exit status immediately, or it will be overridden.
+    JRUBY_STATUS=$?
+
+    stty icanon echo
+
+    exit $JRUBY_STATUS
   else
     exec "$JAVA_CMD" $JAVA_OPTS "$JAVA_JNA" "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMETER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
