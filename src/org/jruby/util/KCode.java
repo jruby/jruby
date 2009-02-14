@@ -33,8 +33,8 @@ import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class KCode {
-    public static final KCode NIL = new KCode(null, "ASCII", 0);
-    public static final KCode NONE = new KCode("NONE", "ASCII", 0);
+    public static final KCode NIL = new KCode(null, "UTF8", 0);
+    public static final KCode NONE = new KCode("NONE", "UTF8", 0);
     public static final KCode UTF8 = new KCode("UTF8", "NonStrictUTF8", 64);
     public static final KCode SJIS = new KCode("SJIS", "NonStrictSJIS", 48);
     public static final KCode EUC = new KCode("EUC", "NonStrictEUCJP", 32);
@@ -95,5 +95,10 @@ public final class KCode {
             encoding = Encoding.load(encodingName);
         }
         return encoding;
+    }
+
+    @Override
+    public String toString() {
+        return name();
     }
 }
