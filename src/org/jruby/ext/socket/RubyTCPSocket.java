@@ -100,13 +100,13 @@ public class RubyTCPSocket extends RubyIPSocket {
             if(localHost == null) {
                 InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort);
                 channel = SocketChannel.open(addr);
+                channel.finishConnect();
             } else {
-                channel = SocketChannel.open();
-                Socket socket = channel.socket();
+                Socket socket = new Socket();
                 socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), localPort));
                 socket.connect(new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort));
+                channel = socket.getChannel();
             }
-            channel.finishConnect();
             initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
