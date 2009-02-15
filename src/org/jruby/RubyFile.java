@@ -1134,8 +1134,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (child.equals(".")) {
-            // skip it
-            if (canonicalPath != null && canonicalPath.length() == 0 ) canonicalPath += "/";
+            // no canonical path yet or length is zero, and we have a / followed by a dot...
+            if (slash == -1) {
+                // we don't have another slash after this, so replace /. with /
+                if (canonicalPath != null && canonicalPath.length() == 0 && slash == -1) canonicalPath += "/";
+            } else {
+                // we do have another slash; omit both / and . (JRUBY-1606)
+            }
         } else if (child.equals("..")) {
             if (canonicalPath == null) throw new IllegalArgumentException("Cannot have .. at the start of an absolute path");
             int lastDir = canonicalPath.lastIndexOf('/');
