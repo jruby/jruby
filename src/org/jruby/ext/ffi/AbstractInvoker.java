@@ -36,13 +36,10 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -92,7 +89,9 @@ public abstract class AbstractInvoker extends RubyObject {
      */
     @JRubyMethod(name="attach")
     public IRubyObject attach(ThreadContext context, IRubyObject module, IRubyObject methodName) {
-
+        if (!(module instanceof RubyModule)) {
+            throw context.getRuntime().newTypeError(module, context.getRuntime().getModule());
+        }
         DynamicMethod m = createDynamicMethod((RubyModule) module);
         ((RubyModule) module).addModuleFunction(methodName.asJavaString(), m);
         return this;
