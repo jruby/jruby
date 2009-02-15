@@ -60,23 +60,6 @@ public class ThreadLibrary implements Library {
         SizedQueue.setup(runtime);
     }
 
-    static boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
-        if ( timeout != null ) {
-            long delay_ns = (long)(timeout * 1000000000.0);
-            long start_ns = System.nanoTime();
-            if (delay_ns > 0) {
-                long delay_ms = delay_ns / 1000000;
-                int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                o.wait(delay_ms, delay_ns_remainder);
-            }
-            long end_ns = System.nanoTime();
-            return ( end_ns - start_ns ) <= delay_ns;
-        } else {
-            o.wait();
-            return true;
-        }
-    }
-
     @JRubyClass(name="Mutex")
     public static class Mutex extends RubyObject {
         private RubyThread owner = null;
@@ -218,11 +201,10 @@ public class ThreadLibrary implements Library {
             }
             boolean success = false;
             try {
-                context.getThread().enterSleep();
                 synchronized (this) {
                     mutex.unlock(context);
                     try {
-                        success = ThreadLibrary.wait_timeout(this, timeout);
+                        success = context.getThread().wait_timeout(this, timeout);
                     } finally {
                         // An interrupt or timeout may have caused us to miss
                         // a notify that we consumed, so do another notify in
@@ -234,7 +216,6 @@ public class ThreadLibrary implements Library {
                 }
             } finally {
                 mutex.lock(context);
-                context.getThread().exitSleep();
             }
             if (timeout != null) {
                 return context.getRuntime().newBoolean(success);

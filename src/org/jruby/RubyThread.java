@@ -719,7 +719,7 @@ public class RubyThread extends RubyObject {
     @JRubyMethod(name = "status")
     public IRubyObject status() {
         if (threadImpl.isAlive()) {
-            if (isStopped || (currentSelector != null && currentSelector.isOpen()) || blockingIO != null) {
+            if (isSleeping()) {
             	return getRuntime().newString("sleep");
             } else if (killed) {
                 return getRuntime().newString("aborting");
@@ -731,6 +731,10 @@ public class RubyThread extends RubyObject {
         } else {
             return getRuntime().getFalse();
         }
+    }
+
+    private boolean isSleeping() {
+        return isStopped || (currentSelector != null && currentSelector.isOpen()) || blockingIO != null || currentWaitObject != null;
     }
 
     public void enterSleep() {
@@ -836,6 +840,7 @@ public class RubyThread extends RubyObject {
     }
     
     private volatile Selector currentSelector;
+    private volatile Object currentWaitObject;
     
     @Deprecated
     public boolean selectForAccept(RubyIO io) {
@@ -911,6 +916,12 @@ public class RubyThread extends RubyObject {
         if (iowait != null) {
             iowait.cancel();
         }
+        Object object = currentWaitObject;
+        if (object != null) {
+            synchronized (object) {
+                object.notify();
+            }
+        }
     }
     private volatile BlockingIO.Condition blockingIO = null;
     public boolean waitForIO(ThreadContext context, RubyIO io, int ops) {
@@ -954,5 +965,32 @@ public class RubyThread extends RubyObject {
             System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + killed);
         }
         kernelModule.callMethod(context, "raise", raiseException);
+    }
+
+    public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
+        if ( timeout != null ) {
+            long delay_ns = (long)(timeout * 1000000000.0);
+            long start_ns = System.nanoTime();
+            if (delay_ns > 0) {
+                long delay_ms = delay_ns / 1000000;
+                int delay_ns_remainder = (int)( delay_ns % 1000000 );
+                try {
+                    currentWaitObject = o;
+                    o.wait(delay_ms, delay_ns_remainder);
+                } finally {
+                    currentWaitObject = null;
+                }
+            }
+            long end_ns = System.nanoTime();
+            return ( end_ns - start_ns ) <= delay_ns;
+        } else {
+            try {
+                currentWaitObject = o;
+                o.wait();
+            } finally {
+                currentWaitObject = null;
+            }
+            return true;
+        }
     }
 }
