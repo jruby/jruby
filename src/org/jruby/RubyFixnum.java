@@ -618,12 +618,22 @@ public class RubyFixnum extends RubyInteger {
     /** fix_equal
      * 
      */
-    @JRubyMethod(name = "==")
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return RubyBoolean.newBoolean(context.getRuntime(), value == ((RubyFixnum) other).value);
-        }
+        if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value == ((RubyFixnum) other).value);
+        return super.op_num_equal(context, other);
+    }
+
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value == ((RubyFixnum) other).value);
+        return compareOther(context, other);
+    }
+
+    private IRubyObject compareOther(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyBignum) return ((RubyBignum)other).op_equal(context, this);
+        if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value == ((RubyFloat)other).getDoubleValue());
         return super.op_num_equal(context, other);
     }
 
