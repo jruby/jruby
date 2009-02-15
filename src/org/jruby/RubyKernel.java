@@ -1279,6 +1279,12 @@ public class RubyKernel {
     @JRubyMethod(name = {"exec"}, required = 1, rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
+
+        // This is a fairly specific hack for empty string, but it does the job
+        if (args.length == 1 && args[0].convertToString().isEmpty()) {
+            throw runtime.newErrnoENOENTError(args[0].convertToString().toString());
+        }
+        
         int resultCode;
         try {
             // TODO: exec should replace the current process.
