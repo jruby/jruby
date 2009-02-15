@@ -632,7 +632,8 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject op_equalOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) return ((RubyBignum)other).op_equal(context, this);
+        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(),
+                BigInteger.valueOf(value).compareTo(((RubyBignum)other).getValue()) == 0);
         if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value == ((RubyFloat)other).getDoubleValue());
         return super.op_num_equal(context, other);
     }
