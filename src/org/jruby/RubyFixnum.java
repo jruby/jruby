@@ -689,8 +689,8 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject op_gtOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(), 
-                RubyBignum.newBignum(context.getRuntime(), value).op_cmp(context, other).convertToInteger().getLongValue() > 0);
+        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(),
+                BigInteger.valueOf(value).compareTo(((RubyBignum)other).getValue()) > 0);
         if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value > ((RubyFloat) other).getLongValue());
         return coerceRelOp(context, ">", other);
     }
@@ -711,8 +711,8 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject op_geOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(), 
-                RubyBignum.newBignum(context.getRuntime(), value).op_cmp(context, other).convertToInteger().getLongValue() >= 0);
+        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(),
+                BigInteger.valueOf(value).compareTo(((RubyBignum)other).getValue()) >= 0);
         if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value >= ((RubyFloat) other).getLongValue());
         return coerceRelOp(context, ">=", other);
     }
@@ -733,8 +733,8 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject op_ltOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(), 
-                RubyBignum.newBignum(context.getRuntime(), value).op_cmp(context, other).convertToInteger().getLongValue() < 0);
+        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(),
+                BigInteger.valueOf(value).compareTo(((RubyBignum)other).getValue()) < 0);
         if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value < ((RubyFloat) other).getLongValue());
         return coerceRelOp(context, "<", other);
     }
@@ -755,8 +755,8 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject op_leOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(), 
-                RubyBignum.newBignum(context.getRuntime(), value).op_cmp(context, other).convertToInteger().getLongValue() <= 0);
+        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(),
+                BigInteger.valueOf(value).compareTo(((RubyBignum)other).getValue()) <= 0);
         if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value <= ((RubyFloat) other).getLongValue());
         return coerceRelOp(context, "<=", other);
     }
