@@ -628,10 +628,10 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value == ((RubyFixnum) other).value);
-        return compareOther(context, other);
+        return op_equalOther(context, other);
     }
 
-    private IRubyObject compareOther(ThreadContext context, IRubyObject other) {
+    private IRubyObject op_equalOther(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) return ((RubyBignum)other).op_equal(context, this);
         if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value == ((RubyFloat)other).getDoubleValue());
         return super.op_num_equal(context, other);
@@ -649,16 +649,28 @@ public class RubyFixnum extends RubyInteger {
     /** fix_cmp
      * 
      */
-    @JRubyMethod(name = "<=>")
+    @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return compareFixnum(context.getRuntime(), (RubyFixnum)other);
         return coerceCmp(context, "<=>", other);
     }
-    
+
     private IRubyObject compareFixnum(Ruby runtime, RubyFixnum other) {
         long otherValue = ((RubyFixnum) other).value;
         return value == otherValue ? RubyFixnum.zero(runtime) : value > otherValue ?
                 RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+    }
+
+    @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_cmp19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyFixnum) return compareFixnum(context.getRuntime(), (RubyFixnum)other);
+        return compareOther(context, other);
+    }
+
+    private IRubyObject compareOther(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyBignum) return ((RubyBignum)other).op_cmp(context, this);
+        if (other instanceof RubyFloat) return dbl_cmp(context.getRuntime(), (double)value, ((RubyFloat)other).getLongValue());
+        return coerceCmp(context, "<=>", other);
     }
 
     /** fix_gt
