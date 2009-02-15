@@ -424,16 +424,6 @@ public class RubyKernel {
         return getLastlineString(context, context.getRuntime()).sub_bang(context, arg0, arg1, block);
     }
 
-    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject sub_bang19(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-        return getLastlineString(context, context.getRuntime()).sub_bang19(context, arg0, block);
-    }
-
-    @JRubyMethod(name = "sub!", frame = true, module = true, visibility = PRIVATE, reads = LASTLINE, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject sub_bang19(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return getLastlineString(context, context.getRuntime()).sub_bang19(context, arg0, arg1, block);
-    }
-
     /**
      * Variable-arity version for compatibility. Not bound to Ruby.
      * @deprecated Use the one or two-arg versions.
