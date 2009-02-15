@@ -168,7 +168,7 @@ module REXML
     #   indentation will be twice this number of spaces, and children will be
     #   indented an additional amount.  For a value of 3, every item will be 
     #   indented 3 more levels, or 6 more spaces (2 * 3). Defaults to -1
-    # trans::
+    # transitive::
     #   If transitive is true and indent is >= 0, then the output will be
     #   pretty-printed in such a way that the added whitespace does not affect
     #   the absolute *value* of the document -- that is, it leaves the value
@@ -179,12 +179,13 @@ module REXML
     #   unable to parse proper XML, we have to provide a hack to generate XML
     #   that IE's limited abilities can handle.  This hack inserts a space 
     #   before the /> on empty tags.  Defaults to false
-		def write( output=$stdout, indent=-1, trans=false, ie_hack=false )
+		def write( output=$stdout, indent=-1, transitive=false, ie_hack=false )
       if xml_decl.encoding != "UTF-8" && !output.kind_of?(Output)
         output = Output.new( output, xml_decl.encoding )
       end
       formatter = if indent > -1
-          if trans
+          if transitive
+            require 'rexml/formatters/transitive'
             REXML::Formatters::Transitive.new( indent )
           else
             REXML::Formatters::Pretty.new( indent, ie_hack )
