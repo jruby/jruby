@@ -668,7 +668,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject compareOther(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) return ((RubyBignum)other).op_cmp(context, this);
+        if (other instanceof RubyBignum) return newFixnum(context.getRuntime(), BigInteger.valueOf(value).compareTo(((RubyBignum)other).getValue()));
         if (other instanceof RubyFloat) return dbl_cmp(context.getRuntime(), (double)value, ((RubyFloat)other).getLongValue());
         return coerceCmp(context, "<=>", other);
     }
