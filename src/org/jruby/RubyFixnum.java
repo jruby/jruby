@@ -698,11 +698,22 @@ public class RubyFixnum extends RubyInteger {
     /** fix_ge
      * 
      */
-    @JRubyMethod(name = ">=")
+    @JRubyMethod(name = ">=", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return RubyBoolean.newBoolean(context.getRuntime(), value >= ((RubyFixnum) other).value);
-        }
+        if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value >= ((RubyFixnum) other).value);
+        return coerceRelOp(context, ">=", other);
+    }
+
+    @JRubyMethod(name = ">=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value >= ((RubyFixnum) other).value);
+        return op_geOther(context, other);
+    }
+
+    private IRubyObject op_geOther(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyBignum) return RubyBoolean.newBoolean(context.getRuntime(), 
+                RubyBignum.newBignum(context.getRuntime(), value).op_cmp(context, other).convertToInteger().getLongValue() >= 0);
+        if (other instanceof RubyFloat) return RubyBoolean.newBoolean(context.getRuntime(), (double)value >= ((RubyFloat) other).getLongValue());
         return coerceRelOp(context, ">=", other);
     }
 
