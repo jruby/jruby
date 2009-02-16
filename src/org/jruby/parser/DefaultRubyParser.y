@@ -1497,8 +1497,12 @@ string_content : tSTRING_CONTENT {
 		   $$ = lexer.getStrTerm();
 		   lexer.setStrTerm(null);
 		   lexer.setState(LexState.EXPR_BEG);
+                   lexer.getConditionState().stop();
+	           lexer.getCmdArgumentState().stop();
 	       } compstmt tRCURLY {
 		   lexer.setStrTerm($<StrTerm>2);
+                   lexer.getConditionState().restart();
+	           lexer.getCmdArgumentState().restart();
 
 		   $$ = support.newEvStrNode(support.union($1, $4), $3);
 	       }
