@@ -3993,8 +3993,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
             lastNull = false;
 
-            if (captures) populateCapturesForSplit(runtime, result, matcher);
-
+            if (captures) populateCapturesForSplit(runtime, result, matcher, false);
             if (limit && lim <= ++i) break;
         }
 
@@ -4005,12 +4004,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher) {
+    private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher, boolean is19) {
         Region region = matcher.getRegion();
         for (int i = 1; i < region.numRegs; i++) {
             int beg = region.beg[i];
             if (beg == -1) continue;
-            result.append(makeShared(runtime, beg, region.end[i] - beg));
+            result.append(is19 ? makeShared19(runtime, beg, region.end[i] - beg) : makeShared(runtime, beg, region.end[i] - beg));
         }
     }
 
@@ -4159,8 +4158,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
             lastNull = false;
 
-            if (captures) populateCapturesForSplit19(runtime, result, matcher);
-
+            if (captures) populateCapturesForSplit(runtime, result, matcher, true);
             if (limit && lim <= ++i) break;
         }
 
@@ -4169,15 +4167,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
         return result;
-    }
-
-    private void populateCapturesForSplit19(Ruby runtime, RubyArray result, Matcher matcher) {
-        Region region = matcher.getRegion();
-        for (int i = 1; i < region.numRegs; i++) {
-            int beg = region.beg[i];
-            if (beg == -1) continue;
-            result.append(makeShared19(runtime , beg, region.end[i] - beg));
-        }
     }
 
     private RubyArray awkSplit19(boolean limit, int lim, int i) {
