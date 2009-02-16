@@ -2681,23 +2681,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
         boolean tainted = arg0 != null && arg0.isTaint();
         Ruby runtime = context.getRuntime();
 
-        final Regex pattern, pat;
+        final Regex pattern, prepared;
         final RubyRegexp regexp;
         if (arg0 instanceof RubyRegexp) {
             regexp = (RubyRegexp)arg0;
             pattern = regexp.getPattern();
-            pat = regexp.preparePattern(this);
+            prepared = regexp.preparePattern(this);
         } else {
             regexp = null;
             pattern = getStringPattern19(runtime, arg0);
-            pat = RubyRegexp.preparePattern(runtime, pattern, this);
+            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
         }
 
         final int begin = value.begin;
         int slen = value.realSize;
         final int range = begin + slen;
         byte[]bytes = value.bytes;
-        final Matcher matcher = pat.matcher(bytes, begin, range);
+        final Matcher matcher = prepared.matcher(bytes, begin, range);
 
         final Frame frame = context.getPreviousFrame();
         int beg = matcher.search(begin, range, Option.NONE);
