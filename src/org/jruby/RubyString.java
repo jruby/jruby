@@ -3712,11 +3712,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject upto(ThreadContext context, IRubyObject str, Block block) {
-        return upto(context, str, false, block);
+        return uptoCommon(context, str, false, block);
     }
 
     /* rb_str_upto */
-    final IRubyObject upto(ThreadContext context, IRubyObject str, boolean excl, Block block) {
+    final IRubyObject uptoCommon(ThreadContext context, IRubyObject str, boolean excl, Block block) {
         RubyString end = str.convertToString();
 
         int n = value.cmp(end.value);
