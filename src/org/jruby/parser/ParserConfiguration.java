@@ -31,6 +31,7 @@
 package org.jruby.parser;
 
 import org.jruby.CompatVersion;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.KCode;
@@ -49,6 +50,8 @@ public class ParserConfiguration {
     private boolean extraPositionInformation = false;
     // Will parser parse Duby grammar Extensions
     private boolean isDubyExtensionsEnabled = SafePropertyAccessor.getBoolean("jruby.duby.enabled", false);
+    // Should we display extra debug information while parsing?
+    private boolean isDebug = false;
 
     private CompatVersion version;
 
@@ -69,6 +72,12 @@ public class ParserConfiguration {
         this.extraPositionInformation = extraPositionInformation;
         this.isEvalParse = !isFileParse;
         this.version = version;
+    }
+
+    public ParserConfiguration(KCode kCode, int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
+        this(kCode, lineNumber, extraPositionInformation, inlineSource, isFileParse, config.getCompatVersion());
+
+        this.isDebug = config.isParserDebug();
     }
 
     /**
@@ -94,6 +103,10 @@ public class ParserConfiguration {
      */
     public boolean hasExtraPositionInformation() {
         return extraPositionInformation;
+    }
+
+    public boolean isDebug() {
+        return isDebug;
     }
 
     /**

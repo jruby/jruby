@@ -2021,7 +2021,7 @@ public final class Ruby {
 
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(getKCode(), lineNumber, false, false, true, config.getCompatVersion()));
+        return parser.parse(file, in, scope, new ParserConfiguration(getKCode(), lineNumber, false, false, true, config));
     }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
@@ -2030,7 +2030,7 @@ public final class Ruby {
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(getKCode(), 0, false, true, config.getCompatVersion()));
+        return parser.parse(file, in, scope, new ParserConfiguration(getKCode(), 0, false, true, false, config));
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
@@ -2044,7 +2044,7 @@ public final class Ruby {
         
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
-                new ParserConfiguration(getKCode(), lineNumber, false, config.getCompatVersion()));
+                new ParserConfiguration(getKCode(), lineNumber, false, false, true, config));
     }
 
     @Deprecated
@@ -2059,19 +2059,19 @@ public final class Ruby {
         }
 
         return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
-                new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, config.getCompatVersion()));
+                new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, true, config));
     }
     
     public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, content, scope, new ParserConfiguration(getKCode(), lineNumber, false, config.getCompatVersion()));
+        return parser.parse(file, content, scope, new ParserConfiguration(getKCode(), lineNumber, false, false, true, config));
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
         if (parserStats != null) parserStats.addJRubyModuleParse();
         return parser.parse(file, content, scope, 
-                new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, config.getCompatVersion()));
+                new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, true, config));
     }
 
 

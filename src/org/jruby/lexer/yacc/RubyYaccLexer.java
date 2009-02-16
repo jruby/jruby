@@ -621,6 +621,35 @@ public class RubyYaccLexer {
         if (warnings.isVerbose()) warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
     }
 
+    private int magicCommentMarker(String str, int begin) {
+        int i = begin;
+        int len = str.length();
+
+        while (i < len) {
+            switch (str.charAt(i)) {
+                case '-':
+                    if (str.charAt(i - 1) == '*' && str.charAt(i - 2) == '-') return i + 1;
+                    i += 2;
+                    break;
+                case '*':
+                    if (i + 1 >= len) return 0;
+
+                    if (str.charAt(i + 1) != '-') {
+                        i += 4;
+                    } else if (str.charAt(i - 1) != '-') {
+                        i += 2;
+                    } else {
+                        return i + 2;
+                    }
+                    break;
+                default:
+                    i += 3;
+                    break;
+            }
+        }
+        return 0;
+    }
+
     /**
      * Read a comment up to end of line.  When found each comment will get stored away into
      * the parser result so that any interested party can use them as they seem fit.  One idea
@@ -1520,7 +1549,7 @@ public class RubyYaccLexer {
                         if (state != LexState.EXPR_CMDARG && cmdArgumentState.isInState()) {
                             return Tokens.kDO_BLOCK;
                         }
-                        if (state == LexState.EXPR_ENDARG || state == LexState.EXPR_BEG) return Tokens.kDO_BLOCK;
+                        if (state == LexState.EXPR_ENDARG || (!isOneEight && state == LexState.EXPR_BEG)) return Tokens.kDO_BLOCK;
                         return Tokens.kDO;
                     }
                 }
@@ -1534,7 +1563,7 @@ public class RubyYaccLexer {
         }
 
         if (isBEG() || lex_state == LexState.EXPR_DOT || isARG()) {
-            lex_state = commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG; 
+            lex_state = commandState ? LexState.EXPR_CMDARG : LexState.EXPR_ARG;
         } else {
             lex_state = LexState.EXPR_END;
         }

@@ -236,6 +236,7 @@
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
+        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -265,6 +266,7 @@
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
+        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -383,6 +385,7 @@
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
+        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
@@ -1336,6 +1339,7 @@
       <zipfileset src="${build.lib.dir}/jffi.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
       <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
+      <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

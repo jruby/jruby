@@ -170,6 +170,7 @@ public class RubyInstanceConfig {
     private String inputFieldSeparator = null;
     private boolean managementEnabled = true;
     private String inPlaceBackupExtension = null;
+    private boolean parserDebug = false;
 
     private int safeLevel = 0;
 
@@ -374,6 +375,7 @@ public class RubyInstanceConfig {
                 .append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
                 //.append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
                 .append("  -X[option]      enable extended option (omit option to list)\n")
+                .append("  -y              enable parsing debug output")
                 .append("  --copyright     print the copyright\n")
                 .append("  --debug         sets the execution mode most suitable for debugger functionality\n")
                 .append("  --jdb           runs JRuby process under JDB\n")
@@ -924,6 +926,9 @@ public class RubyInstanceConfig {
                         throw mee;
                     }
                     break FOR;
+                case 'y':
+                    parserDebug = true;
+                    break FOR;
                 case '-':
                     if (argument.equals("--command") || argument.equals("--bin")) {
                         characterIndex = argument.length();
@@ -1161,6 +1166,10 @@ public class RubyInstanceConfig {
 
     public boolean isDebug() {
         return debug;
+    }
+
+    public boolean isParserDebug() {
+        return parserDebug;
     }
 
     public boolean isShowVersion() {

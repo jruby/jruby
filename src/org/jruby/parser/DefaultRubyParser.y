@@ -1842,9 +1842,9 @@ none_block_pass: /* none */ {
         lexer.setSource(source);
         lexer.setEncoding(configuration.getKCode().getEncoding());
         try {
+            Object debugger = configuration.isDebug() ? new jay.yydebug.yyDebugAdapter() : null;
 	    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-	    //yyparse(lexer, new jay.yydebug.yyDebugAdapter());
-	    yyparse(lexer, null);
+            yyparse(lexer, debugger);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (yyException e) {
