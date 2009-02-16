@@ -3,6 +3,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.Passwd;
 import org.jruby.ext.posix.Group;
 import org.jruby.ext.posix.POSIX;
@@ -109,6 +110,8 @@ public class RubyEtc {
                 throw runtime.newArgumentError("can't find user for " + uid);
             }
             return setupPasswd(runtime, pwd);
+        } catch (RaiseException re) {
+            throw re;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwuid is not supported by JRuby on this platform", e);
@@ -175,12 +178,16 @@ public class RubyEtc {
 
         try {
             String login = runtime.getPosix().getlogin();
-
             if (login != null) {
                 return runtime.newString(login);
-            } else {
-                return runtime.getNil();
             }
+
+            login = System.getenv("USER");
+            if (login != null) {
+                return runtime.newString(login);
+            }
+            
+            return runtime.getNil();
         } catch (Exception e) {
             // fall back on env entry for USER
             return runtime.newString(System.getProperty("user.name"));
@@ -256,6 +263,7 @@ public class RubyEtc {
     public static IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
+
         try {
             int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
             Group gr = posix.getgrgid(gid);
@@ -266,9 +274,11 @@ public class RubyEtc {
                 throw runtime.newArgumentError("can't find group for " + gid);
             }
             return setupGroup(runtime, gr);
+        } catch (RaiseException re) {
+            throw re;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.gegrgid is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrgid is not supported by JRuby on this platform", e);
             }
             return runtime.getNil();
         }
