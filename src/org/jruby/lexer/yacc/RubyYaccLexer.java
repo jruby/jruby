@@ -407,7 +407,7 @@ public class RubyYaccLexer {
 
     private boolean isBEG() {
         return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                (!isOneEight && (lex_state == LexState.EXPR_VALUE || lex_state == LexState.EXPR_CLASS));
+                lex_state == LexState.EXPR_CLASS || (!isOneEight && lex_state == LexState.EXPR_VALUE);
     }
 
     private boolean isARG() {
