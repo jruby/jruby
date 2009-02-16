@@ -26,6 +26,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -441,62 +442,67 @@ public class RuntimeHelpers {
      */
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         RubyModule klazz = context.getFrameKlazz();
+        String name = context.getFrameName();
 
         RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
         
-        if (superClass == null) {
-            String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, args, CallType.SUPER, block);
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method, name, args, CallType.SUPER, block);
         }
-        return invokeAs(context, superClass, self, context.getFrameName(), args, block);
+        return method.call(context, self, superClass, name, args, block);
     }
     
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
         RubyModule klazz = context.getFrameKlazz();
+        String name = context.getFrameName();
 
         RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        
-        if (superClass == null) {
-            String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, CallType.SUPER, block);
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method, name, CallType.SUPER, block);
         }
-        return invokeAs(context, superClass, self, context.getFrameName(), block);
+        return method.call(context, self, superClass, name, block);
     }
     
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
         RubyModule klazz = context.getFrameKlazz();
+        String name = context.getFrameName();
 
         RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        
-        if (superClass == null) {
-            String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, CallType.SUPER, block);
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method, name, arg0, CallType.SUPER, block);
         }
-        return invokeAs(context, superClass, self, context.getFrameName(), arg0, block);
+        return method.call(context, self, superClass, name, arg0, block);
     }
     
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyModule klazz = context.getFrameKlazz();
+        String name = context.getFrameName();
 
         RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        
-        if (superClass == null) {
-            String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, CallType.SUPER, block);
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method, name, arg0, arg1, CallType.SUPER, block);
         }
-        return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, block);
+        return method.call(context, self, superClass, name, arg0, arg1, block);
     }
     
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyModule klazz = context.getFrameKlazz();
+        String name = context.getFrameName();
 
         RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        
-        if (superClass == null) {
-            String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, arg2, CallType.SUPER, block);
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        if (method.isUndefined()) {
+            return callMethodMissing(context, self, method, name, arg0, arg1, arg2, CallType.SUPER, block);
         }
-        return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, arg2, block);
+        return method.call(context, self, superClass, name, arg0, arg1, arg2, block);
     }
 
     public static RubyArray ensureRubyArray(IRubyObject value) {
