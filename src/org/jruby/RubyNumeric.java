@@ -742,15 +742,16 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.getRuntime();
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
-            return fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
-                                                ((RubyFixnum)to).getLongValue(),
-                                                ((RubyFixnum)step).getLongValue(),
-                                                block);
+            fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
+                                         ((RubyFixnum)to).getLongValue(),
+                                         ((RubyFixnum)step).getLongValue(),
+                                          block);
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            return floatStep(context, runtime, to, step, block);
+            floatStep(context, runtime, this, to, step, block);
         } else {
-            return duckStep(context, runtime, to, step, block);
+            duckStep(context, runtime, this, to, step, block);
         }
+        return this;
     }
 
     @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
@@ -766,18 +767,19 @@ public class RubyNumeric extends RubyObject {
     private IRubyObject stepCommon19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.getRuntime();
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
-            return fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
-                                                ((RubyFixnum)to).getLongValue(),
-                                                ((RubyFixnum)step).getLongValue(),
-                                                block);
+            fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
+                                         ((RubyFixnum)to).getLongValue(),
+                                         ((RubyFixnum)step).getLongValue(),
+                                          block);
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            return floatStep19(context, runtime, to, step, false, block);
+            floatStep19(context, runtime, this, to, step, false, block);
         } else {
-            return duckStep(context, runtime, to, step, block);
+            duckStep(context, runtime, this, to, step, block);
         }
+        return this;
     }
 
-    private IRubyObject fixnumStep(ThreadContext context, Ruby runtime, long value, long end, long diff, Block block) {
+    private static void fixnumStep(ThreadContext context, Ruby runtime, long value, long end, long diff, Block block) {
         if (diff == 0) throw runtime.newArgumentError("step cannot be 0");
         if (diff > 0) {
             for (long i = value; i <= end; i += diff) {
@@ -788,11 +790,10 @@ public class RubyNumeric extends RubyObject {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         }
-        return this;
     }
 
-    private IRubyObject floatStep(ThreadContext context, Ruby runtime, IRubyObject to, IRubyObject step, Block block) { 
-        double beg = num2dbl(this);
+    protected static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, Block block) { 
+        double beg = num2dbl(from);
         double end = num2dbl(to);
         double unit = num2dbl(step);
 
@@ -807,14 +808,14 @@ public class RubyNumeric extends RubyObject {
         for (long i = 0; i < n; i++) {
             block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
         }
-        return this;
     }
 
-    private IRubyObject floatStep19(ThreadContext context, Ruby runtime, IRubyObject to, IRubyObject step, boolean excl, Block block) { 
-        double beg = num2dbl(this);
+    static void floatStep19(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, Block block) { 
+        double beg = num2dbl(from);
         double end = num2dbl(to);
         double unit = num2dbl(step);
 
+        // TODO: remove
         if (unit == 0) throw runtime.newArgumentError("step cannot be 0");
 
         double n = (end - beg)/unit;
@@ -830,11 +831,10 @@ public class RubyNumeric extends RubyObject {
                 block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
             }
         }
-        return this;
     }
 
-    private IRubyObject duckStep(ThreadContext context, Ruby runtime, IRubyObject to, IRubyObject step, Block block) {
-        IRubyObject i = this;
+    private static void duckStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, Block block) {
+        IRubyObject i = from;
         String cmpString = step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue() ? ">" : "<";
 
         while (true) {
@@ -842,7 +842,6 @@ public class RubyNumeric extends RubyObject {
             block.yield(context, i);
             i = i.callMethod(context, "+", step);
         }
-        return this;
     }
 
     /** num_equal, doesn't override RubyObject.op_equal

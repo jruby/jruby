@@ -411,12 +411,12 @@ public class RubyRange extends RubyObject {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
-    @JRubyMethod(name = "step", frame = true)
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject step, Block block) {
         return stepCommon(context, step, block);
     }
 
-    @JRubyMethod(name = "step", frame = true)
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, Block block) {
         return stepCommon(context, RubyFixnum.one(context.getRuntime()), block);
     }
@@ -428,13 +428,7 @@ public class RubyRange extends RubyObject {
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             if (unit == 0) throw runtime.newArgumentError("step can't be 0");
-
-            long e = ((RubyFixnum)end).getLongValue();
-            if (!isExclusive) e++;
-            
-            for (long i = ((RubyFixnum)begin).getLongValue(); i < e; i += unit) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
-            }
+            fixnumStep(context, runtime, unit, block);
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
@@ -444,24 +438,11 @@ public class RubyRange extends RubyObject {
                 Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
                 ((RubyString)tmp).upto(context, end, isExclusive, blockCallback);
             } else if (begin instanceof RubyNumeric) {
-                if (equalInternal(context, step, RubyFixnum.zero(runtime))) {
-                    throw runtime.newArgumentError("step can't be 0");
-                }
-                final String method;
-                if (isExclusive) {
-                    method = "<";
-                } else {
-                    method = "<=";
-                }
-                IRubyObject beg = begin;
-                while (beg.callMethod(context, method, end).isTrue()) {
-                    block.yield(context, beg);
-                    beg = beg.callMethod(context, "+", step);
-                }
+                if (equalInternal(context, step, RubyFixnum.zero(runtime))) throw runtime.newArgumentError("step can't be 0");
+                numericStep(context, runtime, step, block);
             } else {
                 if (unit == 0) throw runtime.newArgumentError("step can't be 0");
-                if (!begin.respondsTo("succ")) throw runtime.newTypeError(
-                        "can't iterate from " + begin.getMetaClass().getName());
+                if (!begin.respondsTo("succ")) throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
                 // range_each_func(range, step_i, b, e, args);
                 rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
             }
@@ -469,14 +450,74 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
+    private void fixnumStep(ThreadContext context, Ruby runtime, long unit, Block block) {
+        long e = ((RubyFixnum)end).getLongValue();
+        if (!isExclusive) e++;
+        for (long i = ((RubyFixnum)begin).getLongValue(); i < e; i += unit) {
+            block.yield(context, RubyFixnum.newFixnum(runtime, i));
+        }
+    }
+
+    private void numericStep(ThreadContext context, Ruby runtime, IRubyObject step, Block block) {
+        final String method = isExclusive ? "<" : "<=";
+        IRubyObject beg = begin;
+        while (beg.callMethod(context, method, end).isTrue()) {
+            block.yield(context, beg);
+            beg = beg.callMethod(context, "+", step);
+        }
+    }
+
     @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject step19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? step(context, block) : enumeratorize(context.getRuntime(), this, "step");
+        return block.isGiven() ? stepCommon19(context, RubyFixnum.zero(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step");
     }
 
     @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject step19(final ThreadContext context, IRubyObject step, final Block block) {
-        return block.isGiven() ? step(context, step, block) : enumeratorize(context.getRuntime(), this, "step", step);
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "step", step);
+
+        if (!(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
+        IRubyObject zero = RubyFixnum.zero(runtime);
+        if (step.callMethod(context, "<", zero).isTrue()) throw runtime.newArgumentError("step can't be negative");
+        if (!step.callMethod(context, ">", zero).isTrue()) throw runtime.newArgumentError("step can't be 0");
+        return stepCommon19(context, step, block);
+    }
+
+    private IRubyObject stepCommon19(ThreadContext context, IRubyObject step, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
+            fixnumStep(context, runtime, ((RubyFixnum)step).getLongValue(), block);
+        } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
+            RubyNumeric.floatStep19(context, runtime, begin, end, step, isExclusive, block);
+        } else if (begin instanceof RubyNumeric ||
+                        !checkIntegerType(runtime, begin, "to_int").isNil() ||
+                        !checkIntegerType(runtime, end, "to_int").isNil()) {
+            numericStep19(context, runtime, step, block);
+        } else {
+            IRubyObject tmp = begin.checkStringType();
+            if (!tmp.isNil()) {
+                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
+                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
+                ((RubyString)tmp).upto19Common(context, end, isExclusive, blockCallback);
+            } else {
+                if (!begin.respondsTo("succ")) throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
+                // range_each_func(range, step_i, b, e, args);
+                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
+            }
+        }
+        return this;
+    }
+
+    private void numericStep19(ThreadContext context, Ruby runtime, IRubyObject step, Block block) {
+        final String method = isExclusive ? "<" : "<=";
+        IRubyObject beg = begin;
+        long i = 0;
+        while (beg.callMethod(context, method, end).isTrue()) {
+            block.yield(context, beg);
+            i++;
+            beg = begin.callMethod(context, "+", RubyFixnum.newFixnum(runtime, i).callMethod(context, "*", step));
+        }
     }
 
     @JRubyMethod(name = {"include?", "member?", "==="}, required = 1, compat = CompatVersion.RUBY1_8)

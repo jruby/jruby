@@ -3716,7 +3716,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     /* rb_str_upto */
-    public IRubyObject upto(ThreadContext context, IRubyObject str, boolean excl, Block block) {
+    final IRubyObject upto(ThreadContext context, IRubyObject str, boolean excl, Block block) {
         RubyString end = str.convertToString();
 
         int n = value.cmp(end.value);
@@ -3749,7 +3749,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             enumeratorize(runtime, this, "upto", new IRubyObject[]{end, excl});
     }
 
-    private IRubyObject upto19Common(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
+    final IRubyObject upto19Common(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
         Ruby runtime = context.getRuntime();
         RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);
