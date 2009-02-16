@@ -3078,7 +3078,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             beg += length;
             if (beg < 0) return runtime.getNil();
         }
-        
+
         int end = Math.min(length, beg + len);
         return makeShared(runtime, beg, end - beg);
     }
@@ -4080,22 +4080,35 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (spat instanceof RubyString) {
                 ByteList spatValue = ((RubyString)spat).value;
                 int len = spatValue.realSize;
+                Encoding spatEnc = spatValue.encoding;
                 if (len == 0) {
-                    result = regexSplit19(context, spat, limit, lim, i);
+                    Regex pattern = RubyRegexp.getRegexpFromCache(context.getRuntime(), spatValue, spatEnc, 0);
+                    result = regexSplit19(context, pattern, pattern, limit, lim, i);
                 } else {
                     final int c;
                     byte[]bytes = spatValue.bytes;
                     int p = spatValue.begin;
-                    Encoding spatEnc = spatValue.encoding;
                     if (spatEnc.isAsciiCompatible()) {
                         c = len == 1 ? bytes[p] & 0xff : -1;
                     } else {
                         c = len == StringSupport.preciseLength(spatEnc, bytes, p, p + len) ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
                     }
-                    result = c == ' ' ? awkSplit19(limit, lim, i) : regexSplit19(context, spat, limit, lim, i);
+                    result = c == ' ' ? awkSplit19(limit, lim, i) : stringSplit19(context, (RubyString)spat, limit, lim, i);
                 }
             } else {
-                result = regexSplit19(context, spat, limit, lim, i);
+                final Regex pattern, prepared;
+                final RubyRegexp regexp;
+                Ruby runtime = context.getRuntime();
+                if (spat instanceof RubyRegexp) {
+                    regexp = (RubyRegexp)spat;
+                    pattern = regexp.getPattern();
+                    prepared = regexp.preparePattern(this);
+                } else {
+                    regexp = null;
+                    pattern = getStringPattern19(runtime, spat);
+                    prepared = RubyRegexp.preparePattern(runtime, pattern, this);
+                }
+                result = regexSplit19(context, pattern, prepared, limit, lim, i);
             }
         }
 
@@ -4108,16 +4121,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    private RubyArray regexSplit19(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
+    private RubyArray regexSplit19(ThreadContext context, Regex pattern, Regex prepared, boolean limit, int lim, int i) {
         Ruby runtime = context.getRuntime();
-        final Regex pattern = getQuotedPattern(pat);
 
         int begin = value.begin;
         int len = value.realSize;
         int range = begin + len;
         byte[]bytes = value.bytes;
 
-        final Matcher matcher = pattern.matcher(bytes, begin, range);
+        final Matcher matcher = prepared.matcher(bytes, begin, range);
 
         RubyArray result = runtime.newArray();
         Encoding enc = value.encoding;
@@ -4212,6 +4224,56 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (len > 0 && (limit || len > b || lim < 0)) result.append(makeShared19(runtime, b, len - b));
         return result;
+    }
+
+    private RubyArray stringSplit19(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
+        Ruby runtime = context.getRuntime();
+        if (scanForCodeRange() == CR_BROKEN) throw runtime.newArgumentError("invalid byte sequence in " + value.encoding);
+        if (spat.scanForCodeRange() == CR_BROKEN) throw runtime.newArgumentError("invalid byte sequence in " + spat.value.encoding);
+
+        RubyArray result = runtime.newArray();
+        Encoding enc = checkEncoding(spat);
+
+        byte[]bytes = value.bytes;
+        int p = value.begin;
+        int begin = p;
+        int len = value.realSize;
+        int end = p + len;
+
+        ByteList svalue = spat.value;
+        byte[]sbytes = svalue.bytes;
+        int sp = svalue.begin;
+        int slen = svalue.realSize;
+
+        int e;
+        while (p < end && (e = find(bytes, begin, len, sbytes, sp, slen, p)) >= 0) {
+            int t = enc.rightAdjustCharHead(bytes, p, e, end);
+            if (t != e) {
+                p = t;
+                continue;
+            }
+            result.append(makeShared19(runtime, p - begin, e - p));
+            p = e + slen;
+            if (limit && lim <= ++i) break;
+        }
+        if (len > 0 && (limit || len > p || lim < 0)) result.append(makeShared19(runtime, p, len - p));
+        return result;
+    }
+
+    private static int find(byte[] in, int inP, int inLen, byte[] what, int whatP, int whatLen, int start) {
+        byte first  = what[whatP];
+        int max = inP + (inLen - whatLen);
+
+        for (int i = inP + start; i <= max; i++) {
+            if (in[i] != first) while (++i <= max && in[i] != first);
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + whatLen - 1;
+                for (int k = whatP + 1; j < end && in[j] == what[k]; j++, k++);
+                if (j == end) return i - inP;
+            }
+        }
+        return -1;
     }
 
     private RubyString getStringForPattern(IRubyObject obj) {
