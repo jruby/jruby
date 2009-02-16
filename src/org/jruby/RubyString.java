@@ -3739,17 +3739,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject upto19(ThreadContext context, IRubyObject end, Block block) {
         Ruby runtime = context.getRuntime();
-        return block.isGiven() ? upto19Common(context, end, false, block) : enumeratorize(runtime, this, "upto", end);
+        return block.isGiven() ? uptoCommon19(context, end, false, block) : enumeratorize(runtime, this, "upto", end);
     }
 
     @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject upto19(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
-        Ruby runtime = context.getRuntime();
-        return block.isGiven() ? upto19Common(context, end, excl.isTrue(), block) : 
-            enumeratorize(runtime, this, "upto", new IRubyObject[]{end, excl});
+        return block.isGiven() ? uptoCommon19(context, end, excl.isTrue(), block) : 
+            enumeratorize(context.getRuntime(), this, "upto", new IRubyObject[]{end, excl});
     }
 
-    final IRubyObject upto19Common(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
+    final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
         Ruby runtime = context.getRuntime();
         RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);

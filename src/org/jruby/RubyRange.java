@@ -373,24 +373,12 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "each", frame = true)
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each(ThreadContext context, final Block block) {
         final Ruby runtime = context.getRuntime();
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long lim = ((RubyFixnum) end).getLongValue();
-            if (!isExclusive) lim++;
-
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-                final IRubyObject nil = runtime.getNil();
-                for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
-                    block.yield(context, nil);
-                }
-            } else {
-                for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
-                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
-                }
-            }
+            fixnumEach(context, runtime, block);
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).uptoCommon(context, end, isExclusive, block);
         } else {
@@ -406,9 +394,43 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
+    private void fixnumEach(ThreadContext context, Ruby runtime, Block block) {
+        long lim = ((RubyFixnum) end).getLongValue();
+        if (!isExclusive) lim++;
+
+        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+            final IRubyObject nil = runtime.getNil();
+            for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
+                block.yield(context, nil);
+            }
+        } else {
+            for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+        }
+    }
+
     @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "each");
+
+        if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
+                "can't iterate from " + begin.getMetaClass().getName());
+
+        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
+            fixnumEach(context, runtime, block);
+        } else if (begin instanceof RubyString) {
+            ((RubyString) begin).uptoCommon19(context, end, isExclusive, block);
+        } else {
+            rangeEach(context, new RangeCallBack() {
+                @Override
+                void call(ThreadContext context, IRubyObject arg) {
+                    block.yield(context, arg);
+                }
+            });
+        }
+        return this;
     }
 
     @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
@@ -499,7 +521,7 @@ public class RubyRange extends RubyObject {
             if (!tmp.isNil()) {
                 StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
                 Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
-                ((RubyString)tmp).upto19Common(context, end, isExclusive, blockCallback);
+                ((RubyString)tmp).uptoCommon19(context, end, isExclusive, blockCallback);
             } else {
                 if (!begin.respondsTo("succ")) throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
                 // range_each_func(range, step_i, b, e, args);
