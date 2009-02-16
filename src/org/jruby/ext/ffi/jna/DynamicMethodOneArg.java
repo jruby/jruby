@@ -43,19 +43,22 @@ class DynamicMethodOneArg extends JNADynamicMethod {
         this.marshaller = marshallers[0];
     }
 
+    private final IRubyObject invoke(ThreadContext context, IRubyObject arg1) {
+        Invocation invocation = new Invocation(context);
+        Object[] nativeArgs = new Object[] { marshaller.marshal(invocation, arg1) };
+        IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
+        invocation.finish();
+        return retVal;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         arity.checkArity(context.getRuntime(), args);
-        return call(context, self, clazz, name, args[0], block);
+        return invoke(context, args[0]);
     }
     
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        Invocation invocation = new Invocation(context);
-        Object[] nativeArgs = new Object[1];
-        nativeArgs[0] = marshaller.marshal(invocation, arg);
-        IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
-        invocation.finish();
-        return retVal;
+        return invoke(context, arg);
     }
 }

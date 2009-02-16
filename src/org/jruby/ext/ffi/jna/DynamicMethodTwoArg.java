@@ -46,16 +46,8 @@ final class DynamicMethodTwoArg extends JNADynamicMethod {
         marshaller2 = marshallers[1];
     }
 
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        arity.checkArity(context.getRuntime(), args);
-        return call(context, self, clazz, name, args[0], args[1], block);
-    }
-    
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self,
-            RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        final Invocation invocation = new Invocation(context);
+    private final IRubyObject invoke(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+     final Invocation invocation = new Invocation(context);
         final Object[] nativeArgs = new Object[]{
             marshaller1.marshal(invocation, arg1),
             marshaller2.marshal(invocation, arg2),
@@ -63,5 +55,17 @@ final class DynamicMethodTwoArg extends JNADynamicMethod {
         IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, nativeArgs);
         invocation.finish();
         return retVal;
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        arity.checkArity(context.getRuntime(), args);
+        return invoke(context, args[0], args[1]);
+    }
+    
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self,
+            RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
+        return invoke(context, arg1, arg2);
     }
 }
