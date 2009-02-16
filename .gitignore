@@ -18,3 +18,5 @@ share
 latest_source_cache
 src_gen
 docs/api
+spec/ruby
+test/rails
