@@ -723,7 +723,7 @@ public class RubyNumeric extends RubyObject {
         return convertToFloat().truncate();
     }
 
-    @JRubyMethod(name = "step", required = 1, optional = 1, frame = true)
+    @Deprecated
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
         switch (args.length) {
         case 0: throw context.getRuntime().newArgumentError(0, 1);
@@ -733,17 +733,12 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "step", frame = true)
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
         return step(context, arg0, RubyFixnum.one(context.getRuntime()), block);
     }
 
-    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject step19(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? step(context, arg0, block) : enumeratorize(context.getRuntime(), this, "step", arg0);
-    }
-
-    @JRubyMethod(name = "step", frame = true)
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.getRuntime();
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
@@ -753,6 +748,30 @@ public class RubyNumeric extends RubyObject {
                                                 block);
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
             return floatStep(context, runtime, to, step, block);
+        } else {
+            return duckStep(context, runtime, to, step, block);
+        }
+    }
+
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(ThreadContext context, IRubyObject arg0, Block block) {
+        return block.isGiven() ? stepCommon19(context, arg0, RubyFixnum.one(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step", arg0);
+    }
+
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject step19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
+        return block.isGiven() ? stepCommon19(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
+    }
+
+    private IRubyObject stepCommon19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
+            return fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
+                                                ((RubyFixnum)to).getLongValue(),
+                                                ((RubyFixnum)step).getLongValue(),
+                                                block);
+        } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
+            return floatStep19(context, runtime, to, step, false, block);
         } else {
             return duckStep(context, runtime, to, step, block);
         }
@@ -785,8 +804,31 @@ public class RubyNumeric extends RubyObject {
         if (err > 0.5) err = 0.5;            
         n = Math.floor(n + err) + 1;
 
-        for (double i = 0; i < n; i++){
+        for (long i = 0; i < n; i++) {
             block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
+        }
+        return this;
+    }
+
+    private IRubyObject floatStep19(ThreadContext context, Ruby runtime, IRubyObject to, IRubyObject step, boolean excl, Block block) { 
+        double beg = num2dbl(this);
+        double end = num2dbl(to);
+        double unit = num2dbl(step);
+
+        if (unit == 0) throw runtime.newArgumentError("step cannot be 0");
+
+        double n = (end - beg)/unit;
+        double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
+
+        if (Double.isInfinite(unit)) {
+            if (unit > 0) block.yield(context, RubyFloat.newFloat(runtime, beg));
+        } else {
+            if (err > 0.5) err = 0.5;            
+            n = Math.floor(n + err);
+            if (!excl) n++;
+            for (long i = 0; i < n; i++){
+                block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
+            }
         }
         return this;
     }
@@ -801,11 +843,6 @@ public class RubyNumeric extends RubyObject {
             i = i.callMethod(context, "+", step);
         }
         return this;
-    }
-
-    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject step19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
-        return block.isGiven() ? step(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
     }
 
     /** num_equal, doesn't override RubyObject.op_equal
