@@ -722,7 +722,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject truncate() {
         return convertToFloat().truncate();
     }
-    
+
     @JRubyMethod(name = "step", required = 1, optional = 1, frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
         switch (args.length) {
@@ -732,7 +732,7 @@ public class RubyNumeric extends RubyObject {
         default: throw context.getRuntime().newArgumentError(args.length, 2);
         }
     }
-    
+
     @JRubyMethod(name = "step", frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
         return step(context, arg0, RubyFixnum.one(context.getRuntime()), block);
@@ -742,64 +742,63 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject step19(ThreadContext context, IRubyObject arg0, Block block) {
         return block.isGiven() ? step(context, arg0, block) : enumeratorize(context.getRuntime(), this, "step", arg0);
     }
-    
+
     @JRubyMethod(name = "step", frame = true)
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
+        Ruby runtime = context.getRuntime();
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
-            long value = getLongValue();
-            long end = ((RubyFixnum) to).getLongValue();
-            long diff = ((RubyFixnum) step).getLongValue();
-
-            if (diff == 0) {
-                throw getRuntime().newArgumentError("step cannot be 0");
-            }
-            if (diff > 0) {
-                for (long i = value; i <= end; i += diff) {
-                    block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
-                }
-            } else {
-                for (long i = value; i >= end; i += diff) {
-                    block.yield(context, RubyFixnum.newFixnum(getRuntime(), i));
-                }
-            }
+            return fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
+                                                ((RubyFixnum)to).getLongValue(),
+                                                ((RubyFixnum)step).getLongValue(),
+                                                block);
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            double beg = num2dbl(this);
-            double end = num2dbl(to);
-            double unit = num2dbl(step);
-
-            if (unit == 0) {
-                throw getRuntime().newArgumentError("step cannot be 0");
-            }           
-            
-            double n = (end - beg)/unit;
-            double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
-            
-            if (err>0.5) {
-                err=0.5;            
-            }
-            n = Math.floor(n + err) + 1;
-            
-            for(double i = 0; i < n; i++){
-                block.yield(context, RubyFloat.newFloat(getRuntime(), i * unit + beg));
-            }
-
+            return floatStep(context, runtime, to, step, block);
         } else {
-            RubyNumeric i = this;
-            
-            String cmpString;
-            if (((RubyBoolean) step.callMethod(context, ">", RubyFixnum.zero(getRuntime()))).isTrue()) {
-                cmpString = ">";
-            } else {
-                cmpString = "<";
-            }
+            return duckStep(context, runtime, to, step, block);
+        }
+    }
 
-            while (true) {
-                if (i.callMethod(context, cmpString, to).isTrue()) {
-                    break;
-                }
-                block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "+", step);
+    private IRubyObject fixnumStep(ThreadContext context, Ruby runtime, long value, long end, long diff, Block block) {
+        if (diff == 0) throw runtime.newArgumentError("step cannot be 0");
+        if (diff > 0) {
+            for (long i = value; i <= end; i += diff) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
+        } else {
+            for (long i = value; i >= end; i += diff) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+        }
+        return this;
+    }
+
+    private IRubyObject floatStep(ThreadContext context, Ruby runtime, IRubyObject to, IRubyObject step, Block block) { 
+        double beg = num2dbl(this);
+        double end = num2dbl(to);
+        double unit = num2dbl(step);
+
+        if (unit == 0) throw runtime.newArgumentError("step cannot be 0");
+
+        double n = (end - beg)/unit;
+        double err = (Math.abs(beg) + Math.abs(end) + Math.abs(end - beg)) / Math.abs(unit) * DBL_EPSILON;
+
+        if (err > 0.5) err = 0.5;            
+        n = Math.floor(n + err) + 1;
+
+        for (double i = 0; i < n; i++){
+            block.yield(context, RubyFloat.newFloat(runtime, i * unit + beg));
+        }
+        return this;
+    }
+
+    private IRubyObject duckStep(ThreadContext context, Ruby runtime, IRubyObject to, IRubyObject step, Block block) {
+        IRubyObject i = this;
+        String cmpString = step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue() ? ">" : "<";
+
+        while (true) {
+            if (i.callMethod(context, cmpString, to).isTrue()) break;
+            block.yield(context, i);
+            i = i.callMethod(context, "+", step);
         }
         return this;
     }
