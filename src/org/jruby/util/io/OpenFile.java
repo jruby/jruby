@@ -94,7 +94,13 @@ public class OpenFile {
 
         if (((mode & WBUF) != 0 || (mode & (SYNCWRITE | RBUF)) == SYNCWRITE)
                 && !mainStream.feof() && pipeStream == null) {
-            seek(0, Stream.SEEK_CUR);
+            try {
+                // seek to force underlying buffer to flush
+                seek(0, Stream.SEEK_CUR);
+            } catch (IOException ioe) {
+                // MRI ignores seek errors, presumably for unseekable files like
+                // serial ports (JRUBY-2979), so we shall too.
+            }
         }
     }
 
@@ -126,7 +132,13 @@ public class OpenFile {
             throw runtime.newIOError("not opened for writing");
         }
         if ((mode & RBUF) != 0 && !mainStream.feof() && pipeStream == null) {
-            seek(0, Stream.SEEK_CUR);
+            try {
+                // seek to force read buffer to invalidate
+                seek(0, Stream.SEEK_CUR);
+            } catch (IOException ioe) {
+                // MRI ignores seek errors, presumably for unseekable files like
+                // serial ports (JRUBY-2979), so we shall too.
+            }
         }
         if (pipeStream == null) {
             mode &= ~RBUF;
