@@ -2408,6 +2408,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int len = value.realSize;
         int range = begin + len;
         byte[]bytes = value.bytes;
+        Encoding enc = value.encoding;
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
         Frame frame = context.getPreviousFrame();
@@ -2425,7 +2426,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 repl = objAsString(context, hash.op_aref(context, subStr));
             }
 
-            modifyCheck(bytes, len);
+            modifyCheck(bytes, len, enc);
             frozenCheck();
             frame.setBackRef(match);
             return subBangCommon19(context, pattern, matcher, repl, tainted);
