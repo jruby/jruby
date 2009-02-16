@@ -7,6 +7,7 @@ JAY=jay
 RUBY=ruby
 PARSER_BASE=DefaultRubyParser
 YYTABLE_PREFIX=
+DEBUG=true
 ###### Do not change below ######
 
 if [ "$1" != "" ]; then
@@ -20,7 +21,7 @@ fi
 
 if [ "$DEBUG" != "" ]; then
   DEBUG_FLAG=-t
-  # Nonesence...my script-fu is weak
+  # Nonesense...my script-fu is weak
   DEBUG_STRIP="xdyhbk"
 else
   DEBUG_FLAG=
