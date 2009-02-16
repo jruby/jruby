@@ -4438,32 +4438,33 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject scan19(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = context.getRuntime();
         Encoding enc = value.encoding;
-        final Regex pattern, pat;
+        final Regex pattern, prepared;
         final RubyRegexp regexp;
         if (arg instanceof RubyRegexp) {
             regexp = (RubyRegexp)arg;
             pattern = regexp.getPattern();
-            pat = regexp.preparePattern(this);
+            prepared = regexp.preparePattern(this);
         } else {
             regexp = null;
             pattern = getStringPattern19(runtime, arg);
-            pat = RubyRegexp.preparePattern(runtime, pattern, this);
+            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
         }
-        int begin = value.begin;
-        int range = begin + value.realSize;
-        final Matcher matcher = pat.matcher(value.bytes, begin, range);
 
         if (block.isGiven()) {
-            return scanIter19(context, pattern, matcher, enc, block, begin, range, regexp);
+            return scanIter19(context, pattern, prepared, enc, block, regexp);
         } else {
-            return scanNoIter19(context, pattern, matcher, enc, begin, range, regexp);
+            return scanNoIter19(context, pattern, prepared, enc, regexp);
         }
     }
 
-    private IRubyObject scanIter19(ThreadContext context, Regex pattern, Matcher matcher, Encoding enc, Block block, int begin, int range, RubyRegexp regexp) {
+    private IRubyObject scanIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, Block block, RubyRegexp regexp) {
         Ruby runtime = context.getRuntime();
         byte[]bytes = value.bytes;
-        int size = value.realSize;
+        int begin = value.begin;
+        int len = value.realSize;
+        int range = begin + len;
+        final Matcher matcher = prepared.matcher(bytes, begin, range);
+
         Frame frame = context.getPreviousFrame();
         boolean tainted = regexp != null && regexp.isTaint();
 
@@ -4480,7 +4481,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     match.setTaint(true);
                 }
                 block.yield(context, substr);
-                modifyCheck(bytes, size, enc);
+                modifyCheck(bytes, len, enc);
             }
         } else {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
@@ -4489,15 +4490,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 match.regexp = regexp;
                 if (tainted) match.setTaint(true);
                 block.yield(context, populateCapturesForScan(runtime, matcher, range, tainted));
-                modifyCheck(bytes, size, enc);
+                modifyCheck(bytes, len, enc);
             }
         }
         frame.setBackRef(match == null ? runtime.getNil() : match);
         return this;
     }
 
-    private IRubyObject scanNoIter19(ThreadContext context, Regex pattern, Matcher matcher, Encoding enc, int begin, int range, RubyRegexp regexp) {
+    private IRubyObject scanNoIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, RubyRegexp regexp) {
         Ruby runtime = context.getRuntime();
+        byte[]bytes = value.bytes;
+        int begin = value.begin;
+        int range = begin + value.realSize;
+        final Matcher matcher = prepared.matcher(bytes, begin, range);
+
         RubyArray ary = runtime.newArray();
         boolean tainted = regexp != null && regexp.isTaint();
 
@@ -4505,7 +4511,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (pattern.numberOfCaptures() == 0) {
             while (matcher.search(begin + end, range, Option.NONE) >= 0) {
                 end = positionEnd(matcher, enc, begin, range);
-                IRubyObject substr = makeShared(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
+                IRubyObject substr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
                 if (tainted) substr.setTaint(true);
                 ary.append(substr);
             }
