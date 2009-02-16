@@ -30,6 +30,7 @@ package org.jruby.ext.socket;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -103,11 +104,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         // we basically ignore protocol. let someone report it...
         return initialize();
     }
-
-    public IRubyObject setsockopt(ThreadContext context, IRubyObject[] args) {
-        // Stubbed out
-        return context.getRuntime().getNil();
-    }
+    
     @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {
         return bind(getRuntime().getCurrentContext(), host, port);
@@ -203,19 +200,22 @@ public class RubyUDPSocket extends RubyIPSocket {
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args) {
         try {
+            int written;
             if (args.length >= 3) { // host and port given
-                InetSocketAddress addr =
-                        new InetSocketAddress(InetAddress.getByName(args[2].convertToString().toString()), RubyNumeric.fix2int(args[3]));
+                RubyString nameStr = args[2].convertToString();
                 RubyString data = args[0].convertToString();
                 ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
-                ((DatagramChannel) this.getChannel()).send(buf, addr);
-                return data.length();
+
+                InetAddress address = RubySocket.getRubyInetAddress(nameStr.getByteList());
+                InetSocketAddress addr =
+                        new InetSocketAddress(address, RubyNumeric.fix2int(args[3]));
+                written = ((DatagramChannel) this.getChannel()).send(buf, addr);
             } else {
                 RubyString data = args[0].convertToString();
                 ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
-                ((DatagramChannel) this.getChannel()).write(buf);
-                return data.length();
+                written = ((DatagramChannel) this.getChannel()).write(buf);
             }
+            return context.getRuntime().newFixnum(written);
         } catch (UnknownHostException e) {
             throw sockerr(context.getRuntime(), "send: name or service not known");
         } catch (IOException e) {

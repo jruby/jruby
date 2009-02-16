@@ -39,6 +39,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -71,12 +72,13 @@ public class RubyIPSocket extends RubyBasicSocket {
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = r.newString("AF_INET");
         ret[1] = r.newFixnum(addr.getPort());
+        String hostAddress = addr.getAddress().getHostAddress();
         if(r.isDoNotReverseLookupEnabled()) {
-            ret[2] = r.newString(addr.getAddress().getHostAddress());
+            ret[2] = r.newString(hostAddress);
         } else {
             ret[2] = r.newString(addr.getHostName());
         }
-        ret[3] = r.newString(addr.getAddress().getHostAddress());
+        ret[3] = r.newString(hostAddress);
         return r.newArrayNoCopy(ret);
     }
     @Deprecated

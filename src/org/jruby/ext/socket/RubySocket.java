@@ -406,6 +406,21 @@ public class RubySocket extends RubyBasicSocket {
         return context.getRuntime().newArrayNoCopy(result);
     }
 
+    private static final ByteList BROADCAST = new ByteList("<broadcast>".getBytes());
+    private static final byte[] INADDR_BROADCAST = new byte[] {-1,-1,-1,-1}; // 255.255.255.255
+    private static final ByteList ANY = new ByteList("<any>".getBytes());
+    private static final byte[] INADDR_ANY = new byte[] {0,0,0,0}; // 0.0.0.0
+
+    public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
+        if (address.equal(BROADCAST)) {
+            return InetAddress.getByAddress(INADDR_BROADCAST);
+        } else if (address.equal(ANY)) {
+            return InetAddress.getByAddress(INADDR_ANY);
+        } else {
+            return InetAddress.getByName(address.toString());
+        }
+    }
+
     @Deprecated
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
         return gethostbyname(recv.getRuntime().getCurrentContext(), recv, hostname);
@@ -413,13 +428,13 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         try {
-            InetAddress addr = InetAddress.getByName(hostname.convertToString().toString());
+            InetAddress addr = getRubyInetAddress(hostname.convertToString().getByteList());
             Ruby runtime = context.getRuntime();
             IRubyObject[] ret = new IRubyObject[4];
             ret[0] = runtime.newString(addr.getCanonicalHostName());
             ret[1] = runtime.newArray();
             ret[2] = runtime.newFixnum(2); // AF_INET
-            ret[3] = runtime.newString(intoString(runtime,addr));
+            ret[3] = runtime.newString(new ByteList(addr.getAddress()));
             return runtime.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
             throw sockerr(context.getRuntime(), "gethostbyname: name or service not known");
