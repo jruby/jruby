@@ -78,7 +78,7 @@ module RI
           "List all the names known to RDoc, one per line"
         ],
 
-        [ "--no-pager",      "-T",   nil,
+        [ "--no-pager",      "-T",   false,
           "Send output directly to stdout." 
         ],
 
@@ -217,7 +217,8 @@ module RI
     end
 
     def initialize
-      @use_stdout   = !STDOUT.tty?
+      # JRUBY-3413: ri/rdoc do not page correctly
+      @use_stdout   = true #!STDOUT.tty?
       @width        = 72
       @formatter    = RI::TextFormatter.for("plain") 
       @list_classes = false
