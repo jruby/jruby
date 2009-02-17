@@ -701,13 +701,26 @@ public class RubyClass extends RubyModule {
      * rb_class_superclass
      *
      */
-    @JRubyMethod(name = "superclass")
+    @JRubyMethod(name = "superclass", compat = CompatVersion.RUBY1_8)
     public IRubyObject superclass(ThreadContext context) {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) throw context.getRuntime().newTypeError("uninitialized class");
-        
+
         if (isSingleton()) superClazz = metaClass;
+        while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
+
+        return superClazz != null ? superClazz : context.getRuntime().getNil();
+    }
+    
+    @JRubyMethod(name = "superclass", compat = CompatVersion.RUBY1_9)
+    public IRubyObject superclass19(ThreadContext context) {
+        RubyClass superClazz = superClass;
+        if (superClazz == null) {
+            if (metaClass == runtime.getBasicObject()) return runtime.getNil();
+            throw context.getRuntime().newTypeError("uninitialized class");
+        }
+
         while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
 
         return superClazz != null ? superClazz : context.getRuntime().getNil();
