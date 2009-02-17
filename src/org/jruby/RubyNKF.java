@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Koichiro Ohba <koichiro@meadowy.org>
+ * Copyright (C) 2007-2009 Koichiro Ohba <koichiro@meadowy.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -43,6 +43,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.Pack;
 
 @JRubyModule(name="NKF")
 public class RubyNKF {
@@ -58,6 +59,16 @@ public class RubyNKF {
     public static final NKFCharset UTF16 = new NKFCharset(8, "UTF-16");
     public static final NKFCharset UTF32 = new NKFCharset(12, "UTF-32");
     public static final NKFCharset OTHER = new NKFCharset(16, null);
+    public static final NKFCharset BASE64 = new NKFCharset(20, "base64");
+    public static final NKFCharset QENCODE = new NKFCharset(21, "qencode");
+    public static final NKFCharset MIME_DETECT = new NKFCharset(22, "MimeAutoDetect");
+
+    private static final ByteList BEGIN_MIME_STRING = new ByteList(ByteList.plain("=?"));
+    private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
+    private static final ByteList MIME_ASCII = new ByteList(ByteList.plain(ASCII.getCharset()));
+    private static final ByteList MIME_UTF8 = new ByteList(ByteList.plain(UTF8.getCharset()));
+    private static final ByteList MIME_JIS = new ByteList(ByteList.plain(JIS.getCharset()));
+    private static final ByteList MIME_EUC_JP = new ByteList(ByteList.plain(EUC.getCharset()));
 
     public static class NKFCharset {
         private final int value;
@@ -162,25 +173,50 @@ public class RubyNKF {
         
         Map<String, NKFCharset> options = parseOpt(opt.convertToString().toString());
         
-        NKFCharset nc = options.get("input");
-        if (nc.getValue() == AUTO.getValue()) {
+        if (options.get("input").getValue() == AUTO.getValue()) {
             KCode kcode = runtime.getKCode();
             if (kcode == KCode.SJIS) {
-                nc = SJIS;
+                options.put("input", SJIS);
             } else if (kcode == KCode.EUC) {
-                nc = EUC;
+                options.put("input", EUC);
             } else if (kcode == KCode.UTF8) {
-                nc = UTF8;
+                options.put("input", UTF8);
             }
         }
-        String decodeCharset = nc.getCharset();
+
+        ByteList mimeString = str.convertToString().getByteList();
+        ByteList mimeText = null;
+        NKFCharset mimeState = detectMimeString(mimeString, options);
+        if (mimeState == NOCONV) {
+            mimeText = mimeString;
+        } else {
+            mimeText = getMimeText(mimeString);
+            RubyArray array = null;
+            if (mimeState == BASE64) {
+                array = Pack.unpack(runtime, mimeText, new ByteList(ByteList.plain("m")));
+            } else if (mimeState == QENCODE) {
+                array = Pack.unpack(runtime, mimeText, new ByteList(ByteList.plain("M")));
+            }
+            RubyString s = (RubyString) array.entry(0);
+            mimeText = s.asString().getByteList();
+        }
+
+        String decodeCharset = options.get("input").getCharset();
         String encodeCharset = options.get("output").getCharset();
-        
-        return convert(context, decodeCharset, encodeCharset, str);
+
+        RubyString result = convert(context, decodeCharset, encodeCharset, mimeText);
+
+        if (options.get("mime-encode") == BASE64) {
+            result = encodeMimeString(runtime, result, "m"); // BASE64
+        } else if (options.get("mime-encode") == QENCODE) {
+            result = encodeMimeString(runtime, result, "M"); // quoted-printable
+        }
+
+        return result;
     }
     
-    private static IRubyObject convert(ThreadContext context, String decodeCharset, 
-            String encodeCharset, IRubyObject str) {
+    private static RubyString convert(ThreadContext context, String decodeCharset,
+            String encodeCharset, ByteList str) {
         Ruby runtime = context.getRuntime();
         CharsetDecoder decoder;
         CharsetEncoder encoder;
@@ -191,8 +227,7 @@ public class RubyNKF {
             throw runtime.newArgumentError("invalid encoding");
         }
         
-        ByteList bytes = str.convertToString().getByteList();
-        ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+        ByteBuffer buf = ByteBuffer.wrap(str.unsafeBytes(), str.begin(), str.length());
         try {
             CharBuffer cbuf = decoder.decode(buf);
             buf = encoder.encode(cbuf);
@@ -205,13 +240,65 @@ public class RubyNKF {
         
     }
 
-    private static int optionUTF(String s, int i) {
+    private static RubyString encodeMimeString(Ruby runtime, RubyString str, String format) {
+        RubyArray array = RubyArray.newArray(runtime, 1);
+        array.append(str);
+        return Pack.pack(runtime, array, new ByteList(ByteList.plain(format))).chomp(runtime.getCurrentContext());
+    }
+
+    private static NKFCharset detectMimeString(ByteList str, Map<String, NKFCharset> options) {
+        if (str.length() <= 6) return NOCONV;
+        if (options.get("mime-decode") == NOCONV) return NOCONV;
+        if (!str.startsWith(BEGIN_MIME_STRING)) return NOCONV;
+        if (!str.endsWith(END_MIME_STRING)) return NOCONV;
+
+        int pos = str.indexOf('?', 3);
+        if (pos < 0) return NOCONV;
+        ByteList charset = new ByteList(str, 2, pos - 2);
+        if (charset.caseInsensitiveCmp(MIME_UTF8) == 0) {
+            options.put("input", UTF8);
+        } else if (charset.caseInsensitiveCmp(MIME_JIS) == 0) {
+            options.put("input", JIS);
+        } else if (charset.caseInsensitiveCmp(MIME_EUC_JP) == 0) {
+            options.put("input", EUC);
+        } else {
+            options.put("input", ASCII);
+        }
+
+        int prev = pos;
+        pos = str.indexOf('?', pos + 1);
+        if (pos < 0) return NOCONV;
+        char encode = str.charAt(pos - 1);
+
+        switch (encode) {
+        case 'q':
+        case 'Q':
+            return QENCODE;
+        case 'b':
+        case 'B':
+            return BASE64;
+        default:
+            return NOCONV;
+        }
+    }
+
+    private static ByteList getMimeText(ByteList str) {
+        int pos = 0;
+        for (int i = 3; i >= 1; i--) {
+            pos = str.indexOf('?', pos + 1);
+        }
+        return new ByteList(str, pos + 1, str.length() - pos - 3);
+    }
+
+    private static int optionUTF(String s, int pos) {
         int n = 8;
-        if (i+1 < s.length() && Character.isDigit(s.charAt(i+1))) {
-            n = Character.digit(s.charAt(i+1), 10);
-            if (i+2 < s.length() && Character.isDigit(s.charAt(i+2))) {
+        int first = pos + 1;
+        int second = pos + 2;
+        if (first < s.length() && Character.isDigit(s.charAt(first))) {
+            n = Character.digit(s.charAt(first), 10);
+            if (second < s.length() && Character.isDigit(s.charAt(second))) {
                 n *= 10;
-                n += Character.digit(s.charAt(i+2), 10);
+                n += Character.digit(s.charAt(second), 10);
             }
         }
         return n;
@@ -223,6 +310,8 @@ public class RubyNKF {
         // default options
         options.put("input", AUTO);
         options.put("output", JIS);
+        options.put("mime-decode", MIME_DETECT);
+        options.put("mime-encode", NOCONV);
         
         for (int i = 0; i < s.length(); i++) {
             switch (s.charAt(i)) {
@@ -277,8 +366,37 @@ public class RubyNKF {
             case 'h':
                 break;
             case 'm':
+                if (i+1 >= s.length()) {
+                    options.put("mime-decode", MIME_DETECT);
+                    break;
+                }
+                switch (s.charAt(i+1)) {
+                case 'B':
+                    options.put("mime-decode", BASE64);
+                    break;
+                case 'Q':
+                    options.put("mime-decode", QENCODE);
+                    break;
+                case 'N':
+                    // TODO: non-strict option
+                    break;
+                case '0':
+                    options.put("mime-decode", NOCONV);
+                    break;
+                }
                 break;
             case 'M':
+                if (i+1 >= s.length()) {
+                    options.put("mime-encode", NOCONV);
+                }
+                switch (s.charAt(i+1)) {
+                case 'B':
+                    options.put("mime-encode", BASE64);
+                    break;
+                case 'Q':
+                    options.put("mime-encode", QENCODE);
+                    break;
+                }
                 break;
             case 'l':
                 break;

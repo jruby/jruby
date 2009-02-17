@@ -44,4 +44,15 @@ class NKFTest < Test::Unit::TestCase
       # IBM JDK does not appear to support all the same encodings; See JRUBY-3301.
     end
   end
+
+  def test_mime_decode
+    assert_equal("hello", NKF.nkf("-m", "=?US-ASCII?Q?hello=?="))
+    assert_equal("hello world", NKF.nkf("-m", "=?US-ASCII?Q?hello=20world?="))
+    assert_equal("hello world", NKF.nkf("-m", "=?US-ASCII?B?aGVsbG8gd29ybGQ=?="))
+  end
+
+  def test_mime_encode
+    assert_equal("hello=", NKF.nkf("-MQ", "hello"))
+    assert_equal("aGVsbG8gd29ybGQ=", NKF.nkf("-MB", "hello world"))
+  end
 end
