@@ -43,6 +43,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.java.MiniJava;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -238,6 +240,22 @@ public class RubyFixnum extends RubyInteger {
      *  Instance Methods
      *  ================ 
      */
+    @Override
+    public IRubyObject times(ThreadContext context, Block block) {
+        Ruby runtime = context.getRuntime();
+        long value = this.value;
+        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+            IRubyObject nil = runtime.getNil();
+            for (long i = 0; i < value; i++) {
+                block.yield(context, nil);
+            }
+        } else {
+            for (long i = 0; i < value; i++) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+        }
+        return this;
+    }
 
     /** fix_to_s
      * 
