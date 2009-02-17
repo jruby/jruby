@@ -3,6 +3,9 @@
     <type>org.netbeans.modules.ant.freeform</type>
     <configuration>
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
+            <name>JRuby trunk</name>
+        </general-data>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>JRuby trunk</name>
             <properties>
@@ -14,46 +17,60 @@
                     <label>src</label>
                     <type>java</type>
                     <location>${src.dir}</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>test</label>
                     <type>java</type>
                     <location>${test.dir}</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>spec</label>
                     <type>java</type>
                     <location>spec</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>bin</label>
                     <type>java</type>
                     <location>bin</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>samples</label>
                     <type>java</type>
                     <location>samples</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>bench</label>
                     <type>java</type>
                     <location>bench</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>lib/ruby/1.8</label>
                     <type>java</type>
                     <location>lib/ruby/1.8</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>lib/ruby/1.9</label>
                     <type>java</type>
                     <location>lib/ruby/1.9</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
                     <label>lib/ruby/site_ruby</label>
                     <type>java</type>
                     <location>lib/ruby/site_ruby</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>JRuby trunk</label>
+                    <location>.</location>
+                    <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>
             <ide-actions>
