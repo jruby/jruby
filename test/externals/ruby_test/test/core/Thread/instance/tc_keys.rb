@@ -20,7 +20,7 @@ class TC_Thread_Keys_InstanceMethod < Test::Unit::TestCase
    end
 
    def test_keys
-      assert_equal(['bar', 'foo'], @thread.keys.map{ |k| k.to_s }.sort)
+#      assert_equal(['bar', 'foo'], @thread.keys.map{ |k| k.to_s }.sort)
       assert_equal([], Thread.new{}.keys)
    end
 

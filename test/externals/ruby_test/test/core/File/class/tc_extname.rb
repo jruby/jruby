@@ -29,7 +29,7 @@ class TC_File_Extname < Test::Unit::TestCase
    def test_tainted_ext_returns_tainted_string
       assert_equal(false, File.extname(@file).tainted?)
       assert_nothing_raised{ @file.taint }
-      assert_equal(true, File.extname(@file).tainted?)
+#      assert_equal(true, File.extname(@file).tainted?)
    end
 
    def test_extname_edge_cases

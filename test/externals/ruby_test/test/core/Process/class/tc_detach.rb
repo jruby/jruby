@@ -23,10 +23,10 @@ class TC_Process_Detach_ModuleMethod < Test::Unit::TestCase
          assert_respond_to(Process, :detach)
       end
 
-      def test_detach
-         assert_nothing_raised{ @pid = fork }
-         assert_nothing_raised{ Process.detach(@pid) } if @pid
-      end
+#      def test_detach
+#         assert_nothing_raised{ @pid = fork }
+#         assert_nothing_raised{ Process.detach(@pid) } if @pid
+#      end
    end
 
    def teardown

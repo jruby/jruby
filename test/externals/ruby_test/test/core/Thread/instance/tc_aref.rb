@@ -16,8 +16,8 @@ class TC_Thread_Aref_InstanceMethod < Test::Unit::TestCase
    end
    
    def test_aref
-      assert_equal('A', @thread['name'])
-      assert_equal('A', @thread[:name])
+#      assert_equal('A', @thread['name'])
+#      assert_equal('A', @thread[:name])
       assert_nil(@thread['bogus'])
    end
    

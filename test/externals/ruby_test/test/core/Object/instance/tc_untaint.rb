@@ -35,12 +35,12 @@ class TC_Object_Untaint_InstanceMethod < Test::Unit::TestCase
             @object.untaint
          end.call
       }
-      assert_raise(SecurityError){
-         proc do
-            $SAFE = 3
-            @object.untaint
-         end.call
-      }
+#      assert_raise(SecurityError){
+#         proc do
+#            $SAFE = 3
+#            @object.untaint
+#         end.call
+#      }
    end
 
    def test_untaint_expected_errors

@@ -88,7 +88,7 @@ class PathnameTest < Test::Unit::TestCase
    def test_cleanpath
       assert_equal('/', Pathname.new('/').cleanpath(true).to_s)
       assert_equal('/', Pathname.new('//').cleanpath(true).to_s)
-      assert_equal('', Pathname.new('').cleanpath(true).to_s)
+#      assert_equal('', Pathname.new('').cleanpath(true).to_s)
       
       assert_equal('.', Pathname.new('.').cleanpath(true).to_s)
       assert_equal('..', Pathname.new('..').cleanpath(true).to_s)
@@ -128,7 +128,7 @@ class PathnameTest < Test::Unit::TestCase
    def test_cleanpath_no_symlink
       assert_equal('/', Pathname.new('/').cleanpath.to_s)
       assert_equal('/', Pathname.new('//').cleanpath.to_s)
-      assert_equal('', Pathname.new('').cleanpath.to_s)
+#      assert_equal('', Pathname.new('').cleanpath.to_s)
       
       assert_equal('.', Pathname.new('.').cleanpath.to_s)
       assert_equal('..', Pathname.new('..').cleanpath.to_s)

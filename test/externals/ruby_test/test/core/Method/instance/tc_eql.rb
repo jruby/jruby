@@ -6,7 +6,7 @@
 require 'test/unit'
 require 'test/helper'
 
-class MethodEql
+class MethodEquality
    def foo; end
    def bar; some_method; end  # Synonym, but not true alias
    alias baz foo

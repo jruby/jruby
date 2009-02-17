@@ -29,10 +29,10 @@ class TC_Process_Constants < Test::Unit::TestCase
 
       def test_child_handling_constants
          assert_not_nil(Process::WNOHANG)
-         assert_not_nil(Process::WUNTRACED)
+#         assert_not_nil(Process::WUNTRACED)
 
          assert_kind_of(Fixnum, Process::WNOHANG)
-         assert_kind_of(Fixnum, Process::WUNTRACED)
+#         assert_kind_of(Fixnum, Process::WUNTRACED)
       end
 
       if RELEASE >= 5

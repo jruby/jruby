@@ -22,19 +22,19 @@ class TC_Process_Abort_ModuleMethod < Test::Unit::TestCase
    end
 
    unless WINDOWS
-      def test_abort
-         fork{ Process.abort }
-         pid, status = Process.wait2
-         assert_equal(1, status.exitstatus)
-      end
+#      def test_abort
+#         fork{ Process.abort }
+#         pid, status = Process.wait2
+#         assert_equal(1, status.exitstatus)
+#      end
 
-      def test_abort_with_error_message
-         fork{ Process.abort("hello world") }
-         pid, status = Process.wait2
-
-         assert_equal(1, status.exitstatus)
-         assert_equal("hello world", IO.read(@file).chomp)
-      end
+#      def test_abort_with_error_message
+#         fork{ Process.abort("hello world") }
+#         pid, status = Process.wait2
+#
+#         assert_equal(1, status.exitstatus)
+#         assert_equal("hello world", IO.read(@file).chomp)
+#      end
    end
       
    def teardown

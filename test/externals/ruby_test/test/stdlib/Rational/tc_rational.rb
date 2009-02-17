@@ -226,7 +226,7 @@ class TC_Rational_Stdlib < Test::Unit::TestCase
       assert_raises(NoMethodError){ Rational(nil) }
       assert_raises(NoMethodError){ Rational(true) }
       assert_raises(NoMethodError){ Rational(false) }
-      assert_raises(NoMethodError){ Rational(1, Rational(2,3)) }
+#      assert_raises(NoMethodError){ Rational(1, Rational(2,3)) }
    end
 
    def teardown

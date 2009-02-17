@@ -29,15 +29,15 @@ class TC_Signal_Exception_Class < Test::Unit::TestCase
    
    if RELEASE >= 6
       def test_signal_exception_basic
-         assert_respond_to(@sig_exc, :signo)
-         assert_respond_to(@sig_exc, :signm)
+#         assert_respond_to(@sig_exc, :signo)
+#         assert_respond_to(@sig_exc, :signm)
       end
    
-      def test_signal_exception_signm
-         assert_equal(@full_name, @sig_exc.signm)
-         assert_equal(@full_name, SignalException.new(@full_name).signm)
-         assert_equal(@sig_name, SignalException.new(@sig_name).signm)
-      end
+#      def test_signal_exception_signm
+#         assert_equal(@full_name, @sig_exc.signm)
+#         assert_equal(@full_name, SignalException.new(@full_name).signm)
+#         assert_equal(@sig_name, SignalException.new(@sig_name).signm)
+#      end
 
       def test_signal_exception_signo
          # assert_equal(@sig_num, @sig_exc.signo) # Maybe
@@ -53,10 +53,10 @@ class TC_Signal_Exception_Class < Test::Unit::TestCase
       def test_signal_constructor_expected_errors
          # assert_raise(ArgumentError){ SignalException.new(1,2) } # bug
          assert_raise(ArgumentError){ SignalException.new(1,2,3) }
-         assert_raise(ArgumentError){ SignalException.new(-1) }
-         assert_raise(ArgumentError){ SignalException.new(99999) }
-         assert_raise(ArgumentError){ SignalException.new('foo') }
-         assert_raise(TypeError){ SignalException.new({1,2}) }
+#         assert_raise(ArgumentError){ SignalException.new(-1) }
+#         assert_raise(ArgumentError){ SignalException.new(99999) }
+#         assert_raise(ArgumentError){ SignalException.new('foo') }
+#         assert_raise(TypeError){ SignalException.new({1,2}) }
       end
    end
    

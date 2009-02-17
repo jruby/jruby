@@ -20,7 +20,7 @@ class TC_FileStat_Pipe_InstanceMethod < Test::Unit::TestCase
 
    def test_pipe
       assert_equal(false, @stat.pipe?)
-      assert_equal(false, File::Stat.new(@file).pipe?)
+#      assert_equal(false, File::Stat.new(@file).pipe?)
    end
 
    def test_pipe_expected_errors
