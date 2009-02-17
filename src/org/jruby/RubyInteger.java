@@ -117,35 +117,39 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "upto", frame = true)
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
-        final Ruby runtime = getRuntime();
-
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-            RubyFixnum toFixnum = (RubyFixnum) to;
-            final long toValue = toFixnum.getLongValue();
-            final long fromValue = getLongValue();
-
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-                final IRubyObject nil = runtime.getNil();
-                for (long i = fromValue; i <= toValue; i++) {
-                    block.yield(context, nil);
-                }
-            } else {
-                for (long i = fromValue; i <= toValue; i++) {
-                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
-                }
-            }
+            fixnumUpto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
         } else {
-            RubyNumeric i = this;
-
-            while (true) {
-                if (i.callMethod(context, ">", to).isTrue()) {
-                    break;
-                }
-                block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(runtime));
-            }
+            duckUpto(context, this, to, block);
         }
         return this;
+    }
+
+    private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+            IRubyObject nil = runtime.getNil();
+            for (long i = from; i <= to; i++) {
+                block.yield(context, nil);
+            }
+        } else {
+            for (long i = from; i <= to; i++) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+        }
+    }
+
+    private static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject i = from;
+        RubyFixnum one = RubyFixnum.one(runtime);
+        while (true) {
+            if (i.callMethod(context, ">", to).isTrue()) {
+                break;
+            }
+            block.yield(context, i);
+            i = i.callMethod(context, "+", one);
+        }
     }
 
     @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
