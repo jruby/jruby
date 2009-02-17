@@ -3017,6 +3017,13 @@ public class RubyIO extends RubyObject {
                 new RubyIO(runtime, process.getError()) :
                 new RubyIO(runtime, process.getErrorStream());
 
+            input.getOpenFile().getMainStream().getDescriptor().
+              setCanBeSeekable(false);
+            output.getOpenFile().getMainStream().getDescriptor().
+              setCanBeSeekable(false);
+            error.getOpenFile().getMainStream().getDescriptor().
+              setCanBeSeekable(false);
+
             RubyArray yieldArgs = RubyArray.newArrayLight(runtime, output, input, error);
             if (block.isGiven()) {
                 try {
