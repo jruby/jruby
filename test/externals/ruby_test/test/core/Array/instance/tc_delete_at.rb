@@ -1,11 +1,11 @@
-###########################################################
+#######################################################################
 # tc_delete_at.rb
 #
-# Test suite for the Array#delete_at instance method.
-###########################################################
-require "test/unit"
+# Test case for the Array#delete_at instance method.
+#######################################################################
+require 'test/unit'
 
-class TC_Array_DeleteAt_Instance < Test::Unit::TestCase
+class TC_Array_DeleteAt_InstanceMethod < Test::Unit::TestCase
    def setup
       @array = [1,2,3]
    end
@@ -29,9 +29,15 @@ class TC_Array_DeleteAt_Instance < Test::Unit::TestCase
       assert_equal([1,3], @array)
    end
 
+   def test_delete_at_with_float
+      assert_equal(2, @array.delete_at(1.5))
+      assert_equal(nil, @array.delete_at(5.0))
+      assert_equal(nil, @array.delete_at(-5.9))
+   end
+
    def test_delete_at_expected_errors
-      assert_raises(ArgumentError){ @array.delete_at }
-      assert_raises(TypeError){ @array.delete_at("foo") }
+      assert_raise(ArgumentError){ @array.delete_at }
+      assert_raise(TypeError){ @array.delete_at('foo') }
    end
 
    def teardown

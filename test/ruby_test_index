@@ -305,7 +305,6 @@ externals/ruby_test/test/core/ObjectSpace/class/tc_id2ref
 externals/ruby_test/test/core/Range/instance/tc_begin
 #externals/ruby_test/test/core/Range/instance/tc_each
 externals/ruby_test/test/core/Range/instance/tc_equal
-externals/ruby_test/test/core/Range/instance/tc_threequals
 externals/ruby_test/test/core/String/class/tc_new
 externals/ruby_test/test/core/String/instance/tc_aref
 externals/ruby_test/test/core/String/instance/tc_aset

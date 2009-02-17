@@ -3,13 +3,23 @@
 #
 # Test suite for the Hash#== instance method.
 ###########################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
-class TC_Hash_Equality_Instance < Test::Unit::TestCase
+class TC_Hash_Equality_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
+   class HEquality
+      def to_hash
+         {'foo' => 1, 'bar' => 2}
+      end
+   end
+
    def setup
-      @hash1 = {"foo"=>1, "bar"=>2}
-      @hash2 = {"bar"=>2, "foo"=>1}
-      @hash3 = {:foo=>1, :bar=>2}
+      @hash1  = {"foo"=>1, "bar"=>2}
+      @hash2  = {"bar"=>2, "foo"=>1}
+      @hash3  = {:foo=>1, :bar=>2}
+      @custom = HEquality.new
    end
 
    def test_equality_basic
@@ -30,9 +40,16 @@ class TC_Hash_Equality_Instance < Test::Unit::TestCase
       assert_equal(false, {nil=>1} == {0=>1})
    end
 
+   def test_equality_using_custom_to_hash_method
+      # Fails
+      #assert_equal(true, @hash1 == @custom)
+      assert_equal(false, {1,2} == @custom)
+   end
+
    def teardown   
-      @hash1 = nil
-      @hash2 = nil
-      @hash3 = nil
+      @hash1  = nil
+      @hash2  = nil
+      @hash3  = nil
+      @custom = nil
    end
 end

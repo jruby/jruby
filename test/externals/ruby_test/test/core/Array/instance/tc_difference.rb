@@ -1,17 +1,30 @@
-#################################################
+############################################################################
 # tc_difference.rb
 #
-# Test suite for the Array#- instance method.
-#################################################
+# Test suite for the Array#- instance method. Note that we define a class
+# with a custom to_ary method to ensure that Array#- uses it properly.
+############################################################################
 require "test/unit"
 
 class TC_Array_Difference_InstanceMethod < Test::Unit::TestCase
+   class ADiff
+      def to_ary
+         [1, 2]
+      end
+   end
+
    def setup
       @array1 = [1, 2, 2, 3, 3, 3]
       @array2 = [2, 3]
       @array3 = [1, "hello", "world", nil, true, false]
       @array4 = [nil, true, false]
       @nested = [[1,2], ['hello', 'world']]
+      @custom = ADiff.new
+   end
+
+   def test_difference_custom_to_ary_method
+      assert_nothing_raised{ @array1 - @custom }
+      assert_equal([3, 3, 3], @array1 - @custom)
    end
 
    def test_difference_basic

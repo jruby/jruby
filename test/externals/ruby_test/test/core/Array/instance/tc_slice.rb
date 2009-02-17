@@ -5,7 +5,7 @@
 #####################################################################
 require "test/unit"
 
-class TC_Array_Slice_Instance < Test::Unit::TestCase
+class TC_Array_Slice_InstanceMethod < Test::Unit::TestCase
    def setup
       @array = %w/a b c d e/
    end
@@ -42,6 +42,7 @@ class TC_Array_Slice_Instance < Test::Unit::TestCase
    def test_expected_errors
       assert_raises(ArgumentError){ @array.slice(1,2,3) }
       assert_raises(TypeError){ @array.slice(true) }
+      assert_raises(TypeError){ @array.slice(2, nil) }
    end
 
    def teardown

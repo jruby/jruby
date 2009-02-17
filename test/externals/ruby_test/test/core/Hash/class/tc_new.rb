@@ -5,7 +5,7 @@
 ################################################################
 require "test/unit"
 
-class TC_Hash_New_Class < Test::Unit::TestCase
+class TC_Hash_New_ClassMethod < Test::Unit::TestCase
    def setup
       @hash = nil
    end
@@ -44,7 +44,8 @@ class TC_Hash_New_Class < Test::Unit::TestCase
    end
 
    def test_expected_errors
-      assert_raises(ArgumentError){ Hash.new(1,2) }
+      assert_raise(ArgumentError){ Hash.new(1,2) }  # too many arguments
+      assert_raise(ArgumentError){ Hash.new(0){ } } # arg + block illegal
    end
 
    def teardown

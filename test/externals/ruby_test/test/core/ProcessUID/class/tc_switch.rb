@@ -19,7 +19,7 @@ class TC_ProcessUID_Switch_ModuleMethod < Test::Unit::TestCase
       @uid  = Process.uid
       @euid = Process.euid
 
-      if ROOT && @uid == @euid
+      if !WINDOWS && ROOT && @uid == @euid
          Process.euid = Etc.getpwnam('nobody').uid
          @euid = Process.euid
       end

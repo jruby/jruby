@@ -11,8 +11,8 @@ class TC_File_Utime_ClassMethod < Test::Unit::TestCase
    
    def setup
       @time  = Time.now
-      @file1 = File.join(Dir.pwd, 'test1.txt')
-      @file2 = File.join(Dir.pwd, 'test1.txt')
+      @file1 = File.join(Dir.pwd, 'test_utime1.txt')
+      @file2 = File.join(Dir.pwd, 'test_utime2.txt')
       
       touch(@file1)
       touch(@file2)
@@ -57,7 +57,8 @@ class TC_File_Utime_ClassMethod < Test::Unit::TestCase
       remove_file(@file1)
       remove_file(@file2)
       
-      @file = nil
-      @time = nil
+      @file1 = nil
+      @file2 = nil
+      @time  = nil
    end
 end

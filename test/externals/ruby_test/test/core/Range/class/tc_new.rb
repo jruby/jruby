@@ -14,7 +14,7 @@ class TC_Range_New_ClassMethod < Test::Unit::TestCase
       @low   = -9223372036854775808
       @range = nil
 
-      # Untypical range objects
+      # Atypical range objects
       @file1 = 'test1.txt'
       @file2 = 'test2.txt'
       @time1 = Time.now

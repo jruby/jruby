@@ -5,23 +5,21 @@
 #####################################################################
 require 'test/unit'
 
-# We use this later on in the test case itself.
-#
-class Foo
-   attr_accessor :a, :b, :c
-
-   def self.create(*args)
-      obj = allocate
-      obj.send(:initialize, *args)
-      obj
-   end
-
-   def initialize(a, b, c)
-      @a, @b, @c = a, b, c
-   end
-end
-
 class TC_Class_Allocate_InstanceMethod < Test::Unit::TestCase
+   class Foo
+      attr_accessor :a, :b, :c
+
+      def self.create(*args)
+         obj = allocate
+         obj.send(:initialize, *args)
+         obj
+      end
+
+      def initialize(a, b, c)
+         @a, @b, @c = a, b, c
+      end
+   end
+   
    def setup
       @foo = nil
    end

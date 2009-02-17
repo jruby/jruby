@@ -45,6 +45,13 @@ class TC_File_Join_ClassMethod < Test::Unit::TestCase
       end
    end
 
+   # If any argument of File.join is tainted, the returned string is tainted
+   def test_tainted_join
+      assert_equal(false, File.join(*@dirs).tainted?)
+      assert_nothing_raised{ @dirs[0].taint }
+      assert_equal(true, File.join(*@dirs).tainted?)
+   end
+
    def test_expected_errors
       assert_raises(TypeError){ File.join(nil, nil) }
    end

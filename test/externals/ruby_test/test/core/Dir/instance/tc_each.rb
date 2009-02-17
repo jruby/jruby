@@ -10,7 +10,7 @@ class TC_Dir_Each_Instance < Test::Unit::TestCase
    include Test::Helper
 
    def setup
-      @pwd = `pwd`.chomp
+      @pwd = pwd_n
       @dir = Dir.new(@pwd)
       if WINDOWS
          @entries = `dir /A /B`.split("\n").push('.', '..')

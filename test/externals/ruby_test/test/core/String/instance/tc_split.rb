@@ -34,6 +34,13 @@ class TC_String_Split_Instance < Test::Unit::TestCase
       assert_equal(['h', 'e', 'l', 'l', 'o'], @string4.split(//))
    end
 
+   def test_split_regular_expression_with_limit
+      assert_equal(['a', 'bb', 'ccc'], @string2.split(/@\d/, 0))
+      assert_equal([@string2], @string2.split(/@\d/, 1))
+      assert_equal(['a', 'bb@2ccc'], @string2.split(/@\d/, 2))
+      assert_equal(['h', 'e', 'l', 'l', 'o', ''], @string4.split(//, -1))
+   end
+
    def test_split_with_positive_limit
       assert_equal([" now's the time"], @string1.split(' ', 1))
       assert_equal(["now's", "the time"], @string1.split(' ', 2))

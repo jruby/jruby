@@ -1,15 +1,27 @@
 ######################################################################
 # tc_setgid.rb
 #
-# Test case for the FileStat#setgid? instance method.
+# Test case for the FileStat#setgid? instance method. Most tests
+# are skipped on MS Windows.
+#
+# TODO: I am not sure the approach I'm using actually works. Verify.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_Setgid_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
+class TC_FileStat_Setgid_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
    
    def setup
-      @stat = File::Stat.new(__FILE__)
+      @stat  = File::Stat.new(__FILE__)
+
+      if WINDOWS
+         @mstat = nil
+         @bool  = nil
+      else
+         @mstat = File::Stat.new(`which mail`.chomp)
+         @bool  = @mstat.mode.to_s(8)[2].chr == '2'
+      end
    end
 
    def test_setgid_basic
@@ -19,7 +31,7 @@ class TC_FileStat_Setgid_Instance < Test::Unit::TestCase
    # Windows always returns true
    def test_setgid
       assert_equal(false, @stat.setgid?)
-      assert_equal(true, File::Stat.new('/usr/bin/mail').setgid?) unless WINDOWS
+      assert_equal(@bool, @mstat.setgid?) unless WINDOWS
    end
 
    def test_setgid_expected_errors
@@ -27,6 +39,8 @@ class TC_FileStat_Setgid_Instance < Test::Unit::TestCase
    end
 
    def teardown
-      @stat = nil
+      @stat  = nil
+      @mstat = nil
+      @bool  = nil
    end
 end

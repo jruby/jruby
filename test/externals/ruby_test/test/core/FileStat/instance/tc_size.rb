@@ -4,11 +4,14 @@
 # Test case for the FileStat#size and File::Stat#size? instance methods.
 #########################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_Size_Instance < Test::Unit::TestCase
+class TC_FileStat_Size_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
       @stat = File::Stat.new(__FILE__)
-      @file = RUBY_PLATFORM.match('mswin') ? 'NUL' : '/dev/null'
+      @file = null_device
    end
 
    def test_size_basic

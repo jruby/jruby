@@ -5,7 +5,7 @@
 ############################################################
 require "test/unit"
 
-class TC_Hash_ToA_Instance < Test::Unit::TestCase
+class TC_Hash_ToA_InstanceMethod < Test::Unit::TestCase
    def setup
       @hash = {"a",1,"b",2,"c",3}
    end
@@ -19,6 +19,12 @@ class TC_Hash_ToA_Instance < Test::Unit::TestCase
    def test_to_a
       assert_equal([["a",1],["b",2],["c",3]], @hash.to_a)
       assert_equal([], {}.to_a)
+   end
+   
+   def test_to_a_edge_cases
+      assert_equal([['a', 3]], {'a', 1, 'a', 2, 'a', 3}.to_a)
+      assert_equal([[nil, nil]], {nil, nil, nil, nil}.to_a)
+      assert_equal([['a', [1,2]], ['b', [3,4]]], {'a', [1,2], 'b', [3,4]}.to_a)
    end
 
    def test_to_a_expected_errors

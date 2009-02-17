@@ -1,13 +1,15 @@
 ######################################################################
 # tc_sticky.rb
 #
-# Test case for the FileStat#sticky instance method.
+# Test case for the FileStat#sticky instance method. Most tests
+# are skipped on MS Windows.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_Sticky_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
-   
+class TC_FileStat_Sticky_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
       @stat = File::Stat.new(__FILE__)
    end
@@ -18,7 +20,7 @@ class TC_FileStat_Sticky_Instance < Test::Unit::TestCase
 
    def test_sticky
       assert_equal(false, @stat.sticky?)
-      assert_equal(true, File::Stat.new('/tmp').sticky?)
+      assert_equal(true, File::Stat.new('/tmp').sticky?) unless WINDOWS
    end
 
    def test_sticky_expected_errors

@@ -5,7 +5,7 @@
 ######################################################################
 require "test/unit"
 
-class TC_String_Ljust_Instance < Test::Unit::TestCase
+class TC_String_Ljust_InstanceMethod < Test::Unit::TestCase
    def setup
       @string = 'hello'
    end
@@ -35,6 +35,14 @@ class TC_String_Ljust_Instance < Test::Unit::TestCase
       assert_equal('hello', @string.ljust(-100))
       assert_equal("hello\0\0\0\0\0", @string.ljust(10, "\0"))
       assert_equal("hello\0\0\0xx", "hello\0\0\0".ljust(10, 'x'))
+   end
+
+   def test_ljust_tainted_string
+      assert_equal(false, 'hello'.ljust(8).tainted?)
+      assert_equal(true, 'hello'.taint.ljust(8).tainted?)
+      # Fails
+      #assert_equal(false, 'hello'.ljust(4, 'X'.taint).tainted?) # Not > length
+      assert_equal(true, 'hello'.ljust(8, 'X'.taint).tainted?)
    end
 
    def test_ljust_expected_errors

@@ -3,11 +3,14 @@
 #
 # Test case for the String#intern instance method and its aliases.
 ######################################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
-class TC_String_Intern_Instance < Test::Unit::TestCase
+class TC_String_Intern_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+   
    def setup
-      @string = "<html><b>Hello</b></html>"
+      @string = '<html><b>Hello</b></html>'
    end
 
    def test_intern_basic
@@ -38,9 +41,25 @@ class TC_String_Intern_Instance < Test::Unit::TestCase
       assert_nothing_raised{ 'false'.intern }
    end
 
+   # You cannot intern an empty string, a string that contains '\0' or a
+   # tainted string if the $SAFE level is 1 or greater.
+   #--
+   # TODO: Figure out why this test succeeds when run as part of the
+   # test_string task, but fails when run as part of the test_core task.
+   #
    def test_intern_expected_errors
-      assert_raises(ArgumentError){ ''.intern } # Can't intern empty string
-      assert_raises(ArgumentError){ @string.intern(1) }
+     # Fails
+#      assert_raise(SecurityError){
+#         proc do
+#            $SAFE = 1
+#            @string = 'hello'
+#            @string.taint
+#            @string.intern
+#         end.call
+#      } if RELEASE > 5
+      assert_raise(ArgumentError){ "hello\0".intern }
+      assert_raise(ArgumentError){ ''.intern }
+      assert_raise(ArgumentError){ @string.intern(1) }
    end
 
    def teardown

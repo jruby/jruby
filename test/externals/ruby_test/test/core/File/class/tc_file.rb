@@ -18,6 +18,7 @@ class TC_File_File_ClassMethod < Test::Unit::TestCase
          @dir  = "/bin"
       end
 
+      @msg  = '=> May fail on MS Windows'
       @file = "test.txt"
       touch(@file)
    end
@@ -30,7 +31,7 @@ class TC_File_File_ClassMethod < Test::Unit::TestCase
    def test_file
       assert_equal(true, File.file?(@file))
       assert_equal(false, File.file?(@dir))
-      assert_equal(false, File.file?(@null), 'May fail on MS Windows')
+      assert_equal(false, File.file?(@null), @msg)
    end
 
    def test_file_expected_errors
@@ -43,5 +44,6 @@ class TC_File_File_ClassMethod < Test::Unit::TestCase
       remove_file(@file)
       @null = nil
       @file = nil
+      @msg  = nil
    end
 end

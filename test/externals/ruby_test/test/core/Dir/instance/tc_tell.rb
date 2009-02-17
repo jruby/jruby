@@ -4,11 +4,14 @@
 # Test case for the Dir#tell instance method.  This also covers the
 # Dir#pos synonym.
 ######################################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
-class TC_Dir_Tell_Instance < Test::Unit::TestCase
+class TC_Dir_Tell_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
-      @pwd = `pwd`.chomp
+      @pwd = pwd_n
       @dir = Dir.new(@pwd)
    end
 

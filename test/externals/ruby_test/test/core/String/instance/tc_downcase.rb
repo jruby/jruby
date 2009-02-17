@@ -1,37 +1,53 @@
 ############################################################################
 # tc_downcase.rb
 #
-# Test case for the String#downcase and String#downcase! instance methods.
+# Test case for the String#downcase instance method. Tests for the
+# String#downcase! instance method can be found in tc_downcase_bang.rb.
+#
+# TODO: Add Unicode tests.
 ############################################################################
-require "test/unit"
+require 'test/unit'
 
-class TC_String_Downcase_Instance < Test::Unit::TestCase
+class TC_String_Downcase_InstanceMethod < Test::Unit::TestCase
    def setup
-      @str = "<HTML><B>HELLO</B></HTML>"
+      @str = '<HTML><B>HELLO</B></HTML>'
    end
 
    def test_downcase_basic
       assert_respond_to(@str, :downcase)
-      assert_respond_to(@str, :downcase!)
       assert_nothing_raised{ @str.downcase }
-      assert_nothing_raised{ @str.downcase! }
+      assert_kind_of(String, @str.downcase)
    end
 
    def test_downcase
-      assert_equal("<html><b>hello</b></html>", @str.downcase)
-      assert_equal("<HTML><B>HELLO</B></HTML>", @str)
-      assert_equal("hello", "hello".downcase)
+      assert_equal('<html><b>hello</b></html>', @str.downcase)
+      assert_equal('hello', 'hello'.downcase)
    end
 
-   def test_downcase_bang
-      assert_equal("<html><b>hello</b></html>", @str.downcase!)
-      assert_equal("<html><b>hello</b></html>", @str)
-      assert_equal(nil, "hello".downcase!)
+   def test_downcase_non_alpha
+      assert_equal('123', '123'.downcase)
+      assert_equal('!@#$%^&*()', '!@#$%^&*()'.downcase)
+   end
+
+   def test_downcase_original_unmodified
+      @str = 'HELLO'
+      assert_nothing_raised{ @str.downcase }
+      assert_equal('HELLO', @str)
+   end
+   
+   def test_downcase_frozen_string_allowed
+      @str = 'HELLO'
+      assert_equal('hello', @str.freeze.downcase) 
+   end
+
+   def test_downcase_edge_cases
+      assert_equal('', ''.downcase)
+      assert_equal(' ', ' '.downcase)
+      assert_equal("\000\000", "\000\000".downcase)
    end
 
    def test_downcase_expected_errors
-      assert_raises(ArgumentError){ @str.downcase("test") }
-      assert_raises(ArgumentError){ @str.downcase!("test") }
+      assert_raise(ArgumentError){ @str.downcase('test') }
    end
 
    def teardown

@@ -48,6 +48,8 @@ class TC_Array_Repetition_InstanceMethod < Test::Unit::TestCase
       assert_raises(TypeError){ @array1 * nil }
       assert_raises(TypeError){ @array1 * @array2 }
       assert_raises(TypeError){ @array1 * false }
+      assert_raises(ArgumentError){ @array1 * -3 }
+      assert_raises(ArgumentError, RangeError){ @array1 * (256**64) }
       assert_raises(ArgumentError){ @array1.send(:*, @array2, @array3) }
    end
    

@@ -3,9 +3,12 @@
 #
 # Test case for the Dir#close instance method
 ######################################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
 class TC_Dir_Close_Instance < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
       @dirname = "bogus"
       system("mkdir #{@dirname}")
@@ -30,10 +33,6 @@ class TC_Dir_Close_Instance < Test::Unit::TestCase
 
    def teardown
       @dir = nil
-      if PLATFORM.match("mswin")
-         system("rmdir /S /Q #{@dirname}")
-      else
-         system("rm -rf #{@dirname}")
-      end
+      remove_dir(@dirname)
    end
 end

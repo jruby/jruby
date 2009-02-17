@@ -17,16 +17,18 @@ class TC_Fixnum_Addition_InstanceMethod < Test::Unit::TestCase
       assert_respond_to(@num1, :+)
       assert_nothing_raised{ @num1.+(1) }
       assert_nothing_raised{ @num1 + 1 }
-
-      assert_kind_of(Fixnum, @num1)
-      assert_kind_of(Fixnum, @max)
-      assert_kind_of(Fixnum, @min)
    end
 
    def test_addition
       assert_equal(@min, @min + 0)
       assert_equal(@min, 0 + @min)
       assert_equal(true, @min + 1 > @min)
+      # Fails
+#      assert_equal(true, @min + 0.1 > @min)
+   end
+
+   def test_addition_expected_errors
+      assert_raise(ArgumentError){ @num1.send(:+, 1, 2) }
    end
 
    def teardown

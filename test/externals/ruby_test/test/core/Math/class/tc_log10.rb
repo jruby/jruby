@@ -26,7 +26,7 @@ class TC_Math_Log10_Class < Test::Unit::TestCase
       assert_in_delta(-0.46, Math.log10(0.345), 0.01)
    end
    
-   if OSX
+   if OSX || JRUBY
       def test_log10_returns_infinity
          assert_equal('-Infinity', Math.log10(0).to_s)
       end
@@ -34,7 +34,7 @@ class TC_Math_Log10_Class < Test::Unit::TestCase
    
    # TODO: Shouldn't all non-numerics raise TypeError?
    def test_log10_expected_errors
-      assert_raises(Errno::ERANGE){ Math.log10(0) } unless OSX
+      assert_raises(Errno::ERANGE){ Math.log10(0) } unless OSX || JRUBY
       assert_raises(Errno::EDOM){ Math.log10(-1) }
       assert_raises(TypeError){ Math.log10(nil) }
       assert_raises(ArgumentError){ Math.log10('test') }

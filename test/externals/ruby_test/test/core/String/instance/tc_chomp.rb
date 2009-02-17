@@ -1,11 +1,12 @@
 #######################################################################
 # tc_chomp.rb
 #
-# Test case for the String#chomp and String#chomp! instance methods.
+# Test case for the String#chomp instance method. Tests for the
+# String#chomp! instance method can be found in tc_chomp_bang.rb.
 #######################################################################
-require "test/unit"
+require 'test/unit'
 
-class TC_String_Chomp_Instance < Test::Unit::TestCase
+class TC_String_Chomp_InstanceMethod < Test::Unit::TestCase
    def setup
       @str1 = "hello"
       @str2 = "hello\n"
@@ -17,11 +18,8 @@ class TC_String_Chomp_Instance < Test::Unit::TestCase
 
    def test_chomp_basic
       assert_respond_to(@str1, :chomp)
-      assert_respond_to(@str1, :chomp!)
       assert_nothing_raised{ @str1.chomp }
-      assert_nothing_raised{ @str1.chomp! }
-      assert_nothing_raised{ @str1.chomp("llo") }
-      assert_nothing_raised{ @str1.chomp!("ll0") }
+      assert_kind_of(String, @str1.chomp)
    end
 
    def test_chomp
@@ -30,14 +28,9 @@ class TC_String_Chomp_Instance < Test::Unit::TestCase
       assert_equal("hello", @str3.chomp)
       assert_equal("hello", @str4.chomp)
       assert_equal("hello\n", @str5.chomp)
-   end
 
-   def test_chomp_bang
-      assert_equal(nil, @str1.chomp!)
-      assert_equal("hello", @str2.chomp!)
-      assert_equal("hello", @str3.chomp!)
-      assert_equal("hello", @str4.chomp!)
-      assert_equal("hello\n", @str5.chomp!)
+      # Validate that the original string is unmodified
+      assert_equal("hello\n", @str2)
    end
 
    def test_chomp_with_arg
@@ -45,13 +38,6 @@ class TC_String_Chomp_Instance < Test::Unit::TestCase
       assert_equal("hello", @str1.chomp("z"))
       assert_equal("he", @str2.chomp("llo\n"))
       assert_equal("hello\n", @str2.chomp("llo"))
-   end
-
-   def test_chomp_bang_with_arg
-      assert_equal("he", @str1.chomp!("llo"))
-      assert_equal(nil, @str1.chomp!("z"))
-      assert_equal("he", @str2.chomp!("llo\n"))
-      assert_equal(nil, @str2.chomp!("llo"))
    end
 
    def test_chomp_rs_altered
@@ -66,20 +52,6 @@ class TC_String_Chomp_Instance < Test::Unit::TestCase
 
       $/ = ""
       assert_equal("hello", @str5.chomp)
-   end
-
-   def test_chomp_bang_rs_altered
-      $/ = "llo"
-      assert_equal("he", @str1.chomp!)
-
-      $/ = nil
-      assert_equal(nil, @str1.chomp!)
-
-      $/ = "\n"
-      assert_equal("hello", @str4.chomp!)
-
-      $/ = ""
-      assert_equal("hello", @str5.chomp!)
    end
 
    def test_chomp_expected_errors

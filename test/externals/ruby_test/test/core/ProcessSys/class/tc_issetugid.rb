@@ -21,7 +21,10 @@ class TC_ProcessSys_Issetugid_ModuleMethod < Test::Unit::TestCase
    end
 
    def test_issetugid_expected_errors
-      assert_raises(ArgumentError){ Process::Sys.issetugid(1) }
-      assert_raises(NotImplementedError) if WINDOWS
+      if WINDOWS
+         assert_raises(NotImplementedError){ Process::Sys.issetugid }
+      else
+         assert_raises(ArgumentError){ Process::Sys.issetugid(1) }
+      end
    end
 end

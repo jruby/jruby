@@ -5,7 +5,7 @@
 ###############################################################
 require "benchmark"
 
-MAX = 5_000_000
+MAX = ARGV[0].chomp.to_i rescue 200000
 
 Benchmark.bm(30) do |x|
    x.report("String.new"){
@@ -254,7 +254,7 @@ Benchmark.bm(30) do |x|
 
    x.report("String#insert"){
       string = "hello"
-      (MAX/10).times{ string.insert(2, "world") }
+      MAX.times{ string.insert(2, "world") }
    }
 
    x.report("String#intern"){

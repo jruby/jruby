@@ -20,10 +20,20 @@ class TC_Array_Shift_Instance < Test::Unit::TestCase
       assert_equal("b", @array.shift)
       assert_equal("c", @array.shift)
       assert_equal(nil, @array.shift)
+      assert_equal(['a'], [['a'], ['b']].shift)
+   end
+
+   def test_shift_edge_cases
+      assert_equal(nil, [nil].shift)
+      assert_equal(0, [0].shift)
+      assert_equal(false, [false].shift)
+      assert_equal(true, [true].shift)
+      assert_equal([], [[],[]].shift)
    end
 
    def test_shift_expected_errors
       assert_raises(ArgumentError){ @array.shift("foo") }
+      assert_raises(ArgumentError){ @array.shift(2) }
    end
 
    def teardown

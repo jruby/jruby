@@ -4,11 +4,14 @@
 # Test case for the Dir#pos= instance method.  Note that Dir#pos is
 # tested in the tc_tell test case since it's a synonym.
 ######################################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
 class TC_Dir_Pos_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
-      @pwd = `pwd`.chomp
+      @pwd = pwd_n
       @dir = Dir.new(@pwd)
    end
 

@@ -6,7 +6,7 @@
 require "test/unit"
 
 # Used to verify that objects with .to_str implemented are acceptable
-class FooString
+class NewString
    def to_str
       "test"
    end
@@ -28,12 +28,13 @@ class TC_String_New_Class < Test::Unit::TestCase
    end
 
    def test_constructor_allows_to_str
-      assert_nothing_raised{ String.new(FooString.new) }
-      assert_equal("test", String.new(FooString.new))
+      assert_nothing_raised{ String.new(NewString.new) }
+      assert_equal("test", String.new(NewString.new))
    end
 
    def test_expected_errors
-      assert_raises(TypeError){ String.new(nil) }
-      assert_raises(TypeError){ String.new(7) }
+      assert_raise(TypeError){ String.new(nil) }
+      assert_raise(TypeError){ String.new(7) }
+      assert_raise(ArgumentError, RangeError){ String.new(0.chr * (2**64)) }
    end
 end

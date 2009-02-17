@@ -37,7 +37,7 @@ class TC_IO_Pipe_ClassMethod < Test::Unit::TestCase
    end
 
    def teardown
-      @read.close if @read rescue nil
-      @write.close if @write rescue nil
+      @read.close if @read && !@read.closed? 
+      @write.close if @write && !@write.closed?
    end
 end

@@ -12,16 +12,18 @@ require 'test/helper'
 class TC_ProcessSys_Setegid_ModuleMethod < Test::Unit::TestCase
    include Test::Helper
 
-   def setup
-      @nobody_gid = Etc.getgrnam('nobody').gid
-      @login_gid  = Etc.getpwnam(Etc.getlogin).gid
+   unless WINDOWS
+      def setup
+         @nobody_gid = Etc.getgrnam('nobody').gid
+         @login_gid  = Etc.getpwnam(Etc.getlogin).gid
+      end
    end
 
    def test_setegid_basic
       assert_respond_to(Process::Sys, :setegid)
    end
 
-   if ROOT
+   if ROOT && !WINDOWS
       def test_setegid
          assert_nothing_raised{ Process::Sys.setegid(@nobody_gid) }
          assert_equal(@nobody_gid, Process.egid)
@@ -30,15 +32,18 @@ class TC_ProcessSys_Setegid_ModuleMethod < Test::Unit::TestCase
       end
    end
 
-   def test_gid_expected_errors
-      assert_raises(TypeError){ Process::Sys.setegid('bogus') }
+   def test_gid_expected_errors     
       if WINDOWS
-         assert_raises(NotImplementedError){ Process::Sys.setegid(@nobody_gid) }
+         assert_raises(NotImplementedError){ Process::Sys.setegid('bogus') }
+      else
+         assert_raises(TypeError){ Process::Sys.setegid('bogus') }
       end
    end
 
-   def teardown
-      @nobody_gid = nil
-      @login_gid  = nil
+   unless WINDOWS
+      def teardown
+         @nobody_gid = nil
+         @login_gid  = nil
+      end
    end
 end

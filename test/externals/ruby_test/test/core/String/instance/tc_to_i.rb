@@ -50,6 +50,9 @@ class TC_String_To_I_Instance < Test::Unit::TestCase
    def test_to_i_expected_errors
       assert_raises(ArgumentError){ @string1.to_i(99) }
       assert_raises(ArgumentError){ @string1.to_i(-1) }
+      assert_raises(ArgumentError){ @string1.to_i(10, 12) }
+      assert_raises(TypeError){ @string1.to_i(nil) }
+      assert_raises(TypeError){ @string1.to_i(false) }
    end
 
    def teardown

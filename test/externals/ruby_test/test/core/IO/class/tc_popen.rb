@@ -8,8 +8,10 @@ require 'test/unit'
 require 'test/helper'
 
 class TC_IO_Popen_ClassMethod < Test::Unit::TestCase
+   include Test::Helper
+   
    def setup
-      @cmd = 'date'
+      @cmd = WINDOWS ? 'date /t' : 'date'
       @str = nil
       @io  = nil
    end
@@ -32,6 +34,7 @@ class TC_IO_Popen_ClassMethod < Test::Unit::TestCase
    end
 
    def teardown
+      sleep 0.1 if WINDOWS # To silence warnings
       @io.close if @io rescue nil
       @cmd = nil
    end

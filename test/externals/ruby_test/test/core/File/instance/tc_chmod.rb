@@ -14,8 +14,8 @@ class TC_File_Chmod_InstanceMethod < Test::Unit::TestCase
       @name2 = base_file(__FILE__, 'tc_atime.rb')
       @file1 = File.open(@name1)
       @file2 = File.open(@name2)
-      @file1_mode = File.stat(@name1).mode
-      @file2_mode = File.stat(@name2).mode
+      @mode1 = File.stat(@name1).mode
+      @mode2 = File.stat(@name2).mode
    end
 
    def test_chmod_basic
@@ -33,19 +33,24 @@ class TC_File_Chmod_InstanceMethod < Test::Unit::TestCase
       assert_equal('100444', File.stat(@name2).mode.to_s(8))
    end
 
+   def test_chmod_fails_on_closed_handle
+      assert_nothing_raised{ @file1.close }
+      assert_raise(IOError){ @file1.chmod(0644) }
+   end
+
    def test_chmod_expected_errors
       assert_raises(ArgumentError){ @file1.chmod }
       assert_raises(TypeError){ @file2.chmod(@file2) } # Questionable
    end
 
    def teardown
-      File.chmod(@file1_mode, @name1)
-      File.chmod(@file2_mode, @name2)
-      @file1.close
-      @file2.close
+      File.chmod(@mode1, @name1)
+      File.chmod(@mode2, @name2)
+      @file1.close if @file1 && !@file1.closed?
+      @file2.close if @file2 && !@file2.closed?
       @name1 = nil
       @name2 = nil
-      @file1_mode = nil
-      @file2_mode = nil
+      @mode1 = nil
+      @mode2 = nil
    end
 end

@@ -11,7 +11,7 @@ class TC_Dir_Chdir_Class < Test::Unit::TestCase
 
    def setup
       @pwd      = Dir.pwd
-      @old_home = ENV["HOME"] || ENV["LOGDIR"]
+      @old_home = get_home
       ENV["HOME"] = @pwd
    end
 
@@ -42,7 +42,8 @@ class TC_Dir_Chdir_Class < Test::Unit::TestCase
    end
 
    def teardown
-      system("chdir #{@pwd}")
+      @pwd.tr!('/', "\\") if WINDOWS
+      WINDOWS ? system("chdir #{@pwd}") : system("cd #{@pwd}")
       ENV["HOME"] = @old_home
       @pwd = nil
    end

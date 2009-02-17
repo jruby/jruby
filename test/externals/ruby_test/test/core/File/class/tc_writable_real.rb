@@ -13,7 +13,7 @@ class TC_File_Writable_Real_ClassMethod < Test::Unit::TestCase
    def setup
       @file1 = File.join(Dir.pwd, 'temp1.txt')
       @file2 = File.join(Dir.pwd, 'temp2.txt')
-      @uid   = Etc.getpwnam('nobody').uid
+      @uid   = Etc.getpwnam('nobody').uid unless WINDOWS
 
       touch(@file1)
       touch(@file2)
@@ -57,6 +57,6 @@ class TC_File_Writable_Real_ClassMethod < Test::Unit::TestCase
 
       @file1 = nil
       @file2 = nil
-      @uid   = nil
+      @uid   = nil unless WINDOWS
    end
 end

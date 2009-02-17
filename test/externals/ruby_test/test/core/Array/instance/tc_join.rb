@@ -7,7 +7,8 @@ require "test/unit"
 
 class TC_Array_Join_Instance < Test::Unit::TestCase
    def setup
-      @array = %w/a b c/
+      @array  = %w/a b c/
+      @nested = [1, [2, 3], ['a', 'b']]
    end
 
    def test_join_basic
@@ -16,9 +17,17 @@ class TC_Array_Join_Instance < Test::Unit::TestCase
    end
 
    def test_join
-      assert_equal("abc", @array.join)
-      assert_equal("a-b-c", @array.join("-"))
-      assert_equal("abc", @array.join(nil))
+      assert_equal('abc', @array.join)
+      assert_equal('a-b-c', @array.join('-'))
+      assert_equal('abc', @array.join(nil))
+      assert_equal('1-2-3-a-b', @nested.join('-'))
+   end
+   
+   def test_join_edge_cases
+      assert_equal('', [].join)
+      assert_equal('', [[], []].join)
+      assert_equal('', [nil].join)
+      assert_equal('true-false', [true, false].join('-'))
    end
 
    def test_join_expected_errors
@@ -27,6 +36,7 @@ class TC_Array_Join_Instance < Test::Unit::TestCase
    end
 
    def teardown
-      @array = nil
+      @array  = nil
+      @nested = nil
    end
 end

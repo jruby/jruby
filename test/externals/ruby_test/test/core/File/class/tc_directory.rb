@@ -4,10 +4,13 @@
 # Test case for the File.directory? class method.
 #####################################################################
 require 'test/unit'
+require 'test/helper'
 
 class TC_File_Directory_ClassMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
-      if RUBY_PLATFORM.match('mswin')
+      if WINDOWS
          @dir  = "C:\\"
          @file = "C:\\winnt\\notepad.exe"
       else

@@ -4,12 +4,14 @@
 # Test case for the FileStat#setuid? instance method.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
 class TC_FileStat_Setuid_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
+   include Test::Helper
    
    def setup
       @stat = File::Stat.new(__FILE__)
+      @pass = `which passwd`.chomp unless WINDOWS
    end
 
    def test_setuid_basic
@@ -19,7 +21,7 @@ class TC_FileStat_Setuid_Instance < Test::Unit::TestCase
    # Windows always returns true
    def test_setuid
       assert_equal(false, @stat.setuid?)
-      assert_equal(true, File::Stat.new('/usr/bin/passwd').setuid?) unless WINDOWS
+      assert_equal(true, File::Stat.new(@pass).setuid?) unless WINDOWS
    end
 
    def test_setuid_expected_errors
@@ -28,5 +30,6 @@ class TC_FileStat_Setuid_Instance < Test::Unit::TestCase
 
    def teardown
       @stat = nil
+      @pass = nil unless WINDOWS
    end
 end

@@ -1,7 +1,7 @@
 #########################################################################
 # tc_zero.rb
 #
-# Test case for the FileStat#zero instance methods.
+# Test case for the FileStat#zero? instance method.
 #########################################################################
 require 'test/unit'
 require 'test/helper'
@@ -11,7 +11,7 @@ class TC_FileStat_Zero_Instance < Test::Unit::TestCase
 
    def setup
       @stat = File::Stat.new(__FILE__)
-      @file = WINDOWS ? 'NUL' : '/dev/null'
+      @file = null_device
    end
 
    def test_zero_basic

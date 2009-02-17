@@ -32,11 +32,21 @@ class TC_File_Path < Test::Unit::TestCase
       assert_equal(File.join(@pwd, "/test2"), @fh_with_path.path)
       assert_equal(File.join(@pwd, "/./test3"), @fh_with_extra.path)
    end
+   
+   def test_tainted_path_returns_tainted_string
+      assert_nothing_raised{ @fh_with_path.taint }
+      assert_equal(true, @fh_with_path.path.tainted?)
+   end   
+
+   def test_path_edge_cases
+      assert_nothing_raised{ @fh_no_path.close }
+      assert_nothing_raised{ @fh_no_path.path }
+   end
 
    def teardown
-      @fh_no_path.close
-      @fh_with_path.close
-      @fh_with_extra.close
+      @fh_no_path.close unless @fh_no_path.closed?
+      @fh_with_path.close unless @fh_with_path.closed?
+      @fh_with_extra.close unless @fh_with_extra.closed?
 
       File.unlink(@file_no_path)
       File.unlink(@file_with_path)

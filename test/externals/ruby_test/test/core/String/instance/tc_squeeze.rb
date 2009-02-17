@@ -3,9 +3,9 @@
 #
 # Test case for the String#squeeze and String#squeeze! instance methods.
 ###########################################################################
-require "test/unit"
+require 'test/unit'
 
-class TC_String_Squeeze_Instance < Test::Unit::TestCase
+class TC_String_Squeeze_InstanceMethod < Test::Unit::TestCase
    def setup
       @string = "yellow   moon"
    end
@@ -52,7 +52,8 @@ class TC_String_Squeeze_Instance < Test::Unit::TestCase
    end
 
    def test_squeeze_expected_errors
-      assert_raises(TypeError){ @string.squeeze(1) }
+      assert_raise(TypeError){ @string.squeeze(1) }
+      assert_raise(TypeError){ @string.freeze.squeeze!('l') }
    end
 
    def teardown

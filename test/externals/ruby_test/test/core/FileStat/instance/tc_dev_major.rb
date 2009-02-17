@@ -4,9 +4,10 @@
 # Test case for the FileStat#dev_major instance method.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_DevMajor_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
+class TC_FileStat_DevMajor_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
    
    def setup
       @stat = File::Stat.new(__FILE__)
@@ -22,7 +23,7 @@ class TC_FileStat_DevMajor_Instance < Test::Unit::TestCase
    end
 
    def test_dev_major
-      unless RUBY_PLATFORM.match('mswin')
+      unless WINDOWS
          assert_equal(true, @stat.dev_major > 0)
       end
    end

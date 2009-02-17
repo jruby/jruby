@@ -7,7 +7,7 @@ require "test/unit"
 
 class TC_String_Include_Instance < Test::Unit::TestCase
    def setup
-      @string = "a\/\t\n\r\""
+      @string = "a\/\t\n\r\"789"
    end
 
    def test_include_basic
@@ -15,15 +15,20 @@ class TC_String_Include_Instance < Test::Unit::TestCase
       assert_nothing_raised{ @string.include?("a") }
    end
 
-   def test_include_string
+   def test_include_string_expected_true
+      assert_equal(true, @string.include?("a"))
       assert_equal(true, @string.include?("/"))
       assert_equal(true, @string.include?("\t"))
       assert_equal(true, @string.include?("\n"))
       assert_equal(true, @string.include?("\r"))
       assert_equal(true, @string.include?('"'))
+      assert_equal(true, @string.include?(97))
+   end
 
+   def test_include_string_expected_false
       assert_equal(false, @string.include?("b"))
       assert_equal(false, @string.include?("\\"))
+      assert_equal(false, @string.include?(789))
    end
 
    def test_include_int

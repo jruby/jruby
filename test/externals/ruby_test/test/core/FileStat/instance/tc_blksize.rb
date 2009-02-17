@@ -4,9 +4,10 @@
 # Test case for the FileStat#blksize instance method.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
 class TC_FileStat_Blksize_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
+   include Test::Helper
    
    def setup
       @stat = File::Stat.new(__FILE__)

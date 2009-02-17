@@ -10,9 +10,9 @@ class TC_File_Identical_ClassMethod < Test::Unit::TestCase
    include Test::Helper
 
    def setup
-      @file1 = 'test1.txt'
-      @file2 = 'test2.txt'
-      @file3 = 'test3.txt'
+      @file1 = 'test_identical1.txt'
+      @file2 = 'test_identical2.txt'
+      @file3 = 'test_identical3.txt'
 
       touch_n(@file1)
       touch_n(@file2)

@@ -7,7 +7,7 @@
 #######################################################################
 require "benchmark"
 
-MAX = 2_000_000
+MAX = 200000
 
 Benchmark.bm(35) do |x|
    x.report("Integer#chr"){

@@ -4,9 +4,10 @@
 # Test case for the FileStat#owned? instance method.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_Owned_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
+class TC_FileStat_Owned_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
    
    def setup
       @stat = File::Stat.new(__FILE__)

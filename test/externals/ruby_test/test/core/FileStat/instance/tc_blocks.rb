@@ -4,9 +4,10 @@
 # Test case for the FileStat#blocks instance method.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_Blocks_Instance < Test::Unit::TestCase
-   WINDOWS = RUBY_PLATFORM.match('mswin')
+class TC_FileStat_Blocks_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
    
    def setup
       @stat = File::Stat.new(__FILE__)

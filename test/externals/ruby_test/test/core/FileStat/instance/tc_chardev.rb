@@ -4,8 +4,11 @@
 # Test case for the FileStat#chardev instance method.
 ######################################################################
 require 'test/unit'
+require 'test/helper'
 
-class TC_FileStat_Chardev_Instance < Test::Unit::TestCase
+class TC_FileStat_Chardev_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
       @stat = File::Stat.new(__FILE__)
    end
@@ -17,7 +20,7 @@ class TC_FileStat_Chardev_Instance < Test::Unit::TestCase
    def test_chardev
       assert_equal(false, @stat.chardev?)
 
-      unless RUBY_PLATFORM.match('mswin')
+      unless WINDOWS
          assert_equal(true, File::Stat.new('/dev/null').chardev?)
       end
    end

@@ -12,7 +12,7 @@ class TC_ProcessUID_Rid_ModuleMethod < Test::Unit::TestCase
 
    def setup
       unless WINDOWS
-         @gid = Etc.getpwnam(Etc.getlogin).gid
+         @uid = Etc.getpwnam(Etc.getlogin).uid
       end
    end
 
@@ -23,11 +23,11 @@ class TC_ProcessUID_Rid_ModuleMethod < Test::Unit::TestCase
 
    unless WINDOWS
       def test_rid
-         assert_equal(Process.gid, Process::UID.rid)
+         assert_equal(Process.uid, Process::UID.rid)
          if ROOT
             assert_equal(0, Process::UID.rid)
          else
-            assert_equal(@gid, Process::UID.rid)
+            assert_equal(@uid, Process::UID.rid)
          end
       end
 
@@ -38,7 +38,7 @@ class TC_ProcessUID_Rid_ModuleMethod < Test::Unit::TestCase
 
    def teardown
       unless WINDOWS
-         @gid = nil
+         @uid = nil
       end
    end
 end

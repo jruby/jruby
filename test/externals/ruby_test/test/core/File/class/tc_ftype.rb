@@ -3,7 +3,8 @@
 #
 # Test case for the File.ftype class method.
 #
-# TODO: Add tests for 'socket' and 'unknown'.
+# TODO: Add tests for 'socket' and 'unknown', and better tests for
+# MS Windows.
 ######################################################################
 require 'test/unit'
 require 'test/helper'
@@ -14,12 +15,18 @@ class TC_File_Ftype_ClassMethod < Test::Unit::TestCase
    def setup
       @file = __FILE__
       @dir  = Dir.pwd
-      @char = Pathname.new(File.null).realpath
+      @fifo = nil
 
       if WINDOWS
          @block_dev = "NUL"
+         @fifo  = nil
+         @block = nil
+         @link  = nil
+         @char  = nil
       else
+         @char = Pathname.new('/dev/null').realpath
          @fifo = "test_fifo"
+
          system("mkfifo #{@fifo}")
 
          if File.exists?("/dev/fd0")
@@ -58,20 +65,23 @@ class TC_File_Ftype_ClassMethod < Test::Unit::TestCase
       assert_equal('directory', File.ftype(@dir))
    end
 
-   def test_ftype_char
-      assert_equal('characterSpecial', File.ftype(@char))
-   end
+   # TODO: Find appropriate tests for MS Windows
+   unless WINDOWS
+      def test_ftype_char
+         assert_equal('characterSpecial', File.ftype(@char))
+      end
 
-   def test_ftype_block
-      assert_equal('blockSpecial', File.ftype(@block), "BLOCK WAS: #{@block}")
-   end
+      def test_ftype_block
+         assert_equal('blockSpecial', File.ftype(@block), "BLOCK WAS: #{@block}")
+      end
 
-   def test_ftype_link
-      assert_equal('link', File.ftype(@link))
-   end
+      def test_ftype_link
+         assert_equal('link', File.ftype(@link))
+      end
 
-   def test_ftype_fifo
-      assert_equal('fifo', File.ftype(@fifo))
+      def test_ftype_fifo
+         assert_equal('fifo', File.ftype(@fifo))
+      end
    end
 
    def test_ftype_expected_errors

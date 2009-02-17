@@ -1,7 +1,8 @@
 ######################################################################
 # tc_begin.rb
 #
-# Test case for the Range#begin instance method.
+# Test case for the Range#begin instance method and the Range#first
+# alias.
 ######################################################################
 require 'test/unit'
 
@@ -19,12 +20,25 @@ class TC_Range_Begin_InstanceMethod < Test::Unit::TestCase
       assert_nothing_raised{ @range1.begin }
    end
 
+   def test_first_alias_basic
+      assert_respond_to(@range1, :first)
+      assert_nothing_raised{ @range1.first }
+   end
+
    def test_begin
       assert_equal(0, @range1.begin)
       assert_equal(1, @range2.begin)
       assert_equal(-1.5, @range3.begin)
       assert_equal('a', @range4.begin)
       assert_equal([], @range5.begin)
+   end
+
+   def test_first_alias
+      assert_equal(0, @range1.first)
+      assert_equal(1, @range2.first)
+      assert_equal(-1.5, @range3.first)
+      assert_equal('a', @range4.first)
+      assert_equal([], @range5.first)
    end
 
    def test_begin_expected_failures

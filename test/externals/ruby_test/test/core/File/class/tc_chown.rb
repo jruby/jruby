@@ -35,9 +35,8 @@ class TC_File_Chown_ClassMethod < Test::Unit::TestCase
          @root  = Process.euid == 0
          @uid   = Etc.getpwnam('nobody').uid
          @gid   = Etc.getgrnam('nobody').gid
-
-         system("touch #{@file1}")
-         system("touch #{@file2}")
+         touch(@file1)
+         touch(@file2)
       end
 
       def test_chown_basic

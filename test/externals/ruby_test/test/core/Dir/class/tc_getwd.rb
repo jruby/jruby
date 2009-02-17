@@ -4,12 +4,15 @@
 # Test suite for the Dir.getwd class method.  This also tests
 # the Dir.pwd alias.
 ###############################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
 class TC_Dir_Getwd_Class < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
-      @pwd = `pwd`.chomp
-      @pwd.tr!('\\','/') if PLATFORM.match("mswin")
+      @pwd = pwd_n
+      @pwd.tr!('\\','/') if WINDOWS
    end
 
    def test_getwd_basic

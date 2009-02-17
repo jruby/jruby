@@ -22,6 +22,11 @@ class TC_Array_Length_Instance < Test::Unit::TestCase
       assert_equal(1, [false].length)
    end
 
+   def test_size_alias
+      assert_respond_to(@array, :size)
+      assert_equal(true, @array.method(:size) == @array.method(:length))
+   end
+
    def test_length_expected_errors
       assert_raises(ArgumentError){ @array.length(1) }
    end

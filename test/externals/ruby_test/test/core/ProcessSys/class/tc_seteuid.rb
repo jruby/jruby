@@ -14,9 +14,11 @@ require 'test/helper'
 class TC_ProcessSys_Seteuid_ModuleMethod < Test::Unit::TestCase
    include Test::Helper
 
-   def setup
-      @nobody_uid = Etc.getpwnam('nobody').uid
-      @login_uid  = Etc.getpwnam(Etc.getlogin).uid
+   unless WINDOWS
+      def setup
+         @nobody_uid = Etc.getpwnam('nobody').uid
+         @login_uid  = Etc.getpwnam(Etc.getlogin).uid
+      end
    end
 
    def test_seteuid_basic
@@ -33,14 +35,17 @@ class TC_ProcessSys_Seteuid_ModuleMethod < Test::Unit::TestCase
    #end
 
    def test_uid_expected_errors
-      assert_raises(TypeError){ Process::Sys.seteuid('bogus') }
-      if WINDOWS
-         assert_raises(NotImplementedError){ Process::Sys.seteuid(@nobody_uid) }
+      if WINDOWS       
+         assert_raises(NotImplementedError){ Process::Sys.seteuid(1) }
+      else
+         assert_raises(TypeError){ Process::Sys.seteuid('bogus') }
       end
    end
 
-   def teardown
-      @nobody_uid = nil
-      @login_uid  = nil
+   unless WINDOWS
+      def teardown
+         @nobody_uid = nil
+         @login_uid  = nil
+      end
    end
 end

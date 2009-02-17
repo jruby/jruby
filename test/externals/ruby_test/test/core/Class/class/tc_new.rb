@@ -6,8 +6,12 @@
 require 'test/unit'
 
 class TC_Class_New_Class < Test::Unit::TestCase
+   class FooNew; end
+
    def setup
-      @obj   = nil
+      @obj = nil
+      @foo = FooNew.new
+      @singleton = class << @foo; self; end
       @block = lambda{
          def hello
             "hello"
@@ -33,11 +37,14 @@ class TC_Class_New_Class < Test::Unit::TestCase
    end
 
    def test_new_expected_errors
-      assert_raises(LocalJumpError){ Class.new{ yield } }
+      assert_raise(LocalJumpError){ Class.new{ yield } }
+      assert_raise(TypeError){ @singleton.new }
    end
 
    def teardown
       @obj   = nil
+      @foo   = nil
       @block = nil
+      @singleton = nil
    end
 end

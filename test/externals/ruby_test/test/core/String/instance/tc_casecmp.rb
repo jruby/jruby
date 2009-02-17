@@ -3,9 +3,9 @@
 #
 # Test case for the String#casecmp instance method.
 ############################################################
-require "test/unit"
+require 'test/unit'
 
-class TC_String_Casecmp_Instance < Test::Unit::TestCase
+class TC_String_Casecmp_InstanceMethod < Test::Unit::TestCase
    def setup
       @str1 = "<html><b>hello</b></html>"
       @str2 = "<HTML><B>HELLO</B></HTML>"
@@ -22,6 +22,14 @@ class TC_String_Casecmp_Instance < Test::Unit::TestCase
       assert_equal(0, @str1.casecmp(@str2))
       assert_equal(-1, @str1.casecmp(@str3))
       assert_equal(1, @str3.casecmp(@str1))
+   end
+
+   def test_casecmp_edge_cases
+      assert_equal(0, ''.casecmp(''))
+      assert_equal(-1, ''.casecmp(' '))
+      assert_equal(1, ' '.casecmp(''))
+      assert_equal(0, '123'.casecmp('123'))
+      assert_equal(0, '!@#$%^&*()'.casecmp('!@#$%^&*()'))
    end
 
    def test_casecmp_expected_errors

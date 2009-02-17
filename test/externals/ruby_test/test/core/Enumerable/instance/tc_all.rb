@@ -5,35 +5,44 @@
 ######################################################################
 require 'test/unit'
 
-class TC_Enumerable_All_Instance < Test::Unit::TestCase
+class TC_Enumerable_All_InstanceMethod < Test::Unit::TestCase
    def setup
-      @enum1 = [0, 1, 2, -1]
-      @enum2 = [nil, false, true]
+      @enum = ['a', 'b', 'c']
    end
 
    def test_all_basic
-      assert_respond_to(@enum1, :all?)
-      assert_nothing_raised{ @enum1.all? }
-      assert_nothing_raised{ @enum1.all?{ } }
+      assert_respond_to(@enum, :all?)
+      assert_nothing_raised{ @enum.all? }
+      assert_nothing_raised{ @enum.all?{ } }
    end
 
-   def test_all_return_value
-      assert_equal(true, @enum1.all?)
-      assert_equal(true, @enum1.all?{ |o| o < 5 })
+   def test_all_no_block
+      assert_equal(true, [1, 2, 3].all?)
+      assert_equal(false, [nil, false, true].all?)
+      assert_equal(false, [nil, false].all?)
+   end
 
-      assert_equal(false, @enum1.all?{ |o| o > 2 })
-      assert_equal(false, @enum2.all?)
+   def test_all_with_block
+      assert_equal(false, [1, 2, 3].all?{ |e| e > 1 })
+      assert_equal(true, [1, 2, 3].all?{ |e| e > 0 })
+   end
+
+   def test_all_with_explicit_false_and_nil
+      assert_equal(true, [nil].all?{ |e| e.nil? })
+      assert_equal(true, [false].all?{ |e| e == false })
    end
 
    def test_all_edge_cases
-      assert_nothing_raised{ @enum1.all?{ |o| 5.times{ @enum1.shift } } }
+      assert_equal(true, [].all?)
+      assert_equal(true, [0].all?)
+      assert_equal(true, [true].all?)
    end
 
-   def test_all_expected_failures
-      assert_raises(ArgumentError){ @enum1.all?(1) }
+   def test_all_expected_errors
+      assert_raise(ArgumentError){ [1, 2, 3].all?(1) }
    end
 
    def teardown
-      @enum1 = nil
+      @enum = nil
    end
 end

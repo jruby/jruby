@@ -5,7 +5,7 @@
 ##############################################################
 require "benchmark"
 
-MAX = 2_000_000
+MAX = ARGV[0].chomp.to_i rescue 200000
 
 Benchmark.bm(30) do |x|
    x.report("Hash[]"){

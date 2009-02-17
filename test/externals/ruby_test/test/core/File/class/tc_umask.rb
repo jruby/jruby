@@ -15,6 +15,7 @@ class TC_File_Umask_ClassMethod < Test::Unit::TestCase
    def setup
       @file = 'temp1.txt'
       File.open(@file, 'w'){}
+      @omask = get_umask
    end
    
    def test_umask_basic
@@ -43,5 +44,6 @@ class TC_File_Umask_ClassMethod < Test::Unit::TestCase
    def teardown
       remove_file(@file)
       @file = nil
+      set_umask(@omask)
    end
 end

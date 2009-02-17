@@ -13,6 +13,7 @@ class TC_Range_Equal_InstanceMethod < Test::Unit::TestCase
 
    def test_equal_basic
       assert_respond_to(@range1, :==)
+      assert_nothing_raised{ @range1 == @range1 }
       assert_nothing_raised{ @range1 == @range2 }
    end
 
@@ -30,6 +31,10 @@ class TC_Range_Equal_InstanceMethod < Test::Unit::TestCase
    def test_equal_edge_cases
       assert_equal(true, Range.new([], []) == Range.new([], []))
       assert_equal(false, @range1 == 7)
+   end
+
+   def test_equal_against_non_range
+      assert_equal(false, @range1 == 'hello')
    end
 
    def teardown

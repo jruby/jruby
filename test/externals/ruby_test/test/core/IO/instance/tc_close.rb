@@ -12,8 +12,11 @@ require 'test/unit'
 require 'test/helper'
 
 class TC_IO_Close_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+   
    def setup
-      @stream = File.new('test.txt', 'w')
+      @file = 'tc_close.txt'
+      @stream = File.new(@file, 'wb')
       @val = nil
    end
 
@@ -29,6 +32,8 @@ class TC_IO_Close_InstanceMethod < Test::Unit::TestCase
    end
 
    def teardown
+      @stream.close if @stream && !@stream.closed?
+      remove_file(@file)
       @stream = nil
       @val = nil
    end

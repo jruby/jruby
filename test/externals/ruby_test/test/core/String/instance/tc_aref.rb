@@ -11,7 +11,7 @@ class StringArefTemp
    end
 end
 
-class TC_String_Aref_Instance < Test::Unit::TestCase
+class TC_String_Aref_InstanceMethod < Test::Unit::TestCase
    def setup
       @string1 = "qwerty"
       @string2 = "<strong>hello</strong>"
@@ -92,9 +92,20 @@ class TC_String_Aref_Instance < Test::Unit::TestCase
    def test_aref_honors_to_int
       assert_equal(101, @string1[StringArefTemp.new])
    end
+   
+   # Inspired by JRUBY-1721
+   def test_aref_and_tainted_strings
+      assert_nothing_raised{ @string1.taint }
+      assert_equal(true, @string1.tainted?)
+      assert_equal(true, @string1[0,1].tainted?)
+   end
 
    def test_aref_expected_errors
-      assert_raises(TypeError){ @string1[nil] }
+      assert_raise(TypeError){ @string1[nil] }
+      assert_raise(TypeError){ @string1[1, nil] }
+      assert_raise(TypeError){ @string1[[1]] }
+      assert_raise(ArgumentError){ @string1[] }
+      assert_raise(ArgumentError){ @string1[1,2,3] }
    end
 
    def teardown

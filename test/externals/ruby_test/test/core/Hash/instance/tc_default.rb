@@ -3,9 +3,12 @@
 #
 # Test suite for the Hash#default and Hash#default= instance methods.
 ######################################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
-class TC_Hash_Default_Instance < Test::Unit::TestCase
+class TC_Hash_Default_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
       @hash1 = Hash.new
       @hash2 = Hash.new("test")
@@ -27,7 +30,7 @@ class TC_Hash_Default_Instance < Test::Unit::TestCase
       assert_equal(0, @hash3.default(0))
       assert_equal(9, @hash3.default(3))
       
-      if RUBY_VERSION.split('.').last.to_i > 4
+      if RELEASE > 4
          assert_equal(nil, @hash3.default)
       else
          assert_equal(0, @hash3.default)
@@ -35,8 +38,10 @@ class TC_Hash_Default_Instance < Test::Unit::TestCase
    end
 
    def test_default_set
-      assert_nothing_raised{ @hash1.default = "foo" }
-      assert_equal("foo", @hash1.default)
+      assert_nothing_raised{ @hash3.default = "foo" }
+      assert_equal('foo', @hash3.default)
+      assert_equal('foo', @hash3.default(3))
+      assert_equal('foo', @hash3.default('x'))
    end
 
    def test_default_with_key

@@ -2,12 +2,12 @@
 # tc_lchmod.rb
 #
 # Test case for the File.lchmod class method. Note that almost all
-# of these tests are skipped on MS Windows and OS X.
+# of these tests are skipped on MS Windows, OS X, and SOLARIS.
 #####################################################################
 require 'test/unit'
 require 'test/helper'
 
-class TC_File_Llchmod_ClassMethod < Test::Unit::TestCase
+class TC_File_Lchmod_ClassMethod < Test::Unit::TestCase
    include Test::Helper
 
    # TODO: Setup actual symbolic links
@@ -20,14 +20,14 @@ class TC_File_Llchmod_ClassMethod < Test::Unit::TestCase
 
    def test_lchmod_basic
       assert_respond_to(File, :lchmod)
-      unless WINDOWS || OSX
+      unless WINDOWS || OSX || SOLARIS
          assert_nothing_raised{ File.lchmod(0644, @file1) }
          assert_nothing_raised{ File.lchmod(0644, @file1, @file2) }
          assert_kind_of(Fixnum, File.lchmod(0644, @file1))
       end
    end
 
-   unless WINDOWS || OSX
+   unless WINDOWS || OSX || SOLARIS
       def test_lchmod
          assert_nothing_raised{ File.lchmod(0644, @file1) }
          assert_equal(1, File.lchmod(0644, @file1))
@@ -57,7 +57,7 @@ class TC_File_Llchmod_ClassMethod < Test::Unit::TestCase
    end
 
    def teardown
-      unless WINDOWS || OSX
+      unless WINDOWS || OSX || SOLARIS
          File.lchmod(@file1_mode, @file1)
          File.lchmod(@file2_mode, @file2)
       end

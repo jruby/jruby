@@ -1,13 +1,14 @@
-###########################################################
+##############################################################################
 # tc_each.rb
 #
-# Test suite for the Hash#each instance method.
-###########################################################
+# Test suite for the Hash#each instance method and the Hash#each_pair alias.
+##############################################################################
 require "test/unit"
 
 class TC_Hash_Each_Instance < Test::Unit::TestCase
    def setup
       @hash = {"ant", 1, "bat", 2, "cat", 3, "dog", 4}
+      @int  = 0
    end
 
    def test_each_basic
@@ -15,20 +16,37 @@ class TC_Hash_Each_Instance < Test::Unit::TestCase
       assert_nothing_raised{ @hash.each{} }
    end
 
+   def test_each_pair_basic
+      assert_respond_to(@hash, :each_pair)
+      assert_nothing_raised{ @hash.each_pair{} }
+   end
+
    def test_each_iterate
-      i = 0
       @hash.each{ |key, value|
          assert_equal(value, @hash.delete(key))
-         i += 1
+         @int += 1
       }
-      assert_equal(4, i)
+      assert_equal(4, @int)
+   end
+
+   def test_each_pair_iterate
+      @hash.each_pair{ |key, value|
+         assert_equal(value, @hash.delete(key))
+         @int += 1
+      }
+      assert_equal(4, @int)
    end
 
    def test_each_noop_on_empty
-      i = 0
-      {}.each{ i += 1 }
-      assert_equal(0, i)
+      {}.each{ @int += 1 }
+      assert_equal(0, @int)
       assert_equal(@hash, @hash.each{})
+   end
+
+   def test_each_pair_noop_on_empty
+      {}.each_pair{ @int += 1 }
+      assert_equal(0, @int)
+      assert_equal(@hash, @hash.each_pair{})
    end
 
    def test_each_expected_errors
@@ -36,7 +54,13 @@ class TC_Hash_Each_Instance < Test::Unit::TestCase
       assert_raises(LocalJumpError){ @hash.each }
    end
 
+   def test_each_pair_expected_errors
+      assert_raises(ArgumentError){ @hash.each_pair(1){} }
+      assert_raises(LocalJumpError){ @hash.each_pair }
+   end
+
    def teardown
       @hash = nil
+      @int  = nil
    end
 end

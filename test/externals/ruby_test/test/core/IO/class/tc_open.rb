@@ -11,7 +11,7 @@ class TC_IO_Open_ClassMethod < Test::Unit::TestCase
 
    def setup
       @stream = nil
-      @file   = 'test.txt'
+      @file   = File.join(Dir.pwd, 'tc_open.txt')
       @fh     = File.open(@file, 'w')
       @fileno = @fh.fileno
    end
@@ -48,6 +48,7 @@ class TC_IO_Open_ClassMethod < Test::Unit::TestCase
    end
 
    def teardown
+      @fh.close rescue nil
       remove_file(@file)
       @file   = nil
       @fh     = nil

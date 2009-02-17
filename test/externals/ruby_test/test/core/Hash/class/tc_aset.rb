@@ -5,7 +5,7 @@
 ###########################################################
 require "test/unit"
 
-class TC_Hash_Aset_Class < Test::Unit::TestCase
+class TC_Hash_Aset_ClassMethod < Test::Unit::TestCase
    def test_empty
       assert_equal({}, Hash[])
    end
@@ -23,6 +23,6 @@ class TC_Hash_Aset_Class < Test::Unit::TestCase
    end
 
    def test_aset_expected_errors
-      assert_raises(ArgumentError){ Hash["foo"] }
+      assert_raises(ArgumentError){ Hash["foo"] } # Odd number of arguments
    end
 end

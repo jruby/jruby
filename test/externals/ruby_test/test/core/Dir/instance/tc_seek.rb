@@ -3,11 +3,14 @@
 #
 # Test case for the Dir#seek instance method.
 ######################################################################
-require "test/unit"
+require 'test/unit'
+require 'test/helper'
 
-class TC_Dir_Seek_Instance < Test::Unit::TestCase
+class TC_Dir_Seek_InstanceMethod < Test::Unit::TestCase
+   include Test::Helper
+
    def setup
-      @pwd = `pwd`.chomp
+      @pwd = pwd_n
       @dir = Dir.new(@pwd)
    end
 

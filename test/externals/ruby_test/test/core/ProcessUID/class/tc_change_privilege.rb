@@ -40,7 +40,7 @@ class TC_ProcessUID_ChangePrivilege_ModuleMethod < Test::Unit::TestCase
 
    def test_uid_expected_errors
       if WINDOWS
-         assert_raises(NotImplementedError){ Process::UID.change_privilege("x") }
+         assert_raises(TypeError, NotImplementedError){ Process::UID.change_privilege("x") }
       else
          assert_raises(TypeError){ Process::UID.change_privilege("x") }
       end

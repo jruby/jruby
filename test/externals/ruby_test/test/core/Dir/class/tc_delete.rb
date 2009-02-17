@@ -11,8 +11,8 @@ class TC_Dir_Delete_Class < Test::Unit::TestCase
    include Test::Helper
 
    def setup
-      @cur_dir = Dir.pwd
-      @new_dir = "bogus"
+      @cur_dir = base_dir(__FILE__)
+      @new_dir = File.join(@cur_dir, 'bogus')
       Dir.mkdir(@new_dir)
    end
 
@@ -62,7 +62,7 @@ class TC_Dir_Delete_Class < Test::Unit::TestCase
    end
 
    def teardown
-      remove_dir(@new_dir)
+      remove_dir(@new_dir) if File.exists?(@new_dir)
       @cur_dir = nil
       @new_dir = nil
    end

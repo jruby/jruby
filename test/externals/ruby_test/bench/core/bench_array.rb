@@ -2,11 +2,12 @@
 # bench_array.rb
 #
 # Benchmark suite for the Array methods.  Deprecated methods and
-# aliases are not benchmarked.
+# aliases are not benchmarked. You may pass the maximum number of
+# iterations as an argument. The default is 200,000.
 #######################################################################
 require "benchmark"
 
-MAX = 2_000_000
+MAX = ARGV[0].chomp.to_i rescue 200000
 
 Benchmark.bm(35) do |x|
    x.report("Array[]"){
@@ -247,10 +248,10 @@ Benchmark.bm(35) do |x|
       MAX.times{ array.include?("four") }
    }
 
-   # Pathological in Ruby 1.8.3 and earlier
+   # Pathological in Ruby 1.8.3 and earlier. Still bad in Ruby 1.8.4 or later.
    x.report("Array#insert"){
       array = [1,2,3,4]
-      (MAX/10).times{ array.insert(2, "a", "b") }
+      MAX.times{ array.insert(2, "a", "b") }
    }
 
    x.report("Array#join"){

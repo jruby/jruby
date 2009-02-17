@@ -5,7 +5,7 @@
 ###################################################################
 require "test/unit"
 
-class TC_Array_Sort_Instance < Test::Unit::TestCase
+class TC_Array_Sort_InstanceMethod < Test::Unit::TestCase
    def setup
       @array = %w/b e a d c/
    end
@@ -33,8 +33,8 @@ class TC_Array_Sort_Instance < Test::Unit::TestCase
    end
 
    def test_expected_errors
-      assert_raises(ArgumentError){ @array.sort(1) }
-      assert_raises(ArgumentError){ @array.sort{} }
+      assert_raise(ArgumentError){ @array.sort(1) }
+      assert_raise(ArgumentError){ @array.sort{} }
    end
 
    def teardown
