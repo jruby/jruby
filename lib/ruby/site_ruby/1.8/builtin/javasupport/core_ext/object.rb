@@ -28,9 +28,9 @@ class Object
       # which means I am missing something.
       constant = include_class.java_class.to_s.split(".").last
       if (Module === self)
-        return class_eval("#{constant} = #{include_class.java_class}", __FILE__, __LINE__)
+        return class_eval("#{constant} = include_class", __FILE__, __LINE__)
       else
-        return eval("#{constant} = #{include_class.java_class}", binding, __FILE__, __LINE__)
+        return eval("#{constant} = include_class", binding, __FILE__, __LINE__)
       end
     end
     

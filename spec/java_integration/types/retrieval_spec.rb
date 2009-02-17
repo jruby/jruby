@@ -20,3 +20,12 @@ describe "Java classes with nested enums" do
     ClassWithEnums::Enums.values.map{|e|e.to_s}.should == ["A", "B", "C"];
   end
 end
+
+describe "A Java class" do
+  describe "in a package with a leading underscore" do
+    it "can be accessed directly using the Java:: prefix" do
+      myclass = Java::java_integration.fixtures._funky.MyClass
+      myclass.new.foo.should == "MyClass"
+    end
+  end
+end
