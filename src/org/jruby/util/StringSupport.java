@@ -415,47 +415,50 @@ public final class StringSupport {
         return 0;        
     }
 
-    public static int scanHex(byte[]bytes, int p, int end, int len) {
-        return scanHex(bytes, p, end, len, ASCIIEncoding.INSTANCE);
+    public static int scanHex(byte[]bytes, int p, int len) {
+        return scanHex(bytes, p, len, ASCIIEncoding.INSTANCE);
     }
 
-    public static int scanHex(byte[]bytes, int p, int end, int len, Encoding enc) {
+    public static int scanHex(byte[]bytes, int p, int len, Encoding enc) {
         int v = 0;
         int c;
-        while (len-- > 0 && p < end && enc.isXDigit(c = bytes[p++] & 0xff)) {
+        while (len-- > 0 && enc.isXDigit(c = bytes[p++] & 0xff)) {
             v = (v << 4) + enc.xdigitVal(c);
         }
         return v;
     }
 
-    public static int hexLength(int hex) {
-        int i = 0;
-        while (hex > 0) {
-            i++;
-            hex >>>= 4;
-        }
-        return i;
+    public static int hexLength(byte[]bytes, int p, int len) {
+        return hexLength(bytes, p, len, ASCIIEncoding.INSTANCE);
     }
 
-    public static int scanOct(byte[]bytes, int p, int end, int len) {
-        return scanOct(bytes, p, end, len, ASCIIEncoding.INSTANCE);
+    public static int hexLength(byte[]bytes, int p, int len, Encoding enc) {
+        int hlen = 0;
+        while (len-- > 0 && enc.isXDigit(bytes[p++] & 0xff)) hlen++;
+        return hlen;
     }
 
-    public static int scanOct(byte[]bytes, int p, int end, int len, Encoding enc) {
+    public static int scanOct(byte[]bytes, int p, int len) {
+        return scanOct(bytes, p, len, ASCIIEncoding.INSTANCE);
+    }
+
+    public static int scanOct(byte[]bytes, int p, int len, Encoding enc) {
         int v = 0;
         int c;
-        while (len-- > 0 && p < end && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') {
+        while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') {
             v = (v << 3) + Encoding.digitVal(c);
         }
         return v;
     }
 
-    public static int octLength(int hex) {
-        int i = 0;
-        while (hex > 0) {
-            i++;
-            hex >>>= 3;
-        }
-        return i;
+    public static int octLength(byte[]bytes, int p, int len) {
+        return octLength(bytes, p, len, ASCIIEncoding.INSTANCE);
+    }
+
+    public static int octLength(byte[]bytes, int p, int len, Encoding enc) {
+        int olen = 0;
+        int c;
+        while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') olen++;
+        return olen;
     }
 }

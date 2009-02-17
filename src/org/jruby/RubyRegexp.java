@@ -432,13 +432,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             case '0': case '1': case '2': case '3':
             case '4': case '5': case '6': case '7':
                 p--;
-                code = StringSupport.scanOct(bytes, p, end, end < p + 3 ? end - p : 3);
-                p += StringSupport.octLength(code);
+                int olen = end < p + 3 ? end - p : 3;
+                code = StringSupport.scanOct(bytes, p, olen);
+                p += StringSupport.octLength(bytes, p, olen);
                 break;
 
             case 'x': /* \xHH */
-                code = StringSupport.scanHex(bytes, p, end, end < p + 2 ? end - p : 2);
-                int len = StringSupport.hexLength(code);
+                int hlen = end < p + 2 ? end - p : 2;
+                code = StringSupport.scanHex(bytes, p, hlen);
+                int len = StringSupport.hexLength(bytes, p, hlen);
                 if (len < 1) raisePreprocessError(runtime, str, "invalid hex escape", mode);
                 p += len;
                 break;
@@ -541,8 +543,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         boolean hasUnicode = false; 
         while (true) {
-            int code = StringSupport.scanHex(bytes, p, end, end - p);
-            int len = StringSupport.hexLength(code);
+            int code = StringSupport.scanHex(bytes, p, end - p);
+            int len = StringSupport.hexLength(bytes, p, end - p);
             if (len == 0) break;
             if (len > 6) raisePreprocessError(runtime, str, "invalid Unicode range", mode);
             p += len;
@@ -557,8 +559,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static int unescapeUnicodeBmp(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding[]encp, ByteList str, ErrorMode mode) {
         if (p + 4 > end) raisePreprocessError(runtime, str, "invalid Unicode escape", mode);
-        int code = StringSupport.scanHex(bytes, p, end, 4);
-        int len = StringSupport.hexLength(code);
+        int code = StringSupport.scanHex(bytes, p, 4);
+        int len = StringSupport.hexLength(bytes, p, 4);
         if (len != 4) raisePreprocessError(runtime, str, "invalid Unicode escape", mode);
         appendUtf8(runtime, to, code, encp, str, mode);
         return p + 4;
@@ -588,7 +590,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 switch (c = bytes[p++] & 0xff) {
                 case '1': case '2': case '3':
                 case '4': case '5': case '6': case '7': /* \O, \OO, \OOO or backref */
-                    if (StringSupport.scanOct(bytes, p - 1, end, end - (p - 1)) <= 0177) {
+                    if (StringSupport.scanOct(bytes, p - 1, end - (p - 1)) <= 0177) {
                         to.append('\\').append(c);
                         break;
                     }
