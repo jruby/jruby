@@ -122,9 +122,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /** The super constructor signature for Java-based method handles. */
     private final static String JAVA_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class));
     
-    /** The super constructor signature for indexed Java-based method handles. */
-    private final static String JAVA_INDEXED_SUPER_SIG = sig(Void.TYPE, params(RubyModule.class, Visibility.class, int.class));
-    
     /** The lvar index of "this" */
     public static final int THIS_INDEX = 0;
     

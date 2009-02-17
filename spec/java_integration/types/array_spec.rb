@@ -611,8 +611,8 @@ describe "A Java primitive Array of type" do
 
       arr.length.should == 2
 
-      arr[0].should == h1
-      arr[1].should == h2
+      arr[0].should be_equal(h1)
+      arr[1].should be_equal(h2)
     end
     
     it "should be possible to set values in primitive array" do 
@@ -648,9 +648,9 @@ describe "A Java primitive Array of type" do
       h3["flix"] = "mux"
 
       arr = [h1, h2, h3].to_java java.util.HashMap
-      arr[0].should == h1
-      arr[1].should == h2
-      arr[2].should == h3
+      arr[0].should be_equal(h1)
+      arr[1].should be_equal(h2)
+      arr[2].should be_equal(h3)
     end
 
     it "should be possible to call methods that take primitive array" do
