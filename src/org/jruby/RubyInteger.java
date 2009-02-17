@@ -199,31 +199,16 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "times", frame = true)
     public IRubyObject times(ThreadContext context, Block block) {
-        final Ruby runtime = context.getRuntime();
-
-        if (this instanceof RubyFixnum) {
-            final long value = getLongValue();
-            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-                final IRubyObject nil = runtime.getNil();
-                for (long i = 0; i < value; i++) {
-                    block.yield(context, nil);
-                }
-            } else {
-                for (long i = 0; i < value; i++) {
-                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
-                }
+        Ruby runtime = context.getRuntime();
+        IRubyObject i = RubyFixnum.zero(runtime);
+        RubyFixnum one = RubyFixnum.one(runtime);
+        while (true) {
+            if (!i.callMethod(context, "<", this).isTrue()) {
+                break;
             }
-        } else {
-            RubyNumeric i = RubyFixnum.zero(runtime);
-            while (true) {
-                if (!i.callMethod(context, "<", this).isTrue()) {
-                    break;
-                }
-                block.yield(context, i);
-                i = (RubyNumeric) i.callMethod(context, "+", RubyFixnum.one(runtime));
-            }
+            block.yield(context, i);
+            i = i.callMethod(context, "+", one);
         }
-
         return this;
     }
 
