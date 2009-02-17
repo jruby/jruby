@@ -919,7 +919,8 @@ call_args     : command {
               | tSTAR arg_value opt_block_arg {
                   $$ = support.arg_blk_pass(support.newSplatNode(getPosition($1), $2), $3);
               }
-              | block_arg {}
+              | block_arg {
+              }
 
 call_args2    : arg_value ',' args opt_block_arg {
                   $$ = support.arg_blk_pass(support.newArrayNode(getPosition($1), $1).addAll($3), $4);
@@ -962,7 +963,8 @@ call_args2    : arg_value ',' args opt_block_arg {
 	      | tSTAR arg_value opt_block_arg {
                   $$ = support.arg_blk_pass(support.newSplatNode(getPosition($1), $2), $3);
 	      }
-	      | block_arg {}
+	      | block_arg {
+              }
 
 command_args  : /* none */ { 
 	          $$ = new Long(lexer.getCmdArgumentState().begin());
@@ -1234,7 +1236,8 @@ opt_else      : none
               }
 
 block_var     : lhs
-              | mlhs {}
+              | mlhs {
+              }
 
 opt_block_var : none
               | tPIPE /* none */ tPIPE {
@@ -1336,7 +1339,9 @@ opt_rescue    : kRESCUE exc_list exc_var then compstmt opt_rescue {
                   Node body = node == null ? NilImplicitNode.NIL : node;
                   $$ = new RescueBodyNode(getPosition($1, true), $2, body, $6);
 	      }
-              | {$$ = null;}
+              | {
+                  $$ = null;
+              }
 
 exc_list      : arg_value {
                   $$ = support.newArrayNode($1.getPosition(), $1);

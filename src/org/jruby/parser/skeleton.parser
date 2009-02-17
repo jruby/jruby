@@ -272,9 +272,11 @@ t        if (yydebug != null)
 t          yydebug.reduce(yyState, yyStates[yyV-1], yyN, yyRule[yyN], yyLen[yyN]);
 .        yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
 .        switch (yyN) {
+.// ACTIONS_BEGIN
 
  actions		## code from the actions within the grammar
 
+.// ACTIONS_END
 .        }
 .        yyTop -= yyLen[yyN];
 .        yyState = yyStates[yyTop];
@@ -304,4 +306,5 @@ t        if (yydebug != null) yydebug.shift(yyStates[yyTop], yyState);
 .    }
 .  }
 .
+.// ACTION_BODIES
  epilog			## text following second %%

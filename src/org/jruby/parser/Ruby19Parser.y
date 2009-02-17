@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2008-2009 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -950,7 +950,8 @@ call_args       : command {
                     $$ = support.arg_append($1, new HashNode(getPosition(null), $3));
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
-                | block_arg {}
+                | block_arg {
+                }
 
 command_args    : /* none */ {
                     $$ = new Long(lexer.getCmdArgumentState().begin());
@@ -1232,7 +1233,8 @@ opt_else        : none
                 }
 
 for_var         : lhs
-                | mlhs {}
+                | mlhs {
+                }
 
 f_marg          : f_norm_arg {
                      $$ = support.assignable($1, NilImplicitNode.NIL);
@@ -1475,7 +1477,9 @@ opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                     Node body = node == null ? NilImplicitNode.NIL : node;
                     $$ = new RescueBodyNode(getPosition($1, true), $2, body, $6);
                 }
-                | { $$ = null; }
+                | { 
+                    $$ = null; 
+                }
 
 exc_list        : arg_value {
                     $$ = support.newArrayNode($1.getPosition(), $1);
