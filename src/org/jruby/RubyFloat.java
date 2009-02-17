@@ -76,7 +76,7 @@ public class RubyFloat extends RubyNumeric {
 
         floatc.getSingletonClass().undefineMethod("new");
 
-        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_8) {
+        if (!runtime.is1_9()) {
             floatc.includeModule(runtime.getPrecision());
         }
 

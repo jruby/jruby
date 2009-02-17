@@ -190,7 +190,7 @@ public class LoadService {
               String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
               // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
-              if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
+              if (runtime.is1_9()) {
                   addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
                   addPath(rubyDir + "site_ruby");
                   addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);

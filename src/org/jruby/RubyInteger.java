@@ -69,7 +69,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integer.getSingletonClass().undefineMethod("new");
 
-        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_8) {
+        if (!runtime.is1_9()) {
             integer.includeModule(runtime.getPrecision());
         }
 

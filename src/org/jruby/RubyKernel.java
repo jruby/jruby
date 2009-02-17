@@ -318,7 +318,7 @@ public class RubyKernel {
         }
 
         IRubyObject result = runtime.getNil();
-        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_9) {
+        if (runtime.is1_9()) {
             if (args.length == 1) {
                 result = args[0];
             } else if (args.length > 1) {

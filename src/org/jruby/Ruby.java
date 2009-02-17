@@ -967,7 +967,7 @@ public final class Ruby {
     }
 
     private void initRoot() {
-        boolean oneNine = config.getCompatVersion() == CompatVersion.RUBY1_9;
+        boolean oneNine = is1_9();
         // Bootstrap the top of the hierarchy
         if (oneNine) {
             basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.OBJECT_ALLOCATOR);
@@ -1029,7 +1029,7 @@ public final class Ruby {
         RubyEnumerable.createEnumerableModule(this);
         RubyString.createStringClass(this);
 
-        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+        if (is1_9()) {
             RubyEncoding.createEncodingClass(this);
             RubyConverter.createConverterClass(this);
             encodingService = new EncodingService(this);
@@ -1047,7 +1047,7 @@ public final class Ruby {
             RubyException.createExceptionClass(this);
         }
 
-        if (config.getCompatVersion() == CompatVersion.RUBY1_8) {
+        if (!is1_9()) {
             if (profile.allowModule("Precision")) {
                 RubyPrecision.createPrecisionModule(this);
             }
@@ -1063,7 +1063,7 @@ public final class Ruby {
             RubyFixnum.createFixnumClass(this);
         }
 
-        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+        if (is1_9()) {
             if (profile.allowClass("Complex")) {
                 RubyComplex.createComplexClass(this);
             }
@@ -1211,7 +1211,7 @@ public final class Ruby {
         zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", standardError);
         floatDomainError  = defineClassIfAllowed("FloatDomainError", rangeError);
 
-        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+        if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
                 encodingError = defineClass("EncodingError", standardError, standardError.getAllocator()); 
                 encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
@@ -1303,7 +1303,7 @@ public final class Ruby {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.libraries.NetProtocolBufferedIOLibrary");
         }
         
-        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+        if (is1_9()) {
             addLazyBuiltin("fiber.so", "fiber", "org.jruby.libraries.FiberLibrary");
         }
         
@@ -1320,7 +1320,7 @@ public final class Ruby {
 
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
-        if (config.getCompatVersion() == CompatVersion.RUBY1_9) {
+        if (is1_9()) {
             getLoadService().require("builtin/prelude.rb");
             getLoadService().require("builtin/core_ext/symbol");
             getLoadService().require("enumerator");

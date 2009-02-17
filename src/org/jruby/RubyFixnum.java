@@ -72,7 +72,7 @@ public class RubyFixnum extends RubyInteger {
             }
         };
 
-        if (runtime.getInstanceConfig().getCompatVersion() == CompatVersion.RUBY1_8) {
+        if (!runtime.is1_9()) {
             fixnum.includeModule(runtime.getPrecision());
         }
 
