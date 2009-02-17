@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.jruby.Ruby;
 import org.jruby.ast.executable.Script;
+import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassReader;
 
@@ -31,19 +32,18 @@ public class CompiledScriptLoader {
             }
             buf = baos.toByteArray();
             JRubyClassLoader jcl = runtime.getJRubyClassLoader();
+            OneShotClassLoader oscl = new OneShotClassLoader(jcl);
+            
             ClassReader cr = new ClassReader(buf);
             String className = cr.getClassName().replace('/', '.');
 
-            Class clazz = null;
-            try {
-                clazz = jcl.loadClass(className);
-            } catch (ClassNotFoundException cnfe) {
-                clazz = jcl.defineClass(className, buf);
-            }
+            Class clazz = clazz = oscl.defineClass(className, buf);
 
             // if it's a compiled JRuby script, instantiate and run it
             if (Script.class.isAssignableFrom(clazz)) {
                 return (Script)clazz.newInstance();
+            } else {
+                throw runtime.newLoadError("use `java_import' to load normal Java classes");
             }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
@@ -69,6 +69,5 @@ public class CompiledScriptLoader {
                 throw runtime.newIOErrorFromException(ioe);
             }
         }
-        return null;
     }
 }

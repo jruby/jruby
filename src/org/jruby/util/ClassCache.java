@@ -56,7 +56,7 @@ public class ClassCache<T> {
         }
     }
     
-    private static class OneShotClassLoader extends ClassLoader {
+    public static class OneShotClassLoader extends ClassLoader {
         private final static ProtectionDomain DEFAULT_DOMAIN = 
             JRubyClassLoader.class.getProtectionDomain();
         
