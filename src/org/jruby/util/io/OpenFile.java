@@ -256,7 +256,7 @@ public class OpenFile {
                     } finally {
                         // make sure the pipe stream is set to null
                         pipeStream = null;
-                        runtime.getDescriptors().remove(Integer.valueOf(pipe.getFileno()));
+                        runtime.unregisterDescriptor(pipe.getFileno());
                     }
                 }
                 Stream ms = mainStream;
@@ -276,7 +276,7 @@ public class OpenFile {
                     } finally {
                         // make sure the main stream is set to null
                         mainStream = null;
-                        runtime.getDescriptors().remove(Integer.valueOf(main.getFileno()));
+                        runtime.unregisterDescriptor(main.getFileno());
                     }
                 }
             }

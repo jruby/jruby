@@ -38,6 +38,7 @@ package org.jruby;
 import java.io.EOFException;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.CancelledKeyException;
@@ -77,6 +78,7 @@ import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
 import org.jruby.util.io.FileExistsException;
+import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
@@ -93,8 +95,13 @@ public class RubyIO extends RubyObject {
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
     
+
+    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
+        getRuntime().registerDescriptor(descriptor,isRetained);
+    }
+
     public void registerDescriptor(ChannelDescriptor descriptor) {
-        getRuntime().registerDescriptor(descriptor);
+        registerDescriptor(descriptor,false); // default: don't retain
     }
     
     public void unregisterDescriptor(int aFileno) {
@@ -898,6 +905,52 @@ public class RubyIO extends RubyObject {
         }
 
         return io;
+    }
+
+    @JRubyMethod(name = "sysopen", required = 1, optional = 2, frame = true, meta = true)
+    public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+
+        IRubyObject pathString = args[0].convertToString();
+        runtime.checkSafeString(pathString);
+        String path = pathString.toString();
+
+        ModeFlags modes = null;
+        int perms = -1; // -1 == don't set permissions
+        try {
+            if (args.length > 1) {
+                IRubyObject modeString = args[1].convertToString();
+                modes = getIOModes(runtime, modeString.toString());
+            } else {
+                modes = getIOModes(runtime, "r");
+            }
+            if (args.length > 2) {
+                RubyInteger permsInt =
+                    args.length >= 3 ? args[2].convertToInteger() : null;
+                perms = RubyNumeric.fix2int(permsInt);
+            }
+        } catch (InvalidValueException e) {
+            throw runtime.newErrnoEINVALError();
+        }
+
+        int fileno = -1;
+        try {
+            ChannelDescriptor descriptor =
+                ChannelDescriptor.open(runtime.getCurrentDirectory(),
+                                       path, modes, perms, runtime.getPosix());
+            runtime.registerDescriptor(descriptor,true); // isRetained=true
+            fileno = descriptor.getFileno();
+        }
+        catch (FileNotFoundException fnfe) {
+            throw runtime.newErrnoENOENTError(path);
+        } catch (DirectoryAsFileException dafe) {
+            throw runtime.newErrnoEISDirError(path);
+        } catch (FileExistsException fee) {
+            throw runtime.newErrnoEEXISTError(path);
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+        return runtime.newFixnum(fileno);
     }
 
     // This appears to be some windows-only mode.  On a java platform this is a no-op
@@ -1714,9 +1767,9 @@ public class RubyIO extends RubyObject {
     protected IRubyObject close2(Ruby runtime) {
         if (openFile == null) return runtime.getNil();
         
-        // These would be used when we notify threads...if we notify threads
         interruptBlockingThreads();
-        
+
+        /* FIXME: Why did we go to this trouble and not use these descriptors?
         ChannelDescriptor main, pipe;
         if (openFile.getPipeStream() != null) {
             pipe = openFile.getPipeStream().getDescriptor();
@@ -1727,7 +1780,7 @@ public class RubyIO extends RubyObject {
             pipe = null;
         }
         
-        main = openFile.getMainStream().getDescriptor();
+        main = openFile.getMainStream().getDescriptor(); */
         
         // cleanup, raising errors if any
         openFile.cleanup(runtime, true);

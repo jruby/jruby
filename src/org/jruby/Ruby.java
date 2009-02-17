@@ -2700,8 +2700,12 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EAGAIN"), message);
     }
 
+    public RaiseException newErrnoEISDirError(String message) {
+        return newRaiseException(getErrno().fastGetClass("EISDIR"), message);
+    }
+
     public RaiseException newErrnoEISDirError() {
-        return newRaiseException(getErrno().fastGetClass("EISDIR"), "Is a directory");
+        return newErrnoEISDirError("Is a directory");
     }
 
     public RaiseException newErrnoESPIPEError() {
@@ -2959,17 +2963,27 @@ public final class Ruby {
         }
     }
 
-    public void registerDescriptor(ChannelDescriptor descriptor) {
+    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
         cleanDescriptors();
         
         int fileno = descriptor.getFileno();
-        descriptors.put(fileno, new WeakDescriptorReference(descriptor, descriptorQueue));
+        Integer filenoKey = new Integer(fileno);
+        descriptors.put(filenoKey, new WeakDescriptorReference(descriptor, descriptorQueue));
+        if (isRetained) {
+            retainedDescriptors.put(filenoKey, descriptor);
+        }
+    }
+
+    public void registerDescriptor(ChannelDescriptor descriptor) {
+        registerDescriptor(descriptor,false); // default: don't retain
     }
 
     public void unregisterDescriptor(int aFileno) {
         cleanDescriptors();
         
-        descriptors.remove(new Integer(aFileno));
+        Integer aFilenoKey = new Integer(aFileno);
+        descriptors.remove(aFilenoKey);
+        retainedDescriptors.remove(aFilenoKey);
     }
 
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
@@ -3147,6 +3161,9 @@ public final class Ruby {
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
     private Map<Integer, WeakDescriptorReference> descriptors = new ConcurrentHashMap<Integer, WeakDescriptorReference>();
     private ReferenceQueue<ChannelDescriptor> descriptorQueue = new ReferenceQueue<ChannelDescriptor>();
+    // ChannelDescriptors opened by sysopen are cached to avoid collection
+    private Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
+
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
     private Random random = new Random();
