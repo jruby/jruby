@@ -98,7 +98,7 @@ public class ChannelStream implements Stream, Finalizable {
     protected int ungotc = -1;
     private volatile boolean closedExplicitly = false;
 
-    private boolean eof = false;
+    private volatile boolean eof = false;
 
     public ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, FileDescriptor fileDescriptor) throws InvalidValueException {
         descriptor.checkNewModes(modes);
