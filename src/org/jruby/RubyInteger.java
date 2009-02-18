@@ -47,6 +47,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
 
 /** Implementation of the Integer class.
@@ -292,11 +293,48 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_to_i
      * 
      */
-    @JRubyMethod(name = {"to_i", "to_int", "floor", "ceil", "round", "truncate"})
-    public RubyInteger to_i() {
+    @JRubyMethod(name = {"to_i", "to_int", "floor", "ceil", "truncate"})
+    public IRubyObject to_i() {
         return this;
     }
-    
+
+    @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_8)
+    public IRubyObject round() {
+        return this;
+    }
+
+    @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_9)
+    public IRubyObject round19() {
+        return this;
+    }
+
+    @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_9)
+    public IRubyObject round19(ThreadContext context, IRubyObject arg) {
+        int ndigits = RubyNumeric.num2int(arg);
+        if (ndigits > 0) return RubyKernel.new_float(this, this);
+        if (ndigits == 0) return this;
+        ndigits = -ndigits;
+        Ruby runtime = context.getRuntime();
+        if (ndigits < 0) throw runtime.newArgumentError("ndigits out of range");
+        IRubyObject f = Numeric.int_pow(context, 10, ndigits);
+
+        if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
+            long x = ((RubyFixnum)this).getLongValue();
+            long y = ((RubyFixnum)f).getLongValue();
+            boolean neg = x < 0;
+            if (neg) x = -x;
+            x = (x + y / 2) / y * y;
+            if (neg) x = -x;
+            return RubyFixnum.newFixnum(runtime, x);
+        } else {
+            IRubyObject h = f.callMethod(context, "/", RubyFixnum.two(runtime));
+            IRubyObject r = callMethod(context, "%", f);
+            IRubyObject n = callMethod(context, "-", r);
+            if (!r.callMethod(context, "<", h).isTrue()) n = n.callMethod(context, "+", f);
+            return n;
+        }
+    }
+
     /** integer_to_r
      * 
      */
