@@ -2716,20 +2716,20 @@ public class RubyArray extends RubyObject implements List {
     /** ary_make_hash
      * 
      */
-    private final RubyHash makeHash(RubyArray ary2) {
-        RubyHash hash = new RubyHash(getRuntime(), false);
+    private RubyHash makeHash() {
+        return makeHash(new RubyHash(getRuntime(), false));
+    }
+
+    private RubyHash makeHash(RubyHash hash) {
         int begin = this.begin;
         for (int i = begin; i < begin + realLength; i++) {
             hash.fastASet(values[i], NEVER);
         }
-
-        if (ary2 != null) {
-            begin = ary2.begin;            
-            for (int i = begin; i < begin + ary2.realLength; i++) {
-                hash.fastASet(ary2.values[i], NEVER);
-            }
-        }
         return hash;
+    }
+
+    private RubyHash makeHash(RubyArray ary2) {
+        return ary2.makeHash(makeHash());
     }
 
     /** rb_ary_uniq_bang
@@ -2737,7 +2737,7 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "uniq!")
     public IRubyObject uniq_bang() {
-        RubyHash hash = makeHash(null);
+        RubyHash hash = makeHash();
         if (realLength == hash.size()) return getRuntime().getNil();
 
         int j = 0;
@@ -2754,7 +2754,7 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "uniq")
     public IRubyObject uniq() {
-        RubyHash hash = makeHash(null);
+        RubyHash hash = makeHash();
         if (realLength == hash.size()) return makeShared();
 
         RubyArray result = new RubyArray(getRuntime(), getMetaClass(), hash.size()); 
@@ -2773,7 +2773,7 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_diff(IRubyObject other) {
-        RubyHash hash = other.convertToArray().makeHash(null);
+        RubyHash hash = other.convertToArray().makeHash();
         RubyArray ary3 = new RubyArray(getRuntime(), ARRAY_DEFAULT_SIZE);
 
         int begin = this.begin;
@@ -2792,7 +2792,7 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and(IRubyObject other) {
         RubyArray ary2 = other.convertToArray();
-        RubyHash hash = ary2.makeHash(null);
+        RubyHash hash = ary2.makeHash();
         RubyArray ary3 = new RubyArray(getRuntime(), realLength < ary2.realLength ? realLength : ary2.realLength);
 
         for (int i = 0; i < realLength; i++) {
