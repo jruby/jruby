@@ -2732,13 +2732,34 @@ public class RubyArray extends RubyObject implements List {
         return ary2.makeHash(makeHash());
     }
 
-    /** rb_ary_uniq_bang
+    /** ary_make_hash_by
+     * 
+     */
+    private RubyHash makeHash(ThreadContext context, RubyArray ary2, Block block) {
+        return ary2.makeHash(makeHash(context, block));
+    }
+
+    private RubyHash makeHash(ThreadContext context, Block block) {
+        return makeHash(context, new RubyHash(getRuntime(), false), block);
+    }
+
+    private RubyHash makeHash(ThreadContext context, RubyHash hash, Block block) {
+        int begin = this.begin;
+        for (int i = begin; i < begin + realLength; i++) {
+            IRubyObject v = elt(i);
+            IRubyObject k = block.yield(context, v);
+            if (hash.fastARef(k) == null) hash.fastASet(k, v);
+        }
+        return hash;
+    }
+
+    /** rb_ary_uniq_bang 
      *
      */
-    @JRubyMethod(name = "uniq!")
-    public IRubyObject uniq_bang() {
+    @JRubyMethod(name = "uniq!", compat = CompatVersion.RUBY1_8)
+    public IRubyObject uniq_bang(ThreadContext context) {
         RubyHash hash = makeHash();
-        if (realLength == hash.size()) return getRuntime().getNil();
+        if (realLength == hash.size()) return context.getRuntime().getNil();
 
         int j = 0;
         for (int i = 0; i < realLength; i++) {
@@ -2749,15 +2770,31 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    @JRubyMethod(name = "uniq!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject uniq_bang19(ThreadContext context, Block block) {
+        if (!block.isGiven()) return uniq_bang(context);
+        RubyHash hash = makeHash(context, block);
+        if (realLength == hash.size()) return context.getRuntime().getNil();
+        realLength = 0;
+
+        hash.visitAll(new RubyHash.Visitor() {
+            @Override
+            public void visit(IRubyObject key, IRubyObject value) {
+                append(value);
+            }
+        });
+        return this;
+    }
+
     /** rb_ary_uniq 
      *
      */
-    @JRubyMethod(name = "uniq")
-    public IRubyObject uniq() {
+    @JRubyMethod(name = "uniq", compat = CompatVersion.RUBY1_8)
+    public IRubyObject uniq(ThreadContext context) {
         RubyHash hash = makeHash();
         if (realLength == hash.size()) return makeShared();
 
-        RubyArray result = new RubyArray(getRuntime(), getMetaClass(), hash.size()); 
+        RubyArray result = new RubyArray(context.getRuntime(), getMetaClass(), hash.size()); 
 
         int j = 0;
         for (int i = 0; i < realLength; i++) {
@@ -2765,6 +2802,22 @@ public class RubyArray extends RubyObject implements List {
             if (hash.fastDelete(v)) result.values[j++] = v;
         }
         result.realLength = j;
+        return result;
+    }
+
+    @JRubyMethod(name = "uniq", compat = CompatVersion.RUBY1_9)
+    public IRubyObject uniq19(ThreadContext context, Block block) {
+        if (!block.isGiven()) return uniq(context);
+        RubyHash hash = makeHash(context, block);
+        if (realLength == hash.size()) return context.getRuntime().getNil();
+
+        final RubyArray result = new RubyArray(context.getRuntime(), getMetaClass(), hash.size());
+        hash.visitAll(new RubyHash.Visitor() {
+            @Override
+            public void visit(IRubyObject key, IRubyObject value) {
+                result.append(value);
+            }
+        });
         return result;
     }
 
