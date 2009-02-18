@@ -524,15 +524,17 @@ public class RubyThread extends RubyObject {
         synchronized (stopLock) {
             rubyThread.pollThreadEvents();
             try {
-                rubyThread.isStopped = true;
                 // attempt to decriticalize all if we're the critical thread
                 receiver.getRuntime().getThreadService().setCritical(false);
+                
+                rubyThread.isStopped = true;
                 
                 stopLock.wait();
             } catch (InterruptedException ie) {
                 rubyThread.pollThreadEvents();
+            } finally {
+                rubyThread.isStopped = false;
             }
-            rubyThread.isStopped = false;
         }
         
         return receiver.getRuntime().getNil();
