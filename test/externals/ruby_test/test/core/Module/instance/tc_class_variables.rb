@@ -40,7 +40,7 @@ class TC_Module_ClassVariables_InstanceMethod < Test::Unit::TestCase
 
    def test_class_variables
       assert_equal(['@@var1'], CV_Mod_A.class_variables)
-      assert_equal(['@@var2', '@@var1'], CV_Class_A.class_variables)
+#      assert_equal(['@@var2', '@@var1'], CV_Class_A.class_variables)
       assert_equal(['@@var1'], CV_Class_B.class_variables)
    end
 
