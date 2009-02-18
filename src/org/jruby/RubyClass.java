@@ -171,7 +171,7 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
-    private final Ruby runtime;
+    protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
     private Set<RubyClass> subclasses;
@@ -292,7 +292,7 @@ public class RubyClass extends RubyModule {
     @Override
     public RubyClass makeMetaClass(RubyClass superClass) {
         if (isSingleton()) { // could be pulled down to RubyClass in future
-            MetaClass klass = new MetaClass(getRuntime(), superClass); // rb_class_boot
+            MetaClass klass = new MetaClass(runtime, superClass); // rb_class_boot
             setMetaClass(klass);
 
             klass.setAttached(this);
@@ -575,7 +575,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_8, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(context.getRuntime().getObject(), block, false);
+        return initializeCommon(runtime.getObject(), block, false);
     }
         
     @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_8, frame = true, visibility = Visibility.PRIVATE)
@@ -588,7 +588,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(context.getRuntime().getObject(), block, true);
+        return initializeCommon(runtime.getObject(), block, true);
     }
         
     @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, frame = true, visibility = Visibility.PRIVATE)
@@ -625,7 +625,7 @@ public class RubyClass extends RubyModule {
     @Override
     public IRubyObject initialize_copy(IRubyObject original){
         if (superClass != null) throw runtime.newTypeError("already initialized class");
-        if (original instanceof MetaClass) throw getRuntime().newTypeError("can't copy singleton class");        
+        if (original instanceof MetaClass) throw runtime.newTypeError("can't copy singleton class");        
         
         super.initialize_copy(original);
         allocator = ((RubyClass)original).allocator; 
@@ -684,16 +684,16 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod(name = "inherited", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
-        return context.getRuntime().getNil();
+        return runtime.getNil();
     }
 
     /** rb_class_inherited (reversed semantics!)
      * 
      */
     public void inherit(RubyClass superClazz) {
-        if (superClazz == null) superClazz = getRuntime().getObject();
+        if (superClazz == null) superClazz = runtime.getObject();
 
-        superClazz.invokeInherited(getRuntime().getCurrentContext(), superClazz, this);
+        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
     }
 
     /** Return the real super class of this class.
@@ -705,12 +705,12 @@ public class RubyClass extends RubyModule {
     public IRubyObject superclass(ThreadContext context) {
         RubyClass superClazz = superClass;
 
-        if (superClazz == null) throw context.getRuntime().newTypeError("uninitialized class");
+        if (superClazz == null) throw runtime.newTypeError("uninitialized class");
 
         if (isSingleton()) superClazz = metaClass;
         while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
 
-        return superClazz != null ? superClazz : context.getRuntime().getNil();
+        return superClazz != null ? superClazz : runtime.getNil();
     }
     
     @JRubyMethod(name = "superclass", compat = CompatVersion.RUBY1_9)
@@ -718,16 +718,16 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
         if (superClazz == null) {
             if (metaClass == runtime.getBasicObject()) return runtime.getNil();
-            throw context.getRuntime().newTypeError("uninitialized class");
+            throw runtime.newTypeError("uninitialized class");
         }
 
         while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
 
-        return superClazz != null ? superClazz : context.getRuntime().getNil();
+        return superClazz != null ? superClazz : runtime.getNil();
     }
 
     private void checkNotInitialized() {
-        if (superClass != null) throw getRuntime().newTypeError("already initialized class");
+        if (superClass != null) throw runtime.newTypeError("already initialized class");
     }
     /** rb_check_inheritable
      * 
@@ -750,11 +750,11 @@ public class RubyClass extends RubyModule {
     }
     
     public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
-        getMarshal().marshalTo(getRuntime(), obj, this, marshalStream);
+        getMarshal().marshalTo(runtime, obj, this, marshalStream);
     }
     
     public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
-        return getMarshal().unmarshalFrom(getRuntime(), this, unmarshalStream);
+        return getMarshal().unmarshalFrom(runtime, this, unmarshalStream);
     }
     
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {

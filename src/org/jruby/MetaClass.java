@@ -53,7 +53,7 @@ public final class MetaClass extends RubyClass {
         super(runtime, superClass, false);
         index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
     }
- 
+
     public boolean isSingleton() {
         return true;
     }
@@ -65,9 +65,9 @@ public final class MetaClass extends RubyClass {
     public RubyClass getRealClass() {
         return superClass.getRealClass();
     }
-    
+
     public final IRubyObject allocate(){
-        throw getRuntime().newTypeError("can't create instance of virtual class");
+        throw runtime.newTypeError("can't create instance of virtual class");
     }
 
     public IRubyObject getAttached() {
