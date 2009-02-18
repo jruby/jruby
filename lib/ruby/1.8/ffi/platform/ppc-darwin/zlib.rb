@@ -232,6 +232,7 @@ module Zlib
 
   class ZStream < FFI::Struct
 
+    self.size = 56
     layout :next_in, :pointer, 0,
            :avail_in, :uint, 4,
            :total_in, :ulong, 8,
@@ -246,7 +247,6 @@ module Zlib
            :data_type, :int, 44,
            :adler, :ulong, 48,
            :reserved, :ulong, 52
-
 
 
 
