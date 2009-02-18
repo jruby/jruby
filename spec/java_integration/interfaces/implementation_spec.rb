@@ -364,6 +364,24 @@ describe "A Ruby class including a descendant interface" do
     UsesSingleMethodInterface.callIt(dosmi).should == "foo"
     UsesDescendantOfSingleMethodInterface.callThat(dosmi).should == "bar"
   end
+
+  it "inherits implementation of super-interface methods from superclass" do
+    super_impl = Class.new do
+      include SingleMethodInterface
+      
+      def callIt; "foo"; end
+    end
+    
+    impl = Class.new(super_impl) do
+      include DescendantOfSingleMethodInterface
+      def callThat; "bar"; end
+    end
+    
+    dosmi = impl.new
+
+    UsesSingleMethodInterface.callIt(dosmi).should == "foo"
+    UsesDescendantOfSingleMethodInterface.callThat(dosmi).should == "bar"
+  end
 end
 
 describe "Single object implementing methods of interface" do 

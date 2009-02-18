@@ -359,6 +359,7 @@ public class MiniJava implements Library {
         
         // construct the class, implementing all supertypes
         cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(Object.class), superTypeNames);
+        cw.visitSource(pathName + ".gen", null);
         
         // fields needed for dispatch and such
         cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null).visitEnd();
@@ -413,22 +414,28 @@ public class MiniJava implements Library {
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
                         cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
                 mv.start();
+                mv.line(1);
                 
                 // TODO: this code should really check if a Ruby equals method is implemented or not.
                 if(simpleName.equals("equals") && paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
+                    mv.line(2);
                     mv.aload(0);
                     mv.aload(1);
                     mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
                     mv.ireturn();
                 } else if(simpleName.equals("hashCode") && paramTypes.length == 0 && returnType == Integer.TYPE) {
+                    mv.line(3);
                     mv.aload(0);
                     mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
                     mv.ireturn();
                 } else if(simpleName.equals("toString") && paramTypes.length == 0 && returnType == String.class) {
+                    mv.line(4);
                     mv.aload(0);
                     mv.invokespecial(p(Object.class), "toString", sig(String.class));
                     mv.areturn();
                 } else {
+                    mv.line(5);
+                    
                     Label dispatch = new Label();
                     Label end = new Label();
                     Label recheckMethod = new Label();
@@ -441,6 +448,7 @@ public class MiniJava implements Library {
                     mv.ifnonnull(dispatch);
 
                     // field is null, lock class and try to populate
+                    mv.line(6);
                     mv.pop();
                     mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
                     mv.monitorenter();
@@ -450,6 +458,7 @@ public class MiniJava implements Library {
                     Label tryEnd = new Label();
                     Label finallyStart = new Label();
                     Label finallyEnd = new Label();
+                    mv.line(7);
                     mv.label(tryStart);
 
                     mv.aload(0);
@@ -466,6 +475,7 @@ public class MiniJava implements Library {
                     mv.if_acmpeq(noStore);
 
                     // store it
+                    mv.line(8);
                     mv.dup();
                     mv.putstatic(pathName, simpleName, ci(DynamicMethod.class));
 
@@ -481,6 +491,7 @@ public class MiniJava implements Library {
 
                     // finally block to release monitor
                     mv.label(finallyStart);
+                    mv.line(9);
                     mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
                     mv.monitorexit();
                     mv.label(finallyEnd);
@@ -492,11 +503,13 @@ public class MiniJava implements Library {
 
                     // re-get, re-check method; if not null now, go to dispatch
                     mv.label(recheckMethod);
+                    mv.line(10);
                     mv.getstatic(pathName, simpleName, ci(DynamicMethod.class));
                     mv.dup();
                     mv.ifnonnull(dispatch);
 
                     // method still not available, call method_missing
+                    mv.line(11);
                     mv.pop();
                     // exit monitor before making call
                     // FIXME: this not being in a finally is a little worrisome
@@ -509,6 +522,7 @@ public class MiniJava implements Library {
                 
                     // perform the dispatch
                     mv.label(dispatch);
+                    mv.line(12, dispatch);
                     // get current context
                     mv.getstatic(pathName, "ruby", ci(Ruby.class));
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
@@ -526,6 +540,7 @@ public class MiniJava implements Library {
                     mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
                 
                     // invoke method
+                    mv.line(13);
                     mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
                 
                     mv.label(end);

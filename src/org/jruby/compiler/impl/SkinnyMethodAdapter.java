@@ -500,6 +500,16 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitMaxs(1, 1);
         getMethodVisitor().visitEnd();
     }
+
+    public void line(int line) {
+        Label label = new Label();
+        label(label);
+        visitLineNumber(line, label);
+    }
+
+    public void line(int line, Label label) {
+        visitLineNumber(line, label);
+    }
     
     public void ifnonnull(Label arg0) {
         getMethodVisitor().visitJumpInsn(IFNONNULL, arg0);
