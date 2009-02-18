@@ -646,17 +646,28 @@ public class RubyInstanceConfig {
 
     public String getJRubyHome() {
         if (jrubyHome == null) {
+            // try the normal property first
             if (!Ruby.isSecurityRestricted()) {
                 jrubyHome = SafePropertyAccessor.getProperty("jruby.home");
             }
 
             if (jrubyHome != null) {
+                // verify it if it's there
                 jrubyHome = verifyHome(jrubyHome);
             } else {
                 try {
+                    // try loading from classloader resources
                     jrubyHome = getClass().getResource("/META-INF/jruby.home")
                         .toURI().getSchemeSpecificPart();
                 } catch (Exception e) {}
+
+                if (jrubyHome != null) {
+                    // verify it if it's there
+                    jrubyHome = verifyHome(jrubyHome);
+                } else {
+                    // otherwise fall back on system temp location
+                    jrubyHome = System.getProperty("java.io.tmpdir");
+                }
             }
         }
         return jrubyHome;
@@ -676,7 +687,10 @@ public class RubyInstanceConfig {
             if (!f.isAbsolute()) {
                 home = f.getAbsolutePath();
             }
-            f.mkdirs();
+            if (!f.exists()) {
+                System.err.println("Warning: JRuby home \"" + f + "\" does not exist, using " + System.getProperty("java.io.tmpdir"));
+                return System.getProperty("java.io.tmpdir");
+            }
         }
         return home;
     }
