@@ -1028,8 +1028,14 @@ public class RubyInstanceConfig {
         }
 
         private String resolveScript(String scriptName) {
-            File fullName = new File(getJRubyHome(), "bin/" + scriptName);
-            if (fullName.exists()) {
+            // try cwd first
+            File fullName = new File(scriptName);
+            if (fullName.exists() && fullName.isFile()) {
+                return fullName.getAbsolutePath();
+            }
+
+            fullName = new File(getJRubyHome(), "bin/" + scriptName);
+            if (fullName.exists() && fullName.isFile()) {
                 return fullName.getAbsolutePath();
             }
 
@@ -1038,7 +1044,7 @@ public class RubyInstanceConfig {
                 String[] paths = path.split(System.getProperty("path.separator"));
                 for (int i = 0; i < paths.length; i++) {
                     fullName = new File(paths[i], scriptName);
-                    if (fullName.exists()) {
+                    if (fullName.exists() && fullName.isFile()) {
                         return fullName.getAbsolutePath();
                     }
                 }
