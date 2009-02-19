@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +104,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("import org.jruby.runtime.Arity;");
                     out.println("import org.jruby.runtime.Visibility;");
                     out.println("import org.jruby.compiler.ASTInspector;");
+                    out.println("import java.util.Arrays;");
+                    out.println("import java.util.List;");
 
                     out.println("public class " + qualifiedName + "$Populator extends TypePopulator {");
                     out.println("    public void populate(RubyModule cls, Class clazz) {");
@@ -122,7 +125,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
 
-                    List<String> frameAwareMethods = new ArrayList<String>();
+                    Set<String> frameAwareMethods = new HashSet<String>();
 
                     int methodCount = 0;
                     for (MethodDeclaration md : cd.getMethods()) {
@@ -202,11 +205,22 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         out.println("        }");
                     }
 
-                    for (String name : frameAwareMethods) {
-                        out.println("        ASTInspector.FRAME_AWARE_METHODS.add(\"" + name + "\");");
+                    out.println("    }");
+
+                    // write out a static initializer for frame names, so it only fires once
+                    if (!frameAwareMethods.isEmpty()) {
+                        StringBuffer frameMethodsString = new StringBuffer();
+                        boolean first = true;
+                        for (String name : frameAwareMethods) {
+                            if (!first) frameMethodsString.append(',');
+                            first = false;
+                            frameMethodsString.append('"').append(name).append('"');
+                        }
+                        out.println("    static {");
+                        out.println("        ASTInspector.FRAME_AWARE_METHODS.addAll((List<String>)Arrays.asList(" + frameMethodsString + "));");
+                        out.println("     }");
                     }
 
-                    out.println("    }");
                     out.println("}");
                     out.close();
                     out = null;
