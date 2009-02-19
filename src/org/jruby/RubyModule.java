@@ -108,6 +108,7 @@ public class RubyModule extends RubyObject {
     public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
             "eval",
             "module_eval",
+            "class_eval",
             "instance_eval",
             "instance_exec",
             "binding",

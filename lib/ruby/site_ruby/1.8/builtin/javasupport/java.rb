@@ -17,15 +17,18 @@ module Java
 
 end
  
-module JavaPackageModuleTemplate  
+module JavaPackageModuleTemplate
+  # don't undefine important methods
   @@keep = /^(__|<|>|=)|^(class|const_missing|inspect|method_missing|to_s)$|(\?|!|=)$/
+  # don't alias "special" methods
+  @@no_alias = /^(eval|module_eval|class_eval|instance_eval|instance_exec|binding|local_variables)$/
   class << self
   
     # blank-slate logic relocated from org.jruby.javasupport.Java
     instance_methods.each do |meth|
       unless meth.to_s =~ @@keep
         # keep aliased methods for those we'll undef, for use by IRB and other utilities
-        unless method_defined?(method_alias = :"__#{meth}__")
+        unless meth.to_s =~ @@no_alias || method_defined?(method_alias = :"__#{meth}__")
           alias_method method_alias, meth
         end
         undef_method meth  
