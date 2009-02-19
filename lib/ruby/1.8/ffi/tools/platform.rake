@@ -25,14 +25,14 @@ def gen_platform_conf(task, options = {})
     s.field :ai_addr, :pointer
     s.field :ai_canonname, :string
     s.field :ai_next, :pointer
-  end unless JRuby::FFI::Platform::IS_WINDOWS
+  end unless FFI::Platform::IS_WINDOWS
 
   dirent = FFI::StructGenerator.new 'dirent' do |s|
     s.include "sys/types.h"
     s.include "dirent.h"
     s.name 'struct dirent'
     s.field :d_ino, :ino_t
-    s.field :d_reclen, :ushort unless JRuby::FFI::Platform::IS_WINDOWS
+    s.field :d_reclen, :ushort unless FFI::Platform::IS_WINDOWS
     s.field :d_name, :char_array
   end
 
@@ -531,7 +531,7 @@ def gen_platform_conf(task, options = {})
   puts "Generating #{task.name}..." if $verbose
 
   File.open task.name, "w" do |f|
-    addrinfo.dump_config f unless JRuby::FFI::Platform::IS_WINDOWS
+    addrinfo.dump_config f unless FFI::Platform::IS_WINDOWS
     dirent.dump_config f
     timeval.dump_config f
     sockaddr_in.dump_config f

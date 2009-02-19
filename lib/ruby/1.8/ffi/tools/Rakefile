@@ -7,6 +7,7 @@ require 'ffi/tools/const_generator'
 require 'ffi/tools/types_generator'
 require 'ffi/tools/generator'
 require 'fileutils'
+require 'rbconfig'
 
 arches = [ ]
 arch_options = {}
@@ -14,13 +15,12 @@ conf_files = []
 
 if FFI::Platform.mac?
   osx_arches = [ "ppc", "i386" ]
-  osx_arches << "x86_64" if `arch` == "x86_64"
+  osx_arches << "x86_64" if Config::CONFIG['host_cpu'] == 'x86_64'
   osx_arches.each do |arch|
     arches << arch
     platform_dir = File.join(FFI::Platform::FFI_DIR, "platform", "#{arch}-darwin")
     arch_options[arch] = { :platform_dir => platform_dir, :cppflags => "-arch #{arch}"}
   end
-
 else
   arches = [ FFI::Platform::ARCH ]
   arch_options[FFI::Platform::ARCH] = {
