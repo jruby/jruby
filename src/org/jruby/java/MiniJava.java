@@ -37,6 +37,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.load.Library;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.IdUtil;
@@ -203,9 +204,9 @@ public class MiniJava implements Library {
         cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, name, null, p(Object.class), superTypeNames);
         
         // fields needed for dispatch and such
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null).visitEnd();
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null).visitEnd();
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "self", ci(IRubyObject.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "$ruby", ci(Ruby.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "$rubyClass", ci(RubyClass.class), null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$self", ci(IRubyObject.class), null, null).visitEnd();
         
         // create constructor
         SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class), null, null));
@@ -214,10 +215,10 @@ public class MiniJava implements Library {
         
         // wrap self and store the wrapper
         initMethod.aload(0);
-        initMethod.getstatic(name, "ruby", ci(Ruby.class));
+        initMethod.getstatic(name, "$ruby", ci(Ruby.class));
         initMethod.aload(0);
         initMethod.invokestatic(p(MiniJava.class), "javaToRuby", sig(IRubyObject.class, Ruby.class, Object.class));
-        initMethod.putfield(name, "self", ci(IRubyObject.class));
+        initMethod.putfield(name, "$self", ci(IRubyObject.class));
         
         // end constructor
         initMethod.voidreturn();
@@ -230,11 +231,11 @@ public class MiniJava implements Library {
         // set RubyClass
         setupMethod.aload(0);
         setupMethod.dup();
-        setupMethod.putstatic(name, "rubyClass", ci(RubyClass.class));
+        setupMethod.putstatic(name, "$rubyClass", ci(RubyClass.class));
         
         // set Ruby
         setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
-        setupMethod.putstatic(name, "ruby", ci(Ruby.class));
+        setupMethod.putstatic(name, "$ruby", ci(Ruby.class));
         
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
@@ -264,19 +265,19 @@ public class MiniJava implements Library {
                 mv.dup();
                 mv.ifnonnull(dispatch);
                 mv.pop();
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                mv.getstatic(name, "$rubyClass", ci(RubyClass.class));
                 mv.ldc("method_missing");
                 mv.invokevirtual(p(RubyClass.class), "searchMethod", sig(DynamicMethod.class, String.class));
                 mv.label(dispatch);
                 
                 // get current context
-                mv.getstatic(name, "ruby", ci(Ruby.class));
+                mv.getstatic(name, "$ruby", ci(Ruby.class));
                 mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
                 
                 // load self, class, and name
                 mv.aload(0);
-                mv.getfield(name, "self", ci(IRubyObject.class));
-                mv.getstatic(name, "rubyClass", ci(RubyClass.class));
+                mv.getfield(name, "$self", ci(IRubyObject.class));
+                mv.getstatic(name, "$rubyClass", ci(RubyClass.class));
                 mv.ldc(simpleName);
                 
                 // load arguments into IRubyObject[] for dispatch
@@ -288,7 +289,7 @@ public class MiniJava implements Library {
                         mv.dup();
                         mv.pushInt(i);
                         // convert to IRubyObject
-                        mv.getstatic(name, "ruby", ci(Ruby.class));
+                        mv.getstatic(name, "$ruby", ci(Ruby.class));
                         mv.aload(i + 1);
                         mv.invokestatic(p(MiniJava.class), "javaToRuby", sig(IRubyObject.class, Ruby.class, Object.class));
                         mv.aastore();
@@ -362,9 +363,9 @@ public class MiniJava implements Library {
         cw.visitSource(pathName + ".gen", null);
         
         // fields needed for dispatch and such
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null).visitEnd();
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null).visitEnd();
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "self", ci(IRubyObject.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "$ruby", ci(Ruby.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "$rubyClass", ci(RubyClass.class), null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$self", ci(IRubyObject.class), null, null).visitEnd();
         
         // create constructor
         SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null));
@@ -374,7 +375,7 @@ public class MiniJava implements Library {
         // store the wrapper
         initMethod.aload(0);
         initMethod.aload(1);
-        initMethod.putfield(pathName, "self", ci(IRubyObject.class));
+        initMethod.putfield(pathName, "$self", ci(IRubyObject.class));
         
         // end constructor
         initMethod.voidreturn();
@@ -387,19 +388,22 @@ public class MiniJava implements Library {
         // set RubyClass
         setupMethod.aload(0);
         setupMethod.dup();
-        setupMethod.putstatic(pathName, "rubyClass", ci(RubyClass.class));
+        setupMethod.putstatic(pathName, "$rubyClass", ci(RubyClass.class));
         
         // set Ruby
         setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
-        setupMethod.putstatic(pathName, "ruby", ci(Ruby.class));
+        setupMethod.putstatic(pathName, "$ruby", ci(Ruby.class));
         
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
             Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
-                
-            // all methods dispatch to the simple version by default, or method_missing if it's not present
-            cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(DynamicMethod.class), null, null).visitEnd();
+
+            // set up a field for the CacheEntry
+            // TODO: make this an array so it's not as much class metadata; similar to AbstractScript stuff
+            cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(CacheEntry.class), null, null).visitEnd();
+            setupMethod.getstatic(p(CacheEntry.class), "NULL_CACHE", ci(CacheEntry.class));
+            setupMethod.putstatic(pathName, simpleName, ci(CacheEntry.class));
 
             Set<String> implementedNames = new HashSet<String>();
             
@@ -443,14 +447,17 @@ public class MiniJava implements Library {
                     // Try to look up field for simple name
 
                     // get field; if nonnull, go straight to dispatch
-                    mv.getstatic(pathName, simpleName, ci(DynamicMethod.class));
+                    mv.getstatic(pathName, simpleName, ci(CacheEntry.class));
                     mv.dup();
-                    mv.ifnonnull(dispatch);
+                    mv.aload(0);
+                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.invokestatic(p(MiniJava.class), "isCacheOk", sig(boolean.class, params(CacheEntry.class, IRubyObject.class)));
+                    mv.iftrue(dispatch);
 
                     // field is null, lock class and try to populate
                     mv.line(6);
                     mv.pop();
-                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
                     mv.monitorenter();
 
                     // try/finally block to ensure unlock
@@ -462,27 +469,17 @@ public class MiniJava implements Library {
                     mv.label(tryStart);
 
                     mv.aload(0);
-                    mv.getfield(pathName, "self", ci(IRubyObject.class));
+                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
                     for (String eachName : nameSet) {
                         mv.ldc(eachName);
                     }
-                    mv.invokestatic(p(MiniJava.class), "searchMethod", sig(DynamicMethod.class, params(IRubyObject.class, String.class, nameSet.size())));
-                    mv.dup();
-                
-                    // if it's not undefined...
-                    mv.getstatic(p(UndefinedMethod.class), "INSTANCE", ci(UndefinedMethod.class));
-                    Label noStore = new Label();
-                    mv.if_acmpeq(noStore);
+                    mv.invokestatic(p(MiniJava.class), "searchWithCache", sig(CacheEntry.class, params(IRubyObject.class, String.class, nameSet.size())));
 
                     // store it
-                    mv.line(8);
-                    mv.dup();
-                    mv.putstatic(pathName, simpleName, ci(DynamicMethod.class));
+                    mv.putstatic(pathName, simpleName, ci(CacheEntry.class));
 
-                    // all done with lookup attempts, pop any result and release monitor
-                    mv.label(noStore);
-                    mv.pop();
-                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
+                    // all done with lookup attempts, release monitor
+                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
                     mv.monitorexit();
                     mv.go_to(recheckMethod);
 
@@ -492,7 +489,7 @@ public class MiniJava implements Library {
                     // finally block to release monitor
                     mv.label(finallyStart);
                     mv.line(9);
-                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
                     mv.monitorexit();
                     mv.label(finallyEnd);
                     mv.athrow();
@@ -504,9 +501,11 @@ public class MiniJava implements Library {
                     // re-get, re-check method; if not null now, go to dispatch
                     mv.label(recheckMethod);
                     mv.line(10);
-                    mv.getstatic(pathName, simpleName, ci(DynamicMethod.class));
+                    mv.getstatic(pathName, simpleName, ci(CacheEntry.class));
                     mv.dup();
-                    mv.ifnonnull(dispatch);
+                    mv.getfield(p(CacheEntry.class), "method", ci(DynamicMethod.class));
+                    mv.invokevirtual(p(DynamicMethod.class), "isUndefined", sig(boolean.class));
+                    mv.iffalse(dispatch);
 
                     // method still not available, call method_missing
                     mv.line(11);
@@ -514,7 +513,7 @@ public class MiniJava implements Library {
                     // exit monitor before making call
                     // FIXME: this not being in a finally is a little worrisome
                     mv.aload(0);
-                    mv.getfield(pathName, "self", ci(IRubyObject.class));
+                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
                     mv.ldc(simpleName);
                     coerceArgumentsToRuby(mv, paramTypes, pathName);
                     mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
@@ -524,13 +523,14 @@ public class MiniJava implements Library {
                     mv.label(dispatch);
                     mv.line(12, dispatch);
                     // get current context
-                    mv.getstatic(pathName, "ruby", ci(Ruby.class));
+                    mv.getfield(p(CacheEntry.class), "method", ci(DynamicMethod.class));
+                    mv.getstatic(pathName, "$ruby", ci(Ruby.class));
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
                 
                     // load self, class, and name
                     mv.aload(0);
-                    mv.getfield(pathName, "self", ci(IRubyObject.class));
-                    mv.getstatic(pathName, "rubyClass", ci(RubyClass.class));
+                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
                     mv.ldc(simpleName);
                 
                     // coerce arguments
@@ -596,7 +596,7 @@ public class MiniJava implements Library {
                 mv.dup();
                 mv.pushInt(i);
                 // convert to IRubyObject
-                mv.getstatic(name, "ruby", ci(Ruby.class));
+                mv.getstatic(name, "$ruby", ci(Ruby.class));
                 if (paramTypes[i].isPrimitive()) {
                     if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
                         mv.iload(argIndex++);
@@ -746,54 +746,6 @@ public class MiniJava implements Library {
         } catch (NoSuchMethodException ex) {
             throw error(ruby, ex, "Could not setup class: " + newClass);
         }
-
-        // now, create a method_added that can replace the DynamicMethod fields as they're redefined
-        final Map<String, Field> allFields = new HashMap<String, Field>();
-        try {
-            for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
-                String simpleName = entry.getKey();
-                Field simpleField = newClass.getField(simpleName);
-                Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
-                
-                for (String name : nameSet) {
-                    allFields.put(name, simpleField);
-                }
-            }
-        } catch (IllegalArgumentException ex) {
-            throw error(ruby, ex, "Could not prepare method fields: " + newClass);
-        } catch (NoSuchFieldException ex) {
-            throw error(ruby, ex, "Could not prepare method fields: " + newClass);
-        }
-
-        DynamicMethod method_added = new JavaMethod(rubyCls.getSingletonClass(), Visibility.PUBLIC) {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                RubyClass selfClass = (RubyClass)self;
-                Ruby ruby = selfClass.getClassRuntime();
-                String methodName = args[0].asJavaString();
-                Field field = allFields.get(methodName);
-
-                if (field == null) {
-                    // do nothing, it's a non-impl method
-                } else {
-                    try {
-                        synchronized (self) {
-                            DynamicMethod method = selfClass.searchMethod(methodName);
-                            if (method != UndefinedMethod.INSTANCE) {
-                                field.set(null, method);
-                            }
-                        }
-                    } catch (IllegalAccessException iae) {
-                        throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);
-                    } catch (IllegalArgumentException iae) {
-                        throw error(ruby, iae, "Could not set new method into field: " + selfClass + "." + methodName);
-                    }
-                }
-
-                return context.getRuntime().getNil();
-            }
-        };
-        rubyCls.getSingletonClass().addMethod("method_added", method_added);
     }
     
     protected static String mangleMethodFieldName(String baseName, Class[] paramTypes) {
@@ -1450,95 +1402,99 @@ public class MiniJava implements Library {
         }
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1) {
-        return clazz.searchMethod(name1);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1) {
+        return clazz.searchWithCache(name1);
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2);
         }
-        return method;
+        return entry;
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2, String name3) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2, name3);
         }
-        return method;
+        return entry;
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3, name4);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2, String name3, String name4) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2, name3, name4);
         }
-        return method;
+        return entry;
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3, name4, name5);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2, String name3, String name4, String name5) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2, name3, name4, name5);
         }
-        return method;
+        return entry;
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3, name4, name5, name6);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2, name3, name4, name5, name6);
         }
-        return method;
+        return entry;
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3, name4, name5, name6, name7);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2, name3, name4, name5, name6, name7);
         }
-        return method;
+        return entry;
     }
     
-    public static DynamicMethod searchMethod(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
-        DynamicMethod method = clazz.searchMethod(name1);
-        if (method == UndefinedMethod.INSTANCE) {
-            return searchMethod(clazz, name2, name3, name4, name5, name6, name7, name8);
+    public static CacheEntry searchWithCache(RubyClass clazz, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
+        CacheEntry entry = clazz.searchWithCache(name1);
+        if (entry.method == UndefinedMethod.INSTANCE) {
+            return searchWithCache(clazz, name2, name3, name4, name5, name6, name7, name8);
         }
-        return method;
+        return entry;
     }
 
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1) {
-        return searchMethod(obj.getMetaClass(), name1);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1) {
+        return searchWithCache(obj.getMetaClass(), name1);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2) {
-        return searchMethod(obj.getMetaClass(), name1, name2);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2) {
+        return searchWithCache(obj.getMetaClass(), name1, name2);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3) {
-        return searchMethod(obj.getMetaClass(), name1, name2, name3);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2, String name3) {
+        return searchWithCache(obj.getMetaClass(), name1, name2, name3);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4) {
-        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2, String name3, String name4) {
+        return searchWithCache(obj.getMetaClass(), name1, name2, name3, name4);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5) {
-        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2, String name3, String name4, String name5) {
+        return searchWithCache(obj.getMetaClass(), name1, name2, name3, name4, name5);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6) {
-        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5, name6);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6) {
+        return searchWithCache(obj.getMetaClass(), name1, name2, name3, name4, name5, name6);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6, String name7) {
-        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5, name6, name7);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6, String name7) {
+        return searchWithCache(obj.getMetaClass(), name1, name2, name3, name4, name5, name6, name7);
     }
     
-    public static DynamicMethod searchMethod(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
-        return searchMethod(obj.getMetaClass(), name1, name2, name3, name4, name5, name6, name7, name8);
+    public static CacheEntry searchWithCache(IRubyObject obj, String name1, String name2, String name3, String name4, String name5, String name6, String name7, String name8) {
+        return searchWithCache(obj.getMetaClass(), name1, name2, name3, name4, name5, name6, name7, name8);
+    }
+
+    public static boolean isCacheOk(CacheEntry entry, IRubyObject self) {
+        return entry.typeOk(self.getMetaClass()) && entry.method != UndefinedMethod.INSTANCE;
     }
 }

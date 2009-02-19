@@ -541,7 +541,6 @@ describe "A child extending a Ruby class that includes Java interfaces" do
 end
 
 describe "Calling methods through interface on Ruby objects with methods defined on singleton class" do
-  
   before(:each) do
     @klass = Class.new do
       include SingleMethodInterface
@@ -565,25 +564,21 @@ describe "Calling methods through interface on Ruby objects with methods defined
   end
   
   it "should handle two object with combo of instance_eval and module extension" do
-    pending "Needs work in ifc impl method lookup logic" do
-      @obj1.instance_eval("def callIt; return :one; end;")
-      @module = Module.new { def callIt; return :two; end; }
-      @obj2.extend(@module)
+    @obj1.instance_eval("def callIt; return :one; end;")
+    @module = Module.new { def callIt; return :two; end; }
+    @obj2.extend(@module)
 
-      UsesSingleMethodInterface.callIt(@obj1).should == :one
-      UsesSingleMethodInterface.callIt(@obj2).should == :two
-    end
+    UsesSingleMethodInterface.callIt(@obj1).should == :one
+    UsesSingleMethodInterface.callIt(@obj2).should == :two
   end
   
   it "should handle two object with combo of instance_eval and module extension in opposite order" do
-    pending "Needs work in ifc impl method lookup logic" do
-      @obj1.instance_eval("def callIt; return :one; end;")
-      @module = Module.new { def callIt; return :two; end; }
-      @obj2.extend(@module)
+    @obj1.instance_eval("def callIt; return :one; end;")
+    @module = Module.new { def callIt; return :two; end; }
+    @obj2.extend(@module)
 
-      UsesSingleMethodInterface.callIt(@obj2).should == :two
-      UsesSingleMethodInterface.callIt(@obj1).should == :one
-    end
+    UsesSingleMethodInterface.callIt(@obj2).should == :two
+    UsesSingleMethodInterface.callIt(@obj1).should == :one
   end
 end
 
