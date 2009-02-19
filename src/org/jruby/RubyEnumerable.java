@@ -321,7 +321,7 @@ public class RubyEnumerable {
         RubyArray result = runtime.newArray();
 
         callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
-        result.sort_bang(block);
+        result.sort_bang(context, block);
         
         return result;
     }

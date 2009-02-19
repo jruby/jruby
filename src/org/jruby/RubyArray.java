@@ -2884,9 +2884,9 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "sort", frame = true)
-    public RubyArray sort(Block block) {
+    public RubyArray sort(ThreadContext context, Block block) {
         RubyArray ary = aryDup();
-        ary.sort_bang(block);
+        ary.sort_bang(context, block);
         return ary;
     }
 
@@ -2894,20 +2894,57 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "sort!", frame = true)
-    public RubyArray sort_bang(Block block) {
+    public IRubyObject sort_bang(ThreadContext context, Block block) {
         modify();
         if (realLength > 1) {
             flags |= TMPLOCK_ARR_F;
             try {
-                if (block.isGiven()) {
-                    Qsort.sort(values, begin, begin + realLength, new BlockComparator(block));
-                } else {
-                    Qsort.sort(values, begin, begin + realLength, new DefaultComparator());
-                }
+                return block.isGiven() ? sortInternal(context, block): sortInternal(context);
             } finally {
                 flags &= ~TMPLOCK_ARR_F;
             }
         }
+        return this;
+    }
+
+    private IRubyObject sortInternal(final ThreadContext context) {
+        Qsort.sort(values, begin, begin + realLength, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+                    return compareFixnums((RubyFixnum)o1, (RubyFixnum)o2);
+                }
+                if (o1 instanceof RubyString && o2 instanceof RubyString) {
+                    return ((RubyString) o1).op_cmp((RubyString) o2);
+                }
+                return compareOthers(context, (IRubyObject)o1, (IRubyObject)o2);
+            }
+        });
+        return this;
+    }
+
+    private static int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
+        long a = o1.getLongValue();
+        long b = o2.getLongValue();
+        return a > b ? 1 : a == b ? 0 : -1;
+    }
+
+    private static int compareOthers(ThreadContext context, IRubyObject o1, IRubyObject o2) {
+        IRubyObject ret = o1.callMethod(context, "<=>", o2);
+        int n = RubyComparable.cmpint(context, ret, o1, o2);
+        //TODO: ary_sort_check should be done here
+        return n;
+    }
+
+    private IRubyObject sortInternal(final ThreadContext context, final Block block) {
+        Qsort.sort(values, begin, begin + realLength, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                IRubyObject obj1 = (IRubyObject) o1;
+                IRubyObject obj2 = (IRubyObject) o2;
+                IRubyObject ret = block.yield(context, getRuntime().newArray(obj1, obj2), null, null, true);
+                //TODO: ary_sort_check should be done here
+                return RubyComparable.cmpint(context, ret, obj1, obj2);
+            }
+        });
         return this;
     }
 
@@ -3259,57 +3296,6 @@ public class RubyArray extends RubyObject implements List {
             RubyArray ary = new RubyArray(runtime, result);
             ary.realLength = n;
             return ary;
-        }
-    }
-
-    final class BlockComparator implements Comparator {
-        private Block block;
-
-        public BlockComparator(Block block) {
-            this.block = block;
-        }
-
-        public int compare(Object o1, Object o2) {
-            ThreadContext context = getRuntime().getCurrentContext();
-            IRubyObject obj1 = (IRubyObject) o1;
-            IRubyObject obj2 = (IRubyObject) o2;
-            IRubyObject ret = block.yield(context, getRuntime().newArray(obj1, obj2), null, null, true);
-            int n = RubyComparable.cmpint(context, ret, obj1, obj2);
-            //TODO: ary_sort_check should be done here
-            return n;
-        }
-    }
-
-    static final class DefaultComparator implements Comparator {
-        public int compare(Object o1, Object o2) {
-            if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                return compareFixnums((RubyFixnum)o1, (RubyFixnum)o2);
-            }
-            if (o1 instanceof RubyString && o2 instanceof RubyString) {
-                return ((RubyString) o1).op_cmp((RubyString) o2);
-            }
-            //TODO: ary_sort_check should be done here
-            return compareOthers((IRubyObject)o1, (IRubyObject)o2);
-        }
-
-        private int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
-            long a = o1.getLongValue();
-            long b = o2.getLongValue();
-            if (a > b) {
-                return 1;
-            }
-            if (a < b) {
-                return -1;
-            }
-            return 0;
-        }
-
-        private int compareOthers(IRubyObject o1, IRubyObject o2) {
-            ThreadContext context = o1.getRuntime().getCurrentContext();
-            IRubyObject ret = o1.callMethod(context, "<=>", o2);
-            int n = RubyComparable.cmpint(context, ret, o1, o2);
-            //TODO: ary_sort_check should be done here
-            return n;
         }
     }
 

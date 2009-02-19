@@ -1072,8 +1072,8 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "sort", frame = true)
-    public RubyArray sort(Block block) {
-        return to_a().sort_bang(block);
+    public IRubyObject sort(ThreadContext context, Block block) {
+        return to_a().sort_bang(context, block);
     }
 
     /** rb_hash_index
