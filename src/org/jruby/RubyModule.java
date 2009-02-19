@@ -47,6 +47,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -104,6 +105,14 @@ import org.jruby.util.collections.WeakHashSet;
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
     private static final boolean DEBUG = false;
+    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
+            "eval",
+            "module_eval",
+            "instance_eval",
+            "instance_exec",
+            "binding",
+            "local_variables"
+            ));
     
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
         moduleClass.index = ClassIndex.MODULE;
@@ -1066,6 +1075,15 @@ public class RubyModule extends RubyObject {
         if (this == runtime.getObject()) {
             runtime.secure(4);
         }
+
+        // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+        // We warn because we treat certain method names as "special" for purposes of
+        // optimization. Hopefully this will be enough to convince people not to alias
+        // them.
+        if (SCOPE_CAPTURING_METHODS.contains(oldName)) {
+            runtime.getWarnings().warn("`" + oldName + "' should not be aliased");
+        }
+
         DynamicMethod method = searchMethod(oldName);
         if (method.isUndefined()) {
             if (isModule()) {

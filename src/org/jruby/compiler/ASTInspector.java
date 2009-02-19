@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
@@ -150,12 +151,7 @@ public class ASTInspector {
         FRAME_AWARE_METHODS.add("block_given?");
         FRAME_AWARE_METHODS.add("iterator?");
         
-        SCOPE_AWARE_METHODS.add("eval");
-        SCOPE_AWARE_METHODS.add("module_eval");
-        SCOPE_AWARE_METHODS.add("class_eval");
-        SCOPE_AWARE_METHODS.add("instance_eval");
-        SCOPE_AWARE_METHODS.add("binding");
-        SCOPE_AWARE_METHODS.add("local_variables");
+        SCOPE_AWARE_METHODS.addAll(RubyModule.SCOPE_CAPTURING_METHODS);
         
         PRAGMAS.add("__NOFRAME__");
     }
