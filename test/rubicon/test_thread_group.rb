@@ -5,17 +5,18 @@ class TestThreadGroup < Test::Unit::TestCase
 
   def test_00sanity
     tg = ThreadGroup::Default
-    assert_equal(Thread.current, tg.list[0])
+    assert(tg.list.include? Thread.current)
   end
 
   def test_add
     tg = ThreadGroup.new
+    pre_size = ThreadGroup::Default.list.length
     tg.add(Thread.current)
     assert_equal(1, tg.list.length)
-    assert_equal(0, ThreadGroup::Default.list.length)
+    assert_equal(pre_size - 1, ThreadGroup::Default.list.length)
     ThreadGroup::Default.add(Thread.current)
     assert_equal(0, tg.list.length)
-    assert_equal(1, ThreadGroup::Default.list.length)
+    assert_equal(pre_size, ThreadGroup::Default.list.length)
   end
 
   def test_list

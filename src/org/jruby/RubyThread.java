@@ -995,4 +995,26 @@ public class RubyThread extends RubyObject {
             return true;
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final RubyThread other = (RubyThread)obj;
+        if (this.threadImpl != other.threadImpl && (this.threadImpl == null || !this.threadImpl.equals(other.threadImpl))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 97 * hash + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
+        return hash;
+    }
 }

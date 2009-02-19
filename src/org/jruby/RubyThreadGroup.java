@@ -29,14 +29,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.WeakHashSet;
 
 /**
  * Implementation of Ruby's <code>ThreadGroup</code> class. This is currently
@@ -47,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="ThreadGroup")
 public class RubyThreadGroup extends RubyObject {
-    private Map<Integer, IRubyObject> rubyThreadList = new HashMap<Integer, IRubyObject>();
+    private Set<RubyThread> rubyThreadList = new WeakHashSet<RubyThread>();
     private boolean enclosed = false;
 
     // ENEBO: Can these be fast?
@@ -94,17 +94,17 @@ public class RubyThreadGroup extends RubyObject {
             IRubyObject oldGroup = rubyThread.group();
             if (oldGroup != getRuntime().getNil()) {
                 RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
-                threadGroup.rubyThreadList.remove(System.identityHashCode(rubyThread));
+                threadGroup.rubyThreadList.remove(rubyThread);
             }
 
             rubyThread.setThreadGroup(this);
-            rubyThreadList.put(System.identityHashCode(rubyThread), rubyThread);
+            rubyThreadList.add(rubyThread);
         }
     }
     
     public synchronized void remove(RubyThread rubyThread) {
         rubyThread.setThreadGroup(null);
-        rubyThreadList.remove(System.identityHashCode(rubyThread));
+        rubyThreadList.remove(rubyThread);
     }
     
     @JRubyMethod(name = "enclose", frame = true)
@@ -121,7 +121,7 @@ public class RubyThreadGroup extends RubyObject {
 
     @JRubyMethod(name = "list", frame = true)
     public synchronized IRubyObject list(Block block) {
-        return getRuntime().newArrayNoCopy((IRubyObject[]) rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
+        return getRuntime().newArrayNoCopy((IRubyObject[]) rubyThreadList.toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {
