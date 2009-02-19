@@ -34,6 +34,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -63,8 +64,9 @@ import org.jruby.runtime.Visibility;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
+ * @author <a href="mailto:koichiro@meadowy.org">Koichiro Ohba</a>
  */
-@JRubyModule(name = "Readline", include = "Enumerable")
+@JRubyModule(name = "Readline")
 public class Readline {
     public static final char ESC_KEY_CODE = (char)27;
     private final static boolean DEBUG = false;
@@ -252,6 +254,21 @@ public class Readline {
         return s_readline(recv, RubyString.newEmptyString(recv.getRuntime()), recv.getRuntime().getFalse());
     }
 
+    @JRubyMethod(name = "basic_word_break_characters=", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject s_set_basic_word_break_character(IRubyObject recv, IRubyObject achar) throws Exception {
+        Ruby runtime = recv.getRuntime();
+        if (!achar.respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + achar.getMetaClass() + " into String");
+        }
+        ProcCompletor.setDelimiter(achar.convertToString().toString());
+        return achar;
+    }
+
+    @JRubyMethod(name = "basic_word_break_characters", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject s_get_basic_word_break_character(IRubyObject recv) throws Exception {
+        return recv.getRuntime().newString(ProcCompletor.getDelimiter());
+    }
+
     @JRubyMethod(name = "completion_append_character=", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject s_set_completion_append_character(IRubyObject recv, IRubyObject achar) throws Exception {
         return recv.getRuntime().getNil();
@@ -397,14 +414,42 @@ public class Readline {
     public static class ProcCompletor implements Completor {
 
         IRubyObject procCompletor;
+        //\t\n\"\\'`@$><=;|&{(
+        static private String[] delimiters = {" ", "\t", "\n", "\"", "\\", "'", "`", "@", "$", ">", "<", "=", ";", "|", "&", "{", "("};
 
         public ProcCompletor(IRubyObject procCompletor) {
             this.procCompletor = procCompletor;
         }
 
+        public static String getDelimiter() {
+            StringBuilder result = new StringBuilder(delimiters.length);
+            for (String delimiter : delimiters) {
+                result.append(delimiter);
+            }
+            return result.toString();
+        }
+
+        public static void setDelimiter(String delimiter) {
+            List<String> l = new ArrayList<String>();
+            CharBuffer buf = CharBuffer.wrap(delimiter);
+            while (buf.hasRemaining()) {
+                l.add(String.valueOf(buf.get()));
+            }
+            delimiters = l.toArray(new String[l.size()]);
+        }
+
+        private int wordIndexOf(String buffer) {
+            int index = 0;
+            for (String c : delimiters) {
+                index = buffer.lastIndexOf(c);
+                if (index != -1) return index;
+            }
+            return index;
+        }
+
         public int complete(String buffer, int cursor, List candidates) {
             buffer = buffer.substring(0, cursor);
-            int index = buffer.lastIndexOf(" ");
+            int index = wordIndexOf(buffer);
             if (index != -1) {
                 buffer = buffer.substring(index + 1);
             }

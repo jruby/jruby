@@ -15,3 +15,7 @@ test_readline_history_size 3
 test_no_exception { Readline::HISTORY.push }
 test_readline_history_size 3
 
+# basic_word_break_characters
+test_equal(" \t\n\"\\'`@$><=;|&{(", Readline.basic_word_break_characters)
+test_equal(" hello", Readline.basic_word_break_characters = " hello")
+test_equal(" hello", Readline.basic_word_break_characters)
