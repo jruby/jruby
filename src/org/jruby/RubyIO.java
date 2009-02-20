@@ -218,7 +218,7 @@ public class RubyIO extends RubyObject {
                 registerDescriptor(main);
             }
             
-            if (openFile.isWritable()) {
+            if (openFile.isWritable() && process.hasOutput()) {
                 Channel outChannel;
                 if (process.getOutput() != null) {
                     // NIO-based

@@ -336,7 +336,10 @@ public class ShellLauncher {
             if (modes.isWritable()) {
                 prepareOutput(child);
             } else {
-                pumpOutput(child, runtime);
+                // close process output
+                // See JRUBY-3405; hooking up to parent process stdin caused
+                // problems for IRB etc using stdin.
+                try {child.getOutputStream().close();} catch (IOException ioe) {}
             }
             
             if (modes.isReadable()) {
@@ -385,11 +388,15 @@ public class ShellLauncher {
             return inerrChannel;
         }
 
+        public boolean hasOutput() {
+            return output != null || outputChannel != null;
+        }
+
         @Override
         public int waitFor() throws InterruptedException {
             if (outputPumper == null) {
                 try {
-                    output.close();
+                    if (output != null) output.close();
                 } catch (IOException ioe) {
                     // ignore, we're on the way out
                 }
