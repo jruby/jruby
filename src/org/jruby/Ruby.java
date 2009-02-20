@@ -133,6 +133,7 @@ import org.jruby.util.io.ChannelDescriptor;
 import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
 import java.util.EnumSet;
+import org.jruby.threading.DaemonThreadFactory;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -890,19 +891,6 @@ public final class Ruby {
 
     public boolean isClassDefined(String name) {
         return getModule(name) != null;
-    }
-    
-    /**
-     * A ThreadFactory for when we're using pooled threads; we want to create
-     * the threads with daemon = true so they don't keep us from shutting down.
-     */
-    public static class DaemonThreadFactory implements ThreadFactory {
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable);
-            thread.setDaemon(true);
-            
-            return thread;
-        }
     }
 
     /** 

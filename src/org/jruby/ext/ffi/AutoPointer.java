@@ -12,6 +12,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.threading.DaemonThreadFactory;
 
 @JRubyClass(name = "FFI::" + AutoPointer.CLASS_NAME, parent = "JRuby::FFI::AbstractMemoryPointer")
 public class AutoPointer extends Pointer {
@@ -53,7 +54,7 @@ public class AutoPointer extends Pointer {
     }
     
     private static final class PointerHolder {
-        private static final Executor executor = Executors.newSingleThreadExecutor(new Ruby.DaemonThreadFactory());
+        private static final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
         private final Pointer pointer;
         private final IRubyObject proc;
         private PointerHolder(Pointer pointer, IRubyObject proc) {

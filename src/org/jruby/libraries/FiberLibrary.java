@@ -30,6 +30,8 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
@@ -41,35 +43,42 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.threading.DaemonThreadFactory;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * A basic implementation of Ruby 1.9 Fiber library.
  */
 public class FiberLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        Fiber.setup(runtime);
+        RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+                return new Fiber(runtime, klazz);
+            }
+        });
+        // FIXME: Not sure what the semantics of transfer are
+        //cFiber.defineFastMethod("transfer", cb.getFastOptMethod("transfer"));
+
+        cFiber.defineAnnotatedMethods(Fiber.class);
+        cFiber.defineAnnotatedMethods(FiberMeta.class);
     }
 
+    private Executor executor = Executors.newCachedThreadPool(new DaemonThreadFactory());
+
     @JRubyClass(name="Fiber")
-    public static class Fiber extends RubyObject {
+    public class Fiber extends RubyObject {
         private final Object yieldLock = new Object();
         private Block block;
         private IRubyObject result;
-        private Thread thread;
+        private Runnable runnable;
         private boolean alive = false;
-        
-        @JRubyMethod(name = "new", rest = true, meta = true, frame = true, compat = CompatVersion.RUBY1_9)
-        public static Fiber newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-            Fiber result = new Fiber(context.getRuntime(), (RubyClass)recv);
-            result.initialize(context, args, block);
-            return result;
-        }
-        
+
+        @JRubyMethod(rest = true, visibility = PRIVATE)
         public IRubyObject initialize(ThreadContext context, final IRubyObject[] args, Block block) {
             this.block = block;
             final Ruby runtime = context.getRuntime();
             this.result = runtime.getNil();
-            this.thread = new Thread() {
+            this.runnable = new Runnable() {
                 @Override
                 public void run() {
                     synchronized (yieldLock) {
@@ -84,21 +93,12 @@ public class FiberLibrary implements Library {
                     }
                 }
             };
-            // FIXME: Is this appropriate? Should still-running fibers just die on exit?
-            this.thread.setDaemon(true);
+            // FIXME: Make thread pool threads daemons if necessary
             return this;
         }
 
         public Fiber(Ruby runtime, RubyClass type) {
             super(runtime, type);
-        }
-
-        public static void setup(Ruby runtime) {
-            RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            // FIXME: Not sure what the semantics of transfer are
-            //cFiber.defineFastMethod("transfer", cb.getFastOptMethod("transfer"));
-            
-            cFiber.defineAnnotatedMethods(Fiber.class);
         }
 
         @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
@@ -111,7 +111,7 @@ public class FiberLibrary implements Library {
                     result = context.getRuntime().newArrayNoCopyLight(args);
                 }
                 if (!alive) {
-                    thread.start();
+                    executor.execute(runnable);
                     yieldLock.wait();
                 } else {
                     yieldLock.notify();
@@ -134,7 +134,9 @@ public class FiberLibrary implements Library {
         public IRubyObject alive_p(ThreadContext context) {
             return context.getRuntime().newBoolean(alive);
         }
+    }
 
+    public static class FiberMeta {
         @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
         public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject value) throws InterruptedException {
             Fiber fiber = context.getFiber();
