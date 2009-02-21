@@ -983,13 +983,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(value.hashCode());
+        Ruby runtime = getRuntime();
+        return RubyFixnum.newFixnum(runtime, strHashCode(runtime));
     }
 
     @Override
     public int hashCode() {
-        // TODO: encoding should affect hashCode
-        return value.hashCode();
+        return strHashCode(getRuntime());
+    }
+
+    private int strHashCode(Ruby runtime) {
+        if (runtime.is1_9()) {
+            return value.hashCode() ^ (value.encoding.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : value.encoding.getIndex());
+        } else {
+            return value.hashCode();
+        }
     }
 
     @Override
