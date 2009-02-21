@@ -47,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class FloatNode extends Node implements ILiteralNode {
     private double value;
+    private RubyFloat rubyFloat;
     
     public FloatNode(ISourcePosition position, double value) {
         super(position);
@@ -68,6 +69,11 @@ public class FloatNode extends Node implements ILiteralNode {
     public double getValue() {
         return value;
     }
+
+    public RubyFloat getRubyFloat(Ruby runtime) {
+        if (rubyFloat == null) rubyFloat = RubyFloat.newFloat(runtime, value);
+        return rubyFloat;
+    }
     
     /**
      * Sets the value
@@ -83,6 +89,6 @@ public class FloatNode extends Node implements ILiteralNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyFloat.newFloat(runtime, value);
+        return getRubyFloat(runtime);
     }
 }

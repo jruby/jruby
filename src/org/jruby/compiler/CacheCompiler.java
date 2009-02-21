@@ -24,6 +24,8 @@ public interface CacheCompiler {
     public void cacheSymbol(BaseBodyCompiler method, String symbol);
     
     public void cacheFixnum(BaseBodyCompiler method, long value);
+
+    public void cacheFloat(BaseBodyCompiler method, double value);
     
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint);
 

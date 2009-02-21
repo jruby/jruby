@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -250,6 +251,25 @@ public abstract class AbstractScript implements Script {
         return fixnum;
     }
 
+    public static final double NUMBERED_FLOAT_COUNT = 10;
+
+    public final RubyFloat getFloat0(Ruby runtime, double value) {return getFloat(runtime, 0, value);}
+    public final RubyFloat getFloat1(Ruby runtime, double value) {return getFloat(runtime, 1, value);}
+    public final RubyFloat getFloat2(Ruby runtime, double value) {return getFloat(runtime, 2, value);}
+    public final RubyFloat getFloat3(Ruby runtime, double value) {return getFloat(runtime, 3, value);}
+    public final RubyFloat getFloat4(Ruby runtime, double value) {return getFloat(runtime, 4, value);}
+    public final RubyFloat getFloat5(Ruby runtime, double value) {return getFloat(runtime, 5, value);}
+    public final RubyFloat getFloat6(Ruby runtime, double value) {return getFloat(runtime, 6, value);}
+    public final RubyFloat getFloat7(Ruby runtime, double value) {return getFloat(runtime, 7, value);}
+    public final RubyFloat getFloat8(Ruby runtime, double value) {return getFloat(runtime, 8, value);}
+    public final RubyFloat getFloat9(Ruby runtime, double value) {return getFloat(runtime, 9, value);}
+
+    public final RubyFloat getFloat(Ruby runtime, int index, double value) {
+        RubyFloat flote = flotes[index];
+        if (flote == null) return flotes[index] = RubyFloat.newFloat(runtime, value);
+        return flote;
+    }
+
     public final RubyRegexp getRegexp(Ruby runtime, int index, String pattern, int options) {
         RubyRegexp regexp = regexps[index];
         if (regexp == null) {
@@ -330,6 +350,10 @@ public abstract class AbstractScript implements Script {
 
     public final void initFixnums(int size) {
         fixnums = new RubyFixnum[size];
+    }
+
+    public final void initFloats(int size) {
+        flotes = new RubyFloat[size];
     }
 
     public final void initRegexps(int size) {
@@ -522,6 +546,7 @@ public abstract class AbstractScript implements Script {
     public RubySymbol[] symbols;
     public ByteList[] byteLists;
     public RubyFixnum[] fixnums;
+    public RubyFloat[] flotes;
     public RubyRegexp[] regexps;
     public BigInteger[] bigIntegers;
     public String filename;
