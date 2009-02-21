@@ -12,6 +12,12 @@ module FFI
     def self.members
       @layout.members
     end
+    def self.offsets
+      @layout.offsets
+    end
+    def self.offset_of(name)
+      @layout.offset_of(name)
+    end
     def self.in
       :buffer_in
     end
@@ -21,11 +27,17 @@ module FFI
     def size
       self.class.size
     end
+    def offset_of(name)
+      self.class.offset_of(name)
+    end
     def members
       self.class.members
     end
     def values
       members.map { |m| self[m] }
+    end
+    def offsets
+      self.class.offsets
     end
     def clear
       pointer.clear

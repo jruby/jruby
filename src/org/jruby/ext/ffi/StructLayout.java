@@ -28,8 +28,10 @@
 
 package org.jruby.ext.ffi;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -37,6 +39,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -55,6 +58,9 @@ public final class StructLayout extends RubyObject {
     /** The name:offset map for this struct */
     private final Map<IRubyObject, Member> fields;
     
+    /** The ordered list of field names (as symbols) */
+    private final List<RubySymbol> fieldNames;
+
     /** The total size of this struct */
     private final int size;
     
@@ -108,6 +114,7 @@ public final class StructLayout extends RubyObject {
         this.size = 0;
         this.align = 1;
         this.fields = Collections.emptyMap();
+        this.fieldNames = Collections.emptyList();
         this.cacheableFieldCount = 0;
         this.cacheIndexMap = new int[0];
     }
@@ -140,6 +147,15 @@ public final class StructLayout extends RubyObject {
             }
         }
         this.cacheableFieldCount = cfCount;
+
+        // Create the ordered list of field names from the map
+        List<RubySymbol> names = new ArrayList<RubySymbol>(fields.size());
+        for (Map.Entry<IRubyObject, Member> e : fields.entrySet()) {
+            if (e.getKey() instanceof RubySymbol) {
+                names.add((RubySymbol) e.getKey());
+            }
+        }
+        this.fieldNames = Collections.unmodifiableList(names);
     }
     
     /**
@@ -200,7 +216,32 @@ public final class StructLayout extends RubyObject {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        return RubyArray.newArray(context.getRuntime(), fields.keySet());
+        RubyArray members = RubyArray.newArray(context.getRuntime());
+        for (RubySymbol name : fieldNames) {
+            members.append(name);
+        }
+        return members;
+    }
+
+    /**
+     * Gets a ruby array of the offsets of all members of this struct.
+     *
+     * @return a <tt>RubyArray</tt> containing the offsets of all members.
+     */
+    @JRubyMethod(name = "offsets")
+    public IRubyObject offsets(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        RubyArray offsets = RubyArray.newArray(runtime);
+        for (Map.Entry<IRubyObject, Member> e : fields.entrySet()) {
+            if (e.getKey() instanceof RubySymbol) {
+                RubyArray offset = RubyArray.newArray(runtime);
+                // Assemble a [ :name, offset ] array
+                offset.append(e.getKey());
+                offset.append(runtime.newFixnum(e.getValue().offset));
+                offsets.append(offset);
+            }
+        }
+        return offsets;
     }
     
     /**
@@ -221,6 +262,17 @@ public final class StructLayout extends RubyObject {
     @JRubyMethod(name = "alignment")
     public IRubyObject aligment(ThreadContext context) {
         return RubyFixnum.newFixnum(context.getRuntime(), getMinimumAlignment());
+    }
+
+    /**
+     * Gets the offset of a member of the struct.
+     *
+     * @return The offset of the member within the struct memory, in bytes.
+     */
+    @JRubyMethod(name = "offset_of")
+    public IRubyObject offset_of(ThreadContext context, IRubyObject fieldName) {
+        final Member member = getMember(context.getRuntime(), fieldName);
+        return RubyFixnum.newFixnum(context.getRuntime(), member.offset);
     }
 
     /**
