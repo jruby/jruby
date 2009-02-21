@@ -454,6 +454,8 @@ public final class StructLayoutBuilder extends RubyObject {
                 } else {
                     throw runtime.newArgumentError("Invalid pointer value");
                 }
+            } else if (value.isNil()) {
+                getMemoryIO(ptr).putAddress(offset, 0L);
             } else {
                 throw runtime.newArgumentError("Invalid pointer value");
             }
