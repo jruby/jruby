@@ -343,7 +343,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public final boolean eql(IRubyObject other) {
         Ruby runtime = getRuntime();
-        if (other.getMetaClass() != runtime.getString()) return super.eql(other);
+        if (getMetaClass() != runtime.getString() || getMetaClass() != other.getMetaClass()) return super.eql(other);
         return runtime.is1_9() ? eql19(runtime, other) : eql18(runtime, other);
     }
 
@@ -351,6 +351,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.equal(((RubyString)other).value);
     }
 
+    // rb_str_hash_cmp
     private boolean eql19(Ruby runtime, IRubyObject other) {
         RubyString otherString = (RubyString)other;
         return isComparableWith(otherString) && value.equal(((RubyString)other).value);
