@@ -3088,8 +3088,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (len < 0) return runtime.getNil();
         int length = value.realSize;
         if (length == 0) len = 0; 
-        
-        int p;
+
         Encoding enc = value.encoding;
         if (singleByteOptimizable(enc)) {
             if (beg > length) return runtime.getNil();
@@ -3098,58 +3097,59 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 if (beg < 0) return runtime.getNil();
             }
             if (beg + len > length) len = length - beg;
-            if (len <= 0) {
-                len = 0;
-                p = 0;
-            } else {
-                p = value.begin + beg;
-            }
+            if (len <= 0) len = beg = 0;
+            return makeShared19(runtime, beg, len);
         } else {
-            int s = value.begin;
-            int end = s + length;
-            byte[]bytes = value.bytes;
-            if (beg < 0) {
-                if (len > -beg) len = -beg;
-                if (-beg * enc.maxLength() < length >>> 3) {
-                    beg = -beg;
-                    int e = end;
-                    while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1); // nothing
-                    p = e;
-                    if (p == -1) return runtime.getNil();
-                    while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1); // nothing
-                    if (p == -1) return runtime.getNil();
-                    len = e - p;
-                    return makeShared19(runtime, p, len);
-                } else {
-                    beg += strLength(enc);
-                    if (beg < 0) return runtime.getNil();
-                }
-            } else if (beg > 0 && beg > strLength(enc)) {
-                return runtime.getNil();
-            }
-            if (len == 0) {
-                p = 0;
-            } else if (isCodeRangeValid() && enc instanceof UTF8Encoding) {
-                p = StringSupport.utf8Nth(bytes, s, end, beg);
-                len = StringSupport.utf8Offset(bytes, p, end, len);
-            } else if (enc.isFixedWidth()) {
-                int w = enc.maxLength();
-                p = s + beg * w;
-                if (p > end) {
-                    p = end;
-                    len = 0;
-                } else if (len * w > end - p) {
-                    len = end - p;
-                } else {
-                    len *= w;
-                }
-            } else if ((p = StringSupport.nth(enc, bytes, s, end, beg)) == end) {
-                len = 0;
-            } else {
-                len = StringSupport.offset(enc, bytes, p, end, len); 
-            }
+            return multibyteSubstr19(runtime, enc, len, beg, length);
         }
-        return makeShared19(runtime, p, len);
+    }
+
+    private final IRubyObject multibyteSubstr19(Ruby runtime, Encoding enc, int len, int beg, int length) {
+        int p;
+        int s = value.begin;
+        int end = s + length;
+        byte[]bytes = value.bytes;
+
+        if (beg < 0) {
+            if (len > -beg) len = -beg;
+            if (-beg * enc.maxLength() < length >>> 3) {
+                beg = -beg;
+                int e = end;
+                while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1); // nothing
+                p = e;
+                if (p == -1) return runtime.getNil();
+                while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1); // nothing
+                if (p == -1) return runtime.getNil();
+                return makeShared19(runtime, p - s, e - p);
+            } else {
+                beg += strLength(enc);
+                if (beg < 0) return runtime.getNil();
+            }
+        } else if (beg > 0 && beg > strLength(enc)) {
+            return runtime.getNil();
+        }
+        if (len == 0) {
+            p = 0;
+        } else if (isCodeRangeValid() && enc instanceof UTF8Encoding) {
+            p = StringSupport.utf8Nth(bytes, s, end, beg);
+            len = StringSupport.utf8Offset(bytes, p, end, len);
+        } else if (enc.isFixedWidth()) {
+            int w = enc.maxLength();
+            p = s + beg * w;
+            if (p > end) {
+                p = end;
+                len = 0;
+            } else if (len * w > end - p) {
+                len = end - p;
+            } else {
+                len *= w;
+            }
+        } else if ((p = StringSupport.nth(enc, bytes, s, end, beg)) == end) {
+            len = 0;
+        } else {
+            len = StringSupport.offset(enc, bytes, p, end, len); 
+        }
+        return makeShared19(runtime, p - s, len);
     }
 
     /* rb_str_splice */
