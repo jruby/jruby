@@ -79,7 +79,6 @@ public class FiberLibrary implements Library {
             final Ruby runtime = context.getRuntime();
             this.result = runtime.getNil();
             this.runnable = new Runnable() {
-                @Override
                 public void run() {
                     synchronized (yieldLock) {
                         alive = true;
