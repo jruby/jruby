@@ -14,6 +14,13 @@ class TC_Time_Getgm_InstanceMethod < Test::Unit::TestCase
       @local  = Time.local(2000, 1, 1, 20, 15, 1)
       @gmt    = nil
       @offset = get_tz_offset
+      @gmt_day = if @offset > @local.hour
+         @local.day - 1
+      elsif (@local.hour - @offset) >= 24
+         @local.day + 1
+      else
+         @local.day
+      end
    end
 
    def test_getgm_basic
@@ -32,8 +39,8 @@ class TC_Time_Getgm_InstanceMethod < Test::Unit::TestCase
       assert_nothing_raised{ @gmt = @local.getgm }
       assert_equal(true, @gmt.gmt?)
       assert_equal(1, @gmt.mon)
-#      assert_equal(@gmt.hour, (@local.hour + @offset) % 24)
-      assert_equal(2, @gmt.day)
+      assert_equal(@gmt.hour, (@local.hour - @offset) % 24)
+      assert_equal(@gmt_day, @gmt.day)
       assert_equal(15, @gmt.min)
       assert_equal(1, @gmt.sec)
    end
@@ -42,8 +49,8 @@ class TC_Time_Getgm_InstanceMethod < Test::Unit::TestCase
       assert_nothing_raised{ @gmt = @local.getutc }
       assert_equal(true, @gmt.gmt?)
       assert_equal(1, @gmt.mon)
-#      assert_equal(@gmt.hour, (@local.hour + @offset) % 24)
-      assert_equal(2, @gmt.day)
+      assert_equal(@gmt.hour, (@local.hour - @offset) % 24)
+      assert_equal(@gmt_day, @gmt.day)
       assert_equal(15, @gmt.min)
       assert_equal(1, @gmt.sec)
    end

@@ -13,6 +13,14 @@ class TC_Time_Getlocal_InstanceMethod < Test::Unit::TestCase
       @gmt    = Time.gm(2000, 1, 1, 20, 15, 1)
       @local  = nil
       @offset = get_tz_offset
+      @local_day = if (@gmt.hour + @offset) >= 24
+         @gmt.day + 1
+      elsif (@gmt.hour + @offset) < 0
+         @gmt.day - 1
+      else
+         @gmt.day
+      end
+
    end
 
    def test_getlocal_basic
@@ -30,7 +38,7 @@ class TC_Time_Getlocal_InstanceMethod < Test::Unit::TestCase
    def test_getlocal
       assert_nothing_raised{ @local = @gmt.getlocal }
       assert_equal(1, @local.mon)
-      assert_equal(1, @local.day)
+      assert_equal(@local_day, @local.day)
 #      assert_equal(@local.hour, (@gmt.hour - @offset) % 24)
       assert_equal(15, @local.min)
       assert_equal(1, @local.sec)
