@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -48,13 +47,11 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
-    Map<Double, Integer> floatIndices = new HashMap<Double, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedStringCount = 0;
     int inheritedRegexpCount = 0;
     int inheritedBigIntegerCount = 0;
     int inheritedFixnumCount = 0;
-    int inheritedFloatCount = 0;
     int inheritedConstantCount = 0;
     int inheritedBlockBodyCount = 0;
     int inheritedBlockCallbackCount = 0;
@@ -214,20 +211,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, long.class));
             }
         }
-    }
-
-    public void cacheFloat(BaseBodyCompiler method, double value) {
-        Integer index = floatIndices.get(value);
-        if (index == null) {
-            index = new Integer(inheritedFloatCount++);
-            floatIndices.put(value, index);
-        }
-
-        method.loadThis();
-        method.loadRuntime();
-        method.method.pushInt(index.intValue());
-        method.method.ldc(value);
-        method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat", sig(RubyFloat.class, Ruby.class, int.class, double.class));
     }
 
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
@@ -420,14 +403,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.aload(0);
             initMethod.pushInt(size);
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initFixnums", sig(void.class, params(int.class)));
-        }
-
-        // generate fixnums initialization code
-        size = inheritedFloatCount;
-        if (size != 0) {
-            initMethod.aload(0);
-            initMethod.pushInt(size);
-            initMethod.invokevirtual(scriptCompiler.getClassname(), "initFloats", sig(void.class, params(int.class)));
         }
 
         // generate constants initialization code

@@ -443,7 +443,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void createNewFloat(double value) {
-        script.getCacheCompiler().cacheFloat(this, value);
+        loadRuntime();
+        method.ldc(new Double(value));
+
+        invokeRuby("newFloat", sig(RubyFloat.class, params(Double.TYPE)));
     }
 
     public void createNewFixnum(long value) {
