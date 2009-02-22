@@ -51,7 +51,11 @@ final class CallbackMarshaller implements ParameterMarshaller {
     }
 
     public void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject value) {
-        marshalParam(context, buffer, value);
+        if (value.isNil()) {
+            buffer.putAddress(0);
+        } else {
+            marshalParam(context, buffer, value);
+        }
     }
     void marshal(ThreadContext context, InvocationBuffer buffer, Block value) {
         marshalParam(context, buffer, value);

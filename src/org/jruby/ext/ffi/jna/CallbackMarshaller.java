@@ -131,7 +131,7 @@ final class CallbackMarshaller implements Marshaller {
         return cb;
     }
     public final Object marshal(Invocation invocation, final IRubyObject parameter) {
-        return getCallback(parameter.getRuntime(), parameter);
+        return parameter.isNil() ? null : getCallback(parameter.getRuntime(), parameter);
     }
     public final Object marshal(Ruby runtime, final Block block) {
         return getCallback(runtime, block);
@@ -233,14 +233,19 @@ final class CallbackMarshaller implements Marshaller {
                 return (float) RubyNumeric.num2dbl(value);
             case FLOAT64:
                 return (double) RubyNumeric.num2dbl(value);
-            case POINTER: {
-                MemoryIO io = ((Pointer) value).getMemoryIO();
-                if (io instanceof NativeMemoryIO) {
-                    return ((NativeMemoryIO) io).getPointer();
-                } else {
+            case POINTER:
+                if (value instanceof Pointer) {
+                    MemoryIO io = ((Pointer) value).getMemoryIO();
+                    if (io instanceof NativeMemoryIO) {
+                        return ((NativeMemoryIO) io).getPointer();
+                    } else {
+                        return null;
+                    }
+                } else if (value.isNil()) {
                     return null;
+                } else {
+                    throw runtime.newArgumentError("Invalid pointer value");
                 }
-            }
             default:
                 return Long.valueOf(0);
         }
