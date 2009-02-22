@@ -144,7 +144,7 @@ public class Platform {
                     dataModel = 64;
                     break;
                 default:
-                    throw new ExceptionInInitializerError("Cannot determine cpu address size");
+                    dataModel = 0;
             }
         }
         addressSize = dataModel;
@@ -171,7 +171,7 @@ public class Platform {
                 version = Integer.valueOf(v[1]);
             }
         } catch (Exception ex) {
-            throw new ExceptionInInitializerError("Could not determine java version");
+            version = 0;
         }
         javaVersionMajor = version;
     }
@@ -218,7 +218,10 @@ public class Platform {
         return OS != OS.WINDOWS;
     }
     public final boolean isSupported() {
-        return OS != OS.UNKNOWN && CPU != CPU.UNKNOWN;
+        return OS != OS.UNKNOWN 
+                && CPU != CPU.UNKNOWN
+                && (addressSize == 32 || addressSize == 64)
+                && javaVersionMajor >= 5;
     }
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
         RubyModule module = ffi.defineModuleUnder("Platform");
