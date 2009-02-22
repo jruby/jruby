@@ -780,29 +780,44 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_aset
      *
      */
-    @JRubyMethod(name = {"[]=", "store"}, required = 2)
+    @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         modify();
 
-        if (!(key instanceof RubyString)) {
-            internalPut(key, value);
+        if (key instanceof RubyString) {
+            op_asetForString(context.getRuntime(), (RubyString)key, value);
         } else {
-            final RubyHashEntry entry = internalGetEntry(key);
-            if (entry != NO_ENTRY) {
-                entry.value = value;
-            } else {
-                RubyString realKey = (RubyString)key;
-                
-                if (!realKey.isFrozen()) {
-                    realKey = realKey.strDup(context.getRuntime(), realKey.getMetaClass().getRealClass());
-                    realKey.setFrozen(true);
-                }
-                
-                internalPut(realKey, value, false);
-            }
+            internalPut(key, value);
         }
 
         return value;
+    }
+
+    @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
+        modify();
+
+        Ruby runtime = context.getRuntime();
+        if (key.getMetaClass().getRealClass() == runtime.getString()) {
+            op_asetForString(runtime, (RubyString)key, value);
+        } else {
+            internalPut(key, value);
+        }
+
+        return value;
+    }
+
+    private void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
+        final RubyHashEntry entry = internalGetEntry(key);
+        if (entry != NO_ENTRY) {
+            entry.value = value;
+        } else {
+            if (!key.isFrozen()) {
+                key = key.strDup(runtime, key.getMetaClass().getRealClass());
+                key.setFrozen(true);
+            }
+            internalPut(key, value, false);
+        }
     }
 
     /**
