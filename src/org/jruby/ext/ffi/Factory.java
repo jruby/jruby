@@ -81,6 +81,10 @@ public abstract class Factory {
             if (!RubyInstanceConfig.nativeEnabled) {
                 throw runtime.newLoadError("Native API access is disabled");
             }
+            if (!Platform.getPlatform().isSupported()) {
+                throw runtime.newLoadError("Unsupported platform: " + Platform.getPlatform().getName());
+            }
+
             RubyModule ffi = runtime.defineModule("FFI");
             Factory factory = Factory.getInstance();
             factory.init(runtime, ffi);

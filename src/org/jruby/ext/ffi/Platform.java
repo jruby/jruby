@@ -94,7 +94,7 @@ public class Platform {
                 return os;
             }
         }
-        throw new ExceptionInInitializerError("Unsupported operating system");
+        return OS.UNKNOWN;
     }
     private static final Platform determinePlatform(OS os) {
         switch (os) {
@@ -105,7 +105,7 @@ public class Platform {
             case WINDOWS:
                 return new Windows();
             case UNKNOWN:
-                throw new ExceptionInInitializerError("Unsupported operating system");
+                return new Unsupported(os);
             default:
                 return new Default(os);
         }
@@ -125,7 +125,7 @@ public class Platform {
         } else if ("sparcv9".equals(archString)) {
             return CPU.SPARCV9;
         } else {
-            throw new ExceptionInInitializerError("Unsupported CPU architecture: " + archString);
+            return CPU.UNKNOWN;
         }
     }
     
@@ -175,7 +175,8 @@ public class Platform {
         }
         javaVersionMajor = version;
     }
-/**
+
+    /**
      * Gets the current <tt>Platform</tt>
      *
      * @return The current platform.
@@ -216,7 +217,9 @@ public class Platform {
     public final boolean isUnix() {
         return OS != OS.WINDOWS;
     }
-    
+    public final boolean isSupported() {
+        return OS != OS.UNKNOWN && CPU != CPU.UNKNOWN;
+    }
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
         RubyModule module = ffi.defineModuleUnder("Platform");
         Platform platform = Platform.getPlatform();
@@ -326,6 +329,16 @@ public class Platform {
         }
         return System.mapLibraryName(libName);
     }
+    private static class Supported extends Platform {
+        public Supported(OS os) {
+            super(os);
+        }
+    }
+    private static class Unsupported extends Platform {
+        public Unsupported(OS os) {
+            super(os);
+        }
+    }
     private static final class Default extends Platform {
 
         public Default(OS os) {
@@ -336,7 +349,7 @@ public class Platform {
     /**
      * A {@link Platform} subclass representing the MacOS system.
      */
-    private static final class Darwin extends Platform {
+    private static final class Darwin extends Supported {
 
         public Darwin() {
             super(OS.DARWIN);
@@ -361,7 +374,7 @@ public class Platform {
     /**
      * A {@link Platform} subclass representing the Linux operating system.
      */
-    private static final class Linux extends Platform {
+    private static final class Linux extends Supported {
 
         public Linux() {
             super(OS.LINUX);
@@ -379,7 +392,7 @@ public class Platform {
     /**
      * A {@link Platform} subclass representing the Windows system.
      */
-    private static class Windows extends Platform {
+    private static class Windows extends Supported {
 
         public Windows() {
             super(OS.WINDOWS);
