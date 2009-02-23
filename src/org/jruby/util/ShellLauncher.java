@@ -190,6 +190,10 @@ public class ShellLauncher {
         return runAndWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
+    public static int runWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
+        return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
+    }
+
     public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs) {
         String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
         if (shouldRunInProcess(runtime, args)) {
@@ -234,6 +238,18 @@ public class ShellLauncher {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
             throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
+
+    public static int runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
+        OutputStream error = runtime.getErrorStream();
+        InputStream input = runtime.getInputStream();
+        try {
+            Process aProcess = run(runtime, rawArgs);
+            handleStreams(aProcess,input,output,error);
+            return aProcess.hashCode();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
         }
     }
 
