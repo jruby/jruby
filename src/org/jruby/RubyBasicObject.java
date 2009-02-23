@@ -702,6 +702,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
+        if (isUntrusted()) dup.setUntrusted(true);
 
         initCopy(dup, this);
 

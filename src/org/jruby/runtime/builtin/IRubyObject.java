@@ -109,6 +109,18 @@ public interface IRubyObject {
      * @param b
      */
     void setFrozen(boolean b);
+
+    /**
+     * RubyMethod isUntrusted.
+     * @return boolean
+     */
+    boolean isUntrusted();
+
+    /**
+     * RubyMethod setUntrusted.
+     * @param b
+     */
+    void setUntrusted(boolean b);
     
     /**
      *
