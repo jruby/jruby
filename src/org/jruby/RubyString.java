@@ -967,13 +967,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "%", required = 1)
     public IRubyObject op_format(ThreadContext context, IRubyObject arg) {
+        return opFormatCommon(context, arg, context.getRuntime().getInstanceConfig().getCompatVersion());
+    }
+
+    private IRubyObject opFormatCommon(ThreadContext context, IRubyObject arg, CompatVersion compat) {
         IRubyObject tmp = arg.checkArrayType();
         if (tmp.isNil()) tmp = arg;
 
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
         ByteList out = new ByteList(value.realSize);
-        boolean tainted = Sprintf.sprintf(out, Locale.US, value, tmp);
+        boolean tainted;
+        switch (compat) {
+        case RUBY1_8:
+            tainted = Sprintf.sprintf(out, Locale.US, value, tmp);
+            break;
+        case RUBY1_9:
+            tainted = Sprintf.sprintf1_9(out, Locale.US, value, tmp);
+            break;
+        default:
+            throw new RuntimeException("invalid compat version for sprintf: " + compat);
+        }
         RubyString str = newString(context.getRuntime(), out);
 
         str.setTaint(tainted || isTaint());

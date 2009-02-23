@@ -184,6 +184,12 @@ public class Sprintf {
         return rubySprintfToBuffer(to, format, new Args(locale, args));
     }
 
+    // Special form of sprintf that returns a RubyString and handles
+    // tainted strings correctly. Version for 1.9.
+    public static boolean sprintf1_9(ByteList to, Locale locale, CharSequence format, IRubyObject args) {
+        return rubySprintfToBuffer(to, format, new Args(locale, args), false);
+    }
+
     public static boolean sprintf(ByteList to, CharSequence format, IRubyObject args) {
         return rubySprintf(to, format, new Args(args));
     }
@@ -201,6 +207,10 @@ public class Sprintf {
     }
 
     private static boolean rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args) {
+        return rubySprintfToBuffer(buf, charFormat, args, true);
+    }
+
+    private static boolean rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args, boolean usePrefixForZero) {
         boolean tainted = false;
         final byte[] format;
 
@@ -518,21 +528,13 @@ public class Sprintf {
                     default:
                         base = 10; break;
                     }
-                    if ((flags & FLAG_SHARP) != 0) {
-                        switch (fchar) {
-                        case 'o': prefix = PREFIX_OCTAL; break;
-                        case 'x': prefix = PREFIX_HEX_LC; break;
-                        case 'X': prefix = PREFIX_HEX_UC; break;
-                        case 'b': prefix = PREFIX_BINARY_LC; break;
-                        case 'B': prefix = PREFIX_BINARY_UC; break;
-                        }
-                        if (prefix != null) width -= prefix.length;
-                    }
                     // We depart here from strict adherence to MRI code, as MRI
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
+                    boolean zero;
                     if (type == ClassIndex.FIXNUM) {
                         negative = ((RubyFixnum)arg).getLongValue() < 0;
+                        zero = ((RubyFixnum)arg).getLongValue() == 0;
                         if (negative && fchar == 'u') {
                             bytes = getUnsignedNegativeBytes((RubyFixnum)arg);
                         } else {
@@ -540,11 +542,24 @@ public class Sprintf {
                         }
                     } else {
                         negative = ((RubyBignum)arg).getValue().signum() < 0;
+                        zero = ((RubyFixnum)arg).getLongValue() == 0;
                         if (negative && fchar == 'u') {
                             bytes = getUnsignedNegativeBytes((RubyBignum)arg);
                         } else {
                             bytes = getBignumBytes((RubyBignum)arg,base,sign,fchar=='X');
                         }
+                    }
+                    if ((flags & FLAG_SHARP) != 0) {
+                        if (!zero || usePrefixForZero) {
+                            switch (fchar) {
+                            case 'o': prefix = PREFIX_OCTAL; break;
+                            case 'x': prefix = PREFIX_HEX_LC; break;
+                            case 'X': prefix = PREFIX_HEX_UC; break;
+                            case 'b': prefix = PREFIX_BINARY_LC; break;
+                            case 'B': prefix = PREFIX_BINARY_UC; break;
+                            }
+                        }
+                        if (prefix != null) width -= prefix.length;
                     }
                     int len = 0;
                     if (sign) {
