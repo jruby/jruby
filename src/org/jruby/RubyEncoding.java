@@ -270,7 +270,7 @@ public class RubyEncoding extends RubyObject {
     }
 
     @JRubyMethod(name = "compatible?", meta = true)
-    public static IRubyObject compatible_p(ThreadContext context, IRubyObject first, IRubyObject second) {
+    public static IRubyObject compatible_p(ThreadContext context, IRubyObject self, IRubyObject first, IRubyObject second) {
         Ruby runtime = context.getRuntime();
         Encoding enc = areCompatible(first, second);
 
