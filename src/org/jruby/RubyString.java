@@ -2892,7 +2892,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private IRubyObject indexCommon19(Ruby runtime, ThreadContext context, IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
-            pos = singleByteOptimizable() ? value.begin + pos : 
+            pos = singleByteOptimizable() ? pos : 
                     StringSupport.nth(checkEncoding(regSub), 
                             value.bytes,
                             value.begin,
