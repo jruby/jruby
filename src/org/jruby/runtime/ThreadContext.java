@@ -35,7 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -619,15 +618,18 @@ public final class ThreadContext {
                 frame.getLineNumber() == previousFrame.getLineNumber() &&
                 frame.getMethodName() != null &&
                 frame.getMethodName().equals(previousFrame.getMethodName()) &&
+                frame.getFileName() != null &&
                 frame.getFileName().equals(previousFrame.getFileName())) {
             return;
         }
         
         RubyString traceLine;
+        String fileName = frame.getFileName();
+        if (fileName == null) fileName = "";
         if (previousFrame.getMethodName() == UNKNOWN_NAME) {
-            traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber()));
+            traceLine = RubyString.newString(runtime, fileName + ':' + (frame.getLineNumber()));
         } else {
-            traceLine = RubyString.newString(runtime, frame.getFileName() + ':' + (frame.getLineNumber()) + ":in `" + previousFrame.getMethodName() + '\'');
+            traceLine = RubyString.newString(runtime, fileName + ':' + (frame.getLineNumber()) + ":in `" + previousFrame.getMethodName() + '\'');
         }
         
         backtrace.append(traceLine);
