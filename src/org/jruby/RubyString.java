@@ -2701,7 +2701,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl, RubyHash hash, IRubyObject arg0, final boolean bang) {
-        boolean tainted = arg0 != null && arg0.isTaint();
+        boolean tainted = false;
+        boolean untrusted = false;
         Ruby runtime = context.getRuntime();
 
         final Regex pattern, prepared;
@@ -2755,6 +2756,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
 
             if (val.isTaint()) tainted = true;
+            if (val.isUntrusted()) untrusted = true;
 
             int len = beg - offset;
             if (len != 0) dest.cat(bytes, cp, len, enc);
@@ -2784,9 +2786,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             view(dest.value);
             setCodeRange(dest.getCodeRange());
             if (tainted) setTaint(true);
+            if (untrusted) setUntrusted(true);
             return this;
         } else {
             if (tainted) dest.setTaint(true);
+            if (untrusted) dest.setUntrusted(true);
             dest.infectBy(this);
             return dest;
         }

@@ -410,6 +410,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject infectBy(IRubyObject obj) {
         if (obj.isTaint()) setTaint(true);
+        if (obj.isUntrusted()) setUntrusted(true);
         return this;
     }
 
