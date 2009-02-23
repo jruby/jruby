@@ -424,6 +424,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return (flags & FROZEN_F) != 0;
     }
 
+    /**
+     * Sets whether this object is frozen or not. Shortcut for doing
+     * setFlag(FROZEN_F, frozen).
+     *
+     * @param frozen should this object be frozen?
+     */
+    public void setFrozen(boolean frozen) {
+        if (frozen) {
+            flags |= FROZEN_F;
+        } else {
+            flags &= ~FROZEN_F;
+        }
+    }
+
 
     /**
      * Is this value untrusted or not? Shortcut for doing
@@ -441,11 +455,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @param frozen should this object be frozen?
      */
-    public void setFrozen(boolean frozen) {
-        if (frozen) {
-            flags |= FROZEN_F;
+    public void setUntrusted(boolean untrusted) {
+        if (untrusted) {
+            flags |= UNTRUSTED_F;
         } else {
-            flags &= ~FROZEN_F;
+            flags &= ~UNTRUSTED_F;
         }
     }
 
@@ -740,6 +754,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         initCopy(clone, this);
 
         if (isFrozen()) clone.setFrozen(true);
+        if (isUntrusted()) clone.setUntrusted(true);
         return clone;
     }
 
