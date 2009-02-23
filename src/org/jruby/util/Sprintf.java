@@ -542,7 +542,7 @@ public class Sprintf {
                         }
                     } else {
                         negative = ((RubyBignum)arg).getValue().signum() < 0;
-                        zero = ((RubyFixnum)arg).getLongValue() == 0;
+                        zero = ((RubyBignum)arg).getValue().equals(BigInteger.ZERO);
                         if (negative && fchar == 'u') {
                             bytes = getUnsignedNegativeBytes((RubyBignum)arg);
                         } else {
