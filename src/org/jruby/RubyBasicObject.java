@@ -96,8 +96,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final int NIL_F = 1 << 1;
     public static final int FROZEN_F = 1 << 2;
     public static final int TAINTED_F = 1 << 3;
+    public static final int UNTRUSTED_F = 1 << 4;
 
-    public static final int FL_USHIFT = 4;
+    public static final int FL_USHIFT = 5;
 
     public static final int USER0_F = (1<<(FL_USHIFT+0));
     public static final int USER1_F = (1<<(FL_USHIFT+1));
@@ -214,7 +215,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected void taint(Ruby runtime) {
         runtime.secure(4);
         if (!isTaint()) {
-        	testFrozen("object");
+        	testFrozen();
             setTaint(true);
         }
     }
@@ -226,7 +227,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    protected final void testFrozen(String message) {
        if (isFrozen()) {
-           throw getRuntime().newFrozenError(message + " " + getMetaClass().getName());
+           throw getRuntime().newFrozenError(message);
+       }
+   }
+
+    /** rb_frozen_class_p
+     *
+     * Helper to test whether this object is frozen, and if it is will
+     * throw an exception based on the message.
+     */
+   protected final void testFrozen() {
+       if (isFrozen()) {
+           throw getRuntime().newFrozenError("object");
        }
    }
 
@@ -410,6 +422,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public boolean isFrozen() {
         return (flags & FROZEN_F) != 0;
+    }
+
+
+    /**
+     * Is this value untrusted or not? Shortcut for doing
+     * getFlag(UNTRUSTED_F).
+     *
+     * @return true if this object is frozen, false otherwise
+     */
+    public boolean isUntrusted() {
+        return (flags & UNTRUSTED_F) != 0;
     }
 
     /**

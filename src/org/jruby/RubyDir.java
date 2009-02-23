@@ -90,7 +90,7 @@ public class RubyDir extends RubyObject {
     private final void checkDir() {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: operation on untainted Dir");
      
-        testFrozen("");
+        testFrozen("Dir");
         
         if (!isOpen) throw getRuntime().newIOError("closed directory");
     }    

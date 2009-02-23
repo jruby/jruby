@@ -208,7 +208,7 @@ public class RubyObject extends RubyBasicObject {
      * If possible, call this instead of {@link #testFrozen}.
      */
    protected void checkFrozen() {
-       testFrozen("can't modify frozen ");
+       testFrozen();
    }
 
     /** init_copy
@@ -793,7 +793,7 @@ public class RubyObject extends RubyBasicObject {
         context.getRuntime().secure(3);
 
         if (isTaint()) {
-            testFrozen("object");
+            testFrozen();
             setTaint(false);
         }
 
@@ -823,7 +823,7 @@ public class RubyObject extends RubyBasicObject {
     public IRubyObject freeze(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if ((flags & FROZEN_F) == 0 && (runtime.is1_9() || !isImmediate())) {
-            if (runtime.getSafeLevel() >= 4 && !isTaint()) throw runtime .newSecurityError("Insecure: can't freeze object");
+            if (runtime.getSafeLevel() >= 4 && !isTaint()) throw runtime.newSecurityError("Insecure: can't freeze object");
             flags |= FROZEN_F;
         }
         return this;
@@ -843,6 +843,47 @@ public class RubyObject extends RubyBasicObject {
     @JRubyMethod(name = "frozen?")
     public RubyBoolean frozen_p(ThreadContext context) {
         return context.getRuntime().newBoolean(isFrozen());
+    }
+
+    /** rb_obj_untrusted
+     *  call-seq:
+     *     obj.untrusted?    => true or false
+     *
+     *  Returns <code>true</code> if the object is untrusted.
+     */
+    @JRubyMethod(name = "untrusted?", compat = CompatVersion.RUBY1_9)
+    public RubyBoolean untrusted_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(isUntrusted());
+    }
+
+    /** rb_obj_untrust
+     *  call-seq:
+     *     obj.untrust -> obj
+     *
+     *  Marks <i>obj</i> as untrusted.
+     */
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject untrust(ThreadContext context) {
+        if (!isUntrusted() && !isImmediate()) {
+            checkFrozen();
+            flags |= UNTRUSTED_F;
+        }
+        return this;
+    }
+
+    /** rb_obj_trust
+     *  call-seq:
+     *     obj.trust    => obj
+     *
+     *  Removes the untrusted mark from <i>obj</i>.
+     */
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject trust(ThreadContext context) {
+        if (isUntrusted() && !isImmediate()) {
+            checkFrozen();
+            flags &= ~UNTRUSTED_F;
+        }
+        return this;
     }
 
     /** rb_inspect

@@ -121,7 +121,8 @@ public class RubyKernel {
         if (!IdUtil.isValidConstantName(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
-        
+
+        if (!(file instanceof RubyString)) throw runtime.newTypeError(file, runtime.getString());
         RubyString fileString = file.convertToString();
         
         if (fileString.isEmpty()) {
