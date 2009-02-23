@@ -74,6 +74,7 @@ test_timeout
 test_thread
 test_threaded_nonlocal_return
 test_time_nil_ops
+test_unmarshal
 test_variables
 test_vietnamese_charset
 #test_trace_func

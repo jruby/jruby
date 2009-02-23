@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.marshal;
 
-import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,20 +60,21 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.util.ByteList;
 
 /**
- * Unmarshals objects from strings or streams in Ruby's marsal format.
+ * Unmarshals objects from strings or streams in Ruby's marshal format.
  *
  * @author Anders
  */
-public class UnmarshalStream extends BufferedInputStream {
+public class UnmarshalStream extends InputStream {
     protected final Ruby runtime;
     private final UnmarshalCache cache;
     private final IRubyObject proc;
+    private final InputStream inputStream;
 
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc) throws IOException {
-        super(in);
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
+        this.inputStream = in;
 
         int major = in.read(); // Major
         int minor = in.read(); // Minor
@@ -370,5 +370,9 @@ public class UnmarshalStream extends BufferedInputStream {
             throw runtime.newArgumentError(className + " does not refer class"); // sic
         }
         return (RubyClass) classInstance;
+    }
+
+    public int read() throws IOException {
+        return inputStream.read();
     }
 }

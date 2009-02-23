@@ -33,8 +33,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import static java.util.logging.Logger.getLogger;
+
 import java.io.EOFException;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -43,15 +43,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-
-import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
-import static java.util.logging.Logger.getLogger;
+
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.util.ByteList;
@@ -500,7 +499,7 @@ public class ChannelStream implements Stream, Finalizable {
     public InputStream newInputStream() {
         InputStream in = descriptor.getBaseInputStream();
         if (in == null) {
-            return new BufferedInputStream(Channels.newInputStream((ReadableByteChannel)descriptor.getChannel()));
+            return Channels.newInputStream((ReadableByteChannel)descriptor.getChannel());
         } else {
             return in;
         }
@@ -510,7 +509,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @see org.jruby.util.IOHandler#getOutputStream()
      */
     public OutputStream newOutputStream() {
-        return new BufferedOutputStream(Channels.newOutputStream((WritableByteChannel)descriptor.getChannel()));
+        return Channels.newOutputStream((WritableByteChannel)descriptor.getChannel());
     }
     
     public void clearerr() {
