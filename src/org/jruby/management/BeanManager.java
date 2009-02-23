@@ -69,7 +69,7 @@ public class BeanManager {
             ObjectName beanName = new ObjectName(name);
             mbs.registerMBean(bean, beanName);
         } catch (InstanceAlreadyExistsException ex) {
-            Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(BeanManager.class.getName()).log(Level.WARNING, "mbean already registered: " + name);
         } catch (MBeanRegistrationException ex) {
             Logger.getLogger(BeanManager.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NotCompliantMBeanException ex) {
