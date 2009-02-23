@@ -306,7 +306,7 @@ externals/ruby_test/test/core/IO/instance/tc_getc
 externals/ruby_test/test/core/IO/instance/tc_gets
 #externals/ruby_test/test/core/IO/instance/tc_isatty
 externals/ruby_test/test/core/IO/instance/tc_lineno
-externals/ruby_test/test/core/IO/instance/tc_pid
+#externals/ruby_test/test/core/IO/instance/tc_pid
 externals/ruby_test/test/core/IO/instance/tc_pos
 externals/ruby_test/test/core/IO/instance/tc_pos_set
 externals/ruby_test/test/core/IO/instance/tc_read

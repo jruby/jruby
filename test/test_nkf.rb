@@ -1,8 +1,10 @@
 require 'test/unit'
 require 'nkf'
+require 'test/test_helper'
 
 class NKFTest < Test::Unit::TestCase
-
+  include TestHelper
+  
   def test_module_method_define?
     assert_respond_to(NKF, :guess)
     assert_respond_to(NKF, :guess1)
@@ -35,13 +37,12 @@ class NKFTest < Test::Unit::TestCase
     utf = ["e38182e38184e38186e38188e3818a"].pack("H*")
     conv = NKF.nkf('-wE', euc)
     assert_equal(utf, conv)
-    begin
+    if !IBM_JVM
+      # IBM JDK does not appear to support all the same encodings; See JRUBY-3301.
       conv = NKF.nkf('-w', euc)
       assert_equal(utf, conv)
       conv = NKF.nkf('-w8', euc)
       assert_equal(utf, conv)
-    rescue ArgumentError
-      # IBM JDK does not appear to support all the same encodings; See JRUBY-3301.
     end
   end
 
@@ -53,6 +54,9 @@ class NKFTest < Test::Unit::TestCase
 
   def test_mime_encode
     assert_equal("hello=", NKF.nkf("-MQ", "hello"))
-    assert_equal("aGVsbG8gd29ybGQ=", NKF.nkf("-MB", "hello world"))
+    if !IBM_JVM
+      # IBM JDK does not appear to support all the same encodings; See JRUBY-3301.
+      assert_equal("aGVsbG8gd29ybGQ=", NKF.nkf("-MB", "hello world"))
+    end
   end
 end
