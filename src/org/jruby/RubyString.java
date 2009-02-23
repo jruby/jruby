@@ -2929,7 +2929,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int p = value.begin;
         int end = p + value.realSize;
         if (offset != 0) {
-            offset = singleByteOptimizable() ? p + offset : StringSupport.offset(enc, bytes, p, end, offset);
+            offset = singleByteOptimizable() ? offset : StringSupport.offset(enc, bytes, p, end, offset);
             p += offset;
         }
         if (slen == 0) return offset;
@@ -2937,8 +2937,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while (true) {
             int pos = value.indexOf(sub.value, p - value.begin);
             if (pos < 0) return pos;
+            pos -= (p - value.begin);
             int t = enc.rightAdjustCharHead(bytes, p, p + pos, end);
-            if (t == p + pos) return pos + offset;;
+            if (t == p + pos) return pos + offset;
             if ((len -= t - p) <= 0) return -1;
             offset += t - p;
             p = t;
