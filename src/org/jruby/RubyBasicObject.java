@@ -419,6 +419,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return this;
     }
 
+    final RubyBasicObject infectBy(int tuFlags) {
+        flags |= (tuFlags & (TAINTED_F | UNTRUSTED_F));
+        return this;
+    }
+
     /**
      * Is this value frozen or not? Shortcut for doing
      * getFlag(FROZEN_F).

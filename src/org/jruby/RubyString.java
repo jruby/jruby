@@ -2449,30 +2449,26 @@ public class RubyString extends RubyObject implements EncodingCapable {
             RubyMatchData match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
             match.regexp = regexp;
             final RubyString repl;
-            final boolean tainted, untrusted;
+            final int tuFlags;
             IRubyObject subStr = makeShared19(runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin());
             if (hash == null) {
-                tainted = untrusted = false;
+                tuFlags = 0;
                 repl = objAsString(context, block.yield(context, subStr));
             } else {
-                tainted = hash.isTaint();
-                untrusted = hash.isUntrusted();
+                tuFlags = hash.flags;
                 repl = objAsString(context, hash.op_aref(context, subStr));
             }
 
             modifyCheck(bytes, len, enc);
             frozenCheck();
             frame.setBackRef(match);
-            return subBangCommon19(context, pattern, matcher, repl, tainted, untrusted);
+            return subBangCommon19(context, pattern, matcher, repl, tuFlags | repl.flags);
         } else {
             return frame.setBackRef(runtime.getNil());
         }
     }
 
     private IRubyObject subBangNoIter19(Ruby runtime, ThreadContext context, Regex pattern, Regex prepared, RubyString repl, RubyRegexp regexp) {
-        boolean tained = repl.isTaint();
-        boolean untrusted = repl.isUntrusted();
-
         int begin = value.begin;
         int range = begin + value.realSize;
         final Matcher matcher = prepared.matcher(value.bytes, begin, range);
@@ -2482,13 +2478,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             repl = RubyRegexp.regsub19(repl, this, matcher, pattern);
             RubyMatchData match = RubyRegexp.updateBackRef19(context, this, frame, matcher, pattern);
             match.regexp = regexp;
-            return subBangCommon19(context, pattern, matcher, repl, tained, untrusted);
+            return subBangCommon19(context, pattern, matcher, repl, repl.flags);
         } else {
             return frame.setBackRef(runtime.getNil());
         }
     }
 
-    private IRubyObject subBangCommon19(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, boolean tainted, boolean untrusted) {
+    private IRubyObject subBangCommon19(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, int tuFlags) {
         final int beg = matcher.getBegin();       
         final int end = matcher.getEnd();
 
@@ -2504,8 +2500,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         associateEncoding(enc);
-        if (repl.isTaint()) tainted = true;
-        if (repl.isUntrusted()) untrusted = true;
 
         int cr = getCodeRange();
         if (cr > CR_UNKNOWN && cr < CR_BROKEN) {
@@ -2526,9 +2520,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
         value.realSize += replValue.realSize - plen;
         setCodeRange(cr);
-        if (tainted) setTaint(true);
-        if (untrusted) setUntrusted(true);
-        return this;
+        return infectBy(tuFlags);
     }
 
     private Encoding subBangVerifyEncoding(ThreadContext context, RubyString repl, int beg, int end) {
