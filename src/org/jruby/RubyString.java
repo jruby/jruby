@@ -2695,7 +2695,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final RubyHash hash;
         final RubyString str;
         final int tuFlags;
-
         if (tryHash.isNil()) {
             hash = null;
             str = arg1.convertToString();
@@ -2703,10 +2702,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else {
             hash = (RubyHash)tryHash;
             str = null;
-            tuFlags = hash.flags;
+            tuFlags = hash.flags & TAINTED_F;
         }
 
-        return gsubCommon19(context, block, str, hash, arg0, bang, tuFlags & TAINTED_F);
+        return gsubCommon19(context, block, str, hash, arg0, bang, tuFlags);
     }
 
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl, RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
@@ -2793,7 +2792,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             setCodeRange(dest.getCodeRange());
             return infectBy(tuFlags);
         } else {
-            return dest.infectBy(tuFlags);
+            return dest.infectBy(tuFlags | flags);
         }
     }
 
