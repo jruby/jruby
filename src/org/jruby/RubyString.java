@@ -2670,7 +2670,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, false) : enumeratorize(context.getRuntime(), this, "gsub", arg0);
+        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, false, 0) : enumeratorize(context.getRuntime(), this, "gsub", arg0);
     }
 
     @JRubyMethod(name = "gsub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
@@ -2680,7 +2680,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true) : enumeratorize(context.getRuntime(), this, "gsub!", arg0);
+        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true, 0) : enumeratorize(context.getRuntime(), this, "gsub!", arg0);
     }
 
     @JRubyMethod(name = "gsub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
@@ -2694,21 +2694,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         final RubyHash hash;
         final RubyString str;
+        final int tuFlags;
 
         if (tryHash.isNil()) {
             hash = null;
             str = arg1.convertToString();
+            tuFlags = str.flags;
         } else {
             hash = (RubyHash)tryHash;
             str = null;
+            tuFlags = hash.flags;
         }
 
-        return gsubCommon19(context, block, str, hash, arg0, bang);
+        return gsubCommon19(context, block, str, hash, arg0, bang, tuFlags & TAINTED_F);
     }
 
-    private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl, RubyHash hash, IRubyObject arg0, final boolean bang) {
-        boolean tainted = false;
-        boolean untrusted = false;
+    private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl, RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
         Ruby runtime = context.getRuntime();
 
         final Regex pattern, prepared;
@@ -2761,8 +2762,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 if (bang) frozenCheck();
             }
 
-            if (val.isTaint()) tainted = true;
-            if (val.isUntrusted()) untrusted = true;
+            tuFlags |= val.flags;
 
             int len = beg - offset;
             if (len != 0) dest.cat(bytes, cp, len, enc);
@@ -2791,14 +2791,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (bang) {
             view(dest.value);
             setCodeRange(dest.getCodeRange());
-            if (tainted) setTaint(true);
-            if (untrusted) setUntrusted(true);
-            return this;
+            return infectBy(tuFlags);
         } else {
-            if (tainted) dest.setTaint(true);
-            if (untrusted) dest.setUntrusted(true);
-            dest.infectBy(this);
-            return dest;
+            return dest.infectBy(tuFlags);
         }
     }
 
