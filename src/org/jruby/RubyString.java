@@ -1220,7 +1220,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString otherStr = other.convertToString();
         otherStr.shareLevel = shareLevel = SHARE_LEVEL_BYTELIST;
         value = otherStr.value;
-        infectBy(other);
+        infectBy(otherStr);
         return otherStr;
     }
 
@@ -2233,8 +2233,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     public RubyString append(IRubyObject other) {
-        infectBy(other);
-        return cat(stringValue(other).value);
+        RubyString otherStr = other.convertToString();
+        infectBy(otherStr);
+        return cat(otherStr.value);
     }
 
     public RubyString append19(IRubyObject other) {
@@ -2272,16 +2273,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "crypt")
     public RubyString crypt(ThreadContext context, IRubyObject other) {
-        ByteList salt = stringValue(other).getByteList();
+        RubyString otherStr = other.convertToString();
+        ByteList salt = otherStr.getByteList();
         if (salt.realSize < 2) {
             throw context.getRuntime().newArgumentError("salt too short(need >=2 bytes)");
         }
 
         salt = salt.makeShared(0, 2);
-        RubyString s = RubyString.newStringShared(context.getRuntime(), JavaCrypt.crypt(salt, this.getByteList()));
-        s.infectBy(this);
-        s.infectBy(other);
-        return s;
+        RubyString result = RubyString.newStringShared(context.getRuntime(), JavaCrypt.crypt(salt, this.getByteList()));
+        result.infectBy(this);
+        result.infectBy(otherStr);
+        return result;
     }
 
     /* RubyString aka rb_string_value */
@@ -4628,12 +4630,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private IRubyObject justify(IRubyObject arg0, IRubyObject arg1, int jflag) {
         Ruby runtime = getRuntime();
-        ByteList pad = arg1.convertToString().value;
+        RubyString padStr = arg1.convertToString();
+        ByteList pad = padStr.value;
         if (pad.realSize == 0) throw runtime.newArgumentError("zero width padding");
-        return justifyCommon(runtime, pad, RubyFixnum.num2int(arg0), jflag).infectBy(arg1);
+        return justifyCommon(runtime, pad, RubyFixnum.num2int(arg0), jflag).infectBy(padStr);
     }
 
-    private IRubyObject justifyCommon(Ruby runtime, ByteList pad, int width, int jflag) {
+    private RubyString justifyCommon(Ruby runtime, ByteList pad, int width, int jflag) {
         if (width < 0 || value.realSize >= width) return strDup(runtime);
 
         ByteList res = new ByteList(width);
@@ -4685,7 +4688,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
 
-        return new RubyString(runtime, getMetaClass(), res).infectBy(this);
+        RubyString result = new RubyString(runtime, getMetaClass(), res);
+        result.infectBy(this);
+        return result;
     }
 
     private IRubyObject justify19(IRubyObject arg0, int jflag) {

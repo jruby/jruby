@@ -1736,7 +1736,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (start == -1) return match.getRuntime().getNil();
 
         RubyString str = m.str.makeShared(match.getRuntime(), start, end - start);
-        str.infectBy(match);
+        str.infectBy(m);
         return str;
     }
 
@@ -1754,7 +1754,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
         if (m.begin == -1) match.getRuntime().getNil(); 
-        return m.str.makeShared(match.getRuntime(), 0,  m.begin).infectBy(match);
+        return m.str.makeShared(match.getRuntime(), 0,  m.begin).infectBy(m);
     }
 
     /** rb_reg_match_post
@@ -1764,7 +1764,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
         if (m.begin == -1) return match.getRuntime().getNil();
-        return m.str.makeShared(match.getRuntime(), m.end, m.str.getByteList().realSize - m.end).infectBy(match);
+        return m.str.makeShared(match.getRuntime(), m.end, m.str.getByteList().realSize - m.end).infectBy(m);
     }
 
     /** rb_reg_match_last

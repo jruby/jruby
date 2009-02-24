@@ -414,6 +414,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return this;
     }
 
+    final RubyBasicObject infectBy(RubyBasicObject obj) {
+        flags |= (obj.flags & (TAINTED_F | UNTRUSTED_F));
+        return this;
+    }
 
     /**
      * Is this value frozen or not? Shortcut for doing

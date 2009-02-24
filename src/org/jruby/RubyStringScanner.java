@@ -515,7 +515,7 @@ public class RubyStringScanner extends RubyObject {
     }
     
     private IRubyObject inspect(String msg) {
-        IRubyObject result = getRuntime().newString("#<" + getMetaClass() + " " + msg + ">"); 
+        RubyString result = getRuntime().newString("#<" + getMetaClass() + " " + msg + ">"); 
         if (str != null) result.infectBy(str);
         return result;
     }
