@@ -56,7 +56,7 @@ public class LateLoadingLibrary implements Library {
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (runtime.getDebug().isTrue()) e.printStackTrace();
             throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e);
         }
     }

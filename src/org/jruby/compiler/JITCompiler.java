@@ -61,7 +61,7 @@ public class JITCompiler implements JITCompilerMBean {
     private AtomicLong largestCodeSize = new AtomicLong(0);
     
     public JITCompiler(Ruby ruby) {
-//        ruby.getBeanManager().register(this);
+        ruby.getBeanManager().register(this);
     }
 
     public DynamicMethod tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
