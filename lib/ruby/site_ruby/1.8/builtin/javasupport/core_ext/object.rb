@@ -107,7 +107,7 @@ class Object
       alias_method :method_added_without_import_checking, :method_added
       
       def method_added(name)
-        if name.to_sym == :import && !@adding
+        if name.to_sym == :import && defined?(@adding) && !@adding
           @adding = true
           alias_method :other_import, :import
           alias_method :import, :handle_different_imports
