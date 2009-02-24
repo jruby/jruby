@@ -1336,7 +1336,7 @@ public class RubyIO extends RubyObject {
         }
         
         // Of course this isn't particularly useful.
-        int pid = myOpenFile.getProcess().hashCode();
+        long pid = myOpenFile.getPid();
         
         return context.getRuntime().newFixnum(pid); 
     }

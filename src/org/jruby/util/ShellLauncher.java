@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import static java.lang.System.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -190,7 +191,7 @@ public class ShellLauncher {
         return runAndWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
-    public static int runWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
+    public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
@@ -241,16 +242,123 @@ public class ShellLauncher {
         }
     }
 
-    public static int runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
-        OutputStream error = runtime.getErrorStream();
-        InputStream input = runtime.getInputStream();
+    public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
         try {
-            Process aProcess = run(runtime, rawArgs);
-            handleStreams(aProcess,input,output,error);
-            return aProcess.hashCode();
+            POpenProcess aProcess = new POpenProcess(popenShared(runtime, rawArgs), runtime);
+            return getPidFromProcess(aProcess);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }
+    }
+
+    public static long getPidFromProcess(Process process) {
+        if (process instanceof ScriptThreadProcess) {
+            return process.hashCode();
+        } else if (process instanceof POpenProcess) {
+            return reflectPidFromProcess(((POpenProcess)process).getChild());
+        } else {
+            return reflectPidFromProcess(process);
+        }
+    }
+    
+    private static final Class UNIXProcess;
+    private static final Field UNIXProcess_pid;
+    private static final Class ProcessImpl;
+    private static final Field ProcessImpl_handle;
+    private interface PidGetter { public long getPid(Process process); }
+    private static final PidGetter PID_GETTER;
+    
+    static {
+        // default PidGetter
+        PidGetter pg = new PidGetter() {
+            public long getPid(Process process) {
+                return process.hashCode();
+            }
+        };
+        
+        Class up = null;
+        Field pid = null;
+        try {
+            up = Class.forName("java.lang.UNIXProcess");
+            pid = up.getDeclaredField("pid");
+            pid.setAccessible(true);
+        } catch (Exception e) {
+            // ignore and try windows version
+        }
+        UNIXProcess = up;
+        UNIXProcess_pid = pid;
+
+        Class pi = null;
+        Field handle = null;
+        try {
+            pi = Class.forName("java.lang.ProcessImpl");
+            handle = pi.getDeclaredField("handle");
+            handle.setAccessible(true);
+        } catch (Exception e) {
+            // ignore and use hashcode
+        }
+        ProcessImpl = pi;
+        ProcessImpl_handle = handle;
+
+        if (UNIXProcess_pid != null) {
+            if (ProcessImpl_handle != null) {
+                // try both
+                pg = new PidGetter() {
+                    public long getPid(Process process) {
+                        try {
+                            if (UNIXProcess.isInstance(process)) {
+                                return (Integer)UNIXProcess_pid.get(process);
+                            } else if (ProcessImpl.isInstance(process)) {
+                                return (Long)ProcessImpl_handle.get(process);
+                            }
+                        } catch (Exception e) {
+                            // ignore and use hashcode
+                        }
+                        return process.hashCode();
+                    }
+                };
+            } else {
+                // just unix
+                pg = new PidGetter() {
+                    public long getPid(Process process) {
+                        try {
+                            if (UNIXProcess.isInstance(process)) {
+                                return (Integer)UNIXProcess_pid.get(process);
+                            }
+                        } catch (Exception e) {
+                            // ignore and use hashcode
+                        }
+                        return process.hashCode();
+                    }
+                };
+            }
+        } else if (ProcessImpl_handle != null) {
+            // just windows
+            pg = new PidGetter() {
+                public long getPid(Process process) {
+                    try {
+                        if (ProcessImpl.isInstance(process)) {
+                            return (Long)ProcessImpl_handle.get(process);
+                        }
+                    } catch (Exception e) {
+                        // ignore and use hashcode
+                    }
+                    return process.hashCode();
+                }
+            };
+        } else {
+            // neither
+            pg = new PidGetter() {
+                public long getPid(Process process) {
+                    return process.hashCode();
+                }
+            };
+        }
+        PID_GETTER = pg;
+    }
+
+    public static long reflectPidFromProcess(Process process) {
+        return PID_GETTER.getPid(process);
     }
 
     public static Process run(Ruby runtime, IRubyObject string) throws IOException {
@@ -406,6 +514,10 @@ public class ShellLauncher {
 
         public boolean hasOutput() {
             return output != null || outputChannel != null;
+        }
+
+        public Process getChild() {
+            return child;
         }
 
         @Override

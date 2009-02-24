@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.util.ShellLauncher;
 
 public class OpenFile {
 
@@ -205,6 +206,10 @@ public class OpenFile {
 
     public void setProcess(Process process) {
         this.process = process;
+    }
+
+    public long getPid() {
+        return ShellLauncher.getPidFromProcess(process);
     }
 
     public int getLineNumber() {
