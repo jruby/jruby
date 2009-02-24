@@ -33,10 +33,8 @@ package org.jruby.evaluator;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBinding;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockPassNode;

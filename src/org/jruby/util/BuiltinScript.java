@@ -53,7 +53,7 @@ public class BuiltinScript implements Library {
 
         if (in == null) throw runtime.newIOError("Resource not found: " + resourceName);
 
-        runtime.loadFile(name, new BufferedInputStream(in), wrap);
+        runtime.loadFile(name, new BufferedInputStream(in, 8192), wrap);
         
         in.close();
     }

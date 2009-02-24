@@ -1127,7 +1127,7 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
-                return new BufferedInputStream(new FileInputStream(file));
+                return new BufferedInputStream(new FileInputStream(file), 8192);
             }
         } catch (IOException e) {
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());

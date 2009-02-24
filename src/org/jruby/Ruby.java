@@ -64,7 +64,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -94,7 +93,7 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.management.BeanManager;
+//import org.jruby.management.BeanManager;
 import org.jruby.management.ClassCache;
 import org.jruby.management.Config;
 import org.jruby.management.ParserStats;
@@ -132,7 +131,10 @@ import org.jruby.util.io.ChannelDescriptor;
 
 import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
+import com.kenai.constantine.platform.Errno;
 import java.util.EnumSet;
+import org.jruby.management.BeanManager;
+import org.jruby.management.BeanManagerFactory;
 import org.jruby.threading.DaemonThreadFactory;
 
 /**
@@ -214,7 +216,7 @@ public final class Ruby {
         this.profile            = config.getProfile();
         this.currentDirectory   = config.getCurrentDirectory();
         this.kcode              = config.getKCode();
-        this.beanManager        = new BeanManager(this, config.isManagementEnabled());
+        this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
         
@@ -1231,7 +1233,7 @@ public final class Ruby {
     private void initErrno() {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
-            for (com.kenai.constantine.platform.Errno e : EnumSet.allOf(com.kenai.constantine.platform.Errno.class)) {
+            for (Errno e : Errno.values()) {
                 Constant c = (Constant) e;
                 if (Character.isUpperCase(c.name().charAt(0))) {
                     createSysErr(c.value(), c.name());

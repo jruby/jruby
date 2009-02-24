@@ -23,7 +23,7 @@ public class CompiledScriptLoader {
     public static Script loadScriptFromFile(Ruby runtime, InputStream inStream, String resourceName) {
         InputStream in = null;
         try {
-            in = new BufferedInputStream(inStream);
+            in = new BufferedInputStream(inStream, 8192);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buf = new byte[8196];
             int read = 0;

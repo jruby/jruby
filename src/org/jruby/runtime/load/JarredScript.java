@@ -65,7 +65,7 @@ public class JarredScript implements Library {
         runtime.getJRubyClassLoader().addURL(jarFile);
 
         try {
-            JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream()));
+            JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream(), 8192));
 
             Manifest mf = in.getManifest();
             if (mf != null) {

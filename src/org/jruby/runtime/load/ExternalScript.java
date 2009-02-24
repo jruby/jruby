@@ -44,7 +44,7 @@ public class ExternalScript implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
         try {
-            InputStream in = new BufferedInputStream(resource.getURL().openStream());
+            InputStream in = new BufferedInputStream(resource.getURL().openStream(), 8192);
 
             String name = resource.getName();
             try {

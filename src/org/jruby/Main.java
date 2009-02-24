@@ -280,7 +280,7 @@ public class Main {
         if (in == null) return result;
         try {
             in.mark(1024);
-            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"));
+            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
             String firstLine = reader.readLine();
             if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
                 int index = firstLine.indexOf("ruby", 2);
