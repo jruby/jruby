@@ -1987,6 +1987,7 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = {"index", "find_index"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject index19(ThreadContext context, IRubyObject obj, Block unused) {
+        if (unused.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
         return index(context, obj); 
     }
 
@@ -1994,7 +1995,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject index19(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "index");
-        
+
         for (int i = begin; i < begin + realLength; i++) {
             if (block.yield(context, values[i]).isTrue()) return runtime.newFixnum(i - begin);
         }
@@ -2023,6 +2024,7 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = "rindex", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject rindex19(ThreadContext context, IRubyObject obj, Block unused) {
+        if (unused.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
         return rindex(context, obj); 
     }
 
