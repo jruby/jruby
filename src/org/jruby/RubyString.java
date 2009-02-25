@@ -5621,9 +5621,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int send = s + value.realSize;
         byte[]bytes = value.bytes;
         boolean modify = false;
-        int c;
+        boolean asciiCompatible = enc.isAsciiCompatible();
+        int cr = asciiCompatible ? CR_7BIT : CR_VALID; 
         while (s < send) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+            int c;
+            if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
                 if (squeeze[c]) {
                     modify = true;
                 } else {
@@ -5639,11 +5641,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 } else {
                     if (t != s) enc.codeToMbc(c, bytes, t);
                     t += cl;
+                    if (cr == CR_7BIT) cr = CR_VALID;
                 }
                 s += cl;
             }
         }
         value.realSize = t - value.begin;
+        setCodeRange(cr);
 
         return modify ? this : runtime.getNil();        
     }
