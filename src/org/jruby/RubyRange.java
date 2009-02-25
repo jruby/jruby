@@ -415,14 +415,13 @@ public class RubyRange extends RubyObject {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "each");
 
-        if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
-                "can't iterate from " + begin.getMetaClass().getName());
-
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, runtime, block);
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).uptoCommon19(context, end, isExclusive, block);
         } else {
+            if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
+                    "can't iterate from " + begin.getMetaClass().getName());
             rangeEach(context, new RangeCallBack() {
                 @Override
                 void call(ThreadContext context, IRubyObject arg) {
