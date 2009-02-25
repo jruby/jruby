@@ -6171,7 +6171,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     buf = tbuf;
                 }
                 enc.codeToMbc(c, buf, t);
-                if (mayModify && tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) modify = true;
+                if (mayModify && (tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 t += tlen;
             }
@@ -6221,7 +6221,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
                 enc.codeToMbc(c, buf, t);
 
-                if (mayModify && tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) modify = true;
+                if (mayModify && (tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s += clen;
                 t += tlen;
