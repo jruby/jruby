@@ -2094,8 +2094,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         cat(c);
     }
 
-    private void escapeCodePointCat(Ruby runtime, byte[]bytes, int p , int n) {
-        modify();
+    private void escapeCodePointCat(Ruby runtime, byte[]bytes, int p, int n) {
         for (int q = p - n; q < p; q++) {
             Sprintf.sprintf(runtime, value, "\\x%02X", bytes[q] & 0377);
         }
