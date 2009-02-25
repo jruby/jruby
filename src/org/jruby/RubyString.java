@@ -6055,7 +6055,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         return modify ? this : runtime.getNil();
     }
-    
+
     private IRubyObject trTrans19(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
         Ruby runtime = context.getRuntime();
         if (value.realSize == 0) return runtime.getNil();
@@ -6066,8 +6066,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString srcStr = src.convertToString();
         ByteList srcList = srcStr.value;
-        Encoding enc = checkEncoding(srcStr);
-        enc = checkEncoding(replStr) == enc ? enc : srcStr.checkEncoding(replStr);
+        Encoding e1 = checkEncoding(srcStr);
+        Encoding e2 = checkEncoding(replStr);
+        Encoding enc = e1 == e2 ? e1 : srcStr.checkEncoding(replStr);
 
         int cr = getCodeRange();
 
@@ -6118,7 +6119,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 if (r == -1) r = trRepl.now;
                 if (c < TRANS_SIZE) {
                     trans[c & 0xff] = r;
-                    if (r > TRANS_SIZE) singlebyte = false;
+                    if (r > TRANS_SIZE - 1) singlebyte = false;
                 } else {
                     if (hash == null) hash = new IntHash<Integer>();
                     hash.put(c, r);
@@ -6126,6 +6127,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
 
+        if (cr == CR_VALID) cr = CR_7BIT;
         modifyAndKeepCodeRange();
         int s = value.begin;
         int send = s + value.realSize;
@@ -6141,19 +6143,25 @@ public class RubyString extends RubyObject implements EncodingCapable {
             byte[]buf = new byte[max];
             int t = 0;
             while (s < send) {
-                c0 = c = codePoint(runtime, enc, sbytes, s, send);
-                tlen = clen = codeLength(runtime, enc, c);
+                boolean mayModify = false;
+                c0 = c = codePoint(runtime, e1, sbytes, s, send);
+                clen = codeLength(runtime, e1, c);
+                tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
                 s += clen;
                 c = trCode(c, trans, hash, cflag, last);
 
                 if (c != -1) {
-                    if (save == c) continue;
+                    if (save == c) {
+                        if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
+                        continue;
+                    }
                     save = c;
                     tlen = codeLength(runtime, enc, c);
                     modify = true;
                 } else {
                     save = -1;
                     c = c0;
+                    if (enc != e1) mayModify = true;
                 }
 
                 while (t + tlen >= max) {
@@ -6163,6 +6171,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     buf = tbuf;
                 }
                 enc.codeToMbc(c, buf, t);
+                if (mayModify && tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) modify = true;
+                if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 t += tlen;
             }
             value.bytes = buf;
@@ -6179,6 +6189,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     }
                     modify = true;
                 }
+                if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s++;
             }
         } else {
@@ -6187,17 +6198,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int t = 0;
 
             while (s < send) {
-                c0 = c = codePoint(runtime, enc, sbytes, s, send);
-                tlen = clen = codeLength(runtime, enc, c);
+                boolean mayModify = false;
+                c0 = c = codePoint(runtime, e1, sbytes, s, send);
+                clen = codeLength(runtime, e1, c);
+                tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
+
                 c = trCode(c, trans, hash, cflag, last);
 
                 if (c != -1) {
                     tlen = codeLength(runtime, enc, c);
+                    modify = true;
                 } else {
                     c = c0;
+                    if (enc != e1) mayModify = true;
                 }
-                modify = true;
-
                 while (t + tlen >= max) {
                     max <<= 1;
                     byte[]tbuf = new byte[max];
@@ -6206,6 +6220,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 }
 
                 enc.codeToMbc(c, buf, t);
+
+                if (mayModify && tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) modify = true;
+                if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s += clen;
                 t += tlen;
             }
@@ -6214,7 +6231,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         if (modify) {
-            cr = codeRangeAnd(cr, replStr.getCodeRange());
             if (cr != CR_BROKEN) setCodeRange(cr);
             associateEncoding(enc);
             return this;
