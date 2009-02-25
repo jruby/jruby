@@ -933,16 +933,18 @@ public class RubyFixnum extends RubyInteger {
     // Piece of mri rb_to_id
     @Override
     public String asJavaString() {
-        getRuntime().getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "do not use Fixnums as Symbols");
-        
+        Ruby runtime = getRuntime();
+        if (runtime.is1_9()) throw runtime.newTypeError(inspect().toString() + " is not a symbol");
+        runtime.getWarnings().warn(ID.FIXNUMS_NOT_SYMBOLS, "do not use Fixnums as Symbols");
+
         // FIXME: I think this chunk is equivalent to MRI id2name (and not our public method 
         // id2name).  Make into method if used more than once.  
-        RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
-        
+        RubySymbol symbol = RubySymbol.getSymbolLong(runtime, value);
+
         if (symbol == null) {
-            throw getRuntime().newArgumentError("" + value + " is not a symbol");
+            throw runtime.newArgumentError("" + value + " is not a symbol");
         }
-        
+
         return symbol.asJavaString();
     }
 
