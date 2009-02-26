@@ -1592,7 +1592,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reverse_each
      *
      */
-    @JRubyMethod(name = "reverse_each", frame = true)
+    @JRubyMethod(name = "reverse_each", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject reverse_each(ThreadContext context, Block block) {
         int len = realLength;
 
@@ -1602,6 +1602,11 @@ public class RubyArray extends RubyObject implements List {
         }
 
         return this;
+    }
+
+    @JRubyMethod(name = "reverse_each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject reverse_each19(ThreadContext context, Block block) {
+        return block.isGiven() ? reverse_each(context, block) : enumeratorize(context.getRuntime(), this, "reverse_each");
     }
 
     private IRubyObject inspectJoin(ThreadContext context, RubyArray tmp, IRubyObject sep) {
