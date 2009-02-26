@@ -1595,13 +1595,12 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "reverse_each", frame = true)
     public IRubyObject reverse_each(ThreadContext context, Block block) {
         int len = realLength;
-        
+
         while(len-- > 0) {
             block.yield(context, values[begin + len]);
-            
             if (realLength < len) len = realLength;
         }
-        
+
         return this;
     }
 

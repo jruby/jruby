@@ -711,6 +711,23 @@ public class RubyEnumerable {
         return block.isGiven() ? each_with_index(context, self, block) : enumeratorize(context.getRuntime(), self, "each_with_index");
     }
 
+    @JRubyMethod(name = "reverse_each", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject reverse_each19(ThreadContext context, IRubyObject self, Block block) {
+        return block.isGiven() ? reverse_eachInternal(context, self, to_a19(context, self), block) :
+            enumeratorize(context.getRuntime(), self, "reverse_each");
+    }
+
+    @JRubyMethod(name = "reverse_each", frame = true, rest = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject reverse_each19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return block.isGiven() ? reverse_eachInternal(context, self, to_a19(context, self, args), block) :
+            enumeratorize(context.getRuntime(), self, "reverse_each", args);
+    }
+
+    private static IRubyObject reverse_eachInternal(ThreadContext context, IRubyObject self, IRubyObject obj, Block block) { 
+        ((RubyArray)obj).reverse_each(context, block);
+        return self;
+    }
+
     @JRubyMethod(name = {"include?", "member?"}, required = 1, frame = true)
     public static IRubyObject include_p(ThreadContext context, IRubyObject self, final IRubyObject arg) {
         final Ruby runtime = context.getRuntime();
