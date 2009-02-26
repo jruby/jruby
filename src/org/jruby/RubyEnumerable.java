@@ -305,13 +305,25 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"})
+    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
-
         callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
+        return result;
+    }
 
+    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
+        return to_a(context, self);
+    }
+
+    @JRubyMethod(name = {"to_a", "entries"}, required = 1, rest = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[]args) {
+        Ruby runtime = context.getRuntime();
+        RubyArray result = runtime.newArray();
+        RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
+                Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
         return result;
     }
 
