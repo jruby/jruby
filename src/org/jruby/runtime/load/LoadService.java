@@ -55,6 +55,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -568,6 +569,9 @@ public class LoadService {
             // otherwise load the library we've found
             state.library.load(runtime, false);
             return true;
+        } catch (MainExitException mee) {
+            // allow MainExitException to propagate out for exec and friends
+            throw mee;
         } catch (Throwable e) {
             if(isJarfileLibrary(state, state.searchFile)) {
                 return true;
