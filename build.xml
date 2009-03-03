@@ -1130,6 +1130,7 @@
     <include name="bin/*jirb*"/>
     <include name="bin/generate_yaml_index.rb"/>
     <include name="bin/testrb"/>
+    <include name="bin/ast*"/>
   </patternset>
 
   <patternset id="dist.lib.files">
