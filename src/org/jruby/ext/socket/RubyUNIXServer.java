@@ -39,6 +39,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.InvalidValueException;
 
 /**
  *
@@ -64,17 +65,17 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject path) throws Exception {
+    public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         init_unixsock(context.getRuntime(), path, true);
         return this;
     }
 
     @Deprecated
-    public IRubyObject accept() throws Exception {
+    public IRubyObject accept() {
         return accept(getRuntime().getCurrentContext());
     }
     @JRubyMethod
-    public IRubyObject accept(ThreadContext context) throws Exception {
+    public IRubyObject accept(ThreadContext context) {
         LibCSocket.sockaddr_un from = new LibCSocket.sockaddr_un();
         int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
         if(fd2 < 0) {
@@ -92,11 +93,11 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         return sock;
     }
     @Deprecated
-    public IRubyObject accept_nonblock() throws Exception {
+    public IRubyObject accept_nonblock() {
         return accept_nonblock(getRuntime().getCurrentContext());
     }
     @JRubyMethod
-    public IRubyObject accept_nonblock(ThreadContext context) throws Exception {
+    public IRubyObject accept_nonblock(ThreadContext context) {
         LibCSocket.sockaddr_un from = new LibCSocket.sockaddr_un();
         IntByReference fromlen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
         
@@ -119,11 +120,11 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         return sock;
     }
     @Deprecated
-    public IRubyObject sysaccept() throws Exception {
+    public IRubyObject sysaccept() {
         return accept(getRuntime().getCurrentContext());
     }
     @JRubyMethod
-    public IRubyObject sysaccept(ThreadContext context) throws Exception {
+    public IRubyObject sysaccept(ThreadContext context) {
         return accept(context);
     }
     @Deprecated
