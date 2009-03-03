@@ -63,6 +63,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -2960,7 +2961,21 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         int mode;
 
-        IRubyObject cmdObj = args[0].convertToString();
+        IRubyObject cmdObj = null;
+        if (Platform.IS_WINDOWS) {
+            String[] tokens = args[0].convertToString().toString().split(" ", 2);
+            if (tokens.length > 1) {
+                cmdObj = new RubyString(runtime, (RubyClass) recv,
+                        (tokens[0].replace('/', '\\') + tokens[1]));
+            }
+            else {
+                cmdObj = new RubyString(runtime, (RubyClass) recv,
+                        (tokens[0].replace('/','\\')));
+            }
+        }
+        else {
+            cmdObj = args[0].convertToString();
+        }
         runtime.checkSafeString(cmdObj);
 
         if ("-".equals(cmdObj.toString())) {
