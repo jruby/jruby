@@ -48,9 +48,8 @@ module JRuby
         end
       end
 
-      def extract
-        require 'jruby/extract'
-        JRuby::Extract.new(ARGV.first).extract
+      def method_missing(name, *)
+        $stderr.puts "jruby: No such file, directory, or command -- #{name}"
       end
     end
   end
