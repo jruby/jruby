@@ -1,0 +1,5 @@
+fails(JRUBY-3471):Literal Regexps throws SyntaxError for malformed literals
+fails(JRUBY-3471):Literal Regexps supports [[:alpha:][:digit:][:etc:]] (predefined character classes)
+fails(JRUBY-3471):Literal Regexps supports (?imx-imx) (inline modifiers)
+fails(JRUBY-3471):Literal Regexps supports (?imx-imx:expr) (scoped inline modifiers)
+fails(JRUBY-3471):Literal Regexps does not do thread synchronization for /o
