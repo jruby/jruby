@@ -742,7 +742,7 @@ public class RubyInstanceConfig {
         }
 
         private boolean isInterpreterArgument(String argument) {
-            return (argument.charAt(0) == '-' || argument.charAt(0) == '+') && !endOfArguments;
+            return argument.length() > 0 && (argument.charAt(0) == '-' || argument.charAt(0) == '+') && !endOfArguments;
         }
 
         private String getArgumentError(String additionalError) {

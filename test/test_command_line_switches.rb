@@ -189,4 +189,14 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       end
     end
   end
+
+  # JRUBY-3467
+  def test_blank_arg_ends_arg_processing
+    config = org.jruby.RubyInstanceConfig.new
+    config.process_arguments(["-v", "", "-d"].to_java :string)
+    # -v argument should be processed
+    assert config.verbose?
+    # -d argument should not be processed as an interpreter arg
+    assert !config.debug?
+  end
 end
