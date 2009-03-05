@@ -189,7 +189,7 @@ public class ThreadService {
     public void setCritical(boolean critical) {
         if (critical && !criticalLock.isHeldByCurrentThread()) {
             criticalLock.lock();
-        } else if (criticalLock.isHeldByCurrentThread()) {
+        } else if (!critical && criticalLock.isHeldByCurrentThread()) {
             criticalLock.unlock();
         }
     }
