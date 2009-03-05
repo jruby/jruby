@@ -1,0 +1,1 @@
+fails(JRUBY-3459):Thread#alive? reports aborting on a killed thread

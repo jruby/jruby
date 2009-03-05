@@ -949,23 +949,23 @@
   </target>
 
   <target name="run-specs-compiled-short" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec"/>
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
   </target>
   <target name="run-specs-precompiled-short" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec"/>
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
   </target>
   <target name="run-specs-interpreted-short" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/no-library.mspec"/>
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.8.mspec"/>
   </target>
 
   <target name="run-specs-compiled-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec" compat="RUBY1_9"/>
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec" compat="RUBY1_9"/>
   </target>
   <target name="run-specs-precompiled-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/no-library.mspec" compat="RUBY1_9"/>
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec" compat="RUBY1_9"/>
   </target>
   <target name="run-specs-interpreted-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/no-library.mspec" compat="RUBY1_9"/>
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.8.mspec" compat="RUBY1_9"/>
   </target>
 
   <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
