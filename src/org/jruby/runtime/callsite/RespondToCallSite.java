@@ -1,14 +1,15 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Visibility;
 
 public class RespondToCallSite extends NormalCachingCallSite {
-    private String lastString;
-    private CacheEntry respondEntry;
-    private IRubyObject respondsTo;
+    private volatile String lastString;
+    private volatile CacheEntry respondEntry = CacheEntry.NULL_CACHE;
+    private volatile IRubyObject respondsTo;
 
     public RespondToCallSite() {
         super("respond_to?");
@@ -42,7 +43,11 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
     }
 
-    private boolean isCacheInvalid(String newString, RubyClass klass) {
+    // TODO: This and recacheRespondsTo needed to be synchronized for JRUBY-3466,
+    // but this degraded performance nearly 2x. It's still faster than MRI, but
+    // a reanalysis of this code may show a faster way to ensure we're caching
+    // safely.
+    private synchronized boolean isCacheInvalid(String newString, RubyClass klass) {
         return lastString != newString || !respondEntry.typeOk(klass);
     }
 
@@ -50,17 +55,22 @@ public class RespondToCallSite extends NormalCachingCallSite {
         return cache.typeOk(klass) && cache.method == context.getRuntime().getRespondToMethod();
     }
 
-    private void recacheRespondsTo(String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {
+    private synchronized void recacheRespondsTo(String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         lastString = newString;
         respondEntry = klass.searchWithCache(newString);
         if (!respondEntry.method.isUndefined()) {
-            if (!checkVisibility || respondEntry.method.getVisibility() != Visibility.PRIVATE) {
-                respondsTo = context.getRuntime().getTrue();
-            } else {
-                respondsTo = context.getRuntime().getFalse();
-            }
+            respondsTo = checkVisibilityAndCache(respondEntry, checkVisibility, runtime);
         } else {
-            respondsTo = context.getRuntime().getFalse();
+            respondsTo = runtime.getFalse();
+        }
+    }
+
+    private static IRubyObject checkVisibilityAndCache(CacheEntry respondEntry, boolean checkVisibility, Ruby runtime) {
+        if (!checkVisibility || respondEntry.method.getVisibility() != Visibility.PRIVATE) {
+            return runtime.getTrue();
+        } else {
+            return runtime.getFalse();
         }
     }
 }
