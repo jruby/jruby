@@ -82,7 +82,7 @@ Declarations:
  setters to initialize objects.  A constructed object shall always be in
  a valid state.
  
- Use "Type[] name" stead of "Type name[]" for arrays.
+ Use "Type[] name" instead of "Type name[]" for arrays.
  
 
 Statements:
