@@ -111,6 +111,9 @@ public class RubyEtc {
             }
             return setupPasswd(runtime, pwd);
         } catch (RaiseException re) {
+            if (runtime.getNotImplementedError().isInstance(re.getException())) {
+                return runtime.getNil();
+            }
             throw re;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
