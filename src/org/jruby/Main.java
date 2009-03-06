@@ -284,6 +284,14 @@ public class Main {
             String firstLine = reader.readLine();
             if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
                 int index = firstLine.indexOf("ruby", 2);
+
+                // JRUBY-3456: This was not considering that the executable
+                // name may actually be "jruby.bat" and the arg processing
+                // should happen after it.
+                if (firstLine.indexOf("ruby.bat", 2) == index) {
+                    index += 4;
+                }
+
                 if (firstLine.length() < index + 5) {
                     in.reset();
                     return result;
