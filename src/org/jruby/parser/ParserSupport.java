@@ -840,10 +840,11 @@ public class ParserSupport {
         ArrayNode cases = new ArrayNode(firstWhenNode != null ? firstWhenNode.getPosition() : position);
         CaseNode caseNode = new CaseNode(position, expression, cases);
 
-        for (Node current = firstWhenNode; current != null;) {
-            if (current instanceof WhenNode) {
+        for (Node current = firstWhenNode; current != null; current = ((WhenNode) current).getNextCase()) {
+            if (current instanceof WhenOneArgNode) {
                 cases.add(current);
-                current = ((WhenNode) current).getNextCase();
+            } else if (current instanceof WhenNode) {
+                simplifyMultipleArgumentWhenNodes((WhenNode) current, cases);
             } else {
                 caseNode.setElseNode(current);
                 break;
@@ -851,6 +852,42 @@ public class ParserSupport {
         }
 
         return caseNode;
+    }
+
+    /*
+     * This method exists for us to break up multiple expression when nodes (e.g. when 1,2,3:)
+     * into individual whenNodes.  The primary reason for this is to ensure lazy evaluation of
+     * the arguments (when foo,bar,gar:) to prevent side-effects.  In the old code this was done
+     * using nested when statements, which was awful for interpreter and compilation.
+     *
+     * Notes: This has semantic equivalence but will not be lexically equivalent.  Compiler
+     * needs to detect same bodies to simplify bytecode generated.
+     */
+    private void simplifyMultipleArgumentWhenNodes(WhenNode sourceWhen, ArrayNode cases) {
+        Node expressionNodes = sourceWhen.getExpressionNodes();
+
+        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode) {
+            cases.add(sourceWhen);
+            return;
+        }
+
+        if (expressionNodes instanceof ListNode) {
+            ListNode list = (ListNode) expressionNodes;
+            ISourcePosition position = sourceWhen.getPosition();
+            Node bodyNode = sourceWhen.getBodyNode();
+
+            for (int i = 0; i < list.size(); i++) {
+                Node expression = list.get(i);
+
+                if (expression instanceof SplatNode || expression instanceof ArgsCatNode) {
+                    cases.add(new WhenNode(position, expression, bodyNode, null));
+                } else {
+                    cases.add(new WhenOneArgNode(position, expression, bodyNode, null));
+                }
+            }
+        } else {
+            cases.add(sourceWhen);
+        }
     }
     
     public WhenNode newWhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
@@ -861,7 +898,7 @@ public class ParserSupport {
         }
 
         ListNode list = (ListNode) expressionNodes;
-        
+
         if (list.size() == 1) {
             Node element = list.get(0);
             
