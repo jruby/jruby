@@ -1,4 +1,4 @@
-require 'ffi.so'
+require 'ffi-internal.so'
 
 module FFI
   module Platform
