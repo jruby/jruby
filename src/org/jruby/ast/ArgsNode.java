@@ -270,27 +270,38 @@ public class ArgsNode extends Node {
 
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , Block block) {
         prepare(context, runtime, self , IRubyObject.NULL_ARRAY, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8}, block);
-    }    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Block block) {
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Block block) {
         prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9}, block);
     }
+
 
     public void checkArgCount(Ruby runtime, int argsLength) {
 //        arity.checkArity(runtime, argsLength);
