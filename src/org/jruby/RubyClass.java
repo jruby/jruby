@@ -53,6 +53,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 
 /**
@@ -675,7 +676,7 @@ public class RubyClass extends RubyModule {
     }
     
     public Ruby getClassRuntime() {
-            return runtime;
+        return Ruby.getRuntime(this);
     }
 
     public RubyClass getRealClass() {

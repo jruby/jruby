@@ -191,6 +191,36 @@ public final class Ruby {
         config.setError(err);
         return newInstance(config);
     }
+
+    private static abstract class RuntimeGetter {
+        public abstract Ruby getRuntime(RubyClass rubyClass);
+    }
+    private static final class LocalRuntimeGetter extends RuntimeGetter {
+        public Ruby getRuntime(RubyClass rubyClass) {
+            return rubyClass.runtime;
+        }
+    };
+    private static final class GlobalRuntimeGetter extends RuntimeGetter {
+        private final Ruby runtime;
+        public GlobalRuntimeGetter(Ruby runtime) {
+            this.runtime = runtime;
+        }
+        public Ruby getRuntime(RubyClass rubyClass) {
+            return runtime;
+        }
+    }
+    public static final RuntimeGetter runtimeGetter;
+    static {
+        if (SafePropertyAccessor.getBoolean("jruby.global.runtime")) {
+            runtimeGetter = new GlobalRuntimeGetter(newInstance());
+        } else {
+            runtimeGetter = new LocalRuntimeGetter();
+        }
+    }
+
+    static Ruby getRuntime(RubyClass rubyClass) {
+        return runtimeGetter.getRuntime(rubyClass);
+    }
     
     /**
      * Create and initialize a new JRuby runtime. The properties of the
