@@ -1,0 +1,37 @@
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in %>) {
+        Ruby runtime = context.getRuntime();
+
+        try {
+            pre(context, name, self, Block.NULL_BLOCK, runtime);
+            argsNode.checkArgCount(runtime, <%= arity %>);
+            argsNode.prepare(context, runtime, self <%= n_args_out %>, Block.NULL_BLOCK);
+
+            return body.interpret(runtime, context, self, Block.NULL_BLOCK);
+        } catch (JumpException.ReturnJump rj) {
+            return handleReturn(context, rj);
+        } catch (JumpException.RedoJump rj) {
+            return handleRedo(runtime);
+        } finally {
+            post(runtime, context, name);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in %>, Block block) {
+        Ruby runtime = context.getRuntime();
+
+        try {
+            pre(context, name, self, block, runtime);
+            argsNode.checkArgCount(runtime, <%= arity %>);
+            argsNode.prepare(context, runtime, self <%= n_args_out %>, block);
+
+            return body.interpret(runtime, context, self, block);
+        } catch (JumpException.ReturnJump rj) {
+            return handleReturn(context, rj);
+        } catch (JumpException.RedoJump rj) {
+            return handleRedo(runtime);
+        } finally {
+            post(runtime, context, name);
+        }
+    }

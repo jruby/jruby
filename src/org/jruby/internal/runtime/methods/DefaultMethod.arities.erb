@@ -1,0 +1,16 @@
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in %>) {
+        if (callCount >= 0) {
+            return tryJitReturnMethod(context, name).call(context, self, clazz, name <%= n_args_out %>);
+        }
+
+        return actualMethod.call(context, self, clazz, name <%= n_args_out %>);
+    }
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in %>, Block block) {
+        if (callCount >= 0) {
+            return tryJitReturnMethod(context, name).call(context, self, clazz, name <%= n_args_out %>, block);
+        }
+
+        return actualMethod.call(context, self, clazz, name <%= n_args_out %>, block);
+    }
