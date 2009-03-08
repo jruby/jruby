@@ -768,4 +768,12 @@ CLASSDEF
       assert_equal(-1, java.lang.String.instance_method(:toString).arity)
     end
   end
+
+  # JRUBY-3476
+  def test_object_with_singleton_returns_java_class
+    x = java.lang.Object.new
+    def x.foo; end
+    assert(x.java_class.kind_of?Java::JavaClass)
+  end
+
 end
