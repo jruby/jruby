@@ -76,6 +76,7 @@ public class ArgsNode extends Node {
     protected final boolean hasOptArgs;
     protected final boolean hasMasgnArgs;
     protected int maxArgsCount;
+    protected final boolean isSimple;
 
     // Only in ruby 1.9 methods
     private final ListNode post;
@@ -111,6 +112,8 @@ public class ArgsNode extends Node {
         this.hasMasgnArgs = hasMasgnArgs();
         this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
+
+        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0);
     }
 
     public NodeType getNodeType() {
@@ -269,37 +272,114 @@ public class ArgsNode extends Node {
     }
 
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , Block block) {
-        prepare(context, runtime, self , IRubyObject.NULL_ARRAY, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues();
+        } else {
+            prepare(context, runtime, self , IRubyObject.NULL_ARRAY, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3,arg4);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3,arg4,arg5);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3,arg4,arg5,arg6);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
     public void prepare(ThreadContext context, Ruby runtime, IRubyObject self , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Block block) {
-        prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9}, block);
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+        } else {
+            prepare(context, runtime, self , new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
 
 

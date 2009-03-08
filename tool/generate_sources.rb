@@ -8,6 +8,7 @@ TEMPLATES = %w[
   org/jruby/internal/runtime/methods/DefaultMethod
   org/jruby/internal/runtime/methods/InterpretedMethod
   org/jruby/ast/ArgsNode
+  org/jruby/runtime/DynamicScope
 ]
 
 GENERATED_WARNING = "
@@ -20,7 +21,13 @@ GENERATED_WARNING = "
 
 def create_nargs_in(n)
   if n > 0
-    str = ", "
+    ", " + create_nargs_in_bare(n)
+  end
+end
+
+def create_nargs_in_bare(n)
+  if n > 0
+    str = ""
     n.times do |i|
       str << "IRubyObject arg#{i}"
       str << "," if i + 1 < n
@@ -31,7 +38,13 @@ end
 
 def create_nargs_out(n)
   if n > 0
-    str = ", "
+    ", " + create_nargs_out_bare(n)
+  end
+end
+
+def create_nargs_out_bare(n)
+  if n > 0
+    str = ""
     n.times do |i|
       str << "arg#{i}"
       str << "," if i + 1 < n
@@ -41,10 +54,14 @@ def create_nargs_out(n)
 end
 
 def create_nargs_ary(n)
+  ", " + create_nargs_ary_bare(n)
+end
+
+def create_nargs_ary_bare(n)
   if n == 0
-    ", IRubyObject.NULL_ARRAY"
+    "IRubyObject.NULL_ARRAY"
   else
-    str = ", new IRubyObject[] {"
+    str = "new IRubyObject[] {"
     n.times do |i|
       str << "arg#{i}"
       str << "," if i + 1 < n
@@ -61,8 +78,11 @@ def generate(file_src, arities_src)
 
   for arity in arity_range do
     n_args_in = create_nargs_in(arity)
+    n_args_in_bare = create_nargs_in_bare(arity)
     n_args_out = create_nargs_out(arity)
+    n_args_out_bare = create_nargs_out_bare(arity)
     n_args_ary = create_nargs_ary(arity)
+    n_args_ary_bare = create_nargs_ary_bare(arity)
     generated_arities << arities_template.result(binding)
   end
 

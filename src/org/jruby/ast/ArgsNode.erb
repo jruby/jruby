@@ -70,6 +70,7 @@ public class ArgsNode extends Node {
     protected final boolean hasOptArgs;
     protected final boolean hasMasgnArgs;
     protected int maxArgsCount;
+    protected final boolean isSimple;
 
     // Only in ruby 1.9 methods
     private final ListNode post;
@@ -105,6 +106,8 @@ public class ArgsNode extends Node {
         this.hasMasgnArgs = hasMasgnArgs();
         this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
+
+        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0);
     }
 
     public NodeType getNodeType() {
