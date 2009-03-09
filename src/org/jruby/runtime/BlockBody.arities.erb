@@ -1,12 +1,12 @@
-    public IRubyObject call(ThreadContext context <%= n_args_in%>, Binding binding, Block.Type type) {
-        IRubyObject[] args = <%= n_args_ary_bare %>;
+    public IRubyObject call(ThreadContext context <%= n_args_in(arity) %>, Binding binding, Block.Type type) {
+        IRubyObject[] args = <%= n_args_ary_bare(arity) %>;
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context <%= n_args_in%>, Binding binding,
+    public IRubyObject call(ThreadContext context <%= n_args_in(arity) %>, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context <%= n_args_out %>, binding, type);
+        return call(context <%= n_args_out(arity) %>, binding, type);
     }
 <%
 case arity
@@ -15,9 +15,9 @@ when 0
 when 1
   yield_args = "arg0"
 else
-  yield_args = "context.getRuntime().newArrayNoCopyLight(" + n_args_out_bare + ")"
+  yield_args = "context.getRuntime().newArrayNoCopyLight(" + n_args_out_bare(arity) + ")"
 end
 %>
-    public IRubyObject yieldSpecific(ThreadContext context <%= n_args_in%>, Binding binding, Block.Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context <%= n_args_in(arity)%>, Binding binding, Block.Type type) {
         return yield(context, <%= yield_args %>, null, null, true, binding, type);
     }

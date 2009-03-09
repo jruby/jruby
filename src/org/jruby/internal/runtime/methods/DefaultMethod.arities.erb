@@ -1,16 +1,16 @@
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in %>) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in(arity) %>) {
         if (callCount >= 0) {
-            return tryJitReturnMethod(context, name).call(context, self, clazz, name <%= n_args_out %>);
+            return tryJitReturnMethod(context, name).call(context, self, clazz, name <%= n_args_out(arity) %>);
         }
 
-        return actualMethod.call(context, self, clazz, name <%= n_args_out %>);
+        return actualMethod.call(context, self, clazz, name <%= n_args_out(arity) %>);
     }
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in %>, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name <%= n_args_in(arity) %>, Block block) {
         if (callCount >= 0) {
-            return tryJitReturnMethod(context, name).call(context, self, clazz, name <%= n_args_out %>, block);
+            return tryJitReturnMethod(context, name).call(context, self, clazz, name <%= n_args_out(arity) %>, block);
         }
 
-        return actualMethod.call(context, self, clazz, name <%= n_args_out %>, block);
+        return actualMethod.call(context, self, clazz, name <%= n_args_out(arity) %>, block);
     }

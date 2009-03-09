@@ -22,13 +22,13 @@ GENERATED_WARNING = "
 ////////////////////////////////////////////////////////////////////////////////
 "
 
-def create_nargs_in(n)
+def n_args_in(n)
   if n > 0
-    ", " + create_nargs_in_bare(n)
+    ", " + n_args_in_bare(n)
   end
 end
 
-def create_nargs_in_bare(n)
+def n_args_in_bare(n)
   if n > 0
     str = ""
     n.times do |i|
@@ -39,13 +39,13 @@ def create_nargs_in_bare(n)
   end
 end
 
-def create_nargs_out(n)
+def n_args_out(n)
   if n > 0
-    ", " + create_nargs_out_bare(n)
+    ", " + n_args_out_bare(n)
   end
 end
 
-def create_nargs_out_bare(n)
+def n_args_out_bare(n)
   if n > 0
     str = ""
     n.times do |i|
@@ -56,11 +56,11 @@ def create_nargs_out_bare(n)
   end
 end
 
-def create_nargs_ary(n)
-  ", " + create_nargs_ary_bare(n)
+def n_args_ary(n)
+  ", " + n_args_ary_bare(n)
 end
 
-def create_nargs_ary_bare(n)
+def n_args_ary_bare(n)
   if n == 0
     "IRubyObject.NULL_ARRAY"
   else
@@ -75,17 +75,13 @@ end
 
 def generate(file_src, arities_src)
   file_template = ERB.new(File.read(file_src))
+  file_template.filename = file_src
   arities_template = ERB.new(File.read(arities_src))
+  arities_template.filename = arities_src
   arity_range = 0..MAX_ARITY
   generated_arities = ""
 
   for arity in arity_range do
-    n_args_in = create_nargs_in(arity)
-    n_args_in_bare = create_nargs_in_bare(arity)
-    n_args_out = create_nargs_out(arity)
-    n_args_out_bare = create_nargs_out_bare(arity)
-    n_args_ary = create_nargs_ary(arity)
-    n_args_ary_bare = create_nargs_ary_bare(arity)
     generated_arities << arities_template.result(binding)
   end
 
