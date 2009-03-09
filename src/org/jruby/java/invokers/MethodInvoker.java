@@ -19,7 +19,9 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
         this.methods = methods.toArray(new Method[methods.size()]);
         
         if (!Ruby.isSecurityRestricted()) {
-            Method.setAccessible(this.methods, true);
+            try {
+                Method.setAccessible(this.methods, true);
+            } catch(SecurityException e) {}
         }
     }
 

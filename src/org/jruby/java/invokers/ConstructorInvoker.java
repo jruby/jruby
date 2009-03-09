@@ -24,7 +24,9 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         this.ctors = methods.toArray(new Constructor[methods.size()]);
         
         if (!Ruby.isSecurityRestricted()) {
-            Method.setAccessible(this.ctors, true);
+            try {
+                Method.setAccessible(this.ctors, true);
+            } catch(SecurityException e) {}
         }
     }
 

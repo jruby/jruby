@@ -556,6 +556,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw getRuntime().newErrnoEINVALError();
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
+        } catch (SecurityException ex) {
+            throw getRuntime().newErrnoEACCESError("Permission denied - " + path);
         }
     }
 

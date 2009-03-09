@@ -251,7 +251,9 @@ public class JavaClass extends JavaObject {
                 methods = new ArrayList<Method>(4);
             }
             if (!Ruby.isSecurityRestricted()) {
-                method.setAccessible(true);
+                try {
+                    method.setAccessible(true);
+                } catch(SecurityException e) {}
             }
             methods.add(method);
             haveLocalMethod |= javaClass == method.getDeclaringClass();
@@ -287,7 +289,9 @@ public class JavaClass extends JavaObject {
                 constructors = new ArrayList<Constructor>(4);
             }
             if (!Ruby.isSecurityRestricted()) {
-                ctor.setAccessible(true);
+                try {
+                    ctor.setAccessible(true);
+                } catch(SecurityException e) {}
             }
             constructors.add(ctor);
             haveLocalConstructor |= javaClass == ctor.getDeclaringClass();
@@ -354,7 +358,9 @@ public class JavaClass extends JavaObject {
                 // TODO: catch exception if constant is already set by other
                 // thread
                 if (!Ruby.isSecurityRestricted()) {
-                    field.setAccessible(true);
+                    try {
+                        field.setAccessible(true);
+                    } catch(SecurityException e) {}
                 }
                 try {
                     proxy.setConstant(field.getName(), JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), field.get(null)));

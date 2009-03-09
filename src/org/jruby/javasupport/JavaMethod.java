@@ -307,6 +307,10 @@ public class JavaMethod extends JavaCallable {
             getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
             // This point is only reached if there was an exception handler installed.
             return getRuntime().getNil();
+        } catch (Throwable t) {
+            getRuntime().getJavaSupport().handleNativeException(t);
+            // This point is only reached if there was an exception handler installed.
+            return getRuntime().getNil();
         }
     }
 
