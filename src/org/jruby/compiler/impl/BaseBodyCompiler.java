@@ -505,7 +505,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createEmptyArray() {
         loadRuntime();
 
-        invokeRuby("newArray", sig(RubyArray.class, params()));
+        invokeRuby("newArray", sig(RubyArray.class));
     }
 
     public void createObjectArray(Object[] sourceArray, ArrayCallback callback) {

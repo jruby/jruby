@@ -3654,7 +3654,14 @@ public class ASTCompiler {
     }
 
     public void compileZArray(Node node, BodyCompiler context, boolean expr) {
-        context.createEmptyArray();
+        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
+        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            context.createEmptyArray();
+        }
+
+        if (popit) context.consumeCurrentValue();
     }
 
     public void compileZSuper(Node node, BodyCompiler context, boolean expr) {

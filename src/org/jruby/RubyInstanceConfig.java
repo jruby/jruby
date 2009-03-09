@@ -177,7 +177,7 @@ public class RubyInstanceConfig {
     private String jrubyHome;
 
     public static final boolean PEEPHOLE_OPTZ
-            = SafePropertyAccessor.getBoolean("jruby.peephole.optz", true);
+            = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
     public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static boolean FASTOPS_COMPILE_ENABLED
@@ -433,6 +433,8 @@ public class RubyInstanceConfig {
                 .append("       Set the number of lines at which compiled bodies are \"chained\". Default is " + CHAINED_COMPILE_LINE_COUNT_DEFAULT + "\n")
                 .append("    jruby.compile.lazyHandles=true|false\n")
                 .append("       Generate method bindings (handles) for compiled methods lazily. Default is false.\n")
+                .append("    jruby.compile.peephole=true|false\n")
+                .append("       Enable or disable peephole optimizations. Default is true (on).\n")
                 .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
                 .append("       Set the JIT threshold to the specified method invocation count. Default is " + JIT_THRESHOLD + ".\n")
