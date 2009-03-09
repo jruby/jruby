@@ -182,32 +182,34 @@ public class LoadService {
            }
        }
 
-        // wrap in try/catch for security exceptions in an applet
-        if (!Ruby.isSecurityRestricted()) {
-          String jrubyHome = runtime.getJRubyHome();
-          if (jrubyHome != null) {
-              char sep = '/';
-              String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
+       // wrap in try/catch for security exceptions in an applet
+       if (!Ruby.isSecurityRestricted()) {
+           try {
+               String jrubyHome = runtime.getJRubyHome();
+               if (jrubyHome != null) {
+                   char sep = '/';
+                   String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
-              // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
-              if (runtime.is1_9()) {
-                  addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
-                  addPath(rubyDir + "site_ruby");
-                  addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
-                  addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION + sep + "java");
-              }
+                   // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
+                   if (runtime.is1_9()) {
+                       addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
+                       addPath(rubyDir + "site_ruby");
+                       addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
+                       addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION + sep + "java");
+                   }
               
-              // Add 1.8 libs
-              addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-              addPath(rubyDir + "site_ruby");
-              addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-              addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
+                   // Add 1.8 libs
+                   addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+                   addPath(rubyDir + "site_ruby");
+                   addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+                   addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
 
-              // Added to make sure we find default distribution files within jar file.
-              // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
-              addPath("lib" + sep + "ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-          }
-        }
+                   // Added to make sure we find default distribution files within jar file.
+                   // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
+                   addPath("lib" + sep + "ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+               }
+           } catch(SecurityException e) {}
+       }
         
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
         if (runtime.getSafeLevel() == 0) {
@@ -248,7 +250,7 @@ public class LoadService {
         try {
             library.load(runtime, wrap);
         } catch (IOException e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace();
+            if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
             throw runtime.newLoadError("IO error -- " + file);
         }
     }
@@ -576,7 +578,7 @@ public class LoadService {
             removeLoadedFeature(loadNameRubyString);
             reraiseRaiseExceptions(e);
 
-            if(runtime.getDebug().isTrue()) e.printStackTrace();
+            if(runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
             
             RaiseException re = runtime.newLoadError("IO error -- " + state.searchFile);
             re.initCause(e);
@@ -710,8 +712,14 @@ public class LoadService {
             for (String suffix : suffixType.getSuffixes()) {
                 String namePlusSuffix = baseName + suffix;
                 try {
-                    foundResource = new LoadServiceResource(new URL(namePlusSuffix), namePlusSuffix);
+                    URL url = new URL(namePlusSuffix);
+                    if (url.openStream() != null) {
+                        foundResource = new LoadServiceResource(url, namePlusSuffix);
+                    }
+                } catch (FileNotFoundException e) {
                 } catch (MalformedURLException e) {
+                    throw runtime.newIOErrorFromException(e);
+                } catch (IOException e) {
                     throw runtime.newIOErrorFromException(e);
                 }
                 if (foundResource != null) {
