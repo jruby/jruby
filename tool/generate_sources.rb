@@ -9,6 +9,9 @@ TEMPLATES = %w[
   org/jruby/internal/runtime/methods/InterpretedMethod
   org/jruby/ast/ArgsNode
   org/jruby/runtime/DynamicScope
+  org/jruby/runtime/Block
+  org/jruby/runtime/BlockBody
+  org/jruby/runtime/NullBlockBody
 ]
 
 GENERATED_WARNING = "

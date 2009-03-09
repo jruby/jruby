@@ -1,0 +1,47 @@
+<%= generated_warning %>
+
+package org.jruby.runtime;
+
+import org.jruby.RubyLocalJumpError;
+import org.jruby.RubyModule;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block.Type;
+import org.jruby.runtime.builtin.IRubyObject;
+
+public class NullBlockBody extends BlockBody {
+    public NullBlockBody() {
+        super(ZERO_ARGS);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(args), "yield called out of block");
+    }
+
+<%= generated_arities %>
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, value, "yield called out of block");
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, value, "yield called out of block");
+    }
+
+    @Override
+    public StaticScope getStaticScope() {
+        return null;
+    }
+
+    @Override
+    public Block cloneBlock(Binding binding) {
+        return null;
+    }
+
+    @Override
+    public Arity arity() {
+        return null;
+    }
+}

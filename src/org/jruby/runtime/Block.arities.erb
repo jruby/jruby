@@ -1,0 +1,9 @@
+    public IRubyObject call(ThreadContext context <%= n_args_in %>) {
+        return body.call(context <%= n_args_out %>, binding, type);
+    }
+    public IRubyObject call(ThreadContext context <%= n_args_in %>, Block block) {
+        return body.call(context <%= n_args_out %>, binding, type, block);
+    }
+    public IRubyObject yieldSpecific(ThreadContext context <%= n_args_in %>) {
+        return body.yieldSpecific(context <%= n_args_out %>, binding, type);
+    }
