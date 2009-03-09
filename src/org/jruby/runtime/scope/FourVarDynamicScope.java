@@ -2,7 +2,6 @@ package org.jruby.runtime.scope;
 
 import org.jruby.RubyArray;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -27,9 +26,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
     
     @Override
     public void growIfNeeded() {
-        if (staticScope.getNumberOfVariables() != SIZE) {
-            throw new RuntimeException(GROW_ERROR);
-        }
+        growIfNeeded(SIZE, GROW_ERROR);
     }
     
     @Override
@@ -192,7 +189,7 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
         assert size <= 2 : "FourVarDynamicScope only supports scopes with four variables, not " + size;
 
         switch (size) {
-         case 4:
+        case 4:
             variableValueZero = values[values.length - 4];
         case 3:
             variableValueOne = values[values.length - 3];
@@ -268,52 +265,5 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
             
             return argValues;
         }
-    }
-
-    @Override
-    public String toString(StringBuffer buf, String indent) {
-        buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
-        
-        String names[] = staticScope.getVariables();
-        buf.append(names[0]).append("=");
-
-        if (variableValueZero == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueZero);
-        }
-        
-        buf.append(",");
-
-        if (variableValueOne == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueOne);
-        }
-        
-        buf.append(",");
-
-        if (variableValueTwo == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueTwo);
-        }
-        
-        buf.append(",");
-
-        if (variableValueThree == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueThree);
-        }
-        
-        buf.append("]");
-        if (parent != null) {
-            buf.append("\n");
-            parent.toString(buf, indent + "  ");
-        }
-        
-        return buf.toString();
     }
 }

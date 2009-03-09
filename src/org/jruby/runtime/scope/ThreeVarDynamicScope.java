@@ -2,7 +2,6 @@ package org.jruby.runtime.scope;
 
 import org.jruby.RubyArray;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -27,9 +26,7 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
     
     @Override
     public void growIfNeeded() {
-        if (staticScope.getNumberOfVariables() != SIZE) {
-            throw new RuntimeException(GROW_ERROR);
-        }
+        growIfNeeded(SIZE, GROW_ERROR);
     }
     
     @Override
@@ -251,44 +248,5 @@ public class ThreeVarDynamicScope extends TwoVarDynamicScope {
             
             return argValues;
         }
-    }
-
-    @Override
-    public String toString(StringBuffer buf, String indent) {
-        buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
-        
-        String names[] = staticScope.getVariables();
-        buf.append(names[0]).append("=");
-
-        if (variableValueZero == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueZero);
-        }
-        
-        buf.append(",");
-
-        if (variableValueOne == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueOne);
-        }
-        
-        buf.append(",");
-
-        if (variableValueTwo == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueTwo);
-        }
-        
-        buf.append("]");
-        if (parent != null) {
-            buf.append("\n");
-            parent.toString(buf, indent + "  ");
-        }
-        
-        return buf.toString();
     }
 }

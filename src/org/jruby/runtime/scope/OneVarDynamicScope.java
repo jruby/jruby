@@ -2,7 +2,6 @@ package org.jruby.runtime.scope;
 
 import org.jruby.RubyArray;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -11,6 +10,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * This is a DynamicScope that supports exactly three variables.
  */
 public class OneVarDynamicScope extends NoVarsDynamicScope {
+    private static final int SIZE = 1;
+    private static final String SIZE_ERROR = "OneVarDynamicScope only supports scopes with one variable";
+    private static final String GROW_ERROR = "OneVarDynamicScope cannot be grown; use ManyVarsDynamicScope";
+    
     protected IRubyObject variableValueZero;
 
     public OneVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
@@ -23,9 +26,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     
     @Override
     public void growIfNeeded() {
-        if (staticScope.getNumberOfVariables() != 1) {
-            throw new RuntimeException("OneVarDynamicScope cannot be grown; use ManyVarsDynamicScope");
-        }
+        growIfNeeded(SIZE, GROW_ERROR);
     }
     
     @Override
@@ -53,7 +54,7 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
-        assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
+        assert offset < SIZE : SIZE_ERROR;
         return variableValueZero;
     }
     
@@ -71,7 +72,6 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     
     @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
-        assertGetValueDepthZeroOrNil(offset);
         IRubyObject value = variableValueZero;
         if (value == null) return variableValueZero = nil;
         return value;
@@ -93,18 +93,14 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     @Override
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         if (depth > 0) {
-            assertParent();
-            
             return parent.setValue(offset, value, depth - 1);
         } else {
-            assertSetValue(offset);
             return variableValueZero = value;
         }
     }
 
     @Override
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
-        assertSetValueDepthZero(offset);
         return variableValueZero = value;
     }
     @Override
@@ -125,7 +121,6 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      */
     @Override
     public void setArgValues(IRubyObject[] values, int size) {
-        assertSetArgValues(values, size);
         if (size == 1) {
             variableValueZero = values[0];
         }
@@ -135,25 +130,12 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     public void setArgValues(IRubyObject arg0) {
         variableValueZero = arg0;
     }
-    
-    @Override
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
-        assert false : "SingleVarDynamicScope only supports one variable not two";
-    }
-    
-    @Override
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        assert false : "SingleVarDynamicScope only supports one variable not three";
-    }    
 
     /*
      * If we are setting post arguments we can assume there are no pre or others
      */
     @Override
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        assertSetArgValues(values, size);
-        assert index == 0 && size == 1 : "SingleVarDynamicScope only supports one variable";
-
         variableValueZero = values[0];
     }
 
@@ -164,7 +146,6 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
             return parent.getArgValues();
         }
         int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        assert totalArgs <= 1 : "OneVarDynamicScope only supports one variable";
         
         // copy and splat arguments out of the scope to use for zsuper call
         if (staticScope.getRestArg() < 0) {
@@ -176,7 +157,6 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
         } else {
             // rest arg must be splatted
             IRubyObject restArg = getValue(staticScope.getRestArg(), 0);
-            assert restArg != null;
             
             // FIXME: not very efficient
             RubyArray splattedArgs = RuntimeHelpers.splatValue(restArg);            
@@ -189,48 +169,5 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
             
             return argValues;
         }
-    }
-
-    @Override
-    public String toString(StringBuffer buf, String indent) {
-        buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
-        
-        String names[] = staticScope.getVariables();
-        buf.append(names[0]).append("=");
-
-        if (variableValueZero == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueZero);
-        }
-        
-        buf.append("]");
-        if (parent != null) {
-            buf.append("\n");
-            parent.toString(buf, indent + "  ");
-        }
-        
-        return buf.toString();
-    }
-
-    private void assertGetValueDepthZeroOrNil(int offset) {
-        assert offset == 0 : "SingleVarDynamicScope only supports scopes with one variable";
-    }
-
-    private void assertParent() {
-        assert parent != null : "If depth > 0, then parent should not ever be null";
-    }
-
-    private void assertSetArgValues(IRubyObject[] values, int size) {
-        assert values.length <= 1 : "SingleVarDynamicScope only supports one variable ant not " + size + " of value array of length " + values.length;
-    }
-
-    private void assertSetValue(int offset) {
-        assert offset == 0 : "SingleVarDynamicScope only supports one variable";
-    }
-
-    private void assertSetValueDepthZero(int offset) {
-        assert offset == 0 : "SingleVarDynamicScope only supports one variable";
     }
 }

@@ -1,6 +1,5 @@
 package org.jruby.runtime.scope;
 
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -9,6 +8,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * This is a DynamicScope that does not support any variables.
  */
 public class NoVarsDynamicScope extends DynamicScope {
+    private static final int SIZE = 0;
+    private static final String SIZE_ERROR = "NoVarsDynamicScope only supports scopes with one variable";
+    private static final String GROW_ERROR = "NoVarsDynamicScope cannot be grown; use ManyVarsDynamicScope";
+    
     public NoVarsDynamicScope(StaticScope staticScope, DynamicScope parent) {
         super(staticScope, parent);
     }
@@ -18,7 +21,13 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
     
     public void growIfNeeded() {
-        assert staticScope.getNumberOfVariables() == 0 : "NoVarsDynamicScope cannot be grown; use ManyVarsDynamicScope";
+        growIfNeeded(SIZE, GROW_ERROR);
+    }
+
+    protected void growIfNeeded(int size, String message) {
+        if (staticScope.getNumberOfVariables() != size) {
+            throw new RuntimeException(message);
+        }
     }
     
     public DynamicScope cloneScope() {
@@ -40,6 +49,7 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @return the value here
      */
     public IRubyObject getValue(int offset, int depth) {
+        assert depth != 0: SIZE_ERROR;
         return parent.getValue(offset, depth - 1);
     }
     
@@ -105,19 +115,19 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param size is the number of values to assign as ordinary parm values
      */
     public void setArgValues(IRubyObject[] values, int size) {
-        assert size == 0 : "NoVarsDynamicScope only supports scopes with no variables";
+        assert size <= SIZE : this.getClass().getSimpleName() + " does not support scopes with " + size + " variables";
     }
     
     public void setArgValues(IRubyObject arg0) {
-        assert false : "NoVarsDynamicScope does not support any variables";
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 1 variable");
     }
     
     public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
-        assert false : "NoVarsDynamicScope does not support any variables";
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 2 variables");
     }
     
     public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        assert false : "NoVarsDynamicScope does not support any variables";
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 3 variables");
     }
 
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
@@ -134,18 +144,5 @@ public class NoVarsDynamicScope extends DynamicScope {
         assert totalArgs == 0 : "NoVarsDynamicScope only supports scopes with no variables";
         
         return IRubyObject.NULL_ARRAY;
-    }
-
-    @Override
-    public String toString(StringBuffer buf, String indent) {
-        buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" []");
-        
-        if (parent != null) {
-            buf.append("\n");
-            parent.toString(buf, indent + "  ");
-        }
-        
-        return buf.toString();
     }
 }

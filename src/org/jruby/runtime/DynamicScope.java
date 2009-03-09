@@ -8,6 +8,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
 import org.jruby.runtime.scope.OneVarDynamicScope;
@@ -156,16 +157,8 @@ public abstract class DynamicScope {
     public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
     }
-
-    @Override
-    public String toString() {
-        return toString(new StringBuffer(), "");
-    }
     
     public abstract void growIfNeeded();
-
-    // Helper function to give a good view of current dynamic scope with captured scopes
-    public abstract String toString(StringBuffer buf, String indent);
     
     public abstract DynamicScope cloneScope();
 
@@ -322,4 +315,51 @@ public abstract class DynamicScope {
      * Copy variable values back for ZSuper call.
      */
     public abstract IRubyObject[] getArgValues();
+
+    @Override
+    public String toString() {
+        return toString(new StringBuffer(), "");
+    }
+
+    // Helper function to give a good view of current dynamic scope with captured scopes
+    public String toString(StringBuffer buf, String indent) {
+        buf.append(indent).append("Static Type[" + hashCode() + "]: " +
+                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
+        int size = staticScope.getNumberOfVariables();
+        IRubyObject[] variableValues = getValues();
+
+        if (size != 0) {
+            String names[] = staticScope.getVariables();
+            for (int i = 0; i < size-1; i++) {
+                buf.append(names[i]).append("=");
+
+                if (variableValues[i] == null) {
+                    buf.append("null");
+                } else {
+                    buf.append(variableValues[i]);
+                }
+
+                buf.append(",");
+            }
+            buf.append(names[size-1]).append("=");
+
+            assert variableValues.length == names.length : "V: " + variableValues.length +
+                " != N: " + names.length + " for " + buf;
+
+            if (variableValues[size-1] == null) {
+                buf.append("null");
+            } else {
+                buf.append(variableValues[size-1]);
+            }
+
+        }
+
+        buf.append("]");
+        if (parent != null) {
+            buf.append("\n");
+            parent.toString(buf, indent + "  ");
+        }
+
+        return buf.toString();
+    }
 }

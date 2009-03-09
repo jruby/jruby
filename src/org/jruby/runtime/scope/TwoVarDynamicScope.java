@@ -2,7 +2,6 @@ package org.jruby.runtime.scope;
 
 import org.jruby.RubyArray;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -11,6 +10,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * This is a DynamicScope that supports exactly three variables.
  */
 public class TwoVarDynamicScope extends OneVarDynamicScope {
+    private static final int SIZE = 2;
+    private static final String SIZE_ERROR = "TwoVarDynamicScope only supports scopes with two variables";
+    private static final String GROW_ERROR = "TwoVarDynamicScope cannot be grown; use ManyVarsDynamicScope";
+    
     protected IRubyObject variableValueOne;
 
     public TwoVarDynamicScope(StaticScope staticScope, DynamicScope parent) {
@@ -23,9 +26,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
     
     @Override
     public void growIfNeeded() {
-        if (staticScope.getNumberOfVariables() != 2) {
-            throw new RuntimeException("TwoVarDynamicScope cannot be grown; use ManyVarsDynamicScope");
-        }
+        growIfNeeded(SIZE, GROW_ERROR);
     }
     
     @Override
@@ -53,20 +54,20 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         if (depth > 0) {
             return parent.getValue(offset, depth - 1);
         }
-        assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
             return variableValueZero;
         case 1:
             return variableValueOne;
         default:
-            throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
+            throw new RuntimeException(SIZE_ERROR);
         }
     }
     
     @Override
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
-        assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
             if (variableValueZero == null) return variableValueZero = nil;
@@ -75,7 +76,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             if (variableValueOne == null) return variableValueOne = nil;
             return variableValueOne;
         default:
-            throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
+            throw new RuntimeException(SIZE_ERROR);
         }
     }
     @Override
@@ -98,28 +99,28 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             
             return parent.setValue(offset, value, depth - 1);
         } else {
-            assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
+            assert offset < SIZE : SIZE_ERROR;
             switch (offset) {
             case 0:
                 return variableValueZero = value;
             case 1:
                 return variableValueOne = value;
             default:
-                throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
+                throw new RuntimeException(SIZE_ERROR);
             }
         }
     }
 
     @Override
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
-        assert offset < 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        assert offset < SIZE : SIZE_ERROR;
         switch (offset) {
         case 0:
             return variableValueZero = value;
         case 1:
             return variableValueOne = value;
         default:
-            throw new RuntimeException("TwoVarDynamicScope only supports scopes with two variables");
+            throw new RuntimeException(SIZE_ERROR);
         }
     }
     @Override
@@ -140,7 +141,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
      */
     @Override
     public void setArgValues(IRubyObject[] values, int size) {
-        assert size <= 2 : "TwoVarDynamicScope only supports scopes with two variables, not " + size;
+        assert size <= SIZE : SIZE_ERROR;
         switch (size) {
         case 2:
             variableValueOne = values[1];
@@ -151,7 +152,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
 
     @Override
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        assert size <= 2 : "TwoVarDynamicScope only supports scopes with two variables, not " + size;
+        assert size <= SIZE : SIZE_ERROR;
 
         switch (size) {
         case 2:
@@ -171,11 +172,6 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
         variableValueZero = arg0;
         variableValueOne = arg1;
     }
-    
-    @Override
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        assert false : "TwoVarDynamicScope only supports two variables not three";
-    }     
 
     @Override
     public IRubyObject[] getArgValues() {
@@ -184,7 +180,7 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             return parent.getArgValues();
         }
         int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        assert totalArgs <= 2 : "TwoVarDynamicScope only supports scopes with two variables";
+        assert totalArgs <= SIZE : SIZE_ERROR;
         
         // copy and splat arguments out of the scope to use for zsuper call
         if (staticScope.getRestArg() < 0) {
@@ -216,36 +212,5 @@ public class TwoVarDynamicScope extends OneVarDynamicScope {
             
             return argValues;
         }
-    }
-
-    @Override
-    public String toString(StringBuffer buf, String indent) {
-        buf.append(indent).append("Static Type[" + hashCode() + "]: " + 
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
-        
-        String names[] = staticScope.getVariables();
-        buf.append(names[0]).append("=");
-
-        if (variableValueZero == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueZero);
-        }
-        
-        buf.append(",");
-
-        if (variableValueOne == null) {
-            buf.append("null");
-        } else {
-            buf.append(variableValueOne);
-        }
-        
-        buf.append("]");
-        if (parent != null) {
-            buf.append("\n");
-            parent.toString(buf, indent + "  ");
-        }
-        
-        return buf.toString();
     }
 }
