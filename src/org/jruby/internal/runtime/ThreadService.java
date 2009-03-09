@@ -57,7 +57,13 @@ public class ThreadService {
         this.runtime = runtime;
         this.mainContext = ThreadContext.newContext(runtime);
         this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
-        this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
+
+        try {
+            this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
+        } catch(SecurityException e) {
+            this.rubyThreadGroup = Thread.currentThread().getThreadGroup();
+        }
+
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
         
         // Must be called from main thread (it is currently, but this bothers me)

@@ -48,7 +48,7 @@ public abstract class ObjectProxyCache<T,A> {
     private final Segment<T,A>[] segments;
     private final int segmentShift;
     private final int segmentMask;
-    private final Thread vulture;
+    private Thread vulture;
     private final int id;
     
     public ObjectProxyCache() {
@@ -98,37 +98,39 @@ public abstract class ObjectProxyCache<T,A> {
         //
         // FIXME: DISABLED (below) pending resolution of finalization issue
         //
-        this.vulture = new Thread("ObjectProxyCache "+id+" vulture") {
-            public void run() {
-                for ( ;; ) {
-                    try {
-                        sleep(VULTURE_RUN_FREQ_SECONDS * 1000);
-                    } catch (InterruptedException e) {}
-                    boolean dump = size() > 200;
-                    if (dump) {
-                        System.err.println("***Vulture "+id+" waking, stats:");
-                        System.err.println(stats());
-                    }
-                    for (int i = segments.length; --i >= 0; ) {
-                        Segment<T,A> seg = segments[i];
-                        seg.lock();
-                        try {
-                            seg.expunge();
-                        } finally {
-                            seg.unlock();
-                        }
-                        yield();
-                    }
-                    if (dump) {
-                        System.err.println("***Vulture "+id+" sleeping, stats:");
-                        System.err.println(stats());
-                    }
-                }
-            }
-        };
         try {
+            this.vulture = new Thread("ObjectProxyCache "+id+" vulture") {
+                    public void run() {
+                        for ( ;; ) {
+                            try {
+                                sleep(VULTURE_RUN_FREQ_SECONDS * 1000);
+                            } catch (InterruptedException e) {}
+                            boolean dump = size() > 200;
+                            if (dump) {
+                                System.err.println("***Vulture "+id+" waking, stats:");
+                                System.err.println(stats());
+                            }
+                            for (int i = segments.length; --i >= 0; ) {
+                                Segment<T,A> seg = segments[i];
+                                seg.lock();
+                                try {
+                                    seg.expunge();
+                                } finally {
+                                    seg.unlock();
+                                }
+                                yield();
+                            }
+                            if (dump) {
+                                System.err.println("***Vulture "+id+" sleeping, stats:");
+                                System.err.println(stats());
+                            }
+                        }
+                    }
+                };
             vulture.setDaemon(true);
-        } catch (SecurityException e) {}
+        } catch (SecurityException e) {
+            this.vulture = null;
+        }
 
         
         // FIXME: vulture daemon thread prevents finalization,
