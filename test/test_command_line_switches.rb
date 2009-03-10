@@ -153,7 +153,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # server VM when explicitly set --server
     result = jruby(%Q{--server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /(tiered|server|j9jit24|j9jit23)/, result.downcase
+    assert_match /(tiered|server|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler)/, result.downcase
   end
 
   # JRUBY-2648 [Note: Originally these tests had tests for default vm and
