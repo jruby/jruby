@@ -676,7 +676,7 @@ public class RubyClass extends RubyModule {
     }
     
     public Ruby getClassRuntime() {
-        return Ruby.getRuntime(this);
+        return runtime;
     }
 
     public RubyClass getRealClass() {

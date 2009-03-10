@@ -192,34 +192,17 @@ public final class Ruby {
         return newInstance(config);
     }
 
-    private static abstract class RuntimeGetter {
-        public abstract Ruby getRuntime(RubyClass rubyClass);
-    }
-    private static final class LocalRuntimeGetter extends RuntimeGetter {
-        public Ruby getRuntime(RubyClass rubyClass) {
-            return rubyClass.runtime;
+    private static Ruby globalRuntime;
+
+    public static synchronized Ruby getGlobalRuntime() {
+        if (globalRuntime == null) {
+            initGlobalRuntime();
         }
-    };
-    private static final class GlobalRuntimeGetter extends RuntimeGetter {
-        private final Ruby runtime;
-        public GlobalRuntimeGetter(Ruby runtime) {
-            this.runtime = runtime;
-        }
-        public Ruby getRuntime(RubyClass rubyClass) {
-            return runtime;
-        }
-    }
-    public static final RuntimeGetter runtimeGetter;
-    static {
-        if (SafePropertyAccessor.getBoolean("jruby.global.runtime")) {
-            runtimeGetter = new GlobalRuntimeGetter(newInstance());
-        } else {
-            runtimeGetter = new LocalRuntimeGetter();
-        }
+        return globalRuntime;
     }
 
-    static Ruby getRuntime(RubyClass rubyClass) {
-        return runtimeGetter.getRuntime(rubyClass);
+    private static void initGlobalRuntime() {
+        globalRuntime = newInstance();
     }
     
     /**
