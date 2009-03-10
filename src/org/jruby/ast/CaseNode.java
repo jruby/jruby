@@ -107,6 +107,7 @@ public class CaseNode extends Node {
 	 * the body of the case statement, the first of a list of WhenNodes
      * @return whenNode
      */
+    @Deprecated
     public Node getFirstWhenNode() {
         return cases;
     }

@@ -343,7 +343,8 @@ public class ASTInspector {
         case CASENODE:
             CaseNode caseNode = (CaseNode)node;
             inspect(caseNode.getCaseNode());
-            inspect(caseNode.getFirstWhenNode());
+            for (Node when : caseNode.getCases().childNodes()) inspect(when);
+            inspect(caseNode.getElseNode());
             break;
         case CLASSNODE:
             setFlag(CLASS);
