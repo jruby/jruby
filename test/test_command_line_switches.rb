@@ -171,7 +171,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # client VM when explicitly set via --client
     result = jruby(%Q{--client -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_match /client|j9jit24|j9jit23/, result.downcase
+    assert_match /client|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler/, result.downcase
   end
   
   # JRUBY-2821
