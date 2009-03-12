@@ -570,12 +570,12 @@ public class RubyFixnum extends RubyInteger {
             long b = ((RubyFixnum) other).value;
 
             if (b < 0) {
-                return RubyRational.newRationalRaw(context.getRuntime(), this).callMethod(context, "**", other);
+                return RubyRational.newRationalRaw(runtime, this).callMethod(context, "**", other);
             }
 
             if (b == 0) return RubyFixnum.one(runtime);
             if (b == 1) return this;
-             
+
             if (a == 0) {
                 return b > 0 ? RubyFixnum.zero(runtime) : RubyNumeric.dbl2num(runtime, 1.0 / 0.0);
             }
@@ -595,7 +595,10 @@ public class RubyFixnum extends RubyInteger {
             }
             RubyBignum.newBignum(runtime, RubyBignum.fix2big(this)).op_pow(context, other);
         } else if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(context.getRuntime(), Math.pow(a, ((RubyFloat) other).getDoubleValue()));
+            double b = ((RubyFloat)other).getValue();
+            if (b == 0.0 || a == 1) return runtime.newFloat(1.0);
+            if (a == 0) return runtime.newFloat(b < 0 ? 1.0 / 0.0 : 0.0);
+            return RubyFloat.newFloat(runtime, Math.pow(a, b));
         }
         return coerceBin(context, "**", other);
     }
