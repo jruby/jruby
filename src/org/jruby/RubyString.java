@@ -5111,7 +5111,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int pp = end - rslen; 
         if (bytes[p + len - 1] == newline && rslen <= 1 || value.endsWith(rs.value)) {
             if (enc.leftAdjustCharHead(bytes, p, pp, end) != pp) return runtime.getNil();
-            clearCodeRange();
+            if (getCodeRange() != CR_7BIT) clearCodeRange();
             view(0, value.realSize - rslen);
             return this;
         }
