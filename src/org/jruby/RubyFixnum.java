@@ -547,29 +547,21 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
         if(other instanceof RubyFixnum) {
             long b = ((RubyFixnum) other).value;
 
-            if (b == 0) {
-                return RubyFixnum.one(context.getRuntime());
-            }
-            if (b == 1) {
-                return this;
-            }
-            if (b > 0) {
-                return RubyBignum.newBignum(context.getRuntime(), value).op_pow(context, other);
-            }
-            return RubyFloat.newFloat(context.getRuntime(), Math.pow(value, b));
+            if (b == 0) return RubyFixnum.one(runtime);
+            if (b == 1) return this;
+            if (b > 0) return RubyBignum.newBignum(runtime, value).op_pow(context, other);
+            return RubyFloat.newFloat(runtime, Math.pow(value, b));
         } else if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(context.getRuntime(), Math.pow(value, ((RubyFloat) other)
+            return RubyFloat.newFloat(runtime, Math.pow(value, ((RubyFloat) other)
                     .getDoubleValue()));
         }
         return coerceBin(context, "**", other);
     }
-    
-    /** fix_pow 
-     * 
-     */
+
     @JRubyMethod(name = "**", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
@@ -607,8 +599,7 @@ public class RubyFixnum extends RubyInteger {
         }
         return coerceBin(context, "**", other);
     }
-    
-            
+
     /** fix_abs
      * 
      */
