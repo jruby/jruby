@@ -532,7 +532,6 @@ public class RubyClass extends RubyModule {
         return obj;
     }
     
-    // TODO: replace this with a smarter generated invoker that can handle 0-N args
     public static class SpecificArityNew extends JavaMethod {
         public SpecificArityNew(RubyModule implClass, Visibility visibility) {
             super(implClass, visibility);

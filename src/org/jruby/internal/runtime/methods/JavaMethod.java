@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cloneable {
     protected int arityValue;
-    protected Arity arity;
+    protected Arity arity = Arity.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
     protected StaticScope staticScope;
