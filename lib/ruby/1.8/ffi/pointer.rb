@@ -70,5 +70,14 @@ module FFI
       def read_pointer
         get_pointer(0)
       end
+      def write_pointer(ptr)
+        put_pointer(0, ptr)
+      end
+      def read_array_of_pointer(length)
+        get_array_of_pointer(0, length)
+      end
+      def write_array_of_pointer(ary)
+        put_array_of_pointer(0, ary)
+      end
   end
 end
