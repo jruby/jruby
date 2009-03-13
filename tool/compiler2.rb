@@ -84,7 +84,6 @@ file = BiteScript::FileBuilder.build("#{JAVA_CLASSNAME}.java.rb") do
           # We have a signature and need to use java integration logic
           ldc method.arity
           anewarray IRubyObject
-          i = 1;
           index = 1
           1.upto(method.arity) do |i|
             dup
