@@ -164,3 +164,14 @@ test_equal([97, 98, 99], Enumerable::Enumerator.new("abc", :each_byte).map { |b|
 #no block results in LocalJumpError only if enumerating method requires it
 test_exception(LocalJumpError) { Enumerable::Enumerator.new(Wobble.new, :each_needing_block).each }
 test_no_exception { Enumerable::Enumerator.new(Wobble.new, :each_not_needing_block).each }
+
+# JRUBY-3492: wrong # args when calling super without args in subclass of Enumerable::Enumerator
+class JRuby3492 < Enumerable::Enumerator
+  def initialize(x, y, *z)
+    super
+  end
+end
+
+test_no_exception {
+  JRuby3492.new("foo", :each_byte)
+}
