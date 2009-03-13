@@ -769,6 +769,32 @@ abstract public class AbstractMemory extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = { "get_array_of_pointer" }, required = 2)
+    public IRubyObject get_array_of_pointer(ThreadContext context, IRubyObject offset, IRubyObject length) {
+        final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
+        int count = Util.int32Value(length);
+        checkBounds(context, offset, count * POINTER_SIZE);
+        Ruby runtime = context.getRuntime();
+        RubyArray arr = RubyArray.newArray(runtime, count);
+        long off = getOffset(offset);
+        for (int i = 0; i < count; ++i) {
+            arr.add(getPointer(runtime, off + (i * POINTER_SIZE)));
+        }
+        return arr;
+    }
+    @JRubyMethod(name = { "put_array_of_pointer" }, required = 2)
+    public IRubyObject put_array_of_pointer(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
+        final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
+        final RubyArray arr = (RubyArray) arrParam;
+        final int count = arr.getLength();
+        checkBounds(context, offset, count * 8);
+        long off = getOffset(offset);
+        for (int i = 0; i < count; ++i) {
+            Pointer ptr = (Pointer) arr.entry(i);
+            getMemoryIO().putMemoryIO(off + (i * POINTER_SIZE), ptr.getMemoryIO());
+        }
+        return this;
+    }
     @JRubyMethod(name = "put_callback", required = 3)
     public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
         if (!(cbInfo instanceof CallbackInfo)) {
