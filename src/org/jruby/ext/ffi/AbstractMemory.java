@@ -583,7 +583,7 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return arr;
     }
-    @JRubyMethod(name = { "put_array_of_int32", "get_array_of_int" }, required = 2)
+    @JRubyMethod(name = { "put_array_of_int32", "put_array_of_int" }, required = 2)
     public IRubyObject put_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
