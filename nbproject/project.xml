@@ -43,12 +43,6 @@
                     <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
-                    <label>samples</label>
-                    <type>java</type>
-                    <location>samples</location>
-                    <encoding>UTF-8</encoding>
-                </source-folder>
-                <source-folder>
                     <label>bench</label>
                     <type>java</type>
                     <location>bench</location>
@@ -141,10 +135,6 @@
                         <location>bin</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>samples</label>
-                        <location>samples</location>
-                    </source-folder>
-                    <source-folder style="packages">
                         <label>bench</label>
                         <location>bench</location>
                     </source-folder>
@@ -199,10 +189,6 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>bin</package-root>
-                <source-level>1.5</source-level>
-            </compilation-unit>
-            <compilation-unit>
-                <package-root>samples</package-root>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
