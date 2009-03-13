@@ -36,20 +36,22 @@ module FFI
         ary = []
         size = FFI.type_size(type)
         tmp = self
-        length.times {
+        (length - 1).times {
           ary << tmp.send(reader)
           tmp += size
         }
+        ary << tmp.send(reader)
         ary
       end
 
       def write_array_of_type(type, writer, ary)
         size = FFI.type_size(type)
         tmp = self
-        ary.each {|i|
-          tmp.send(writer, i)
+        (ary.length - 1).times do |i|
+          tmp.send(writer, ary[i])
           tmp += size
-        }
+        end
+        tmp.send(writer, ary.last)
         self
       end
       def read_array_of_int(length)
