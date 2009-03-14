@@ -363,6 +363,7 @@ public class RubyRange extends RubyObject {
             if (size > Integer.MAX_VALUE) {
                 throw runtime.newRangeError("Range size too large for to_a");
             }
+            if (size < 0) return RubyArray.newEmptyArray(runtime);
             IRubyObject[] array = new IRubyObject[(int)size];
             for (int i = 0; i < size; i++) {
                 array[i] = RubyFixnum.newFixnum(runtime, base + i);
