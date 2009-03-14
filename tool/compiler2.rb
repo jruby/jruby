@@ -59,7 +59,16 @@ file = BiteScript::FileBuilder.build("#{JAVA_CLASSNAME}.java.rb") do
 
     for method_name in RUBY_CLASS.public_instance_methods(false) do
       method = RUBY_CLASS.instance_method(method_name)
-      signature = RUBY_CLASS.signatures[method_name]
+      signature = if RUBY_CLASS.respond_to? :signatures
+        RUBY_CLASS.signatures[method_name]
+      else
+        nil
+      end
+      annotations = if RUBY_CLASS.respond_to? :annotations
+        RUBY_CLASS.annotations[method_name]
+      else
+        nil
+      end
       
       if signature
         raise "signatures only supported for exact arities: #{RUBY_CLASS.to_s + '#' + method_name}" if method.arity < 0
@@ -69,9 +78,18 @@ file = BiteScript::FileBuilder.build("#{JAVA_CLASSNAME}.java.rb") do
       else
         params = (method.arity < 0) ? [IRubyObject[]] : [IRubyObject] * method.arity
         retval = IRubyObject
+        use_ji = false
       end
       
       public_method method_name, retval, *params do
+        if annotations && annotations.size > 0
+          # define annotations
+          annotations.each do |anno_cls, anno_data|
+            annotate(anno_cls, true) do |anno|
+              anno_data.each {|k,v| anno.send(k + "=", v)} if anno_data
+            end
+          end
+        end
         aload 0
         dup
         invokeinterface IRubyObject, "getRuntime", [Ruby]
@@ -154,7 +172,7 @@ file = BiteScript::FileBuilder.build("#{JAVA_CLASSNAME}.java.rb") do
           elsif double == retval
             invokestatic JavaUtil, "convertRubyToJavaDouble", [double, IRubyObject]
             dreturn
-          elsif retval == void
+          elsif retval == void || retval == nil
             pop
             returnvoid
           else
