@@ -256,11 +256,11 @@ public class Main {
     }
 
     private void showVersion() {
-        config.getOutput().print(config.getVersionString());
+        config.getOutput().println(config.getVersionString());
     }
 
     private void showCopyright() {
-        config.getOutput().print(config.getCopyrightString());
+        config.getOutput().println(config.getCopyrightString());
     }
 
     public void printUsage() {

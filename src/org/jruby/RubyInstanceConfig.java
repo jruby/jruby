@@ -375,7 +375,7 @@ public class RubyInstanceConfig {
                 .append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
                 //.append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
                 .append("  -X[option]      enable extended option (omit option to list)\n")
-                .append("  -y              enable parsing debug output")
+                .append("  -y              enable parsing debug output\n")
                 .append("  --copyright     print the copyright\n")
                 .append("  --debug         sets the execution mode most suitable for debugger functionality\n")
                 .append("  --jdb           runs JRuby process under JDB\n")
@@ -501,9 +501,10 @@ public class RubyInstanceConfig {
         }
 
         String fullVersion = String.format(
-                "jruby %s (ruby %s patchlevel %s) (%s rev %s) [%s-java]\n",
+                "jruby %s (ruby %sp%s) (%s r%s) (%s %s) [%s-java]",
                 Constants.VERSION, ver, patchlevel,
                 Constants.COMPILE_DATE, Constants.REVISION,
+                System.getProperty("java.vm.name"), System.getProperty("java.version"),
                 SafePropertyAccessor.getProperty("os.arch", "unknown")
                 );
 
@@ -511,7 +512,7 @@ public class RubyInstanceConfig {
     }
 
     public String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2008 The JRuby Community (and contribs)\n";
+        return "JRuby - Copyright (C) 2001-2008 The JRuby Community (and contribs)";
     }
 
     public void processArguments(String[] arguments) {
