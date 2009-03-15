@@ -1297,7 +1297,7 @@ public class RubyObject extends RubyBasicObject {
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, frame = true)
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, frame = true)
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) throw context.getRuntime().newArgumentError("block not supplied");
 

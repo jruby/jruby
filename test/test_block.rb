@@ -174,7 +174,7 @@ class TestBlock < Test::Unit::TestCase
 
   def test_instance_exec_args_multiple_result
     o = Object.new
-    assert_equal([1, 3], o.instance_exec(1, 2, 3) { |a, b, c| [a, c] })
+    assert_equal([1, 4], o.instance_exec(1, 2, 3, 4) { |a, b, c, d| [a, d] })
   end
 
   def test_instance_exec_no_block
