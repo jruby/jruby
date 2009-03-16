@@ -517,8 +517,11 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         modifyCheck();
+        Ruby runtime = context.getRuntime();
         realLength = 0;
-        if (block.isGiven()) context.getRuntime().getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
+        if (block.isGiven() && runtime.isVerbose()) {
+            runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
+        }
         return this;
     }
 
