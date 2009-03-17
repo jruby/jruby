@@ -821,8 +821,7 @@ public class RubyKernel {
                 currentFrame.getFile(), currentFrame.getLine() + 1,
                 rEx.to_s());
 
-        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod(context, "write", runtime.newString(msg));
+        runtime.getErr().print(msg);
     }
 
     /**
