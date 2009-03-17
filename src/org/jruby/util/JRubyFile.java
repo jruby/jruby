@@ -37,12 +37,14 @@ import java.io.IOException;
 
 import org.jruby.Ruby;
 
+import org.jruby.ext.posix.JavaSecuredFile;
+
 /**
  * <p>This file acts as an alternative to NormalizedFile, due to the problems with current working 
  * directory.</p>
  *
  */
-public class JRubyFile extends File {
+public class JRubyFile extends JavaSecuredFile {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
@@ -53,9 +55,9 @@ public class JRubyFile extends File {
         if (pathname == null || pathname.equals("") || Ruby.isSecurityRestricted()) {
             return JRubyNonExistentFile.NOT_EXIST;
         }
-        File internal = new File(pathname);
+        File internal = new JavaSecuredFile(pathname);
         if(!internal.isAbsolute()) {
-            internal = new File(cwd,pathname);
+            internal = new JavaSecuredFile(cwd, pathname);
             if(!internal.isAbsolute()) {
                 throw new IllegalArgumentException("Neither current working directory ("+cwd+") nor pathname ("+pathname+") led to an absolute path");
             }
