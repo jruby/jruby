@@ -33,11 +33,13 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URI;
 
+import org.jruby.ext.posix.JavaSecuredFile;
+
 /**
  * This class provides a File implementation that normalizes all path separators to forward slashes.
  * This mimics the behavior of C Ruby, where all paths are internally made UNIX-style, even on Windows.
  */
-public class NormalizedFile extends File {
+public class NormalizedFile extends JavaSecuredFile {
     private static final long serialVersionUID = 7630618150344842227L;
 
     public NormalizedFile(String pathname) {
