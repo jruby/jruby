@@ -40,6 +40,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
 import org.jruby.RubyString;
+import org.jruby.RubyYAML;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -173,14 +174,21 @@ public class JRubyRepresenter extends SafeRepresenterImpl {
 
                 if(!outClass.isInstance(val)) {
                     if(val instanceof RubyString && ((RubyString)val).getByteList().length() > 4) {
-                        ByteList bl = ((RubyString)val).getByteList();
-                        int subst = 4;
-                        if(bl.get(4) == '\n') subst++;
-                        int len = (bl.length()-subst)-1;
-                        Resolver res = new ResolverImpl();
-                        res.descendResolver(null, null);
-                        String detectedTag = res.resolve(ScalarNode.class,bl.makeShared(subst, len),new boolean[]{true,false});
-                        return ((JRubyRepresenter)representer).scalar(detectedTag, bl.makeShared(subst, len), null);
+                        IRubyObject newObj = RubyYAML.load(data, val);
+                        if(newObj instanceof RubyHash) {
+                            return ((JRubyRepresenter)representer).map(YAML.DEFAULT_MAPPING_TAG, (RubyHash)newObj, null);
+                        } else if(newObj instanceof RubyArray) {
+                            return ((JRubyRepresenter)representer).seq(YAML.DEFAULT_SEQUENCE_TAG, (RubyArray)newObj, null);
+                        } else {
+                            ByteList bl = ((RubyString)val).getByteList();
+                            int subst = 4;
+                            if(bl.get(4) == '\n') subst++;
+                            int len = (bl.length()-subst)-1;
+                            Resolver res = new ResolverImpl();
+                            res.descendResolver(null, null);
+                            String detectedTag = res.resolve(ScalarNode.class,bl.makeShared(subst, len),new boolean[]{true,false});
+                            return ((JRubyRepresenter)representer).scalar(detectedTag, bl.makeShared(subst, len), null);
+                        }
                     }
 
                     throw runtime.newTypeError("wrong argument type " + val.getMetaClass().getRealClass() + " (expected YAML::JvYAML::Node)");

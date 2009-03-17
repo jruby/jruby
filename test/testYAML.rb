@@ -515,3 +515,26 @@ end
 
 test_equal "--- !data.allman.ms,2008/Person {}\n\n", PersonTestOne.new.to_yaml
 test_equal PersonTestOne, YAML.load(PersonTestOne.new.to_yaml).class
+
+
+
+Hash.class_eval do
+  def to_yaml( opts = {} )
+    YAML::quick_emit( self, opts ) do |out|
+      out.map( taguri, to_yaml_style ) do |map|
+        each do |k, v|
+          map.add( k, v )
+        end
+      end
+    end
+  end
+
+end
+
+hash = { "element" => "value", "array" => [ { "nested_element" => "nested_value" } ] }
+test_equal <<EXPECTED, hash.to_yaml
+--- 
+array: 
+- nested_element: nested_value
+element: value
+EXPECTED
