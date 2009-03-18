@@ -532,9 +532,18 @@ Hash.class_eval do
 end
 
 hash = { "element" => "value", "array" => [ { "nested_element" => "nested_value" } ] }
-test_equal <<EXPECTED, hash.to_yaml
+ex1 = <<EXPECTED
 --- 
 array: 
 - nested_element: nested_value
 element: value
 EXPECTED
+
+ex2 = <<EXPECTED
+--- 
+element: value
+array: 
+- nested_element: nested_value
+EXPECTED
+
+test_ok [ex1, ex2].include?(hash.to_yaml)
