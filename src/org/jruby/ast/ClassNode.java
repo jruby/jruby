@@ -117,11 +117,6 @@ public class ClassNode extends Node implements IScopingNode {
     }
     
     @Override
-    public String toString() {
-        return "ClassNode [" + cpath + "]";
-    }
-    
-    @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyModule enclosingClass = cpath.getEnclosingModule(runtime, context, self, aBlock);
 

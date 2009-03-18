@@ -79,14 +79,6 @@ public abstract class Colon2Node extends Colon3Node implements INameNode {
     public List<Node> childNodes() {
         return Node.createList(leftNode);
     }
-    
-    @Override
-    public String toString() {
-        String result = "Colon2Node [";
-        if (leftNode != null) result += leftNode;
-        result += getName();
-        return result + "]";
-    }
 
     /** Get parent module/class that this module represents */
     @Override

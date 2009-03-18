@@ -148,11 +148,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     }
     
     @Override
-    public String toString() {
-        return "" + getClass().getName() + ": '" + getName() + "' @ " + getPosition();
-    }
-    
-    @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         assert false: "No longer called";
 

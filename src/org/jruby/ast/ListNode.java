@@ -129,18 +129,6 @@ public class ListNode extends Node {
     	return list.size() == 0 ? null : list.get(list.size() - 1);
     }
     
-    public String toString() {
-        String string = super.toString();
-    	StringBuilder b = new StringBuilder();
-    	for (int i = 0; i < list.size(); i++) {
-    		b.append(list.get(i));
-            if (i + 1 < list.size()) {
-                b.append(", ");
-            }
-    	}
-    	return string + ": {" + b.toString() + "}";
-    }
-    
     public List<Node> childNodes() {
         return list;
     }

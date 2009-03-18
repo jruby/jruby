@@ -110,10 +110,4 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return self.getInstanceVariables().fastHasInstanceVariable(name) ? "instance-variable" : null;
     }
-
-    @Override
-    public String toString() {
-        return "InstVarnode: " + name;
-
-    }
 }

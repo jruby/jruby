@@ -103,9 +103,4 @@ public class NewlineNode extends Node {
         // TODO: do above but not below for additional newline nodes
         return nextNode.interpret(runtime, context, self, aBlock);
     }
-
-    @Override
-    public String toString() {
-        return "NewlineNode\n  " + getNextNode().toString();
-    }
 }

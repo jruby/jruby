@@ -126,11 +126,6 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     }
 
     @Override
-    public String toString() {
-        return "" + getClass().getName() + ": '" + getName() + "' @ " + getPosition();
-    }
-    
-    @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         assert false : "Should not happen anymore";
 

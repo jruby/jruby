@@ -78,11 +78,6 @@ public class ConstNode extends Node implements INameNode {
         return EMPTY_LIST;
     }
     
-    @Override
-    public String toString() {
-        return "ConstNode [" + name + "]";
-    }
-
     public void setName(String name) {
         this.name = name;
     }

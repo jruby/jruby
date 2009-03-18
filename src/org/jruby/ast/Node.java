@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -86,8 +87,22 @@ public abstract class Node implements ISourcePositionHolder {
         return list;
     }
 
+    @Override
     public String toString() {
-        return getNodeName() + "[]";
+        StringBuilder builder = new StringBuilder(60);
+
+        builder.append("(").append(getNodeName());
+
+        if (this instanceof INameNode) {
+            builder.append(":").append(((INameNode) this).getName());
+        }
+
+        for (Node child: childNodes()) {
+            builder.append(", ").append(child);
+        }
+        builder.append(")");
+
+        return builder.toString();
     }
 
     protected String getNodeName() {
