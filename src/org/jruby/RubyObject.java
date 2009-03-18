@@ -664,10 +664,19 @@ public class RubyObject extends RubyBasicObject {
     @Override
     public int hashCode() {
         IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), "hash");
-
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
+        return nonFixnumHashCode(hashValue);
+    }
 
-        return super.hashCode();
+    private int nonFixnumHashCode(IRubyObject hashValue) {
+        Ruby runtime = getRuntime();
+        if (runtime.is1_9()) {
+            return (int)hashValue.convertToInteger().getLongValue();
+        } else {
+            hashValue = hashValue.callMethod(runtime.getCurrentContext(), "%", RubyFixnum.newFixnum(runtime, 536870923L));
+            if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
+            return System.identityHashCode(hashValue);
+        }
     }
 
     /** rb_obj_class
