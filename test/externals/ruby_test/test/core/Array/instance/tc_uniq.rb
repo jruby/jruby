@@ -16,7 +16,7 @@ class TestObject
     [@a, @b].eql?([other_test_object.a, other_test_object.b])
   end
   def hash;
-    Digest::MD5.hexdigest("#{@b}_#{@b}").to_i(16)
+    Digest::MD5.hexdigest("#{@a}_#{@b}").to_i(16)
   end
 end
 
