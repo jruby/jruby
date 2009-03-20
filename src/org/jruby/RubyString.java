@@ -2660,7 +2660,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return this;
         } else {
             RubyString destStr = new RubyString(runtime, getMetaClass(), dest);
-            infectBy(tuFlags | flags);
+            destStr.infectBy(tuFlags | flags);
             return destStr;
         }
     }
