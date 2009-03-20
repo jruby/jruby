@@ -4452,24 +4452,27 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = value.encoding;
         final Regex pattern, prepared;
         final RubyRegexp regexp;
+        final int tuFlags;
         if (arg instanceof RubyRegexp) {
             regexp = (RubyRegexp)arg;
+            tuFlags = regexp.flags;
             pattern = regexp.getPattern();
             prepared = regexp.preparePattern(this);
         } else {
             regexp = null;
+            tuFlags = 0;
             pattern = getStringPattern19(runtime, arg);
             prepared = RubyRegexp.preparePattern(runtime, pattern, this);
         }
 
         if (block.isGiven()) {
-            return scanIter19(context, pattern, prepared, enc, block, regexp);
+            return scanIter19(context, pattern, prepared, enc, block, regexp, tuFlags);
         } else {
-            return scanNoIter19(context, pattern, prepared, enc, regexp);
+            return scanNoIter19(context, pattern, prepared, enc, regexp, tuFlags);
         }
     }
 
-    private IRubyObject scanIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, Block block, RubyRegexp regexp) {
+    private IRubyObject scanIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, Block block, RubyRegexp regexp, int tuFlags) {
         Ruby runtime = context.getRuntime();
         byte[]bytes = value.bytes;
         int begin = value.begin;
@@ -4478,7 +4481,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
         Frame frame = context.getPreviousFrame();
-        int tuFlags = regexp == null ? 0 : regexp.flags;
 
         int end = 0;
         RubyMatchData match = null;
@@ -4507,7 +4509,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    private IRubyObject scanNoIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, RubyRegexp regexp) {
+    private IRubyObject scanNoIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, RubyRegexp regexp, int tuFlags) {
         Ruby runtime = context.getRuntime();
         byte[]bytes = value.bytes;
         int begin = value.begin;
@@ -4515,7 +4517,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Matcher matcher = prepared.matcher(bytes, begin, range);
 
         RubyArray ary = runtime.newArray();
-        int tuFlags = regexp == null ? 0 : regexp.flags;
 
         int end = 0;
         if (pattern.numberOfCaptures() == 0) {
