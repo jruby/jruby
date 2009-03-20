@@ -2560,7 +2560,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
         if (block.isGiven()) {
-            return gsubCommon(context, bang, getQuotedPattern(arg0), block, null, false);
+            return gsubCommon(context, bang, getQuotedPattern(arg0), block, null, 0);
         } else {
             throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
         }
@@ -2568,10 +2568,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         RubyString repl = arg1.convertToString();
-        return gsubCommon(context, bang, getQuotedPattern(arg0), block, repl, repl.isTaint());
+        return gsubCommon(context, bang, getQuotedPattern(arg0), block, repl, repl.flags);
     }
 
-    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, Regex pattern, Block block, RubyString repl, boolean tainted) {
+    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, Regex pattern, Block block, RubyString repl, int tuFlags) {
         Ruby runtime = context.getRuntime();
         Frame frame = context.getPreviousFrame();
 
@@ -2607,7 +2607,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 val = RubyRegexp.regsub(repl, this, matcher, runtime.getKCode().getEncoding());
             }
 
-            if (val.isTaint()) tainted = true;
+            tuFlags |= val.flags;
 
             ByteList vbuf = val.value;
             int len = (bp - buf) + (beg - offset) + vbuf.realSize + 3;
@@ -2657,12 +2657,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         dest.realSize = bp - buf;
         if (bang) {
             view(dest);
-            if (tainted) setTaint(true);
+            infectBy(tuFlags);
             return this;
         } else {
             RubyString destStr = new RubyString(runtime, getMetaClass(), dest);
-            destStr.infectBy(this);
-            if (tainted) destStr.setTaint(true);
+            infectBy(tuFlags | flags);
             return destStr;
         }
     }
