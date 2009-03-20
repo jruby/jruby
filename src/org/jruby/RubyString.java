@@ -2656,12 +2656,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         dest.realSize = bp - buf;
         if (bang) {
             view(dest);
-            infectBy(tuFlags);
-            return this;
+            return infectBy(tuFlags);
         } else {
-            RubyString destStr = new RubyString(runtime, getMetaClass(), dest);
-            destStr.infectBy(tuFlags | flags);
-            return destStr;
+            return new RubyString(runtime, getMetaClass(), dest).infectBy(tuFlags | flags);
         }
     }
 
