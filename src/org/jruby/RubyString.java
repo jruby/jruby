@@ -2333,14 +2333,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
             modifyCheck(bytes, size);
             frozenCheck();
             frame.setBackRef(match);
-            return subBangCommon(context, pattern, matcher, repl, false);
+            return subBangCommon(context, pattern, matcher, repl, repl.flags);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
         }
     }
 
     private IRubyObject subBangNoIter(ThreadContext context, Regex pattern, RubyString repl) {
-        boolean tained = repl.isTaint();
+        int tuFlags = repl.flags;
         int range = value.begin + value.realSize;
         Matcher matcher = pattern.matcher(value.bytes, value.begin, range);
 
@@ -2348,13 +2348,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (matcher.search(value.begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub(repl, this, matcher, context.getRuntime().getKCode().getEncoding());
             RubyRegexp.updateBackRef(context, this, frame, matcher, pattern);
-            return subBangCommon(context, pattern, matcher, repl, tained);
+            return subBangCommon(context, pattern, matcher, repl, tuFlags);
         } else {
             return frame.setBackRef(context.getRuntime().getNil());
         }
     }
 
-    private IRubyObject subBangCommon(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, boolean tainted) {
+    private IRubyObject subBangCommon(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, int tuFlags) {
         final int beg = matcher.getBegin();
         final int plen = matcher.getEnd() - beg;
 
@@ -2364,7 +2364,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else {
             modify();
         }
-        if (repl.isTaint()) tainted = true;
 
         if (replValue.realSize != plen) {
             int src = value.begin + beg + plen;
@@ -2374,7 +2373,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         System.arraycopy(replValue.bytes, replValue.begin, value.bytes, value.begin + beg, replValue.realSize);
         value.realSize += replValue.realSize - plen;
-        if (tainted) setTaint(true);
+        infectBy(tuFlags);
         return this;
     }
 
