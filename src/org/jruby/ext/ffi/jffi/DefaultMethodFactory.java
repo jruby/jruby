@@ -39,11 +39,14 @@ public final class DefaultMethodFactory {
     }
     DynamicMethod createMethod(RubyModule module, Function function, 
             NativeType returnType, NativeParam[] parameterTypes, CallingConvention convention) {
+
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
+
         ParameterMarshaller[] marshallers = new ParameterMarshaller[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; ++i)  {
             marshallers[i] = getMarshaller(parameterTypes[i], convention);
         }
+
         /*
          * If there is exactly _one_ callback argument to the function,
          * then a block can be given and automatically subsituted for the callback
@@ -61,7 +64,32 @@ public final class DefaultMethodFactory {
                 return new CallbackMethodWithBlock(module, function, functionInvoker, marshallers, cbindex);
             }
         }
-        switch (parameterTypes.length) {
+
+        //
+        // Determine if the parameter might be passed as a 32bit int parameter.
+        // This just applies to buffer/pointer types.
+        //
+        FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
+        boolean canBeFastInt = parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
+        for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
+            if (!(parameterTypes[i] instanceof NativeType) || marshallers[i].needsInvocationSession()) {
+                canBeFastInt = false;
+            } else {
+                switch ((NativeType) parameterTypes[i]) {
+                    case POINTER:
+                    case BUFFER_IN:
+                    case BUFFER_OUT:
+                    case BUFFER_INOUT:
+                        canBeFastInt = Platform.getPlatform().addressSize() == 32;
+                        break;
+                    default:
+                        canBeFastInt = fastIntFactory.isFastIntParam(parameterTypes[i]);
+                        break;
+                }
+            }
+        }
+
+        if (!canBeFastInt) switch (parameterTypes.length) {
             case 0:
                 return new DefaultMethodZeroArg(module, function, functionInvoker);
             case 1:
@@ -73,6 +101,29 @@ public final class DefaultMethodFactory {
             default:
                 return new DefaultMethod(module, function, functionInvoker, marshallers);
         }
+        //
+        // Set up for potentially fast-int operations
+        //
+        
+        IntResultConverter resultConverter = fastIntFactory.getIntResultConverter(returnType);
+        IntParameterConverter[] intParameterConverters = new IntParameterConverter[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            intParameterConverters[i] = fastIntFactory.getIntParameterConverter(parameterTypes[i]);
+        }
+        switch (parameterTypes.length) {
+            case 0:
+                return new FastIntMethodZeroArg(module, function, resultConverter, intParameterConverters);
+            case 1:
+                return new FastIntPointerMethodOneArg(module, function, resultConverter, 
+                        intParameterConverters, marshallers);
+            case 2:
+                return new FastIntPointerMethodTwoArg(module, function, resultConverter,
+                        intParameterConverters, marshallers);
+            case 3:
+                return new FastIntPointerMethodThreeArg(module, function, resultConverter,
+                        intParameterConverters, marshallers);
+        }
+        throw new IllegalArgumentException("Parameter types not supported");
     }
     static FunctionInvoker getFunctionInvoker(NativeType returnType) {
         switch (returnType) {

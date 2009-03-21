@@ -5,11 +5,15 @@ import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.BasePointer;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Pointer;
+import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -109,6 +113,14 @@ public class FastIntMethodFactory {
                     return Unsigned32ParameterConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException("Long is too big for int parameter");
+            case POINTER:
+            case BUFFER_IN:
+            case BUFFER_OUT:
+            case BUFFER_INOUT:
+                if (Platform.getPlatform().addressSize() == 32) {
+                    return PointerParameterConverter.INSTANCE;
+                }
+                throw new IllegalArgumentException("Pointer is too big for int parameter");
             default:
                 throw new IllegalArgumentException("Unknown type " + type);
         }
@@ -228,6 +240,11 @@ public class FastIntMethodFactory {
     }
     static abstract class BaseParameterConverter implements IntParameterConverter {
         static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+
+        public boolean isConvertible(ThreadContext context, IRubyObject value) {
+            return true;
+        }
+
     }
     static final class Signed8ParameterConverter extends BaseParameterConverter {
         public static final IntParameterConverter INSTANCE = new Signed8ParameterConverter();
@@ -270,5 +287,40 @@ public class FastIntMethodFactory {
         public final int intValue(ThreadContext context, IRubyObject obj) {
             return Float.floatToRawIntBits((float) RubyNumeric.num2dbl(obj));
         }
+    }
+    private static final int getAddress(Pointer ptr) {
+        return (int) ((DirectMemoryIO) ptr.getMemoryIO()).getAddress();
+    }
+    static final class PointerParameterConverter extends BaseParameterConverter {
+
+        public static final IntParameterConverter INSTANCE = new PointerParameterConverter();
+
+        public final int intValue(ThreadContext context, IRubyObject parameter) {
+
+            if (parameter instanceof Pointer) {
+                return getAddress((Pointer) parameter);
+
+            } else if (parameter instanceof Struct) {
+                IRubyObject memory = ((Struct) parameter).getMemory();
+                if (memory instanceof Pointer) {
+                    return getAddress((Pointer) memory);
+                } else if (memory == null || memory.isNil()) {
+                    return 0;
+                }
+
+            } else if (parameter.isNil()) {
+                return 0;
+            }
+            throw context.getRuntime().newArgumentError("Cannot convert pointer to 32bit integer");
+        }
+
+        @Override
+        public boolean isConvertible(ThreadContext context, IRubyObject parameter) {
+            return parameter instanceof Pointer
+                    || (parameter instanceof Struct && ((Struct) parameter).getMemory() instanceof Pointer)
+                    || parameter.isNil();
+        }
+
+
     }
 }
