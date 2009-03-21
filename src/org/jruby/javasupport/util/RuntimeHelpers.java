@@ -66,26 +66,6 @@ public class RuntimeHelpers {
         if (receiver == self) return variableSite;
         return normalSite;
     }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, ThreadContext context, IRubyObject caller, CallSite callSite) {
-        callSite.call(context, caller, receiver, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, ThreadContext context, IRubyObject caller, CallSite callSite) {
-        callSite.call(context, caller, receiver, arg0, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, ThreadContext context, IRubyObject caller, CallSite callSite) {
-        callSite.call(context, caller, receiver, arg0, arg1, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, ThreadContext context, IRubyObject caller, CallSite callSite) {
-        callSite.call(context, caller, receiver, arg0, arg1, arg2, value);
-        return value;
-    }
-    public static IRubyObject doAttrAsgn(IRubyObject value, IRubyObject receiver, IRubyObject[] args, ThreadContext context, IRubyObject caller, CallSite callSite) {
-        callSite.call(context, caller, receiver, appendToObjectArray(args, value));
-        return value;
-    }
     public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject value, ThreadContext context, IRubyObject caller) {
         callSite.call(context, caller, receiver, value);
         return value;
@@ -98,9 +78,20 @@ public class RuntimeHelpers {
         callSite.call(context, caller, receiver, arg0, arg1, value);
         return value;
     }
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject value, ThreadContext context, IRubyObject caller) {
+        callSite.call(context, caller, receiver, arg0, arg1, arg2, value);
+        return value;
+    }
     public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, ThreadContext context, IRubyObject caller) {
         callSite.call(context, caller, receiver, args);
         return args[args.length - 1];
+    }
+    public static IRubyObject doAttrAsgn(IRubyObject receiver, CallSite callSite, IRubyObject[] args, IRubyObject value, ThreadContext context, IRubyObject caller) {
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[args.length] = value;
+        callSite.call(context, caller, receiver, newArgs);
+        return value;
     }
 
     public static boolean invokeEqqForCaseWhen(CallSite callSite, ThreadContext context, IRubyObject caller, IRubyObject arg, IRubyObject[] receivers) {

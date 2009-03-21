@@ -62,76 +62,79 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
-        // value is already on stack, evaluate receiver and args and call helper
+        // value is already on stack, save it for later
+        int temp = methodCompiler.getVariableCompiler().grabTempLocal();
+        methodCompiler.getVariableCompiler().setTempLocal(temp);
+        
+        // receiver first, so we know which call site to use
         receiverCallback.call(methodCompiler);
 
-        String signature;
+        // select appropriate call site
+        method.dup(); // dup receiver
+        methodCompiler.loadSelf(); // load self
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.VARIABLE);
+        methodCompiler.invokeUtilityMethod("selectAttrAsgnCallSite", sig(CallSite.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class));
+
+        String signature = null;
         if (argsCallback == null) {
             signature = sig(IRubyObject.class,
-                    IRubyObject.class /*value*/,
                     IRubyObject.class /*receiver*/,
+                    CallSite.class,
+                    IRubyObject.class /*value*/,
                     ThreadContext.class,
-                    IRubyObject.class, /*self*/
-                    CallSite.class);
+                    IRubyObject.class /*self*/);
         } else {
             switch (argsCallback.getArity()) {
-                case 0:
-                    signature = sig(IRubyObject.class,
-                            IRubyObject.class /*value*/,
-                            IRubyObject.class /*receiver*/,
-                            ThreadContext.class,
-                            IRubyObject.class, /*self*/
-                            CallSite.class);
-                    break;
-                case 1:
-                    argsCallback.call(methodCompiler);
-                    signature = sig(IRubyObject.class,
-                            IRubyObject.class /*value*/,
-                            IRubyObject.class /*receiver*/,
-                            IRubyObject.class /*arg0*/,
-                            ThreadContext.class,
-                            IRubyObject.class, /*self*/
-                            CallSite.class);
-                    break;
-                case 2:
-                    argsCallback.call(methodCompiler);
-                    signature = sig(IRubyObject.class,
-                            IRubyObject.class /*value*/,
-                            IRubyObject.class /*receiver*/,
-                            IRubyObject.class /*arg0*/,
-                            IRubyObject.class /*arg1*/,
-                            ThreadContext.class,
-                            IRubyObject.class, /*self*/
-                            CallSite.class);
-                    break;
-                case 3:
-                    argsCallback.call(methodCompiler);
-                    signature = sig(IRubyObject.class,
-                            IRubyObject.class /*value*/,
-                            IRubyObject.class /*receiver*/,
-                            IRubyObject.class /*arg0*/,
-                            IRubyObject.class /*arg1*/,
-                            IRubyObject.class /*arg2*/,
-                            ThreadContext.class,
-                            IRubyObject.class, /*self*/
-                            CallSite.class);
-                    break;
-                default:
-                    argsCallback.call(methodCompiler);
-                    signature = sig(IRubyObject.class,
-                            IRubyObject.class /*value*/,
-                            IRubyObject.class /*receiver*/,
-                            IRubyObject[].class /*args*/,
-                            ThreadContext.class,
-                            IRubyObject.class, /*self*/
-                            CallSite.class);
-                    break;
+            case 1:
+                argsCallback.call(methodCompiler);
+                signature = sig(IRubyObject.class,
+                        IRubyObject.class, /*receiver*/
+                        CallSite.class,
+                        IRubyObject.class, /*arg0*/
+                        IRubyObject.class, /*value*/
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/);
+                break;
+            case 2:
+                argsCallback.call(methodCompiler);
+                signature = sig(IRubyObject.class,
+                        IRubyObject.class, /*receiver*/
+                        CallSite.class,
+                        IRubyObject.class, /*arg0*/
+                        IRubyObject.class, /*arg1*/
+                        IRubyObject.class, /*value*/
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/);
+                break;
+            case 3:
+                argsCallback.call(methodCompiler);
+                signature = sig(IRubyObject.class,
+                        IRubyObject.class, /*receiver*/
+                        CallSite.class,
+                        IRubyObject.class, /*arg0*/
+                        IRubyObject.class, /*arg1*/
+                        IRubyObject.class, /*arg2*/
+                        IRubyObject.class, /*value*/
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/);
+                break;
+            default:
+                argsCallback.call(methodCompiler);
+                signature = sig(IRubyObject.class,
+                        IRubyObject.class, /*receiver*/
+                        CallSite.class,
+                        IRubyObject[].class, /*args*/
+                        IRubyObject.class, /*value*/
+                        ThreadContext.class,
+                        IRubyObject.class /*self*/);
             }
         }
-        
+
+        methodCompiler.getVariableCompiler().getTempLocal(temp);
+        methodCompiler.getVariableCompiler().releaseTempLocal();
         methodCompiler.loadThreadContext();
         methodCompiler.loadSelf();
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
 
         methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
     }
