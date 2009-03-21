@@ -3323,12 +3323,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();
     }
 
-    private void subpatSet19(ThreadContext context, RubyRegexp regexp, int nth, IRubyObject repl) {
+    private void subpatSet19(ThreadContext context, RubyRegexp regexp, IRubyObject backref, IRubyObject repl) {
         Ruby runtime = context.getRuntime();
         if (regexp.search19(context, this, 0, false) < 0) throw runtime.newIndexError("regexp not matched");
         RubyMatchData match = (RubyMatchData)context.getCurrentFrame().getBackRef();
 
-        nth = subpatSetCheck(runtime, nth, match.regs);
+        int nth = backref == null ? 0 : subpatSetCheck(runtime, match.backrefNumber(backref), match.regs);
 
         final int start, end;
         if (match.regs == null) {
@@ -3415,7 +3415,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg0 instanceof RubyFixnum) {
             return op_aset19(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
-            subpatSet19(context, (RubyRegexp)arg0, 0, arg1.convertToString());
+            subpatSet19(context, (RubyRegexp)arg0, null, arg1.convertToString());
             return arg1;
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
@@ -3440,7 +3440,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "[]=", reads = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
-            subpatSet19(context, (RubyRegexp)arg0, RubyNumeric.num2int(arg1), arg2);
+            subpatSet19(context, (RubyRegexp)arg0, arg1, arg2);
         } else {
             int beg = RubyNumeric.num2int(arg0);
             int len = RubyNumeric.num2int(arg1);
