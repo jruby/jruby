@@ -1718,24 +1718,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject nth_match(int nth, IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
+        Ruby runtime = m.getRuntime();
 
-        int start, end;
-        
+        final int start, end;
         if (m.regs == null) {
-            if (nth >= 1) return match.getRuntime().getNil();
-            if (nth < 0 && ++nth <= 0) return match.getRuntime().getNil();
+            if (nth >= 1 || (nth < 0 && ++nth <= 0)) return runtime.getNil();
             start = m.begin;
             end = m.end;
         } else {
-            if (nth >= m.regs.numRegs) return match.getRuntime().getNil();
-            if (nth < 0 && (nth+=m.regs.numRegs) <= 0) return match.getRuntime().getNil();
+            if (nth >= m.regs.numRegs || (nth < 0 && (nth+=m.regs.numRegs) <= 0)) return runtime.getNil();
             start = m.regs.beg[nth];
             end = m.regs.end[nth];
         }
-        
-        if (start == -1) return match.getRuntime().getNil();
 
-        RubyString str = m.str.makeShared(match.getRuntime(), start, end - start);
+        if (start == -1) return runtime.getNil();
+
+        RubyString str = m.str.makeShared(runtime, start, end - start);
         str.infectBy(m);
         return str;
     }
@@ -1753,8 +1751,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject match_pre(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        if (m.begin == -1) match.getRuntime().getNil(); 
-        return m.str.makeShared(match.getRuntime(), 0,  m.begin).infectBy(m);
+        Ruby runtime = m.getRuntime();
+        if (m.begin == -1) runtime.getNil(); 
+        return m.str.makeShared(runtime, 0,  m.begin).infectBy(m);
     }
 
     /** rb_reg_match_post
@@ -1763,8 +1762,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject match_post(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
-        if (m.begin == -1) return match.getRuntime().getNil();
-        return m.str.makeShared(match.getRuntime(), m.end, m.str.getByteList().realSize - m.end).infectBy(m);
+        Ruby runtime = m.getRuntime();
+        if (m.begin == -1) return runtime.getNil();
+        return m.str.makeShared(runtime, m.end, m.str.getByteList().realSize - m.end).infectBy(m);
     }
 
     /** rb_reg_match_last
