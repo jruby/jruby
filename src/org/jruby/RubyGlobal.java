@@ -139,11 +139,11 @@ public class RubyGlobal {
         switch (runtime.getInstanceConfig().getCompatVersion()) {
         case RUBY1_8:
             version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
-            patchlevel = runtime.newString(Constants.RUBY_PATCHLEVEL).freeze(context);
+            patchlevel = runtime.newFixnum(Constants.RUBY_PATCHLEVEL).freeze(context);
             break;
         case RUBY1_9:
             version = runtime.newString(Constants.RUBY1_9_VERSION).freeze(context);
-            patchlevel = runtime.newString(Constants.RUBY1_9_PATCHLEVEL).freeze(context);
+            patchlevel = runtime.newFixnum(Constants.RUBY1_9_PATCHLEVEL).freeze(context);
             break;
         }
         runtime.defineGlobalConstant("RUBY_VERSION", version);

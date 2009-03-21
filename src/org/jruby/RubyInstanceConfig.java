@@ -488,7 +488,7 @@ public class RubyInstanceConfig {
 
     public String getVersionString() {
         String ver = null;
-        String patchlevel = null;
+        int patchlevel = 0;
         switch (compatVersion) {
         case RUBY1_8:
             ver = Constants.RUBY_VERSION;
@@ -501,7 +501,7 @@ public class RubyInstanceConfig {
         }
 
         String fullVersion = String.format(
-                "jruby %s (ruby %sp%s) (%s r%s) (%s %s) [%s-java]",
+                "jruby %s (ruby %sp%d) (%s r%s) (%s %s) [%s-java]",
                 Constants.VERSION, ver, patchlevel,
                 Constants.COMPILE_DATE, Constants.REVISION,
                 System.getProperty("java.vm.name"), System.getProperty("java.version"),
