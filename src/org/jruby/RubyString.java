@@ -3254,7 +3254,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref19(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
-        if (arg1 instanceof RubyRegexp) return subpat19(runtime, context, (RubyRegexp)arg1, RubyNumeric.num2int(arg2));
+        if (arg1 instanceof RubyRegexp) return subpat19(runtime, context, (RubyRegexp)arg1, arg2);
         return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
@@ -3264,7 +3264,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg instanceof RubyFixnum) {
             return op_aref19(runtime, RubyNumeric.fix2int((RubyFixnum)arg));
         } else if (arg instanceof RubyRegexp) {
-            return subpat19(runtime, context, (RubyRegexp)arg, 0);
+            return subpat19(runtime, context, (RubyRegexp)arg);
         } else if (arg instanceof RubyString) {
             RubyString str = (RubyString)arg;
             return strIndex19(str, 0) != -1 ? str.strDup(runtime) : runtime.getNil();
@@ -3346,9 +3346,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
         associateEncoding(enc);
     }
 
-    private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex, int nth) {
+    private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex, IRubyObject backref) {
         if (regex.search19(context, this, 0, false) >= 0) {
-            return RubyRegexp.nth_match(nth, context.getCurrentFrame().getBackRef());
+            RubyMatchData match = (RubyMatchData)context.getCurrentFrame().getBackRef();
+            return RubyRegexp.nth_match(match.backrefNumber(backref), context.getCurrentFrame().getBackRef());
+        }
+        return runtime.getNil();
+    }
+
+    private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex) {
+        if (regex.search19(context, this, 0, false) >= 0) {
+            return RubyRegexp.nth_match(0, context.getCurrentFrame().getBackRef());
         }
         return runtime.getNil();
     }
@@ -4838,7 +4846,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             RubyRegexp regex = (RubyRegexp)arg;
             pos = regex.search19(context, this, 0, false);
             if (pos < 0) return partitionMismatch(runtime);
-            sep = (RubyString)subpat19(runtime, context, regex, 0);
+            sep = (RubyString)subpat19(runtime, context, regex);
             if (pos == 0 && sep.value.realSize == 0) return partitionMismatch(runtime);
         } else {
             IRubyObject tmp = arg.checkStringType();
