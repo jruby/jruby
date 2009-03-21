@@ -787,7 +787,7 @@ abstract public class AbstractMemory extends RubyObject {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
         final RubyArray arr = (RubyArray) arrParam;
         final int count = arr.getLength();
-        checkBounds(context, offset, count * 8);
+        checkBounds(context, offset, count * POINTER_SIZE);
         long off = getOffset(offset);
         for (int i = 0; i < count; ++i) {
             Pointer ptr = (Pointer) arr.entry(i);
