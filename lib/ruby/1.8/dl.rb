@@ -245,7 +245,7 @@ module DL
     end
 
     def size
-      @layout.size
+      @layout ? @layout.size : @ptr.total
     end
   end
 
