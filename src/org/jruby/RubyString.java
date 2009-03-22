@@ -901,7 +901,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_8, argTypes = RubyString.class)
     public IRubyObject op_plus(ThreadContext context, RubyString str) {
         RubyString resultStr = newString(context.getRuntime(), addByteLists(value, str.value));
-        if (isTaint() || str.isTaint()) resultStr.setTaint(true);
+        resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
@@ -913,7 +913,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.getRuntime(), addByteLists(value, str.value),
                                     enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
-        if (isTaint() || str.isTaint()) resultStr.setTaint(true);
+        resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
     public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
