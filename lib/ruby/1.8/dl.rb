@@ -1,254 +1,210 @@
-require 'java'
-
 warn "DL: This is only a partial implementation, and it's likely broken"
 
+require 'ffi'
+
 module DL
-  class DLError < StandardError; end
-  class DLTypeError < StandardError; end
+  TypeMap = {
+    '0' => :void,
+    'C' => :char,
+    'H' => :short,
+    'I' => :int,
+    'L' => :long,
+    'F' => :float,
+    'D' => :double,
+    'S' => :string,
+    'p' => :pointer,
+    'P' => :pointer,
+    'c' => :pointer,
+    'h' => :pointer,
+    'i' => :pointer,
+    'l' => :pointer,
+    'f' => :pointer,
+    'd' => :pointer,
+  }
   
-  FuncTable = {}
+  Char2TypeName = {
+    '0' => 'void',
+    'C' => 'char',
+    'H' => 'short',
+    'I' => 'int',
+    'L' => 'long',
+    'F' => 'float',
+    'D' => 'double',
+    'S' => 'const char *',
+    's' => 'char *',
+    'p' => 'void *',
+    'P' => 'void *',
+    'c' => 'char *',
+    'h' => 'short *',
+    'i' => 'int *',
+    'l' => 'long *',
+    'f' => 'float *',
+    'd' => 'double *',
+    'A' => '[]',
+    'a' => '[]',
+  }
   
-  RTLD_GLOBAL = 0
-  RTLD_LAZY = 0
-  RTLD_NOW = 0
-  
-  ALIGN_INT = 0
-  ALIGN_LONG = 0
-  ALIGN_FLOAT = 0
-  ALIGN_SHORT = 0
-  ALIGN_DOUBLE = 0
-  ALIGN_VOIDP = 0
-  
-  MAX_ARG = 0
-  DLSTACK = 0
-  
-  FREE = 
-  
-  def self.dlopen(*args)
-    Handle.new(*args)
+  RTLD_LAZY = FFI::DynamicLibrary::RTLD_LAZY
+  RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
+  RTLD_NOW = FFI::DynamicLibrary::RTLD_NOW
+
+  ALIGN_SHORT = 2
+  ALIGN_INT = 4
+  ALIGN_LONG = FFI::Platform::ARCH =~ /sparc/ ? 8 : (FFI::Platform::LONG_SIZE / 8)
+  ALIGN_VOIDP = FFI::Platform::ARCH =~ /sparc/ ? 8 : (FFI::Platform::ADDRESS_SIZE / 8)
+  ALIGN_FLOAT = FFI::Platform::ARCH =~ /sparc/ ? 8 : 4
+  ALIGN_DOUBLE = FFI::Platform::ARCH =~ /sparc/ ? 8 : (FFI::Platform::LONG_SIZE / 8)
+
+  class DLError < StandardError
+
   end
-  
-  def self.callback
-    
+
+  class DLTypeError < DLError
+
   end
-  
-  def self.define_callback
-    
-  end
-  
-  def self.remove_callback
-    
-  end
-  
-  def self.malloc(*args)
-    PtrData.malloc(*args)
-  end
-  
-  def self.strdup
-    
-  end
-  
-  def self.sizeof
-    
-  end
-  
-  class ::String
-    def to_ptr
-      
+
+  def self.find_type(type)
+    ffi_type = TypeMap[type]
+    if ffi_type
+      FFI.find_type(ffi_type)
     end
   end
-  
-  class ::Array
-    def to_ptr
-      
-    end
+
+  def self.align(offset, align)
+    mask = align - 1;
+    off = offset;
+    ((off & mask) != 0) ? (off & ~mask) + align : off
   end
-  
-  class ::IO
-    def to_ptr
-      
+
+  def self.sizeof(type)
+    type = type.split(//)
+    i = 0
+    size = 0
+    while i < type.length
+      t = type[i]
+      i += 1
+      count = []
+      while i < type.length && type[i] =~ /[0123456789]/
+        count << type[i]
+        i += 1
+      end
+      n = count.empty? ? 1 : count.join("").to_i
+      case t
+      when 'I'
+        size = align(size, ALIGN_INT) + n * 4
+      when 'i'
+        size += n * 4
+      when 'L'
+        size = align(size, ALIGN_LONG) + n * FFI::Platform::LONG_SIZE / 8
+      when 'l'
+        size += n * FFI::Platform::LONG_SIZE / 8
+      when 'F'
+        size = align(size, ALIGN_FLOAT) + n * 4
+      when 'f'
+        size += n * 4
+      when 'D'
+        size = align(size, ALIGN_DOUBLE) + n * 8
+      when 'd'
+        size += n * 8
+      when 'C', 'c'
+        size += n * 1
+      when 'H'
+        size = align(size, ALIGN_SHORT) + n * 4
+      when 'h'
+        size += n * 2
+      when 'P', 'S'
+        size = align(size, ALIGN_VOIDP) + n * FFI::Platform::ADDRESS_SIZE / 8
+      when 'p', 's'
+        size += n * FFI::Platform::ADDRESS_SIZE / 8
+      else
+        raise DLTypeError.new("unexpected type '#{t}'")
+      end
     end
+    size
   end
-  
+
   class Handle
-    import com.sun.jna.NativeLibrary
-    
-    def initialize(clib, cflag = 0)
-      @ptr = NativeLibrary.get_instance(clib)
+
+    def initialize(libname, flags = RTLD_LAZY | RTLD_GLOBAL)
+      @lib = FFI::DynamicLibrary.open(libname, flags)
+      raise RuntimeError, "Could not open #{libname}" unless @lib
+
       @open = true
-      @enable_close = false
-      
-      if block_given?
-        begin
-          yield self
-        ensure
-          # TODO: close somehow?
-          @open = false
-        end
-      end
-      
-      return nil
-    rescue
-      raise $!.to_s
-    end
-    
-    def to_i
-      
-    end
-    
-    def to_ptr
-      
-    end
-    
-    def close
-      
-    end
-    
-    def sym(name, type = nil)
-      unless @open
-        raise "closed handle"
-      end
-      
+
       begin
-        func = @ptr.get_function(name)
-        raise "unknown symbol \"#{name}\"" unless func
-        
-        return Symbol.new(func, name, type)
-      end
+        yield(self)
+      ensure
+        self.close
+      end if block_given?
     end
-    
-    def []
-      
+
+    def close
+      raise "Closing #{self} not allowed" unless @enable_close
+      @open = false
     end
-    
-    def disable_close
-      @enable_close = false
+
+    def sym(func, prototype = "0")
+      raise "Closed handle" unless @open
+      address = @lib.find_symbol(func)
+      Symbol.new(address, prototype, func) if address
     end
-    
+
+    def [](func, ty = nil)
+      sym(func, ty || "0")
+    end
+
     def enable_close
       @enable_close = true
     end
-  end
-  
-  class PtrData
-    def self.malloc; end
-    def initialize; end
-    def free=; end
-    def free; end
-    def to_i; end
-    def ptr; end
-    def +@; end
-    def ref; end
-    def -@; end
-    def null?; end
-    def to_a; end
-    def to_s; end
-    def to_str; end
-    def inspect; end
-    def <=>; end
-    def ==; end
-    def eql?; end
-    def +; end
-    def -; end
-    def define_data_type; end
-    def struct!; end
-    def union!; end
-    def []; end
-    def []=; end
-    def size; end
-    def size=; end
-    
-    module MemorySpace
-      MemoryTable = {}
-      
-      def self.each; end
+
+    def disable_close
+      @enable_close = false
     end
   end
   
   class Symbol
-    def self.char2type; end
-    
-    def initialize(func, name, type)
-      @func = func
-      @name = name.dup
-      @type = type.dup
+
+    attr_reader :name, :proto
+
+    def initialize(address, type = nil, name = nil)
+      @address = address
+      @name = name
+      @proto = type
       
-      nil
+      rt = DL.find_type(type[0].chr)
+      arg_types = type[1..-1].map { |t| DL.find_type(t) }
+
+      @invoker = FFI::Invoker.new(@address.library, @address, arg_types, rt, "default")
     end
-    
-    def call(*args)
-      types = []
-      @type.each_byte do |b|
-        case b
-        when ?p
-        when ?P
-        when ?a
-        when ?A
-        when ?C, ?c
-          types << java.lang.Byte
-        when ?H
-        when ?h
-        when ?I, ?i
-          types << java.lang.Integer
-        when ?L, ?l
-          types << java.lang.Long
-        when ?F, ?f
-          types << java.lang.Float
-        when ?D,?d
-          types << java.lang.Double
-        when ?S,?s
-          types << java.lang.String
-        else raise "unknown type '#{b.chr}'"
-        end
-      end
-      
-      ret_type = types.shift
-      function = get_function_from_return(ret_type)
-      
-      types = types.to_java java.lang.Class
-      
-      values = []
-      
-      args && args.each_index do |i|
-        # TODO: how to do more reliable type coercion here based on types array?
-        values << Java.ruby_to_java(args[i])
-      end
-      
-      values = values.to_java :object
-      
-      [@func.send(function, values), args]
+
+    def call(args)
+      [ @invoker.call(args), nil ]
     end
-    
-    alias [] call
-    
-    def name; @name; end
-    def proto; @type; end
-    def cproto; end
-    def inspect; end
-    def to_s; end
-    def to_ptr; end
-    def to_i; end
-    
-    private
-    
-    def get_function_from_return(ret_type)
-      if ret_type == java.lang.Integer
-        return :invokeInt
-      elsif ret_type == java.lang.String
-        return :invokeString
-      elsif ret_type == java.lang.Long
-        return :invokeLong
-      elsif ret_type == java.lang.Float
-        return :invokeFloat
-      elsif ret_type == java.lang.Double
-        return :invokeDouble
-      end
+
+    def cproto
+      proto = @proto[1..-1].map { |t| Symbol.char2type(t) }
+      Symbol.char2type(@proto[0].chr) << ' ' << @name << '(' << proto.join(', ') << ')'
     end
+
+    def inspect
+      "#<DL::Symbol func=0x#{@address.address.to_s(16)} '#{cproto}'>"
+    end
+
+    def to_s
+      cproto
+    end
+
+    def to_i
+      @address.address.to_i
+    end
+
+    def self.char2type(ch)
+      Char2TypeName[ch]
+    end
+
   end
-  
-  def self.last_error; end
-  def self.last_error=; end
-  
-  def self.win32_last_error; end
-  def self.win32_last_error=; end
+
+  def self.dlopen(libname)
+    Handle.new(libname)
+  end
 end
