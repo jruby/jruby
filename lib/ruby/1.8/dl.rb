@@ -12,6 +12,7 @@ module DL
     'F' => :float,
     'D' => :double,
     'S' => :string,
+    's' => :pointer,
     'p' => :pointer,
     'P' => :pointer,
     'c' => :pointer,
@@ -65,9 +66,8 @@ module DL
 
   def self.find_type(type)
     ffi_type = TypeMap[type]
-    if ffi_type
-      FFI.find_type(ffi_type)
-    end
+    raise DLTypeError.new("Unknown type '#{type}'") unless ffi_type
+    FFI.find_type(ffi_type)
   end
 
   def self.align(offset, align)
@@ -146,7 +146,7 @@ module DL
     def sym(func, prototype = "0")
       raise "Closed handle" unless @open
       address = @lib.find_symbol(func)
-      Symbol.new(address, prototype, func) if address
+      Symbol.new(address, prototype, func) if address && !address.null?
     end
 
     def [](func, ty = nil)
@@ -172,13 +172,20 @@ module DL
       @proto = type
       
       rt = DL.find_type(type[0].chr)
-      arg_types = type[1..-1].map { |t| DL.find_type(t) }
+      arg_types = []
+      type[1..-1].each_byte { |t| arg_types << DL.find_type(t.chr) } if type.length > 1
 
       @invoker = FFI::Invoker.new(@address.library, @address, arg_types, rt, "default")
+      
+      if rt == FFI::NativeType::POINTER
+        def self.call(*args)
+          [ PtrData.new(@invoker.call(*args)), args ]
+        end
+      end
     end
 
-    def call(args)
-      [ @invoker.call(args), nil ]
+    def call(*args)
+      [ @invoker.call(*args), args ]
     end
 
     def cproto
