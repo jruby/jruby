@@ -2957,7 +2957,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_take
+    /** rb_ary_sort_by_bang
      * 
      */
     @JRubyMethod(name = "sort_by!", compat = CompatVersion.RUBY1_9, frame = true)

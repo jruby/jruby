@@ -3415,7 +3415,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (arg0 instanceof RubyFixnum) {
             return op_aset19(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
-            subpatSet19(context, (RubyRegexp)arg0, null, arg1.convertToString());
+            subpatSet19(context, (RubyRegexp)arg0, null, arg1);
             return arg1;
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
