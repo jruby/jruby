@@ -93,21 +93,30 @@ public class DynamicLibrary extends RubyObject {
             this.library = library;
             this.name = name;
         }
+
+        @JRubyMethod(name = "library")
+        public IRubyObject library(ThreadContext context) {
+            return library;
+        }
+
         @Override
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect(ThreadContext context) {
             return RubyString.newString(context.getRuntime(),
                     String.format("#<Library Symbol library=%s symbol=%s address=%#x>", library.name, name, getAddress()));
         }
+
         @Override
         @JRubyMethod(name = "to_s", optional = 1)
         public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
             return RubyString.newString(context.getRuntime(), name);
         }
+
         @Override
         public final String toString() {
             return name;
         }
+
         final String getName() {
             return name;
         }

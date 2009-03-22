@@ -85,6 +85,12 @@ public class DynamicLibrary extends RubyObject {
             this.library = library;
             this.name = name;
         }
+
+        @JRubyMethod(name = "library")
+        public IRubyObject library(ThreadContext context) {
+            return library;
+        }
+
         @Override
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect(ThreadContext context) {
@@ -92,10 +98,12 @@ public class DynamicLibrary extends RubyObject {
                     String.format("#<Library Symbol library=%s symbol=%s address=%#x>", 
                     library.name, name, getAddress()));
         }
+
         @Override
         public final String toString() {
             return name;
         }
+
         final String getName() {
             return name;
         }
