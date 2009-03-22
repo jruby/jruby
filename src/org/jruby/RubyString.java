@@ -961,7 +961,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             System.arraycopy(bytes.bytes, 0, bytes.bytes, n, len - n);
         }
         RubyString result = new RubyString(context.getRuntime(), getMetaClass(), bytes);
-        result.setTaint(isTaint());
+        result.infectBy(this);
         return result;
     }
 
