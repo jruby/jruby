@@ -204,7 +204,56 @@ module DL
 
   end
 
+  class PtrData
+    def initialize(addr, size = nil, sym = nil)
+      @ptr = addr
+    end
+
+    def self.malloc(size, free = nil)
+      self.new(FFI::MemoryPointer.new(size))
+    end
+
+    def null?
+      @ptr.null?
+    end
+
+    def struct!(type, *members)
+      builder = FFI::StructLayoutBuilder.new
+      i = 0
+      members.each do |name|
+        t = type[i].chr
+        i += 1
+        if i < type.length && type[i] =~ /[0123456789]/
+          raise DLTypeError.new("array fields not supported in struct")
+        end
+        if t =~ /[CHILFDPS]/
+          builder.add_field(name, DL.find_type(t))
+        else
+          raise DLTypeError.new("Unsupported type '#{t}")
+        end
+      end
+      @layout = builder.build
+      self
+    end
+
+    def [](name)
+      @layout.get(@ptr, name)
+    end
+    
+    def []=(name, value)
+      @layout.put(@ptr, name, value)
+    end
+
+    def size
+      @layout.size
+    end
+  end
+
   def self.dlopen(libname)
     Handle.new(libname)
+  end
+
+  def self.malloc(size, free = nil)
+    PtrData.malloc(size, free)
   end
 end
