@@ -217,6 +217,10 @@ module DL
       @ptr.null?
     end
 
+    def to_ptr
+      @ptr
+    end
+
     def struct!(type, *members)
       builder = FFI::StructLayoutBuilder.new
       i = 0

@@ -576,16 +576,24 @@ public final class DefaultMethodFactory {
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ObjectBuffer.ZERO_TERMINATE);
+
             } else if (parameter.respondsTo("to_ptr")) {
-                IRubyObject ptr = parameter.callMethod(context, "to_ptr");
-                if (ptr instanceof Pointer) {
-                    buffer.putAddress(getAddress((Pointer) ptr));
-                } else if (ptr instanceof Buffer) {
-                    addBufferParameter(buffer, ptr, flags);
-                } else if (ptr.isNil()) {
-                    buffer.putAddress(0L);
-                } else {
-                    throw context.getRuntime().newArgumentError("to_ptr returned an invalid pointer");
+                final int MAXRECURSE = 4;
+                for (int depth = 0; depth < MAXRECURSE; ++depth) {
+                    IRubyObject ptr = parameter.callMethod(context, "to_ptr");
+                    if (ptr instanceof Pointer) {
+                        buffer.putAddress(getAddress((Pointer) ptr));
+                    } else if (ptr instanceof Buffer) {
+                        addBufferParameter(buffer, ptr, flags);
+                    } else if (ptr.isNil()) {
+                        buffer.putAddress(0L);
+                    } else if (depth < MAXRECURSE && ptr.respondsTo("to_ptr")) {
+                        parameter = ptr;
+                        continue;
+                    } else {
+                        throw context.getRuntime().newArgumentError("to_ptr returned an invalid pointer");
+                    }
+                    break;
                 }
             } else {
                 throw context.getRuntime().newArgumentError("Invalid buffer/pointer parameter");
