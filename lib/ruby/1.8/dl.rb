@@ -189,8 +189,8 @@ module DL
     end
 
     def cproto
-      proto = @proto[1..-1].map { |t| Symbol.char2type(t) }
-      Symbol.char2type(@proto[0].chr) << ' ' << @name << '(' << proto.join(', ') << ')'
+      cproto = @proto[1..-1].split(//).map { |t| Symbol.char2type(t) }.join(', ')
+      "#{Symbol.char2type(@proto[0].chr)} #{@name}(#{cproto})"
     end
 
     def inspect
