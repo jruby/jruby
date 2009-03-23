@@ -42,6 +42,8 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -50,9 +52,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     private Node iterNode;
+    private CallSite callSite;
 
     public ZSuperNode(ISourcePosition position) {
         super(position);
+        this.callSite = MethodIndex.getSuperCallSite();
     }
 
     public NodeType getNodeType() {
@@ -91,8 +95,9 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
-        
-        return RuntimeHelpers.callZSuper(runtime, context, block, self);
+        if (block == null || !block.isGiven()) block = context.getFrameBlock();
+
+        return callSite.call(context, self, self, context.getCurrentScope().getArgValues(), block);
     }
     
     @Override

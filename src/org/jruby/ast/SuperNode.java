@@ -37,7 +37,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -51,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class SuperNode extends Node implements BlockAcceptingNode {
     private final Node argsNode;
     private Node iterNode;
-    public CallSite callAdapter;
+    private final CallSite callSite;
 
     public SuperNode(ISourcePosition position, Node argsNode) {
         this(position, argsNode, null);
@@ -64,7 +63,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
-        this.callAdapter = MethodIndex.getSuperCallSite();
+        this.callSite = MethodIndex.getSuperCallSite();
     }
 
     public NodeType getNodeType() {
@@ -109,7 +108,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         // If no explicit block passed to super, then use the one passed in, unless it's explicitly cleared with nil
         if (iterNode == null && !block.isGiven()) block = aBlock;
 
-        return callAdapter.call(context, self, self, args, block);
+        return callSite.call(context, self, self, args, block);
     }
     
     @Override

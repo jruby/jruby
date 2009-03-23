@@ -60,6 +60,7 @@ import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -2202,16 +2203,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void callZSuper(CompilerCallback closure) {
-        loadRuntime();
-        loadThreadContext();
-        if (closure != null) {
-            closure.call(this);
-        } else {
-            method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-        }
-        loadSelf();
+        ArgumentsCallback argsCallback = new ArgumentsCallback() {
+            public int getArity() {
+                return -1;
+            }
 
-        invokeUtilityMethod("callZSuper", sig(IRubyObject.class, params(Ruby.class, ThreadContext.class, Block.class, IRubyObject.class)));
+            public void call(BodyCompiler context) {
+                loadThreadContext();
+                invokeUtilityMethod("getArgValues", sig(IRubyObject[].class, ThreadContext.class));
+            }
+        };
+        getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closure, false);
     }
 
     public void checkIsExceptionHandled(ArgumentsCallback rescueArgs) {

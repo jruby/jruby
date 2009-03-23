@@ -769,6 +769,10 @@ public class RuntimeHelpers {
         
         return RubyRegexp.match_last(backref);
     }
+
+    public static IRubyObject[] getArgValues(ThreadContext context) {
+        return context.getCurrentScope().getArgValues();
+    }
     
     public static IRubyObject callZSuper(Ruby runtime, ThreadContext context, Block block, IRubyObject self) {
         // Has the method that is calling super received a block argument

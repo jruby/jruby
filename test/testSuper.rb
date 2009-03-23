@@ -412,7 +412,10 @@ class Bar222 < Foo222
 end
 
 test_equal('a', Bar222.new.b)
-test_equal('b', Bar222.new.method(:b).call)
+# I'm proactively calling this a bug and testing the correct behavior
+# http://redmine.ruby-lang.org/issues/show/1151
+# test_equal('b', Bar222.new.method(:b).call)
+test_equal('a', Bar222.new.method(:b).call)
 
 # JRUBY-2267 frames getting overwritten and super failing as a result
 class Foo2267

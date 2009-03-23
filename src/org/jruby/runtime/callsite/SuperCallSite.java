@@ -15,6 +15,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class SuperCallSite extends CallSite {
     protected volatile CacheEntry cache = CacheEntry.NULL_CACHE;
+    // This can go away if we determine that the following is officially a bug:
+    // http://redmine.ruby-lang.org/issues/show/1151
+    protected volatile String lastName;
     
     public SuperCallSite() {
         super("super", CallType.SUPER);
@@ -26,7 +29,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, args);
         }
         return cacheAndCall(caller, selfType, args, context, self, name);
@@ -38,7 +41,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, args, block);
         }
         return cacheAndCall(caller, selfType, block, args, context, self, name);
@@ -72,7 +75,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name);
         }
         return cacheAndCall(caller, selfType, context, self, name);
@@ -84,7 +87,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name);
@@ -118,7 +121,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1);
@@ -130,7 +133,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1);
@@ -164,7 +167,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2);
@@ -176,7 +179,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2);
@@ -210,7 +213,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2, arg3);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2, arg3);
@@ -222,7 +225,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (myCache.typeOk(selfType)) {
+        if (selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2, arg3, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2, arg3);
@@ -395,7 +398,6 @@ public class SuperCallSite extends CallSite {
     }
 
     protected static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self, RubyModule frameClass, String frameName) {
-        context.callThreadPoll();
         checkSuperDisabledOrOutOfMethod(context, frameClass, frameName);
         RubyClass superClass = RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), frameClass).getSuperClass();
         return superClass;
