@@ -53,7 +53,7 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public final long getAddress() {
         PointerByReference ref = new PointerByReference(ptr);
         return ADDRESS_SIZE == 32
-                ? ref.getPointer().getInt(0) : ref.getPointer().getLong(0);
+                ? (ref.getPointer().getInt(0) & 0xffffffffL) : ref.getPointer().getLong(0);
     }
     
     public final boolean isNull() {
@@ -86,7 +86,7 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public long getAddress(long offset) {
         return ADDRESS_SIZE == 32
-                ? getInt(offset) : getLong(offset);
+                ? (getInt(offset) & 0xffffffffL) : getLong(offset);
     }
 
     public final DirectMemoryIO getMemoryIO(long offset) {
