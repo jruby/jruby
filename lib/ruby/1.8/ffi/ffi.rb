@@ -105,16 +105,17 @@ module FFI
     else
       raise LoadError, "Invalid library '#{lib}'"
     end
-    function = library.find_symbol(name)
+    function = library.find_function(name)
     raise NotFoundError.new(name, library.name) unless function
 
     args = args.map {|e| find_type(e) }
     invoker = if args.length > 0 && args[args.length - 1] == FFI::NativeType::VARARGS
       FFI::VariadicInvoker.new(library, function, args, find_type(ret), options)
     else
-      FFI::Invoker.new(library, function, args, find_type(ret), options[:convention].to_s)
+      FFI::Invoker.new(function, args, find_type(ret), options[:convention].to_s)
     end
     raise NotFoundError.new(name, library.name) unless invoker
+    
     return invoker
   end
 

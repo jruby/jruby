@@ -145,7 +145,7 @@ module DL
 
     def sym(func, prototype = "0")
       raise "Closed handle" unless @open
-      address = @lib.find_symbol(func)
+      address = @lib.find_function(func)
       Symbol.new(address, prototype, func) if address && !address.null?
     end
 
@@ -175,7 +175,7 @@ module DL
       arg_types = []
       type[1..-1].each_byte { |t| arg_types << DL.find_type(t.chr) } if type.length > 1
 
-      @invoker = FFI::Invoker.new(@address.library, @address, arg_types, rt, "default")
+      @invoker = FFI::Invoker.new(address, arg_types, rt, "default")
       
       if rt == FFI::NativeType::POINTER
         def self.call(*args)

@@ -67,21 +67,38 @@ final class JNAInvoker extends AbstractInvoker {
         return result;
     }
 
-    @JRubyMethod(name = { "new" }, meta = true, required = 5)
+    @JRubyMethod(name = { "new" }, meta = true, required = 4)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        String convention = args[4].toString();
-        DynamicLibrary library = (DynamicLibrary) args[0];
-        String functionName = ((DynamicLibrary.Symbol) args[1]).getName();
-        RubyArray paramTypes = (RubyArray) args[2];
+
+        //
+        // JNA does not allow creation of functions to arbitrary addresses
+        //
+        if (!(args[0] instanceof DynamicLibrary.Symbol)) {
+            throw context.getRuntime().newArgumentError("Invalid function address");
+        }
+
+        if (!(args[1] instanceof RubyArray)) {
+            throw context.getRuntime().newArgumentError("Invalid parameter types array");
+        }
+
+        DynamicLibrary.Symbol symbol = (DynamicLibrary.Symbol) args[0];
+        RubyArray paramTypes = (RubyArray) args[1];
+        NativeType returnType = NativeType.valueOf(Util.int32Value(args[2]));
+        int conv = "stdcall".equals(args[3].toString()) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
+
+        //
+        // Create the ruby->JNA parameter converters
+        //
         NativeParam[] parameterTypes = getNativeParameterTypes(context.getRuntime(), paramTypes);
-        NativeType returnType = NativeType.valueOf(Util.int32Value(args[3]));
-        int conv = "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
-        Function function = library.getNativeLibrary().getFunction(functionName, conv);
-        FunctionInvoker functionInvoker = JNAProvider.getFunctionInvoker(returnType);
         Marshaller[] marshallers = new Marshaller[parameterTypes.length];
         for (int i = 0; i < marshallers.length; ++i) {
             marshallers[i] = JNAProvider.getMarshaller(parameterTypes[i], conv);
         }
+
+        Function function = symbol.getNativeLibrary().getFunction(symbol.getName(), conv);
+
+        // JNA -> ruby converter
+        FunctionInvoker functionInvoker = JNAProvider.getFunctionInvoker(returnType);
 
         return new JNAInvoker(context.getRuntime(), (RubyClass) recv, function, functionInvoker, marshallers);
     }

@@ -61,7 +61,7 @@ module FFI::Library
     address = nil
     libraries.each do |lib|
       begin
-        address = lib.find_symbol(cname.to_s)
+        address = lib.find_variable(cname.to_s)
         break unless address.nil?
       rescue LoadError
       end

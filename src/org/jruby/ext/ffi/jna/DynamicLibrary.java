@@ -62,12 +62,22 @@ public class DynamicLibrary extends RubyObject {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
     }
-    @JRubyMethod(name = {  "find_symbol" })
-    public IRubyObject findSymbol(ThreadContext context, IRubyObject symbolName) {
+    
+    @JRubyMethod(name = {  "find_function" })
+    public IRubyObject findFunction(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();
         try {
-            com.sun.jna.Pointer ptr = library.getGlobalVariableAddress(sym);
-            return new Symbol(context.getRuntime(), this, sym, ptr);
+            return new Symbol(context.getRuntime(), this, sym, library.getFunction(sym));
+        } catch (UnsatisfiedLinkError ex) {
+            return context.getRuntime().getNil();
+        }
+    }
+
+    @JRubyMethod(name = {  "find_symbol", "find_variable" })
+    public IRubyObject findVariable(ThreadContext context, IRubyObject symbolName) {
+        final String sym = symbolName.toString();
+        try {
+            return new Symbol(context.getRuntime(), this, sym, library.getGlobalVariableAddress(sym));
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();
         }
@@ -78,12 +88,23 @@ public class DynamicLibrary extends RubyObject {
     }
     static final class Symbol extends BasePointer {
         private final DynamicLibrary library;
+        private final com.sun.jna.Pointer address;
         private final String name;
+
         public Symbol(Ruby runtime, DynamicLibrary library, String name, com.sun.jna.Pointer address) {
             super(runtime, FFIProvider.getModule(runtime).fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
                     new NativeMemoryIO(address), Long.MAX_VALUE);
             this.library = library;
+            this.address = address;
             this.name = name;
+        }
+
+        com.sun.jna.NativeLibrary getNativeLibrary() {
+            return library.getNativeLibrary();
+        }
+
+        com.sun.jna.Pointer getNativeAddress() {
+            return address;
         }
 
         @JRubyMethod(name = "library")

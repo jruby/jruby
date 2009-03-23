@@ -71,7 +71,7 @@ public class DynamicLibrary extends RubyObject {
                     libName != null ? libName : "current process", ex.getMessage()));
         }
     }
-    @JRubyMethod(name = {  "find_symbol" })
+    @JRubyMethod(name = {  "find_symbol", "find_function", "find_variable" })
     public IRubyObject findSymbol(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();
         final long address = library.getSymbolAddress(sym);
