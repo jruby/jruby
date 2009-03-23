@@ -50,8 +50,6 @@ public interface InvocationCompiler {
     public void invokeOpAsgnWithAnd(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     public void invokeOpAsgnWithMethod(String opName, String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
     
-    public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureCallback);
-    
     /**
      * Attr assign calls have slightly different semantics that normal calls, so this method handles those additional semantics.
      */

@@ -3446,30 +3446,11 @@ public class ASTCompiler {
     public void compileSuper(Node node, BodyCompiler context, boolean expr) {
         final SuperNode superNode = (SuperNode) node;
 
-        CompilerCallback argsCallback = new CompilerCallback() {
+        ArgumentsCallback argsCallback = getArgsCallback(superNode.getArgsNode());
 
-                    public void call(BodyCompiler context) {
-                        compileArguments(superNode.getArgsNode(), context);
-                    }
-                };
+        CompilerCallback closureArg = getBlock(superNode.getIterNode());
 
-
-        if (superNode.getIterNode() == null) {
-            // no block, go for simple version
-            if (superNode.getArgsNode() != null) {
-                context.getInvocationCompiler().invokeSuper(argsCallback, null);
-            } else {
-                context.getInvocationCompiler().invokeSuper(null, null);
-            }
-        } else {
-            CompilerCallback closureArg = getBlock(superNode.getIterNode());
-
-            if (superNode.getArgsNode() != null) {
-                context.getInvocationCompiler().invokeSuper(argsCallback, closureArg);
-            } else {
-                context.getInvocationCompiler().invokeSuper(null, closureArg);
-            }
-        }
+        context.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

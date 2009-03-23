@@ -362,6 +362,11 @@ public abstract class AbstractScript implements Script {
         callSites[index] = MethodIndex.getVariableCallSite(name);
         return callSites;
     }
+
+    public static CallSite[] setSuperCallSite(CallSite[] callSites, int index) {
+        callSites[index] = MethodIndex.getSuperCallSite();
+        return callSites;
+    }
     
     public final void setFilename(String filename) {
         this.filename = filename;

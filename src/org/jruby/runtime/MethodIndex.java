@@ -45,6 +45,7 @@ import java.util.Map;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 
 /**
@@ -163,5 +164,9 @@ public class MethodIndex {
     
     public synchronized static CallSite getVariableCallSite(String name) {
         return new VariableCachingCallSite(name);
+    }
+
+    public synchronized static CallSite getSuperCallSite() {
+        return new SuperCallSite();
     }
 }

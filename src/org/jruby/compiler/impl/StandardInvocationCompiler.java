@@ -29,6 +29,7 @@ package org.jruby.compiler.impl;
 
 import org.jruby.RubyArray;
 import org.jruby.compiler.ArgumentsCallback;
+import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.NotCompilableException;
@@ -372,41 +373,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             break;
         }
     }
-
-    public void invokeSuper(CompilerCallback argsCallback, CompilerCallback closureArg) {
-        methodCompiler.loadThreadContext();
-        methodCompiler.invokeUtilityMethod("checkSuperDisabledOrOutOfMethod", sig(void.class, ThreadContext.class));
-        
-        methodCompiler.loadSelf();
-
-        methodCompiler.loadThreadContext(); // [self, tc]
-        
-        // args
-        if (argsCallback == null) {
-            method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-            // block
-            if (closureArg == null) {
-                // no args, no block
-                methodCompiler.loadBlock();
-            } else {
-                // no args, with block
-                closureArg.call(methodCompiler);
-            }
-        } else {
-            argsCallback.call(methodCompiler);
-            // block
-            if (closureArg == null) {
-                // with args, no block
-                methodCompiler.loadBlock();
-            } else {
-                // with args, with block
-                closureArg.call(methodCompiler);
-            }
-        }
-        
-        method.invokeinterface(p(IRubyObject.class), "callSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, Block.class));
-    }
-
+    
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
 
@@ -420,6 +387,15 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             receiverCallback.call(methodCompiler);
         } else {
             methodCompiler.loadSelf();
+        }
+
+        // super uses current block if none given
+        if (callType == CallType.SUPER && closureArg == null) {
+            closureArg = new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    methodCompiler.loadBlock();
+                }
+            };
         }
         
         String signature;

@@ -30,7 +30,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -370,13 +369,17 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 CallType callType = callTypeList.get(i);
 
                 initMethod.pushInt(i);
-                initMethod.ldc(name);
                 if (callType.equals(CallType.NORMAL)) {
+                    initMethod.ldc(name);
                     initMethod.invokestatic(scriptCompiler.getClassname(), "setCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
                 } else if (callType.equals(CallType.FUNCTIONAL)) {
+                    initMethod.ldc(name);
                     initMethod.invokestatic(scriptCompiler.getClassname(), "setFunctionalCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
                 } else if (callType.equals(CallType.VARIABLE)) {
+                    initMethod.ldc(name);
                     initMethod.invokestatic(scriptCompiler.getClassname(), "setVariableCallSite", sig(CallSite[].class, params(CallSite[].class, int.class, String.class)));
+                } else if (callType.equals(CallType.SUPER)) {
+                    initMethod.invokestatic(scriptCompiler.getClassname(), "setSuperCallSite", sig(CallSite[].class, params(CallSite[].class, int.class)));
                 }
             }
             initMethod.putfield(scriptCompiler.getClassname(), "callSites", ci(CallSite[].class));
