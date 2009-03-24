@@ -52,14 +52,24 @@ final class TypeSizeMapper {
         int index = (int) RubyNumeric.num2long(type);
         return index >= 0 && index < sizes.length ? sizes[index] : -1;
     }
+
+    /**
+     * Calls up to ruby code to calculate the size of the tpe
+     * 
+     * @param context The current thread context
+     * @param ffi The FFI ruby module
+     * @param sizeArg The name of the type
+     * @return size of the type
+     */
     private static final int callTypeSize(ThreadContext context, RubyModule ffi, IRubyObject sizeArg) {
         return (int) RubyFixnum.num2long(ffi.callMethod(context, "type_size", sizeArg));
     }
+
     public static final int getTypeSize(ThreadContext context, IRubyObject sizeArg) {
         final RubyModule ffi = FFIProvider.getModule(context.getRuntime());
         final IRubyObject typeDefs = ffi.fastFetchConstant("TypeDefs");
         final IRubyObject type = ((RubyHash) typeDefs).fastARef(sizeArg);
-        final int size = type != null  ? getTypeSize(type) : 0;
+        final int size = type != null && !type.isNil() ? getTypeSize(type) : 0;
         return size > 0 ? size : callTypeSize(context, ffi, sizeArg);
     }
 }
