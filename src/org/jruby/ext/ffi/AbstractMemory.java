@@ -523,7 +523,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_array_of_int8", "get_array_of_char" }, required = 2)
     public IRubyObject get_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
-        checkBounds(context, offset, count * 2);
+        checkBounds(context, offset, count);
         byte[] array = new byte[count];
         getMemoryIO().get(getOffset(offset), array, 0, array.length);
         Ruby runtime = context.getRuntime();
@@ -537,7 +537,7 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject put_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
-        checkBounds(context, offset, count * 2);
+        checkBounds(context, offset, count);
         byte[] array = new byte[count];        
         for (int i = 0; i < array.length; ++i) {
             array[i] = Util.int8Value((IRubyObject) arr.entry(i));
@@ -610,7 +610,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = "get_array_of_int64", required = 2)
     public IRubyObject get_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
-        checkBounds(context, offset, count * 4);
+        checkBounds(context, offset, count * 8);
         long[] array = new long[count];
         getMemoryIO().get(getOffset(offset), array, 0, array.length);
         Ruby runtime = context.getRuntime();
