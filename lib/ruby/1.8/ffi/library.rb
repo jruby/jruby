@@ -6,7 +6,7 @@ module FFI::Library
     names.each do |name|
       [ name, FFI.map_library_name(name) ].each do |libname|
         begin
-          lib = FFI::DynamicLibrary.open(libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL)
+          lib = FFI::DynamicLibrary.open(libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
           if lib
             ffi_libs << lib
             break
