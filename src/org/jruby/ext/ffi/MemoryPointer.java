@@ -42,7 +42,8 @@ public final class MemoryPointer extends BasePointer {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
         }
-        AllocatedDirectMemoryIO io = factory.allocateDirectMemory(total > 0 ? total : 1, clear);
+        AllocatedDirectMemoryIO io = factory.allocateDirectMemory(context.getRuntime(),
+                total > 0 ? total : 1, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
             throw new RaiseException(runtime, runtime.getNoMemoryError(),

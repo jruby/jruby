@@ -181,7 +181,7 @@ public abstract class Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>MemoryIO</tt>.
      */
-    public abstract AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear);
+    public abstract AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear);
 
     /**
      * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.

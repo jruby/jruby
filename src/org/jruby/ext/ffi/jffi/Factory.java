@@ -59,8 +59,8 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      * @param clear If the memory should be cleared.
      * @return A new <tt>MemoryIO</tt>.
      */
-    public AllocatedDirectMemoryIO allocateDirectMemory(int size, boolean clear) {
-        return AllocatedNativeMemoryIO.allocate(size, clear);
+    public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
+        return AllocatedNativeMemoryIO.allocate(runtime, size, clear);
     }
 
     public DirectMemoryIO wrapDirectMemory(long address) {

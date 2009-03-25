@@ -1,19 +1,18 @@
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 
-final class AllocatedNativeMemoryIO extends NativeMemoryIO implements AllocatedDirectMemoryIO {
-    private final int size;
+final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
     private volatile boolean released = false;
     private volatile boolean autorelease = true;
 
-    static final AllocatedNativeMemoryIO allocate(int size, boolean clear) {
+    static final AllocatedNativeMemoryIO allocate(Ruby runtime, int size, boolean clear) {
         long memory = IO.allocateMemory(size, clear);
-        return memory != 0 ? new AllocatedNativeMemoryIO(memory, size) : null;
+        return memory != 0 ? new AllocatedNativeMemoryIO(runtime, memory, size) : null;
     }
-    private AllocatedNativeMemoryIO(long address, int size) {
-        super(address);
-        this.size = size;
+    private AllocatedNativeMemoryIO(Ruby runtime, long address, int size) {
+        super(runtime, address, size);
     }
 
     public void free() {
