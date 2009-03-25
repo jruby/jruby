@@ -227,7 +227,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_int8", "get_char" }, required = 1)
     public IRubyObject get_int8(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 1);
-        return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getByte(getOffset(offset)));
+        return Util.newSigned8(context.getRuntime(), getMemoryIO().getByte(getOffset(offset)));
     }
     
     /**
@@ -253,9 +253,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_uint8", "get_uchar" }, required = 1)
     public IRubyObject get_uint8(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 1);
-        int value = getMemoryIO().getByte(getOffset(offset));
-        return RubyFixnum.newFixnum(context.getRuntime(),
-                value < 0 ? (short) ((value & 0x7F) + 0x80) : value);
+        return Util.newUnsigned8(context.getRuntime(), getMemoryIO().getByte(getOffset(offset)));
     }
 
     /**
@@ -281,7 +279,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_int16", "get_short" }, required = 1)
     public IRubyObject get_int16(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 2);
-        return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getShort(getOffset(offset)));
+        return Util.newSigned16(context.getRuntime(), getMemoryIO().getShort(getOffset(offset)));
     }
     
     /**
@@ -307,9 +305,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_uint16", "get_ushort" }, required = 1)
     public IRubyObject get_uint16(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 2);
-        int value = getMemoryIO().getShort(getOffset(offset));
-        return RubyFixnum.newFixnum(context.getRuntime(), 
-            value < 0 ? (int)((value & 0x7FFF) + 0x8000) : value);
+        return Util.newUnsigned16(context.getRuntime(), getMemoryIO().getShort(getOffset(offset)));
     }
     /**
      * Writes a 32 bit signed integer value to the memory address.
@@ -334,7 +330,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_int32", "get_int" }, required = 1)
     public IRubyObject get_int32(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 4);
-        return RubyFixnum.newFixnum(context.getRuntime(), getMemoryIO().getInt(getOffset(offset)));
+        return Util.newSigned32(context.getRuntime(), getMemoryIO().getInt(getOffset(offset)));
     }
     
     /**
@@ -360,9 +356,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "get_uint32", "get_uint" }, required = 1)
     public IRubyObject get_uint32(ThreadContext context, IRubyObject offset) {
         checkBounds(context, offset, 4);
-        long value = getMemoryIO().getInt(getOffset(offset));
-        return RubyFixnum.newFixnum(context.getRuntime(), 
-                value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+        return Util.newUnsigned32(context.getRuntime(), getMemoryIO().getInt(getOffset(offset)));
     }
     /**
      * Writes a 64 bit integer value to the memory area.
