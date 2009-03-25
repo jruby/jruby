@@ -38,7 +38,7 @@ public final class Buffer extends AbstractMemory {
     }
 
     public Buffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, new ArrayMemoryIO(0), 0);
+        super(runtime, klass, new ArrayMemoryIO(runtime, 0), 0);
         this.inout = IN | OUT;
         this.typeSize = 1;
     }
@@ -47,7 +47,7 @@ public final class Buffer extends AbstractMemory {
     }
     Buffer(Ruby runtime, int size, int flags) {
         this(runtime, FFIProvider.getModule(runtime).fastGetClass("Buffer"),
-            new ArrayMemoryIO(size), size, 1, flags);
+            new ArrayMemoryIO(runtime, size), size, 1, flags);
     }
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int typeSize, int inout) {
         super(runtime, (RubyClass) klass, io, size);
@@ -62,7 +62,8 @@ public final class Buffer extends AbstractMemory {
             IRubyObject sizeArg, int count, int flags) {
         final int typeSize = calculateSize(context, sizeArg);
         final int total = typeSize * count;
-        return new Buffer(context.getRuntime(), recv, new ArrayMemoryIO(total), total, typeSize, flags);
+        return new Buffer(context.getRuntime(), recv, 
+                new ArrayMemoryIO(context.getRuntime(), total), total, typeSize, flags);
     }
     @JRubyMethod(name = { "new", "alloc_inout", "__alloc_inout" }, meta = true)
     public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, IRubyObject sizeArg) {

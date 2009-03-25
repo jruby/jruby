@@ -187,4 +187,11 @@ public final class Util {
             }
         }
     }
+
+    public static final void checkBounds(Ruby runtime, long size, long off, long len) {
+        if ((off | len | (off + len) | (size - (off + len))) < 0) {
+            throw runtime.newIndexError("Memory access offset="
+                    + off + " size=" + len + " is out of bounds");
+        }
+    }
 }
