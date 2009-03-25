@@ -702,21 +702,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().putMemoryIO(getOffset(offset), ((AbstractMemory) ptr).getMemoryIO());
         return this;
     }
-    @JRubyMethod(name = "__get_buffer", required = 2)
-    public IRubyObject get_buffer(ThreadContext context, IRubyObject off, IRubyObject len_) {
-        int len = Util.int32Value(len_);
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(getOffset(off), bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        return context.getRuntime().newString(bl);
-    }
-    @JRubyMethod(name = "__put_buffer", required = 3)
-    public IRubyObject put_buffer(ThreadContext context, IRubyObject off, IRubyObject str, IRubyObject len_) {
-        ByteList bl = str.convertToString().getByteList();
-        int len = Math.min(bl.length(), Util.int32Value(len_));
-        getMemoryIO().put(getOffset(off), bl.unsafeBytes(), bl.begin(), len);
-        return context.getRuntime().newFixnum(len);
-    }
+    
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
         return slice(context.getRuntime(), RubyNumeric.fix2long(value));

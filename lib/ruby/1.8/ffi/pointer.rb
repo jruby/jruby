@@ -21,7 +21,7 @@ module FFI
       end
       def read_string(len=nil)
         if len
-          __get_buffer(0, len)
+          get_bytes(0, len)
         else
           get_string(0)
         end
@@ -30,7 +30,7 @@ module FFI
       def write_string(str, len=nil)
         len = str.size unless len
         # Write the string data without NUL termination
-        __put_buffer(0, str, len)
+        put_bytes(0, str)
       end
       def read_array_of_type(type, reader, length)
         ary = []
