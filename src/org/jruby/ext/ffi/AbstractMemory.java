@@ -518,75 +518,45 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject get_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count);
-        byte[] array = new byte[count];
-        getMemoryIO().get(getOffset(offset), array, 0, array.length);
-        Ruby runtime = context.getRuntime();
-        RubyArray arr = RubyArray.newArray(runtime, array.length);
-        for (int i = 0; i < array.length; ++i) {
-            arr.add(RubyFixnum.newFixnum(runtime, array[i]));
-        }
-        return arr;
+        return MemoryUtil.getArrayOfSigned8(context.getRuntime(), io, getOffset(offset), count);
     }
     @JRubyMethod(name = { "put_array_of_int8", "put_array_of_char" }, required = 2)
     public IRubyObject put_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
         checkBounds(context, offset, count);
-        byte[] array = new byte[count];        
-        for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.int8Value((IRubyObject) arr.entry(i));
-        }
-        getMemoryIO().put(getOffset(offset), array, 0, array.length);
+        MemoryUtil.putArrayOfSigned8(context.getRuntime(), getMemoryIO(), getOffset(offset), arr);
+
         return this;
     }
     @JRubyMethod(name = { "get_array_of_int16", "get_array_of_short" }, required = 2)
     public IRubyObject get_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 2);
-        short[] array = new short[count];
-        getMemoryIO().get(getOffset(offset), array, 0, array.length);
-        Ruby runtime = context.getRuntime();
-        RubyArray arr = RubyArray.newArray(runtime, array.length);
-        for (int i = 0; i < array.length; ++i) {
-            arr.add(RubyFixnum.newFixnum(runtime, array[i]));
-        }
-        return arr;
+        return MemoryUtil.getArrayOfSigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), count);
     }
     @JRubyMethod(name = { "put_array_of_int16", "put_array_of_short" }, required = 2)
     public IRubyObject put_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
         checkBounds(context, offset, count * 2);
-        short[] array = new short[count];        
-        for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.int16Value((IRubyObject) arr.entry(i));
-        }
-        getMemoryIO().put(getOffset(offset), array, 0, array.length);
+        MemoryUtil.putArrayOfSigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), arr);
+        
         return this;
     }
     @JRubyMethod(name = { "get_array_of_int32", "get_array_of_int" }, required = 2)
     public IRubyObject get_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 4);
-        int[] array = new int[count];
-        getMemoryIO().get(getOffset(offset), array, 0, array.length);
-        Ruby runtime = context.getRuntime();
-        RubyArray arr = RubyArray.newArray(runtime, array.length);
-        for (int i = 0; i < array.length; ++i) {
-            arr.add(RubyFixnum.newFixnum(runtime, array[i]));
-        }
-        return arr;
+        return MemoryUtil.getArrayOfSigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), count);
     }
     @JRubyMethod(name = { "put_array_of_int32", "put_array_of_int" }, required = 2)
     public IRubyObject put_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
         checkBounds(context, offset, count * 4);
-        int[] array = new int[count];
-        for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.int32Value((IRubyObject) arr.entry(i));
-        }
-        getMemoryIO().put(getOffset(offset), array, 0, array.length);
+        MemoryUtil.putArrayOfSigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), arr);
+
         return this;
     }
     @JRubyMethod(name = "get_array_of_long", required = 2)
@@ -605,75 +575,50 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject get_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 8);
-        long[] array = new long[count];
-        getMemoryIO().get(getOffset(offset), array, 0, array.length);
-        Ruby runtime = context.getRuntime();
-        RubyArray arr = RubyArray.newArray(runtime, array.length);
-        for (int i = 0; i < array.length; ++i) {
-            arr.add(RubyFixnum.newFixnum(runtime, array[i]));
-        }
-        return arr;
+        return MemoryUtil.getArrayOfSigned64(context.getRuntime(), io, getOffset(offset), count);
     }
     @JRubyMethod(name = "put_array_of_int64", required = 2)
     public IRubyObject put_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
         checkBounds(context, offset, count * 8);
-        long[] array = new long[count];
-        for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.int64Value((IRubyObject) arr.entry(i));
-        }
-        getMemoryIO().put(getOffset(offset), array, 0, array.length);
+
+        MemoryUtil.putArrayOfSigned64(context.getRuntime(), getMemoryIO(), getOffset(offset), arr);
+
         return this;
     }
+
     @JRubyMethod(name = { "get_array_of_float32", "get_array_of_float" }, required = 2)
     public IRubyObject get_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 4);
-        float[] array = new float[count];
-        getMemoryIO().get(getOffset(offset), array, 0, array.length);
-        Ruby runtime = context.getRuntime();
-        RubyArray arr = RubyArray.newArray(runtime, array.length);
-        for (int i = 0; i < array.length; ++i) {
-            arr.add(RubyFloat.newFloat(runtime, array[i]));
-        }
-        return arr;
+        return MemoryUtil.getArrayOfFloat32(context.getRuntime(), io, getOffset(offset), count);
     }
+
     @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" }, required = 2)
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
         checkBounds(context, offset, count * 4);
-        float[] array = new float[count];
-        for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.floatValue((IRubyObject) arr.entry(i));
-        }
-        getMemoryIO().put(getOffset(offset), array, 0, array.length);
+        MemoryUtil.putArrayOfFloat32(context.getRuntime(), io, getOffset(offset), arr);
+
         return this;
     }
+    
     @JRubyMethod(name = { "get_array_of_float64", "get_array_of_double" }, required = 2)
     public IRubyObject get_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject length) {
         int count = Util.int32Value(length);
         checkBounds(context, offset, count * 8);
-        double[] array = new double[count];
-        getMemoryIO().get(getOffset(offset), array, 0, array.length);
-        Ruby runtime = context.getRuntime();
-        RubyArray arr = RubyArray.newArray(runtime, array.length);
-        for (int i = 0; i < array.length; ++i) {
-            arr.add(RubyFloat.newFloat(runtime, array[i]));
-        }
-        return arr;
+
+        return MemoryUtil.getArrayOfFloat64(context.getRuntime(), io, getOffset(offset), count);
     }
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         RubyArray arr = (RubyArray) arrParam;
         int count = arr.getLength();
         checkBounds(context, offset, count * 8);
-        double[] array = new double[count];
-        for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.doubleValue((IRubyObject) arr.entry(i));
-        }
-        getMemoryIO().put(getOffset(offset), array, 0, array.length);
+        MemoryUtil.putArrayOfFloat32(context.getRuntime(), getMemoryIO(), getOffset(offset), arr);
+
         return this;
     }
     @JRubyMethod(name = "get_string", required = 1)
