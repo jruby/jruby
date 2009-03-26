@@ -107,6 +107,7 @@ public class RubyYaccLexer {
         map.put("BEGIN", Keyword.LBEGIN);
         map.put("while", Keyword.WHILE);
         map.put("alias", Keyword.ALIAS);
+        map.put("__ENCODING__", Keyword.__ENCODING__);
     }
 
     private Encoding encoding;
@@ -172,7 +173,8 @@ public class RubyYaccLexer {
         LEND ("END", Tokens.klEND, Tokens.klEND, LexState.EXPR_END),
         LBEGIN ("BEGIN", Tokens.klBEGIN, Tokens.klBEGIN, LexState.EXPR_END),
         WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, LexState.EXPR_BEG),
-        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, LexState.EXPR_FNAME);
+        ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, LexState.EXPR_FNAME),
+        __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, LexState.EXPR_END);
         
         public final String name;
         public final int id0;
@@ -1528,7 +1530,7 @@ public class RubyYaccLexer {
             /* See if it is a reserved word.  */
             //Keyword keyword = Keyword.getKeyword(tempVal, tempVal.length());
             Keyword keyword = getKeyword(tempVal);
-            if (keyword != null) {
+            if (keyword != null && (keyword != Keyword.__ENCODING__ || !isOneEight)) {
                 // enum lex_state
                 LexState state = lex_state;
 

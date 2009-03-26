@@ -90,6 +90,7 @@ import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DotNode;
+import org.jruby.ast.EncodingNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallManyArgsBlockNode;
 import org.jruby.ast.FCallManyArgsBlockPassNode;
@@ -272,9 +273,7 @@ public class ParserSupport {
         case Tokens.k__LINE__:
             return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);
         case Tokens.k__ENCODING__:
-            // ENEBO: 1.8 will never see this, but 1.9 can
-            // TODO: Replace with proper encoding support
-            return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);            
+            return new EncodingNode(token.getPosition());
         case Tokens.tIDENTIFIER:
             return currentScope.declare(token.getPosition(), (String) token.getValue());
         case Tokens.tCONSTANT:

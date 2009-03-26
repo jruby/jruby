@@ -1679,4 +1679,9 @@ public class ReWriteVisitor implements NodeVisitor {
         print("*" + iVisited.getName());
         return null;
     }
+
+    public Object visitEncodingNode(EncodingNode iVisited) {
+        print("__ENCODING__");
+        return null;
+    }
 }

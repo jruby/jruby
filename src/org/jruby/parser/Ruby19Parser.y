@@ -1737,7 +1737,7 @@ variable        : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
                     $$ = new Token("__LINE__", Tokens.k__LINE__, $1.getPosition());
                 }
                 | k__ENCODING__ {
-                    $$ = new Token("__ENCODING__", Tokens.k__LINE__, $1.getPosition());
+                    $$ = new Token("__ENCODING__", Tokens.k__ENCODING__, $1.getPosition());
                 }
 
 var_ref         : variable {
