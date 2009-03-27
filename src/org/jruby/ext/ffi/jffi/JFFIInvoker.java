@@ -60,9 +60,14 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         super(runtime, klass, parameterTypes.length);
 
         final com.kenai.jffi.Type jffiReturnType = getFFIType(returnType);
+        if (jffiReturnType == null) {
+            throw runtime.newArgumentError("Invalid return type");
+        }
         com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
         for (int i = 0; i < jffiParamTypes.length; ++i) {
-            jffiParamTypes[i] = getFFIType(parameterTypes[i]);
+            if ((jffiParamTypes[i] = getFFIType(parameterTypes[i])) == null) {
+                throw runtime.newArgumentError("Invalid parameter type");
+            }
         }
 
         this.handle = handle;
@@ -108,6 +113,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
         return callMethod.call(context, callModule, callModule.getSingletonClass(), "call", args, Block.NULL_BLOCK);
     }
+    
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         DynamicMethod dm;
@@ -128,38 +134,12 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     }
     private static final com.kenai.jffi.Type getFFIType(NativeParam type) {
 
-        if (type instanceof NativeType) switch ((NativeType) type) {
-            case VOID: return com.kenai.jffi.Type.VOID;
-            case INT8: return com.kenai.jffi.Type.SINT8;
-            case UINT8: return com.kenai.jffi.Type.UINT8;
-            case INT16: return com.kenai.jffi.Type.SINT16;
-            case UINT16: return com.kenai.jffi.Type.UINT16;
-            case INT32: return com.kenai.jffi.Type.SINT32;
-            case UINT32: return com.kenai.jffi.Type.UINT32;
-            case INT64: return com.kenai.jffi.Type.SINT64;
-            case UINT64: return com.kenai.jffi.Type.UINT64;
-            case LONG:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32
-                        ? com.kenai.jffi.Type.SINT32
-                        : com.kenai.jffi.Type.SINT64;
-            case ULONG:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32
-                        ? com.kenai.jffi.Type.UINT32
-                        : com.kenai.jffi.Type.UINT64;
-            case FLOAT32: return com.kenai.jffi.Type.FLOAT;
-            case FLOAT64: return com.kenai.jffi.Type.DOUBLE;
-            case POINTER: return com.kenai.jffi.Type.POINTER;
-            case BUFFER_IN:
-            case BUFFER_OUT:
-            case BUFFER_INOUT:
-                return com.kenai.jffi.Type.POINTER;
-            case STRING: return com.kenai.jffi.Type.POINTER;
-            default:
-                throw new IllegalArgumentException("Unknown type " + type);
+        if (type instanceof NativeType) {
+            return FFIUtil.getFFIType((NativeType) type);
         } else if (type instanceof CallbackInfo) {
             return com.kenai.jffi.Type.POINTER;
         } else {
-            throw new IllegalArgumentException("Unknown type " + type);
+            return null;
         }
     }
 }

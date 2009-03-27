@@ -108,7 +108,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     case FLOAT64:
                     case POINTER:
                     case STRING:
-                        ffiParameterTypes[i] = getFFIType((NativeType) nativeParams[i]);
+                        ffiParameterTypes[i] = FFIUtil.getFFIType((NativeType) nativeParams[i]);
                         parameterTypes[i] = (NativeType) nativeParams[i];
                         break;
                     default:
@@ -130,7 +130,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 case FLOAT64:
                 case POINTER:
                 case VOID:
-                    this.ffiReturnType = getFFIType(cbInfo.getReturnType());
+                    this.ffiReturnType = FFIUtil.getFFIType(cbInfo.getReturnType());
                     break;
                 default:
                    throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
@@ -138,37 +138,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             }
         }
     }
-    private static final Type getFFIType(NativeType type) {
-        switch (type) {
-            case VOID: return com.kenai.jffi.Type.VOID;
-            case INT8: return com.kenai.jffi.Type.SINT8;
-            case UINT8: return com.kenai.jffi.Type.UINT8;
-            case INT16: return com.kenai.jffi.Type.SINT16;
-            case UINT16: return com.kenai.jffi.Type.UINT16;
-            case INT32: return com.kenai.jffi.Type.SINT32;
-            case UINT32: return com.kenai.jffi.Type.UINT32;
-            case INT64: return com.kenai.jffi.Type.SINT64;
-            case UINT64: return com.kenai.jffi.Type.UINT64;
-            case LONG:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32
-                        ? com.kenai.jffi.Type.SINT32
-                        : com.kenai.jffi.Type.SINT64;
-            case ULONG:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32
-                        ? com.kenai.jffi.Type.UINT32
-                        : com.kenai.jffi.Type.UINT64;
-            case FLOAT32: return com.kenai.jffi.Type.FLOAT;
-            case FLOAT64: return com.kenai.jffi.Type.DOUBLE;
-            case POINTER: return com.kenai.jffi.Type.POINTER;
-            case BUFFER_IN:
-            case BUFFER_OUT:
-            case BUFFER_INOUT:
-                return com.kenai.jffi.Type.POINTER;
-            case STRING: return com.kenai.jffi.Type.POINTER;
-            default:
-                throw new IllegalArgumentException("Unknown type " + type);
-        }
-    }
+
     @JRubyClass(name = "FFI::Callback", parent = "FFI::BasePointer")
     static class Callback extends BasePointer {
         private final CallbackInfo cbInfo;
