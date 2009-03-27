@@ -110,6 +110,9 @@ public abstract class Factory {
             if (ffi.fastGetClass(FFIProvider.CLASS_NAME) == null) {
                 FFIProvider.createProviderClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("Type") == null) {
+                Type.createTypeClass(runtime, ffi);
+            }
             if (ffi.fastGetClass(AbstractInvoker.CLASS_NAME) == null) {
                 AbstractInvoker.createAbstractInvokerClass(runtime, ffi);
             }
