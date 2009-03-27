@@ -46,14 +46,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallbackInfo extends Type implements NativeParam {
     public static final String CLASS_NAME = "CallbackInfo";
     
-    /**
-     * The arity of this function.
-     */
+    /** The arity of this function. */
     protected final Arity arity;
 
     protected final NativeParam[] parameterTypes;
     protected final NativeType returnType;
-    
+
+    /**
+     * Creates a CallbackInfo class for a ruby runtime
+     *
+     * @param runtime The runtime to create the class for
+     * @param module The module to place the class in
+     *
+     * @return The newly created ruby class
+     */
     public static RubyClass createCallbackInfoClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
                 module.fastGetClass("Type"),
@@ -66,7 +72,11 @@ public class CallbackInfo extends Type implements NativeParam {
     
     /**
      * Creates a new <tt>CallbackInfo</tt> instance.
-     * @param arity
+     *
+     * @param runtime The runtime to create the instance for
+     * @param klazz The ruby class of the CallbackInfo instance
+     * @param returnType The return type of the callback
+     * @param paramTypes The parameter types of the callback
      */
     public CallbackInfo(Ruby runtime, RubyClass klazz, NativeType returnType, NativeParam[] paramTypes) {
         super(runtime, klazz);
@@ -75,8 +85,18 @@ public class CallbackInfo extends Type implements NativeParam {
         this.returnType = returnType;
     }
 
+    /**
+     * CallbackInfo.new
+     *
+     * @param context The current ruby thread context
+     * @param klass The ruby class of the CallbackInfo instance
+     * @param returnType The ruby return type
+     * @param _paramTypes An array containing the ruby parameter types
+     *
+     * @return A new CallbackInfo instance
+     */
     @JRubyMethod(name = "new", meta = true)
-    public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject self, IRubyObject returnType, IRubyObject _paramTypes)
+    public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass, IRubyObject returnType, IRubyObject _paramTypes)
     {
         RubyArray paramTypes = (RubyArray) _paramTypes;
         NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
@@ -84,7 +104,7 @@ public class CallbackInfo extends Type implements NativeParam {
             nativeParamTypes[i] = NativeType.valueOf((IRubyObject) paramTypes.entry(i));
         }
         try {
-            return new CallbackInfo(context.getRuntime(), (RubyClass) self,
+            return new CallbackInfo(context.getRuntime(), (RubyClass) klass,
                     NativeType.valueOf(returnType), nativeParamTypes);
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();
@@ -100,13 +120,29 @@ public class CallbackInfo extends Type implements NativeParam {
         return arity;
     }
 
+    /**
+     * Gets the native type of this CallbackInfo when passed as a parameter
+     *
+     * @return The native type of this CallbackInfo instance.
+     */
     public NativeType getNativeType() {
         return NativeType.POINTER;
     }
 
+    /**
+     * Gets the native return type the callback should return
+     *
+     * @return The native return type
+     */
     public final NativeType getReturnType() {
         return returnType;
     }
+
+    /**
+     * Gets the ruby parameter types of the callback
+     *
+     * @return An array of the parameter types
+     */
     public final NativeParam[] getParameterTypes() {
         return parameterTypes;
     }

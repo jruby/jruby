@@ -29,27 +29,68 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+
+/**
+ * Manages Callback instances for the low level FFI backend.
+ */
 public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+
+    /** Holder for the single instance of CallbackManager */
     private static final class SingletonHolder {
         static final CallbackManager INSTANCE = new CallbackManager();
     }
-    public static RubyClass createCallbackClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("Callback",
-                module.fastGetClass("Pointer"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(Callback.class);
-        result.defineAnnotatedConstants(Callback.class);
 
-        return result;
-    }
-    private final Map<Object, Map<CallbackInfo, Callback>> callbackMap =
-            new WeakHashMap<Object, Map<CallbackInfo, Callback>>();
-    private final Map<CallbackInfo, ClosureInfo> infoMap =
-            Collections.synchronizedMap(new WeakHashMap<CallbackInfo, ClosureInfo>());
+    /** 
+     * Gets the singleton instance of CallbackManager
+     */
     public static final CallbackManager getInstance() {
         return SingletonHolder.INSTANCE;
     }
+    
+    /**
+     * Creates a Callback class for a ruby runtime
+     *
+     * @param runtime The runtime to create the class for
+     * @param module The module to place the class in
+     *
+     * @return The newly created ruby class
+     */
+    public static RubyClass createCallbackClass(Ruby runtime, RubyModule module) {
+
+        RubyClass cbClass = module.defineClassUnder("Callback", module.fastGetClass("Pointer"),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
+        cbClass.defineAnnotatedMethods(Callback.class);
+        cbClass.defineAnnotatedConstants(Callback.class);
+
+        return cbClass;
+    }
+    
+    /**
+     * A map to keep {@link Callback} instances alive
+     * 
+     * This maps from either a Proc or Block to another map of
+     * CallbackInfo:Callback. This allows the fringe case of a single proc 
+     * object being passed as an argument to different functions.
+     */
+    private final Map<Object, Map<CallbackInfo, Callback>> callbackMap =
+            new WeakHashMap<Object, Map<CallbackInfo, Callback>>();
+
+    /** A map of Ruby CallbackInfo to low level JFFI Closure metadata */
+    private final Map<CallbackInfo, ClosureInfo> infoMap =
+            Collections.synchronizedMap(new WeakHashMap<CallbackInfo, ClosureInfo>());
+
+    /**
+     * Gets a Callback object conforming to the signature contained in the
+     * <tt>CallbackInfo</tt> for the ruby <tt>Proc</tt> or <tt>Block</tt> instance.
+     *
+     * @param runtime The ruby runtime the callback is attached to
+     * @param cbInfo The signature of the native callback
+     * @param proc The ruby <tt>Proc</tt> or <tt>Block</tt> object to call when
+     * the callback is invoked.
+     * @return A native value returned to the native caller.
+     */
     public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
         Map<CallbackInfo, Callback> map;
         synchronized (callbackMap) {
@@ -62,6 +103,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             }
             callbackMap.put(proc, map = Collections.synchronizedMap(new HashMap<CallbackInfo, Callback>(2)));
         }
+
         ClosureInfo info = infoMap.get(cbInfo);
         if (info == null) {
             CallingConvention convention = "stdcall".equals(null)
@@ -75,8 +117,13 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 info.ffiReturnType, info.ffiParameterTypes, info.convention);
         Callback cb = new Callback(runtime, handle, cbInfo, proc);
         map.put(cbInfo, cb);
+
         return cb;
     }
+
+    /**
+     * Holds the JFFI return type and parameter types to avoid
+     */
     private static class ClosureInfo {
         private final CallbackInfo cbInfo;
         private final CallingConvention convention;
@@ -102,6 +149,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         }
     }
 
+    /**
+     * Wrapper around the native callback, to represent it as a ruby object
+     */
     @JRubyClass(name = "FFI::Callback", parent = "FFI::BasePointer")
     static class Callback extends BasePointer {
         private final CallbackInfo cbInfo;
@@ -114,6 +164,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             this.proc = proc;
         }
     }
+
+    /**
+     * Wraps a ruby proc in a JFFI Closure
+     */
     private static final class CallbackProxy implements Closure {
         private final Ruby runtime;
         private final CallbackInfo cbInfo;
@@ -147,6 +201,14 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             setReturnValue(runtime, cbInfo.getReturnType(), buffer, retVal);
         }
     }
+
+    /**
+     * An implementation of MemoryIO that throws exceptions on any attempt to read/write
+     * the callback memory area (which is code).
+     *
+     * This also keeps the callback alive via the handle member, as long as this
+     * CallbackMemoryIO instance is contained in a valid Callback pointer.
+     */
     static final class CallbackMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
         private final Closure.Handle handle;
         public CallbackMemoryIO(Ruby runtime,  Closure.Handle handle) {
@@ -163,6 +225,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             return true;
         }
     }
+
     /**
      * Extracts the primitive value from a Ruby object.
      * This is similar to Util.longValue(), except it won't throw exceptions for
@@ -198,6 +261,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         }
         return 0;
     }
+
+    /**
+     * Converts a ruby return value into a native callback return value.
+     *
+     * @param runtime The ruby runtime the callback is attached to
+     * @param type The ruby type of the return value
+     * @param buffer The native parameter buffer
+     * @param value The ruby value
+     */
     private static final void setReturnValue(Ruby runtime, NativeType type,
             Closure.Buffer buffer, IRubyObject value) {
         switch ((NativeType) type) {
@@ -228,6 +300,16 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             default:
         }
     }
+
+    /**
+     * Converts a native value into a ruby object.
+     *
+     * @param runtime The ruby runtime to create the ruby object in
+     * @param type The type of the native parameter
+     * @param buffer The JFFI Closure parameter buffer.
+     * @param index The index of the parameter in the buffer.
+     * @return A new Ruby object.
+     */
     private static final IRubyObject fromNative(Ruby runtime, NativeType type,
             Closure.Buffer buffer, int index) {
         switch (type) {
@@ -263,6 +345,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 throw new IllegalArgumentException("Invalid type " + type);
         }
     }
+
+    /**
+     * Converts a native string value into a ruby string object.
+     *
+     * @param runtime The ruby runtime to create the ruby string in
+     * @param buffer The JFFI Closure parameter buffer.
+     * @param index The index of the parameter in the buffer.
+     * @return A new Ruby string object or nil if string is NULL.
+     */
     private static final IRubyObject getStringParameter(Ruby runtime, Closure.Buffer buffer, int index) {
         long address = buffer.getAddress(index);
         if (address == 0) {
@@ -280,6 +371,12 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         return s;
     }
 
+    /**
+     * Checks if a type is a valid callback return type
+     *
+     * @param type The type to examine
+     * @return <tt>true</tt> if <tt>type</tt> is a valid return type for a callback.
+     */
     private static final boolean isReturnTypeValid(NativeType type) {
         switch (type) {
             case INT8:
@@ -300,6 +397,13 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         }
         return false;
     }
+    
+    /**
+     * Checks if a type is a valid parameter type for a callback
+     *
+     * @param type The type to examine
+     * @return <tt>true</tt> if <tt>type</tt> is a valid parameter type for a callback.
+     */
     private static final boolean isParameterTypeValid(NativeParam type) {
         if (type instanceof NativeType) switch ((NativeType) type) {
             case INT8:
