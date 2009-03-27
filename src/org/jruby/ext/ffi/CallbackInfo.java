@@ -159,4 +159,31 @@ public class CallbackInfo extends Type implements NativeParam {
     public final Type[] getParameterTypes() {
         return parameterTypes;
     }
+
+    @JRubyMethod(name = "hash")
+    public final IRubyObject to_s(ThreadContext context) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("#<FFI::CallbackInfo [ ");
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            sb.append(parameterTypes[i].toString().toLowerCase());
+            if (i < (parameterTypes.length - 1)) {
+                sb.append(", ");
+            }
+        }
+        sb.append(" ], " + returnType.toString().toLowerCase() + ">");
+        return context.getRuntime().newString(sb.toString());
+    }
+    @Override
+    public final String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CallbackInfo[parameters=[");
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            sb.append(parameterTypes[i].toString().toLowerCase());
+            if (i < (parameterTypes.length - 1)) {
+                sb.append(", ");
+            }
+        }
+        sb.append("] return=" + returnType.toString().toLowerCase() + "]");
+        return sb.toString();
+    }
 }

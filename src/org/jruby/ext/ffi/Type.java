@@ -33,6 +33,7 @@ public abstract class Type extends RubyObject {
         return typeClass;
     }
 
+
     public abstract NativeType getNativeType();
 
     /**
@@ -56,6 +57,11 @@ public abstract class Type extends RubyObject {
 
         public NativeType getNativeType() {
             return nativeType;
+        }
+        
+        @Override
+        public final String toString() {
+            return nativeType.name();
         }
     }
 }

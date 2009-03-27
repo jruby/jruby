@@ -22,6 +22,7 @@ import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
@@ -300,6 +301,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     buffer.setAddressReturn(addressValue(value)); break;
                 default:
             }
+        } else if (type instanceof CallbackInfo) {
+            if (value instanceof RubyProc) {
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, (CallbackInfo) type, value);
+                buffer.setAddressReturn(addressValue(cb));
+            } else {
+                buffer.setAddressReturn(0L);
+            }
+        } else {
+            buffer.setLongReturn(0L);
         }
     }
 
@@ -398,6 +408,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 case VOID:
                     return true;
             }
+        } else if (type instanceof CallbackInfo) {
+            return true;
         }
         return false;
     }
