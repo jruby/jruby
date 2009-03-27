@@ -116,7 +116,7 @@ public abstract class AbstractInvoker extends RubyObject {
                 nativeParamTypes[i] = NativeType.valueOf(obj);
             }
             if (nativeParamTypes[i] == null) {
-                runtime.newArgumentError("Invalid parameter type");
+                throw runtime.newArgumentError("Invalid parameter type");
             }
         }
         return nativeParamTypes;
