@@ -86,7 +86,14 @@ abstract public class AbstractMemory extends RubyObject {
             throw context.getRuntime().newArgumentError("Invalid size argument");
         }
     }
-    
+
+    protected static final RubyArray checkArray(IRubyObject obj) {
+        if (!(obj instanceof RubyArray)) {
+            throw obj.getRuntime().newArgumentError("Array expected");
+        }
+        return (RubyArray) obj;
+    }
+
     protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         super(runtime, klass);
         this.io = io;
@@ -499,7 +506,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_int8", "put_array_of_char" }, required = 2)
     public IRubyObject put_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         
-        MemoryUtil.putArrayOfSigned8(context.getRuntime(), getMemoryIO(), getOffset(offset), (RubyArray) arrParam);
+        MemoryUtil.putArrayOfSigned8(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -512,7 +519,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_int16", "put_array_of_short" }, required = 2)
     public IRubyObject put_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         
-        MemoryUtil.putArrayOfSigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), (RubyArray) arrParam);
+        MemoryUtil.putArrayOfSigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
         
         return this;
     }
@@ -524,7 +531,7 @@ abstract public class AbstractMemory extends RubyObject {
 
     @JRubyMethod(name = { "put_array_of_int32", "put_array_of_int" }, required = 2)
     public IRubyObject put_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfSigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), (RubyArray) arrParam);
+        MemoryUtil.putArrayOfSigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -551,7 +558,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = "put_array_of_int64", required = 2)
     public IRubyObject put_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         
-        MemoryUtil.putArrayOfSigned64(context.getRuntime(), getMemoryIO(), getOffset(offset), (RubyArray) arrParam);
+        MemoryUtil.putArrayOfSigned64(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -564,7 +571,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" }, required = 2)
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfFloat32(context.getRuntime(), io, getOffset(offset), (RubyArray) arrParam);
+        MemoryUtil.putArrayOfFloat32(context.getRuntime(), io, getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -576,7 +583,7 @@ abstract public class AbstractMemory extends RubyObject {
     
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfFloat32(context.getRuntime(), getMemoryIO(), getOffset(offset), (RubyArray) arrParam);
+        MemoryUtil.putArrayOfFloat32(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
