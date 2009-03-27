@@ -220,7 +220,7 @@ public final class StructLayoutBuilder extends RubyObject {
             type = (CallbackInfo) args[1];
             alignBits = ADDRESS_ALIGN; sizeBits = ADDRESS_SIZE;
         } else {
-            NativeType t = NativeType.valueOf(Util.int32Value(args[1]));
+            NativeType t = NativeType.valueOf(args[1]);
             type = t;
             alignBits = getAlignmentBits(t);
             sizeBits = getSizeBits(t);
@@ -252,7 +252,7 @@ public final class StructLayoutBuilder extends RubyObject {
     public IRubyObject add_array(ThreadContext context, IRubyObject[] args) {
         final Ruby runtime = context.getRuntime();
         IRubyObject name = args[0];
-        NativeType type = NativeType.valueOf(Util.int32Value(args[1]));
+        NativeType type = NativeType.valueOf(args[1]);
         int length = Util.int32Value(args[2]);
         int offset = args.length > 3 && !args[3].isNil() ? Util.int32Value(args[3]) : -1;
         final int alignBits = getAlignmentBits(type);

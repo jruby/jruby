@@ -130,7 +130,7 @@ module FFI::Library
   end
   def typedef(current, add)
     @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
-    if current.kind_of? Integer
+    if current.kind_of?(FFI::Type)
       code = current
     else
       code = @ffi_typedefs[current] || FFI.find_type(current)

@@ -28,6 +28,9 @@
 
 package org.jruby.ext.ffi;
 
+import org.jruby.RubyInteger;
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  * Native types
  */
@@ -69,5 +72,15 @@ public enum NativeType implements NativeParam {
             return NativeType.VOID;
         }
         return values[type];
+    }
+    
+    public static final NativeType valueOf(IRubyObject type) {
+        if (type instanceof Type.Builtin) {
+            return ((Type.Builtin) type).nativeType;
+        } else if (type instanceof RubyInteger) {
+            return valueOf(Util.int32Value(type));
+        } else {
+            return NativeType.VOID;
+        }
     }
 }

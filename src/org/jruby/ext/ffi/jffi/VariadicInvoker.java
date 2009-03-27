@@ -78,7 +78,7 @@ public class VariadicInvoker extends RubyObject {
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
-        NativeType returnType = NativeType.valueOf(Util.int32Value(args[2]));
+        NativeType returnType = NativeType.valueOf(args[2]);
         FunctionInvoker functionInvoker = DefaultMethodFactory.getFunctionInvoker(returnType);
         return new VariadicInvoker(recv.getRuntime(), recv, library, address,
                 functionInvoker, getFFIType(returnType), conv);
@@ -91,7 +91,7 @@ public class VariadicInvoker extends RubyObject {
         Type[] ffiParamTypes = new Type[types.length];
         NativeType[] paramTypes = new NativeType[types.length];
         for (int i = 0; i < types.length; ++i) {
-            NativeType t = NativeType.valueOf(Util.int32Value(types[i]));
+            NativeType t = NativeType.valueOf(types[i]);
             switch (t) {
                 case INT8:
                 case INT16:

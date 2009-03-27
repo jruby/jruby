@@ -18,7 +18,6 @@ import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -92,7 +91,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         
         BasePointer ptr = (BasePointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
-        NativeType returnType = NativeType.valueOf(Util.int32Value(args[2]));
+        NativeType returnType = NativeType.valueOf(args[2]);
         String convention = args[3].toString();
 
         NativeParam[] parameterTypes = getNativeParameterTypes(context.getRuntime(), paramTypes);

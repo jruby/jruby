@@ -37,7 +37,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
@@ -83,7 +82,7 @@ final class JNAInvoker extends AbstractInvoker {
 
         DynamicLibrary.Symbol symbol = (DynamicLibrary.Symbol) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
-        NativeType returnType = NativeType.valueOf(Util.int32Value(args[2]));
+        NativeType returnType = NativeType.valueOf(args[2]);
         int conv = "stdcall".equals(args[3].toString()) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
 
         //

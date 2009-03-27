@@ -89,7 +89,7 @@ public class JNAVariadicInvoker extends RubyObject {
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
-        FunctionInvoker functionInvoker = JNAProvider.getFunctionInvoker(NativeType.valueOf(Util.int32Value(args[2])));
+        FunctionInvoker functionInvoker = JNAProvider.getFunctionInvoker(NativeType.valueOf(args[2]));
         return new JNAVariadicInvoker(recv.getRuntime(), function, functionInvoker);
     }
 
@@ -100,7 +100,7 @@ public class JNAVariadicInvoker extends RubyObject {
         Object[] args = new Object[types.length];
         Invocation invocation = new Invocation(context);
         for (int i = 0; i < types.length; ++i) {
-            NativeType type = NativeType.valueOf(Util.int32Value(types[i]));
+            NativeType type = NativeType.valueOf(types[i]);
             switch (type) {
                 case INT8:
                 case UINT8:

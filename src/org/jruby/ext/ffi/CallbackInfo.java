@@ -81,11 +81,11 @@ public class CallbackInfo extends RubyObject implements NativeParam {
         RubyArray paramTypes = (RubyArray) _paramTypes;
         NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
         for (int i = 0; i < paramTypes.size(); ++i) {
-            nativeParamTypes[i] = NativeType.valueOf(Util.int32Value((IRubyObject) paramTypes.entry(i)));
+            nativeParamTypes[i] = NativeType.valueOf((IRubyObject) paramTypes.entry(i));
         }
         try {
             return new CallbackInfo(context.getRuntime(), (RubyClass) self,
-                    NativeType.valueOf(Util.int32Value(returnType)), nativeParamTypes);
+                    NativeType.valueOf(returnType), nativeParamTypes);
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();
         }

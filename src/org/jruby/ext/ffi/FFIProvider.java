@@ -81,16 +81,17 @@ public abstract class FFIProvider extends RubyObject {
             IRubyObject obj = (IRubyObject) paramTypes.entry(i);
             if (obj instanceof NativeParam) {
                 nativeParamTypes[i] = (NativeParam) obj;
-            } else if (obj instanceof RubyInteger) {
-                nativeParamTypes[i] = NativeType.valueOf(Util.int32Value(obj));
             } else {
+                nativeParamTypes[i] = NativeType.valueOf(obj);
+            }
+            if (nativeParamTypes[i] == null) {
                 context.getRuntime().newArgumentError("Invalid parameter type");
             }
         }
         try {
             return createInvoker(context.getRuntime(), 
                     args[0].isNil() ? null : args[0].toString(), 
-                    args[1].toString(), NativeType.valueOf(Util.int32Value(args[2])), 
+                    args[1].toString(), NativeType.valueOf(args[2]),
                     nativeParamTypes, args[4].toString());
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();

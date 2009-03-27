@@ -22,10 +22,11 @@ public class Type extends RubyObject {
 
         RubyClass builtinClass = typeClass.defineClassUnder("Builtin", typeClass,
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
+        RubyModule nativeType = ffiModule.defineModuleUnder("NativeType");
         for (NativeType t : NativeType.values()) {
             Builtin  b = new Builtin(runtime, builtinClass, t);
             typeClass.fastSetConstant(t.name(), b);
+            nativeType.fastSetConstant(t.name(), b);
             ffiModule.fastSetConstant("TYPE_" + t.name(), b);
         }
 
@@ -40,7 +41,7 @@ public class Type extends RubyObject {
     }
 
     @JRubyClass(name = "FFI::Type::Builtin", parent = "FFI::Type")
-    final static class Builtin extends Type implements NativeParam {
+    final static class Builtin extends Type /* implements NativeParam */ {
         final NativeType nativeType;
 
         /**

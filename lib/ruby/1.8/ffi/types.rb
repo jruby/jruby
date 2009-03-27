@@ -1,7 +1,7 @@
 module FFI
   TypeDefs = Hash.new
   def self.add_typedef(current, add)
-    if current.kind_of? Integer
+    if current.kind_of?(Type)
       code = current
     else
       code = TypeDefs[current]
@@ -13,7 +13,7 @@ module FFI
   def self.find_type(name, type_map = nil)
     type_map = TypeDefs if type_map.nil?
     code = type_map[name]
-    code = name if !code && name.kind_of?(Integer)
+    code = name if !code && name.kind_of?(FFI::Type)
     code = name if !code && name.kind_of?(FFI::CallbackInfo)
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code

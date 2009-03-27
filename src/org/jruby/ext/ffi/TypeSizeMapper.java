@@ -1,9 +1,7 @@
 package org.jruby.ext.ffi;
 
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -17,31 +15,31 @@ final class TypeSizeMapper {
             switch (types[i]) {
                 case INT8:
                 case UINT8:
-                    sz[i] = 1;
+                    sz[types[i].ordinal()] = 1;
                     break;
                 case INT16:
                 case UINT16:
-                    sz[i] = 2;
+                    sz[types[i].ordinal()] = 2;
                     break;
                 case INT32:
                 case UINT32:
                 case FLOAT32:
-                    sz[i] = 4;
+                    sz[types[i].ordinal()] = 4;
                     break;
                 case INT64:
                 case UINT64:
                 case FLOAT64:
-                    sz[i] = 8;
+                    sz[types[i].ordinal()] = 8;
                     break;
                 case LONG:
                 case ULONG:
-                    sz[i] = Platform.getPlatform().longSize() >> 3;
+                    sz[types[i].ordinal()] = Platform.getPlatform().longSize() >> 3;
                     break;
                 case POINTER:
-                    sz[i] = Platform.getPlatform().addressSize() >> 3;
+                    sz[types[i].ordinal()] = Platform.getPlatform().addressSize() >> 3;
                     break;
                 default:
-                    sz[i] = 0;
+                    sz[types[i].ordinal()] = -1;
                     break;
             }
         }
@@ -49,7 +47,7 @@ final class TypeSizeMapper {
     }
 
     private static final int getTypeSize(IRubyObject type) {
-        int index = (int) RubyNumeric.num2long(type);
+        int index = NativeType.valueOf(type).ordinal();
         return index >= 0 && index < sizes.length ? sizes[index] : -1;
     }
 
@@ -62,7 +60,7 @@ final class TypeSizeMapper {
      * @return size of the type
      */
     private static final int callTypeSize(ThreadContext context, RubyModule ffi, IRubyObject sizeArg) {
-        return (int) RubyFixnum.num2long(ffi.callMethod(context, "type_size", sizeArg));
+        return getTypeSize(ffi.callMethod(context, "type_size", sizeArg));
     }
 
     public static final int getTypeSize(ThreadContext context, IRubyObject sizeArg) {
