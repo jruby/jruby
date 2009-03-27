@@ -149,9 +149,7 @@ public abstract class Factory {
             if (ffi.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
-            FFIProvider provider = newProvider(runtime);
-            ffi.defineConstant("LastError", provider);
-
+            
             Platform.createPlatformModule(runtime, ffi);
         }
     }

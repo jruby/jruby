@@ -4,9 +4,12 @@ package org.jruby.ext.ffi.jffi;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
 
@@ -34,6 +37,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             }
             if (ffi.fastGetClass("Callback") == null) {
                 CallbackManager.createCallbackClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass("LastError") == null) {
+                ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
             }
         }
     }
@@ -69,5 +75,12 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     @Override
     public CallbackManager getCallbackManager() {
         return CallbackManager.getInstance();
+    }
+
+    private static final class LastError {
+        @JRubyMethod(name = {  "error" }, meta = true)
+        public static final  IRubyObject error(ThreadContext context, IRubyObject recv) {
+            return context.getRuntime().newFixnum(com.kenai.jffi.LastError.getInstance().getError());
+        }
     }
 }

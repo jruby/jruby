@@ -34,6 +34,7 @@ import com.sun.jna.ptr.LongByReference;
 import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
@@ -41,6 +42,8 @@ import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * An implementation of FFI for JNA
@@ -63,6 +66,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             if (ffi.fastGetClass("VariadicInvoker") == null) {
                 JNAVariadicInvoker.createVariadicInvokerClass(runtime, ffi);
             }
+            ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
         }
     }
     protected FFIProvider newProvider(Ruby runtime) {
@@ -112,5 +116,12 @@ public class Factory extends org.jruby.ext.ffi.Factory {
                 throw runtime.newNotImplementedError("Not implemented");
             }
         };
+    }
+
+    private static final class LastError {
+        @JRubyMethod(name = {  "error" }, meta = true)
+        public static final  IRubyObject error(ThreadContext context, IRubyObject recv) {
+            return context.getRuntime().newFixnum(Native.getLastError());
+        }
     }
 }
