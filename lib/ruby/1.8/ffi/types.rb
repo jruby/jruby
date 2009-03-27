@@ -14,7 +14,6 @@ module FFI
     type_map = TypeDefs if type_map.nil?
     code = type_map[name]
     code = name if !code && name.kind_of?(FFI::Type)
-    code = name if !code && name.kind_of?(FFI::CallbackInfo)
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end

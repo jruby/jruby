@@ -145,8 +145,9 @@ module FFI::Library
       @ffi_callbacks[name]
     elsif name.is_a?(Class) && name < FFI::Struct
       FFI::NativeType::POINTER
+    elsif name.kind_of?(FFI::Type)
+      name
     end
-    code = name if !code && name.kind_of?(FFI::CallbackInfo)
     if code.nil? || code.kind_of?(Symbol)
       FFI.find_type(name)
     else

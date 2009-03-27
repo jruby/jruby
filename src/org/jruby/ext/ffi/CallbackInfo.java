@@ -32,7 +32,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -43,8 +42,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Defines a C callback's parameters and return type.
  */
-@JRubyClass(name = "FFI::CallbackInfo", parent = "Object")
-public class CallbackInfo extends RubyObject implements NativeParam {
+@JRubyClass(name = "FFI::CallbackInfo", parent = "FFI::Type")
+public class CallbackInfo extends Type implements NativeParam {
     public static final String CLASS_NAME = "CallbackInfo";
     
     /**
@@ -57,7 +56,7 @@ public class CallbackInfo extends RubyObject implements NativeParam {
     
     public static RubyClass createCallbackInfoClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
-                runtime.getObject(),
+                module.fastGetClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(CallbackInfo.class);
         result.defineAnnotatedConstants(CallbackInfo.class);
@@ -75,6 +74,7 @@ public class CallbackInfo extends RubyObject implements NativeParam {
         this.parameterTypes = paramTypes;
         this.returnType = returnType;
     }
+
     @JRubyMethod(name = "new", meta = true)
     public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject self, IRubyObject returnType, IRubyObject _paramTypes)
     {
@@ -90,6 +90,7 @@ public class CallbackInfo extends RubyObject implements NativeParam {
             return context.getRuntime().getNil();
         }
     }
+    
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
      * 
