@@ -150,7 +150,6 @@ public abstract class Factory {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
             FFIProvider provider = newProvider(runtime);
-            ffi.defineConstant("InvokerFactory", provider);
             ffi.defineConstant("LastError", provider);
 
             Platform.createPlatformModule(runtime, ffi);
