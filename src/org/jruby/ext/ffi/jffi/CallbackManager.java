@@ -20,12 +20,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
-import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -177,7 +175,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         private final Object proc;
         
         Callback(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, Object proc) {
-            super(runtime, FFIProvider.getModule(runtime).fastGetClass("Callback"),
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("Callback"),
                     new CallbackMemoryIO(runtime, handle), Long.MAX_VALUE);
             this.cbInfo = cbInfo;
             this.proc = proc;

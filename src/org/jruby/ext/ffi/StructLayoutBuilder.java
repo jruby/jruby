@@ -95,7 +95,7 @@ public final class StructLayoutBuilder extends RubyObject {
         return result;
     }
     StructLayoutBuilder(Ruby runtime) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
     }
     StructLayoutBuilder(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

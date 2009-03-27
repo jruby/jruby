@@ -46,7 +46,7 @@ public class Struct extends RubyObject {
      * @param runtime The runtime for the <tt>StructLayout</tt>
      */
     Struct(Ruby runtime) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass("Struct"));
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Struct"));
     }
 
     /**
@@ -71,7 +71,7 @@ public class Struct extends RubyObject {
     }
 
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
-        return klass.isKindOfModule(FFIProvider.getModule(runtime).getClass("Struct"));
+        return klass.isKindOfModule(runtime.fastGetModule("FFI").getClass("Struct"));
     }
     static final int getStructSize(Ruby runtime, IRubyObject structClass) {
         return getStructLayout(runtime, structClass).getSize();

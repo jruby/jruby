@@ -31,8 +31,6 @@ package org.jruby.ext.ffi.jna;
 import org.jruby.ext.ffi.*;
 import com.sun.jna.Function;
 import com.sun.jna.Memory;
-import com.sun.jna.Native;
-import com.sun.jna.NativeLibrary;
 import java.nio.ByteBuffer;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
@@ -42,36 +40,10 @@ import org.jruby.util.ByteList;
 /**
  * A FFIProvider that uses JNA to load and execute native functions.
  */
-public final class JNAProvider extends FFIProvider {
+public final class JNAProvider {
 
-    JNAProvider(Ruby runtime) {
-        super(runtime);
+    private JNAProvider() {
     }
-    
-    @Override
-    public final AbstractInvoker createInvoker(Ruby runtime, String libraryName, String functionName,
-            NativeType returnType, NativeParam[] parameterTypes, String convention) {
-        int conv = "stdcall".equals(convention) ? Function.ALT_CONVENTION : Function.C_CONVENTION;
-        if (libraryName == null) {
-            libraryName = Platform.LIBC;
-        }
-        Function function = NativeLibrary.getInstance(libraryName).getFunction(functionName, conv);
-        FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
-        Marshaller[] marshallers = new Marshaller[parameterTypes.length];
-        for (int i = 0; i < marshallers.length; ++i) {
-            marshallers[i] = getMarshaller(parameterTypes[i], conv);
-        }
-
-        return new JNAInvoker(runtime, FFIProvider.getModule(runtime).fastGetClass("Invoker"), function, functionInvoker, marshallers);
-    }
-    
-    public int getLastError() {
-        return Native.getLastError();
-    }
-    public void setLastError(int error) {
-        Native.setLastError(error);
-    }
-
     
     /**
      * Gets a {@link FunctionInvoker} for a native return type.

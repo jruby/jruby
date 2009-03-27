@@ -54,7 +54,7 @@ public abstract class Factory {
             if (providerName != null) {
                 providerNames.add(providerName);
             }
-            final String prefix = FFIProvider.class.getPackage().getName();
+            final String prefix = Factory.class.getPackage().getName();
             providerNames.add(prefix + ".jffi.Factory");
             providerNames.add(prefix + ".jna.Factory");
             for (String className : providerNames) {
@@ -107,9 +107,6 @@ public abstract class Factory {
      */
     public void init(Ruby runtime, RubyModule ffi) {
         synchronized (ffi) {
-            if (ffi.fastGetClass(FFIProvider.CLASS_NAME) == null) {
-                FFIProvider.createProviderClass(runtime, ffi);
-            }
             if (ffi.fastGetClass("Type") == null) {
                 Type.createTypeClass(runtime, ffi);
             }
@@ -153,8 +150,6 @@ public abstract class Factory {
             Platform.createPlatformModule(runtime, ffi);
         }
     }
-    
-    protected abstract FFIProvider newProvider(Ruby runtime);
     
     /**
      * Loads a native library.

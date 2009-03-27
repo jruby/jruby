@@ -11,7 +11,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.BasePointer;
-import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -92,7 +91,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
 
         public Symbol(Ruby runtime, DynamicLibrary library, String name, com.sun.jna.Pointer address) {
-            super(runtime, FFIProvider.getModule(runtime).fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
                     new NativeMemoryIO(address), Long.MAX_VALUE);
             this.library = library;
             this.address = address;

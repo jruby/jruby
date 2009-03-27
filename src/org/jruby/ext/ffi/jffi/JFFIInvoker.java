@@ -15,7 +15,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -52,7 +51,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     }
     
     JFFIInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass("Invoker"), Library.getCachedInstance(libraryName, Library.LAZY),
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"), Library.getCachedInstance(libraryName, Library.LAZY),
                 Library.getCachedInstance(libraryName, Library.LAZY).getSymbolAddress(functionName),
                 returnType, parameterTypes, convention);
     }

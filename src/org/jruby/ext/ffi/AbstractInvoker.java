@@ -69,7 +69,7 @@ public abstract class AbstractInvoker extends RubyObject {
      * @param arity
      */
     protected AbstractInvoker(Ruby runtime, int arity) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME), arity);
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), arity);
     }
 
     /**

@@ -35,7 +35,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.Factory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -48,7 +47,7 @@ import org.jruby.util.io.ModeFlags;
 /**
  * An IO implementation that reads/writes to a native file descriptor.
  */
-@JRubyClass(name=FFIProvider.MODULE_NAME + "::" + FileDescriptorIO.CLASS_NAME, parent="IO")
+@JRubyClass(name="FFI::" + FileDescriptorIO.CLASS_NAME, parent="IO")
 public class FileDescriptorIO extends RubyIO {
     public static final String CLASS_NAME = "FileDescriptorIO";
     private static final class Allocator implements ObjectAllocator {
@@ -61,7 +60,7 @@ public class FileDescriptorIO extends RubyIO {
         super(runtime, klass);
     }
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
+        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
         ModeFlags modes;
         try {
             modes = new ModeFlags(ModeFlags.RDWR);

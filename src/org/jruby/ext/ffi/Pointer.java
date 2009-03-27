@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Pointer",
-                FFIProvider.getModule(runtime).getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
+                module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         result.defineAnnotatedMethods(Pointer.class);

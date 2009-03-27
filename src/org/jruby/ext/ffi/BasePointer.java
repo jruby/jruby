@@ -29,7 +29,7 @@ public class BasePointer extends Pointer {
         return result;
     }
     public static final RubyClass getBasePointerClass(Ruby runtime) {
-        return FFIProvider.getModule(runtime).fastGetClass(BASE_POINTER_NAME);
+        return runtime.fastGetModule("FFI").fastGetClass(BASE_POINTER_NAME);
     }
     public BasePointer(Ruby runtime, DirectMemoryIO io) {
         super(runtime, getBasePointerClass(runtime), io);

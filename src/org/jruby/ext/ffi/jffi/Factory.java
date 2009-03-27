@@ -7,7 +7,6 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,10 +41,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
                 ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
             }
         }
-    }
-    @Override
-    protected FFIProvider newProvider(Ruby runtime) {
-        return new JFFIProvider(runtime);
     }
 
     @Override

@@ -64,7 +64,7 @@ final class TypeSizeMapper {
     }
 
     public static final int getTypeSize(ThreadContext context, IRubyObject sizeArg) {
-        final RubyModule ffi = FFIProvider.getModule(context.getRuntime());
+        final RubyModule ffi = context.getRuntime().fastGetModule("FFI");
         final IRubyObject typeDefs = ffi.fastFetchConstant("TypeDefs");
         final IRubyObject type = ((RubyHash) typeDefs).fastARef(sizeArg);
         final int size = type != null && !type.isNil() ? getTypeSize(type) : 0;

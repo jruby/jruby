@@ -39,7 +39,6 @@ import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.FFIProvider;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ThreadContext;
@@ -68,9 +67,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             }
             ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
         }
-    }
-    protected FFIProvider newProvider(Ruby runtime) {
-        return new JNAProvider(runtime);
     }
     
     @Override

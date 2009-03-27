@@ -100,7 +100,7 @@ public final class StructLayout extends RubyObject {
      * @param runtime The runtime for the <tt>StructLayout</tt>
      */
     StructLayout(Ruby runtime) {
-        this(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
     }
     
     /**
@@ -128,7 +128,7 @@ public final class StructLayout extends RubyObject {
      * @param minAlign The minimum alignment required when allocating memory.
      */
     StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size, int minAlign) {
-        super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME));
+        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
         //
         // fields should really be an immutable map as it is never modified after construction
         //
@@ -424,7 +424,7 @@ public final class StructLayout extends RubyObject {
             this(runtime, null, 0, 0, 0, null);
         }
         Array(Ruby runtime, IRubyObject ptr, long offset, int length, int sizeBits, ArrayMemberIO aio) {
-            super(runtime, FFIProvider.getModule(runtime).fastGetClass(CLASS_NAME).fastGetClass("Array"));
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"));
             this.ptr = (AbstractMemory) ptr;
             this.offset = offset;
             this.length = length;
