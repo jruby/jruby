@@ -63,9 +63,15 @@ public enum NativeType implements NativeParam {
     /** A Rubinus :string arg - copies data both ways, and nul terminates */
     RBXSTRING,
     VARARGS;
-    public int intValue() {
+    
+    public final int intValue() {
         return ordinal();
     }
+
+    public final NativeType getNativeType() {
+        return this;
+    }
+
     public static final NativeType valueOf(int type) {
         NativeType[] values = NativeType.values();
         if (type < 0 || type >= values.length) {
@@ -77,8 +83,8 @@ public enum NativeType implements NativeParam {
     public static final NativeType valueOf(IRubyObject type) {
         if (type instanceof Type.Builtin) {
             return ((Type.Builtin) type).nativeType;
-        } else if (type instanceof RubyInteger) {
-            return valueOf(Util.int32Value(type));
+        } else if (type instanceof NativeParam) {
+            return ((NativeParam) type).getNativeType();
         } else {
             return NativeType.VOID;
         }

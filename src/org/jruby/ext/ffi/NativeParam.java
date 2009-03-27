@@ -33,5 +33,5 @@ package org.jruby.ext.ffi;
  * used as parameter types.
  */
 public interface NativeParam {
-
+    public NativeType getNativeType();
 }

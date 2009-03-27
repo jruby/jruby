@@ -99,6 +99,10 @@ public class CallbackInfo extends RubyObject implements NativeParam {
         return arity;
     }
 
+    public NativeType getNativeType() {
+        return NativeType.POINTER;
+    }
+
     public final NativeType getReturnType() {
         return returnType;
     }
