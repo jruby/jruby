@@ -12,7 +12,7 @@ import org.jruby.runtime.ObjectAllocator;
  *
  */
 @JRubyClass(name = "FFI::Type", parent = "Object")
-public class Type extends RubyObject {
+public abstract class Type extends RubyObject {
 
     public static RubyClass createTypeClass(Ruby runtime, RubyModule ffiModule) {
         RubyClass typeClass = ffiModule.defineClassUnder("Type", runtime.getObject(),
@@ -33,6 +33,8 @@ public class Type extends RubyObject {
         return typeClass;
     }
 
+    public abstract NativeType getNativeType();
+
     /**
      * Initializes a new <tt>Type</tt> instance.
      */
@@ -41,8 +43,8 @@ public class Type extends RubyObject {
     }
 
     @JRubyClass(name = "FFI::Type::Builtin", parent = "FFI::Type")
-    final static class Builtin extends Type /* implements NativeParam */ {
-        final NativeType nativeType;
+    public final static class Builtin extends Type /* implements NativeParam */ {
+        private final NativeType nativeType;
 
         /**
          * Initializes a new <tt>BuiltinType</tt> instance.
@@ -50,6 +52,10 @@ public class Type extends RubyObject {
         private Builtin(Ruby runtime, RubyClass klass, NativeType nativeType) {
             super(runtime, klass);
             this.nativeType = nativeType;
+        }
+
+        public NativeType getNativeType() {
+            return nativeType;
         }
     }
 }

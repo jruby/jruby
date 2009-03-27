@@ -82,7 +82,7 @@ public enum NativeType implements NativeParam {
     
     public static final NativeType valueOf(IRubyObject type) {
         if (type instanceof Type.Builtin) {
-            return ((Type.Builtin) type).nativeType;
+            return ((Type.Builtin) type).getNativeType();
         } else if (type instanceof NativeParam) {
             return ((NativeParam) type).getNativeType();
         } else {

@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 JRuby project
+ * Copyright (C) 2008, 2009 JRuby project
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -49,8 +49,8 @@ public class CallbackInfo extends Type implements NativeParam {
     /** The arity of this function. */
     protected final Arity arity;
 
-    protected final NativeParam[] parameterTypes;
-    protected final NativeType returnType;
+    protected final Type[] parameterTypes;
+    protected final Type returnType;
 
     /**
      * Creates a CallbackInfo class for a ruby runtime
@@ -78,7 +78,7 @@ public class CallbackInfo extends Type implements NativeParam {
      * @param returnType The return type of the callback
      * @param paramTypes The parameter types of the callback
      */
-    public CallbackInfo(Ruby runtime, RubyClass klazz, NativeType returnType, NativeParam[] paramTypes) {
+    public CallbackInfo(Ruby runtime, RubyClass klazz, Type returnType, Type[] paramTypes) {
         super(runtime, klazz);
         this.arity = Arity.fixed(paramTypes.length);
         this.parameterTypes = paramTypes;
@@ -96,16 +96,29 @@ public class CallbackInfo extends Type implements NativeParam {
      * @return A new CallbackInfo instance
      */
     @JRubyMethod(name = "new", meta = true)
-    public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass, IRubyObject returnType, IRubyObject _paramTypes)
+    public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass,
+            IRubyObject returnType, IRubyObject paramTypes)
     {
-        RubyArray paramTypes = (RubyArray) _paramTypes;
-        NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
-        for (int i = 0; i < paramTypes.size(); ++i) {
-            nativeParamTypes[i] = NativeType.valueOf((IRubyObject) paramTypes.entry(i));
+        if (!(returnType instanceof Type)) {
+            throw context.getRuntime().newArgumentError("wrong argument type "
+                    + returnType.getMetaClass().getName() + " (expected FFI::Type)");
+        }
+        if (!(paramTypes instanceof RubyArray)) {
+            throw context.getRuntime().newArgumentError("wrong argument type "
+                    + paramTypes.getMetaClass().getName() + " (expected Array)");
+        }
+        Type[] nativeParamTypes = new Type[((RubyArray)paramTypes).size()];
+        for (int i = 0; i < nativeParamTypes.length; ++i) {
+            IRubyObject obj = ((RubyArray) paramTypes).entry(i);
+            if (!(obj instanceof Type)) {
+                throw context.getRuntime().newArgumentError("wrong argument type "
+                        + obj.getMetaClass().getName() + " (expected array of FFI::Type)");
+            }
+            nativeParamTypes[i] = (Type) obj;
         }
         try {
             return new CallbackInfo(context.getRuntime(), (RubyClass) klass,
-                    NativeType.valueOf(returnType), nativeParamTypes);
+                    (Type) returnType, nativeParamTypes);
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();
         }
@@ -134,7 +147,7 @@ public class CallbackInfo extends Type implements NativeParam {
      *
      * @return The native return type
      */
-    public final NativeType getReturnType() {
+    public final Type getReturnType() {
         return returnType;
     }
 
@@ -143,7 +156,7 @@ public class CallbackInfo extends Type implements NativeParam {
      *
      * @return An array of the parameter types
      */
-    public final NativeParam[] getParameterTypes() {
+    public final Type[] getParameterTypes() {
         return parameterTypes;
     }
 }

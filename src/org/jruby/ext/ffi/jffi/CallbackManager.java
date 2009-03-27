@@ -4,7 +4,6 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Closure;
 import com.kenai.jffi.ClosureManager;
-import com.kenai.jffi.Type;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,9 +20,9 @@ import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
-import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
+import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -112,7 +111,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             infoMap.put(cbInfo, info);
         }
         
-        final CallbackProxy cbProxy = new CallbackProxy(runtime, cbInfo, proc);
+        final CallbackProxy cbProxy = new CallbackProxy(runtime, info, proc);
         final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
                 info.ffiReturnType, info.ffiParameterTypes, info.convention);
         Callback cb = new Callback(runtime, handle, cbInfo, proc);
@@ -127,25 +126,28 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static class ClosureInfo {
         private final CallbackInfo cbInfo;
         private final CallingConvention convention;
-        private final Type[] ffiParameterTypes;
-        private final Type ffiReturnType;
+        private final NativeType[] nativeParameterTypes;
+        private final com.kenai.jffi.Type[] ffiParameterTypes;
+        private final com.kenai.jffi.Type ffiReturnType;
         
         public ClosureInfo(CallbackInfo cbInfo, CallingConvention convention) {
             this.cbInfo = cbInfo;
             this.convention = convention;
-            NativeParam[] nativeParams = cbInfo.getParameterTypes();
 
-            ffiParameterTypes = new Type[nativeParams.length];
-            for (int i = 0; i < nativeParams.length; ++i) {
-                if (!isParameterTypeValid(nativeParams[i])) {
-                    throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + nativeParams[i]);
+            Type[] paramTypes = cbInfo.getParameterTypes();
+            ffiParameterTypes = new com.kenai.jffi.Type[paramTypes.length];
+            nativeParameterTypes = new NativeType[paramTypes.length];
+            for (int i = 0; i < paramTypes.length; ++i) {
+                if (!isParameterTypeValid(paramTypes[i])) {
+                    throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + paramTypes[i]);
                 }
-                ffiParameterTypes[i] = FFIUtil.getFFIType((NativeType) nativeParams[i]);
+                nativeParameterTypes[i] = paramTypes[i].getNativeType();
+                ffiParameterTypes[i] = FFIUtil.getFFIType(nativeParameterTypes[i]);
             }
             if (!isReturnTypeValid(cbInfo.getReturnType())) {
                 throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
             }
-            this.ffiReturnType = FFIUtil.getFFIType(cbInfo.getReturnType());
+            this.ffiReturnType = FFIUtil.getFFIType(cbInfo.getReturnType().getNativeType());
         }
     }
 
@@ -170,17 +172,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      */
     private static final class CallbackProxy implements Closure {
         private final Ruby runtime;
+        private final ClosureInfo closureInfo;
         private final CallbackInfo cbInfo;
         private final WeakReference<Object> proc;
-        private final NativeParam[] parameterTypes;
-        private final NativeType returnType;
-
-        CallbackProxy(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+        
+        CallbackProxy(Ruby runtime, ClosureInfo closureInfo, Object proc) {
             this.runtime = runtime;
-            this.cbInfo = cbInfo;
+            this.closureInfo = closureInfo;
+            this.cbInfo = closureInfo.cbInfo;
             this.proc = new WeakReference<Object>(proc);
-            this.parameterTypes = cbInfo.getParameterTypes();
-            this.returnType = cbInfo.getReturnType();
         }
         public void invoke(Closure.Buffer buffer) {
             Object recv = proc.get();
@@ -188,9 +188,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 buffer.setIntReturn(0);
                 return;
             }
-            IRubyObject[] params = new IRubyObject[parameterTypes.length];
+            IRubyObject[] params = new IRubyObject[closureInfo.nativeParameterTypes.length];
             for (int i = 0; i < params.length; ++i) {
-                params[i] = fromNative(runtime, (NativeType) parameterTypes[i], buffer, i);
+                params[i] = fromNative(runtime, closureInfo.nativeParameterTypes[i], buffer, i);
             }
             IRubyObject retVal;
             if (recv instanceof RubyProc) {
@@ -270,34 +270,36 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @param buffer The native parameter buffer
      * @param value The ruby value
      */
-    private static final void setReturnValue(Ruby runtime, NativeType type,
+    private static final void setReturnValue(Ruby runtime, Type type,
             Closure.Buffer buffer, IRubyObject value) {
-        switch ((NativeType) type) {
-            case VOID:
-                break;
-            case INT8:
-                buffer.setByteReturn((byte) longValue(value)); break;
-            case UINT8:
-                buffer.setByteReturn((byte) longValue(value)); break;
-            case INT16:
-                buffer.setShortReturn((short) longValue(value)); break;
-            case UINT16:
-                buffer.setShortReturn((short) longValue(value)); break;
-            case INT32:
-                buffer.setIntReturn((int) longValue(value)); break;
-            case UINT32:
-                buffer.setIntReturn((int) longValue(value)); break;
-            case INT64:
-                buffer.setLongReturn(Util.int64Value(value)); break;
-            case UINT64:
-                buffer.setLongReturn(Util.uint64Value(value)); break;
-            case FLOAT32:
-                buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
-            case FLOAT64:
-                buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
-            case POINTER:
-                buffer.setAddressReturn(addressValue(value)); break;
-            default:
+        if (type instanceof Type.Builtin) {
+            switch (type.getNativeType()) {
+                case VOID:
+                    break;
+                case INT8:
+                    buffer.setByteReturn((byte) longValue(value)); break;
+                case UINT8:
+                    buffer.setByteReturn((byte) longValue(value)); break;
+                case INT16:
+                    buffer.setShortReturn((short) longValue(value)); break;
+                case UINT16:
+                    buffer.setShortReturn((short) longValue(value)); break;
+                case INT32:
+                    buffer.setIntReturn((int) longValue(value)); break;
+                case UINT32:
+                    buffer.setIntReturn((int) longValue(value)); break;
+                case INT64:
+                    buffer.setLongReturn(Util.int64Value(value)); break;
+                case UINT64:
+                    buffer.setLongReturn(Util.uint64Value(value)); break;
+                case FLOAT32:
+                    buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
+                case FLOAT64:
+                    buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
+                case POINTER:
+                    buffer.setAddressReturn(addressValue(value)); break;
+                default:
+            }
         }
     }
 
@@ -377,23 +379,25 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @param type The type to examine
      * @return <tt>true</tt> if <tt>type</tt> is a valid return type for a callback.
      */
-    private static final boolean isReturnTypeValid(NativeType type) {
-        switch (type) {
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-            case LONG:
-            case ULONG:
-            case INT64:
-            case UINT64:
-            case FLOAT32:
-            case FLOAT64:
-            case POINTER:
-            case VOID:
-                return true;
+    private static final boolean isReturnTypeValid(Type type) {
+        if (type instanceof Type.Builtin) {
+            switch (type.getNativeType()) {
+                case INT8:
+                case UINT8:
+                case INT16:
+                case UINT16:
+                case INT32:
+                case UINT32:
+                case LONG:
+                case ULONG:
+                case INT64:
+                case UINT64:
+                case FLOAT32:
+                case FLOAT64:
+                case POINTER:
+                case VOID:
+                    return true;
+            }
         }
         return false;
     }
@@ -404,23 +408,25 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @param type The type to examine
      * @return <tt>true</tt> if <tt>type</tt> is a valid parameter type for a callback.
      */
-    private static final boolean isParameterTypeValid(NativeParam type) {
-        if (type instanceof NativeType) switch ((NativeType) type) {
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-            case LONG:
-            case ULONG:
-            case INT64:
-            case UINT64:
-            case FLOAT32:
-            case FLOAT64:
-            case POINTER:
-            case STRING:
-                return true;
+    private static final boolean isParameterTypeValid(Type type) {
+        if (type instanceof Type.Builtin) {
+            switch (type.getNativeType()) {
+                case INT8:
+                case UINT8:
+                case INT16:
+                case UINT16:
+                case INT32:
+                case UINT32:
+                case LONG:
+                case ULONG:
+                case INT64:
+                case UINT64:
+                case FLOAT32:
+                case FLOAT64:
+                case POINTER:
+                case STRING:
+                    return true;
+            }
         }
         return false;
     }

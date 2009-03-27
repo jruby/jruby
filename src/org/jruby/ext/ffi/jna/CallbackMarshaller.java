@@ -44,6 +44,7 @@ import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Pointer;
+import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -62,7 +63,7 @@ final class CallbackMarshaller implements Marshaller {
     public CallbackMarshaller(CallbackInfo cbInfo, int convention) {
         this.cbInfo = cbInfo;
         this.convention = convention;
-        NativeParam[] nativeParams = cbInfo.getParameterTypes();
+        Type[] nativeParams = cbInfo.getParameterTypes();
         paramTypes = new Class[nativeParams.length];
         for (int i = 0; i < nativeParams.length; ++i) {
             paramTypes[i] = classFor(nativeParams[i]);
@@ -70,7 +71,7 @@ final class CallbackMarshaller implements Marshaller {
                 throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + nativeParams[i]);
             }
         }
-        switch (cbInfo.getReturnType()) {
+        switch (cbInfo.getReturnType().getNativeType()) {
             case INT8:
             case UINT8:
             case INT16:
@@ -93,31 +94,34 @@ final class CallbackMarshaller implements Marshaller {
         }        
     }
 
-    private static final Class classFor(NativeParam type) {
-        switch ((NativeType) type) {
-            case VOID:
-                return void.class;
-            case INT8:
-            case UINT8:
-                return byte.class;
-            case INT16:
-            case UINT16:
-                return short.class;
-            case INT32:
-            case UINT32:
-                return int.class;
-            case INT64:
-            case UINT64:
-                return long.class;
-            case FLOAT32:
-                return float.class;
-            case FLOAT64:
-                return double.class;
-            case POINTER:
-                return com.sun.jna.Pointer.class;
-            default:
-                return null;
+    private static final Class classFor(Type type) {
+        if (type instanceof Type.Builtin) {
+            switch (type.getNativeType()) {
+                case VOID:
+                    return void.class;
+                case INT8:
+                case UINT8:
+                    return byte.class;
+                case INT16:
+                case UINT16:
+                    return short.class;
+                case INT32:
+                case UINT32:
+                    return int.class;
+                case INT64:
+                case UINT64:
+                    return long.class;
+                case FLOAT32:
+                    return float.class;
+                case FLOAT64:
+                    return double.class;
+                case POINTER:
+                    return com.sun.jna.Pointer.class;
+                default:
+                    return null;
+            }
         }
+        return null;
     }
     private final Object getCallback(Ruby runtime, Object obj) {
         com.sun.jna.Callback cb = callbackMap.get(obj);
@@ -150,10 +154,10 @@ final class CallbackMarshaller implements Marshaller {
             if (recv == null) {
                 return 0L;
             }
-            NativeParam[] nativeParams = cbInfo.getParameterTypes();
+            Type[] nativeParams = cbInfo.getParameterTypes();
             IRubyObject[] params = new IRubyObject[nativeParams.length];
             for (int i = 0; i < params.length; ++i) {
-                params[i] = fromNative(runtime, nativeParams[i], args[i]);
+                params[i] = fromNative(runtime, nativeParams[i].getNativeType(), args[i]);
             }
             IRubyObject retVal;
             try {
@@ -165,7 +169,7 @@ final class CallbackMarshaller implements Marshaller {
             } catch (Throwable t) {
                 return Long.valueOf(0);
             }
-            return toNative(runtime, cbInfo.getReturnType(), retVal);
+            return toNative(runtime, cbInfo.getReturnType().getNativeType(), retVal);
         }
 
         public Class[] getParameterTypes() {
