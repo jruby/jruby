@@ -80,62 +80,25 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static class ClosureInfo {
         private final CallbackInfo cbInfo;
         private final CallingConvention convention;
-        private final NativeType[] parameterTypes;
         private final Type[] ffiParameterTypes;
         private final Type ffiReturnType;
+        
         public ClosureInfo(CallbackInfo cbInfo, CallingConvention convention) {
             this.cbInfo = cbInfo;
             this.convention = convention;
             NativeParam[] nativeParams = cbInfo.getParameterTypes();
-            ffiParameterTypes = new Type[nativeParams.length];
-            parameterTypes = new NativeType[nativeParams.length];
-            for (int i = 0; i < nativeParams.length; ++i) {
-                if (!(nativeParams[i] instanceof NativeType)) {
-                    throw new RuntimeException("Invalid callback parameter type: " + nativeParams[i]);
-                }
-                switch ((NativeType) nativeParams[i]) {
-                    case INT8:
-                    case UINT8:
-                    case INT16:
-                    case UINT16:
-                    case INT32:
-                    case UINT32:
-                    case LONG:
-                    case ULONG:
-                    case INT64:
-                    case UINT64:
-                    case FLOAT32:
-                    case FLOAT64:
-                    case POINTER:
-                    case STRING:
-                        ffiParameterTypes[i] = FFIUtil.getFFIType((NativeType) nativeParams[i]);
-                        parameterTypes[i] = (NativeType) nativeParams[i];
-                        break;
-                    default:
-                        throw new RuntimeException("Invalid callback parameter type: " + nativeParams[i]);
-                }
-            }
-            switch (cbInfo.getReturnType()) {
-                case INT8:
-                case UINT8:
-                case INT16:
-                case UINT16:
-                case INT32:
-                case UINT32:
-                case LONG:
-                case ULONG:
-                case INT64:
-                case UINT64:
-                case FLOAT32:
-                case FLOAT64:
-                case POINTER:
-                case VOID:
-                    this.ffiReturnType = FFIUtil.getFFIType(cbInfo.getReturnType());
-                    break;
-                default:
-                   throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
 
+            ffiParameterTypes = new Type[nativeParams.length];
+            for (int i = 0; i < nativeParams.length; ++i) {
+                if (!isParameterTypeValid(nativeParams[i])) {
+                    throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + nativeParams[i]);
+                }
+                ffiParameterTypes[i] = FFIUtil.getFFIType((NativeType) nativeParams[i]);
             }
+            if (!isReturnTypeValid(cbInfo.getReturnType())) {
+                throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
+            }
+            this.ffiReturnType = FFIUtil.getFFIType(cbInfo.getReturnType());
         }
     }
 
@@ -315,5 +278,46 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         RubyString s = RubyString.newStringShared(runtime, bytes);
         s.setTaint(true);
         return s;
+    }
+
+    private static final boolean isReturnTypeValid(NativeType type) {
+        switch (type) {
+            case INT8:
+            case UINT8:
+            case INT16:
+            case UINT16:
+            case INT32:
+            case UINT32:
+            case LONG:
+            case ULONG:
+            case INT64:
+            case UINT64:
+            case FLOAT32:
+            case FLOAT64:
+            case POINTER:
+            case VOID:
+                return true;
+        }
+        return false;
+    }
+    private static final boolean isParameterTypeValid(NativeParam type) {
+        if (type instanceof NativeType) switch ((NativeType) type) {
+            case INT8:
+            case UINT8:
+            case INT16:
+            case UINT16:
+            case INT32:
+            case UINT32:
+            case LONG:
+            case ULONG:
+            case INT64:
+            case UINT64:
+            case FLOAT32:
+            case FLOAT64:
+            case POINTER:
+            case STRING:
+                return true;
+        }
+        return false;
     }
 }
