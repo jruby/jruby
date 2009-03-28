@@ -15,8 +15,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.NativeParam;
-import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Type;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -32,8 +31,8 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             = Collections.synchronizedMap(new WeakHashMap<DynamicMethod, Object>());
     private final Object handle;
     private final Function function;
-    private final NativeType returnType;
-    private final NativeParam[] parameterTypes;
+    private final Type returnType;
+    private final Type[] parameterTypes;
     private final int parameterCount;
     private final CallingConvention convention;
     private final RubyModule callModule;
@@ -50,29 +49,30 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         return result;
     }
     
-    JFFIInvoker(Ruby runtime, String libraryName, String functionName, NativeType returnType, NativeParam[] parameterTypes, String convention) {
+    JFFIInvoker(Ruby runtime, String libraryName, String functionName, Type returnType, Type[] parameterTypes, String convention) {
         this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"), Library.getCachedInstance(libraryName, Library.LAZY),
                 Library.getCachedInstance(libraryName, Library.LAZY).getSymbolAddress(functionName),
                 returnType, parameterTypes, convention);
     }
 
-    JFFIInvoker(Ruby runtime, RubyClass klass, Object handle, long address, NativeType returnType, NativeParam[] parameterTypes, String convention) {
+    JFFIInvoker(Ruby runtime, RubyClass klass, Object handle, long address, Type returnType, Type[] parameterTypes, String convention) {
         super(runtime, klass, parameterTypes.length);
 
         final com.kenai.jffi.Type jffiReturnType = getFFIType(returnType);
         if (jffiReturnType == null) {
-            throw runtime.newArgumentError("Invalid return type");
+            throw runtime.newArgumentError("Invalid return type " + returnType);
         }
+        
         com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
         for (int i = 0; i < jffiParamTypes.length; ++i) {
             if ((jffiParamTypes[i] = getFFIType(parameterTypes[i])) == null) {
-                throw runtime.newArgumentError("Invalid parameter type");
+                throw runtime.newArgumentError("Invalid parameter type " + parameterTypes[i]);
             }
         }
 
         this.handle = handle;
         function = new Function(address, jffiReturnType, jffiParamTypes);
-        this.parameterTypes = new NativeParam[parameterTypes.length];
+        this.parameterTypes = new Type[parameterTypes.length];
         System.arraycopy(parameterTypes, 0, this.parameterTypes, 0, parameterTypes.length);
         this.parameterCount = parameterTypes.length;
         this.returnType = returnType;
@@ -92,16 +92,26 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         if (!(args[1] instanceof RubyArray)) {
             throw context.getRuntime().newArgumentError("Invalid parameter types array");
         }
-        
+
+        if (!(args[2] instanceof Type)) {
+            throw context.getRuntime().newArgumentError("Invalid return type");
+        }
         BasePointer ptr = (BasePointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
-        NativeType returnType = NativeType.valueOf(args[2]);
+        Type returnType = (Type) args[2];
         String convention = args[3].toString();
 
-        NativeParam[] parameterTypes = getNativeParameterTypes(context.getRuntime(), paramTypes);
+        Type[] parameterTypes = new Type[paramTypes.size()];
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            IRubyObject type = paramTypes.entry(i);
+            if (!(type instanceof Type)) {
+                throw context.getRuntime().newArgumentError("Invalid parameter type");
+            }
+            parameterTypes[i] = (Type) paramTypes.entry(i);
+        }
         
         return new JFFIInvoker(context.getRuntime(), (RubyClass) recv, ptr,
-                ptr.getAddress(), returnType, parameterTypes, convention);
+                ptr.getAddress(), (Type) returnType, parameterTypes, convention);
     }
 
     /**
@@ -132,12 +142,11 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         libraryRefMap.put(dm, handle);
         return dm;
     }
-    private static final com.kenai.jffi.Type getFFIType(NativeParam type) {
 
-        if (type instanceof NativeType) {
-            return FFIUtil.getFFIType((NativeType) type);
-        } else if (type instanceof CallbackInfo) {
-            return com.kenai.jffi.Type.POINTER;
+    static final com.kenai.jffi.Type getFFIType(Type type) {
+
+        if (type instanceof Type.Builtin || type instanceof CallbackInfo) {
+            return FFIUtil.getFFIType(type.getNativeType());
         } else {
             return null;
         }

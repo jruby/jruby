@@ -14,6 +14,7 @@ import org.jruby.RubyString;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
+import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeParam;
@@ -22,6 +23,7 @@ import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -37,8 +39,9 @@ public final class DefaultMethodFactory {
     public static final DefaultMethodFactory getFactory() {
         return SingletonHolder.INSTANCE;
     }
+    
     DynamicMethod createMethod(RubyModule module, Function function, 
-            NativeType returnType, NativeParam[] parameterTypes, CallingConvention convention) {
+            Type returnType, Type[] parameterTypes, CallingConvention convention) {
 
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
 
@@ -72,10 +75,10 @@ public final class DefaultMethodFactory {
         FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
         boolean canBeFastInt = parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
         for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
-            if (!(parameterTypes[i] instanceof NativeType) || marshallers[i].needsInvocationSession()) {
+            if (!(parameterTypes[i] instanceof Type.Builtin) || marshallers[i].needsInvocationSession()) {
                 canBeFastInt = false;
             } else {
-                switch ((NativeType) parameterTypes[i]) {
+                switch (parameterTypes[i].getNativeType()) {
                     case POINTER:
                     case BUFFER_IN:
                     case BUFFER_OUT:
@@ -125,6 +128,16 @@ public final class DefaultMethodFactory {
         }
         throw new IllegalArgumentException("Parameter types not supported");
     }
+
+    static FunctionInvoker getFunctionInvoker(Type returnType) {
+        if (returnType instanceof Type.Builtin) {
+            return getFunctionInvoker(returnType.getNativeType());
+        } else if (returnType instanceof CallbackInfo) {
+            return getFunctionInvoker(returnType.getNativeType());
+        }
+        throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
+    }
+
     static FunctionInvoker getFunctionInvoker(NativeType returnType) {
         switch (returnType) {
             case VOID:
@@ -174,6 +187,15 @@ public final class DefaultMethodFactory {
     static final ParameterMarshaller getMarshaller(NativeParam type, CallingConvention convention) {
         if (type instanceof NativeType) {
             return getMarshaller((NativeType) type);
+        } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
+            return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
+        } else {
+            return null;
+        }
+    }
+    static final ParameterMarshaller getMarshaller(Type type, CallingConvention convention) {
+        if (type instanceof Type.Builtin) {
+            return getMarshaller(type.getNativeType());
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
         } else {

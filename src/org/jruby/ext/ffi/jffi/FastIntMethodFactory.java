@@ -5,7 +5,6 @@ import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
@@ -14,6 +13,7 @@ import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -27,7 +27,8 @@ public class FastIntMethodFactory {
     public static final FastIntMethodFactory getFactory() {
         return SingletonHolder.INSTANCE;
     }
-    final boolean isFastIntMethod(NativeType returnType, NativeParam[] parameterTypes) {
+    
+    final boolean isFastIntMethod(Type returnType, Type[] parameterTypes) {
         for (int i = 0; i < parameterTypes.length; ++i) {
             if (!isFastIntParam(parameterTypes[i])) {
                 return false;
@@ -35,29 +36,31 @@ public class FastIntMethodFactory {
         }
         return parameterTypes.length <= 3 && isFastIntResult(returnType);
     }
-    final boolean isFastIntResult(NativeType type) {
-        switch (type) {
-            case VOID:
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-                return true;
-            case POINTER:
-            case STRING:
-                return Platform.getPlatform().addressSize() == 32;
-            case LONG:
-            case ULONG:
-                return Platform.getPlatform().longSize() == 32;
-            default:
-                return false;
+    final boolean isFastIntResult(Type type) {
+        if (type instanceof Type.Builtin) {
+            switch (type.getNativeType()) {
+                case VOID:
+                case INT8:
+                case UINT8:
+                case INT16:
+                case UINT16:
+                case INT32:
+                case UINT32:
+                    return true;
+                case POINTER:
+                case STRING:
+                    return Platform.getPlatform().addressSize() == 32;
+                case LONG:
+                case ULONG:
+                    return Platform.getPlatform().longSize() == 32;
+            }
         }
+        return false;
     }
-    final boolean isFastIntParam(NativeParam paramType) {
-        if (paramType instanceof NativeType) {
-            switch ((NativeType) paramType) {
+    
+    final boolean isFastIntParam(Type paramType) {
+        if (paramType instanceof Type.Builtin) {
+            switch (paramType.getNativeType()) {
                 case INT8:
                 case UINT8:
                 case INT16:
@@ -73,14 +76,16 @@ public class FastIntMethodFactory {
         }
         return false;
     }
-    DynamicMethod createMethod(RubyModule module, Function function,
-            NativeType returnType, NativeParam[] parameterTypes) {
+    
+    DynamicMethod createMethod(RubyModule module, Function function, Type returnType, Type[] parameterTypes) {
+
         FastIntMethodFactory factory = this;
         IntParameterConverter[] parameterConverters = new IntParameterConverter[parameterTypes.length];
         IntResultConverter resultConverter = factory.getIntResultConverter(returnType);
         for (int i = 0; i < parameterConverters.length; ++i) {
             parameterConverters[i] = factory.getIntParameterConverter(parameterTypes[i]);
         }
+
         switch (parameterTypes.length) {
             case 0:
                 return new FastIntMethodZeroArg(module, function, resultConverter, parameterConverters);
@@ -94,6 +99,10 @@ public class FastIntMethodFactory {
                 throw module.getRuntime().newRuntimeError("Arity " + parameterTypes.length + " not implemented");
         }
     }
+    final IntParameterConverter getIntParameterConverter(Type type) {
+        return type instanceof Type.Builtin ? getIntParameterConverter(type.getNativeType()) : null;
+    }
+    
     final IntParameterConverter getIntParameterConverter(NativeParam type) {
         switch ((NativeType) type) {
             case INT8: return Signed8ParameterConverter.INSTANCE;
@@ -124,6 +133,9 @@ public class FastIntMethodFactory {
             default:
                 throw new IllegalArgumentException("Unknown type " + type);
         }
+    }
+    final IntResultConverter getIntResultConverter(Type type) {
+        return type instanceof Type.Builtin ? getIntResultConverter(type.getNativeType()) : null;
     }
     final IntResultConverter getIntResultConverter(NativeType type) {
         switch (type) {

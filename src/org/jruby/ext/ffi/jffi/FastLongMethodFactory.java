@@ -6,10 +6,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.BasePointer;
-import org.jruby.ext.ffi.NativeParam;
-import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -23,7 +22,8 @@ public class FastLongMethodFactory {
     public static final FastLongMethodFactory getFactory() {
         return SingletonHolder.INSTANCE;
     }
-    final boolean isFastLongMethod(NativeType returnType, NativeParam[] parameterTypes) {
+    
+    final boolean isFastLongMethod(Type returnType, Type[] parameterTypes) {
         for (int i = 0; i < parameterTypes.length; ++i) {
             if (!isFastLongParam(parameterTypes[i])) {
                 return false;
@@ -31,29 +31,33 @@ public class FastLongMethodFactory {
         }
         return parameterTypes.length <= 3 && isFastLongResult(returnType);
     }
-    final boolean isFastLongResult(NativeType type) {
-        switch (type) {
-            case VOID:
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-            case INT64:
-            case UINT64:
-            case POINTER:
-            case STRING:
-            case LONG:
-            case ULONG:
-                return true;
-            default:
-                return false;
+    
+    
+    final boolean isFastLongResult(Type type) {
+        if (type instanceof Type.Builtin) {
+            switch (type.getNativeType()) {
+                case VOID:
+                case INT8:
+                case UINT8:
+                case INT16:
+                case UINT16:
+                case INT32:
+                case UINT32:
+                case INT64:
+                case UINT64:
+                case POINTER:
+                case STRING:
+                case LONG:
+                case ULONG:
+                    return true;
+            }
         }
+        return false;
     }
-    final boolean isFastLongParam(NativeParam paramType) {
-        if (paramType instanceof NativeType) {
-            switch ((NativeType) paramType) {
+    
+    final boolean isFastLongParam(Type paramType) {
+        if (paramType instanceof Type.Builtin) {
+            switch (paramType.getNativeType()) {
                 case INT8:
                 case UINT8:
                 case INT16:
@@ -69,13 +73,14 @@ public class FastLongMethodFactory {
         }
         return false;
     }
+
     DynamicMethod createMethod(RubyModule module, Function function,
-            NativeType returnType, NativeParam[] parameterTypes) {
-        FastLongMethodFactory factory = this;
+            Type returnType, Type[] parameterTypes) {
+
         LongParameterConverter[] parameterConverters = new LongParameterConverter[parameterTypes.length];
-        LongResultConverter resultConverter = factory.getLongResultConverter(returnType);
+        LongResultConverter resultConverter = getLongResultConverter(returnType);
         for (int i = 0; i < parameterConverters.length; ++i) {
-            parameterConverters[i] = factory.getLongParameterConverter(parameterTypes[i]);
+            parameterConverters[i] = getLongParameterConverter(parameterTypes[i]);
         }
 
         switch (parameterTypes.length) {
@@ -91,8 +96,8 @@ public class FastLongMethodFactory {
                 throw module.getRuntime().newRuntimeError("Arity " + parameterTypes.length + " not implemented");
         }
     }
-    final LongParameterConverter getLongParameterConverter(NativeParam type) {
-        switch ((NativeType) type) {
+    final LongParameterConverter getLongParameterConverter(Type type) {
+        switch (type.getNativeType()) {
             case INT8: return Signed8ParameterConverter.INSTANCE;
             case UINT8: return Unsigned8ParameterConverter.INSTANCE;
             case INT16: return Signed16ParameterConverter.INSTANCE;
@@ -119,8 +124,8 @@ public class FastLongMethodFactory {
                 throw new IllegalArgumentException("Unknown type " + type);
         }
     }
-    final LongResultConverter getLongResultConverter(NativeType type) {
-        switch (type) {
+    final LongResultConverter getLongResultConverter(Type type) {
+        switch (type.getNativeType()) {
             case VOID: return VoidResultConverter.INSTANCE;
             case INT8: return Signed8ResultConverter.INSTANCE;
             case UINT8: return Unsigned8ResultConverter.INSTANCE;
