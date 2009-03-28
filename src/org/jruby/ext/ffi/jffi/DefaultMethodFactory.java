@@ -133,7 +133,7 @@ public final class DefaultMethodFactory {
         if (returnType instanceof Type.Builtin) {
             return getFunctionInvoker(returnType.getNativeType());
         } else if (returnType instanceof CallbackInfo) {
-            return getFunctionInvoker(returnType.getNativeType());
+            return new CallbackInvoker((CallbackInfo) returnType);
         }
         throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
     }
@@ -411,6 +411,30 @@ public final class DefaultMethodFactory {
             return s;
         }
         public static final FunctionInvoker INSTANCE = new StringInvoker();
+    }
+
+    /**
+     * Invokes the native function with a callback/function pointer return value.
+     * Returns a {@link Invoker} to ruby.
+     */
+    private static final class CallbackInvoker extends BaseInvoker {
+        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+        private final Type returnType;
+        private final Type[] parameterTypes;
+
+        public CallbackInvoker(CallbackInfo cbInfo) {
+            this.returnType = cbInfo.getReturnType();
+            this.parameterTypes = cbInfo.getParameterTypes();
+        }
+        
+
+        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+            long address = invoker.invokeAddress(function, args);
+            if (address == 0) {
+                return runtime.getNil();
+            }
+            return new JFFIInvoker(runtime, address, returnType, parameterTypes);
+        }
     }
 
     /*------------------------------------------------------------------------*/

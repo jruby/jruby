@@ -54,7 +54,10 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
                 Library.getCachedInstance(libraryName, Library.LAZY).getSymbolAddress(functionName),
                 returnType, parameterTypes, convention);
     }
-
+    JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes) {
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"), null, address,
+                returnType, parameterTypes, "default");
+    }
     JFFIInvoker(Ruby runtime, RubyClass klass, Object handle, long address, Type returnType, Type[] parameterTypes, String convention) {
         super(runtime, klass, parameterTypes.length);
 
