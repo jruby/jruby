@@ -28,7 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-public class SimplePositionFactory implements ISourcePositionFactory {
+public class SimplePositionFactory {
     private LexerSource source;
     private ISourcePosition lastPosition;
 

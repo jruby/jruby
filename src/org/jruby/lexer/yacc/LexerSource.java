@@ -49,7 +49,7 @@ import org.jruby.util.ByteList;
  */
 public abstract class LexerSource {
 	// Where we get new positions from.
-	private ISourcePositionFactory positionFactory;
+	private SimplePositionFactory positionFactory;
 	
     // The name of this source (e.g. a filename: foo.rb)
     private final String sourceName;
@@ -123,10 +123,6 @@ public abstract class LexerSource {
      */
     public ISourcePosition getPosition() {
     	return positionFactory.getPosition(null, false);
-    }
-    
-    public ISourcePositionFactory getPositionFactory() {
-        return positionFactory;
     }
 
     /**

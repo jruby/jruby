@@ -314,10 +314,6 @@ public class RubyYaccLexer {
     public Object value() {
         return yaccValue;
     }
-
-    public ISourcePositionFactory getPositionFactory() {
-        return src.getPositionFactory();
-    }
     
     /**
      * Get position information for Token/Node that follows node represented by startPosition 
