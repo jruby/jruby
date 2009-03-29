@@ -53,6 +53,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -119,16 +120,18 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         Constructor compilerConstructor = null;
         Method installerMethod = null;
         try {
-            // try to load java.dyn.Dynamic first
-            Class.forName("java.dyn.Dynamic");
-            
-            // if that succeeds, the others should as well
-            Class compiler =
-                    Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
-            Class support =
-                    Class.forName("org.jruby.runtime.invokedynamic.InvokeDynamicSupport");
-            compilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
-            installerMethod = support.getDeclaredMethod("installBytecode", MethodVisitor.class, String.class);
+            if (SafePropertyAccessor.getBoolean("jruby.compile.invokeDynamic")) {
+                // try to load java.dyn.Dynamic first
+                Class.forName("java.dyn.Dynamic");
+
+                // if that succeeds, the others should as well
+                Class compiler =
+                        Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
+                Class support =
+                        Class.forName("org.jruby.runtime.invokedynamic.InvokeDynamicSupport");
+                compilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
+                installerMethod = support.getDeclaredMethod("installBytecode", MethodVisitor.class, String.class);
+            }
         } catch (Exception e) {
             // leave it null and fall back on our normal invocation logic
         }

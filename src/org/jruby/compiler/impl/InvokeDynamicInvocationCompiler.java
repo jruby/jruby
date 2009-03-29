@@ -30,7 +30,6 @@ package org.jruby.compiler.impl;
 import java.dyn.Dynamic;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.CompilerCallback;
-import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -464,8 +463,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-
-        method.invokeinterface(p(Dynamic.class), callName, signature);
+        method.invokedynamic(p(IRubyObject.class), callName, signature);
     }
 
     public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
