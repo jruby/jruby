@@ -312,7 +312,7 @@ public class ParserSupport {
             case Tokens.k__LINE__:
                 throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __LINE__", "__LINE__");
             case Tokens.tIDENTIFIER:
-                return currentScope.assign(value != NilImplicitNode.NIL ? union(lhs, value) : lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
+                return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
                     throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(), "dynamic constant assignment");
@@ -400,7 +400,6 @@ public class ParserSupport {
 
         // Assumption: tail is never a list node
         ((ListNode) head).addAll(tail);
-        head.setPosition(union(head, tail));
         return head;
     }
 
@@ -497,7 +496,6 @@ public class ParserSupport {
         checkExpression(rhs);
         if (lhs instanceof AssignableNode) {
     	    ((AssignableNode) lhs).setValueNode(rhs);
-    	    lhs.setPosition(union(lhs, rhs));
         } else if (lhs instanceof IArgumentNode) {
             IArgumentNode invokableNode = (IArgumentNode) lhs;
             
@@ -804,12 +802,16 @@ public class ParserSupport {
         return new ArrayNode(position, makeNullNil(firstNode));
     }
 
+    private ISourcePosition position(ISourcePositionHolder one, ISourcePositionHolder two) {
+        return one == null ? two.getPosition() : one.getPosition();
+    }
+
     public AndNode newAndNode(ISourcePosition position, Node left, Node right) {
         checkExpression(left);
         
         if (left == null && right == null) return new AndNode(position, makeNullNil(left), makeNullNil(right));
         
-        return new AndNode(union(left, right), makeNullNil(left), makeNullNil(right));
+        return new AndNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
     public OrNode newOrNode(ISourcePosition position, Node left, Node right) {
@@ -817,7 +819,7 @@ public class ParserSupport {
 
         if (left == null && right == null) return new OrNode(position, makeNullNil(left), makeNullNil(right));
         
-        return new OrNode(union(left, right), makeNullNil(left), makeNullNil(right));
+        return new OrNode(position(left, right), makeNullNil(left), makeNullNil(right));
     }
 
     /**
@@ -947,7 +949,7 @@ public class ParserSupport {
     }
     
     private Node new_call_noargs(Node receiver, Token name, IterNode iter) {
-        ISourcePosition position = union(receiver, name);
+        ISourcePosition position = position(receiver, name);
         
         if (receiver == null) receiver = NilImplicitNode.NIL;
         
@@ -966,13 +968,13 @@ public class ParserSupport {
             return new_call_blockpass(receiver, name, (BlockPassNode) args);
         }
 
-        if (iter != null) return new CallSpecialArgBlockNode(union(receiver, args), receiver,(String) name.getValue(), args, (IterNode) iter);
+        if (iter != null) return new CallSpecialArgBlockNode(position(receiver, args), receiver,(String) name.getValue(), args, (IterNode) iter);
 
-        return new CallSpecialArgNode(union(receiver, args), receiver, (String) name.getValue(), args);
+        return new CallSpecialArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
     }
     
     private Node new_call_blockpass(Node receiver, Token operation, BlockPassNode blockPass) {
-        ISourcePosition position = union(receiver, blockPass);
+        ISourcePosition position = position(receiver, blockPass);
         String name = (String) operation.getValue();
         Node args = blockPass.getArgsNode();
         
@@ -1001,25 +1003,25 @@ public class ParserSupport {
 
         switch (args.size()) {
             case 0:
-                if (iter != null) return new CallNoArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
+                if (iter != null) return new CallNoArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
                     
-                return new CallNoArgNode(union(receiver, args), receiver, args, (String) name.getValue());
+                return new CallNoArgNode(position(receiver, args), receiver, args, (String) name.getValue());
             case 1:
-                if (iter != null) return new CallOneArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
+                if (iter != null) return new CallOneArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
                 
-                return new CallOneArgNode(union(receiver, args), receiver, (String) name.getValue(), args);
+                return new CallOneArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
             case 2:
-                if (iter != null) return new CallTwoArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
+                if (iter != null) return new CallTwoArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
                 
-                return new CallTwoArgNode(union(receiver, args), receiver, (String) name.getValue(), args);
+                return new CallTwoArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
             case 3:
-                if (iter != null) return new CallThreeArgBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
+                if (iter != null) return new CallThreeArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
                 
-                return new CallThreeArgNode(union(receiver, args), receiver, (String) name.getValue(), args);
+                return new CallThreeArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
             default:
-                if (iter != null) return new CallManyArgsBlockNode(union(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
+                if (iter != null) return new CallManyArgsBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
 
-                return new CallManyArgsNode(union(receiver, args), receiver, (String) name.getValue(), args);
+                return new CallManyArgsNode(position(receiver, args), receiver, (String) name.getValue(), args);
         }
     }
 
@@ -1044,33 +1046,34 @@ public class ParserSupport {
     
     private Node new_fcall_simpleargs(Token operation, ArrayNode args, Node iter) {
         String name = (String) operation.getValue();
+        ISourcePosition position = position(operation, args);
             
         switch (args.size()) {
             case 0:  // foo()
-                if (iter != null) return new FCallNoArgBlockNode(union(operation, args), name, args, (IterNode) iter);
+                if (iter != null) return new FCallNoArgBlockNode(position, name, args, (IterNode) iter);
                     
-                return new FCallNoArgNode(union(operation, args), args, name);
+                return new FCallNoArgNode(position, args, name);
             case 1:
-                if (iter != null) return new FCallOneArgBlockNode(union(operation, args), name, args, (IterNode) iter);
+                if (iter != null) return new FCallOneArgBlockNode(position, name, args, (IterNode) iter);
                 
-                return new FCallOneArgNode(union(operation, args), name, args);
+                return new FCallOneArgNode(position, name, args);
             case 2:
-                if (iter != null) return new FCallTwoArgBlockNode(union(operation, args), name, args, (IterNode) iter);
+                if (iter != null) return new FCallTwoArgBlockNode(position, name, args, (IterNode) iter);
                 
-                return new FCallTwoArgNode(union(operation, args), name, args);
+                return new FCallTwoArgNode(position, name, args);
             case 3:
-                if (iter != null) return new FCallThreeArgBlockNode(union(operation, args), name, args, (IterNode) iter);
+                if (iter != null) return new FCallThreeArgBlockNode(position, name, args, (IterNode) iter);
                 
-                return new FCallThreeArgNode(union(operation, args), name, args);
+                return new FCallThreeArgNode(position, name, args);
             default:
-                if (iter != null) return new FCallManyArgsBlockNode(union(operation, args), name, args, (IterNode) iter);
+                if (iter != null) return new FCallManyArgsBlockNode(position, name, args, (IterNode) iter);
 
-                return new FCallManyArgsNode(union(operation, args), name, args);
+                return new FCallManyArgsNode(position, name, args);
         }
     }
     
     private Node new_fcall_blockpass(Token operation, BlockPassNode blockPass) {
-        ISourcePosition position = union(operation, blockPass);
+        ISourcePosition position = position(operation, blockPass);
         String name = (String) operation.getValue();
         Node args = blockPass.getArgsNode();
         
@@ -1100,13 +1103,13 @@ public class ParserSupport {
             throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
         }
 
-        if (iter != null) new FCallSpecialArgBlockNode(union(operation, args), (String) operation.getValue(), args, (IterNode) iter);
-        return new FCallSpecialArgNode(union(operation, args), (String) operation.getValue(), args);
+        if (iter != null) new FCallSpecialArgBlockNode(position(operation, args), (String) operation.getValue(), args, (IterNode) iter);
+        return new FCallSpecialArgNode(position(operation, args), (String) operation.getValue(), args);
     }
 
     public Node new_super(Node args, Token operation) {
         if (args != null && args instanceof BlockPassNode) {
-            return new SuperNode(union(operation, args), ((BlockPassNode) args).getArgsNode(), args);
+            return new SuperNode(position(operation, args), ((BlockPassNode) args).getArgsNode(), args);
         }
         return new SuperNode(operation.getPosition(), args);
     }
@@ -1188,9 +1191,9 @@ public class ParserSupport {
 
         if (tail instanceof StrNode) {
             if (head instanceof StrNode) {
-        	    return new StrNode(union(head, tail), (StrNode) head, (StrNode) tail);
+        	    return new StrNode(head.getPosition(), (StrNode) head, (StrNode) tail);
             } 
-            head.setPosition(union(head, tail));
+            head.setPosition(head.getPosition());
             return ((ListNode) head).add(tail);
         	
         } else if (tail instanceof DStrNode) {
