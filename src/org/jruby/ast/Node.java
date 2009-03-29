@@ -34,7 +34,6 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.jruby.Ruby;
@@ -43,7 +42,6 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.IDESourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,7 +52,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class Node implements ISourcePositionHolder {    
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<Node>();
-    public static final List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
     
     private ISourcePosition position;
 
@@ -110,55 +107,6 @@ public abstract class Node implements ISourcePositionHolder {
         int i = name.lastIndexOf('.');
         String nodeType = name.substring(i + 1);
         return nodeType;
-    }
-    
-    public void addComment(CommentNode comment) {
-        Collection<CommentNode> comments = position.getComments();
-        if (comments == null) {
-            comments = new ArrayList<CommentNode>();
-            position.setComments(comments);
-        }
-
-        comments.add(comment);
-    }
-    
-    public void addComments(Collection<CommentNode> moreComments) {
-        Collection<CommentNode> comments = position.getComments();
-        if (comments == EMPTY_COMMENT_LIST) {
-            comments = new ArrayList<CommentNode>();
-            position.setComments(comments);
-        }
-
-        comments.addAll(moreComments);
-    }
-    
-    public Collection<CommentNode> getComments() {
-        return position.getComments();
-    }
-    
-    public boolean hasComments() {
-        return getComments() != EMPTY_COMMENT_LIST;
-    }
-    
-    public ISourcePosition getPositionIncludingComments() {
-        if (!hasComments()) return position;
-        
-        String fileName = position.getFile();
-        int startOffset = position.getStartOffset();
-        int endOffset = position.getEndOffset();
-        int startLine = position.getStartLine();
-        int endLine = position.getEndLine();
-        
-        // Since this is only used for IDEs this is safe code, but there is an obvious abstraction issue here.
-        ISourcePosition commentIncludingPos = 
-            new IDESourcePosition(fileName, startLine, endLine, startOffset, endOffset);
-        
-        for (CommentNode comment: getComments()) {
-            commentIncludingPos = 
-                IDESourcePosition.combinePosition(commentIncludingPos, comment.getPosition());
-        }       
-
-        return commentIncludingPos;
     }
 
     /**

@@ -157,7 +157,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.IDESourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -1284,9 +1284,10 @@ public class ParserSupport {
         
         return floatNode;
     }
-    
+
+    // FIXME: Remove this from grammars.
     public ISourcePosition createEmptyArgsNodePosition(ISourcePosition pos) {
-        return new IDESourcePosition(pos.getFile(), pos.getStartLine(), pos.getEndLine(), pos.getEndOffset() - 1, pos.getEndOffset() - 1);
+        return pos;
     }
     
     public Node unwrapNewlineNode(Node node) {
@@ -1306,9 +1307,8 @@ public class ParserSupport {
             return null;
         }
         String name = getCurrentScope().getLocalScope().getVariables()[index];
-        // FIXME: We should not need to specify IDESourcePosition here...
-        ISourcePosition position = new IDESourcePosition(token.getPosition().getFile(), token.getPosition().getStartLine(), token.getPosition().getEndLine(), token.getPosition().getStartOffset(), token.getPosition().getEndOffset() + name.length());
-        return new ArgumentNode(position, name);
+
+        return new ArgumentNode(token.getPosition(), name);
     }
 
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,

@@ -27,10 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-import java.util.Collection;
-
-import org.jruby.ast.CommentNode;
-
 /**
  * This interface is the combination of two needs:  1) A Ruby interpreter position (for warnings 
  * and errors).  The interpreter only cares about filename and endLine.  2) A IDE position (offsets
@@ -93,14 +89,6 @@ public interface ISourcePosition {
      * @return a new position
      */
     public ISourcePosition union(ISourcePosition position);
-    
-    /**
-     * Get comments associated with this position (really we get this from node, but this is
-     * a hack to save some space when using the interpreter).
-     * @return a collection of comments
-     */
-    public Collection<CommentNode> getComments();
-    public void setComments(Collection<CommentNode> comments);
 
     /** For nodes which are added to the AST which are not proper syntactical elements. */
     public static final ISourcePosition INVALID_POSITION = new ISourcePosition() {
@@ -129,14 +117,6 @@ public interface ISourcePosition {
         }
 
         public ISourcePosition union(ISourcePosition position) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public Collection<CommentNode> getComments() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void setComments(Collection<CommentNode> comments) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     };

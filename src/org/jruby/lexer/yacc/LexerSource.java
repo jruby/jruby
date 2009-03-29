@@ -72,18 +72,12 @@ public abstract class LexerSource {
      * @param sourceName is the file we are reading
      * @param reader is what represents the contents of file sourceName
      * @param line starting line number for source (used by eval)
-     * @param extraPositionInformation will gives us extra information that an IDE may want
+     * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
     protected LexerSource(String sourceName, List<String> list, int line, boolean extraPositionInformation) {
         this.sourceName = sourceName;
         this.line = line;
-
-        if (extraPositionInformation) {
-            positionFactory = new IDESourcePositionFactory(this, line);
-        } else {
-            positionFactory = new SimplePositionFactory(this, line);
-        }
-
+        positionFactory = new SimplePositionFactory(this, line);
         this.list = list;
         lineBuffer = new StringBuilder();
     }
