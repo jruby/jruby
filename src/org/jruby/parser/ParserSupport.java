@@ -802,7 +802,7 @@ public class ParserSupport {
         return new ArrayNode(position, makeNullNil(firstNode));
     }
 
-    private ISourcePosition position(ISourcePositionHolder one, ISourcePositionHolder two) {
+    public ISourcePosition position(ISourcePositionHolder one, ISourcePositionHolder two) {
         return one == null ? two.getPosition() : one.getPosition();
     }
 

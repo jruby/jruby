@@ -69,7 +69,7 @@ public class ParserSupport19 extends ParserSupport {
                 throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __ENCODING__", "__ENCODING__");
             case Tokens.tIDENTIFIER:
                 // ENEBO: 1.9 has CURR nodes for local/block variables.  We don't.  I believe we follow proper logic
-                return currentScope.assign(value != NilImplicitNode.NIL ? union(lhs, value) : lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
+                return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
                     throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(), "dynamic constant assignment");
@@ -116,7 +116,7 @@ public class ParserSupport19 extends ParserSupport {
                     new ArrayNode(body.getPosition(), body).add(node2));
         }
 
-        return new ArgsPushNode(union(node1, node2), node1, node2);
+        return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name)
