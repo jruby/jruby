@@ -87,159 +87,159 @@ public abstract class BlockBody implements JumpTarget {
         return argumentType;
     }
 
-    public IRubyObject call(ThreadContext context , Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , Binding binding,
+    public IRubyObject call(ThreadContext context, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , binding, type);
+        return call(context, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , Binding binding, Block.Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
         return yield(context, null, null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0, Binding binding, Block.Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0, binding, type);
+        return call(context, arg0, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0, Binding binding, Block.Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         return yield(context, arg0, null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1, binding, type);
+        return call(context, arg0, arg1, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2, binding, type);
+        return call(context, arg0, arg1, arg2, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3,arg4};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3, arg4};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3,arg4, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, arg4, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3,arg4), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3,arg4,arg5, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, arg4, arg5, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3,arg4,arg5), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3,arg4,arg5,arg6, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, arg4, arg5, arg6, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3,arg4,arg5,arg6), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5, arg6), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Binding binding, Block.Type type) {
-        IRubyObject[] args = new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9};
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding, Block.Type type) {
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9};
         args = prepareArgumentsForCall(context, args, type);
 
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Binding binding,
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding,
             Block.Type type, Block unusedBlock) {
-        return call(context , arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9, binding, type);
+        return call(context, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, binding, type);
     }
 
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9), null, null, true, binding, type);
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding, Block.Type type) {
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9), null, null, true, binding, type);
     }
 
     

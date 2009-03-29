@@ -25,91 +25,91 @@ public class NullBlockBody extends BlockBody {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context , Binding binding, Type type) {
+    public IRubyObject call(ThreadContext context, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(IRubyObject.NULL_ARRAY), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0, Binding binding, Type type) {
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
     @Override
-    public IRubyObject call(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9}), "yield called out of block");
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding, Type type) {
+        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9}), "yield called out of block");
     }
     @Override
-    public IRubyObject yieldSpecific(ThreadContext context , IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9, Binding binding, Type type) {
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding, Type type) {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
     }
 

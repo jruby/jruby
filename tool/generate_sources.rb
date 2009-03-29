@@ -23,37 +23,19 @@ GENERATED_WARNING = "
 "
 
 def n_args_in(n)
-  if n > 0
-    ", " + n_args_in_bare(n)
-  end
+  ", " + n_args_in_bare(n) if n > 0
 end
 
 def n_args_in_bare(n)
-  if n > 0
-    str = ""
-    n.times do |i|
-      str << "IRubyObject arg#{i}"
-      str << "," if i + 1 < n
-    end
-    str
-  end
+  n_args_array(n, "IRubyObject ")
 end
 
 def n_args_out(n)
-  if n > 0
-    ", " + n_args_out_bare(n)
-  end
+  ", " + n_args_out_bare(n) if n > 0
 end
 
 def n_args_out_bare(n)
-  if n > 0
-    str = ""
-    n.times do |i|
-      str << "arg#{i}"
-      str << "," if i + 1 < n
-    end
-    str
-  end
+  n_args_array(n)
 end
 
 def n_args_ary(n)
@@ -61,16 +43,13 @@ def n_args_ary(n)
 end
 
 def n_args_ary_bare(n)
-  if n == 0
-    "IRubyObject.NULL_ARRAY"
-  else
-    str = "new IRubyObject[] {"
-    n.times do |i|
-      str << "arg#{i}"
-      str << "," if i + 1 < n
-    end
-    str + "}"
-  end
+  return "IRubyObject.NULL_ARRAY" if n == 0
+
+  "new IRubyObject[] {#{n_args_array(n)}}"
+end
+
+def n_args_array(n, arg_prefix="")
+  (0..(n-1)).to_a.map { |i| "#{arg_prefix}arg#{i}" }.join(", ")
 end
 
 def generate(file_src, arities_src)

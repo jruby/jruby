@@ -274,32 +274,32 @@ public abstract class DynamicScope {
     public void setArgValues(IRubyObject arg0) {
         setArgValues(new IRubyObject[] {arg0}, 1);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1) {
-        setArgValues(new IRubyObject[] {arg0,arg1}, 2);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
+        setArgValues(new IRubyObject[] {arg0, arg1}, 2);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2}, 3);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2}, 3);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3}, 4);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3}, 4);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4}, 5);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4}, 5);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5}, 6);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5}, 6);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6}, 7);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6}, 7);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7}, 8);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7}, 8);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8}, 9);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8}, 9);
     }
-    public void setArgValues(IRubyObject arg0,IRubyObject arg1,IRubyObject arg2,IRubyObject arg3,IRubyObject arg4,IRubyObject arg5,IRubyObject arg6,IRubyObject arg7,IRubyObject arg8,IRubyObject arg9) {
-        setArgValues(new IRubyObject[] {arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9}, 10);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9}, 10);
     }
 
 
