@@ -360,12 +360,6 @@ public class ParserSupport {
         return first.getPosition().union(second.getPosition());
     }
     
-    public ISourcePosition union(ISourcePosition first, ISourcePosition second) {
-		if (first.getStartOffset() < second.getStartOffset()) return first.union(second); 
-
-		return second.union(first);
-	}
-    
     public Node addRootNode(Node topOfAST, ISourcePosition position) {
         position = topOfAST != null ? topOfAST.getPosition() : position;
 
@@ -429,7 +423,7 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
         
-        return new CallOneArgNode(union(firstNode.getPosition(), secondNode.getPosition()), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode));
+        return new CallOneArgNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode));
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -1189,7 +1183,7 @@ public class ParserSupport {
         if (tail == null) return head;
         
         if (head instanceof EvStrNode) {
-            head = new DStrNode(union(head.getPosition(), position)).add(head);
+            head = new DStrNode(head.getPosition()).add(head);
         } 
 
         if (tail instanceof StrNode) {
