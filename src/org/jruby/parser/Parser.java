@@ -69,22 +69,6 @@ public class Parser {
         return totalBytes;
     }
     
-    public Node parseRewriter(String file, InputStream content, 
-            ParserConfiguration configuration) throws SyntaxException {
-        long startTime = System.nanoTime();
-        DefaultRubyParser parser = RubyParserPool.getInstance().borrowParser();
-        parser.setWarnings(new NullWarnings());
-        LexerSource lexerSource = LexerSource.getSource(file, content, null, configuration);
-        
-        try {
-            return parser.parse(configuration, lexerSource).getAST();
-        } finally {
-            RubyParserPool.getInstance().returnParser(parser);
-            totalTime += System.nanoTime() - startTime;
-            totalBytes += lexerSource.getOffset();
-        }
-    }
-    
     @SuppressWarnings("unchecked")
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {

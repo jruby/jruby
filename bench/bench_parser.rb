@@ -14,7 +14,8 @@ puts "size: " + src.size.to_s
 fulltime = 0
 
 (ARGV[0] || 5).to_i.times do 
-  parsetime = Benchmark.measure { ITER_COUNT.times { JRuby.parse(src, "parse_rb.rb") } }.real
+a = []
+  parsetime = Benchmark.measure { ITER_COUNT.times { |i| a[i] = JRuby.parse(src, "parse_rb.rb") } }.real
   
   puts "time: " + parsetime.to_s
   fulltime += parsetime
