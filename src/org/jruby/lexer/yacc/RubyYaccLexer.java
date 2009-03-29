@@ -43,7 +43,6 @@ import java.util.HashMap;
 import org.jcodings.Encoding;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
-import org.jruby.ast.CommentNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.NthRefNode;
@@ -225,9 +224,6 @@ public class RubyYaccLexer {
     private StackState cmdArgumentState = new StackState();
     private StrTerm lex_strterm;
     public boolean commandStart;
-    
-    // Whether we're processing comments
-    private boolean doComments;
 
     // Give a name to a value.  Enebo: This should be used more.
     static final int EOF = -1;
@@ -348,9 +344,6 @@ public class RubyYaccLexer {
      */
     public void setParserSupport(ParserSupport parserSupport) {
         this.parserSupport = parserSupport;
-        if (parserSupport.getConfiguration() != null) {
-            this.doComments = parserSupport.getConfiguration().hasExtraPositionInformation();
-        }
     }
 
     public void setEncoding(Encoding encoding) {
@@ -653,42 +646,14 @@ public class RubyYaccLexer {
     }
 
     /**
-     * Read a comment up to end of line.  When found each comment will get stored away into
-     * the parser result so that any interested party can use them as they seem fit.  One idea
-     * is that IDE authors can do distance based heuristics to associate these comments to the
-     * AST node they think they belong to.
+     * Read a comment up to end of line.
      * 
      * @param c last character read from lexer source
      * @return newline or eof value 
      */
     protected int readComment(int c) throws IOException {
-        if (doComments) {
-            return readCommentLong(c);
-        }
-        
         return src.skipUntil('\n');
         
-    }
-    
-    private int readCommentLong(int c) throws IOException {
-        ISourcePosition startPosition = src.getPosition();
-        tokenBuffer.setLength(0);
-        tokenBuffer.append((char) c);
-
-        // FIXME: Consider making a better LexerSource.readLine
-        while ((c = src.read()) != '\n') {
-            if (c == EOF) break;
-
-            tokenBuffer.append((char) c);
-        }
-        src.unread(c);
-        
-        // Store away each comment to parser result so IDEs can do whatever they want with them.
-        ISourcePosition position = startPosition.union(getPosition());
-        
-        parserSupport.getResult().addComment(new CommentNode(position, tokenBuffer.toString()));
-        
-        return c;
     }
     
     /*
@@ -932,10 +897,6 @@ public class RubyYaccLexer {
                 // documentation nodes
                 if (src.wasBeginOfLine()) {
                     if (src.matchMarker(BEGIN_DOC_MARKER, false, false)) {
-                        if (doComments) {
-                            tokenBuffer.setLength(0);
-                            tokenBuffer.append(BEGIN_DOC_MARKER);
-                        }
                         c = src.read();
                         
                         if (Character.isWhitespace(c)) {
@@ -943,30 +904,23 @@ public class RubyYaccLexer {
                             src.unread(c);
                             for (;;) {
                                 c = src.read();
-                                if (doComments) tokenBuffer.append((char) c);
 
                                 // If a line is followed by a blank line put
                                 // it back.
                                 while (c == '\n') {
                                     c = src.read();
-                                    if (doComments) tokenBuffer.append((char) c);
                                 }
                                 if (c == EOF) {
                                     throw new SyntaxException(PID.STRING_HITS_EOF, getPosition(), "embedded document meets end of file");
                                 }
                                 if (c != '=') continue;
                                 if (src.wasBeginOfLine() && src.matchMarker(END_DOC_MARKER, false, false)) {
-                                    if (doComments) tokenBuffer.append(END_DOC_MARKER);
                                     ByteList list = src.readLineBytes();
-                                    if (doComments) tokenBuffer.append(list);
                                     src.unread('\n');
                                     break;
                                 }
                             }
 
-                            if (doComments) {
-                                parserSupport.getResult().addComment(new CommentNode(getPosition(), tokenBuffer.toString()));
-                            }
                             continue;
                         }
 						src.unread(c);

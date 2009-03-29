@@ -34,7 +34,6 @@ package org.jruby.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.ast.CommentNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.PreExeNode;
 import org.jruby.runtime.DynamicScope;
@@ -43,17 +42,12 @@ import org.jruby.runtime.DynamicScope;
  */
 public class RubyParserResult {
     final public static List<Node> EMPTY_BEGIN_LIST = new ArrayList<Node>();
-    final public static List<CommentNode> EMPTY_COMMENT_LIST = new ArrayList<CommentNode>();
+
     private List<Node> beginNodes;
     private Node ast;
     // __END__ marker offset (-1 means none present)
     private int endOffset = -1;
-    private List<CommentNode> commentNodes;
     private DynamicScope scope;
-
-    public List<CommentNode> getCommentNodes() {
-        return commentNodes == null ? EMPTY_COMMENT_LIST : commentNodes;
-    }
     
     public Node getAST() {
         return ast;
@@ -73,11 +67,6 @@ public class RubyParserResult {
      */
     public void setAST(Node ast) {
         this.ast = ast;
-    }
-
-    public void addComment(CommentNode node) {
-        if (commentNodes == null) commentNodes = new ArrayList<CommentNode>();
-        commentNodes.add(node);
     }
     
     public void addBeginNode(PreExeNode node) {
