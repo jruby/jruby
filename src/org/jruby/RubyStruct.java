@@ -349,10 +349,6 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject set(IRubyObject value, int index) {
-        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
-
-        assert !member.isNil() : "uninitialized struct";
-
         modify();
 
         return values[index] = value;
@@ -363,10 +359,6 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject get(int index) {
-        RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
-
-        assert !member.isNil() : "uninitialized struct";
-
         return values[index];
     }
 
