@@ -112,8 +112,8 @@ public abstract class LexerSource {
      * 
      * @return the current position
      */
-    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
-    	return positionFactory.getPosition(startPosition, inclusive);
+    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    	return positionFactory.getPosition(startPosition);
     }
     
     /**
@@ -122,7 +122,7 @@ public abstract class LexerSource {
      * @return the current position
      */
     public ISourcePosition getPosition() {
-    	return positionFactory.getPosition(null, false);
+    	return positionFactory.getPosition(null);
     }
 
     /**

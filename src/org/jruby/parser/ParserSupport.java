@@ -271,7 +271,7 @@ public class ParserSupport {
         case Tokens.k__FILE__:
             return new FileNode(token.getPosition(), ByteList.create(token.getPosition().getFile()));
         case Tokens.k__LINE__:
-            return new FixnumNode(token.getPosition(), token.getPosition().getEndLine()+1);
+            return new FixnumNode(token.getPosition(), token.getPosition().getStartLine()+1);
         case Tokens.k__ENCODING__:
             return new EncodingNode(token.getPosition());
         case Tokens.tIDENTIFIER:
@@ -343,21 +343,6 @@ public class ParserSupport {
         if (node == null) return null;
         
         return node instanceof NewlineNode ? node : new NewlineNode(position, node); 
-    }
-    
-    public ISourcePosition union(ISourcePositionHolder first, ISourcePositionHolder second) {
-        while (first instanceof NewlineNode) {
-            first = ((NewlineNode) first).getNextNode();
-        }
-
-        while (second instanceof NewlineNode) {
-            second = ((NewlineNode) second).getNextNode();
-        }
-        
-        if (second == null) return first.getPosition();
-        if (first == null) return second.getPosition();
-        
-        return first.getPosition().union(second.getPosition());
     }
     
     public Node addRootNode(Node topOfAST, ISourcePosition position) {
@@ -1212,8 +1197,6 @@ public class ParserSupport {
             if(((StrNode) head).getValue().length() == 0) {
                 head = new DStrNode(head.getPosition());
             } else {
-                // All first element StrNode's do not include syntacical sugar.
-                head.getPosition().adjustStartOffset(-1);
                 head = new DStrNode(head.getPosition()).add(head);
             }
         }

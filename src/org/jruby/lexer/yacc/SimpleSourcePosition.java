@@ -29,22 +29,12 @@
 package org.jruby.lexer.yacc;
 
 public class SimpleSourcePosition implements ISourcePosition {
-    String filename;
-    int line;
+    final String filename;
+    final int line;
 
     public SimpleSourcePosition(String filename, int line) {
         this.filename = filename;
         this.line = line;
-    }
-
-    public void adjustStartOffset(int relativeValue) {}
-
-    public int getEndLine() {
-        return line;
-    }
-
-    public int getEndOffset() {
-        return 0;
     }
 
     public String getFile() {
@@ -53,14 +43,6 @@ public class SimpleSourcePosition implements ISourcePosition {
 
     public int getStartLine() {
         return line;
-    }
-
-    public int getStartOffset() {
-        return 0;
-    }
-
-    public ISourcePosition union(ISourcePosition other) {
-        return this;
     }
 
     @Override

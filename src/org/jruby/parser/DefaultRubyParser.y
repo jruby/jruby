@@ -285,7 +285,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
                   Node node = $1;
 
 		  if ($2 != null) {
-		      node = new RescueNode(getPosition($1, true), $1, $2, $3);
+		      node = new RescueNode(getPosition($1), $1, $2, $3);
 		  } else if ($3 != null) {
 		      warnings.warn(ID.ELSE_WITHOUT_RESCUE, getPosition($1), "else without rescue is useless");
                       node = support.appendToBlock($1, $3);
@@ -307,10 +307,10 @@ compstmt      : stmts opt_terms {
 
 stmts         : none
               | stmt {
-                  $$ = support.newline_node($1, getPosition($1, true));
+                  $$ = support.newline_node($1, getPosition($1));
               }
               | stmts terms stmt {
-	          $$ = support.appendToBlock($1, support.newline_node($3, getPosition($3, true)));
+	          $$ = support.appendToBlock($1, support.newline_node($3, getPosition($3)));
               }
               | error stmt {
                   $$ = $2;
@@ -536,13 +536,13 @@ mlhs_basic    : mlhs_head {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, $3);
               }
               | mlhs_head tSTAR {
-                  $$ = new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition(null)));
+                  $$ = new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition()));
               }
               | tSTAR mlhs_node {
                   $$ = new MultipleAsgnNode(getPosition($1), null, $2);
               }
               | tSTAR {
-                  $$ = new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition(null)));
+                  $$ = new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition()));
               }
 
 mlhs_item     : mlhs_node 
@@ -747,28 +747,28 @@ arg           : lhs '=' arg {
                   $$ = new DotNode(getPosition($1), $1, $3, true, isLiteral);
               }
               | arg tPLUS arg {
-                  $$ = support.getOperatorCallNode($1, "+", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "+", $3, getPosition());
               }
               | arg tMINUS arg {
-                  $$ = support.getOperatorCallNode($1, "-", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "-", $3, getPosition());
               }
               | arg tSTAR2 arg {
-                  $$ = support.getOperatorCallNode($1, "*", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "*", $3, getPosition());
               }
               | arg tDIVIDE arg {
-                  $$ = support.getOperatorCallNode($1, "/", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "/", $3, getPosition());
               }
               | arg tPERCENT arg {
-                  $$ = support.getOperatorCallNode($1, "%", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "%", $3, getPosition());
               }
               | arg tPOW arg {
-		  $$ = support.getOperatorCallNode($1, "**", $3, getPosition(null));
+		  $$ = support.getOperatorCallNode($1, "**", $3, getPosition());
               }
 	      | tUMINUS_NUM tINTEGER tPOW arg {
-                  $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition(null)), "-@");
+                  $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition()), "-@");
               }
 	      | tUMINUS_NUM tFLOAT tPOW arg {
-                  $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition(null)), "-@");
+                  $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition()), "-@");
               }
               | tUPLUS arg {
                   if (support.isLiteral($2)) {
@@ -781,37 +781,37 @@ arg           : lhs '=' arg {
                   $$ = support.getOperatorCallNode($2, "-@");
 	      }
               | arg tPIPE arg {
-                  $$ = support.getOperatorCallNode($1, "|", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "|", $3, getPosition());
               }
               | arg tCARET arg {
-                  $$ = support.getOperatorCallNode($1, "^", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "^", $3, getPosition());
               }
               | arg tAMPER2 arg {
-                  $$ = support.getOperatorCallNode($1, "&", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "&", $3, getPosition());
               }
               | arg tCMP arg {
-                  $$ = support.getOperatorCallNode($1, "<=>", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "<=>", $3, getPosition());
               }
               | arg tGT arg {
-                  $$ = support.getOperatorCallNode($1, ">", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, ">", $3, getPosition());
               }
               | arg tGEQ arg {
-                  $$ = support.getOperatorCallNode($1, ">=", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, ">=", $3, getPosition());
               }
               | arg tLT arg {
-                  $$ = support.getOperatorCallNode($1, "<", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "<", $3, getPosition());
               }
               | arg tLEQ arg {
-                  $$ = support.getOperatorCallNode($1, "<=", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "<=", $3, getPosition());
               }
               | arg tEQ arg {
-                  $$ = support.getOperatorCallNode($1, "==", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "==", $3, getPosition());
               }
               | arg tEQQ arg {
-                  $$ = support.getOperatorCallNode($1, "===", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "===", $3, getPosition());
               }
               | arg tNEQ arg {
-                  $$ = new NotNode(getPosition($1), support.getOperatorCallNode($1, "==", $3, getPosition(null)));
+                  $$ = new NotNode(getPosition($1), support.getOperatorCallNode($1, "==", $3, getPosition()));
               }
               | arg tMATCH arg {
                   $$ = support.getMatchNode($1, $3);
@@ -826,10 +826,10 @@ arg           : lhs '=' arg {
                   $$ = support.getOperatorCallNode($2, "~");
               }
               | arg tLSHFT arg {
-                  $$ = support.getOperatorCallNode($1, "<<", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, "<<", $3, getPosition());
               }
               | arg tRSHFT arg {
-                  $$ = support.getOperatorCallNode($1, ">>", $3, getPosition(null));
+                  $$ = support.getOperatorCallNode($1, ">>", $3, getPosition());
               }
               | arg tANDOP arg {
                   $$ = support.newAndNode(getPosition($2), $1, $3);
@@ -864,7 +864,7 @@ aref_args     : none
                   $$ = support.arg_concat(getPosition($1), $1, $4);
               }
               | assocs trailer {
-                  $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1));
+                  $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1));
               }
               | tSTAR arg opt_nl {
                   support.checkExpression($2);
@@ -899,20 +899,20 @@ call_args     : command {
                   $$ = support.arg_blk_pass($<Node>$, $5);
               }
               | assocs opt_block_arg {
-                  $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1));
+                  $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1));
                   $$ = support.arg_blk_pass((Node)$$, $2);
               }
               | assocs ',' tSTAR arg_value opt_block_arg {
-                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1)), $4);
+                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1)), $4);
                   $$ = support.arg_blk_pass((Node)$$, $5);
               }
               | args ',' assocs opt_block_arg {
-                  $$ = $1.add(new HashNode(getPosition(null), $3));
+                  $$ = $1.add(new HashNode(getPosition(), $3));
                   $$ = support.arg_blk_pass((Node)$$, $4);
               }
               | args ',' assocs ',' tSTAR arg opt_block_arg {
                   support.checkExpression($6);
-		  $$ = support.arg_concat(getPosition($1), $1.add(new HashNode(getPosition(null), $3)), $6);
+		  $$ = support.arg_concat(getPosition($1), $1.add(new HashNode(getPosition(), $3)), $6);
                   $$ = support.arg_blk_pass((Node)$$, $7);
               }
               | tSTAR arg_value opt_block_arg {
@@ -932,31 +932,31 @@ call_args2    : arg_value ',' args opt_block_arg {
                   $$ = support.arg_blk_pass((Node)$$, $5);
 	      }
 	      | arg_value ',' args ',' tSTAR arg_value opt_block_arg {
-                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), $1).addAll(new HashNode(getPosition(null), $3)), $6);
+                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), $1).addAll(new HashNode(getPosition(), $3)), $6);
                   $$ = support.arg_blk_pass((Node)$$, $7);
 	      }
 	      | assocs opt_block_arg {
-                  $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1));
+                  $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1));
                   $$ = support.arg_blk_pass((Node)$$, $2);
 	      }
 	      | assocs ',' tSTAR arg_value opt_block_arg {
-                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1)), $4);
+                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1)), $4);
                   $$ = support.arg_blk_pass((Node)$$, $5);
 	      }
 	      | arg_value ',' assocs opt_block_arg {
-                  $$ = support.newArrayNode(getPosition($1), $1).add(new HashNode(getPosition(null), $3));
+                  $$ = support.newArrayNode(getPosition($1), $1).add(new HashNode(getPosition(), $3));
                   $$ = support.arg_blk_pass((Node)$$, $4);
 	      }
 	      | arg_value ',' args ',' assocs opt_block_arg {
-                  $$ = support.newArrayNode(getPosition($1), $1).addAll($3).add(new HashNode(getPosition(null), $5));
+                  $$ = support.newArrayNode(getPosition($1), $1).addAll($3).add(new HashNode(getPosition(), $5));
                   $$ = support.arg_blk_pass((Node)$$, $6);
 	      }
 	      | arg_value ',' assocs ',' tSTAR arg_value opt_block_arg {
-                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), $1).add(new HashNode(getPosition(null), $3)), $6);
+                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), $1).add(new HashNode(getPosition(), $3)), $6);
                   $$ = support.arg_blk_pass((Node)$$, $7);
 	      }
 	      | arg_value ',' args ',' assocs ',' tSTAR arg_value opt_block_arg {
-                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), $1).addAll($3).add(new HashNode(getPosition(null), $5)), $8);
+                  $$ = support.arg_concat(getPosition($1), support.newArrayNode(getPosition($1), $1).addAll($3).add(new HashNode(getPosition(), $5)), $8);
                   $$ = support.arg_blk_pass((Node)$$, $9);
 	      }
 	      | tSTAR arg_value opt_block_arg {
@@ -1338,7 +1338,7 @@ opt_rescue    : kRESCUE exc_list exc_var then compstmt opt_rescue {
 		     node = $5;
                   }
                   Node body = node == null ? NilImplicitNode.NIL : node;
-                  $$ = new RescueBodyNode(getPosition($1, true), $2, body, $6);
+                  $$ = new RescueBodyNode(getPosition($1), $2, body, $6);
 	      }
               | {
                   $$ = null;
@@ -1359,7 +1359,7 @@ opt_ensure    : kENSURE compstmt {
                   if ($2 != null) {
                       $$ = $2;
                   } else {
-                      $$ = new NilNode(getPosition(null));
+                      $$ = new NilNode(getPosition());
                   }
               }
               | none
@@ -1387,17 +1387,6 @@ string        : string1
 string1       : tSTRING_BEG string_contents tSTRING_END {
                   $$ = $2;
                   $<ISourcePositionHolder>$.setPosition(getPosition($1));
-		  int extraLength = ((String) $1.getValue()).length() - 1;
-
-                  // We may need to subtract addition offset off of first 
-		  // string fragment (we optimistically take one off in
-		  // ParserSupport.literal_concat).  Check token length
-		  // and subtract as neeeded.
-		  if (($2 instanceof DStrNode) && extraLength > 0) {
-		     Node strNode = ((DStrNode)$2).get(0);
-		     assert strNode != null;
-		     strNode.getPosition().adjustStartOffset(-extraLength);
-		  }
               }
 
 // Node:xstring - `string` [!null]
@@ -1444,7 +1433,7 @@ words	       : tWORDS_BEG ' ' tSTRING_END {
 
 // ListNode:word_list - collection of words (e.g. %W{a b c}) with out delimeters [!null]
 word_list      : /* none */ {
-                   $$ = new ArrayNode(getPosition(null));
+                   $$ = new ArrayNode(getPosition());
 	       }
 	       | word_list word ' ' {
                    $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(getPosition($1)).add($2) : $2);
@@ -1466,7 +1455,7 @@ qwords	       : tQWORDS_BEG ' ' tSTRING_END {
 
 // ListNode:qword_list - collection of works (e.g. %w{...}) [!null]
 qword_list     : /* none */ {
-                   $$ = new ArrayNode(getPosition(null));
+                   $$ = new ArrayNode(getPosition());
 	       }
 	       | qword_list tSTRING_CONTENT ' ' {
                    $$ = $1.add($2);
@@ -1539,28 +1528,18 @@ sym            : fname | tIVAR | tGVAR | tCVAR
 dsym	       : tSYMBEG xstring_contents tSTRING_END {
                    lexer.setState(LexState.EXPR_END);
 
-		   // DStrNode: :"some text #{some expression}"
+                   // DStrNode: :"some text #{some expression}"
                    // StrNode: :"some text"
-		   // EvStrNode :"#{some expression}"
-                   if ($2 == null) {
-                       yyerror("empty symbol literal");
-                   }
+                   // EvStrNode :"#{some expression}"
+                   if ($2 == null) yyerror("empty symbol literal");
 
-		   if ($2 instanceof DStrNode) {
-		       $$ = new DSymbolNode(getPosition($1), $<DStrNode>2);
-		   } else {
-                       ISourcePosition position = getPosition($2);
-
-                       // We substract one since tsymbeg is longer than one
-		       // and we cannot union it directly so we assume quote
-                       // is one character long and subtract for it.
-		       position.adjustStartOffset(-1);
-                       $2.setPosition(position);
-		       
-		       $$ = new DSymbolNode(getPosition($1));
+                   if ($2 instanceof DStrNode) {
+                       $$ = new DSymbolNode(getPosition($1), $<DStrNode>2);
+                   } else {
+                       $$ = new DSymbolNode(getPosition($1));
                        $<DSymbolNode>$.add($2);
                    }
-	       }
+               }
 
 // Node:numeric - numeric value [!null]
 numeric        : tINTEGER | tFLOAT {
@@ -1657,7 +1636,7 @@ f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = support.new_args(getPosition($1), null, null, null, null, $1);
                }
                | /* none */ {
-                   $$ = support.new_args(support.createEmptyArgsNodePosition(getPosition(null)), null, null, null, null, null);
+                   $$ = support.new_args(support.createEmptyArgsNodePosition(getPosition()), null, null, null, null, null);
                }
 
 // Token:f_norm_arg - normal argument to method declaration [!null]
@@ -1782,7 +1761,7 @@ singleton     : var_ref {
 // ListNode:assoc_list - list of hash values pairs, like assocs but also
 //   will accept ordinary list-style (e.g. a,b,c,d or a=>b,c=>d) [?null]
 assoc_list    : none { // [!null]
-                  $$ = new ArrayNode(getPosition(null));
+                  $$ = new ArrayNode(getPosition());
               }
               | assocs trailer { // [!null]
                   $$ = $1;
@@ -1874,18 +1853,14 @@ none_block_pass: /* none */ {
      * need an extra safety net here.
      */
     private ISourcePosition getPosition2(ISourcePositionHolder pos) {
-        return pos == null ? lexer.getPosition(null, false) : pos.getPosition();
+        return pos == null ? lexer.getPosition() : pos.getPosition();
     }
 
     private ISourcePosition getPosition(ISourcePositionHolder start) {
-        return getPosition(start, false);
+        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
-    private ISourcePosition getPosition(ISourcePositionHolder start, boolean inclusive) {
-        if (start != null) {
-	    return lexer.getPosition(start.getPosition(), inclusive);
-	} 
-	
-	return lexer.getPosition(null, inclusive);
+    private ISourcePosition getPosition() {
+        return lexer.getPosition();
     }
 }

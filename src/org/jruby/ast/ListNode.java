@@ -76,11 +76,7 @@ public class ListNode extends Node {
 
         list.add(node);
 
-        if (getPosition() == null) {
-            setPosition(node.getPosition());
-        } else {
-            setPosition(getPosition().union(node.getPosition()));
-        }
+        if (getPosition() == null) setPosition(node.getPosition());
 
         return this;
     }
@@ -91,7 +87,7 @@ public class ListNode extends Node {
         
         list.add(0, node);
         
-        setPosition(getPosition().union(node.getPosition()));
+        setPosition(node.getPosition());
         return this;
     }
     
@@ -109,8 +105,8 @@ public class ListNode extends Node {
     public ListNode addAll(ListNode other) {
         if (other != null && other.size() > 0) {
             list.addAll(other.list);
-            
-            setPosition(getPosition().union(getLast().getPosition()));
+
+            if (getPosition() == null) setPosition(other.getPosition());
         }
         return this;
     }

@@ -58,6 +58,7 @@ public class DSymbolNode extends ListNode {
         super(position);
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.DSYMBOLNODE;
     }

@@ -52,7 +52,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warn(id, position.getFile(), position.getEndLine(), message, data);
+        warn(id, position.getFile(), position.getStartLine(), message, data);
     }
 
     /**
@@ -91,7 +91,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, only in verbose mode.
      */
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
-        warning(id, position.getFile(), position.getEndLine(), message, data);
+        warning(id, position.getFile(), position.getStartLine(), message, data);
     }
 
     /**

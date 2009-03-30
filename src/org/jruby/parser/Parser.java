@@ -40,8 +40,6 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
-import org.jruby.common.NullWarnings;
-//import org.jruby.lexer.yacc.ByteListLexerSource;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
@@ -116,7 +114,7 @@ public class Parser {
         } catch (SyntaxException e) {
             StringBuilder buffer = new StringBuilder(100);
             buffer.append(e.getPosition().getFile()).append(':');
-            buffer.append(e.getPosition().getEndLine() + 1).append(": ");
+            buffer.append(e.getPosition().getStartLine() + 1).append(": ");
             buffer.append(e.getMessage());
             throw runtime.newSyntaxError(buffer.toString());
         } finally {

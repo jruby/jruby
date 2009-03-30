@@ -323,12 +323,12 @@ public class RubyYaccLexer {
      * @param inclusive include previous node into position information of current node
      * @return a new position
      */
-    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
-    	return src.getPosition(startPosition, inclusive); 
+    public ISourcePosition getPosition(ISourcePosition startPosition) {
+    	return src.getPosition(startPosition); 
     }
     
     public ISourcePosition getPosition() {
-        return src.getPosition(null, false);
+        return src.getPosition();
     }
 
     /**

@@ -305,10 +305,7 @@ public class StandardYARVCompiler {
     }
 
     private int nd_line(Node node) {
-        if(node.getPosition() != null) {
-            return node.getPosition().getEndLine();
-        }
-        return last_line;
+        return node.getPosition() != null ? node.getPosition().getStartLine() : last_line;
     }
 
     private String nd_file(Node node) {

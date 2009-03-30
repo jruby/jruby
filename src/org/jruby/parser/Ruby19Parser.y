@@ -295,7 +295,7 @@ bodystmt      : compstmt opt_rescue opt_else opt_ensure {
                   Node node = $1;
 
                   if ($2 != null) {
-                      node = new RescueNode(getPosition($1, true), $1, $2, $3);
+                      node = new RescueNode(getPosition($1), $1, $2, $3);
                   } else if ($3 != null) {
                       warnings.warn(ID.ELSE_WITHOUT_RESCUE, getPosition($1), "else without rescue is useless");
                       node = support.appendToBlock($1, $3);
@@ -317,10 +317,10 @@ compstmt        : stmts opt_terms {
 
 stmts           : none
                 | stmt {
-                    $$ = support.newline_node($1, getPosition($1, true));
+                    $$ = support.newline_node($1, getPosition($1));
                 }
                 | stmts terms stmt {
-                    $$ = support.appendToBlock($1, support.newline_node($3, getPosition($3, true)));
+                    $$ = support.appendToBlock($1, support.newline_node($3, getPosition($3)));
                 }
                 | error stmt {
                     $$ = $2;
@@ -542,10 +542,10 @@ mlhs_basic      : mlhs_head {
                     $$ = new MultipleAsgn19Node(getPosition($1), $1, $3, $5);
                 }
                 | mlhs_head tSTAR {
-                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition(null)), null);
+                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition()), null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition(null)), $4);
+                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition()), $4);
                 }
                 | tSTAR mlhs_node {
                     $$ = new MultipleAsgn19Node(getPosition($1), null, $2, null);
@@ -554,10 +554,10 @@ mlhs_basic      : mlhs_head {
                     $$ = new MultipleAsgn19Node(getPosition($1), null, $2, $4);
                 }
                 | tSTAR {
-                      $$ = new MultipleAsgn19Node(getPosition($1), null, new StarNode(getPosition(null)), null);
+                      $$ = new MultipleAsgn19Node(getPosition($1), null, new StarNode(getPosition()), null);
                 }
                 | tSTAR ',' mlhs_post {
-                      $$ = new MultipleAsgn19Node(getPosition($1), null, new StarNode(getPosition(null)), $3);
+                      $$ = new MultipleAsgn19Node(getPosition($1), null, new StarNode(getPosition()), $3);
                 }
 
 mlhs_item       : mlhs_node
@@ -804,28 +804,28 @@ arg             : lhs '=' arg {
                     $$ = new DotNode(getPosition($1), $1, $3, true, isLiteral);
                 }
                 | arg tPLUS arg {
-                    $$ = support.getOperatorCallNode($1, "+", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "+", $3, getPosition());
                 }
                 | arg tMINUS arg {
-                    $$ = support.getOperatorCallNode($1, "-", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "-", $3, getPosition());
                 }
                 | arg tSTAR2 arg {
-                    $$ = support.getOperatorCallNode($1, "*", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "*", $3, getPosition());
                 }
                 | arg tDIVIDE arg {
-                    $$ = support.getOperatorCallNode($1, "/", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "/", $3, getPosition());
                 }
                 | arg tPERCENT arg {
-                    $$ = support.getOperatorCallNode($1, "%", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "%", $3, getPosition());
                 }
                 | arg tPOW arg {
-                    $$ = support.getOperatorCallNode($1, "**", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "**", $3, getPosition());
                 }
                 | tUMINUS_NUM tINTEGER tPOW arg {
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition(null)), "-@");
+                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition()), "-@");
                 }
                 | tUMINUS_NUM tFLOAT tPOW arg {
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition(null)), "-@");
+                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition()), "-@");
                 }
                 | tUPLUS arg {
                     if (support.isLiteral($2)) {
@@ -838,37 +838,37 @@ arg             : lhs '=' arg {
                     $$ = support.getOperatorCallNode($2, "-@");
                 }
                 | arg tPIPE arg {
-                    $$ = support.getOperatorCallNode($1, "|", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "|", $3, getPosition());
                 }
                 | arg tCARET arg {
-                    $$ = support.getOperatorCallNode($1, "^", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "^", $3, getPosition());
                 }
                 | arg tAMPER2 arg {
-                    $$ = support.getOperatorCallNode($1, "&", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "&", $3, getPosition());
                 }
                 | arg tCMP arg {
-                    $$ = support.getOperatorCallNode($1, "<=>", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "<=>", $3, getPosition());
                 }
                 | arg tGT arg {
-                    $$ = support.getOperatorCallNode($1, ">", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, ">", $3, getPosition());
                 }
                 | arg tGEQ arg {
-                    $$ = support.getOperatorCallNode($1, ">=", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, ">=", $3, getPosition());
                 }
                 | arg tLT arg {
-                    $$ = support.getOperatorCallNode($1, "<", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "<", $3, getPosition());
                 }
                 | arg tLEQ arg {
-                    $$ = support.getOperatorCallNode($1, "<=", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "<=", $3, getPosition());
                 }
                 | arg tEQ arg {
-                    $$ = support.getOperatorCallNode($1, "==", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "==", $3, getPosition());
                 }
                 | arg tEQQ arg {
-                    $$ = support.getOperatorCallNode($1, "===", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "===", $3, getPosition());
                 }
                 | arg tNEQ arg {
-                    $$ = support.getOperatorCallNode($1, "!=", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "!=", $3, getPosition());
                 }
                 | arg tMATCH arg {
                     $$ = support.getMatchNode($1, $3);
@@ -889,10 +889,10 @@ arg             : lhs '=' arg {
                     $$ = support.getOperatorCallNode($2, "~");
                 }
                 | arg tLSHFT arg {
-                    $$ = support.getOperatorCallNode($1, "<<", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, "<<", $3, getPosition());
                 }
                 | arg tRSHFT arg {
-                    $$ = support.getOperatorCallNode($1, ">>", $3, getPosition(null));
+                    $$ = support.getOperatorCallNode($1, ">>", $3, getPosition());
                 }
                 | arg tANDOP arg {
                     $$ = support.newAndNode(getPosition($2), $1, $3);
@@ -921,10 +921,10 @@ aref_args       : none
                     $$ = $1;
                 }
                 | args ',' assocs trailer {
-                    $$ = support.arg_append($1, new HashNode(getPosition(null), $3));
+                    $$ = support.arg_append($1, new HashNode(getPosition(), $3));
                 }
                 | assocs trailer {
-                    $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1));
+                    $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1));
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -943,11 +943,11 @@ call_args       : command {
                     $$ = support.arg_blk_pass($1, $2);
                 }
                 | assocs opt_block_arg {
-                    $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(null), $1));
+                    $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1));
                     $$ = support.arg_blk_pass((Node)$$, $2);
                 }
                 | args ',' assocs opt_block_arg {
-                    $$ = support.arg_append($1, new HashNode(getPosition(null), $3));
+                    $$ = support.arg_append($1, new HashNode(getPosition(), $3));
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
                 | block_arg {
@@ -1260,10 +1260,10 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgn19Node(getPosition($1), $1, support.assignable($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
-                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition(null)), null);
+                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition()), null);
                 }
                 | f_marg_list ',' tSTAR ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition(null)), $5);
+                    $$ = new MultipleAsgn19Node(getPosition($1), $1, new StarNode(getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
                     $$ = new MultipleAsgn19Node(getPosition($1), null, support.assignable($2, null), null);
@@ -1272,7 +1272,7 @@ f_margs         : f_marg_list {
                     $$ = new MultipleAsgn19Node(getPosition($1), null, support.assignable($2, null), $4);
                 }
                 | tSTAR {
-                    $$ = new MultipleAsgn19Node(getPosition($1), null, new StarNode(getPosition(null)), null);
+                    $$ = new MultipleAsgn19Node(getPosition($1), null, new StarNode(getPosition()), null);
                 }
                 | tSTAR ',' f_marg_list {
                     $$ = new MultipleAsgn19Node(getPosition($1), null, null, $3);
@@ -1327,7 +1327,7 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_f_block_arg {
 
 opt_block_param : none {
     // was $$ = null;
-                   $$ = support.new_args(getPosition(null), null, null, null, null, null);
+                   $$ = support.new_args(getPosition(), null, null, null, null, null);
                 }
                 | block_param_def {
                     lexer.commandStart = true;
@@ -1335,10 +1335,10 @@ opt_block_param : none {
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
-                    $$ = support.new_args(getPosition(null), null, null, null, null, null);
+                    $$ = support.new_args(getPosition(), null, null, null, null, null);
                 }
                 | tOROP {
-                    $$ = support.new_args(getPosition(null), null, null, null, null, null);
+                    $$ = support.new_args(getPosition(), null, null, null, null, null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
                     $$ = $2;
@@ -1479,7 +1479,7 @@ opt_rescue      : kRESCUE exc_list exc_var then compstmt opt_rescue {
                         node = $5;
                     }
                     Node body = node == null ? NilImplicitNode.NIL : node;
-                    $$ = new RescueBodyNode(getPosition($1, true), $2, body, $6);
+                    $$ = new RescueBodyNode(getPosition($1), $2, body, $6);
                 }
                 | { 
                     $$ = null; 
@@ -1546,8 +1546,6 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
                     // and subtract as neeeded.
                     if (($2 instanceof DStrNode) && extraLength > 0) {
                       Node strNode = ((DStrNode)$2).get(0);
-                      assert strNode != null;
-                      strNode.getPosition().adjustStartOffset(-extraLength);
                     }
                 }
 
@@ -1590,7 +1588,7 @@ words           : tWORDS_BEG ' ' tSTRING_END {
                 }
 
 word_list       : /* none */ {
-                    $$ = new ArrayNode(getPosition(null));
+                    $$ = new ArrayNode(getPosition());
                 }
                 | word_list word ' ' {
                      $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(getPosition($1)).add($2) : $2);
@@ -1610,7 +1608,7 @@ qwords          : tQWORDS_BEG ' ' tSTRING_END {
                 }
 
 qword_list      : /* none */ {
-                    $$ = new ArrayNode(getPosition(null));
+                    $$ = new ArrayNode(getPosition());
                 }
                 | qword_list tSTRING_CONTENT ' ' {
                     $$ = $1.add($2);
@@ -1691,16 +1689,8 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode(getPosition($1), $<DStrNode>2);
                      } else {
-                       ISourcePosition position = getPosition($2);
-
-                       // We substract one since tsymbeg is longer than one
-                       // and we cannot union it directly so we assume quote
-                       // is one character long and subtract for it.
-                       position.adjustStartOffset(-1);
-                       $2.setPosition(position);
-
-                       $$ = new DSymbolNode(getPosition($1));
-                       $<DSymbolNode>$.add($2);
+                         $$ = new DSymbolNode(getPosition($1));
+                         $<DSymbolNode>$.add($2);
                      }
                 }
 
@@ -1821,7 +1811,7 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                     $$ = support.new_args($1.getPosition(), null, null, null, null, $1);
                 }
                 | /* none */ {
-                    $$ = support.new_args(getPosition(null), null, null, null, null, null);
+                    $$ = support.new_args(getPosition(), null, null, null, null, null);
                 }
 
 f_bad_arg       : tCONSTANT {
@@ -1872,7 +1862,7 @@ f_arg_item      : f_norm_arg {
                 }
 
 f_arg           : f_arg_item {
-                    $$ = new ArrayNode(getPosition(null), $1);
+                    $$ = new ArrayNode(getPosition(), $1);
                 }
                 | f_arg ',' f_arg_item {
                     $1.add($3);
@@ -1963,7 +1953,7 @@ singleton       : var_ref {
                 }
 
 assoc_list      : none {
-                    $$ = new ArrayNode(getPosition(null));
+                    $$ = new ArrayNode(getPosition());
                 }
                 | assocs trailer {
                     $$ = $1;
@@ -2056,18 +2046,14 @@ none_block_pass : /* none */ {
      * need an extra safety net here.
      */
     private ISourcePosition getPosition2(ISourcePositionHolder pos) {
-        return pos == null ? lexer.getPosition(null, false) : pos.getPosition();
+        return pos == null ? lexer.getPosition() : pos.getPosition();
     }
 
     private ISourcePosition getPosition(ISourcePositionHolder start) {
-        return getPosition(start, false);
+        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
-    private ISourcePosition getPosition(ISourcePositionHolder start, boolean inclusive) {
-        if (start != null) {
-            return lexer.getPosition(start.getPosition(), inclusive);
-        } 
-
-        return lexer.getPosition(null, inclusive);
+    private ISourcePosition getPosition() {
+        return lexer.getPosition();
     }
 }

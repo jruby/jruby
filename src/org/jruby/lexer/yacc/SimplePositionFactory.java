@@ -37,20 +37,21 @@ public class SimplePositionFactory {
         lastPosition = new SimpleSourcePosition(source.getFilename(), line);
     }
 
-    public ISourcePosition getPosition(ISourcePosition startPosition, boolean inclusive) {
+    public ISourcePosition getPosition(ISourcePosition startPosition) {
         if (startPosition != null) {
             lastPosition = startPosition;
             
             return lastPosition;
         }
 
-        if (lastPosition.getStartLine() == source.getLine()) {
-            return lastPosition;
-        }
-        
+        return getPosition();
+    }
+
+    public ISourcePosition getPosition() {
+        if (lastPosition.getStartLine() == source.getLine()) return lastPosition;
+
         lastPosition = new SimpleSourcePosition(source.getFilename(), source.getLine());
 
         return lastPosition;
     }
-
 }
