@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject {
     private final StructLayout layout;
-    private final IRubyObject memory;
+    private IRubyObject memory;
     private StructLayout.Cache cache;
     
     private static final class Allocator implements ObjectAllocator {
@@ -56,8 +56,9 @@ public class Struct extends RubyObject {
      * @param klass the ruby class to use for the <tt>StructLayout</tt>
      */
     Struct(Ruby runtime, RubyClass klass) {
-        this(runtime, klass, null, null);
+        this(runtime, klass, getStructLayout(runtime, klass), null);
     }
+
     /**
      * Creates a new <tt>StructLayout</tt> instance.
      *
@@ -73,9 +74,11 @@ public class Struct extends RubyObject {
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
         return klass.isKindOfModule(runtime.fastGetModule("FFI").getClass("Struct"));
     }
+
     static final int getStructSize(Ruby runtime, IRubyObject structClass) {
         return getStructLayout(runtime, structClass).getSize();
     }
+    
     static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
         try {
             return (StructLayout) ((RubyClass) structClass).fastGetClassVar("@layout");
@@ -84,41 +87,38 @@ public class Struct extends RubyObject {
         }
     }
     
-    private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
-        Ruby runtime = context.getRuntime();
-        StructLayout layout = getStructLayout(runtime, klass);
-        return new Struct(runtime, (RubyClass) klass, layout, new Buffer(runtime, layout.getSize(), flags));
-    }
-
     /*
      * This variant of newStruct is called from StructLayoutBuilder
      */
     static final Struct newStruct(Ruby runtime, RubyClass klass, IRubyObject ptr) {
         return new Struct(runtime, (RubyClass) klass, getStructLayout(runtime, klass), ptr);
     }
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject self) {
-        return allocateStruct(context, self, Buffer.IN | Buffer.OUT);
-    }
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject self, IRubyObject ptr) {
-        return new Struct(context.getRuntime(), (RubyClass) self, getStructLayout(context.getRuntime(), self), ptr);
-    }
-    
-    @JRubyMethod(name = "new", meta = true, rest = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        StructLayout layout = null;
 
-        if (args.length > 1) {
-            IRubyObject[] layoutArgs = new IRubyObject[args.length - 1];
-            System.arraycopy(args, 1, layoutArgs, 0, args.length - 1);
-            layout = (StructLayout) self.callMethod(context, "layout", layoutArgs);
-        } else {
-            layout = getStructLayout(context.getRuntime(), self);
+    @JRubyMethod(name = "initialize")
+    public IRubyObject initialize(ThreadContext context) {
+
+        memory = new Buffer(context.getRuntime(), layout.getSize(), flags);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize")
+    public IRubyObject initialize(ThreadContext context, IRubyObject ptr) {
+        
+        if (!(ptr instanceof AbstractMemory)) {
+            throw context.getRuntime().newTypeError("wrong argument type "
+                    + ptr.getMetaClass().getName() + " (expected Pointer or Buffer)");
         }
-        IRubyObject ptr = args.length > 0 && !args[0].isNil()
-                ? args[0] : new Buffer(context.getRuntime(), layout.getSize());
-        return new Struct(context.getRuntime(), (RubyClass) self, layout, ptr);
+
+        memory = (AbstractMemory) ptr;
+
+        return this;
+    }
+
+    private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
+        Ruby runtime = context.getRuntime();
+        StructLayout layout = getStructLayout(runtime, klass);
+        return new Struct(runtime, (RubyClass) klass, layout, new Buffer(runtime, layout.getSize(), flags));
     }
 
     @JRubyMethod(name = { "new_in", "alloc_in" }, meta = true)

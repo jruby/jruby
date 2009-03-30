@@ -45,10 +45,10 @@ module FFI
     #   ManagedStruct.new
     #
     # When passed a pointer, create a new ManagedStruct which will invoke the class method release() on 
-    def self.new(pointer=nil)
-      raise NoMethodError, "release() not implemented for class #{self}" unless self.respond_to? :release
+    def initialize(pointer=nil)
+      raise NoMethodError, "release() not implemented for class #{self.class}" unless self.class.respond_to? :release
       raise ArgumentError, "Must supply a pointer to memory for the Struct" unless pointer
-      super FFI::AutoPointer.new(pointer, self.method(:release))
+      super FFI::AutoPointer.new(pointer, self.class.method(:release))
     end
 
   end
