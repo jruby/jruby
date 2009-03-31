@@ -336,17 +336,22 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Label catchRedoJump = new Label();
 
                     boolean heapScoped = callConfig.scoping() == Scoping.Full;
+                    boolean framed = callConfig.framing() == Framing.Full;
                     
                     if (heapScoped) {
                         mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
                     }
-                    mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
-                    mv.trycatch(tryBegin, tryEnd, doFinally, null);
+                    if (framed) {
+                        mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+                        mv.trycatch(tryBegin, tryEnd, doFinally, null);
+                    }
                     if (heapScoped) {
                         mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
                     }
-                    mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
-                    mv.label(tryBegin);
+                    if (framed) {
+                        mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
+                        mv.label(tryBegin);
+                    }
                     {
                         mv.aload(0);
                         // FIXME we want to eliminate these type casts when possible
@@ -366,7 +371,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[4]);
                         }
                     }
-                    mv.label(tryEnd);
+                    if (framed) {
+                        mv.label(tryEnd);
+                    }
                     
                     // normal exit, perform finally and return
                     {
@@ -376,59 +383,61 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.visitInsn(ARETURN);
                     }
 
-                    // return jump handling
-                    if (heapScoped) {
-                        mv.label(catchReturnJump);
+                    if (framed) {
+                        // return jump handling
+                        if (heapScoped) {
+                            mv.label(catchReturnJump);
+                            {
+                                mv.aload(0);
+                                mv.swap();
+                                mv.aload(1);
+                                mv.swap();
+                                mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class));
+                                mv.label(doReturnFinally);
+
+                                // finally
+                                if (!callConfig.isNoop()) {
+                                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                                }
+
+                                // return result if we're still good
+                                mv.areturn();
+                            }
+                        }
+
+                        // redo jump handling
+                        mv.label(catchRedoJump);
                         {
-                            mv.aload(0);
-                            mv.swap();
+                            // clear the redo
+                            mv.pop();
+
+                            // get runtime, create jump error, and throw it
                             mv.aload(1);
-                            mv.swap();
-                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class));
-                            mv.label(doReturnFinally);
+                            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                            mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
+                            mv.label(doRedoFinally);
 
                             // finally
                             if (!callConfig.isNoop()) {
                                 invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                             }
 
-                            // return result if we're still good
-                            mv.areturn();
-                        }
-                    }
-
-                    // redo jump handling
-                    mv.label(catchRedoJump);
-                    {
-                        // clear the redo
-                        mv.pop();
-                        
-                        // get runtime, create jump error, and throw it
-                        mv.aload(1);
-                        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                        mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
-                        mv.label(doRedoFinally);
-                        
-                        // finally
-                        if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
-                        }
-                        
-                        // throw redo error if we're still good
-                        mv.athrow();
-                    }
-
-                    // finally handling for abnormal exit
-                    {
-                        mv.label(doFinally);
-
-                        //call post method stuff (exception raised)
-                        if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                            // throw redo error if we're still good
+                            mv.athrow();
                         }
 
-                        // rethrow exception
-                        mv.athrow(); // rethrow it
+                        // finally handling for abnormal exit
+                        {
+                            mv.label(doFinally);
+
+                            //call post method stuff (exception raised)
+                            if (!callConfig.isNoop()) {
+                                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                            }
+
+                            // rethrow exception
+                            mv.athrow(); // rethrow it
+                        }
                     }
 
                     generatedClass = endCall(cw,mv,mname);

@@ -243,6 +243,10 @@ public class RubyBignum extends RubyInteger {
         }
         return addOther(context, other);
     }
+    
+    public IRubyObject op_plus(ThreadContext context, long other) {
+        return addFixnum(other);
+    }
 
     private IRubyObject addFixnum(long other) {
         BigInteger result = value.add(BigInteger.valueOf(other));
@@ -277,6 +281,10 @@ public class RubyBignum extends RubyInteger {
             return subtractFloat((RubyFloat)other);
         }
         return subtractOther(context, other);
+    }
+
+    public IRubyObject op_minus(ThreadContext context, long other) {
+        return subtractFixnum(other);
     }
 
     private IRubyObject subtractFixnum(long other) {

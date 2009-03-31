@@ -328,6 +328,18 @@ public class RubyFixnum extends RubyInteger {
         return addOther(context, other);
     }
     
+    public IRubyObject op_plus(ThreadContext context, long other) {
+        return addFixnum(context, other);
+    }
+
+    private IRubyObject addFixnum(ThreadContext context, long otherValue) {
+        long result = value + otherValue;
+        if (additionOverflowed(value, otherValue, result)) {
+            return addAsBignum(context, otherValue);
+        }
+        return newFixnum(context.getRuntime(), result);
+    }
+    
     private IRubyObject addFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value + otherValue;
@@ -346,6 +358,10 @@ public class RubyFixnum extends RubyInteger {
     }
     
     private IRubyObject addAsBignum(ThreadContext context, RubyFixnum other) {
+        return RubyBignum.newBignum(context.getRuntime(), value).op_plus(context, other);
+    }
+
+    private IRubyObject addAsBignum(ThreadContext context, long other) {
         return RubyBignum.newBignum(context.getRuntime(), value).op_plus(context, other);
     }
     
@@ -369,7 +385,11 @@ public class RubyFixnum extends RubyInteger {
         }
         return subtractOther(context, other);
     }
-    
+
+    public IRubyObject op_minus(ThreadContext context, long other) {
+        return subtractFixnum(context, other);
+    }
+
     private IRubyObject subtractFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value - otherValue;
@@ -378,8 +398,20 @@ public class RubyFixnum extends RubyInteger {
         }
         return newFixnum(context.getRuntime(), result);
     }
+
+    private IRubyObject subtractFixnum(ThreadContext context, long otherValue) {
+        long result = value - otherValue;
+        if (subtractionOverflowed(value, otherValue, result)) {
+            return subtractAsBignum(context, otherValue);
+        }
+        return newFixnum(context.getRuntime(), result);
+    }
     
     private IRubyObject subtractAsBignum(ThreadContext context, RubyFixnum other) {
+        return RubyBignum.newBignum(context.getRuntime(), value).op_minus(context, other);
+    }
+
+    private IRubyObject subtractAsBignum(ThreadContext context, long other) {
         return RubyBignum.newBignum(context.getRuntime(), value).op_minus(context, other);
     }
     
@@ -743,6 +775,10 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value < ((RubyFixnum) other).value);
         return coerceRelOp(context, "<", other);
+    }
+
+    public IRubyObject op_lt(ThreadContext context, long other) {
+        return RubyBoolean.newBoolean(context.getRuntime(), value < other);
     }
 
     @JRubyMethod(name = "<", compat = CompatVersion.RUBY1_9)

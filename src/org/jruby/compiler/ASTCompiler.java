@@ -740,6 +740,20 @@ public class ASTCompiler {
         String name = callNode.getName();
         CallType callType = CallType.NORMAL;
 
+        if (argsCallback != null && argsCallback.getArity() == 1) {
+            Node argument = callNode.getArgsNode().childNodes().get(0);
+            if (name.length() == 1) {
+                switch (name.charAt(0)) {
+                case '+': case '-': case '<':
+                    if (argument instanceof FixnumNode) {
+                        context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
+                        if (!expr) context.consumeCurrentValue();
+                        return;
+                    }
+                }
+            }
+        }
+
         // if __send__ with a literal symbol, compile it as a direct fcall
         if (RubyInstanceConfig.FASTSEND_COMPILE_ENABLED) {
             String literalSend = getLiteralSend(callNode);

@@ -1,6 +1,7 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
@@ -21,6 +22,10 @@ public class SuperCallSite extends CallSite {
     
     public SuperCallSite() {
         super("super", CallType.SUPER);
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
+        return call(context, caller, self, RubyFixnum.newFixnum(context.getRuntime(), fixnum));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {

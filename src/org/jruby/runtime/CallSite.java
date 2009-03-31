@@ -38,6 +38,9 @@ public abstract class CallSite {
         this.methodName = methodName;
         this.callType = callType;
     }
+
+    // binary typed calls
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum);
     
     // no block
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self);
