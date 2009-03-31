@@ -187,7 +187,11 @@ public class RubyBignum extends RubyInteger {
      * 
      */
     public static BigInteger fix2big(RubyFixnum arg) {
-        return BigInteger.valueOf(arg.getLongValue());
+        return long2big(arg.getLongValue());
+    }
+
+    public static BigInteger long2big(long arg) {
+        return BigInteger.valueOf(arg);
     }
 
     /*  ================
@@ -324,6 +328,12 @@ public class RubyBignum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), big2dbl(this) * ((RubyFloat) other).getDoubleValue());
         }
         return coerceBin(context, "*", other);
+    }
+
+    public IRubyObject op_mul(ThreadContext context, long other) {
+        Ruby runtime = context.getRuntime();
+        BigInteger result = value.multiply(long2big(other));
+        return result.signum() == 0 ? RubyFixnum.zero(runtime) : new RubyBignum(runtime, result);
     }
 
     /**

@@ -10,6 +10,13 @@ public class DivCallSite extends NormalCachingCallSite {
         super("/");
     }
 
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
+        if (self instanceof RubyFixnum) {
+            return ((RubyFixnum) self).op_div(context, fixnum);
+        }
+        return super.call(context, caller, self, fixnum);
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
         if (self instanceof RubyFixnum) {

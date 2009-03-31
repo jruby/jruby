@@ -42,6 +42,7 @@ import java.util.Map;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.MiniJava;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -443,7 +444,15 @@ public class RubyFixnum extends RubyInteger {
         }
         return coerceBin(context, "*", other);
     }
-    
+
+    public IRubyObject op_mul(ThreadContext context, long otherValue) {
+        Ruby runtime = context.getRuntime();
+        long result = value * otherValue;
+        if (result == 0) return RubyFixnum.zero(runtime);
+        if (result / value != otherValue) return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
+        return newFixnum(runtime, result);
+    }
+
     /** fix_div
      * here is terrible MRI gotcha:
      * 1.div 3.0 -> 0
@@ -461,6 +470,10 @@ public class RubyFixnum extends RubyInteger {
     	
     @JRubyMethod(name = "/")
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
+        return idiv(context, other, "/");
+    }
+
+    public IRubyObject op_div(ThreadContext context, long other) {
         return idiv(context, other, "/");
     }
 
@@ -489,21 +502,28 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             long x = value;
             long y = ((RubyFixnum) other).value;
-            
-            if (y == 0) {
-                throw context.getRuntime().newZeroDivisionError();
-            }
-            
-            long div = x / y;
-            long mod = x % y;
 
-            if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-                div -= 1;
-            }
-
-            return context.getRuntime().newFixnum(div);
+            return idivLong(context, x, y);
         } 
         return coerceBin(context, method, other);
+    }
+
+    public IRubyObject idiv(ThreadContext context, long y, String method) {
+        long x = value;
+
+        return idivLong(context, x, y);
+    }
+
+    private IRubyObject idivLong( ThreadContext context, long x, long y) throws RaiseException {
+        if (y == 0) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        long div = x / y;
+        long mod = x % y;
+        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+            div -= 1;
+        }
+        return context.getRuntime().newFixnum(div);
     }
         
     /** fix_mod
@@ -733,6 +753,10 @@ public class RubyFixnum extends RubyInteger {
         return coerceRelOp(context, ">", other);
     }
 
+    public IRubyObject op_gt(ThreadContext context, long other) {
+        return RubyBoolean.newBoolean(context.getRuntime(), value > other);
+    }
+
     @JRubyMethod(name = ">", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value > ((RubyFixnum) other).value);
@@ -753,6 +777,10 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value >= ((RubyFixnum) other).value);
         return coerceRelOp(context, ">=", other);
+    }
+
+    public IRubyObject op_ge(ThreadContext context, long other) {
+        return RubyBoolean.newBoolean(context.getRuntime(), value >= other);
     }
 
     @JRubyMethod(name = ">=", compat = CompatVersion.RUBY1_9)
@@ -801,6 +829,10 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value <= ((RubyFixnum) other).value);
         return coerceRelOp(context, "<=", other);
+    }
+
+    public IRubyObject op_le(ThreadContext context, long other) {
+        return RubyBoolean.newBoolean(context.getRuntime(), value <= other);
     }
 
     @JRubyMethod(name = "<=", compat = CompatVersion.RUBY1_9)
