@@ -192,6 +192,10 @@ public class RubyClass extends RubyModule {
         return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
     }
 
+    public void removeVariableAccessor(String name) {
+        ivarAccessors.remove(name);
+    }
+
     @Override
     public int getNativeTypeIndex() {
         return ClassIndex.CLASS;

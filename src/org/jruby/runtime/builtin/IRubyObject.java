@@ -324,12 +324,12 @@ public interface IRubyObject {
      * 
      * @param variables the variables to be set for object 
      */
-    void syncVariables(List<Variable<IRubyObject>> variables);
+    void syncVariables(List<Variable<Object>> variables);
     
     /**
      * @return a list of all variables (ivar/cvar/constant/internal)
      */
-    List<Variable<IRubyObject>> getVariableList();
+    List<Variable<Object>> getVariableList();
 
     //
     // INSTANCE VARIABLE METHODS
@@ -350,6 +350,6 @@ public interface IRubyObject {
 
     void copySpecialInstanceVariables(IRubyObject clone);
 
-    public IRubyObject getIvar(int index);
-    public void setIvar(int index, IRubyObject value);
+    public Object getVariable(int index);
+    public void setVariable(int index, Object value);
 }

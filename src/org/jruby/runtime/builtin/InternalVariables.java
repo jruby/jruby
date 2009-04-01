@@ -21,7 +21,7 @@ public interface InternalVariables {
      * @param name the name of an internal variable
      * @return true if object has the named internal variable.
      */
-    boolean hasXInternalVariable(String name);
+    boolean hasInternalVariable(String name);
     
     /**
      * Returns true if object has the named internal variable.  Use only
@@ -79,9 +79,4 @@ public interface InternalVariables {
      * @return the value of the remove variable, if present; else null
      */
     Object removeInternalVariable(String name);
-
-    /**
-     * @return only internal variables (NOT ivar/cvar/constant)
-     */
-    List<Variable<Object>> getInternalVariableList();
 }

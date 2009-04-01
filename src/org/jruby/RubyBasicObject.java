@@ -29,7 +29,6 @@ package org.jruby;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +42,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.InstanceVariableTable;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
@@ -57,23 +55,12 @@ import org.jruby.util.TypeConverter;
  * @author enebo
  */
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
-
+    private static final boolean DEBUG = false;
+    
     // The class of this object
     protected transient RubyClass metaClass;
 
     protected int flags; // zeroed by jvm
-
-    /**
-     * The variableTable contains variables for an object, defined as:
-     * <ul>
-     * <li> instance variables
-     * <li> class variables (for classes/modules)
-     * <li> internal variables (such as those used when marshaling RubyRange and RubyException)
-     * </ul>
-     *
-     * Constants are stored separately, see {@link RubyModule}.
-     */
-    protected transient volatile InstanceVariableTable variables;
 
     /**
      * The error message used when some one tries to modify an
@@ -992,21 +979,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     private static final Object[] NULL_OBJECT_ARRAY = new Object[0];
-    private volatile Object[] ivarTable = NULL_OBJECT_ARRAY;
+    private volatile Object[] varTable = NULL_OBJECT_ARRAY;
 
     private Object[] getIvarTableForRead() {
-        return ivarTable;
+        return varTable;
     }
 
-    public synchronized Object[] getIvarTableForWrite(int index) {
-        if (ivarTable == IRubyObject.NULL_ARRAY) {
-            ivarTable = new IRubyObject[getMetaClass().getVariableTableSize()];
-        } else if (ivarTable.length <= index) {
-            IRubyObject[] newTable = new IRubyObject[getMetaClass().getVariableTableSize()];
-            System.arraycopy(ivarTable, 0, newTable, 0, ivarTable.length);
-            ivarTable = newTable;
+    private synchronized Object[] getVariableTableForWrite(int index) {
+        if (varTable == NULL_OBJECT_ARRAY) {
+            varTable = new Object[getMetaClass().getRealClass().getVariableTableSize()];
+        } else if (varTable.length <= index) {
+            if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSize());
+            Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSize()];
+            System.arraycopy(varTable, 0, newTable, 0, varTable.length);
+            varTable = newTable;
         }
-        return ivarTable;
+        return varTable;
     }
 
     public Object getVariable(int index) {
@@ -1017,19 +1005,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public synchronized void setVariable(int index, Object value) {
+        ensureInstanceVariablesSettable();
         if (index < 0) return;
-        Object[] ivarTable = getIvarTableForWrite(index);
+        Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
     }
 
     //
     // COMMON VARIABLE METHODS
     //
-
-    @Deprecated
-    public InstanceVariableTable getVariables() {
-        return null;
-    }
 
     /**
      * Returns true if object has any variables, defined as:
@@ -1042,7 +1026,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if object has any variables, else false
      */
     public boolean hasVariables() {
-        return ivarTable.length > 0;
+        return varTable.length > 0;
     }
 
     /**
@@ -1050,20 +1034,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * constants and internal variables this object has.
      */
     public int getVariableCount() {
-        return ivarTable.length;
+        return varTable.length;
     }
 
     /**
      * Gets a list of all variables in this object.
      */
     // TODO: must override in RubyModule to pick up constants
-    public List<Variable<IRubyObject>> getVariableList() {
-        Map<String, RubyClass.InstanceVariableAccessor> ivarAccessors = getMetaClass().getVariableAccessorsForRead();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        for (Map.Entry<String, RubyClass.InstanceVariableAccessor> entry : ivarAccessors.entrySet()) {
-            IRubyObject value = entry.getValue().get(this);
+    public List<Variable<Object>> getVariableList() {
+        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getRealClass().getVariableAccessorsForRead();
+        ArrayList<Variable<Object>> list = new ArrayList<Variable<Object>>();
+        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
             if (value == null) continue;
-            list.add(new VariableEntry<IRubyObject>(entry.getKey(), value));
+            list.add(new VariableEntry<Object>(entry.getKey(), (IRubyObject)value));
         }
         return list;
     }
@@ -1073,10 +1057,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    // TODO: must override in RubyModule to pick up constants
    public List<String> getVariableNameList() {
-        Map<String, RubyClass.InstanceVariableAccessor> ivarAccessors = getMetaClass().getVariableAccessorsForRead();
+        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getRealClass().getVariableAccessorsForRead();
         ArrayList<String> list = new ArrayList<String>();
-        for (Map.Entry<String, RubyClass.InstanceVariableAccessor> entry : ivarAccessors.entrySet()) {
-            IRubyObject value = entry.getValue().get(this);
+        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
             if (value == null) continue;
             list.add(entry.getKey());
         }
@@ -1088,7 +1072,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * specified name.
      */
     protected boolean variableTableContains(String name) {
-        return getMetaClass().getVariableAccessorForRead(name).get(this) != null;
+        return getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this) != null;
     }
 
     /**
@@ -1105,8 +1089,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return the object or null if not found
      */
-    protected IRubyObject variableTableFetch(String name) {
-        return getMetaClass().getVariableAccessorForRead(name).get(this);
+    protected Object variableTableFetch(String name) {
+        return getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this);
     }
 
     /**
@@ -1116,20 +1100,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return the object or null if not found
      */
     protected Object variableTableFastFetch(String internedName) {
-        return variables == null ? null : variables.fastFetch(internedName);
+        return variableTableFetch(internedName);
     }
 
     /**
      * Store a value in the variable store under the specific name.
      */
     protected Object variableTableStore(String name, Object value) {
-        synchronized(this) {
-            if (variables == null) {
-                variables = new InstanceVariableTable(name.intern(), value);
-            } else {
-                variables.store(name, value);
-            }
-        }
+        getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, value);
         return value;
     }
 
@@ -1138,15 +1116,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * needs to be an interned Java String.
      */
     protected Object variableTableFastStore(String internedName, Object value) {
-        assert internedName == internedName.intern() : internedName + " not interned";
-        synchronized(this) {
-            if (variables == null) {
-                variables = new InstanceVariableTable(internedName, value);
-            } else {
-                variables.fastStore(internedName, value);
-            }
-        }
-        return value;
+        return variableTableStore(internedName, value);
     }
 
     /**
@@ -1155,7 +1125,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     protected Object variableTableRemove(String name) {
         synchronized(this) {
-            return variables == null ? null : variables.remove(name);
+            Object value = getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this);
+            getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, null);
+            getMetaClass().getRealClass().removeVariableAccessor(name);
+            return value;
         }
     }
 
@@ -1163,36 +1136,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Get the size of the variable table.
      */
     protected int variableTableGetSize() {
-        return variables == null ? 0 : variables.getSize(); 
+        return getMetaClass().getRealClass().getVariableTableSize();
     }
 
     /**
      * Synchronize the variable table with the argument. In real terms
      * this means copy all entries into a newly allocated table.
      */
-    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
+    protected void variableTableSync(List<Variable<Object>> vars) {
         synchronized(this) {
-            variables = new InstanceVariableTable(vars);
+            for (Variable<Object> var : vars) {
+                variableTableStore(var.getName(), var.getValue());
+            }
         }
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    protected Map variableTableGetMap() {
-        HashMap map = new HashMap();
-        if (variables != null) variables.getMap(this, map);
-        return map;
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    protected Map variableTableGetMap(Map map) {
-        if (variables != null) variables.getMap(this, map);
-        return map;
     }
 
     //
@@ -1212,7 +1168,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InternalVariables#hasInternalVariable
      */
     public boolean hasInternalVariable(String name) {
-        assert !isRubyVariable(name);
+        assert !IdUtil.isRubyVariable(name);
         return variableTableContains(name);
     }
 
@@ -1220,15 +1176,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InternalVariables#fastHasInternalVariable
      */
     public boolean fastHasInternalVariable(String internedName) {
-        assert !isRubyVariable(internedName);
+        assert !IdUtil.isRubyVariable(internedName);
         return variableTableFastContains(internedName);
     }
 
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#getInternalVariable
      */
-    public IRubyObject getInternalVariable(String name) {
-        assert !isRubyVariable(name);
+    public Object getInternalVariable(String name) {
+        assert !IdUtil.isRubyVariable(name);
         return variableTableFetch(name);
     }
 
@@ -1236,7 +1192,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InternalVariables#fastGetInternalVariable
      */
     public Object fastGetInternalVariable(String internedName) {
-        assert !isRubyVariable(internedName);
+        assert !IdUtil.isRubyVariable(internedName);
         return variableTableFastFetch(internedName);
     }
 
@@ -1244,7 +1200,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InternalVariables#setInternalVariable
      */
     public void setInternalVariable(String name, Object value) {
-        assert !isRubyVariable(name);
+        assert !IdUtil.isRubyVariable(name);
         variableTableStore(name, value);
     }
 
@@ -1252,7 +1208,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InternalVariables#fastSetInternalVariable
      */
     public void fastSetInternalVariable(String internedName, Object value) {
-        assert !isRubyVariable(internedName);
+        assert !IdUtil.isRubyVariable(internedName);
         variableTableFastStore(internedName, value);
     }
 
@@ -1260,7 +1216,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InternalVariables#removeInternalVariable
      */
     public Object removeInternalVariable(String name) {
-        assert !isRubyVariable(name);
+        assert !IdUtil.isRubyVariable(name);
         return variableTableRemove(name);
     }
 
@@ -1268,26 +1224,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Sync one variable table with another - this is used to make
      * rbClone work correctly.
      */
-    public void syncVariables(List<Variable<IRubyObject>> variables) {
+    public void syncVariables(List<Variable<Object>> variables) {
         variableTableSync(variables);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#getInternalVariableList
-     */
-    public List<Variable<Object>> getInternalVariableList() {
-        final ArrayList<Variable<Object>> list = new ArrayList<Variable<Object>>();
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
-                public void visit(String name, Object value) {
-                    if (!isRubyVariable(name)) {
-                        list.add(new VariableEntry<Object>(name, value));
-                    }
-                }
-            });
-        }
-        return list;
     }
 
     //
@@ -1324,7 +1262,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject getInstanceVariable(String name) {
         assert IdUtil.isInstanceVariable(name);
-        return variableTableFetch(name);
+        return (IRubyObject)variableTableFetch(name);
     }
 
     /**
@@ -1364,37 +1302,31 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableList
+     * Gets a list of all variables in this object.
      */
+    // TODO: must override in RubyModule to pick up constants
     public List<Variable<IRubyObject>> getInstanceVariableList() {
-        final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
-                public void visit(String name, Object value) {
-                    if (IdUtil.isInstanceVariable(name)) {
-                        list.add(new VariableEntry<IRubyObject>(name, (IRubyObject)value));
-                    }                    
-                }
-            });
+        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getVariableAccessorsForRead();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
+            list.add(new VariableEntry<IRubyObject>(entry.getKey(), (IRubyObject)value));
         }
         return list;
     }
 
     /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
+     * Gets a name list of all variables in this object.
      */
-    public List<String> getInstanceVariableNameList() {
-        final ArrayList<String> list = new ArrayList<String>();
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.Visitor() {
-                public void visit(String name, Object value) {
-                    if (IdUtil.isInstanceVariable(name)) {
-                        list.add(name);
-                    }
-                }
-            });
+   // TODO: must override in RubyModule to pick up constants
+   public List<String> getInstanceVariableNameList() {
+        Map<String, RubyClass.VariableAccessor> ivarAccessors = getMetaClass().getRealClass().getVariableAccessorsForRead();
+        ArrayList<String> list = new ArrayList<String>();
+        for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
+            list.add(entry.getKey());
         }
         return list;
     }
@@ -1403,15 +1335,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
      */
     public void copyInstanceVariablesInto(final InstanceVariables other) {
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.Visitor() {
-                public void visit(String name, Object value) {
-                    if (IdUtil.isInstanceVariable(name)) { 
-                        other.setInstanceVariable(name, (IRubyObject)value);
-                    }
-                }
-            });
+        for (Variable<IRubyObject> var : getInstanceVariableList()) {
+            synchronized (this) {
+                other.setInstanceVariable(var.getName(), var.getValue());
+            }
         }
     }
 

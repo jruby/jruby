@@ -8,7 +8,6 @@ public class VariableEntry<BaseObjectType> implements Variable<BaseObjectType> {
     public final BaseObjectType value;
     
     public VariableEntry(String name, BaseObjectType value) {
-        assert name == name.intern() : name + " is not interned";
         this.name = name;
         this.value = value;
     }

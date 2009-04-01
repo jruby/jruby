@@ -303,12 +303,12 @@ public class UnmarshalStream extends InputStream {
     public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
         int count = unmarshalInt();
         
-        List<Variable<IRubyObject>> attrs = new ArrayList<Variable<IRubyObject>>(count);
+        List<Variable<Object>> attrs = new ArrayList<Variable<Object>>(count);
         
         for (int i = count; --i >= 0; ) {
             String name = unmarshalObject().asJavaString();
             IRubyObject value = unmarshalObject();
-            attrs.add(new VariableEntry<IRubyObject>(name, value));
+            attrs.add(new VariableEntry<Object>(name, value));
         }
         
         object.syncVariables(attrs);

@@ -1521,9 +1521,9 @@ public class RubyObject extends RubyBasicObject {
      */
     @JRubyMethod(name = "instance_variable_get", required = 1)
     public IRubyObject instance_variable_get(ThreadContext context, IRubyObject name) {
-        IRubyObject value;
+        Object value;
         if ((value = variableTableFetch(validateInstanceVariable(name.asJavaString()))) != null) {
-            return value;
+            return (IRubyObject)value;
         }
         return context.getRuntime().getNil();
     }

@@ -140,8 +140,8 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
-    private List<Variable<IRubyObject>> getVariables(IRubyObject value) throws IOException {
-        List<Variable<IRubyObject>> variables = null;
+    private List<Variable<Object>> getVariables(IRubyObject value) throws IOException {
+        List<Variable<Object>> variables = null;
         if (value instanceof CoreObjectType) {
             int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
             
@@ -175,7 +175,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void writeDirectly(IRubyObject value) throws IOException {
-        List<Variable<IRubyObject>> variables = getVariables(value);
+        List<Variable<Object>> variables = getVariables(value);
         writeObjectData(value);
         if (variables != null) {
             dumpVariables(variables);
@@ -364,11 +364,13 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
     
-    public void dumpVariables(List<Variable<IRubyObject>> vars) throws IOException {
+    public void dumpVariables(List<Variable<Object>> vars) throws IOException {
         writeInt(vars.size());
-        for (Variable<IRubyObject> var : vars) {
-            writeAndRegister(runtime.newSymbol(var.getName()));
-            dumpObject(var.getValue());
+        for (Variable<Object> var : vars) {
+            if (var.getValue() instanceof IRubyObject) {
+                writeAndRegister(runtime.newSymbol(var.getName()));
+                dumpObject((IRubyObject)var.getValue());
+            }
         }
     }
     

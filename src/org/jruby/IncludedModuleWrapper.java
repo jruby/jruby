@@ -150,14 +150,6 @@ public final class IncludedModuleWrapper extends RubyClass {
         return delegate.id();
     }
 
-    //
-    // VARIABLE TABLE METHODS - pass to delegate
-    //
-    @Override
-    public InstanceVariableTable getVariables() {
-        return delegate.getVariables();
-    }
-
     @Override
     protected boolean variableTableContains(String name) {
         return delegate.variableTableContains(name);
@@ -169,7 +161,7 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    protected IRubyObject variableTableFetch(String name) {
+    protected Object variableTableFetch(String name) {
         return delegate.variableTableFetch(name);
     }
 
@@ -199,30 +191,8 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    protected void variableTableSync(List<Variable<IRubyObject>> vars) {
+    protected void variableTableSync(List<Variable<Object>> vars) {
         delegate.variableTableSync(vars);
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    @Deprecated // born deprecated
-    protected Map variableTableGetMap() {
-        return delegate.variableTableGetMap();
-    }
-
-    /**
-     * Method to help ease transition to new variables implementation.
-     * Will likely be deprecated in the near future.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    @Deprecated // born deprecated
-    protected Map variableTableGetMap(Map map) {
-        return delegate.variableTableGetMap(map);
     }
 
     //

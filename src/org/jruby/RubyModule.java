@@ -69,7 +69,6 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
-import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
@@ -87,11 +86,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.InstanceVariableTable;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
@@ -1211,15 +1208,15 @@ public class RubyModule extends RubyObject {
         final String variableName = ("@" + internedName).intern();
         if (readable) {
             addMethod(internedName, new JavaMethodZero(this, visibility, CallConfiguration.FrameNoneScopeNone) {
-                private RubyClass.InstanceVariableAccessor accessor = RubyClass.InstanceVariableAccessor.DUMMY_ACCESSOR;
+                private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    IRubyObject variable = verifyAccessor(self.getMetaClass()).get(self);
+                    IRubyObject variable = (IRubyObject)verifyAccessor(self.getMetaClass().getRealClass()).get(self);
 
                     return variable == null ? runtime.getNil() : variable;
                 }
 
-                private RubyClass.InstanceVariableAccessor verifyAccessor(RubyClass cls) {
-                    RubyClass.InstanceVariableAccessor localAccessor = accessor;
+                private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
+                    RubyClass.VariableAccessor localAccessor = accessor;
                     if (localAccessor.getClassId() != cls.hashCode()) {
                         localAccessor = cls.getVariableAccessorForRead(variableName);
                         accessor = localAccessor;
@@ -1232,14 +1229,14 @@ public class RubyModule extends RubyObject {
         if (writeable) {
             internedName = (internedName + "=").intern();
             addMethod(internedName, new JavaMethodOne(this, visibility, CallConfiguration.FrameNoneScopeNone) {
-                private RubyClass.InstanceVariableAccessor accessor = RubyClass.InstanceVariableAccessor.DUMMY_ACCESSOR;
+                private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
-                    verifyAccessor(self.getMetaClass()).set(self, arg1);
+                    verifyAccessor(self.getMetaClass().getRealClass()).set(self, arg1);
                     return arg1;
                 }
 
-                private RubyClass.InstanceVariableAccessor verifyAccessor(RubyClass cls) {
-                    RubyClass.InstanceVariableAccessor localAccessor = accessor;
+                private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
+                    RubyClass.VariableAccessor localAccessor = accessor;
                     if (localAccessor.getClassId() != cls.hashCode()) {
                         localAccessor = cls.getVariableAccessorForWrite(variableName);
                         accessor = localAccessor;
@@ -2299,7 +2296,11 @@ public class RubyModule extends RubyObject {
         Set<String> names = new HashSet<String>();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            names.addAll(p.getClassVariableNameList());
+            for (String name : p.getClassVariableNameList()) {
+                if (IdUtil.isClassVariable(name)) {
+                    names.add(name);
+                }
+            }
         }
 
         RubyArray ary = context.getRuntime().newArray();
@@ -2458,11 +2459,11 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject getClassVar(String name) {
         assert IdUtil.isClassVariable(name);
-        IRubyObject value;
+        Object value;
         RubyModule module = this;
         
         do {
-            if ((value = module.variableTableFetch(name)) != null) return value;
+            if ((value = module.variableTableFetch(name)) != null) return (IRubyObject)value;
         } while ((module = module.getSuperClass()) != null);
 
         throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
@@ -2785,7 +2786,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject searchInternalModuleVariable(final String name) {
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
-            IRubyObject value = module.getInternalVariable(name);
+            IRubyObject value = (IRubyObject)module.getInternalVariable(name);
             if (value != null) return value;
         }
 
@@ -2830,7 +2831,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject fetchClassVariable(String name) {
         assert IdUtil.isClassVariable(name);
-        return variableTableFetch(name);
+        return (IRubyObject)variableTableFetch(name);
     }
 
     public IRubyObject fastFetchClassVariable(String internedName) {
@@ -2856,32 +2857,8 @@ public class RubyModule extends RubyObject {
         return (IRubyObject)variableTableRemove(name);
     }
 
-    public List<Variable<IRubyObject>> getClassVariableList() {
-        final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
-                public void visit(String name, Object value) {
-                    list.add(new VariableEntry<IRubyObject>(name, (IRubyObject)value));
-                }
-            });
-        }
-        return list;
-    }
-
     public List<String> getClassVariableNameList() {
-        final ArrayList<String> list = new ArrayList<String>();
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.Visitor() {
-                public void visit(String name, Object value) {
-                    if (IdUtil.isClassVariable(name)) {
-                        list.add(name);
-                    }
-                }
-            });
-        }
-        return list;
+        return getVariableNameList();
     }
 
     protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";

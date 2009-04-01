@@ -95,10 +95,10 @@ public class RubyException extends RubyObject {
             RubyException exc = (RubyException)obj;
             
             marshalStream.registerLinkTarget(exc);
-            List<Variable<IRubyObject>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<IRubyObject>(
+            List<Variable<Object>> attrs = exc.getVariableList();
+            attrs.add(new VariableEntry<Object>(
                     "mesg", exc.message == null ? runtime.getNil() : exc.message));
-            attrs.add(new VariableEntry<IRubyObject>("bt", exc.getBacktrace()));
+            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
