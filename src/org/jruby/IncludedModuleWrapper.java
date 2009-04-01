@@ -150,6 +150,14 @@ public final class IncludedModuleWrapper extends RubyClass {
         return delegate.id();
     }
 
+    protected synchronized Map<String, IRubyObject> getClassVariables() {
+        return delegate.getClassVariables();
+    }
+
+    protected Map<String, IRubyObject> getClassVariablesForRead() {
+        return delegate.getClassVariablesForRead();
+    }
+
     @Override
     protected boolean variableTableContains(String name) {
         return delegate.variableTableContains(name);

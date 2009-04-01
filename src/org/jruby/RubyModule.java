@@ -52,6 +52,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2296,11 +2297,7 @@ public class RubyModule extends RubyObject {
         Set<String> names = new HashSet<String>();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            for (String name : p.getClassVariableNameList()) {
-                if (IdUtil.isClassVariable(name)) {
-                    names.add(name);
-                }
-            }
+            names.addAll(p.getClassVariableNameList());
         }
 
         RubyArray ary = context.getRuntime().newArray();
@@ -2461,9 +2458,9 @@ public class RubyModule extends RubyObject {
         assert IdUtil.isClassVariable(name);
         Object value;
         RubyModule module = this;
-        
+
         do {
-            if ((value = module.variableTableFetch(name)) != null) return (IRubyObject)value;
+            if ((value = module.fetchClassVariable(name)) != null) return (IRubyObject)value;
         } while ((module = module.getSuperClass()) != null);
 
         throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
@@ -2476,7 +2473,7 @@ public class RubyModule extends RubyObject {
         RubyModule module = this;
         
         do {
-            if ((value = (IRubyObject)module.variableTableFastFetch(internedName)) != null) return value; 
+            if ((value = module.fetchClassVariable(internedName)) != null) return value;
         } while ((module = module.getSuperClass()) != null);
 
         throw getRuntime().newNameError("uninitialized class variable " + internedName + " in " + getName(), internedName);
@@ -2818,47 +2815,58 @@ public class RubyModule extends RubyObject {
     //
     // fetch/store/list class variables for this module
     //
+
+    private volatile Map<String, IRubyObject> classVariables;
+
+    protected synchronized Map<String, IRubyObject> getClassVariables() {
+        if (classVariables == null) {
+            classVariables = new Hashtable<String, IRubyObject>(4);
+        }
+        return classVariables;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, IRubyObject> getClassVariablesForRead() {
+        return classVariables == null ? Collections.EMPTY_MAP : classVariables;
+    }
     
     public boolean hasClassVariable(String name) {
         assert IdUtil.isClassVariable(name);
-        return variableTableContains(name);
+        return getClassVariablesForRead().containsKey(name);
     }
 
     public boolean fastHasClassVariable(String internedName) {
-        assert IdUtil.isClassVariable(internedName);
-        return variableTableFastContains(internedName);
+        return hasClassVariable(internedName);
     }
 
     public IRubyObject fetchClassVariable(String name) {
         assert IdUtil.isClassVariable(name);
-        return (IRubyObject)variableTableFetch(name);
+        return getClassVariablesForRead().get(name);
     }
 
     public IRubyObject fastFetchClassVariable(String internedName) {
-        assert IdUtil.isClassVariable(internedName);
-        return (IRubyObject)variableTableFastFetch(internedName);
+        return fetchClassVariable(internedName);
     }
 
     public IRubyObject storeClassVariable(String name, IRubyObject value) {
         assert IdUtil.isClassVariable(name) && value != null;
         ensureClassVariablesSettable();
-        return (IRubyObject)variableTableStore(name, value);
+        getClassVariables().put(name, value);
+        return value;
     }
 
     public IRubyObject fastStoreClassVariable(String internedName, IRubyObject value) {
-        assert IdUtil.isClassVariable(internedName) && value != null;
-        ensureClassVariablesSettable();
-        return (IRubyObject)variableTableFastStore(internedName, value);
+        return storeClassVariable(internedName, value);
     }
 
     public IRubyObject deleteClassVariable(String name) {
         assert IdUtil.isClassVariable(name);
         ensureClassVariablesSettable();
-        return (IRubyObject)variableTableRemove(name);
+        return getClassVariablesForRead().remove(name);
     }
 
     public List<String> getClassVariableNameList() {
-        return getVariableNameList();
+        return new ArrayList<String>(getClassVariablesForRead().keySet());
     }
 
     protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";
