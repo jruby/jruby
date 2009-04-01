@@ -8,11 +8,14 @@ package org.jruby.ast.executable;
 import java.math.BigInteger;
 import java.util.Arrays;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.RubyClass.VariableAccessor;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -304,6 +307,58 @@ public abstract class AbstractScript implements Script {
     public final BigInteger getBigInteger8(Ruby runtime, String name) {return getBigInteger(runtime, 8, name);}
     public final BigInteger getBigInteger9(Ruby runtime, String name) {return getBigInteger(runtime, 9, name);}
 
+    public final IRubyObject getVariable(Ruby runtime, int index, String name, IRubyObject object) {
+        VariableAccessor variableAccessor = variableReaders[index];
+        RubyClass cls = object.getMetaClass().getRealClass();
+        if (variableAccessor.getClassId() != cls.hashCode()) {
+            variableReaders[index] = variableAccessor = cls.getVariableAccessorForRead(name);
+        }
+        IRubyObject value = (IRubyObject)variableAccessor.get(object);
+        if (value != null) return value;
+        if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime, name);
+        return runtime.getNil();
+    }
+
+    private void warnAboutUninitializedIvar(Ruby runtime, String name) {
+        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+    }
+
+    public static final int NUMBERED_VARIABLEREADER_COUNT = 10;
+
+    public final IRubyObject getVariable0(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 0, name, object);}
+    public final IRubyObject getVariable1(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 1, name, object);}
+    public final IRubyObject getVariable2(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 2, name, object);}
+    public final IRubyObject getVariable3(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 3, name, object);}
+    public final IRubyObject getVariable4(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 4, name, object);}
+    public final IRubyObject getVariable5(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 5, name, object);}
+    public final IRubyObject getVariable6(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 6, name, object);}
+    public final IRubyObject getVariable7(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 7, name, object);}
+    public final IRubyObject getVariable8(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 8, name, object);}
+    public final IRubyObject getVariable9(Ruby runtime, String name, IRubyObject object) {return getVariable(runtime, 9, name, object);}
+
+    public final IRubyObject setVariable(Ruby runtime, int index, String name, IRubyObject object, IRubyObject value) {
+        VariableAccessor variableAccessor = variableWriters[index];
+        RubyClass cls = object.getMetaClass().getRealClass();
+        if (variableAccessor.getClassId() != cls.hashCode()) {
+            variableWriters[index] = variableAccessor = cls.getVariableAccessorForWrite(name);
+        }
+        variableAccessor.set(object, value);
+        return value;
+    }
+
+    public static final int NUMBERED_VARIABLEWRITER_COUNT = 10;
+
+    public final IRubyObject setVariable0(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 0, name, object, value);}
+    public final IRubyObject setVariable1(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 1, name, object, value);}
+    public final IRubyObject setVariable2(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 2, name, object, value);}
+    public final IRubyObject setVariable3(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 3, name, object, value);}
+    public final IRubyObject setVariable4(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 4, name, object, value);}
+    public final IRubyObject setVariable5(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 5, name, object, value);}
+    public final IRubyObject setVariable6(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 6, name, object, value);}
+    public final IRubyObject setVariable7(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 7, name, object, value);}
+    public final IRubyObject setVariable8(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 8, name, object, value);}
+    public final IRubyObject setVariable9(Ruby runtime, String name, IRubyObject object, IRubyObject value) {return setVariable(runtime, 9, name, object, value);}
+
     public final void initScopes(int size) {
         scopes = new StaticScope[size];
     }
@@ -346,6 +401,16 @@ public abstract class AbstractScript implements Script {
         constantGenerations = new int[size];
         Arrays.fill(constantGenerations, -1);
         Arrays.fill(constantTargetHashes, -1);
+    }
+
+    public final void initVariableReaders(int size) {
+        variableReaders = new VariableAccessor[size];
+        Arrays.fill(variableReaders, VariableAccessor.DUMMY_ACCESSOR);
+    }
+
+    public final void initVariableWriters(int size) {
+        variableWriters = new VariableAccessor[size];
+        Arrays.fill(variableWriters, VariableAccessor.DUMMY_ACCESSOR);
     }
 
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
@@ -529,6 +594,8 @@ public abstract class AbstractScript implements Script {
     public RubyFixnum[] fixnums;
     public RubyRegexp[] regexps;
     public BigInteger[] bigIntegers;
+    public VariableAccessor[] variableReaders;
+    public VariableAccessor[] variableWriters;
     public String filename;
     public IRubyObject[] constants;
     public int[] constantGenerations;

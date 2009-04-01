@@ -50,6 +50,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int inheritedStringCount = 0;
     int inheritedRegexpCount = 0;
     int inheritedBigIntegerCount = 0;
+    int inheritedVariableReaderCount = 0;
+    int inheritedVariableWriterCount = 0;
     int inheritedFixnumCount = 0;
     int inheritedConstantCount = 0;
     int inheritedBlockBodyCount = 0;
@@ -274,6 +276,40 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
+    public void cachedGetVariable(BaseBodyCompiler method, String name) {
+        method.loadThis();
+        method.loadRuntime();
+        int index = inheritedVariableReaderCount++;
+        if (index < AbstractScript.NUMBERED_VARIABLEREADER_COUNT) {
+            method.method.ldc(name);
+            method.loadSelf();
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariable" + index, sig(IRubyObject.class, Ruby.class, String.class, IRubyObject.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.ldc(name);
+            method.loadSelf();
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariable", sig(IRubyObject.class, Ruby.class, int.class, String.class, IRubyObject.class));
+        }
+    }
+
+    public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback valueCallback) {
+        method.loadThis();
+        method.loadRuntime();
+        int index = inheritedVariableWriterCount++;
+        if (index < AbstractScript.NUMBERED_VARIABLEWRITER_COUNT) {
+            method.method.ldc(name);
+            method.loadSelf();
+            valueCallback.call(method);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "setVariable" + index, sig(IRubyObject.class, Ruby.class, String.class, IRubyObject.class, IRubyObject.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.ldc(name);
+            method.loadSelf();
+            valueCallback.call(method);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "setVariable", sig(IRubyObject.class, Ruby.class, int.class, String.class, IRubyObject.class, IRubyObject.class));
+        }
+    }
+
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         // build scope names string
         StringBuffer scopeNames = new StringBuffer();
@@ -430,6 +466,22 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.aload(0);
             initMethod.pushInt(size);
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initBigIntegers", sig(void.class, params(int.class)));
+        }
+
+        // generate variable readers initialization code
+        size = inheritedVariableReaderCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initVariableReaders", sig(void.class, params(int.class)));
+        }
+
+        // generate variable writers initialization code
+        size = inheritedVariableWriterCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initVariableWriters", sig(void.class, params(int.class)));
         }
 
         // generate block bodies initialization code

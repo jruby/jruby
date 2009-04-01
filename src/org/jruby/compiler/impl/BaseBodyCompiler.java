@@ -997,23 +997,22 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveInstanceVariable(String name) {
-        loadSelf();
-        loadRuntime();
-        method.ldc(name);
-        invokeUtilityMethod("getInstanceVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
+        script.getCacheCompiler().cachedGetVariable(this, name);
     }
 
     public void assignInstanceVariable(String name) {
-        loadSelf();
-        method.ldc(name);
-        invokeUtilityMethod("setInstanceVariable", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
+        final int tmp = getVariableCompiler().grabTempLocal();
+        getVariableCompiler().setTempLocal(tmp);
+        CompilerCallback callback = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                context.getVariableCompiler().getTempLocal(tmp);
+            }
+        };
+        script.getCacheCompiler().cachedSetVariable(this, name, callback);
     }
 
     public void assignInstanceVariable(String name, CompilerCallback value) {
-        value.call(this);
-        loadSelf();
-        method.ldc(name);
-        invokeUtilityMethod("setInstanceVariable", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
+        script.getCacheCompiler().cachedSetVariable(this, name, value);
     }
 
     public void retrieveGlobalVariable(String name) {
