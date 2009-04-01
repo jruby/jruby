@@ -21,7 +21,7 @@ public interface InternalVariables {
      * @param name the name of an internal variable
      * @return true if object has the named internal variable.
      */
-    boolean hasInternalVariable(String name);
+    boolean hasXInternalVariable(String name);
     
     /**
      * Returns true if object has the named internal variable.  Use only

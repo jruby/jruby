@@ -349,4 +349,7 @@ public interface IRubyObject {
     List<String> getVariableNameList();
 
     void copySpecialInstanceVariables(IRubyObject clone);
+
+    public IRubyObject getIvar(int index);
+    public void setIvar(int index, IRubyObject value);
 }

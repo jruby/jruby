@@ -1211,10 +1211,20 @@ public class RubyModule extends RubyObject {
         final String variableName = ("@" + internedName).intern();
         if (readable) {
             addMethod(internedName, new JavaMethodZero(this, visibility, CallConfiguration.FrameNoneScopeNone) {
+                private RubyClass.InstanceVariableAccessor accessor = RubyClass.InstanceVariableAccessor.DUMMY_ACCESSOR;
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(variableName);
+                    IRubyObject variable = verifyAccessor(self.getMetaClass()).get(self);
 
                     return variable == null ? runtime.getNil() : variable;
+                }
+
+                private RubyClass.InstanceVariableAccessor verifyAccessor(RubyClass cls) {
+                    RubyClass.InstanceVariableAccessor localAccessor = accessor;
+                    if (localAccessor.getClassId() != cls.hashCode()) {
+                        localAccessor = cls.getVariableAccessorForRead(variableName);
+                        accessor = localAccessor;
+                    }
+                    return localAccessor;
                 }
             });
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
@@ -1222,8 +1232,19 @@ public class RubyModule extends RubyObject {
         if (writeable) {
             internedName = (internedName + "=").intern();
             addMethod(internedName, new JavaMethodOne(this, visibility, CallConfiguration.FrameNoneScopeNone) {
+                private RubyClass.InstanceVariableAccessor accessor = RubyClass.InstanceVariableAccessor.DUMMY_ACCESSOR;
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
-                    return self.getInstanceVariables().fastSetInstanceVariable(variableName, arg1);
+                    verifyAccessor(self.getMetaClass()).set(self, arg1);
+                    return arg1;
+                }
+
+                private RubyClass.InstanceVariableAccessor verifyAccessor(RubyClass cls) {
+                    RubyClass.InstanceVariableAccessor localAccessor = accessor;
+                    if (localAccessor.getClassId() != cls.hashCode()) {
+                        localAccessor = cls.getVariableAccessorForWrite(variableName);
+                        accessor = localAccessor;
+                    }
+                    return localAccessor;
                 }
             });
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));

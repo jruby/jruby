@@ -34,6 +34,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -129,6 +132,64 @@ public class RubyClass extends RubyModule {
     
     public CallSite[] getExtraCallSites() {
         return extraCallSites;
+    }
+
+    public static class VariableAccessor {
+        private int index;
+        private final int classId;
+        public VariableAccessor(int index, int classId) {
+            this.index = index;
+            this.classId = classId;
+        }
+        public int getClassId() {
+            return classId;
+        }
+        public int getIndex() {
+            return index;
+        }
+        public Object get(Object object) {
+            return ((IRubyObject)object).getVariable(index);
+        }
+        public void set(Object object, Object value) {
+            ((IRubyObject)object).setVariable(index, value);
+        }
+        public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(-1, -1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, VariableAccessor> ivarAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
+
+    public Map<String, VariableAccessor> getVariableAccessorsForRead() {
+        return ivarAccessors;
+    }
+
+    public synchronized Map<String, VariableAccessor> getVariableAccessorsForWrite() {
+        if (ivarAccessors == Collections.EMPTY_MAP) ivarAccessors = new Hashtable<String, VariableAccessor>(1);
+        return ivarAccessors;
+    }
+
+    public VariableAccessor getVariableAccessorForRead(String name) {
+        VariableAccessor accessor = getVariableAccessorsForRead().get(name);
+        if (accessor == null) accessor = VariableAccessor.DUMMY_ACCESSOR;
+        return accessor;
+    }
+
+    public synchronized VariableAccessor getVariableAccessorForWrite(String name) {
+        Map<String, VariableAccessor> myVariableAccessors = getVariableAccessorsForWrite();
+        VariableAccessor ivarAccessor = myVariableAccessors.get(name);
+        if (ivarAccessor == null) {
+            ivarAccessor = new VariableAccessor(myVariableAccessors.size(), this.id);
+            myVariableAccessors.put(name, ivarAccessor);
+        }
+        return ivarAccessor;
+    }
+
+    public int getVariableTableSize() {
+        return getVariableAccessorsForRead().size();
+    }
+
+    public Map<String, VariableAccessor> getVariableTableCopy() {
+        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
     }
 
     @Override

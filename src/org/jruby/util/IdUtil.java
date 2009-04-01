@@ -129,5 +129,15 @@ public final class IdUtil {
         }
         return true;
     }
-    
+
+    /**
+     * Check the syntax of a Ruby variable, including that it's longer
+     * than zero characters, and starts with either an @ or a capital
+     * letter.
+     */
+    // FIXME: this should go somewhere more generic -- maybe IdUtil
+    public static final boolean isRubyVariable(String name) {
+        char c;
+        return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
+    }
 }

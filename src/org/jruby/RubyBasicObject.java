@@ -991,12 +991,44 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
+    private static final Object[] NULL_OBJECT_ARRAY = new Object[0];
+    private volatile Object[] ivarTable = NULL_OBJECT_ARRAY;
+
+    private Object[] getIvarTableForRead() {
+        return ivarTable;
+    }
+
+    public synchronized Object[] getIvarTableForWrite(int index) {
+        if (ivarTable == IRubyObject.NULL_ARRAY) {
+            ivarTable = new IRubyObject[getMetaClass().getVariableTableSize()];
+        } else if (ivarTable.length <= index) {
+            IRubyObject[] newTable = new IRubyObject[getMetaClass().getVariableTableSize()];
+            System.arraycopy(ivarTable, 0, newTable, 0, ivarTable.length);
+            ivarTable = newTable;
+        }
+        return ivarTable;
+    }
+
+    public Object getVariable(int index) {
+        if (index < 0) return null;
+        Object[] ivarTable = getIvarTableForRead();
+        if (ivarTable.length > index) return ivarTable[index];
+        return null;
+    }
+
+    public synchronized void setVariable(int index, Object value) {
+        if (index < 0) return;
+        Object[] ivarTable = getIvarTableForWrite(index);
+        ivarTable[index] = value;
+    }
+
     //
     // COMMON VARIABLE METHODS
     //
 
+    @Deprecated
     public InstanceVariableTable getVariables() {
-        return variables;
+        return null;
     }
 
     /**
@@ -1010,7 +1042,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if object has any variables, else false
      */
     public boolean hasVariables() {
-        return variableTableGetSize() > 0;
+        return ivarTable.length > 0;
     }
 
     /**
@@ -1018,7 +1050,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * constants and internal variables this object has.
      */
     public int getVariableCount() {
-        return variableTableGetSize();
+        return ivarTable.length;
     }
 
     /**
@@ -1026,14 +1058,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     // TODO: must override in RubyModule to pick up constants
     public List<Variable<IRubyObject>> getVariableList() {
-        final ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
-        InstanceVariableTable variables = getVariables();
-        if (variables != null) {
-            variables.visit(new InstanceVariableTable.TryLockVisitor(this) {
-                public void visit(String name, Object value) {
-                    list.add(new VariableEntry<IRubyObject>(name, (IRubyObject)value));
-                }
-            });
+        Map<String, RubyClass.InstanceVariableAccessor> ivarAccessors = getMetaClass().getVariableAccessorsForRead();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        for (Map.Entry<String, RubyClass.InstanceVariableAccessor> entry : ivarAccessors.entrySet()) {
+            IRubyObject value = entry.getValue().get(this);
+            if (value == null) continue;
+            list.add(new VariableEntry<IRubyObject>(entry.getKey(), value));
         }
         return list;
     }
@@ -1043,36 +1073,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    // TODO: must override in RubyModule to pick up constants
    public List<String> getVariableNameList() {
-       final ArrayList<String> list = new ArrayList<String>();
-       InstanceVariableTable variables = getVariables();
-       if (variables != null) {
-           variables.visit(new InstanceVariableTable.Visitor() {
-               public void visit(String name, Object value) {
-                   list.add(name);
-               }
-           });
-       }
-       return list;
-    }
-
-    /**
-     * Gets internal access to the getmap for variables.
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated // born deprecated
-    public Map getVariableMap() {
-        return variableTableGetMap();
-    }
-
-    /**
-     * Check the syntax of a Ruby variable, including that it's longer
-     * than zero characters, and starts with either an @ or a capital
-     * letter.
-     */
-    // FIXME: this should go somewhere more generic -- maybe IdUtil
-    protected static final boolean isRubyVariable(String name) {
-        char c;
-        return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
+        Map<String, RubyClass.InstanceVariableAccessor> ivarAccessors = getMetaClass().getVariableAccessorsForRead();
+        ArrayList<String> list = new ArrayList<String>();
+        for (Map.Entry<String, RubyClass.InstanceVariableAccessor> entry : ivarAccessors.entrySet()) {
+            IRubyObject value = entry.getValue().get(this);
+            if (value == null) continue;
+            list.add(entry.getKey());
+        }
+        return list;
     }
 
     /**
@@ -1080,7 +1088,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * specified name.
      */
     protected boolean variableTableContains(String name) {
-        return variables == null ? false : variables.contains(name);
+        return getMetaClass().getVariableAccessorForRead(name).get(this) != null;
     }
 
     /**
@@ -1089,7 +1097,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * an interned Java String.
      */
     protected boolean variableTableFastContains(String internedName) {
-        return variables == null ? false : variables.fastContains(internedName);
+        return variableTableContains(internedName);
     }
 
     /**
@@ -1098,7 +1106,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return the object or null if not found
      */
     protected IRubyObject variableTableFetch(String name) {
-        return variables == null ? null : (IRubyObject)variables.fetch(name);
+        return getMetaClass().getVariableAccessorForRead(name).get(this);
     }
 
     /**

@@ -35,6 +35,8 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyClass.InstanceVariableAccessor;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -50,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class InstVarNode extends Node implements IArityNode, INameNode {
     private String name;
+    private InstanceVariableAccessor accessor = InstanceVariableAccessor.DUMMY_ACCESSOR;
 
     public InstVarNode(ISourcePosition position, String name) {
         super(position);
@@ -93,10 +96,14 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject variable = self.getInstanceVariables().fastGetInstanceVariable(name);
-   
+        RubyClass cls = self.getMetaClass();
+        InstanceVariableAccessor localAccessor = accessor;
+        if (localAccessor.getClassId() == cls.hashCode()) return localAccessor.get(self);
+        localAccessor = cls.getVariableAccessorForRead(name);
+        if (localAccessor == null) return runtime.getNil();
+        IRubyObject variable = localAccessor.get(self);
+        accessor = localAccessor;
         if (variable != null) return variable;
-        
         if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
         return runtime.getNil();        
     }
