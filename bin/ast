@@ -1,28 +1,35 @@
 #!/usr/bin/env jruby
 require 'jruby'
 
-def short_name(long_name)
-  long_name.sub(/.*\./, '')
+$indent_string = "  "
+
+def indexes(string, lindex, rindex)
+  lindex = string.index("(", lindex) if lindex != nil
+  rindex = string.index(")", rindex) if rindex != nil
+  return lindex, rindex
 end
 
-def node_string(node)
-  return "#{short_name(node.java_class.name)}" if node.invisible?
-  p = node.position
-  "#{short_name(node.java_class.name)},#{p.startLine},#{p.endLine},#{p.startOffset},#{p.endOffset}"
-end
+def indent(string)
+  depth = -1
 
-def print_tree(node, indent="")
-    puts indent + node_string(node)
+  lindex, rindex = indexes(string, 0, 0)
 
-    node.childNodes.each {|child| print_tree(child, indent + "  ") }
+  while (lindex != nil || rindex != nil)
+    if (lindex != nil && lindex < rindex)
+      depth += 1
+      string[lindex, 1] = "\n#{$indent_string * depth}"
+    else
+      depth -= 1
+      string[rindex, 1] = "\n"
+    end
+
+    lindex, rindex = indexes(string, lindex, rindex)
+  end
+  string.gsub(/,\s*$/, '').squeeze("\n")
 end
 
 file = ARGV.shift
-if file == "-e"
-  src = ARGV.shift
-else
-  src = File.read(file)
-end
+src = file == "-e" ? ARGV.shift : File.read(file)
 
-print_tree JRuby.parse(src)
+puts indent(JRuby.parse(src).to_string)
 
