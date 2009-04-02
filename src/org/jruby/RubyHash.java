@@ -354,7 +354,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final int HASH_SIGN_BIT_MASK = ~(1 << 31);
     private static int MRIBucketIndex(final int h, final int length) {
-        return (h % length);
+        return ((h & HASH_SIGN_BIT_MASK) % length);
     }
 
     private final void resize(int newCapacity) {
