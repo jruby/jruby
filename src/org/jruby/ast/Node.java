@@ -86,6 +86,8 @@ public abstract class Node implements ISourcePositionHolder {
 
     @Override
     public String toString() {
+        if (this instanceof InvisibleNode) return "";
+        
         StringBuilder builder = new StringBuilder(60);
 
         builder.append("(").append(getNodeName());
@@ -93,6 +95,8 @@ public abstract class Node implements ISourcePositionHolder {
         if (this instanceof INameNode) {
             builder.append(":").append(((INameNode) this).getName());
         }
+
+        builder.append(" ").append(getPosition().getStartLine());
 
         for (Node child: childNodes()) {
             builder.append(", ").append(child);
