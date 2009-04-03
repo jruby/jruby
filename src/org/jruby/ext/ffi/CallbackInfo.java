@@ -160,7 +160,7 @@ public class CallbackInfo extends Type implements NativeParam {
         return parameterTypes;
     }
 
-    @JRubyMethod(name = "hash")
+    @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("#<FFI::CallbackInfo [ ");
