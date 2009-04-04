@@ -892,12 +892,22 @@ public class RubyModule extends RubyObject {
     }
 
     public void addMethodInternal(String name, DynamicMethod method) {
-        // We can safely reference methods here instead of doing getMethods() since if we
-        // are adding we are not using a IncludedModuleWrapper.
         synchronized(getMethods()) {
-            getMethods().put(name, method);
+            addMethodAtBootTimeOnly(name, method);
             invalidateCacheDescendants();
         }
+    }
+
+    /**
+     * This method is not intended for use by normal users; it is a fast-path
+     * method that skips synchronization and hierarchy invalidation to speed
+     * boot-time method definition.
+     *
+     * @param name The name to which to bind the method
+     * @param method The method to bind
+     */
+    public void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
+        getMethods().put(name, method);
     }
 
     public void removeMethod(ThreadContext context, String name) {

@@ -338,16 +338,6 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                 return qualifiedName;
             }
 
-            private boolean tryClass(String className) {
-                Class tryClass = null;
-                try {
-                    tryClass = Class.forName(className);
-                } catch (ClassNotFoundException cnfe) {
-                }
-
-                return tryClass != null;
-            }
-
             private int calculateActualRequired(int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
                 int actualRequired;
                 if (optional == 0 && !rest) {
@@ -403,20 +393,16 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         out.println("        ASTInspector.FRAME_AWARE_METHODS.add(\"" + name + "\");");
                     }
                 }
-                // TODO: compat version
-                //                if(jrubyMethod.compat() == CompatVersion.BOTH ||
-                //                        module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
-                //RubyModule metaClass = module.metaClass;
 
                 if (jrubyMethod.meta()) {
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
                         baseName = md.getSimpleName();
-                        out.println("        metaClass.addMethod(\"" + baseName + "\", javaMethod);");
+                        out.println("        metaClass.addMethodAtBootTimeOnly(\"" + baseName + "\", javaMethod);");
                     } else {
                         baseName = jrubyMethod.name()[0];
                         for (String name : jrubyMethod.name()) {
-                            out.println("        metaClass.addMethod(\"" + name + "\", javaMethod);");
+                            out.println("        metaClass.addMethodAtBootTimeOnly(\"" + name + "\", javaMethod);");
                         }
                     }
 
@@ -429,11 +415,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     String baseName;
                     if (jrubyMethod.name().length == 0) {
                         baseName = md.getSimpleName();
-                        out.println("        cls.addMethod(\"" + baseName + "\", javaMethod);");
+                        out.println("        cls.addMethodAtBootTimeOnly(\"" + baseName + "\", javaMethod);");
                     } else {
                         baseName = jrubyMethod.name()[0];
                         for (String name : jrubyMethod.name()) {
-                            out.println("        cls.addMethod(\"" + name + "\", javaMethod);");
+                            out.println("        cls.addMethodAtBootTimeOnly(\"" + name + "\", javaMethod);");
                         }
                     }
 
@@ -451,11 +437,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
                         if (jrubyMethod.name().length == 0) {
                             baseName = md.getSimpleName();
-                            out.println("        singletonClass.addMethod(\"" + baseName + "\", moduleMethod);");
+                            out.println("        singletonClass.addMethodAtBootTimeOnly(\"" + baseName + "\", moduleMethod);");
                         } else {
                             baseName = jrubyMethod.name()[0];
                             for (String name : jrubyMethod.name()) {
-                                out.println("        singletonClass.addMethod(\"" + name + "\", moduleMethod);");
+                                out.println("        singletonClass.addMethodAtBootTimeOnly(\"" + name + "\", moduleMethod);");
                             }
                         }
 
