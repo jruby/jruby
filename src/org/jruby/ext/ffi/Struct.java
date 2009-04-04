@@ -81,9 +81,11 @@ public class Struct extends RubyObject {
     
     static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
         try {
-            return (StructLayout) ((RubyClass) structClass).fastGetClassVar("@layout");
+            return (StructLayout) ((RubyClass) structClass).fastGetInstanceVariable("@layout");
         } catch (RaiseException ex) {
-            return new StructLayout(runtime);
+            throw runtime.newRuntimeError("No layout set for struct");
+        } catch (ClassCastException ex) {
+            throw runtime.newRuntimeError("Invalid layout set for struct");
         }
     }
     
