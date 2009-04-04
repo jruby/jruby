@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents a C enum
  */
 @JRubyClass(name="FFI::Enum", parent="FFI::Type")
-public class Enum extends RubyObject {
+public class Enum extends Type {
 
     public static RubyClass createEnumClass(Ruby runtime, RubyModule ffiModule) {
         RubyClass enumClass = ffiModule.defineClassUnder("Enum", runtime.getObject(),
@@ -34,10 +34,6 @@ public class Enum extends RubyObject {
     }
 
     private Enum(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-    }
-
-    public NativeType getNativeType() {
-        return NativeType.INT32;
+        super(runtime, klass, NativeType.INT32);
     }
 }

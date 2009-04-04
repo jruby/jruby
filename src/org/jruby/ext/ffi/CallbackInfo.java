@@ -79,7 +79,7 @@ public class CallbackInfo extends Type implements NativeParam {
      * @param paramTypes The parameter types of the callback
      */
     public CallbackInfo(Ruby runtime, RubyClass klazz, Type returnType, Type[] paramTypes) {
-        super(runtime, klazz);
+        super(runtime, klazz, NativeType.POINTER);
         this.arity = Arity.fixed(paramTypes.length);
         this.parameterTypes = paramTypes;
         this.returnType = returnType;
@@ -131,15 +131,6 @@ public class CallbackInfo extends Type implements NativeParam {
      */
     public final Arity getArity() {
         return arity;
-    }
-
-    /**
-     * Gets the native type of this CallbackInfo when passed as a parameter
-     *
-     * @return The native type of this CallbackInfo instance.
-     */
-    public NativeType getNativeType() {
-        return NativeType.POINTER;
     }
 
     /**
