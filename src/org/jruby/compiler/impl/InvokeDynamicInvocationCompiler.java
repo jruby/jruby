@@ -27,7 +27,6 @@
 
 package org.jruby.compiler.impl;
 
-import java.dyn.Dynamic;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.NotCompilableException;
