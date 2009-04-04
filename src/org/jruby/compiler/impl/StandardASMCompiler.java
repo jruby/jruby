@@ -120,7 +120,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         Constructor compilerConstructor = null;
         Method installerMethod = null;
         try {
-            if (SafePropertyAccessor.getBoolean("jruby.compile.invokeDynamic")) {
+            if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic")) {
                 // try to load java.dyn.Dynamic first
                 Class.forName("java.dyn.Dynamic");
 

@@ -59,14 +59,20 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
@@ -91,6 +97,43 @@ public class RubyKernel {
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
         
         module.setFlag(RubyObject.USER7_F, false); //Kernel is the only Module that doesn't need an implementor
+
+        runtime.setPrivateMethodMissing(new JavaMethodNBlock(module, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return methodMissing(context, self, name, PRIVATE, CallType.NORMAL, args, block);
+            }
+        });
+
+        runtime.setProtectedMethodMissing(new JavaMethodNBlock(module, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return methodMissing(context, self, name, PROTECTED, CallType.NORMAL, args, block);
+            }
+        });
+
+        runtime.setVariableMethodMissing(new JavaMethodNBlock(module, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return methodMissing(context, self, name, PUBLIC, CallType.VARIABLE, args, block);
+            }
+        });
+
+        runtime.setSuperMethodMissing(new JavaMethodNBlock(module, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return methodMissing(context, self, name, PUBLIC, CallType.SUPER, args, block);
+            }
+        });
+
+        runtime.setNormalMethodMissing(new JavaMethodNBlock(module, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return methodMissing(context, self, name, PUBLIC, CallType.NORMAL, args, block);
+            }
+        });
+
+        runtime.setDefaultMethodMissing(module.searchMethod("method_missing"));
 
         return module;
     }
@@ -159,29 +202,57 @@ public class RubyKernel {
 
     @JRubyMethod(name = "method_missing", rest = true, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
-
-        if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw runtime.newArgumentError("no id given");
-
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
 
+        if (args.length == 0 || !(args[0] instanceof RubySymbol)) throw context.getRuntime().newArgumentError("no id given");
+
+        return methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args, block);
+    }
+
+    private static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        
         // create a lightweight thunk
-        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(runtime, 
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(runtime,
                                                                  recv,
-                                                                 args[0],
+                                                                 symbol,
                                                                  lastVis,
                                                                  lastCallType);
         final IRubyObject[]exArgs;
         final RubyClass exc;
         if (lastCallType != CallType.VARIABLE) {
             exc = runtime.getNoMethodError();
-            exArgs = new IRubyObject[]{msg, args[0], RubyArray.newArrayNoCopy(runtime, args, 1)};
+            exArgs = new IRubyObject[]{msg, symbol, RubyArray.newArrayNoCopy(runtime, args, 1)};
         } else {
             exc = runtime.getNameError();
-            exArgs = new IRubyObject[]{msg, args[0]};
+            exArgs = new IRubyObject[]{msg, symbol};
         }
-        
+
+        throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
+    }
+
+    private static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        // TODO: pass this in?
+        RubySymbol symbol = runtime.newSymbol(name);
+
+        // create a lightweight thunk
+        IRubyObject msg = new RubyNameError.RubyNameErrorMessage(runtime,
+                                                                 recv,
+                                                                 symbol,
+                                                                 lastVis,
+                                                                 lastCallType);
+        final IRubyObject[]exArgs;
+        final RubyClass exc;
+        if (lastCallType != CallType.VARIABLE) {
+            exc = runtime.getNoMethodError();
+            exArgs = new IRubyObject[]{msg, symbol, RubyArray.newArrayNoCopy(runtime, args)};
+        } else {
+            exc = runtime.getNameError();
+            exArgs = new IRubyObject[]{msg, symbol};
+        }
+
         throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
     }
 

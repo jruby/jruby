@@ -132,6 +132,7 @@ import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.util.EnumSet;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.threading.DaemonThreadFactory;
@@ -1399,6 +1400,43 @@ public final class Ruby {
     }
     void setKernel(RubyModule kernelModule) {
         this.kernelModule = kernelModule;
+    }
+
+    public DynamicMethod getPrivateMethodMissing() {
+        return privateMethodMissing;
+    }
+    public void setPrivateMethodMissing(DynamicMethod method) {
+        privateMethodMissing = method;
+    }
+    public DynamicMethod getProtectedMethodMissing() {
+        return protectedMethodMissing;
+    }
+    public void setProtectedMethodMissing(DynamicMethod method) {
+        protectedMethodMissing = method;
+    }
+    public DynamicMethod getVariableMethodMissing() {
+        return variableMethodMissing;
+    }
+    public void setVariableMethodMissing(DynamicMethod method) {
+        variableMethodMissing = method;
+    }
+    public DynamicMethod getSuperMethodMissing() {
+        return superMethodMissing;
+    }
+    public void setSuperMethodMissing(DynamicMethod method) {
+        superMethodMissing = method;
+    }
+    public DynamicMethod getNormalMethodMissing() {
+        return normalMethodMissing;
+    }
+    public void setNormalMethodMissing(DynamicMethod method) {
+        normalMethodMissing = method;
+    }
+    public DynamicMethod getDefaultMethodMissing() {
+        return defaultMethodMissing;
+    }
+    public void setDefaultMethodMissing(DynamicMethod method) {
+        defaultMethodMissing = method;
     }
     
     public RubyClass getDummy() {
@@ -3230,6 +3268,9 @@ public final class Ruby {
             marshalModule, etcModule, fileTestModule, gcModule,
             objectSpaceModule, processModule, procUIDModule, procGIDModule,
             procSysModule, precisionModule, errnoModule;
+
+    private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
+            superMethodMissing, normalMethodMissing, defaultMethodMissing;
     
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;

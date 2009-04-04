@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyLocalJumpError;
@@ -12,6 +13,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class CachingCallSite extends CallSite {
@@ -329,43 +331,43 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, callType, Block.NULL_BLOCK);
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, args, Block.NULL_BLOCK);
     }
 
     private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, callType, Block.NULL_BLOCK);
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, Block.NULL_BLOCK);
     }
 
     private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, Block block) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, callType, block);
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, block);
     }
 
     private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg, callType, Block.NULL_BLOCK);
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, arg, Block.NULL_BLOCK);
     }
 
     private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, args, callType, block);
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, args, block);
     }
 
-    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg, Block block) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg, callType, block);
+    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, Block block) {
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, arg0, block);
     }
 
-    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, callType, Block.NULL_BLOCK);
+    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1) {
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, arg0, arg1, Block.NULL_BLOCK);
     }
 
-    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, callType, block);
+    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, arg0, arg1, block);
     }
 
-    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, arg3, callType, Block.NULL_BLOCK);
+    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 
-    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return RuntimeHelpers.callMethodMissing(context, self, method, methodName, arg1, arg2, arg3, callType, block);
+    private IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, callType, arg0, arg1, arg2, block);
     }
 
     protected abstract boolean methodMissing(DynamicMethod method, IRubyObject caller);
