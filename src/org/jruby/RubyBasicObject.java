@@ -562,8 +562,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * translations.
      */
     public Class getJavaClass() {
-        if (dataGetStruct() instanceof JavaObject) {
-            return ((JavaObject)dataGetStruct()).getValue().getClass();
+        Object obj = dataGetStruct();
+        if (obj instanceof JavaObject) {
+            return ((JavaObject)obj).getValue().getClass();
         }
         return getClass();
     }
@@ -1127,7 +1128,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         synchronized(this) {
             Object value = getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this);
             getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, null);
-            getMetaClass().getRealClass().removeVariableAccessor(name);
             return value;
         }
     }

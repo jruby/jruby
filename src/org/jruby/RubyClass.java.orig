@@ -157,15 +157,21 @@ public class RubyClass extends RubyModule {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
+    private Map<String, VariableAccessor> ivarAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
 
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
-        return variableAccessors;
+        return ivarAccessors;
     }
 
     public synchronized Map<String, VariableAccessor> getVariableAccessorsForWrite() {
-        if (variableAccessors == Collections.EMPTY_MAP) variableAccessors = new Hashtable<String, VariableAccessor>(1);
-        return variableAccessors;
+        if (ivarAccessors == Collections.EMPTY_MAP) ivarAccessors = new Hashtable<String, VariableAccessor>(1);
+        return ivarAccessors;
+    }
+
+    public VariableAccessor getVariableAccessorForRead(String name) {
+        VariableAccessor accessor = getVariableAccessorsForRead().get(name);
+        if (accessor == null) accessor = VariableAccessor.DUMMY_ACCESSOR;
+        return accessor;
     }
 
     public synchronized VariableAccessor getVariableAccessorForWrite(String name) {
@@ -178,18 +184,16 @@ public class RubyClass extends RubyModule {
         return ivarAccessor;
     }
 
-    public VariableAccessor getVariableAccessorForRead(String name) {
-        VariableAccessor accessor = getVariableAccessorsForRead().get(name);
-        if (accessor == null) accessor = VariableAccessor.DUMMY_ACCESSOR;
-        return accessor;
-    }
-
     public int getVariableTableSize() {
-        return variableAccessors.size();
+        return getVariableAccessorsForRead().size();
     }
 
     public Map<String, VariableAccessor> getVariableTableCopy() {
         return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+    }
+
+    public void removeVariableAccessor(String name) {
+        ivarAccessors.remove(name);
     }
 
     @Override

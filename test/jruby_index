@@ -37,6 +37,7 @@ test_hash
 test_higher_javasupport
 test_iconv
 test_included_in_object_space
+test_ivar_table_integrity
 test_io
 test_load
 test_math
