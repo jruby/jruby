@@ -134,6 +134,9 @@ public abstract class Factory {
             if (ffi.fastGetClass("Struct") == null) {
                 Struct.createStructClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("Enum") == null) {
+                Enum.createEnumClass(runtime, ffi);
+            }
             if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);
             }
