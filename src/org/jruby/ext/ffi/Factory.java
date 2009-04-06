@@ -134,17 +134,20 @@ public abstract class Factory {
             if (ffi.fastGetClass("Struct") == null) {
                 Struct.createStructClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Enum") == null) {
-                Enum.createEnumClass(runtime, ffi);
-            }
-            if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
-                CallbackInfo.createCallbackInfoClass(runtime, ffi);
-            }
             if (ffi.fastGetClass(StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(runtime, ffi);
             }
             if (ffi.fastGetClass(StructLayoutBuilder.CLASS_NAME) == null) {
                 StructLayoutBuilder.createStructLayoutBuilderClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass("StructByValue") == null) {
+                StructByValue.createStructByValueClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
+                CallbackInfo.createCallbackInfoClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass("Enum") == null) {
+                Enum.createEnumClass(runtime, ffi);
             }
             if (ffi.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);

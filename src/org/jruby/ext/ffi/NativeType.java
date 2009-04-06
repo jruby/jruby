@@ -62,7 +62,8 @@ public enum NativeType implements NativeParam {
     STRING,
     /** A Rubinus :string arg - copies data both ways, and nul terminates */
     RBXSTRING,
-    VARARGS;
+    VARARGS,
+    STRUCT;
     
     public final int intValue() {
         return ordinal();

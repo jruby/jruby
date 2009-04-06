@@ -80,12 +80,21 @@ public class Struct extends RubyObject {
     }
     
     static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
+        if (!(structClass instanceof RubyClass)) {
+            throw runtime.newTypeError("wrong argument type "
+                    + structClass.getMetaClass().getName() + " (expected subclass of Struct");
+        }
         try {
-            return (StructLayout) ((RubyClass) structClass).fastGetInstanceVariable("@layout");
+            StructLayout layout = (StructLayout) ((RubyClass) structClass).fastGetInstanceVariable("@layout");
+            if (layout == null) {
+                throw runtime.newRuntimeError("No struct layout set for " + ((RubyClass) structClass).getName());
+            }
+            return layout;
+
         } catch (RaiseException ex) {
-            throw runtime.newRuntimeError("No layout set for struct");
+            throw runtime.newRuntimeError("No layout set for struct " + ((RubyClass) structClass).getName());
         } catch (ClassCastException ex) {
-            throw runtime.newRuntimeError("Invalid layout set for struct");
+            throw runtime.newRuntimeError("Invalid layout set for struct " + ((RubyClass) structClass).getName());
         }
     }
     

@@ -24,6 +24,11 @@ module FFI
     def self.out
       :buffer_out
     end
+
+    def self.by_value
+      FFI::StructByValue.new(self)
+    end
+
     def size
       self.class.size
     end
