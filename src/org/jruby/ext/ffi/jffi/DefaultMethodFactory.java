@@ -8,14 +8,17 @@ import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ObjectBuffer;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.Enum;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
@@ -41,13 +44,16 @@ public final class DefaultMethodFactory {
     }
     
     DynamicMethod createMethod(RubyModule module, Function function, 
-            Type returnType, Type[] parameterTypes, CallingConvention convention) {
+            Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
 
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
 
         ParameterMarshaller[] marshallers = new ParameterMarshaller[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; ++i)  {
-            marshallers[i] = getMarshaller(parameterTypes[i], convention);
+            marshallers[i] = getMarshaller(parameterTypes[i], convention, enums);
+            if (marshallers[i] == null) {
+                throw module.getRuntime().newTypeError("Could not create marshaller for " + parameterTypes[i]);
+            }
         }
 
         /*
@@ -73,7 +79,7 @@ public final class DefaultMethodFactory {
         // This just applies to buffer/pointer types.
         //
         FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
-        boolean canBeFastInt = parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
+        boolean canBeFastInt = enums == null && parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
         for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
             if (!(parameterTypes[i] instanceof Type.Builtin) || marshallers[i].needsInvocationSession()) {
                 canBeFastInt = false;
@@ -134,6 +140,8 @@ public final class DefaultMethodFactory {
             return getFunctionInvoker(returnType.getNativeType());
         } else if (returnType instanceof CallbackInfo) {
             return new CallbackInvoker((CallbackInfo) returnType);
+        } else if (returnType instanceof org.jruby.ext.ffi.Enum) {
+            return new EnumInvoker((org.jruby.ext.ffi.Enum) returnType);
         }
         throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
     }
@@ -184,24 +192,45 @@ public final class DefaultMethodFactory {
      * @param type The native type to convert to.
      * @return A new <tt>Marshaller</tt>
      */
-    static final ParameterMarshaller getMarshaller(NativeParam type, CallingConvention convention) {
-        if (type instanceof NativeType) {
-            return getMarshaller((NativeType) type);
-        } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
-            return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
-        } else {
-            return null;
-        }
-    }
-    static final ParameterMarshaller getMarshaller(Type type, CallingConvention convention) {
+    static final ParameterMarshaller getMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (type instanceof Type.Builtin) {
-            return getMarshaller(type.getNativeType());
+            return enums != null ? getEnumMarshaller(type, enums) : getMarshaller(type.getNativeType());
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
+        } else if (type instanceof org.jruby.ext.ffi.Enum) {
+            return getEnumMarshaller(type, type.callMethod(type.getRuntime().getCurrentContext(), "to_hash"));
         } else {
             return null;
         }
     }
+
+    /**
+     * Gets a marshaller to convert from a ruby type to a native type.
+     *
+     * @param type The native type to convert to.
+     * @param enums The enum map
+     * @return A new <tt>ParameterMarshaller</tt>
+     */
+    static final ParameterMarshaller getEnumMarshaller(Type type, IRubyObject enums) {
+        switch (type.getNativeType()) {
+            case INT8:
+            case UINT8:
+            case INT16:
+            case UINT16:
+            case INT32:
+            case UINT32:
+            case INT64:
+            case UINT64:
+                if (!(enums instanceof RubyHash)) {
+                    throw type.getRuntime().newArgumentError("wrong argument type "
+                            + type.getMetaClass().getName() + " (expected Hash)");
+                }
+                return new EnumMarshaller(getMarshaller(type.getNativeType()), (RubyHash) enums);
+            default:
+                return getMarshaller(type.getNativeType());
+        }
+    }
+
     /**
      * Gets a marshaller to convert from a ruby type to a native type.
      *
@@ -266,6 +295,23 @@ public final class DefaultMethodFactory {
         }
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
     }
+
+    /**
+     * Invokes the native function with a native int type, and converts to a symbol
+     */
+    private static final class EnumInvoker extends BaseInvoker {
+        private final org.jruby.ext.ffi.Enum returnType;
+
+        public EnumInvoker(org.jruby.ext.ffi.Enum returnType) {
+            this.returnType = returnType;
+        }
+
+        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+            return returnType.callMethod(runtime.getCurrentContext(), "find",
+                    runtime.newFixnum(invoker.invokeInt(function, args)));
+        }
+    }
+
     /**
      * Invokes the native function with n signed 8 bit integer return value.
      * Returns a Fixnum to ruby.
@@ -443,6 +489,32 @@ public final class DefaultMethodFactory {
             return false;
         }
     }
+    /**
+     * Converts a ruby Enum into an native integer.
+     */
+    static final class EnumMarshaller extends BaseMarshaller {
+        private final ParameterMarshaller marshaller;
+        private final RubyHash enums;
+
+        public EnumMarshaller(ParameterMarshaller marshaller, RubyHash enums) {
+            this.marshaller = marshaller;
+            this.enums = enums;
+        }
+
+        public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            if (parameter instanceof RubySymbol) {
+                parameter = enums.fastARef(parameter);
+                if (parameter.isNil()) {
+                    throw context.getRuntime().newArgumentError("wrong argument.  Could not locate enum value for " + parameter);
+                }
+            }
+            marshaller.marshal(context, buffer, parameter);
+        }
+        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            marshal(invocation.getThreadContext(), buffer, parameter);
+        }
+    }
+
     /**
      * Converts a ruby Fixnum into an 8 bit native integer.
      */

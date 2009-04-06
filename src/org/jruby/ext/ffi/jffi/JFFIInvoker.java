@@ -10,11 +10,13 @@ import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.Enum;
 import org.jruby.ext.ffi.Type;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
@@ -35,6 +37,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final Type[] parameterTypes;
     private final int parameterCount;
     private final CallingConvention convention;
+    private final IRubyObject enums;
     private final RubyModule callModule;
     private final DynamicMethod callMethod;
     
@@ -49,16 +52,14 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         return result;
     }
     
-    JFFIInvoker(Ruby runtime, String libraryName, String functionName, Type returnType, Type[] parameterTypes, String convention) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"), Library.getCachedInstance(libraryName, Library.LAZY),
-                Library.getCachedInstance(libraryName, Library.LAZY).getSymbolAddress(functionName),
-                returnType, parameterTypes, convention);
-    }
+    
     JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes) {
         this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"), null, address,
-                returnType, parameterTypes, "default");
+                returnType, parameterTypes, "default", null);
     }
-    JFFIInvoker(Ruby runtime, RubyClass klass, Object handle, long address, Type returnType, Type[] parameterTypes, String convention) {
+
+    JFFIInvoker(Ruby runtime, RubyClass klass, Object handle, long address,
+            Type returnType, Type[] parameterTypes, String convention, IRubyObject enums) {
         super(runtime, klass, parameterTypes.length);
 
         final com.kenai.jffi.Type jffiReturnType = getFFIType(returnType);
@@ -81,6 +82,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         this.returnType = returnType;
         this.convention = "stdcall".equals(convention)
                 ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
+        this.enums = enums;
         this.callModule = RubyModule.newModule(runtime);
         this.callModule.addModuleFunction("call", callMethod = createDynamicMethod(callModule));
     }
@@ -97,12 +99,22 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         }
 
         if (!(args[2] instanceof Type)) {
-            throw context.getRuntime().newArgumentError("Invalid return type");
+            throw context.getRuntime().newArgumentError("Invalid return type " + args[2]);
         }
         BasePointer ptr = (BasePointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
         Type returnType = (Type) args[2];
-        String convention = args[3].toString();
+
+        // Get the convention from the options hash
+        String convention = "default";
+        IRubyObject enums = null;
+        if (args[3] instanceof RubyHash) {
+            RubyHash options = (RubyHash) args[3];
+            convention = options.fastARef(context.getRuntime().newSymbol("convention")).asJavaString();
+            enums = options.fastARef(context.getRuntime().newSymbol("enums"));
+        } else {
+            convention = args[3].asJavaString();
+        }
 
         Type[] parameterTypes = new Type[paramTypes.size()];
         for (int i = 0; i < parameterTypes.length; ++i) {
@@ -114,7 +126,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         }
         
         return new JFFIInvoker(context.getRuntime(), (RubyClass) recv, ptr,
-                ptr.getAddress(), (Type) returnType, parameterTypes, convention);
+                ptr.getAddress(), (Type) returnType, parameterTypes, convention, enums);
     }
 
     /**
@@ -130,17 +142,17 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         DynamicMethod dm;
-        if (convention == CallingConvention.DEFAULT
+        if (convention == CallingConvention.DEFAULT && enums == null
             && FastIntMethodFactory.getFactory().isFastIntMethod(returnType, parameterTypes)) {
             dm = FastIntMethodFactory.getFactory().createMethod(module,
                     function, returnType, parameterTypes);
-        } else if (convention == CallingConvention.DEFAULT
+        } else if (convention == CallingConvention.DEFAULT && enums == null
             && FastLongMethodFactory.getFactory().isFastLongMethod(returnType, parameterTypes)) {
             dm = FastLongMethodFactory.getFactory().createMethod(module,
                     function, returnType, parameterTypes);
         } else {
             dm = DefaultMethodFactory.getFactory().createMethod(module,
-                    function, returnType, parameterTypes, convention);
+                    function, returnType, parameterTypes, convention, enums);
         }
         libraryRefMap.put(dm, handle);
         return dm;
@@ -148,7 +160,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
 
     static final com.kenai.jffi.Type getFFIType(Type type) {
 
-        if (type instanceof Type.Builtin || type instanceof CallbackInfo) {
+        if (type instanceof Type.Builtin || type instanceof CallbackInfo || type instanceof Enum) {
             return FFIUtil.getFFIType(type.getNativeType());
         } else {
             return null;

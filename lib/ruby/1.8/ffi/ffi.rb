@@ -52,6 +52,22 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'rbconfig'
+
+module FFI
+  #  Specialised error classes - delcare before loading all the other classes
+  class NativeError < LoadError; end
+
+  class TypeError < NativeError; end
+
+  class SignatureError < NativeError; end
+
+  class NotFoundError < NativeError
+    def initialize(function, *libraries)
+      super("Function '#{function}' not found in [#{libraries[0].nil? ? 'current process' : libraries.join(", ")}]")
+    end
+  end
+end
+
 require 'ffi-internal.so' # Load the JRuby implementation class
 require 'ffi/platform'
 require 'ffi/types'
@@ -65,21 +81,10 @@ require 'ffi/variadic'
 require 'ffi/errno'
 require 'ffi/rbx'
 require 'ffi/managedstruct'
+require 'ffi/enum'
 
 module FFI
-
-  #  Specialised error classes
-  class TypeError < LoadError; end
   
-  class SignatureError < LoadError; end
-  
-  class NotFoundError < LoadError
-    def initialize(function, *libraries)
-      libnames = libraries.map { |l| l.kind_of?(String) ? l : l.name }
-      super("Function '#{function}' not found in [#{libraries[0].nil? ? 'current process' : libnames.join(", ")}]")
-    end
-  end
-
   def self.map_library_name(lib)
     # Mangle the library name to reflect the native library naming conventions
     lib = Platform::LIBC if Platform.linux? && lib == 'c'
@@ -112,7 +117,7 @@ module FFI
     invoker = if args.length > 0 && args[args.length - 1] == FFI::NativeType::VARARGS
       FFI::VariadicInvoker.new(library, function, args, find_type(ret), options)
     else
-      FFI::Invoker.new(function, args, find_type(ret), options[:convention].to_s)
+      FFI::Invoker.new(function, args, find_type(ret), options)
     end
     raise NotFoundError.new(name, library.name) unless invoker
     

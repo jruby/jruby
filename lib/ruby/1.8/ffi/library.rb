@@ -33,24 +33,28 @@ module FFI::Library
 
   def attach_function(mname, a3, a4, a5=nil)
     cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
-    libraries = defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
-    convention = defined?(@ffi_convention) ? @ffi_convention : :default
 
     # Convert :foo to the native type
     arg_types.map! { |e| find_type(e) }
     options = Hash.new
-    options[:convention] = convention
-    options[:type_map] = @ffi_typedefs if defined?(@ffi_typedefs)
+    options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
+    options[:type_map] = defined?(@ffi_typedefs) ? @ffi_typedefs : nil
+    options[:enums] = defined?(@ffi_enum_map) ? @ffi_enum_map : nil
+
     # Try to locate the function in any of the libraries
     invokers = []
+    libraries = defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
+    load_error = nil
     libraries.each do |lib|
       begin
         invokers << FFI.create_invoker(lib, cname.to_s, arg_types, find_type(ret_type), options)
       rescue LoadError => ex
+        load_error = ex
       end if invokers.empty?
       end
     invoker = invokers.compact.shift
-    raise FFI::NotFoundError.new(cname.to_s, *libraries) unless invoker
+    raise load_error if load_error
+    #raise FFI::NotFoundError.new(cname.to_s, *libraries) unless invoker
     invoker.attach(self, mname.to_s)
     invoker # Return a version that can be called via #call
   end
@@ -124,19 +128,67 @@ module FFI::Library
     end
     address
   end
-  def callback(name, args, ret)
-    @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
-    @ffi_callbacks[name] = FFI::CallbackInfo.new(find_type(ret), args.map { |e| find_type(e) })
-  end
-  def typedef(current, add)
-    @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
-    if current.kind_of?(FFI::Type)
-      code = current
+
+  def callback(*args)
+    raise ArgError, "wrong number of arguments" if args.length < 2 || args.length > 3
+    name, params, ret = if args.length == 3
+      args
     else
-      code = @ffi_typedefs[current] || FFI.find_type(current)
+      [ nil, args[0], args[1] ]
+    end
+    cb = FFI::CallbackInfo.new(find_type(ret), params.map { |e| find_type(e) })
+
+    # Add to the symbol -> type map (unless there was no name)
+    unless name.nil?
+      @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
+      @ffi_callbacks[name] = cb
+    end
+
+    cb
+  end
+
+  def typedef(current, add, info=nil)
+    @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
+    code = if current.kind_of?(FFI::Type)
+      current
+    else
+      @ffi_typedefs[current] || FFI.find_type(current)
     end
 
     @ffi_typedefs[add] = code
+  end
+
+  def enum(*args)
+    #
+    # enum can be called as:
+    # enum :zero, :one, :two  # unnamed enum
+    # enum [ :zero, :one, :two ] # equivalent to above
+    # enum :foo, [ :zero, :one, :two ] create an enum named :foo
+    #
+    name, values = if args[0].kind_of?(Symbol) && args[1].kind_of?(Array)
+      [ args[0], args[1] ]
+    elsif args[0].kind_of?(Array)
+      [ nil, args[0] ]
+    else
+      [ nil, args ]
+    end
+    @ffi_enums = FFI::Enums.new unless defined?(@ffi_enums)
+    @ffi_enums << (e = FFI::Enum.new(values, name))
+    @ffi_enum_map = Hash.new unless defined?(@ffi_enum_map)
+    # append all the enum values to a global :name => value map
+    @ffi_enum_map.merge!(e.symbol_map)
+
+    # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
+    typedef(e, name) if name
+    e
+  end
+
+  def enum_type(name)
+    @ffi_enums.find(name) if defined?(@ffi_enums)
+  end
+
+  def enum_value(symbol)
+    @ffi_enums.__map_symbol(symbol)
   end
   def find_type(name)
     code = if defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(name)
