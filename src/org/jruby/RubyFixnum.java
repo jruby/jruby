@@ -80,7 +80,7 @@ public class RubyFixnum extends RubyInteger {
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
         
         for (int i = 0; i < runtime.fixnumCache.length; i++) {
-            runtime.fixnumCache[i] = new RubyFixnum(runtime, fixnum, i - 128);
+            runtime.fixnumCache[i] = new RubyFixnum(runtime, fixnum, i - CACHE_OFFSET);
         }
 
         return fixnum;
@@ -93,6 +93,7 @@ public class RubyFixnum extends RubyInteger {
     public static final long MIN = -1 * MAX - 1;
     public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
     public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
+    public static final int CACHE_OFFSET = 128;
 
     private static IRubyObject fixCoerce(IRubyObject x) {
         do {
@@ -165,8 +166,6 @@ public class RubyFixnum extends RubyInteger {
         return value;
     }
 
-    private static final int CACHE_OFFSET = 128;
-    
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
         if (isInCacheRange(value)) {
             return runtime.fixnumCache[(int) value + CACHE_OFFSET];
@@ -175,7 +174,7 @@ public class RubyFixnum extends RubyInteger {
     }
     
     private static boolean isInCacheRange(long value) {
-        return value <= 127 && value >= -128;
+        return value <= CACHE_OFFSET - 1 && value >= -CACHE_OFFSET;
     }
 
     public RubyFixnum newFixnum(long newValue) {
