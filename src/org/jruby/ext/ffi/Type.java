@@ -78,5 +78,18 @@ public abstract class Type extends RubyObject {
         public final String toString() {
             return nativeType.name();
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof Builtin) && ((Builtin) obj).nativeType.equals(nativeType);
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 23 * hash + nativeType.hashCode();
+            return hash;
+        }
+
     }
 }
