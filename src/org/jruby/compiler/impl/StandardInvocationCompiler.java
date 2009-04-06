@@ -28,18 +28,26 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
+import org.objectweb.asm.ClassVisitor;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 
 /**
  *
@@ -397,6 +405,12 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
     
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
+        if (RubyInstanceConfig.INLINE_DYNCALL_ENABLED) {
+            if ((callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) && argsCallback != null && argsCallback.getArity() == 1 && closureArg == null) {
+                invokeDynamicSelfNoBlockOne(name, receiverCallback, argsCallback, callType, closureArg, iterator);
+                return;
+            }
+        }
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
 
         methodCompiler.loadThreadContext(); // [adapter, tc]
@@ -476,6 +490,17 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         // adapter, tc, recv, args{0,1}, block{0,1}]
 
         method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
+    }
+
+    public void invokeDynamicSelfNoBlockOne(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
+        methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
+        method.dup();
+        method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+        method.ldc(name);
+        argsCallback.call(methodCompiler);
+        method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
     }
 
     public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {

@@ -197,6 +197,9 @@ public class RubyInstanceConfig {
     public static boolean FASTSEND_COMPILE_ENABLED =
             SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
     public static boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
+    public static boolean INLINE_DYNCALL_ENABLED
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.inlineDyncalls");
     public static final boolean FORK_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
     public static final boolean POOLING_ENABLED

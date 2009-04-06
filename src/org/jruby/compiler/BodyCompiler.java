@@ -373,13 +373,6 @@ public interface BodyCompiler {
     public void loadNull();
     
     /**
-     * Load the given string as a symbol on to the top of the stack.
-     * 
-     * @param symbol The symbol to load.
-     */
-    public void loadSymbol(String symbol);
-    
-    /**
      * Load the Object class
      */
     public void loadObject();

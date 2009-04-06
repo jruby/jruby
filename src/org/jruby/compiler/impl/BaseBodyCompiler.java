@@ -251,14 +251,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.aconst_null();
     }
 
-    public void loadSymbol(String symbol) {
-        loadRuntime();
-
-        method.ldc(symbol);
-
-        invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
-    }
-
     public void loadObject() {
         loadRuntime();
 
@@ -367,8 +359,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void assignConstantInObject(String name) {
         // load Object under value
-        loadRuntime();
-        invokeRuby("getObject", sig(RubyClass.class, params()));
+        loadObject();
         method.swap();
 
         assignConstantInModule(name);

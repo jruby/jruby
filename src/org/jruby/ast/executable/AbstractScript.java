@@ -16,6 +16,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyClass.VariableAccessor;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -23,9 +24,11 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 
 /**
@@ -34,6 +37,8 @@ import org.jruby.util.ByteList;
  */
 public abstract class AbstractScript implements Script {
     public AbstractScript() {
+        methodCache = new CacheEntry[100];
+        Arrays.fill(methodCache, CacheEntry.NULL_CACHE);
     }
     
     public IRubyObject __file__(ThreadContext context, IRubyObject self, Block block) {
@@ -413,6 +418,11 @@ public abstract class AbstractScript implements Script {
         Arrays.fill(variableWriters, VariableAccessor.DUMMY_ACCESSOR);
     }
 
+    public final void initMethodCache(int size) {
+        methodCache = new CacheEntry[size];
+        Arrays.fill(methodCache, CacheEntry.NULL_CACHE);
+    }
+
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
         callSites[index] = MethodIndex.getCallSite(name);
         return callSites;
@@ -585,8 +595,71 @@ public abstract class AbstractScript implements Script {
         return blockCallbacks[index] = callback;
     }
 
+    protected DynamicMethod getMethod(ThreadContext context, IRubyObject self, int index, String methodName) {
+        RubyClass selfType = pollAndGetClass(context, self);
+        CacheEntry myCache = getCacheEntry(index);
+        if (myCache.typeOk(selfType)) {
+            return myCache.method;
+        }
+        return cacheAndGet(context, selfType, index, methodName);
+    }
+
+    private DynamicMethod cacheAndGet(ThreadContext context, RubyClass selfType, int index, String methodName) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+        if (method.isUndefined()) {
+            return RuntimeHelpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, CallType.FUNCTIONAL);
+        }
+        methodCache[index] = entry;
+        return method;
+    }
+
+    private static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
+        context.callThreadPoll();
+        RubyClass selfType = self.getMetaClass();
+        return selfType;
+    }
+
+    private CacheEntry getCacheEntry(int index) {
+        return methodCache[index];
+    }
+
+    public static final int NUMBERED_METHOD_COUNT = 10;
+
+    protected DynamicMethod getMethod0(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 0, methodName);
+    }
+    protected DynamicMethod getMethod1(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 1, methodName);
+    }
+    protected DynamicMethod getMethod2(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 2, methodName);
+    }
+    protected DynamicMethod getMethod3(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 3, methodName);
+    }
+    protected DynamicMethod getMethod4(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 4, methodName);
+    }
+    protected DynamicMethod getMethod5(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 5, methodName);
+    }
+    protected DynamicMethod getMethod6(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 6, methodName);
+    }
+    protected DynamicMethod getMethod7(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 7, methodName);
+    }
+    protected DynamicMethod getMethod8(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 8, methodName);
+    }
+    protected DynamicMethod getMethod9(ThreadContext context, IRubyObject self, String methodName) {
+        return getMethod(context, self, 9, methodName);
+    }
+
     public StaticScope[] scopes;
     public CallSite[] callSites;
+    public CacheEntry[] methodCache;
     public BlockBody[] blockBodies;
     public CompiledBlockCallback[] blockCallbacks;
     public RubySymbol[] symbols;

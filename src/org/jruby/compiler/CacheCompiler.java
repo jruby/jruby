@@ -47,5 +47,7 @@ public interface CacheCompiler {
 
     public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope);
 
+    public void cacheMethod(BaseBodyCompiler method, String methodName);
+
     public void finish();
 }

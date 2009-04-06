@@ -21,6 +21,7 @@ import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -56,6 +57,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int inheritedConstantCount = 0;
     int inheritedBlockBodyCount = 0;
     int inheritedBlockCallbackCount = 0;
+    int inheritedMethodCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
@@ -390,6 +392,23 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedBlockCallbackCount++;
     }
 
+    public void cacheMethod(BaseBodyCompiler method, String methodName) {
+        method.loadThis();
+        method.loadThreadContext();
+        method.loadSelf();
+
+        if (inheritedMethodCount < AbstractScript.NUMBERED_METHOD_COUNT) {
+            method.method.ldc(methodName);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getMethod" + inheritedMethodCount, sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class));
+        } else {
+            method.method.pushInt(inheritedMethodCount);
+            method.method.ldc(methodName);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getMethod", sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class, int.class, String.class));
+        }
+
+        inheritedMethodCount++;
+    }
+
     public void finish() {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
 
@@ -516,5 +535,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.pop();
         }
 
+        // generate method cache initialization code
+        size = inheritedMethodCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initMethodCache", sig(void.class, params(int.class)));
+        }
     }
 }
