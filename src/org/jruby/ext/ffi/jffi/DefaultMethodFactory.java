@@ -6,7 +6,7 @@ import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
-import com.kenai.jffi.ObjectBuffer;
+import com.kenai.jffi.ArrayFlags;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -18,9 +18,7 @@ import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.Enum;
 import org.jruby.ext.ffi.MemoryPointer;
-import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
@@ -649,17 +647,17 @@ public final class DefaultMethodFactory {
      * Converts a ruby Buffer into a native address.
      */
     static final class BufferMarshaller extends BaseMarshaller {
-        static final ParameterMarshaller IN = new BufferMarshaller(ObjectBuffer.IN);
-        static final ParameterMarshaller OUT = new BufferMarshaller(ObjectBuffer.OUT);
-        static final ParameterMarshaller INOUT = new BufferMarshaller(ObjectBuffer.IN | ObjectBuffer.OUT);
+        static final ParameterMarshaller IN = new BufferMarshaller(ArrayFlags.IN);
+        static final ParameterMarshaller OUT = new BufferMarshaller(ArrayFlags.OUT);
+        static final ParameterMarshaller INOUT = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT);
         private final int flags;
         public BufferMarshaller(int flags) {
             this.flags = flags;
         }
         private static final int bufferFlags(Buffer buffer) {
             int f = buffer.getInOutFlags();
-            return ((f & Buffer.IN) != 0 ? ObjectBuffer.IN: 0)
-                    | ((f & Buffer.OUT) != 0 ? ObjectBuffer.OUT : 0);
+            return ((f & Buffer.IN) != 0 ? ArrayFlags.IN: 0)
+                    | ((f & Buffer.OUT) != 0 ? ArrayFlags.OUT : 0);
         }
         @Override
         public boolean needsInvocationSession() {
@@ -693,7 +691,7 @@ public final class DefaultMethodFactory {
                 buffer.putAddress(0L);
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
-                buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ObjectBuffer.ZERO_TERMINATE);
+                buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ArrayFlags.NULTERMINATE);
 
             } else if (parameter.respondsTo("to_ptr")) {
                 final int MAXRECURSE = 4;
@@ -732,7 +730,7 @@ public final class DefaultMethodFactory {
                 Util.checkStringSafety(context.getRuntime(), parameter);
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(),
-                        ObjectBuffer.IN | ObjectBuffer.ZERO_TERMINATE);
+                        ArrayFlags.IN | ArrayFlags.NULTERMINATE);
             } else if (parameter.isNil()) {
                 buffer.putAddress(0);
             } else {

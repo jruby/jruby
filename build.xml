@@ -234,6 +234,10 @@
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -264,6 +268,10 @@
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -384,6 +392,10 @@
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -1201,7 +1213,10 @@
             </filtermapper>
         </mapper>
     </unzip>
-    <unzip src="build_lib/jffi.jar" dest="dist/lib/native">
+    <unzip dest="dist/lib/native">
+        <fileset dir="build_lib">
+            <include name="jffi-*.jar"/>
+        </fileset>
         <patternset>
             <include name="**/libjffi.*"/>
         </patternset>
@@ -1372,6 +1387,10 @@
       <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
       <zipfileset src="${build.lib.dir}/jna.jar"/>
       <zipfileset src="${build.lib.dir}/jffi.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
       <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
