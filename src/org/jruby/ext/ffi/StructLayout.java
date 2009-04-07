@@ -410,21 +410,11 @@ public final class StructLayout extends RubyObject {
             }
         }
     }
-
-    static abstract class ArrayMemberIO {
-        static final MemoryIO getMemoryIO(IRubyObject ptr) {
-            return ((AbstractMemory) ptr).getMemoryIO();
-        }
-        static final long getOffset(IRubyObject ptr, long offset) {
-            return offset;
-        }
-        abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
-        abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
-    }
+    
     @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
     static final class Array extends RubyObject {
         private final AbstractMemory ptr;
-        private final ArrayMemberIO aio;
+        private final MemoryOp aio;
         private final long offset;
         private final int length, typeSize;
         /**
@@ -436,7 +426,7 @@ public final class StructLayout extends RubyObject {
         Array(Ruby runtime, RubyClass klass) {
             this(runtime, null, 0, 0, 0, null);
         }
-        Array(Ruby runtime, IRubyObject ptr, long offset, int length, int sizeBits, ArrayMemberIO aio) {
+        Array(Ruby runtime, IRubyObject ptr, long offset, int length, int sizeBits, MemoryOp aio) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"));
             this.ptr = (AbstractMemory) ptr;
             this.offset = offset;

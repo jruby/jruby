@@ -1,0 +1,119 @@
+
+package org.jruby.ext.ffi;
+
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
+
+/**
+ * Defines memory operations for a primitive type
+ */
+abstract class MemoryOp {
+    public static final MemoryOp INT8 = new Signed8();
+    public static final MemoryOp UINT8 = new Unsigned8();
+    public static final MemoryOp INT16 = new Signed16();
+    public static final MemoryOp UINT16 = new Unsigned16();
+    public static final MemoryOp INT32 = new Signed32();
+    public static final MemoryOp UINT32 = new Unsigned32();
+    public static final MemoryOp INT64 = new Signed64();
+    public static final MemoryOp UINT64 = new Unsigned64();
+
+    public static final MemoryOp getMemoryOp(NativeType type) {
+        switch (type) {
+            case INT8:
+                return INT8;
+            case UINT8:
+                return UINT8;
+            case INT16:
+                return INT16;
+            case UINT16:
+                return UINT16;
+            case INT32:
+                return INT32;
+            case UINT32:
+                return UINT32;
+            case INT64:
+                return INT64;
+            case UINT64:
+                return UINT64;
+            default:
+                return null;
+        }
+    }
+    
+    abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
+    abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
+
+    static final class Signed8 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putByte(offset, Util.int8Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned8(runtime, io.getByte(offset));
+        }
+    }
+
+    static final class Unsigned8 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putByte(offset, (byte) Util.uint8Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned8(runtime, io.getByte(offset));
+        }
+    }
+    static final class Signed16 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putShort(offset, Util.int16Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned16(runtime, io.getShort(offset));
+        }
+    }
+    static final class Unsigned16 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putShort(offset, (short) Util.uint16Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned16(runtime, io.getShort(offset));
+        }
+    }
+    static final class Signed32 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, Util.int32Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned32(runtime, io.getInt(offset));
+        }
+    }
+    static final class Unsigned32 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, (int) Util.uint32Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned32(runtime, io.getInt(offset));
+        }
+    }
+    static final class Signed64 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putLong(offset, Util.int64Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned64(runtime, io.getLong(offset));
+        }
+    }
+    static final class Unsigned64 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putLong(offset, Util.uint64Value(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned64(runtime, io.getLong(offset));
+        }
+    }
+}
