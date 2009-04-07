@@ -202,6 +202,8 @@ public final class DefaultMethodFactory {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
         } else if (type instanceof org.jruby.ext.ffi.Enum) {
             return getEnumMarshaller(type, type.callMethod(type.getRuntime().getCurrentContext(), "to_hash"));
+        } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
+            return StructByValueMarshaller.INSTANCE;
         } else {
             return null;
         }
