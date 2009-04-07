@@ -57,6 +57,7 @@ import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -272,7 +273,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
-        return new RubyRegexp(runtime, pattern, options);
+        try {
+            return new RubyRegexp(runtime, pattern, options);
+        } catch (RaiseException re) {
+            throw runtime.newSyntaxError(re.getMessage());
+        }
     }
 
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern) {
