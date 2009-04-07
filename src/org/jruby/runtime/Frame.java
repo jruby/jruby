@@ -277,6 +277,10 @@ public final class Frame implements JumpTarget {
         }
         return backrefAndLastline.backref;
     }
+
+    public void zeroBackRef() {
+        backrefAndLastline = new BackrefAndLastline();
+    }
     
     /**
      * Whether a backref has been set for this frame.

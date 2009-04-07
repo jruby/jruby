@@ -87,6 +87,7 @@ public class RubyRunnable implements Runnable {
 
         // Call the thread's code
         try {
+            proc.getBlock().getFrame().zeroBackRef();
             IRubyObject result = proc.call(context, arguments);
             rubyThread.cleanTerminate(result);
         } catch (ThreadKill tk) {
