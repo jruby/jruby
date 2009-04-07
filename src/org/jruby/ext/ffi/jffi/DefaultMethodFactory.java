@@ -194,7 +194,7 @@ public final class DefaultMethodFactory {
      */
     static final ParameterMarshaller getMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (type instanceof Type.Builtin) {
-            return enums != null ? getEnumMarshaller(type, enums) : getMarshaller(type.getNativeType());
+            return enums != null && !enums.isNil() ? getEnumMarshaller(type, enums) : getMarshaller(type.getNativeType());
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
         } else if (type instanceof org.jruby.ext.ffi.Enum) {
@@ -223,7 +223,7 @@ public final class DefaultMethodFactory {
             case UINT64:
                 if (!(enums instanceof RubyHash)) {
                     throw type.getRuntime().newArgumentError("wrong argument type "
-                            + type.getMetaClass().getName() + " (expected Hash)");
+                            + enums.getMetaClass().getName() + " (expected Hash)");
                 }
                 return new EnumMarshaller(getMarshaller(type.getNativeType()), (RubyHash) enums);
             default:
