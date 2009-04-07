@@ -13,17 +13,20 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.StructByValue;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -77,7 +80,7 @@ public final class DefaultMethodFactory {
         // This just applies to buffer/pointer types.
         //
         FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
-        boolean canBeFastInt = enums == null && parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
+        boolean canBeFastInt = enums.isNil() && parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
         for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
             if (!(parameterTypes[i] instanceof Type.Builtin) || marshallers[i].needsInvocationSession()) {
                 canBeFastInt = false;
@@ -140,6 +143,8 @@ public final class DefaultMethodFactory {
             return new CallbackInvoker((CallbackInfo) returnType);
         } else if (returnType instanceof org.jruby.ext.ffi.Enum) {
             return new EnumInvoker((org.jruby.ext.ffi.Enum) returnType);
+        } else if (returnType instanceof StructByValue) {
+            return new StructByValueInvoker((StructByValue) returnType);
         }
         throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
     }
@@ -275,6 +280,8 @@ public final class DefaultMethodFactory {
                 return BufferMarshaller.OUT;
             case BUFFER_INOUT:
                 return BufferMarshaller.INOUT;
+            case STRUCT:
+                return StructByValueMarshaller.INSTANCE;
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);
         }
@@ -455,6 +462,23 @@ public final class DefaultMethodFactory {
             return s;
         }
         public static final FunctionInvoker INSTANCE = new StringInvoker();
+    }
+
+    /**
+     * Invokes the native function with a native struct return value.
+     * Returns a FFI::Struct instance to ruby.
+     */
+    private static final class StructByValueInvoker extends BaseInvoker {
+        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+        private final StructByValue info;
+
+        public StructByValueInvoker(StructByValue info) {
+            this.info = info;
+        }
+
+        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+            return info.newStruct(runtime, invoker.invokeStruct(function, args), 0);
+        }
     }
 
     /**
@@ -742,5 +766,42 @@ public final class DefaultMethodFactory {
             marshal(invocation.getThreadContext(), buffer, parameter);
         }
         public static final ParameterMarshaller INSTANCE = new StringMarshaller();
+    }
+
+    /**
+     * Converts a ruby String into a native pointer.
+     */
+    static final class StructByValueMarshaller extends BaseMarshaller {
+
+        public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            if (!(parameter instanceof Struct)) {
+                throw context.getRuntime().newTypeError("wrong argument type "
+                        + parameter.getMetaClass().getName() + " (expected instance of FFI::Struct)");
+            }
+
+            IRubyObject memory = ((Struct) parameter).getMemory();
+            if (!(memory instanceof AbstractMemory)) {
+                throw context.getRuntime().newTypeError("wrong struct memory type "
+                        + memory.getMetaClass().getName());
+            }
+
+            MemoryIO io = ((AbstractMemory) memory).getMemoryIO();
+            if (io instanceof DirectMemoryIO) {
+                if (io.isNull()) {
+                    throw context.getRuntime().newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
+                }
+                buffer.putStruct(((DirectMemoryIO) io).getAddress());
+            } else if (io instanceof ArrayMemoryIO) {
+                ArrayMemoryIO aio = (ArrayMemoryIO) io;
+                buffer.putStruct(aio.array(), aio.arrayOffset());
+            } else {
+                throw context.getRuntime().newRuntimeError("Invalid struct memory");
+            }
+        }
+
+        public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            marshal(invocation.getThreadContext(), buffer, parameter);
+        }
+        public static final ParameterMarshaller INSTANCE = new StructByValueMarshaller();
     }
 }

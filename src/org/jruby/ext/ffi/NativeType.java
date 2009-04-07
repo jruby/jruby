@@ -63,6 +63,8 @@ public enum NativeType implements NativeParam {
     /** A Rubinus :string arg - copies data both ways, and nul terminates */
     RBXSTRING,
     VARARGS,
+    // ARRAY and STRUCT are only used internally
+    ARRAY,
     STRUCT;
     
     public final int intValue() {

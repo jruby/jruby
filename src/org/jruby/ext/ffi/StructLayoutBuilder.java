@@ -334,7 +334,7 @@ public final class StructLayoutBuilder extends RubyObject {
     
     static final class Signed8Member extends StructLayout.Member {
         Signed8Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.INT8, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putByte(getOffset(ptr), Util.int8Value(value));
@@ -347,7 +347,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Unsigned8Member extends StructLayout.Member {
         Unsigned8Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.UINT8, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putByte(getOffset(ptr), (byte) Util.uint8Value(value));
@@ -360,7 +360,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Signed16Member extends StructLayout.Member {
         Signed16Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.INT16, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putShort(getOffset(ptr), Util.int16Value(value));
@@ -373,7 +373,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Unsigned16Member extends StructLayout.Member {
         Unsigned16Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.UINT16, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putShort(getOffset(ptr), (short) Util.uint16Value(value));
@@ -386,7 +386,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Signed32Member extends StructLayout.Member {
         Signed32Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.INT32, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putInt(getOffset(ptr), Util.int32Value(value));
@@ -399,7 +399,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Unsigned32Member extends StructLayout.Member {
         Unsigned32Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.UINT32, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putInt(getOffset(ptr), (int) Util.uint32Value(value));
@@ -412,7 +412,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Signed64Member extends StructLayout.Member {
         Signed64Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.INT64, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putLong(getOffset(ptr), Util.int64Value(value));
@@ -425,7 +425,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Unsigned64Member extends StructLayout.Member {
         Unsigned64Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.UINT64, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putLong(getOffset(ptr), Util.uint64Value(value));
@@ -438,7 +438,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class PointerMember extends StructLayout.Member {
         PointerMember(int index, long offset) {
-            super(index, offset);
+            super(NativeType.POINTER, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             if (value instanceof Pointer) {
@@ -489,7 +489,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Float32Member extends StructLayout.Member {
         Float32Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.FLOAT32, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putFloat(getOffset(ptr), Util.floatValue(value));
@@ -502,7 +502,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class Float64Member extends StructLayout.Member {
         Float64Member(int index, long offset) {
-            super(index, offset);
+            super(NativeType.FLOAT64, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             getMemoryIO(ptr).putDouble(getOffset(ptr), Util.doubleValue(value));
@@ -515,7 +515,7 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     static final class StringMember extends StructLayout.Member {
         StringMember(int index, long offset) {
-            super(index, offset);
+            super(NativeType.POINTER, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
@@ -544,7 +544,7 @@ public final class StructLayoutBuilder extends RubyObject {
     static final class CharArrayMember extends StructLayout.Member {
         private final int size;
         CharArrayMember(int index, long offset, int size) {
-            super(index, offset);
+            super(NativeType.CHAR_ARRAY, index, offset);
             this.size = size;
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
@@ -575,7 +575,7 @@ public final class StructLayoutBuilder extends RubyObject {
     static final class CallbackMember extends StructLayout.Member {
         private final CallbackInfo cbInfo;
         CallbackMember(CallbackInfo cbInfo, int index, long offset) {
-            super(index, offset);
+            super(NativeType.POINTER, index, offset);
             this.cbInfo = cbInfo;
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
@@ -595,7 +595,7 @@ public final class StructLayoutBuilder extends RubyObject {
     static final class StructMember extends StructLayout.Member {
         private final RubyClass klass;
         StructMember(RubyClass klass, int index, long offset) {
-            super(index, offset);
+            super(NativeType.STRUCT, index, offset);
             this.klass = klass;
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
@@ -626,7 +626,7 @@ public final class StructLayoutBuilder extends RubyObject {
         private final StructLayout.ArrayMemberIO io;
         private final int length, typeSize;
         ArrayMember(int index, long offset, StructLayout.ArrayMemberIO io, int typeSize, int length) {
-            super(index, offset);
+            super(NativeType.ARRAY, index, offset);
             this.io = io;
             this.typeSize = typeSize;
             this.length = length;

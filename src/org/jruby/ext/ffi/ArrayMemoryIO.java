@@ -15,14 +15,14 @@ public final class ArrayMemoryIO implements MemoryIO {
     protected final byte[] buffer;
     protected final int offset, length;
 
-    ArrayMemoryIO(Ruby runtime, byte[] buffer, int offset, int length) {
+    public ArrayMemoryIO(Ruby runtime, byte[] buffer, int offset, int length) {
         this.runtime = runtime;
         this.buffer = buffer;
         this.offset = offset;
         this.length = length;
     }
     
-    ArrayMemoryIO(Ruby runtime, int size) {
+    public ArrayMemoryIO(Ruby runtime, int size) {
         this(runtime, new byte[size], 0, size);
     }
     

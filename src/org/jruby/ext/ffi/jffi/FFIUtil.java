@@ -3,7 +3,10 @@ package org.jruby.ext.ffi.jffi;
 
 import java.util.EnumMap;
 import java.util.Map;
+import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.StructLayout;
+import org.jruby.ext.ffi.Type;
 
 /**
  * Some utility functions for FFI <=> jffi conversions
@@ -42,7 +45,43 @@ public final class FFIUtil {
 
         return m;
     }
+
+    static final com.kenai.jffi.Type getFFIType(Type type) {
+
+        if (type instanceof Type.Builtin || type instanceof CallbackInfo || type instanceof org.jruby.ext.ffi.Enum) {
+
+            return FFIUtil.getFFIType(type.getNativeType());
+
+        } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
+
+            return FFIUtil.newStruct(((org.jruby.ext.ffi.StructByValue) type).getStructLayout());
+
+        } else {
+            return null;
+        }
+    }
+
     static final com.kenai.jffi.Type getFFIType(NativeType type) {
         return typeMap.get(type);
+    }
+
+    /**
+     * Creates a new JFFI Struct descriptor for a StructLayout
+     *
+     * @param layout The structure layout
+     * @return A new Struct descriptor.
+     */
+    static final com.kenai.jffi.Struct newStruct(StructLayout layout) {
+        com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[layout.getFieldCount()];
+
+        int i = 0;
+        for (StructLayout.Member m : layout.getFields()) {
+            com.kenai.jffi.Type fieldType = FFIUtil.getFFIType(m.getNativeType());
+            if (fieldType == null) {
+                throw layout.getRuntime().newTypeError("Unsupported Struct field type " + m.getNativeType());
+            }
+            fields[i++] = fieldType;
+        }
+        return new com.kenai.jffi.Struct(fields);
     }
 }

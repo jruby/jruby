@@ -301,19 +301,28 @@ public final class StructLayout extends RubyObject {
         return fields.size();
     }
 
+    public final java.util.Collection<Member> getFields() {
+        return Collections.unmodifiableCollection(fields.values());
+    }
+
     /**
      * A struct member.  This defines the offset within a chunk of memory to use
      * when reading/writing the member, as well as how to convert between the 
      * native representation of the member and the JRuby representation.
      */
-    static abstract class Member {
+    public static abstract class Member {
+        /** The {@link Type} of this member. */
+        protected final NativeType type;
+
         /** The offset within the memory area of this member */
         protected final long offset;
         
         /** The index of this member within the struct */
         protected final int index;
+
         /** Initializes a new Member instance */
-        protected Member(int index, long offset) {
+        protected Member(NativeType type, int index, long offset) {
+            this.type = type;
             this.index = index;
             this.offset = offset;
         }
@@ -333,7 +342,11 @@ public final class StructLayout extends RubyObject {
         final int getIndex() {
             return index;
         }
-        
+
+        public final NativeType getNativeType() {
+            return type;
+        }
+
         @Override
         public boolean equals(Object obj) {
             return obj instanceof Member && ((Member) obj).offset == offset;

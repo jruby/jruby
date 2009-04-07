@@ -17,6 +17,8 @@ import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.Enum;
+import org.jruby.ext.ffi.StructByValue;
+import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
@@ -62,14 +64,14 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             Type returnType, Type[] parameterTypes, String convention, IRubyObject enums) {
         super(runtime, klass, parameterTypes.length);
 
-        final com.kenai.jffi.Type jffiReturnType = getFFIType(returnType);
+        final com.kenai.jffi.Type jffiReturnType = FFIUtil.getFFIType(returnType);
         if (jffiReturnType == null) {
             throw runtime.newArgumentError("Invalid return type " + returnType);
         }
         
         com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
         for (int i = 0; i < jffiParamTypes.length; ++i) {
-            if ((jffiParamTypes[i] = getFFIType(parameterTypes[i])) == null) {
+            if ((jffiParamTypes[i] = FFIUtil.getFFIType(parameterTypes[i])) == null) {
                 throw runtime.newArgumentError("Invalid parameter type " + parameterTypes[i]);
             }
         }
@@ -91,15 +93,17 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
 
         if (!(args[0] instanceof BasePointer)) {
-            throw context.getRuntime().newArgumentError("Invalid function address");
+            throw context.getRuntime().newTypeError("Invalid function address "
+                    + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
         }
         
         if (!(args[1] instanceof RubyArray)) {
-            throw context.getRuntime().newArgumentError("Invalid parameter types array");
+            throw context.getRuntime().newTypeError("Invalid parameter array "
+                    + args[1].getMetaClass().getName() + " (expected Array)");
         }
 
         if (!(args[2] instanceof Type)) {
-            throw context.getRuntime().newArgumentError("Invalid return type " + args[2]);
+            throw context.getRuntime().newTypeError("Invalid return type " + args[2]);
         }
         BasePointer ptr = (BasePointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
@@ -161,14 +165,5 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         }
         libraryRefMap.put(dm, handle);
         return dm;
-    }
-
-    static final com.kenai.jffi.Type getFFIType(Type type) {
-
-        if (type instanceof Type.Builtin || type instanceof CallbackInfo || type instanceof Enum) {
-            return FFIUtil.getFFIType(type.getNativeType());
-        } else {
-            return null;
-        }
     }
 }
