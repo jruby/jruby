@@ -53,7 +53,7 @@ module FFI::Library
       end if invokers.empty?
       end
     invoker = invokers.compact.shift
-    raise load_error if load_error
+    raise load_error if load_error && invoker.nil?
     #raise FFI::NotFoundError.new(cname.to_s, *libraries) unless invoker
     invoker.attach(self, mname.to_s)
     invoker # Return a version that can be called via #call
