@@ -16,6 +16,8 @@ abstract class MemoryOp {
     public static final MemoryOp UINT32 = new Unsigned32();
     public static final MemoryOp INT64 = new Signed64();
     public static final MemoryOp UINT64 = new Unsigned64();
+    public static final MemoryOp FLOAT32 = new Float32();
+    public static final MemoryOp FLOAT64 = new Float64();
 
     public static final MemoryOp getMemoryOp(NativeType type) {
         switch (type) {
@@ -35,6 +37,16 @@ abstract class MemoryOp {
                 return INT64;
             case UINT64:
                 return UINT64;
+            case FLOAT32:
+                return FLOAT32;
+            case FLOAT64:
+                return FLOAT64;
+            case LONG:
+                return Platform.getPlatform().longSize() == 32
+                        ? INT32 : INT64;
+            case ULONG:
+                return Platform.getPlatform().longSize() == 32
+                        ? UINT32 : UINT64;
             default:
                 return null;
         }
@@ -114,6 +126,24 @@ abstract class MemoryOp {
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
             return Util.newUnsigned64(runtime, io.getLong(offset));
+        }
+    }
+    static final class Float32 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putFloat(offset, Util.floatValue(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return runtime.newFloat(io.getFloat(offset));
+        }
+    }
+    static final class Float64 extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putDouble(offset, Util.doubleValue(value));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return runtime.newFloat(io.getDouble(offset));
         }
     }
 }
