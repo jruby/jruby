@@ -28,6 +28,8 @@
 
 package org.jruby.ext.ffi;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -455,12 +457,12 @@ public final class StructLayoutBuilder extends RubyObject {
         static StructLayout.Member create(CallbackInfo cbInfo, int index, long offset) { return new CallbackMember(cbInfo, index, offset); }
     }
 
-    static final class StructMember extends StructLayout.Member {
+    static final class StructMember extends StructLayout.Aggregate {
         private final RubyClass klass;
         private final StructLayout layout;
 
         StructMember(StructLayout layout, RubyClass klass, int index, long offset) {
-            super(NativeType.STRUCT, index, offset);
+            super(layout, index, offset);
             this.klass = klass;
             this.layout = layout;
         }
@@ -486,6 +488,11 @@ public final class StructLayoutBuilder extends RubyObject {
         @Override
         protected boolean isCacheable() {
             return true;
+        }
+
+        @Override
+        public Collection<StructLayout.Member> getFields() {
+            return layout.getFields();
         }
     }
 

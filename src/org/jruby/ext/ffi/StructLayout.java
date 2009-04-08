@@ -29,6 +29,7 @@
 package org.jruby.ext.ffi;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -359,6 +360,15 @@ public final class StructLayout extends Type {
         protected boolean isCacheable() {
             return false;
         }
+    }
+
+    public static abstract class Aggregate extends Member {
+        /** Initializes a new aggregate Member instance */
+        protected Aggregate(Type type, int index, long offset) {
+            super(type, index, offset);
+        }
+
+        public abstract Collection<Member> getFields();
     }
 
     static final class Cache {

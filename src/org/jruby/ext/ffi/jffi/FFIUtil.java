@@ -1,8 +1,10 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
+import org.jruby.Ruby;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.StructLayout;
@@ -66,22 +68,38 @@ public final class FFIUtil {
     }
 
     /**
+     * Creates a new JFFI Struct descriptor from a list of struct members
+     *
+     * @param the runtime
+     * @param structMembers the members of the struct
+     * @return A new Struct descriptor.
+     */
+    static final com.kenai.jffi.Struct newStruct(Ruby runtime, Collection<StructLayout.Member> structMembers) {
+        com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[structMembers.size()];
+
+        int i = 0;
+        for (StructLayout.Member m : structMembers) {
+            com.kenai.jffi.Type fieldType;
+            if (m instanceof StructLayout.Aggregate) {
+                fieldType = newStruct(runtime, ((StructLayout.Aggregate) m).getFields());
+            } else {
+                fieldType = FFIUtil.getFFIType(m.getNativeType());
+            }
+            if (fieldType == null) {
+                throw runtime.newTypeError("Unsupported Struct field type " + m);
+            }
+            fields[i++] = fieldType;
+        }
+        return new com.kenai.jffi.Struct(fields);
+    }
+
+    /**
      * Creates a new JFFI Struct descriptor for a StructLayout
      *
      * @param layout The structure layout
      * @return A new Struct descriptor.
      */
     static final com.kenai.jffi.Struct newStruct(StructLayout layout) {
-        com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[layout.getFieldCount()];
-
-        int i = 0;
-        for (StructLayout.Member m : layout.getFields()) {
-            com.kenai.jffi.Type fieldType = FFIUtil.getFFIType(m.getNativeType());
-            if (fieldType == null) {
-                throw layout.getRuntime().newTypeError("Unsupported Struct field type " + m.getNativeType());
-            }
-            fields[i++] = fieldType;
-        }
-        return new com.kenai.jffi.Struct(fields);
+        return newStruct(layout.getRuntime(), layout.getFields());
     }
 }

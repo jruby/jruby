@@ -173,11 +173,8 @@ public abstract class Type extends RubyObject {
             case STRING:
             case RBXSTRING:
                 return ADDRESS_ALIGN / 8;
-            case VARARGS:
-            case CHAR_ARRAY:
-                return 0;
             default:
-                throw new UnsupportedOperationException("Cannot determine alignment of " + type);
+                return 0;
         }
     }
     private static final int getNativeSize(NativeType type) {
@@ -209,11 +206,8 @@ public abstract class Type extends RubyObject {
             case STRING:
             case RBXSTRING:
                 return Platform.getPlatform().addressSize() >> 3;
-            case VARARGS:
-            case CHAR_ARRAY:
-                return 0;
             default:
-                throw new UnsupportedOperationException("Cannot determine size of " + type);
+                return 0;
         }
     }
 
