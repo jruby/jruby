@@ -28,7 +28,6 @@
 
 package org.jruby.ext.ffi;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -297,7 +296,7 @@ public final class StructLayoutBuilder extends RubyObject {
 
             case STRING:
             case RBXSTRING:
-                return StringMember.create(index, offset);
+                return new StringMember(type, index, offset);
         }
         return null;
     }
@@ -376,8 +375,8 @@ public final class StructLayoutBuilder extends RubyObject {
     }
     
     static final class StringMember extends StructLayout.Member {
-        StringMember(int index, long offset) {
-            super(NativeType.POINTER, index, offset);
+        StringMember(Type type, int index, long offset) {
+            super(type, index, offset);
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
@@ -401,7 +400,6 @@ public final class StructLayoutBuilder extends RubyObject {
         
             return runtime.newString(bl);
         }
-        static StructLayout.Member create(int index, long offset) { return new StringMember(index, offset); }
     }
 
     static final class CharArrayMember extends StructLayout.Member {
@@ -431,15 +429,12 @@ public final class StructLayoutBuilder extends RubyObject {
         
             return runtime.newString(bl);
         }
-        static StructLayout.Member create(int index, long offset, int size) {
-            return new CharArrayMember(index, offset, size);
-        }
     }
 
     static final class CallbackMember extends StructLayout.Member {
         private final CallbackInfo cbInfo;
         CallbackMember(CallbackInfo cbInfo, int index, long offset) {
-            super(NativeType.POINTER, index, offset);
+            super(cbInfo, index, offset);
             this.cbInfo = cbInfo;
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
@@ -454,7 +449,6 @@ public final class StructLayoutBuilder extends RubyObject {
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
             throw runtime.newNotImplementedError("Cannot get callback struct fields");
         }
-        static StructLayout.Member create(CallbackInfo cbInfo, int index, long offset) { return new CallbackMember(cbInfo, index, offset); }
     }
 
     static final class StructMember extends StructLayout.Aggregate {
