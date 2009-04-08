@@ -20,3 +20,5 @@ src_gen
 docs/api
 spec/ruby
 test/rails
+gem/lib/*.jar
+gem/pkg
