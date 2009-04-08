@@ -1017,4 +1017,8 @@ public class RubyThread extends RubyObject {
         hash = 97 * hash + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
         return hash;
     }
+
+    public String toString() {
+        return threadImpl.toString();
+    }
 }

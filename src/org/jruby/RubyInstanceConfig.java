@@ -171,6 +171,7 @@ public class RubyInstanceConfig {
     private boolean managementEnabled = true;
     private String inPlaceBackupExtension = null;
     private boolean parserDebug = false;
+    private String threadDumpSignal = null;
 
     private int safeLevel = 0;
 
@@ -330,6 +331,7 @@ public class RubyInstanceConfig {
 
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
+        threadDumpSignal = SafePropertyAccessor.getProperty("jruby.thread.dump.signal", "USR2");
 
         if (FORK_ENABLED) {
             error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!\n");
@@ -1295,5 +1297,8 @@ public class RubyInstanceConfig {
             return new ASTCompiler19();
         }
     }
-    
+
+    public String getThreadDumpSignal() {
+        return threadDumpSignal;
+    }
 }

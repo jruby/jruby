@@ -29,9 +29,10 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.internal.runtime.ThreadService;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
+import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -62,6 +63,7 @@ public class RubySignal {
         RubyModule mSignal = runtime.defineModule("Signal");
         
         mSignal.defineAnnotatedMethods(RubySignal.class);
+        registerThreadDumpSignalHandler(runtime);
     }
 
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)
@@ -85,8 +87,33 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(name = "__jtrap_kernel", required = 3,meta = true)
-    public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return SIGNALS.trap(recv, arg1, arg2, arg3);
+    @JRubyMethod(name = "__jtrap_kernel", required = 2,meta = true)
+    public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
+        return SIGNALS.trap(recv, block, sig);
+    }
+
+    private static void registerThreadDumpSignalHandler(final Ruby runtime) {
+        final String threadDumpSignal = runtime.getInstanceConfig().getThreadDumpSignal();
+        if (threadDumpSignal != null && threadDumpSignal.length() > 0) {
+            SIGNALS.trap(runtime, new BlockCallback() {
+                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                    System.err.println("Ruby Thread Dump");
+                    final ThreadService threadService = runtime.getThreadService();
+                    RubyThread[] thrs = threadService.getActiveRubyThreads();
+                    for (RubyThread th : thrs) {
+                        System.err.println("\n" + th);
+                        RubyException exc = new RubyException(runtime, runtime.getRuntimeError(), "");
+                        ThreadContext tc = threadService.getThreadContextForThread(th);
+                        if (tc != null) {
+                            exc.setBacktraceFrames(tc.createBacktrace2(0, false));
+                            exc.printBacktrace(System.err);
+                        } else {
+                            System.err.println("    [no longer alive]");
+                        }
+                    }
+                    return runtime.getNil();
+                }
+            }, threadDumpSignal);
+        }
     }
 }// RubySignal

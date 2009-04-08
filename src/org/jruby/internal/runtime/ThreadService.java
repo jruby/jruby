@@ -52,6 +52,7 @@ public class ThreadService {
     private Map<Object, RubyThread> rubyThreadMap;
     
     private ReentrantLock criticalLock = new ReentrantLock();
+    private Map<RubyThread,ThreadContext> threadContextMap;
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
@@ -65,6 +66,7 @@ public class ThreadService {
         }
 
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
+        this.threadContextMap = Collections.synchronizedMap(new WeakHashMap<RubyThread,ThreadContext>());
         
         // Must be called from main thread (it is currently, but this bothers me)
         localContext.set(new SoftReference<ThreadContext>(mainContext));
@@ -134,6 +136,7 @@ public class ThreadService {
 
     public void setMainThread(Thread thread, RubyThread rubyThread) {
         mainContext.setThread(rubyThread);
+        threadContextMap.put(rubyThread, mainContext);
         rubyThreadMap.put(thread, rubyThread);
     }
     
@@ -159,7 +162,7 @@ public class ThreadService {
             
                 rtList.add(entry.getValue());
             }
-        
+
             RubyThread[] rubyThreads = new RubyThread[rtList.size()];
             rtList.toArray(rubyThreads);
     	
@@ -175,10 +178,15 @@ public class ThreadService {
     	return rubyThreadGroup;
     }
 
+    public ThreadContext getThreadContextForThread(RubyThread thread) {
+        return threadContextMap.get(thread);
+    }
+
     public synchronized ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference(context));
-        getCurrentContext().setThread(thread);
+        threadContextMap.put(thread, context);
+        context.setThread(thread);
         return context;
     }
 
@@ -188,6 +196,7 @@ public class ThreadService {
     
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
+        threadContextMap.remove(thread);
         getCurrentContext().setThread(null);
         localContext.set(null);
     }

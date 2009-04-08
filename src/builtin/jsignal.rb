@@ -8,18 +8,14 @@ class ::Object
   }
   
   begin
-    JavaSignal = Java::sun.misc.Signal
     def __jtrap(*args, &block)
       sig = args.shift
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
       sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
       block = args.shift unless args.empty?
-
-      signal_object = JavaSignal.new(sig) rescue nil
-      return unless signal_object
       
-      Signal::__jtrap_kernel(block, signal_object, sig)
+      Signal::__jtrap_kernel(block, sig)
     rescue Exception
       warn "The signal #{sig} is in use by the JVM and will not work correctly on this platform"
     end

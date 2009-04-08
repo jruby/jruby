@@ -50,20 +50,32 @@ public class SunSignalFacade implements SignalFacade {
     private final static class JRubySignalHandler implements SignalHandler {
         private final Ruby runtime;
         private final IRubyObject block;
-        private final IRubyObject signal_object;
         private final String signal;
+        private final BlockCallback blockCallback;
 
-        public JRubySignalHandler(Ruby runtime, IRubyObject block, IRubyObject signal_object, String signal) {
+        public JRubySignalHandler(Ruby runtime, IRubyObject block, String signal) {
+            this(runtime, block, null, signal);
+        }
+
+        public JRubySignalHandler(Ruby runtime, BlockCallback callback, String signal) {
+            this(runtime, null, callback, signal);
+        }
+
+        private JRubySignalHandler(Ruby runtime, IRubyObject block, BlockCallback callback, String signal) {
             this.runtime = runtime;
             this.block = block;
-            this.signal_object = signal_object;
+            this.blockCallback = callback;
             this.signal = signal;
         }
 
         public void handle(Signal signal) {
             ThreadContext context = runtime.getCurrentContext();
             try {
-                block.callMethod(context, "call");
+                if (block != null) {
+                    block.callMethod(context, "call");
+                } else {
+                    blockCallback.call(context, new IRubyObject[0], Block.NULL_BLOCK);
+                }
             } catch(RaiseException e) {
                 try {
                     runtime.getThread().callMethod(context, "main")
@@ -77,25 +89,50 @@ public class SunSignalFacade implements SignalFacade {
         }
     }
 
-    public IRubyObject trap(final IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        final JRubySignalHandler handler = new JRubySignalHandler(recv.getRuntime(), arg1, arg2, arg3.toString());
+    public IRubyObject trap(final IRubyObject recv, IRubyObject blk, IRubyObject sig) {
+        return trap(recv.getRuntime(), new JRubySignalHandler(recv.getRuntime(), blk, sig.toString()));
+    }
         
+    public IRubyObject trap(final Ruby runtime, BlockCallback blk, String sig) {
+        return trap(runtime, new JRubySignalHandler(runtime, blk, sig));
+    }
+
+    private IRubyObject trap(final Ruby runtime, final JRubySignalHandler handler) {
         final SignalHandler oldHandler;
+        final Signal signal;
+
         try {
-            oldHandler = Signal.handle(new Signal(handler.signal), handler);
+            signal = new Signal(handler.signal);
         } catch (Exception e) {
-            throw recv.getRuntime().newArgumentError(e.getMessage());
+            return runtime.getNil();
         }
-        if(oldHandler instanceof JRubySignalHandler) {
-            return ((JRubySignalHandler)oldHandler).block;
-        } else {
-            return RubyProc.newProc(recv.getRuntime(), CallBlock.newCallClosure(recv, (RubyModule)recv, 
-                                                                                Arity.noArguments(), new BlockCallback(){
-                                                                                        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                                                                                            oldHandler.handle(new Signal(handler.signal));
-                                                                                            return recv.getRuntime().getNil();
-                                                                                        }
-                                                                                    }, recv.getRuntime().getCurrentContext()), Block.Type.NORMAL);
+
+        try {
+            oldHandler = Signal.handle(signal, handler);
+        } catch (Exception e) {
+            throw runtime.newArgumentError(e.getMessage());
         }
+
+        BlockCallback callback = null;
+        if (oldHandler instanceof JRubySignalHandler) {
+            JRubySignalHandler jsHandler = (JRubySignalHandler) oldHandler;
+            if (jsHandler.blockCallback != null) {
+                callback = jsHandler.blockCallback;
+            } else {
+                return jsHandler.block;
+            }
+        }
+        if (callback == null) {
+            callback = new BlockCallback() {
+                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+                    oldHandler.handle(new Signal(handler.signal));
+                    return runtime.getNil();
+                }
+            };
+        }
+        final RubyModule signalModule = runtime.getModule("Signal");
+        Block block = CallBlock.newCallClosure(signalModule, signalModule, Arity.noArguments(),
+                callback, runtime.getCurrentContext());
+        return RubyProc.newProc(runtime, block, Block.Type.NORMAL);
     }
 }// SunSignalFacade

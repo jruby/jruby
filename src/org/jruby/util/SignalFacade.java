@@ -27,11 +27,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import org.jruby.Ruby;
+import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 public interface SignalFacade {
-    IRubyObject trap(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+    IRubyObject trap(IRubyObject recv, IRubyObject block, IRubyObject sig);
+    IRubyObject trap(Ruby runtime, BlockCallback block, String sig);
 }// SignalFacade

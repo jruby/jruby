@@ -1239,6 +1239,7 @@ public final class ThreadContext {
     }
     
     public void preRunThread(Frame currentFrame) {
+        setFileAndLine(currentFrame);
         pushFrame(currentFrame);
     }
     

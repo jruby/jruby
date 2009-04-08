@@ -95,4 +95,8 @@ public class NativeThread implements ThreadLike {
         if (thread != null) thread.isInterrupted();
         return false;
     }
+
+    public String toString() {
+        return nativeThread.get().toString();
+    }
 }
