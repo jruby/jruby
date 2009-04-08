@@ -60,13 +60,7 @@ public final class StructLayout extends Type {
     
     /** The ordered list of field names (as symbols) */
     private final List<RubySymbol> fieldNames;
-
-    /** The total size of this struct */
-    private final int size;
     
-    /** The minimum alignment of memory allocated for structs of this type */
-    private final int align;
-
     private final int cacheableFieldCount;
     private final int[] cacheIndexMap;
 
@@ -96,13 +90,11 @@ public final class StructLayout extends Type {
      * @param minAlign The minimum alignment required when allocating memory.
      */
     StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size, int minAlign) {
-        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), NativeType.STRUCT);
+        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), NativeType.STRUCT, size, minAlign);
         //
         // fields should really be an immutable map as it is never modified after construction
         //
         this.fields = immutableMap(fields);
-        this.size = size;
-        this.align = minAlign;
         this.cacheIndexMap = new int[fields.size()];
 
         int i = 0, cfCount = 0;
@@ -219,7 +211,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
-        return RubyFixnum.newFixnum(context.getRuntime(), size);
+        return RubyFixnum.newFixnum(context.getRuntime(), getNativeSize());
     }
 
     /**
@@ -229,7 +221,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "alignment")
     public IRubyObject aligment(ThreadContext context) {
-        return RubyFixnum.newFixnum(context.getRuntime(), getMinimumAlignment());
+        return RubyFixnum.newFixnum(context.getRuntime(), getNativeAlignment());
     }
 
     /**
@@ -258,11 +250,11 @@ public final class StructLayout extends Type {
     }
 
     public final int getMinimumAlignment() {
-        return align;
+        return getNativeAlignment();
     }
 
     public final int getSize() {
-        return size;
+        return getNativeSize();
     }
 
     public final int getFieldCount() {
@@ -294,6 +286,14 @@ public final class StructLayout extends Type {
             this.index = index;
             this.offset = offset;
         }
+
+        /** Initializes a new Member instance */
+        protected Member(Type type, int index, long offset) {
+            this.type = type.getNativeType();
+            this.index = index;
+            this.offset = offset;
+        }
+
         /**
          * Gets the memory I/O accessor for this member.
          * @param ptr The memory area of the struct.
