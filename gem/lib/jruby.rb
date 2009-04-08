@@ -1,4 +1,4 @@
-class JRubyGem
-  VERSION = '0.0.1'
+module JRuby
+  VERSION = '1.2.0'
   PATH = File.dirname(__FILE__)
 end

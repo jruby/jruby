@@ -5,16 +5,19 @@ require 'hoe'
 require 'fileutils'
 require './lib/jruby.rb'
 
-FileUtils.cp('../lib/jruby.jar', 'lib/jruby.jar')
-jruby_bin = File.read('../bin/jruby')
-File.open('bin/jruby.bash', 'w') {|file| file.write(jruby_bin)}
-FileUtils.cp('../bin/jirb', 'bin/jirb')
-FileUtils.cp('../bin/gem', 'bin/gem')
+task :default => :prepare
 
-FileUtils.mkdir_p 'lib/ruby/site_ruby'
-FileUtils.cp_r '../lib/ruby/site_ruby/1.8', 'lib/ruby/site_ruby'
+task :prepare do
+  FileUtils.cp('../lib/jruby.jar', 'lib/jruby.jar')
+  Dir.chdir('../lib/ruby/1.8') do
+    system 'jar -cvf ../../../gem/lib/jruby-stdlib.jar `find . -name \\*.rb`'
+  end
+  Dir.chdir('../lib/ruby/site_ruby/1.8') do
+    system 'jar -uvf ../../../../gem/lib/jruby-stdlib.jar `find . -name \\*.rb`'
+  end
+end
 
-Hoe.new('jruby', JRubyGem::VERSION) do |p|
+Hoe.new('jruby', JRuby::VERSION) do |p|
   p.rubyforge_name = 'jruby-extras' # if different than lowercase project name
   p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
 end
