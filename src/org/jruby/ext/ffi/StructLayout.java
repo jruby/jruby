@@ -51,7 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Defines the memory layout for a native structure.
  */
 @JRubyClass(name=StructLayout.CLASS_NAME, parent="Object")
-public final class StructLayout extends RubyObject {
+public final class StructLayout extends Type {
     /** The name to use to register this class in the JRuby runtime */
     static final String CLASS_NAME = "StructLayout";
 
@@ -69,22 +69,15 @@ public final class StructLayout extends RubyObject {
 
     private final int cacheableFieldCount;
     private final int[] cacheIndexMap;
-    
-    private static final class Allocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new StructLayout(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new Allocator();
-    }
-    
+
     /**
      * Registers the StructLayout class in the JRuby runtime.
      * @param runtime The JRuby runtime to register the new class in.
      * @return The new class
      */
     public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
-        RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getObject(),
-                Allocator.INSTANCE, module);
+        RubyClass result = runtime.defineClassUnder(CLASS_NAME, module.fastGetClass("Type"),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
         result.defineAnnotatedMethods(StructLayout.class);
         result.defineAnnotatedConstants(StructLayout.class);
         RubyClass array = runtime.defineClassUnder("Array", runtime.getObject(),
@@ -92,31 +85,6 @@ public final class StructLayout extends RubyObject {
         array.includeModule(runtime.getEnumerable());
         array.defineAnnotatedMethods(Array.class);
         return result;
-    }
-    
-    /**
-     * Creates a new <tt>StructLayout</tt> instance using defaults.
-     * 
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     */
-    StructLayout(Ruby runtime) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
-    }
-    
-    /**
-     * Creates a new <tt>StructLayout</tt> instance.
-     * 
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
-     */
-    StructLayout(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-        this.size = 0;
-        this.align = 1;
-        this.fields = Collections.emptyMap();
-        this.fieldNames = Collections.emptyList();
-        this.cacheableFieldCount = 0;
-        this.cacheIndexMap = new int[0];
     }
     
     /**
@@ -128,7 +96,7 @@ public final class StructLayout extends RubyObject {
      * @param minAlign The minimum alignment required when allocating memory.
      */
     StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size, int minAlign) {
-        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
+        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), NativeType.STRUCT);
         //
         // fields should really be an immutable map as it is never modified after construction
         //
