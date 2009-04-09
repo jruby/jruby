@@ -1244,9 +1244,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void backref() {
+        loadRuntime();
         loadThreadContext();
-        invokeThreadContext("getCurrentFrame", sig(Frame.class));
-        method.invokevirtual(p(Frame.class), "getBackRef", sig(IRubyObject.class));
+        invokeUtilityMethod("getBackref", sig(IRubyObject.class, Ruby.class, ThreadContext.class));
     }
 
     public void backrefMethod(String methodName) {

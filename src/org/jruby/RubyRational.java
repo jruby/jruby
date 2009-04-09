@@ -60,6 +60,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -365,8 +366,8 @@ public class RubyRational extends RubyNumeric {
             if (k_exact_p(a2Complex.getImage()) && f_zero_p(context, a2Complex.getImage())) a2 = a2Complex.getReal();
         }
         
-        Frame frame = context.getCurrentFrame();
-        IRubyObject backref = frame.getBackRef();
+        DynamicScope scope = context.getCurrentScope();
+        IRubyObject backref = scope.getBackRef(context.getRuntime());
         if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
         
         if (a1 instanceof RubyFloat) {
@@ -381,7 +382,7 @@ public class RubyRational extends RubyNumeric {
             a2 = str_to_r_strict(context, a2);
         }
         
-        frame.setBackRef(backref);
+        scope.setBackRef(backref);
 
         if (a1 instanceof RubyRational) {
             if (a2.isNil() || (k_exact_p(a2) && f_one_p(context, a2))) return a1;

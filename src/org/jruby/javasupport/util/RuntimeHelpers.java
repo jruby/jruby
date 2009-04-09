@@ -765,7 +765,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject backref(ThreadContext context) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         if(backref instanceof RubyMatchData) {
             ((RubyMatchData)backref).use();
@@ -774,25 +774,25 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject backrefLastMatch(ThreadContext context) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         return RubyRegexp.last_match(backref);
     }
     
     public static IRubyObject backrefMatchPre(ThreadContext context) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         return RubyRegexp.match_pre(backref);
     }
     
     public static IRubyObject backrefMatchPost(ThreadContext context) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         return RubyRegexp.match_post(backref);
     }
     
     public static IRubyObject backrefMatchLast(ThreadContext context) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         return RubyRegexp.match_last(backref);
     }
@@ -1229,20 +1229,20 @@ public class RuntimeHelpers {
     }
 
     public static IRubyObject setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
-        return context.getCurrentFrame().setLastLine(value);
+        return context.getCurrentScope().setLastLine(value);
     }
 
     public static IRubyObject getLastLine(Ruby runtime, ThreadContext context) {
-        return context.getCurrentFrame().getLastLine();
+        return context.getCurrentScope().getLastLine(runtime);
     }
 
     public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
         if (!value.isNil() && !(value instanceof RubyMatchData)) throw runtime.newTypeError(value, runtime.getMatchData());
-        return context.getCurrentFrame().setBackRef(value);
+        return context.getCurrentScope().setBackRef(value);
     }
 
     public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
         return backref;
     }

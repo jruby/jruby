@@ -60,19 +60,15 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
@@ -467,7 +463,7 @@ public class RubyKernel {
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(ThreadContext context, Ruby runtime) {
-        IRubyObject line = context.getPreviousFrame().getLastLine();
+        IRubyObject line = context.getCurrentScope().getLastLine(runtime);
 
         if (line.isNil()) {
             throw runtime.newTypeError("$_ value need to be String (nil given).");
@@ -504,7 +500,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
 
         if (!str.sub_bang(context, args, block).isNil()) {
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -515,7 +511,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
 
         if (!str.sub_bang(context, arg0, block).isNil()) {
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -526,7 +522,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
 
         if (!str.sub_bang(context, arg0, arg1, block).isNil()) {
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -558,7 +554,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
 
         if (!str.gsub_bang(context, args, block).isNil()) {
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -569,7 +565,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
 
         if (!str.gsub_bang(context, arg0, block).isNil()) {
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -580,7 +576,7 @@ public class RubyKernel {
         RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
 
         if (!str.gsub_bang(context, arg0, arg1, block).isNil()) {
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -598,7 +594,7 @@ public class RubyKernel {
         if (str.getByteList().realSize > 0) {
             str = (RubyString) str.dup();
             str.chop_bang(context);
-            context.getPreviousFrame().setLastLine(str);
+            context.getCurrentScope().setLastLine(str);
         }
 
         return str;
@@ -634,7 +630,7 @@ public class RubyKernel {
             return str;
         } 
 
-        context.getPreviousFrame().setLastLine(dup);
+        context.getCurrentScope().setLastLine(dup);
         return dup;
     }
 
@@ -647,7 +643,7 @@ public class RubyKernel {
             return str;
         } 
 
-        context.getPreviousFrame().setLastLine(dup);
+        context.getCurrentScope().setLastLine(dup);
         return dup;
     }
 
@@ -660,7 +656,7 @@ public class RubyKernel {
             return str;
         } 
 
-        context.getPreviousFrame().setLastLine(dup);
+        context.getCurrentScope().setLastLine(dup);
         return dup;
     }
 

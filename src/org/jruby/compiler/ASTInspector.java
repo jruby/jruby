@@ -765,11 +765,11 @@ public class ASTInspector {
     public boolean hasFrameAwareMethods() {
         return getFlag(
                 FRAME_AWARE | FRAME_BLOCK | FRAME_CLASS | FRAME_NAME | FRAME_SELF | FRAME_VISIBILITY |
-                CLOSURE | EVAL | BACKREF | LASTLINE | ZSUPER | SUPER);
+                CLOSURE | EVAL | ZSUPER | SUPER);
     }
 
     public boolean hasScopeAwareMethods() {
-        return getFlag(SCOPE_AWARE);
+        return getFlag(SCOPE_AWARE | BACKREF | LASTLINE);
     }
 
     public boolean hasBlockArg() {

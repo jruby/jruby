@@ -816,7 +816,7 @@ public class RubyZlib {
         public IRubyObject gets(ThreadContext context, IRubyObject[] args) throws IOException {
             IRubyObject result = internalGets(args);
             if (!result.isNil()) {
-                context.getCurrentFrame().setLastLine(result);
+                context.getCurrentScope().setLastLine(result);
             }
             return result;
         }

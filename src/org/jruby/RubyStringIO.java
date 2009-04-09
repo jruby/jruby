@@ -375,7 +375,7 @@ public class RubyStringIO extends RubyObject {
         checkReadable();
 
         IRubyObject result = internalGets(context, args);
-        context.getCurrentFrame().setLastLine(result);
+        context.getCurrentScope().setLastLine(result);
 
         return result;
     }

@@ -87,7 +87,7 @@ public class BackRefNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         
         switch (type) {
         case '&':
@@ -106,7 +106,7 @@ public class BackRefNode extends Node {
     
     @Override
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getCurrentFrame().getBackRef();
+        IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         
         return backref instanceof RubyMatchData ? "$" + type : null;
     }

@@ -17,8 +17,14 @@ public abstract class DynamicScope {
     // Static scoping information for this scope
     protected final StaticScope staticScope;
     
-    // Captured dyanmic scopes
+    // Captured dynamic scopes
     protected final DynamicScope parent;
+
+    // Backref for $~, $1, etc
+    private IRubyObject backref;
+
+    // Lastline
+    private IRubyObject lastline;
     
     // A place to store that special hiding space that bindings need to implement things like:
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
@@ -150,6 +156,48 @@ public abstract class DynamicScope {
      */
     public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
+    }
+
+    /**
+     * Get backref
+     */
+    public final IRubyObject getBackRef() {
+        if (parent != null) {
+            return parent.getBackRef();
+        }
+        return backref;
+    }
+
+    /**
+     * Set backref
+     */
+    public final void setBackRef(IRubyObject backref) {
+        if (parent != null) {
+            parent.setBackRef(backref);
+            return;
+        }
+        this.backref = backref;
+    }
+
+    /**
+     * Get lastline
+     */
+    public final IRubyObject getLastLine() {
+        if (parent != null) {
+            return parent.getLastLine();
+        }
+        return lastline;
+    }
+
+    /**
+     * Set lastline
+     */
+    public final void setLastLine(IRubyObject lastline) {
+        if (parent != null) {
+            parent.setLastLine(lastline);
+            return;
+        }
+        this.lastline = lastline;
     }
     
     public abstract void growIfNeeded();
