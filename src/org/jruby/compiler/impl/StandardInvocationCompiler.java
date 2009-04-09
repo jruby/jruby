@@ -27,11 +27,9 @@
 
 package org.jruby.compiler.impl;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
@@ -43,11 +41,8 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CacheEntry;
-import org.objectweb.asm.ClassVisitor;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
 /**
  *
@@ -405,10 +400,23 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
     
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
-        if (RubyInstanceConfig.INLINE_DYNCALL_ENABLED) {
-            if ((callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) && argsCallback != null && argsCallback.getArity() == 1 && closureArg == null) {
-                invokeDynamicSelfNoBlockOne(name, receiverCallback, argsCallback, callType, closureArg, iterator);
-                return;
+        if (RubyInstanceConfig.INLINE_DYNCALL_ENABLED && closureArg == null) {
+            if (callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) {
+                if (argsCallback == null) {
+                    invokeDynamicSelfNoBlockZero(name);
+                    return;
+                } else if (argsCallback.getArity() >= 1 && argsCallback.getArity() <= 3) {
+                    invokeDynamicSelfNoBlockSpecificArity(name, argsCallback);
+                    return;
+                }
+//            } else if (callType == CallType.NORMAL) {
+//                if (argsCallback == null) {
+//                    invokeDynamicNoBlockZero(name, receiverCallback);
+//                    return;
+//                } else if (argsCallback.getArity() >= 1 && argsCallback.getArity() <= 3) {
+//                    invokeDynamicNoBlockSpecificArity(name, receiverCallback, argsCallback);
+//                    return;
+//                }
             }
         }
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
@@ -492,7 +500,17 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
     }
 
-    public void invokeDynamicSelfNoBlockOne(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
+    public void invokeDynamicSelfNoBlockZero(String name) {
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
+        methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
+        method.dup();
+        method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+        method.ldc(name);
+        method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
+    }
+
+    public void invokeDynamicSelfNoBlockSpecificArity(String name, ArgumentsCallback argsCallback) {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
         methodCompiler.loadThreadContext();
         methodCompiler.loadSelf();
@@ -500,7 +518,48 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
         method.ldc(name);
         argsCallback.call(methodCompiler);
-        method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+        switch (argsCallback.getArity()) {
+        case 1:
+            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+            break;
+        case 2:
+            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
+            break;
+        case 3:
+            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            break;
+        }
+    }
+
+    public void invokeDynamicNoBlockZero(String name, CompilerCallback receiverCallback) {
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
+        methodCompiler.loadThreadContext();
+        receiverCallback.call(methodCompiler);
+        method.dup();
+        method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+        method.ldc(name);
+        method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
+    }
+
+    public void invokeDynamicNoBlockSpecificArity(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
+        methodCompiler.loadThreadContext();
+        receiverCallback.call(methodCompiler);
+        method.dup();
+        method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+        method.ldc(name);
+        argsCallback.call(methodCompiler);
+        switch (argsCallback.getArity()) {
+        case 1:
+            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+            break;
+        case 2:
+            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
+            break;
+        case 3:
+            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            break;
+        }
     }
 
     public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
