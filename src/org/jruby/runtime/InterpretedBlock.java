@@ -56,9 +56,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @see SharedScopeBlock, CompiledBlock
  */
 public class InterpretedBlock extends BlockBody {
-    /** The node wrapping the body and parameter list for this block */
-    private final IterNode iterNode;
-    
     /** Whether this block has an argument list or not */
     private final boolean hasVarNode;
     
@@ -69,7 +66,7 @@ public class InterpretedBlock extends BlockBody {
     private final Node bodyNode;
     
     /** The static scope for the block body */
-    private final StaticScope scope;
+    private StaticScope scope;
     
     /** The arity of the block */
     private final Arity arity;
@@ -96,7 +93,6 @@ public class InterpretedBlock extends BlockBody {
     
     public InterpretedBlock(IterNode iterNode, Arity arity, int argumentType) {
         super(argumentType);
-        this.iterNode = iterNode;
         this.arity = arity;
         this.hasVarNode = iterNode.getVarNode() != null;
         this.varNode = iterNode.getVarNode();
@@ -105,7 +101,7 @@ public class InterpretedBlock extends BlockBody {
     }
     
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldSpecificBlock(binding, iterNode.getScope(), klass);
+        return context.preYieldSpecificBlock(binding, scope, klass);
     }
     
     protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
@@ -266,6 +262,10 @@ public class InterpretedBlock extends BlockBody {
         return scope;
     }
 
+    public void setStaticScope(StaticScope newScope) {
+        this.scope = newScope;
+    }
+
     public Block cloneBlock(Binding binding) {
         // We clone dynamic scope because this will be a new instance of a block.  Any previously
         // captured instances of this block may still be around and we do not want to start
@@ -275,8 +275,8 @@ public class InterpretedBlock extends BlockBody {
         return new Block(this, binding);
     }
 
-    public IterNode getIterNode() {
-        return iterNode;
+    public Node getBodyNode() {
+        return bodyNode;
     }
 
     /**

@@ -241,9 +241,9 @@ public abstract class BlockBody implements JumpTarget {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding, Block.Type type) {
         return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9), null, null, true, binding, type);
     }
-
     
     public abstract StaticScope getStaticScope();
+    public abstract void setStaticScope(StaticScope newScope);
 
     public abstract Block cloneBlock(Binding binding);
 

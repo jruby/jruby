@@ -48,6 +48,7 @@ public class LocalStaticScope extends StaticScope {
         
         // local scopes are argument scopes by default
         setArgumentScope(true);
+        setBackrefLastlineScope(true);
     }
 
     public StaticScope getLocalScope() {

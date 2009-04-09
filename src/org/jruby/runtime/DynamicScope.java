@@ -169,7 +169,7 @@ public abstract class DynamicScope {
      * Get backref
      */
     public final IRubyObject getBackRef(Ruby runtime) {
-        if (parent != null) {
+        if (!staticScope.isBackrefLastlineScope()) {
             return parent.getBackRef(runtime);
         }
         return backref == null ? runtime.getNil() : backref;
@@ -179,7 +179,7 @@ public abstract class DynamicScope {
      * Set backref
      */
     public final IRubyObject setBackRef(IRubyObject backref) {
-        if (parent != null) {
+        if (!staticScope.isBackrefLastlineScope()) {
             return parent.setBackRef(backref);
         }
         return this.backref = backref;
@@ -189,7 +189,7 @@ public abstract class DynamicScope {
      * Get lastline
      */
     public final IRubyObject getLastLine(Ruby runtime) {
-        if (parent != null) {
+        if (!staticScope.isBackrefLastlineScope()) {
             return parent.getLastLine(runtime);
         }
         return lastline == null ? runtime.getNil() : lastline;
@@ -199,7 +199,7 @@ public abstract class DynamicScope {
      * Set lastline
      */
     public final IRubyObject setLastLine(IRubyObject lastline) {
-        if (parent != null) {
+        if (!staticScope.isBackrefLastlineScope()) {
             return parent.setLastLine(lastline);
         }
         return this.lastline = lastline;

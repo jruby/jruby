@@ -81,6 +81,8 @@ public abstract class StaticScope implements Serializable {
     
     // Whether this scope is used as the "argument scope" for e.g. zsuper
     private boolean isArgumentScope = false;
+
+    private boolean isBackrefLastlineScope = false;
     
     private DynamicScope dummyScope = new NoVarsDynamicScope(this);
     
@@ -332,6 +334,14 @@ public abstract class StaticScope implements Serializable {
     
     public void setArgumentScope(boolean isArgumentScope) {
         this.isArgumentScope = isArgumentScope;
+    }
+
+    public boolean isBackrefLastlineScope() {
+        return isBackrefLastlineScope;
+    }
+
+    public void setBackrefLastlineScope(boolean isBackrefLastlineScope) {
+        this.isBackrefLastlineScope = isBackrefLastlineScope;
     }
     
     public Arity getArity() {

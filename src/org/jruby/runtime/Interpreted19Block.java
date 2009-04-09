@@ -51,7 +51,7 @@ public class Interpreted19Block  extends BlockBody {
     private final Node body;
 
     /** The static scope for the block body */
-    private final StaticScope scope;
+    private StaticScope scope;
 
     /** The arity of the block */
     private final Arity arity;
@@ -240,6 +240,10 @@ public class Interpreted19Block  extends BlockBody {
 
     public StaticScope getStaticScope() {
         return scope;
+    }
+
+    public void setStaticScope(StaticScope newScope) {
+        this.scope = newScope;
     }
 
     public Arity arity() {

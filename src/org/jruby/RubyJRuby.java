@@ -163,7 +163,7 @@ public class RubyJRuby {
                 throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
             }
             Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
-            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), ((InterpretedBlock)block.getBody()).getIterNode().getBodyNode()), Block.NULL_BLOCK);
+            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), ((InterpretedBlock)block.getBody()).getBodyNode()), Block.NULL_BLOCK);
         } else {
             Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
             String filename = "-";
@@ -191,7 +191,7 @@ public class RubyJRuby {
                 throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
             }
             content = RubyString.newEmptyString(recv.getRuntime());
-            Node bnode = ((InterpretedBlock)block.getBody()).getIterNode().getBodyNode();
+            Node bnode = ((InterpretedBlock)block.getBody()).getBodyNode();
             node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getBinding().getDynamicScope(), bnode);
             filename = "__block_" + node.getPosition().getFile();
         } else {
