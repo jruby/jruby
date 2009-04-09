@@ -532,9 +532,13 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeDynamicNoBlockZero(String name, CompilerCallback receiverCallback) {
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
-        methodCompiler.loadThreadContext();
         receiverCallback.call(methodCompiler);
+        int recv = methodCompiler.getVariableCompiler().grabTempLocal();
+        method.astore(recv);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name, recv);
+        methodCompiler.loadThreadContext();
+        method.aload(recv);
+        methodCompiler.getVariableCompiler().releaseTempLocal();
         method.dup();
         method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
         method.ldc(name);
@@ -542,9 +546,13 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeDynamicNoBlockSpecificArity(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
-        methodCompiler.loadThreadContext();
         receiverCallback.call(methodCompiler);
+        int recv = methodCompiler.getVariableCompiler().grabTempLocal();
+        method.astore(recv);
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name, recv);
+        methodCompiler.loadThreadContext();
+        method.aload(recv);
+        methodCompiler.getVariableCompiler().releaseTempLocal();
         method.dup();
         method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
         method.ldc(name);

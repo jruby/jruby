@@ -409,6 +409,23 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedMethodCount++;
     }
 
+    public void cacheMethod(BaseBodyCompiler method, String methodName, int receiverLocal) {
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.aload(receiverLocal);
+
+        if (inheritedMethodCount < AbstractScript.NUMBERED_METHOD_COUNT) {
+            method.method.ldc(methodName);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getMethod" + inheritedMethodCount, sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class));
+        } else {
+            method.method.pushInt(inheritedMethodCount);
+            method.method.ldc(methodName);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getMethod", sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class, int.class, String.class));
+        }
+
+        inheritedMethodCount++;
+    }
+
     public void finish() {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
 
