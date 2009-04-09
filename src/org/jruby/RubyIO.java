@@ -1398,7 +1398,7 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "print", rest = true, reads = FrameField.LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) {
-            args = new IRubyObject[] { context.getCurrentFrame().getLastLine() };
+            args = new IRubyObject[] { context.getCurrentScope().getLastLine(context.getRuntime()) };
         }
 
         Ruby runtime = context.getRuntime();
@@ -1892,7 +1892,7 @@ public class RubyIO extends RubyObject {
         
         IRubyObject result = getline(runtime, separator);
 
-        if (!result.isNil()) context.getCurrentFrame().setLastLine(result);
+        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
 
         return result;
     }

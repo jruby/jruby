@@ -62,6 +62,7 @@ import org.jruby.parser.ReOptions;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -888,7 +889,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv) {
-        IRubyObject match = context.getCurrentFrame().getBackRef();
+        IRubyObject match = context.getCurrentScope().getBackRef(context.getRuntime());
         if (match instanceof RubyMatchData) ((RubyMatchData)match).use();
         return match;
     }
@@ -898,7 +899,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     */
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
-        IRubyObject match = context.getCurrentFrame().getBackRef();
+        IRubyObject match = context.getCurrentScope().getBackRef(context.getRuntime());
         if (match.isNil()) return match;
         return nth_match(((RubyMatchData)match).backrefNumber(nth), match);
     }
@@ -1222,13 +1223,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
     public IRubyObject op_match2(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        IRubyObject line = context.getCurrentFrame().getLastLine();
+        IRubyObject line = context.getCurrentScope().getLastLine(runtime);
         if (line instanceof RubyString) {
             int start = search(context, (RubyString)line, 0, false);
             if (start < 0) return runtime.getNil();
             return runtime.newFixnum(start);
         }
-        context.getCurrentFrame().setBackRef(runtime.getNil());
+        context.getCurrentScope().setBackRef(runtime.getNil());
         return runtime.getNil();
     }
 
@@ -1244,7 +1245,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) {
-                context.getCurrentFrame().setBackRef(tmp);
+                context.getCurrentScope().setBackRef(tmp);
                 return runtime.getFalse();
             }
             str = (RubyString)tmp;
@@ -1259,7 +1260,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Ruby runtime = context.getRuntime();
         arg = operandNoCheck(arg);
         if (arg.isNil()) {
-            context.getCurrentFrame().setBackRef(arg);
+            context.getCurrentScope().setBackRef(arg);
             return runtime.getFalse();
         }
         int start = search19(context, (RubyString)arg, 0, false);
@@ -1274,7 +1275,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         Ruby runtime = context.getRuntime();
         if (str.isNil()) {
-            context.getCurrentFrame().setBackRef(str);
+            context.getCurrentScope().setBackRef(str);
             return str;
         }
         int start = search(context, str.convertToString(), 0, false);
@@ -1286,7 +1287,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         if (arg.isNil()) {
-            context.getCurrentFrame().setBackRef(arg);
+            context.getCurrentScope().setBackRef(arg);
             return arg;
         }
         RubyString str = operandCheck(runtime, arg);
@@ -1302,7 +1303,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject match_m(ThreadContext context, IRubyObject str) {
         IRubyObject result = op_match(context, str);
         if (result.isNil()) return result;
-        result = context.getCurrentFrame().getBackRef();
+        result = context.getCurrentScope().getBackRef(context.getRuntime());
         ((RubyMatchData)result).use();
         return result;
     }
@@ -1318,20 +1319,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private IRubyObject match19Common(ThreadContext context, IRubyObject arg, int pos, Block block) {
-        Frame frame = context.getCurrentFrame();
+        DynamicScope scope = context.getCurrentScope();
         if (arg.isNil()) {
-            frame.setBackRef(arg);
+            scope.setBackRef(arg);
             return arg;
         }
         Ruby runtime = context.getRuntime();
         RubyString str = operandCheck(runtime, arg);
 
         if (matchPos(context, str, pos) < 0) {
-            frame.setBackRef(runtime.getNil());
+            scope.setBackRef(runtime.getNil());
             return runtime.getNil();
         }
 
-        IRubyObject backref = frame.getBackRef();
+        IRubyObject backref = scope.getBackRef(runtime);
         ((RubyMatchData)backref).use();
         if (block.isGiven()) return block.yield(context, backref);
         return backref;
@@ -1352,7 +1353,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
         check();
-        Frame frame = context.getCurrentRubyFrame();
+        DynamicScope scope = context.getCurrentScope();
         ByteList value = str.getByteList();
 
         if (pos <= value.realSize && pos >= 0) {
@@ -1362,29 +1363,29 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
             if (result >= 0) {
-                updateBackRef(context, str, frame, matcher);
+                updateBackRef(context, str, scope, matcher);
                 return result;
             }
         }
 
-        frame.setBackRef(context.getRuntime().getNil());
+        scope.setBackRef(context.getRuntime().getNil());
         return -1;
     }
 
-    private RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher) {
-        RubyMatchData match = updateBackRef(context, str, frame, matcher, pattern);
+    private RubyMatchData updateBackRef(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher) {
+        RubyMatchData match = updateBackRef(context, str, scope, matcher, pattern);
         match.regexp = this;
         match.infectBy(this);
         return match;
     }
 
-    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern) {
+    static final RubyMatchData updateBackRef(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, Regex pattern) {
         Ruby runtime = context.getRuntime();
-        IRubyObject backref = frame.getBackRef();
+        IRubyObject backref = scope.getBackRef(runtime);
         final RubyMatchData match;
         if (backref.isNil() || ((RubyMatchData)backref).used()) {
             match = new RubyMatchData(runtime);
-            frame.setBackRef(match);
+            scope.setBackRef(match);
         } else {
             match = (RubyMatchData)backref;
             match.setTaint(runtime.getSafeLevel() >= 3);
@@ -1402,7 +1403,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public final int search19(ThreadContext context, RubyString str, int pos, boolean reverse) {
         check();
-        Frame frame = context.getCurrentRubyFrame();
+        DynamicScope scope = context.getCurrentScope();
         ByteList value = str.getByteList();
 
         if (pos <= value.realSize && pos >= 0) {
@@ -1412,17 +1413,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             int result = matcher.search(begin + pos, begin + (reverse ? 0 : realSize), Option.NONE);
             if (result >= 0) {
-                updateBackRef(context, str, frame, matcher).charOffsetUpdated = false;;
+                updateBackRef(context, str, scope, matcher).charOffsetUpdated = false;;
                 return result;
             }
         }
 
-        frame.setBackRef(context.getRuntime().getNil());
+        scope.setBackRef(context.getRuntime().getNil());
         return -1;
     }
 
-    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, Frame frame, Matcher matcher, Regex pattern) {
-        RubyMatchData match = updateBackRef(context, str, frame, matcher, pattern);
+    static final RubyMatchData updateBackRef19(ThreadContext context, RubyString str, DynamicScope scope, Matcher matcher, Regex pattern) {
+        RubyMatchData match = updateBackRef(context, str, scope, matcher, pattern);
         match.charOffsetUpdated = false;
         return match;
     }

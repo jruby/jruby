@@ -8,6 +8,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
@@ -23,8 +24,14 @@ public abstract class DynamicScope {
     // Static scoping information for this scope
     protected final StaticScope staticScope;
     
-    // Captured dyanmic scopes
+    // Captured dynamic scopes
     protected final DynamicScope parent;
+
+    // Backref for $~, $1, etc
+    private IRubyObject backref;
+
+    // Lastline
+    private IRubyObject lastline;
     
     // A place to store that special hiding space that bindings need to implement things like:
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
@@ -156,6 +163,46 @@ public abstract class DynamicScope {
      */
     public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
+    }
+
+    /**
+     * Get backref
+     */
+    public final IRubyObject getBackRef(Ruby runtime) {
+        if (!staticScope.isBackrefLastlineScope()) {
+            return parent.getBackRef(runtime);
+        }
+        return backref == null ? runtime.getNil() : backref;
+    }
+
+    /**
+     * Set backref
+     */
+    public final IRubyObject setBackRef(IRubyObject backref) {
+        if (!staticScope.isBackrefLastlineScope()) {
+            return parent.setBackRef(backref);
+        }
+        return this.backref = backref;
+    }
+
+    /**
+     * Get lastline
+     */
+    public final IRubyObject getLastLine(Ruby runtime) {
+        if (!staticScope.isBackrefLastlineScope()) {
+            return parent.getLastLine(runtime);
+        }
+        return lastline == null ? runtime.getNil() : lastline;
+    }
+
+    /**
+     * Set lastline
+     */
+    public final IRubyObject setLastLine(IRubyObject lastline) {
+        if (!staticScope.isBackrefLastlineScope()) {
+            return parent.setLastLine(lastline);
+        }
+        return this.lastline = lastline;
     }
     
     public abstract void growIfNeeded();

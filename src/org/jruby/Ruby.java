@@ -132,7 +132,9 @@ import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.util.EnumSet;
+import org.jruby.ast.RootNode;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.threading.DaemonThreadFactory;
@@ -426,38 +428,46 @@ public final class Ruby {
         if (processLineEnds) {
             getGlobalVariables().set("$\\", getGlobalVariables().get("$/"));
         }
-        
-        while (RubyKernel.gets(context, getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
-            loop: while (true) { // Used for the 'redo' command
-                try {
-                    if (processLineEnds) {
-                        getGlobalVariables().get("$_").callMethod(context, "chop!");
+
+        // we do preand post load outside the "body" versions to pre-prepare
+        // and pre-push the dynamic scope we need for lastline
+        RuntimeHelpers.preLoad(context, ((RootNode)scriptNode).getStaticScope().getVariables());
+
+        try {
+            while (RubyKernel.gets(context, getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+                loop: while (true) { // Used for the 'redo' command
+                    try {
+                        if (processLineEnds) {
+                            getGlobalVariables().get("$_").callMethod(context, "chop!");
+                        }
+
+                        if (split) {
+                            getGlobalVariables().set("$F", getGlobalVariables().get("$_").callMethod(context, "split"));
+                        }
+
+                        if (script != null) {
+                            runScriptBody(script);
+                        } else if (runner != null) {
+                            runYarv(runner);
+                        } else {
+                            runInterpreterBody(scriptNode);
+                        }
+
+                        if (printing) RubyKernel.print(context, getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
+                        break loop;
+                    } catch (JumpException.RedoJump rj) {
+                        // do nothing, this iteration restarts
+                    } catch (JumpException.NextJump nj) {
+                        // recheck condition
+                        break loop;
+                    } catch (JumpException.BreakJump bj) {
+                        // end loop
+                        return (IRubyObject) bj.getValue();
                     }
-                    
-                    if (split) {
-                        getGlobalVariables().set("$F", getGlobalVariables().get("$_").callMethod(context, "split"));
-                    }
-                    
-                    if (script != null) {
-                        runScript(script);
-                    } else if (runner != null) {
-                        runYarv(runner);
-                    } else {
-                        runInterpreter(scriptNode);
-                    }
-                    
-                    if (printing) RubyKernel.print(context, getKernel(), new IRubyObject[] {getGlobalVariables().get("$_")});
-                    break loop;
-                } catch (JumpException.RedoJump rj) {
-                    // do nothing, this iteration restarts
-                } catch (JumpException.NextJump nj) {
-                    // recheck condition
-                    break loop;
-                } catch (JumpException.BreakJump bj) {
-                    // end loop
-                    return (IRubyObject) bj.getValue();
                 }
             }
+        } finally {
+            RuntimeHelpers.postLoad(context);
         }
         
         return getNil();
@@ -593,6 +603,20 @@ public final class Ruby {
             return (IRubyObject) rj.getValue();
         }
     }
+
+    /**
+     * This is used for the "gets" loop, and we bypass 'load' to use an
+     * already-prepared, already-pushed scope for the script body.
+     */
+    private IRubyObject runScriptBody(Script script) {
+        ThreadContext context = getCurrentContext();
+
+        try {
+            return script.__file__(context, context.getFrameSelf(), Block.NULL_BLOCK);
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
+        }
+    }
     
     private IRubyObject runYarv(YARVCompiledRunner runner) {
         try {
@@ -609,6 +633,23 @@ public final class Ruby {
         
         try {
             return scriptNode.interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
+        } catch (JumpException.ReturnJump rj) {
+            return (IRubyObject) rj.getValue();
+        }
+    }
+
+    /**
+     * This is used for the "gets" loop, and we bypass 'load' to use an
+     * already-prepared, already-pushed scope for the script body.
+     */
+    public IRubyObject runInterpreterBody(Node scriptNode) {
+        ThreadContext context = getCurrentContext();
+
+        assert scriptNode != null : "scriptNode is not null";
+        assert scriptNode instanceof RootNode;
+
+        try {
+            return ((RootNode)scriptNode).interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }

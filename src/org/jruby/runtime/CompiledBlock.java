@@ -45,7 +45,7 @@ public class CompiledBlock extends BlockBody {
     protected final CompiledBlockCallback callback;
     protected final boolean hasMultipleArgsHead;
     protected final Arity arity;
-    protected final StaticScope scope;
+    protected StaticScope scope;
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
@@ -199,6 +199,10 @@ public class CompiledBlock extends BlockBody {
     
     public StaticScope getStaticScope() {
         return scope;
+    }
+
+    public void setStaticScope(StaticScope newScope) {
+        this.scope = newScope;
     }
 
     public Block cloneBlock(Binding binding) {

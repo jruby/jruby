@@ -46,7 +46,7 @@ public abstract class MethodBlock extends BlockBody {
     private final Arity arity;
      
     // This is a dummy scope; we should find a way to make that more explicit
-    private final StaticScope staticScope;
+    private StaticScope staticScope;
 
     public static Block createMethodBlock(ThreadContext context, IRubyObject self, DynamicScope dynamicScope, MethodBlock body) {
         Binding binding = context.currentBinding(self, dynamicScope);
@@ -142,6 +142,10 @@ public abstract class MethodBlock extends BlockBody {
         // which is obviously wrong; but there's no scope to provide for many methods.
         // It fixes JRUBY-2237, but needs a better solution.
         return staticScope;
+    }
+
+    public void setStaticScope(StaticScope newScope) {
+        this.staticScope = newScope;
     }
 
     public Block cloneBlock(Binding binding) {

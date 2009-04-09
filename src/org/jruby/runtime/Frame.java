@@ -88,15 +88,6 @@ public final class Frame implements JumpTarget {
     /** The target for non-local jumps, like return from a block */
     private final JumpTarget jumpTarget;
     
-    /** A tuple representing the $_ and $~ values for this frame */
-    private static class BackrefAndLastline {
-        public IRubyObject backref;
-        public IRubyObject lastline;
-    }
-    
-    /** The current backref/lastline tuple for this frame */
-    private BackrefAndLastline backrefAndLastline;
-    
     /** The filename where the calling method is located */
     private String fileName;
     
@@ -127,11 +118,6 @@ public final class Frame implements JumpTarget {
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
         this.jumpTarget = frame.jumpTarget;
-        
-        // we force the lazy allocation of backref/lastline here to allow
-        // closures to update the original frame
-        frame.lazyBackrefAndLastline();
-        this.backrefAndLastline = frame.backrefAndLastline;
     }
 
     /**
@@ -176,11 +162,6 @@ public final class Frame implements JumpTarget {
         this.block = frame.block;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
-        
-        // we force the lazy allocation of backref/lastline here to allow
-        // closures to update the original frame
-        frame.lazyBackrefAndLastline();
-        this.backrefAndLastline = frame.backrefAndLastline;
     }
 
     /**
@@ -236,7 +217,6 @@ public final class Frame implements JumpTarget {
         this.self = null;
         this.klazz = null;
         this.block = Block.NULL_BLOCK;
-        this.backrefAndLastline = null;
     }
     
     /**
@@ -264,81 +244,6 @@ public final class Frame implements JumpTarget {
      */
     @Deprecated
     public void setJumpTarget(JumpTarget jumpTarget) {
-    }
-
-    /**
-     * Get the backref for this frame.
-     * 
-     * @return The backref for this frame
-     */
-    public IRubyObject getBackRef() {
-        if (hasBackref()) {
-            return self.getRuntime().getNil();
-        }
-        return backrefAndLastline.backref;
-    }
-
-    public void zeroBackRef() {
-        backrefAndLastline = new BackrefAndLastline();
-    }
-    
-    /**
-     * Whether a backref has been set for this frame.
-     * 
-     * @return True if a backref has been set; false otherwise
-     */
-    private boolean hasBackref() {
-        return backrefAndLastline == null || backrefAndLastline.backref == null;
-    }
-
-    /**
-     * Set the backref for this frame.
-     * 
-     * @param backref The new backref for this frame
-     * @return The passed-in backref value
-     */
-    public IRubyObject setBackRef(IRubyObject backref) {
-        lazyBackrefAndLastline();
-        return this.backrefAndLastline.backref = backref;
-    }
-
-    /**
-     * Get the lastline for this frame.
-     * 
-     * @return The lastline for this frame.
-     */
-    public IRubyObject getLastLine() {
-        if (hasLastline()) {
-            return self.getRuntime().getNil();
-        }
-        return backrefAndLastline.lastline;
-    }
-    
-    /**
-     * Whether a lastline has been set for this frame.
-     * 
-     * @return True if a lastline has been set; false otherwise
-     */
-    private boolean hasLastline() {
-        return backrefAndLastline == null || backrefAndLastline.lastline == null;
-    }
-
-    /**
-     * Set the lastline for this frame.
-     * 
-     * @param lastline The new lastline for this frame
-     * @return The passed-in lastline value
-     */
-    public IRubyObject setLastLine(IRubyObject lastline) {
-        lazyBackrefAndLastline();
-        return this.backrefAndLastline.lastline = lastline;
-    }
-    
-    /**
-     * Initialize the backref/lastline tuple.
-     */
-    private void lazyBackrefAndLastline() {
-         if (backrefAndLastline == null) backrefAndLastline = new BackrefAndLastline();
     }
 
     /**

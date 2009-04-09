@@ -129,6 +129,9 @@ public class NullBlockBody extends BlockBody {
         return null;
     }
 
+    public void setStaticScope(StaticScope newScope) {
+    }
+
     @Override
     public Block cloneBlock(Binding binding) {
         return null;

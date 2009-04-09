@@ -42,6 +42,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.java.MiniJava;
+import org.jruby.parser.BlockStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -132,6 +134,16 @@ public class RubyProc extends RubyObject implements JumpTarget {
         }
         
         block = procBlock.cloneBlock();
+
+        if (type == Block.Type.THREAD) {
+            // modify the block with a new backref/lastline-grabbing scope
+            StaticScope oldScope = block.getBody().getStaticScope();
+            StaticScope newScope = new BlockStaticScope(oldScope.getEnclosingScope(), oldScope.getVariables());
+            newScope.setBackrefLastlineScope(true);
+            newScope.setModule(oldScope.getModule());
+            block.getBody().setStaticScope(newScope);
+        }
+
         block.type = type;
         block.setProcObject(this);
 

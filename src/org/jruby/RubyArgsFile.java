@@ -234,7 +234,7 @@ public class RubyArgsFile {
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject result = internalGets(context, recv, args);
         if (!result.isNil()) {
-            context.getCurrentFrame().setLastLine(result);
+            context.getCurrentScope().setLastLine(result);
             context.getRuntime().getGlobalVariables().set("$_", result);
         }
 
