@@ -240,11 +240,11 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "each", optional = 1, frame = true, writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject line = gets(context, args);
+        IRubyObject line = getsOnly(context, args);
        
         while (!line.isNil()) {
             block.yield(context, line);
-            line = gets(context, args);
+            line = getsOnly(context, args);
         }
        
         return this;
@@ -372,12 +372,16 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-        checkReadable();
-
-        IRubyObject result = internalGets(context, args);
+        IRubyObject result = getsOnly(context, args);
         context.getCurrentScope().setLastLine(result);
 
         return result;
+    }
+    
+    public IRubyObject getsOnly(ThreadContext context, IRubyObject[] args) {
+        checkReadable();
+
+        return internalGets(context, args);
     }
 
     @JRubyMethod(name = {"tty?", "isatty"})
