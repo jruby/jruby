@@ -8,7 +8,7 @@ DIR = File.dirname(__FILE__)
 
 class MSpecScript
   # Language features specs
-  set :language, [ 'language' ]
+  set :language, [ DIR + '/ruby/language' ]
 
   # Core library specs
   set :core, [
