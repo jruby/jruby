@@ -103,7 +103,7 @@ public class SunSignalFacade implements SignalFacade {
 
         try {
             signal = new Signal(handler.signal);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return runtime.getNil();
         }
 
