@@ -63,7 +63,7 @@ public class RubySignal {
         RubyModule mSignal = runtime.defineModule("Signal");
         
         mSignal.defineAnnotatedMethods(RubySignal.class);
-        registerThreadDumpSignalHandler(runtime);
+        //registerThreadDumpSignalHandler(runtime);
     }
 
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, meta = true)
