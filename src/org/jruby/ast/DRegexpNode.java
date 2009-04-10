@@ -118,20 +118,10 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
 
         RubyString string = DStrNode.buildDynamicString(runtime, context, self, aBlock, this);
 
-        RubyRegexp regexp = createRegexp(runtime, string);
+        RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
         
         if (once) setOnceRegexp(regexp);
 
         return regexp;
-    }
-    
-    private RubyRegexp createRegexp(Ruby runtime, RubyString string) {
-        try {
-            return RubyRegexp.newRegexp(runtime, string.getByteList(), options);
-        } catch(Exception e) {
-        //                    System.err.println(iVisited.getValue().toString());
-        //                    e.printStackTrace();
-            throw runtime.newRegexpError(e.getMessage());
-        }
     }
 }

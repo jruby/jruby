@@ -281,6 +281,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
+    // used only by the compiler/interpreter (will set the literal flag)
+    public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, int options) {
+        try {
+            return new RubyRegexp(runtime, pattern.getByteList(), options);
+        } catch (RaiseException re) {
+            throw runtime.newRegexpError(re.getMessage());
+        }
+    }
+
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern) {
         return new RubyRegexp(runtime, pattern);
     }
