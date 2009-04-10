@@ -118,11 +118,41 @@ public class InterpretedBlock extends BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, null, binding);
+        IRubyObject self = prepareSelf(binding);
+
+        try {
+            if (hasVarNode) {
+                setupBlockArg(context, varNode, arg0, arg1, self);
+            }
+
+            // This while loop is for restarting the block call in case a 'redo' fires.
+            return evalBlockBody(context, self);
+        } catch (JumpException.NextJump nj) {
+            return handleNextJump(context, nj, type);
+        } finally {
+            post(context, binding, oldVis, lastFrame);
+        }
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, null, binding);
+        IRubyObject self = prepareSelf(binding);
+
+        try {
+            if (hasVarNode) {
+                setupBlockArg(context, varNode, arg0, arg1, arg2, self);
+            }
+
+            // This while loop is for restarting the block call in case a 'redo' fires.
+            return evalBlockBody(context, self);
+        } catch (JumpException.NextJump nj) {
+            return handleNextJump(context, nj, type);
+        } finally {
+            post(context, binding, oldVis, lastFrame);
+        }
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -234,6 +264,34 @@ public class InterpretedBlock extends BlockBody {
             defaultArgLogic(context, runtime, self, value);
         }
     }
+
+    private void setupBlockArg(ThreadContext context, Node varNode, IRubyObject arg0, IRubyObject arg1, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
+
+        switch (varNode.getNodeType()) {
+        case ZEROARGNODE:
+            return;
+        case MULTIPLEASGNNODE:
+            AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, arg0, arg1, false);
+            break;
+        default:
+            defaultArgLogic(context, runtime, self, arg0, arg1);
+        }
+    }
+
+    private void setupBlockArg(ThreadContext context, Node varNode, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
+
+        switch (varNode.getNodeType()) {
+        case ZEROARGNODE:
+            return;
+        case MULTIPLEASGNNODE:
+            AssignmentVisitor.multiAssign(runtime, context, self, (MultipleAsgnNode)varNode, arg0, arg1, arg2, false);
+            break;
+        default:
+            defaultArgLogic(context, runtime, self, arg0, arg1, arg2);
+        }
+    }
     
     private final void defaultArgsLogic(ThreadContext context, Ruby ruby, IRubyObject self, IRubyObject value) {
         int length = ArgsUtil.arrayLength(value);
@@ -256,6 +314,14 @@ public class InterpretedBlock extends BlockBody {
             ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
         }
         varNode.assign(ruby, context, self, value, Block.NULL_BLOCK, false);
+    }
+
+    private final void defaultArgLogic(ThreadContext context, Ruby ruby, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+        varNode.assign(ruby, context, self, ruby.newArrayNoCopyLight(arg0, arg1), Block.NULL_BLOCK, false);
+    }
+
+    private final void defaultArgLogic(ThreadContext context, Ruby ruby, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        varNode.assign(ruby, context, self, ruby.newArrayNoCopyLight(arg0, arg1, arg2), Block.NULL_BLOCK, false);
     }
     
     public StaticScope getStaticScope() {
