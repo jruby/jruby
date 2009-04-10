@@ -161,9 +161,6 @@ public class RubyInstanceConfig {
     private boolean shouldRunInterpreter = true;
     private boolean shouldPrintUsage = false;
     private boolean shouldPrintProperties=false;
-    private boolean yarv = false;
-    private boolean rubinius = false;
-    private boolean yarvCompile = false;
     private KCode kcode = KCode.NONE;
     private String recordSeparator = "\n";
     private boolean shouldCheckSyntax = false;
@@ -406,10 +403,7 @@ public class RubyInstanceConfig {
                 .append("  -O              run with ObjectSpace disabled (default; improves performance)\n")
                 .append("  +O              run with ObjectSpace enabled (reduces performance)\n")
                 .append("  -C              disable all compilation\n")
-                .append("  +C              force compilation of all scripts before they are run (except eval)\n")
-                .append("  -y              read a YARV-compiled Ruby script and run that (EXPERIMENTAL)\n")
-                .append("  -Y              compile a Ruby script into YARV bytecodes and run this (EXPERIMENTAL)\n")
-                .append("  -R              read a Rubinius-compiled Ruby script and run that (EXPERIMENTAL)\n");
+                .append("  +C              force compilation of all scripts before they are run (except eval)\n");
 
         return sb.toString();
     }
@@ -936,12 +930,6 @@ public class RubyInstanceConfig {
                         compileMode = CompileMode.OFF;
                     } else if (extendedOption.equals("+C")) {
                         compileMode = CompileMode.FORCE;
-                    } else if (extendedOption.equals("-y")) {
-                        yarv = true;
-                    } else if (extendedOption.equals("-Y")) {
-                        yarvCompile = true;
-                    } else if (extendedOption.equals("-R")) {
-                        rubinius = true;
                     } else {
                         MainExitException mee =
                                 new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
@@ -1234,20 +1222,8 @@ public class RubyInstanceConfig {
         return shouldCheckSyntax;
     }
 
-    public boolean isYARVEnabled() {
-        return yarv;
-    }
-
     public String getInputFieldSeparator() {
         return inputFieldSeparator;
-    }
-
-    public boolean isRubiniusEnabled() {
-        return rubinius;
-    }
-
-    public boolean isYARVCompileEnabled() {
-        return yarvCompile;
     }
 
     public KCode getKCode() {

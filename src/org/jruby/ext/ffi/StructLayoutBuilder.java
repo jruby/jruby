@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -241,7 +242,7 @@ public final class StructLayoutBuilder extends RubyObject {
         if (io == null) {
             throw context.getRuntime().newNotImplementedError("Unsupported array field type: " + type);
         }
-        StructLayout.Member field = new ArrayMember(fieldCount++, offset, io, type.getNativeSize() * 8, length);
+        StructLayout.Member field = new ArrayMember(type, fieldCount++, offset, io, length);
 
         return storeField(runtime, args[0], field, type.getNativeAlignment(), (type.getNativeSize() * length));
     }
@@ -262,8 +263,8 @@ public final class StructLayoutBuilder extends RubyObject {
 
         int strlen = Util.int32Value(args[1]);
         int offset = calculateOffset(args, 2, 1);
-
-        return storeField(runtime, args[0], new CharArrayMember(fieldCount++, offset, strlen), 1, strlen);
+        Type type = (Type) context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastFetchConstant("INT8");
+        return storeField(runtime, args[0], new CharArrayMember(type, fieldCount++, offset, strlen), 1, strlen);
     }
 
     /**
@@ -309,7 +310,7 @@ public final class StructLayoutBuilder extends RubyObject {
         private final MemoryOp op;
 
         PrimitiveMember(Type type, int index, long offset) {
-            super(type.getNativeType(), index, offset);
+            super(type, index, offset);
             op = MemoryOp.getMemoryOp(type.getNativeType());
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
@@ -402,32 +403,43 @@ public final class StructLayoutBuilder extends RubyObject {
         }
     }
 
-    static final class CharArrayMember extends StructLayout.Member {
-        private final int size;
-        CharArrayMember(int index, long offset, int size) {
-            super(NativeType.CHAR_ARRAY, index, offset);
-            this.size = size;
+    static final class CharArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
+        private final int length;
+        CharArrayMember(Type type, int index, long offset, int size) {
+            super(type, index, offset);
+            this.length = size;
         }
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
             MemoryIO io = getMemoryIO(ptr);
             ByteList bl = value.convertToString().getByteList();
             // Clamp to no longer than 
-            int len = Math.min(bl.length(), size - 1);
+            int len = Math.min(bl.length(), length - 1);
             io.put(getOffset(ptr), bl.unsafeBytes(), bl.begin(), len);
             io.putByte(getOffset(ptr) + len, (byte) 0);
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
             MemoryIO io = getMemoryIO(ptr);
-            int len = (int) io.indexOf(getOffset(ptr), (byte) 0, size);
+            int len = (int) io.indexOf(getOffset(ptr), (byte) 0, length);
             if (len < 0) {
-                len = size;
+                len = length;
             }
             ByteList bl = new ByteList(len);
             bl.length(len);
             io.get(0, bl.unsafeBytes(), bl.begin(), len);
         
             return runtime.newString(bl);
+        }
+
+        public Collection<StructLayout.Member> getMembers() {
+
+            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(length);
+
+            for (int i = 0; i < length; ++i) {
+                members.add(new PrimitiveMember(type, i, i * type.getNativeSize()));
+            }
+
+            return members;
         }
     }
 
@@ -451,7 +463,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
     }
 
-    static final class StructMember extends StructLayout.Aggregate {
+    static final class StructMember extends StructLayout.Member implements StructLayout.Aggregate {
         private final RubyClass klass;
         private final StructLayout layout;
 
@@ -483,21 +495,19 @@ public final class StructLayoutBuilder extends RubyObject {
         protected boolean isCacheable() {
             return true;
         }
-
-        @Override
-        public Collection<StructLayout.Member> getFields() {
+        
+        public Collection<StructLayout.Member> getMembers() {
             return layout.getFields();
         }
     }
 
-    static final class ArrayMember extends StructLayout.Member {
+    static final class ArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
         private final MemoryOp op;
-        private final int length, typeSize;
+        private final int length;
 
-        ArrayMember(int index, long offset, MemoryOp op, int typeSize, int length) {
-            super(NativeType.ARRAY, index, offset);
+        ArrayMember(Type type, int index, long offset, MemoryOp op, int length) {
+            super(type, index, offset);
             this.op = op;
-            this.typeSize = typeSize;
             this.length = length;
         }
 
@@ -506,22 +516,34 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return new StructLayout.Array(runtime, ptr, offset, length, typeSize, op);
+            return new StructLayout.Array(runtime, ptr, offset, length, type.getNativeSize(), op);
         }
 
         @Override
         public IRubyObject get(Ruby runtime, Struct struct) {
             IRubyObject s = struct.getCachedValue(this);
             if (s == null) {
-                s = new StructLayout.Array(runtime, struct.getMemory(), offset, length, typeSize, op);
+                s = new StructLayout.Array(runtime, struct.getMemory(), offset, length, type.getNativeSize(), op);
                 struct.putCachedValue(this, s);
             }
+
             return s;
         }
 
         @Override
         protected boolean isCacheable() {
             return true;
+        }
+
+        public Collection<StructLayout.Member> getMembers() {
+
+            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(length);
+
+            for (int i = 0; i < length; ++i) {
+                members.add(new PrimitiveMember(type, i, i * type.getNativeSize()));
+            }
+
+            return members;
         }
     }
 }

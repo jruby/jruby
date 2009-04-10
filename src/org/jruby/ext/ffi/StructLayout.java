@@ -273,7 +273,7 @@ public final class StructLayout extends Type {
      */
     public static abstract class Member {
         /** The {@link Type} of this member. */
-        protected final NativeType type;
+        protected final Type type;
 
         /** The offset within the memory area of this member */
         protected final long offset;
@@ -282,15 +282,8 @@ public final class StructLayout extends Type {
         protected final int index;
 
         /** Initializes a new Member instance */
-        protected Member(NativeType type, int index, long offset) {
-            this.type = type;
-            this.index = index;
-            this.offset = offset;
-        }
-
-        /** Initializes a new Member instance */
         protected Member(Type type, int index, long offset) {
-            this.type = type.getNativeType();
+            this.type = type;
             this.index = index;
             this.offset = offset;
         }
@@ -313,7 +306,7 @@ public final class StructLayout extends Type {
         }
 
         public final NativeType getNativeType() {
-            return type;
+            return type.getNativeType();
         }
 
         @Override
@@ -362,13 +355,8 @@ public final class StructLayout extends Type {
         }
     }
 
-    public static abstract class Aggregate extends Member {
-        /** Initializes a new aggregate Member instance */
-        protected Aggregate(Type type, int index, long offset) {
-            super(type, index, offset);
-        }
-
-        public abstract Collection<Member> getFields();
+    public static interface Aggregate {
+        public abstract Collection<Member> getMembers();
     }
 
     static final class Cache {
@@ -404,13 +392,13 @@ public final class StructLayout extends Type {
         Array(Ruby runtime, RubyClass klass) {
             this(runtime, null, 0, 0, 0, null);
         }
-        Array(Ruby runtime, IRubyObject ptr, long offset, int length, int sizeBits, MemoryOp aio) {
+        Array(Ruby runtime, IRubyObject ptr, long offset, int length, int typeSize, MemoryOp aio) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"));
             this.ptr = (AbstractMemory) ptr;
             this.offset = offset;
             this.length = length;
             this.aio = aio;
-            this.typeSize = sizeBits / 8;
+            this.typeSize = typeSize;
         }
         private final long getOffset(IRubyObject index) {
             return offset + (Util.uint32Value(index) * typeSize);

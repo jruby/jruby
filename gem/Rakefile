@@ -2,8 +2,6 @@
 
 require 'rubygems'
 require 'hoe'
-require 'fileutils'
-require './lib/jruby.rb'
 
 task :default => :prepare
 
@@ -17,7 +15,7 @@ task :prepare do
   end
 end
 
-Hoe.new('jruby', JRuby::VERSION) do |p|
+Hoe.new('jruby-jars', JRUBY_VERSION) do |p|
   p.rubyforge_name = 'jruby-extras' # if different than lowercase project name
   p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
 end
