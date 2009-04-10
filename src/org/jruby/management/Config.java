@@ -126,20 +126,8 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().isDebug();
     }
 
-    public boolean isYARVEnabled() {
-        return ruby.get().getInstanceConfig().isYARVEnabled();
-    }
-
     public String getInputFieldSeparator() {
         return ruby.get().getInstanceConfig().getInputFieldSeparator();
-    }
-
-    public boolean isRubiniusEnabled() {
-        return ruby.get().getInstanceConfig().isRubiniusEnabled();
-    }
-
-    public boolean isYARVCompileEnabled() {
-        return ruby.get().getInstanceConfig().isYARVCompileEnabled();
     }
 
     public String getKCode() {

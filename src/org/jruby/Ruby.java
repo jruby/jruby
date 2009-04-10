@@ -71,17 +71,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
 import org.jruby.ast.Node;
-import org.jruby.ast.executable.RubiniusRunner;
 import org.jruby.ast.executable.Script;
-import org.jruby.ast.executable.YARVCompiledRunner;
 import org.jruby.common.RubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.JITCompiler;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.StandardASMCompiler;
-import org.jruby.compiler.yarv.StandardYARVCompiler;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -295,7 +292,7 @@ public final class Ruby {
         int oldLine = context.getLine();
         try {
             context.setFileAndLine(node.getPosition());
-            return runNormally(node, false);
+            return runNormally(node);
         } finally {
             context.setFileAndLine(oldFile, oldLine);
         }
@@ -348,30 +345,22 @@ public final class Ruby {
             return;
         }
         
-        if(config.isYARVEnabled()) {
-            if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
-            new YARVCompiledRunner(this, inputStream, filename).run();
-        } else if(config.isRubiniusEnabled()) {
-            if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
-            new RubiniusRunner(this, inputStream, filename).run();
-        } else {
-            Node scriptNode = parseFromMain(inputStream, filename);
-            ThreadContext context = getCurrentContext();
+        Node scriptNode = parseFromMain(inputStream, filename);
+        ThreadContext context = getCurrentContext();
 
-            String oldFile = context.getFile();
-            int oldLine = context.getLine();
-            try {
-                context.setFileAndLine(scriptNode.getPosition());
+        String oldFile = context.getFile();
+        int oldLine = context.getLine();
+        try {
+            context.setFileAndLine(scriptNode.getPosition());
 
-                if (config.isAssumePrinting() || config.isAssumeLoop()) {
-                    runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
-                            config.isSplit(), config.isYARVCompileEnabled());
-                } else {
-                    runNormally(scriptNode, config.isYARVCompileEnabled());
-                }
-            } finally {
-                context.setFileAndLine(oldFile, oldLine);
+            if (config.isAssumePrinting() || config.isAssumeLoop()) {
+                runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
+                        config.isSplit());
+            } else {
+                runNormally(scriptNode);
             }
+        } finally {
+            context.setFileAndLine(oldFile, oldLine);
         }
     }
 
@@ -405,24 +394,20 @@ public final class Ruby {
      * @param processLineEnds Whether line endings should be processed by
      * setting $\ to $/ and <code>chop!</code>ing every line read
      * @param split Whether to split each line read using <code>String#split</code>
-     * @param yarvCompile Whether to compile the target script to YARV (Ruby 1.9)
      * bytecode before executing.
      * @return The result of executing the specified script
      */
-    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean yarvCompile) {
+    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
         
         Script script = null;
-        YARVCompiledRunner runner = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
-        if (compile || !yarvCompile) {
+        if (compile) {
             script = tryCompile(scriptNode);
             if (compile && script == null) {
                 // terminate; tryCompile will have printed out an error and we're done
                 return getNil();
             }
-        } else if (yarvCompile) {
-            runner = tryCompileYarv(scriptNode);
         }
         
         if (processLineEnds) {
@@ -447,8 +432,6 @@ public final class Ruby {
 
                         if (script != null) {
                             runScriptBody(script);
-                        } else if (runner != null) {
-                            runYarv(runner);
                         } else {
                             runInterpreterBody(scriptNode);
                         }
@@ -478,19 +461,14 @@ public final class Ruby {
      * code.
      * 
      * @param scriptNode The root node of the script to be executed
-     * @param yarvCompile Whether to compile the script to YARV (Ruby 1.9)
      * bytecode before execution
      * @return The result of executing the script
      */
-    public IRubyObject runNormally(Node scriptNode, boolean yarvCompile) {
+    public IRubyObject runNormally(Node scriptNode) {
         Script script = null;
-        YARVCompiledRunner runner = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
-        if (yarvCompile) {
-            runner = tryCompileYarv(scriptNode);
-        // FIXME: Once 1.9 compilation is supported this should be removed
-        } else if (compile) {
+        if (compile) {
             script = tryCompile(scriptNode);
             if (forceCompile && script == null) {
                 return getNil();
@@ -503,8 +481,6 @@ public final class Ruby {
             } else {
                 return runScript(script);
             }
-        } else if (runner != null) {
-            return runYarv(runner);
         } else {
             if (config.isShowBytecode()) System.err.print("error: bytecode printing only works with JVM bytecode");
             return runInterpreter(scriptNode);
@@ -577,23 +553,6 @@ public final class Ruby {
         return script;
     }
     
-    private YARVCompiledRunner tryCompileYarv(Node node) {
-        try {
-            StandardYARVCompiler compiler = new StandardYARVCompiler(this);
-            ASTCompiler.getYARVCompiler().compile(node, compiler);
-            org.jruby.lexer.yacc.ISourcePosition p = node.getPosition();
-            if(p == null && node instanceof org.jruby.ast.RootNode) {
-                p = ((org.jruby.ast.RootNode)node).getBodyNode().getPosition();
-            }
-            return new YARVCompiledRunner(this,compiler.getInstructionSequence("<main>",p.getFile(),"toplevel"));
-        } catch (NotCompilableException nce) {
-            System.err.println("Error -- Not compileable: " + nce.getMessage());
-            return null;
-        } catch (JumpException.ReturnJump rj) {
-            return null;
-        }
-    }
-    
     private IRubyObject runScript(Script script) {
         ThreadContext context = getCurrentContext();
         
@@ -613,14 +572,6 @@ public final class Ruby {
 
         try {
             return script.__file__(context, context.getFrameSelf(), Block.NULL_BLOCK);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
-        }
-    }
-    
-    private IRubyObject runYarv(YARVCompiledRunner runner) {
-        try {
-            return runner.run();
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }

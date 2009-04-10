@@ -36,7 +36,6 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import org.jruby.ast.executable.YARVMachineTest;
 import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
@@ -73,7 +72,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRubyException.class);
         suite.addTestSuite(TestAdoptedThreading.class);
         suite.addTestSuite(TestRubyArray.class);
-        suite.addTestSuite(YARVMachineTest.class);
         suite.addTestSuite(TestRaiseException.class);
         suite.addTestSuite(PlatformTest.class);
         suite.addTestSuite(ShellLauncherTest.class);

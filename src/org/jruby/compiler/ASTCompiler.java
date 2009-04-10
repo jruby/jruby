@@ -565,10 +565,6 @@ public class ASTCompiler {
         }
     }
 
-    public static YARVNodesCompiler getYARVCompiler() {
-        return new YARVNodesCompiler();
-    }
-
     public void compileAlias(Node node, BodyCompiler context, boolean expr) {
         final AliasNode alias = (AliasNode) node;
 
