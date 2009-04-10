@@ -81,7 +81,7 @@ public final class FFIUtil {
         for (StructLayout.Member m : structMembers) {
             com.kenai.jffi.Type fieldType;
             if (m instanceof StructLayout.Aggregate) {
-                fieldType = newStruct(runtime, ((StructLayout.Aggregate) m).getFields());
+                fieldType = newStruct(runtime, ((StructLayout.Aggregate) m).getMembers());
             } else {
                 fieldType = FFIUtil.getFFIType(m.getNativeType());
             }
@@ -90,6 +90,7 @@ public final class FFIUtil {
             }
             fields[i++] = fieldType;
         }
+
         return new com.kenai.jffi.Struct(fields);
     }
 
