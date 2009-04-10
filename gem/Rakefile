@@ -17,7 +17,7 @@ task :prepare do
   end
 end
 
-Hoe.new('jruby', JRuby::VERSION) do |p|
+Hoe.new('jruby', JRUBY_VERSION) do |p|
   p.rubyforge_name = 'jruby-extras' # if different than lowercase project name
   p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
 end
