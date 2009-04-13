@@ -40,6 +40,10 @@ public class WeakHashSet<T> implements Set<T> {
         map = new WeakHashMap<T,T>();
     }
 
+    public WeakHashSet(int size) {
+        map = new WeakHashMap<T,T>(size);
+    }
+
     public boolean add(T o) {
         T previousValue = map.put(o, null);
         return previousValue == null;
