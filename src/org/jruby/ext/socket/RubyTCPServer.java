@@ -46,6 +46,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -88,7 +89,9 @@ public class RubyTCPServer extends RubyTCPSocket {
         IRubyObject hostname = args[0];
         IRubyObject port = args.length > 1 ? args[1] : context.getRuntime().getNil();
 
-        if(hostname.isNil()) {
+        if(hostname.isNil()
+	   || ((hostname instanceof RubyString)
+	       && ((RubyString) hostname).isEmpty())) {
             hostname = context.getRuntime().newString("0.0.0.0");
         } else if (hostname instanceof RubyFixnum) {
             // numeric host, use it for port
