@@ -432,9 +432,9 @@ public class RubyFixnum extends RubyInteger {
         Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum) {
             long otherValue = ((RubyFixnum) other).value;
+            if (value == 0 || otherValue == 0) return RubyFixnum.zero(runtime);
             long result = value * otherValue;
-            if (result == 0) return RubyFixnum.zero(runtime);
-            if (result / value != otherValue) return RubyBignum.newBignum(runtime, value).op_mul(context, other);
+            if (result == 0 || result / value != otherValue) return RubyBignum.newBignum(runtime, value).op_mul(context, other);
             return newFixnum(runtime, result);
         } else if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_mul(context, this);
