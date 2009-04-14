@@ -113,7 +113,10 @@ public class RubyUDPSocket extends RubyIPSocket {
     public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject port) {
         InetSocketAddress addr = null;
         try {
-            if (host.isNil()) {
+            if (host.isNil()
+		|| ((host instanceof RubyString)
+		    && ((RubyString) host).isEmpty())) {
+		// host is nil or the empty string, bind to INADDR_ANY
                 addr = new InetSocketAddress(RubyNumeric.fix2int(port));
             } else {
                 addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
