@@ -157,18 +157,6 @@ public final class StructLayout extends Type {
         getMember(context.getRuntime(), name).put(context.getRuntime(), ptr, value);
         return value;
     }
-
-    /**
-     * Gets the value of the struct member corresponding to <tt>name</tt>.
-     *
-     * @param runtime The ruby runtime.
-     * @param struct The struct to read the field for
-     * @param name The name of the member.
-     * @return A ruby value for the native value of the struct member.
-     */
-    IRubyObject get(Ruby runtime, Struct struct, IRubyObject name) {
-        return getMember(runtime, name).get(runtime, struct);
-    }
     
     /**
      * Gets a ruby array of the names of all members of this struct.
@@ -242,7 +230,7 @@ public final class StructLayout extends Type {
      * @param name The name of the struct field.
      * @return A <tt>Member</tt> descriptor.
      */
-    private Member getMember(Ruby runtime, IRubyObject name) {
+    final Member getMember(Ruby runtime, IRubyObject name) {
         Member f = fields.get(name);
         if (f != null) {
             return f;
@@ -326,6 +314,8 @@ public final class StructLayout extends Type {
          * @param value The ruby value to write to the native struct member.
          */
         public abstract void put(Ruby runtime, IRubyObject ptr, IRubyObject value);
+
+        
         
         /**
          * Reads a ruby value from the struct member.
@@ -335,14 +325,26 @@ public final class StructLayout extends Type {
         public abstract IRubyObject get(Ruby runtime, IRubyObject ptr);
 
         /**
+         * Writes a ruby value to the native struct member as the appropriate native value.
+         *
+         * @param runtime The ruby runtime
+         * @param cache The value cache
+         * @param ptr The struct memory area.
+         * @param value The ruby value to write to the native struct member.
+         */
+        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
+            put(runtime, ptr, value);
+        }
+
+        /**
          * Reads a ruby value from the struct member.
          *
          * @param cache The cache used to store
-         * @param struct The struct to fetch the field for
+         * @param ptr The struct memory area.
          * @return A ruby object equivalent to the native member value.
          */
-        public IRubyObject get(Ruby runtime, Struct struct) {
-            return get(runtime, struct.getMemory());
+        public IRubyObject get(Ruby runtime, Storage cache, IRubyObject ptr) {
+            return get(runtime, ptr);
         }
 
         /**
@@ -357,6 +359,11 @@ public final class StructLayout extends Type {
 
     public static interface Aggregate {
         public abstract Collection<Member> getMembers();
+    }
+
+    public static interface Storage {
+        IRubyObject getCachedValue(Member member);
+        void putCachedValue(Member member, IRubyObject value);
     }
 
     static final class Cache {

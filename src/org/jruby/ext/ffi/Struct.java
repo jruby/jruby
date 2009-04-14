@@ -13,7 +13,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
-public class Struct extends RubyObject {
+public class Struct extends RubyObject implements StructLayout.Storage {
     private final StructLayout layout;
     private IRubyObject memory;
     private StructLayout.Cache cache;
@@ -156,18 +156,24 @@ public class Struct extends RubyObject {
     public static IRubyObject allocateInOut(ThreadContext context, IRubyObject klass, IRubyObject clearArg) {
         return allocateStruct(context, klass, Buffer.IN | Buffer.OUT);
     }
+
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
-        return layout.get(context.getRuntime(), this, fieldName);
+        return layout.getMember(context.getRuntime(), fieldName).get(context.getRuntime(), this, getMemory());
     }
+
     @JRubyMethod(name = "[]=")
     public IRubyObject setFieldValue(ThreadContext context, IRubyObject fieldName, IRubyObject fieldValue) {
-        return layout.put(context, memory, fieldName, fieldValue);
+        Ruby runtime = context.getRuntime();
+        layout.getMember(runtime, fieldName).put(runtime, this, getMemory(), fieldValue);
+        return fieldValue;
     }
+
     @JRubyMethod(name = { "cspec", "layout" })
     public IRubyObject getLayout(ThreadContext context) {
         return layout;
     }
+
     @JRubyMethod(name = "pointer")
     public IRubyObject pointer(ThreadContext context) {
         return memory;
@@ -183,10 +189,10 @@ public class Struct extends RubyObject {
     final MemoryIO getMemoryIO() {
         return ((AbstractMemory) memory).getMemoryIO();
     }
-    final IRubyObject getCachedValue(StructLayout.Member member) {
+    public final IRubyObject getCachedValue(StructLayout.Member member) {
         return cache != null ? cache.get(member) : null;
     }
-    final void putCachedValue(StructLayout.Member member, IRubyObject value) {
+    public final void putCachedValue(StructLayout.Member member, IRubyObject value) {
         if (cache == null) {
             cache = new StructLayout.Cache(layout);
         }

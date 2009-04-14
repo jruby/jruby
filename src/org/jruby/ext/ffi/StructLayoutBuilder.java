@@ -42,6 +42,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.ffi.StructLayout.Storage;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -354,10 +355,16 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         @Override
-        public IRubyObject get(Ruby runtime, Struct struct) {
-            IRubyObject ptr = struct.getMemory();
+        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
+            put(runtime, ptr, value);
+            cache.putCachedValue(this, value);
+        }
+
+
+        @Override
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
-            IRubyObject old = struct.getCachedValue(this);
+            IRubyObject old = cache.getCachedValue(this);
             if (old != null) {
                 MemoryIO oldMemory = ((AbstractMemory) old).getMemoryIO();
                 if ((memory != null && memory.equals(oldMemory)) || (memory == null && oldMemory.isNull())) {
@@ -366,7 +373,7 @@ public final class StructLayoutBuilder extends RubyObject {
             }
             Pointer retval = new BasePointer(runtime,
                     memory != null ? (DirectMemoryIO) memory : new NullMemoryIO(runtime));
-            struct.putCachedValue(this, retval);
+            cache.putCachedValue(this, retval);
             return retval;
         }
         @Override
@@ -379,14 +386,14 @@ public final class StructLayoutBuilder extends RubyObject {
         StringMember(Type type, int index, long offset) {
             super(type, index, offset);
         }
+
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
-            if (io == null || io.isNull()) {
-                throw runtime.newRuntimeError("Invalid memory access");
-            }
-            ByteList bl = value.convertToString().getByteList();
-            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
-            io.putByte(bl.length(), (byte) 0);
+            throw runtime.newArgumentError("Cannot set :string fields");
         }
 
         public IRubyObject get(Ruby runtime, IRubyObject ptr) {
@@ -400,6 +407,24 @@ public final class StructLayoutBuilder extends RubyObject {
             io.get(0, bl.unsafeBytes(), bl.begin(), len);
         
             return runtime.newString(bl);
+        }
+
+        @Override
+        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
+            ByteList bl = value.convertToString().getByteList();
+
+            MemoryPointer mem = MemoryPointer.allocate(runtime, 1, bl.length() + 1, false);
+            //
+            // Keep a reference to the temporary memory in the cache so it does
+            // not get freed by the GC until the struct is freed
+            //
+            cache.putCachedValue(this, mem);
+
+            MemoryIO io = mem.getMemoryIO();            
+            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
+            io.putByte(bl.length(), (byte) 0);
+
+            getMemoryIO(ptr).putMemoryIO(getOffset(ptr), io);
         }
     }
 
@@ -445,16 +470,29 @@ public final class StructLayoutBuilder extends RubyObject {
 
     static final class CallbackMember extends StructLayout.Member {
         private final CallbackInfo cbInfo;
+
         CallbackMember(CallbackInfo cbInfo, int index, long offset) {
             super(cbInfo, index, offset);
             this.cbInfo = cbInfo;
         }
+        
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
         public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+            throw runtime.newArgumentError("Cannot set callback fields");
+        }
+
+        @Override
+        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
             if (value.isNil()) {
                 getMemoryIO(ptr).putAddress(getOffset(ptr), 0L);
             } else {
                 Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, cbInfo, value);
                 getMemoryIO(ptr).putMemoryIO(getOffset(ptr), cb.getMemoryIO());
+                cache.putCachedValue(this, cb);
             }
         }
 
@@ -482,15 +520,15 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         @Override
-        public IRubyObject get(Ruby runtime, Struct struct) {
-            IRubyObject s = struct.getCachedValue(this);
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            IRubyObject s = cache.getCachedValue(this);
             if (s == null) {
-                IRubyObject ptr = struct.getMemory();
                 s = Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)));
-                struct.putCachedValue(this, s);
+                cache.putCachedValue(this, s);
             }
             return s;
         }
+
         @Override
         protected boolean isCacheable() {
             return true;
@@ -520,11 +558,11 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         @Override
-        public IRubyObject get(Ruby runtime, Struct struct) {
-            IRubyObject s = struct.getCachedValue(this);
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            IRubyObject s = cache.getCachedValue(this);
             if (s == null) {
-                s = new StructLayout.Array(runtime, struct.getMemory(), offset, length, type.getNativeSize(), op);
-                struct.putCachedValue(this, s);
+                s = new StructLayout.Array(runtime, ptr, offset, length, type.getNativeSize(), op);
+                cache.putCachedValue(this, s);
             }
 
             return s;

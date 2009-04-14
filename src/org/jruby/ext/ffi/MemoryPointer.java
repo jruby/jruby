@@ -60,6 +60,18 @@ public final class MemoryPointer extends BasePointer {
             return ptr;
         }
     }
+
+    static final MemoryPointer allocate(Ruby runtime, int typeSize, int count, boolean clear) {
+        final int total = typeSize * count;
+        AllocatedDirectMemoryIO io = factory.allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
+        if (io == null) {
+            throw new RaiseException(runtime, runtime.getNoMemoryError(),
+                    String.format("Failed to allocate %d objects of %d bytes", typeSize, count), true);
+        }
+
+        return new MemoryPointer(runtime, runtime.fastGetModule("FFI").fastGetClass("MemoryPointer"), io, total, typeSize);
+    }
+
     @JRubyMethod(name = { "new" }, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, Block block) {
         return allocate(context, recv, sizeArg, 1, true, block);
