@@ -107,6 +107,7 @@ public class ShellLauncher {
             } finally {
                 this.config.getOutput().close();
                 this.config.getError().close();
+                try {this.config.getInput().close();} catch (IOException ioe) {}
             }
         }
 
