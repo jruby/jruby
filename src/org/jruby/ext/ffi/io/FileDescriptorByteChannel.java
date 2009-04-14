@@ -26,19 +26,18 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.ext.ffi.jna;
+package org.jruby.ext.ffi.io;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
-import org.jruby.ext.ffi.Factory;
 
 /**
  * An implementation of ByteChannel that reads from and writes to a native unix
  * file descriptor.
  */
 public class FileDescriptorByteChannel implements ByteChannel {
-    private final static LibC libc = Factory.getInstance().loadLibrary("c", LibC.class);
+    private final static LibC libc = (LibC) com.sun.jna.Native.loadLibrary("c", LibC.class);
     private final int fd;
     private volatile boolean isOpen = true;
 

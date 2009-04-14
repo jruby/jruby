@@ -166,11 +166,6 @@ public abstract class Factory {
      * @return A new instance of <tt>libraryClass</tt> that an access the library.
      */
     public abstract <T> T loadLibrary(String libraryName, Class<T> libraryClass);
-
-    /**
-     * Wraps a {@link java.nio.ByteChannel} around a native file descriptor
-     */
-    public abstract ByteChannel newByteChannel(int fd);
     
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.

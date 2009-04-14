@@ -48,11 +48,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    @Override
-    public ByteChannel newByteChannel(int fd) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
      *

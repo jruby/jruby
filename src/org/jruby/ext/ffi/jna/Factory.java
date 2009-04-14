@@ -78,11 +78,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             return null;
         }
     }
-
-    public ByteChannel newByteChannel(int fd) {
-        return new FileDescriptorByteChannel(fd);
-    }
-
+    
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
      *
