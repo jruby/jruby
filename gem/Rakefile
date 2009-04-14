@@ -30,9 +30,3 @@ Hoe.new('jruby-jars', JRUBY_VERSION) do |p|
   p.rubyforge_name = 'jruby-extras' # if different than lowercase project name
   p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
 end
-
-# No testing
-# Rake::Task[:default].prerequisites.delete(:test)
-# Rake::Task[:test].clear
-# task :test do
-# end
