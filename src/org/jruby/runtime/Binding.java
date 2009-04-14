@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -113,6 +114,15 @@ public class Binding {
      */
     public DynamicScope getDynamicScope() {
         return dynamicScope;
+    }
+
+    private DynamicScope dummyScope;
+
+    public DynamicScope getDummyScope(StaticScope staticScope) {
+        if (dummyScope == null || dummyScope.getStaticScope() != staticScope) {
+            return dummyScope = DynamicScope.newDummyScope(staticScope, dynamicScope);
+        }
+        return dummyScope;
     }
 
     /**

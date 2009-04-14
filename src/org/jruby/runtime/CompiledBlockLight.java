@@ -56,7 +56,7 @@ public class CompiledBlockLight extends CompiledBlock {
     
     @Override
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldLightBlock(binding, DynamicScope.newDummyScope(scope, binding.getDynamicScope()), klass);
+        return context.preYieldLightBlock(binding, binding.getDummyScope(scope), klass);
     }
     
     @Override
