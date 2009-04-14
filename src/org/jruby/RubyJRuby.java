@@ -96,6 +96,7 @@ public class RubyJRuby {
     public static void createJRubyCoreExt(Ruby runtime) {
         runtime.getClassClass().defineAnnotatedMethods(JRubyClassExtensions.class);
         runtime.getThread().defineAnnotatedMethods(JRubyThreadExtensions.class);
+        runtime.getString().defineAnnotatedMethods(JRubyStringExtensions.class);
     }
 
     public static class ExtLibrary implements Library {
@@ -347,6 +348,13 @@ public class RubyJRuby {
             return RubyStruct.newStruct(runtime.getTmsStruct(),
                     new IRubyObject[] { RubyFloat.newFloat(runtime, user), RubyFloat.newFloat(runtime, system), zero, zero },
                     Block.NULL_BLOCK);
+        }
+    }
+    
+    public static class JRubyStringExtensions {
+        @JRubyMethod(name = "alloc", meta = true)
+        public static IRubyObject alloc(ThreadContext context, IRubyObject recv, IRubyObject size) {
+            return RubyString.newStringLight(context.getRuntime(), (int)size.convertToInteger().getLongValue());
         }
     }
     

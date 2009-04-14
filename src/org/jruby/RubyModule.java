@@ -220,8 +220,14 @@ public class RubyModule extends RubyObject {
     protected Set<RubyClass> includingHierarchies;
     
     public synchronized void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
-        if (includingHierarchies == null) includingHierarchies = new WeakHashSet<RubyClass>();
-        includingHierarchies.add(hierarchy);
+        Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
+        Set<RubyClass> myIncludingHierarchies =
+                new WeakHashSet<RubyClass>(oldIncludingHierarchies == null ? 1 : oldIncludingHierarchies.size() + 1);
+        if (includingHierarchies != null) {
+            myIncludingHierarchies.addAll(oldIncludingHierarchies);
+        }
+        myIncludingHierarchies.add(hierarchy);
+        includingHierarchies = Collections.unmodifiableSet(myIncludingHierarchies);
     }
     
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and

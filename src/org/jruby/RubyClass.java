@@ -703,10 +703,11 @@ public class RubyClass extends RubyModule {
     }
     
     public Collection subclasses(boolean includeDescendants) {
-        if (subclasses != null) {
-            Collection<RubyClass> mine = new ArrayList<RubyClass>(subclasses);
+        Set<RubyClass> mySubclasses = subclasses;
+        if (mySubclasses != null) {
+            Collection<RubyClass> mine = new ArrayList<RubyClass>(mySubclasses);
             if (includeDescendants) {
-                for (RubyClass i: subclasses) {
+                for (RubyClass i: mySubclasses) {
                     mine.addAll(i.subclasses(includeDescendants));
                 }
             }
@@ -716,21 +717,63 @@ public class RubyClass extends RubyModule {
             return Collections.EMPTY_LIST;
         }
     }
-    
+
+    /**
+     * Add a new subclass to the weak set of subclasses.
+     *
+     * This version always constructs a new set to avoid having to synchronize
+     * against the set when iterating it for invalidation in
+     * invalidateCacheDescendants.
+     *
+     * @param subclass The subclass to add
+     */
     public synchronized void addSubclass(RubyClass subclass) {
-        if (subclasses == null) subclasses = new WeakHashSet<RubyClass>();
-        subclasses.add(subclass);
+        Set<RubyClass> oldSubclasses = subclasses;
+        Set<RubyClass> mySubclasses =
+                new WeakHashSet<RubyClass>(oldSubclasses == null ? 1 : oldSubclasses.size() + 1);
+        if (oldSubclasses != null) mySubclasses.addAll(oldSubclasses);
+        mySubclasses.add(subclass);
+        subclasses = Collections.unmodifiableSet(mySubclasses);
     }
     
+    /**
+     * Remove a subclass from the weak set of subclasses.
+     *
+     * This version always constructs a new set to avoid having to synchronize
+     * against the set when iterating it for invalidation in
+     * invalidateCacheDescendants.
+     *
+     * @param subclass The subclass to remove
+     */
     public synchronized void removeSubclass(RubyClass subclass) {
-        if (subclasses == null) return;
-        subclasses.remove(subclass);
+        Set<RubyClass> oldSubclasses = subclasses;
+        if (oldSubclasses == null) return;
+        
+        Set<RubyClass> mySubclasses = new WeakHashSet<RubyClass>(oldSubclasses.size() + 1);
+        mySubclasses.addAll(oldSubclasses);
+        mySubclasses.remove(subclass);
+
+        subclasses = Collections.unmodifiableSet(mySubclasses);
     }
 
+    /**
+     * Invalidate all subclasses of this class by walking the set of all
+     * subclasses and asking them to invalidate themselves.
+     *
+     * Note that this version works against a reference to the current set of
+     * subclasses, which could be replaced by the time this iteration is
+     * complete. In theory, there may be a path by which invalidation would
+     * miss a class added during the invalidation process, but the exposure is
+     * minimal if it exists at all. The only way to prevent it would be to
+     * synchronize both invalidation and subclass set modification against a
+     * global lock, which we would like to avoid.
+     */
+    @Override
     protected void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
         // update all subclasses
-        if (subclasses != null) for (RubyClass subclass : subclasses) {
+        Set<RubyClass> mySubclasses = subclasses;
+        if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
             subclass.invalidateCacheDescendants();
         }
     }

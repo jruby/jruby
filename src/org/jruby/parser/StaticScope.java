@@ -84,7 +84,7 @@ public abstract class StaticScope implements Serializable {
 
     private boolean isBackrefLastlineScope = false;
     
-    private DynamicScope dummyScope = new NoVarsDynamicScope(this);
+    private DynamicScope dummyScope;
     
     protected StaticScope(StaticScope enclosingScope, String[] names) {
         assert names != null : "names is not null";
@@ -365,7 +365,7 @@ public abstract class StaticScope implements Serializable {
     }
     
     public DynamicScope getDummyScope() {
-        return dummyScope;
+        return dummyScope == null ? dummyScope = new NoVarsDynamicScope(this) : dummyScope;
     }
 
     private void growVariableNames(String name) {
