@@ -176,6 +176,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
+     * Path for objects that don't taint and don't enter objectspace.
+     */
+    public RubyBasicObject(RubyClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
+    /**
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)

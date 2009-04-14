@@ -97,6 +97,13 @@ public class RubyObject extends RubyBasicObject {
     }
 
     /**
+     * Path for objects that don't taint and don't enter objectspace.
+     */
+    public RubyObject(RubyClass metaClass) {
+        super(metaClass);
+    }
+
+    /**
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)

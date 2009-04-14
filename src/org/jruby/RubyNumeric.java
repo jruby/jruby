@@ -100,6 +100,10 @@ public class RubyNumeric extends RubyObject {
         super(runtime, metaClass);
     }
 
+    public RubyNumeric(RubyClass metaClass) {
+        super(metaClass);
+    }
+
     public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         super(runtime, metaClass, useObjectSpace);
     }    

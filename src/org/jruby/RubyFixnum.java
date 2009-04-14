@@ -42,7 +42,6 @@ import java.util.Map;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.java.MiniJava;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -80,7 +79,7 @@ public class RubyFixnum extends RubyInteger {
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
         
         for (int i = 0; i < runtime.fixnumCache.length; i++) {
-            runtime.fixnumCache[i] = new RubyFixnum(runtime, fixnum, i - CACHE_OFFSET);
+            runtime.fixnumCache[i] = new RubyFixnum(fixnum, i - CACHE_OFFSET);
         }
 
         return fixnum;
@@ -107,12 +106,12 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum(Ruby runtime, long value) {
-        super(runtime, runtime.getFixnum(), false, false);
+        super(runtime.getFixnum());
         this.value = value;
     }
     
-    private RubyFixnum(Ruby runtime, RubyClass klazz, long value) {
-        super(runtime, klazz, false, false);
+    private RubyFixnum(RubyClass klazz, long value) {
+        super(klazz);
         this.value = value;
     }
     
