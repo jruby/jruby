@@ -44,7 +44,6 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.AbstractCompiledBlockCallback;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -150,12 +149,12 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
 
     private ClassWriter createBlockCtor(String namePath, Class fieldClass) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(AbstractCompiledBlockCallback.class), null);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(CompiledBlockCallback.class), null);
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
         mv.aload(0);
-        mv.invokespecial(p(AbstractCompiledBlockCallback.class), "<init>", sig(void.class));
+        mv.invokespecial(p(CompiledBlockCallback.class), "<init>", sig(void.class));
         mv.aload(0);
         mv.aload(1);
         mv.checkcast(p(fieldClass));
