@@ -34,6 +34,8 @@ import com.kenai.constantine.platform.Sock;
 import static com.kenai.constantine.platform.Sock.*;
 import static com.kenai.constantine.platform.NameInfo.*;
 import static com.kenai.constantine.platform.IPProto.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -338,46 +340,43 @@ public class RubySocket extends RubyBasicSocket {
     }
     @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
-        StringBuilder sb = new StringBuilder();
-        sb.append((char)16);
-        sb.append((char)2);
-
-        int iport = RubyNumeric.fix2int(port);
-
-        sb.append((char)((iport >> 8) & 0xFF));
-        sb.append((char)((iport & 0xFF)));
-
-        try {
-            String str = host.isNil() ? null : host.convertToString().toString();
-            if(str != null && "".equals(str)) {
-                sb.append((char)0);
-                sb.append((char)0);
-                sb.append((char)0);
-                sb.append((char)0);
-            } else {
-                InetAddress[] addrs = InetAddress.getAllByName(str);
-                byte[] addr = addrs[0].getAddress();
-                sb.append((char)addr[0]);
-                sb.append((char)addr[1]);
-                sb.append((char)addr[2]);
-                sb.append((char)addr[3]);
-            }
-        } catch(UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "getaddrinfo: No address associated with nodename");
-        }
-
-        sb.append((char)0);
-        sb.append((char)0);
-        sb.append((char)0);
-        sb.append((char)0);
-        sb.append((char)0);
-        sb.append((char)0);
-        sb.append((char)0);
-        sb.append((char)0);
-
-        return context.getRuntime().newString(sb.toString());
+	return pack_sockaddr_in(context, recv,
+				RubyNumeric.fix2int(port),
+				host.isNil()
+				? null
+				: host.convertToString().toString());
     }
+    public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, int iport, String host) {
+	ByteArrayOutputStream bufS = new ByteArrayOutputStream();
+	try {
+	    DataOutputStream ds = new DataOutputStream(bufS);
+	    ds.write(16);
+	    ds.write(2);
 
+	    ds.write(iport >> 8);
+	    ds.write(iport);
+
+	    try {
+		if(host != null && "".equals(host)) {
+		    ds.writeInt(0);
+		} else {
+		    InetAddress[] addrs = InetAddress.getAllByName(host);
+		    byte[] addr = addrs[0].getAddress();
+		    ds.write(addr, 0, addr.length);
+		}
+	    } catch (UnknownHostException e) {
+		throw sockerr(context.getRuntime(), "getaddrinfo: No address associated with nodename");
+	    }
+
+	    ds.writeInt(0);
+	    ds.writeInt(0);
+	} catch (IOException e) {
+	    throw sockerr(context.getRuntime(), "pack_sockaddr_in: internal error");
+	}
+
+        return context.getRuntime().newString(new ByteList(bufS.toByteArray(),
+							   false));
+    }
     @Deprecated
     public static IRubyObject unpack_sockaddr_in(IRubyObject recv, IRubyObject addr) {
         return unpack_sockaddr_in(recv.getRuntime().getCurrentContext(), recv, addr);

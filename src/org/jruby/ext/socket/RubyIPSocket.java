@@ -104,6 +104,28 @@ public class RubyIPSocket extends RubyBasicSocket {
         }
         return addrFor(context.getRuntime(), address);
     }
+    public IRubyObject getsockname(ThreadContext context) {
+        InetSocketAddress sock = getLocalSocket();
+        if (sock == null) {
+            return RubySocket.pack_sockaddr_in(context, this, 0, "");
+	} else {
+	    String addr = sock.getAddress().getHostAddress();
+	    return RubySocket.pack_sockaddr_in(context, this,
+					       sock.getPort(),
+					       addr);
+	}
+    }
+    public IRubyObject getpeername(ThreadContext context) {
+        InetSocketAddress sock = getRemoteSocket();
+        if (sock == null) {
+            return RubySocket.pack_sockaddr_in(context, this, 0, "");
+	} else {
+	    String addr = sock.getAddress().getHostAddress();
+	    return RubySocket.pack_sockaddr_in(context, this,
+					       sock.getPort(),
+					       addr);
+	}
+    }
     @Deprecated
     public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
         return getaddress(recv.getRuntime().getCurrentContext(), recv, hostname);
