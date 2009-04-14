@@ -293,7 +293,7 @@
     <copy file="${basedir}/jruby.bnd.template" tofile="${build.dir}/${bndfile}" filtering="true"/>
     <taskdef resource="aQute/bnd/ant/taskdef.properties"
       classpath="${build.lib.dir}/bnd-0.0.249.jar"/>
-    <bndwrap definitions="${build.dir}" output="${lib.dir}">
+    <bndwrap definitions="${build.dir}" output="${dest.lib.dir}">
       <fileset file="${jar.wrap}" />
     </bndwrap>
     <move file="${jar.wrap}$" tofile="${jar.wrap}"
@@ -372,7 +372,7 @@
       </java>
 
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc8.jar"/>
-      <jarjar destfile="${lib.dir}/${filename}">
+      <jarjar destfile="${dest.lib.dir}/${filename}">
         <fileset dir="${jruby.classes.dir}"/>
         <fileset dir="${build.dir}/jar-complete">
           <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
@@ -407,7 +407,7 @@
       </jarjar>
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby-complete.bnd" />
-        <param name="jar.wrap" value="${lib.dir}/jruby-complete.jar" />
+        <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
       </antcall>
     </target>
 

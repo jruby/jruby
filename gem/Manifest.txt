@@ -2,6 +2,4 @@ History.txt
 Manifest.txt
 README.txt
 Rakefile
-lib/jruby.jar
-lib/jruby-stdlib.jar
 lib/jruby-jars.rb

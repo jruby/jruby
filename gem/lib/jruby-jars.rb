@@ -1,11 +1,11 @@
 module JRubyJars
-  PATH = File.dirname(__FILE__)
+  PATH = File.expand_path(File.dirname(__FILE__))
 
   def self.jruby_jar_path
-    PATH + "/jruby.jar"
+    PATH + "/jruby-#{JRUBY_VERSION}.jar"
   end
 
   def self.stdlib_jar_path
-    PATH + "/jruby-stdlib.jar"
+    PATH + "/jruby-stdlib-#{JRUBY_VERSION}.jar"
   end
 end

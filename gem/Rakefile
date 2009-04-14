@@ -3,16 +3,27 @@
 require 'rubygems'
 require 'hoe'
 
-task :default => :prepare
+task :default => :package
+task :package => :prepare
 
-task :prepare do
-  FileUtils.cp('../lib/jruby.jar', 'lib/jruby.jar')
-  Dir.chdir('../lib/ruby/1.8') do
-    system 'jar -cvf ../../../gem/lib/jruby-stdlib.jar `find . -name \\*.rb`'
+directory "pkg/jruby-jars-#{JRUBY_VERSION}/lib"
+
+file 'pkg/jruby-complete.jar' => "pkg" do
+  pkg_dir = File.expand_path('pkg')
+  Dir.chdir('..') do
+    sh "ant jar-complete -Ddest.lib.dir='#{pkg_dir}'"
   end
-  Dir.chdir('../lib/ruby/site_ruby/1.8') do
-    system 'jar -uvf ../../../../gem/lib/jruby-stdlib.jar `find . -name \\*.rb`'
+end
+
+task :prepare => ['pkg/jruby-complete.jar', "pkg/jruby-jars-#{JRUBY_VERSION}/lib"] do
+  %w(pkg/jruby-complete pkg/jruby-core).each {|d| rm_rf d; mkdir_p d }
+  Dir.chdir("pkg/jruby-complete") do
+    sh "jar xf ../jruby-complete.jar"
+    mv FileList[*%w(builtin jruby org com jline)], "../jruby-core"
   end
+  sh "jar cfm pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-core-#{JRUBY_VERSION}.jar pkg/jruby-complete/META-INF/MANIFEST.MF -C pkg/jruby-core ."
+  rm "pkg/jruby-complete/META-INF/MANIFEST.MF"
+  sh "jar cf pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-stdlib-#{JRUBY_VERSION}.jar -C pkg/jruby-complete ."
 end
 
 Hoe.new('jruby-jars', JRUBY_VERSION) do |p|
@@ -20,4 +31,8 @@ Hoe.new('jruby-jars', JRUBY_VERSION) do |p|
   p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
 end
 
-# vim: syntax=Ruby
+# No testing
+# Rake::Task[:default].prerequisites.delete(:test)
+# Rake::Task[:test].clear
+# task :test do
+# end
