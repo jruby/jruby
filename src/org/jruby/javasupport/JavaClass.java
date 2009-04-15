@@ -1056,6 +1056,11 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod
+    public RubyString inspect() {
+        return getRuntime().newString("class " + javaClass().getName());
+    }
+
+    @JRubyMethod
     public IRubyObject canonical_name() {
         String canonicalName = javaClass().getCanonicalName();
         if (canonicalName != null) {

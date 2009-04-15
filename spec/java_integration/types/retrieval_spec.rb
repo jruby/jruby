@@ -29,3 +29,10 @@ describe "A Java class" do
     end
   end
 end
+
+describe "A JavaClass wrapper around a java.lang.Class" do
+  it "provides a nice String output for inspect" do
+    myclass = java.lang.String.java_class
+    myclass.inspect.should == "class java.lang.String"
+  end
+end
