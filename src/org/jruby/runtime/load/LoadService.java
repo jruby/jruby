@@ -197,13 +197,13 @@ public class LoadService {
                        addPath(rubyDir + "site_ruby");
                        addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
                        addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION + sep + "java");
+                   } else {
+                       // Add 1.8 libs
+                       addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+                       addPath(rubyDir + "site_ruby");
+                       addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+                       addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
                    }
-              
-                   // Add 1.8 libs
-                   addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-                   addPath(rubyDir + "site_ruby");
-                   addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-                   addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
 
                    // Added to make sure we find default distribution files within jar file.
                    // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
