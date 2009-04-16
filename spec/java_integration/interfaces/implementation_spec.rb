@@ -10,6 +10,8 @@ import "java_integration.fixtures.ConstantHoldingInterface"
 import "java_integration.fixtures.ReturnsInterface"
 import "java_integration.fixtures.ReturnsInterfaceConsumer"
 import "java_integration.fixtures.AnotherRunnable"
+import "java_integration.fixtures.BooleanReturningInterface"
+import "java_integration.fixtures.BooleanReturningInterfaceConsumer"
 import "java.lang.Runnable"
 
 describe "Single-method Java interfaces implemented in Ruby" do
@@ -596,5 +598,20 @@ describe "A Ruby class implementing Java interfaces with overlapping methods" do
 
     obj = nil
     lambda {obj = cls.new}.should_not raise_error
+  end
+end
+
+# JRUBY-3166
+describe "A Ruby class implementing a Java interface with method returning Boolean" do
+  it "should correctly box returned value" do
+    cls = Class.new do
+      include BooleanReturningInterface
+      def bar
+        true
+      end
+    end
+
+    obj = cls.new
+    BooleanReturningInterfaceConsumer.new.consume(obj).should be_true
   end
 end

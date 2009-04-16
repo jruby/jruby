@@ -491,12 +491,14 @@ public class JavaUtil {
             return rubyObject;
         }
         
-        if (javaClass.isPrimitive()) {
-            RubyConverter converter = RUBY_CONVERTERS.get(javaClass);
-            if (converter != null) {
-                return converter.convert(context, rubyObject);
-            }
+        // the converters handle not only primitive types but also their boxed versions, so we should check
+        // if we have a converter before checking for isPrimitive()
+        RubyConverter converter = RUBY_CONVERTERS.get(javaClass);
+        if (converter != null) {
+            return converter.convert(context, rubyObject);
+        }
 
+        if (javaClass.isPrimitive()) {
             String s = ((RubyString)TypeConverter.convertToType(rubyObject, rubyObject.getRuntime().getString(), "to_s", true)).getUnicodeValue();
             if (s.length() > 0) {
                 return new Character(s.charAt(0));
