@@ -15,7 +15,8 @@ cygwin=false
 
 # ----- Identify OS we are running under --------------------------------------
 case "`uname`" in
-CYGWIN*) cygwin=true
+CYGWIN*) cygwin=true;;
+Darwin) darwin=true;;
 esac
 
 #
@@ -124,11 +125,17 @@ fi
 
 JAVA_VM=-client
 
-# Split out any -J argument for passing to the JVM.
-# Scanning for args is aborted by '--'.
 declare -a java_args
 declare -a ruby_args
-    while [ $# -gt 0 ]
+
+# Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
+if $darwin; then
+  java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
+fi
+
+# Split out any -J argument for passing to the JVM.
+# Scanning for args is aborted by '--'.
+while [ $# -gt 0 ]
 do
     case "$1" in
     # Stuff after '-J' in this argument goes to JVM
@@ -206,6 +213,11 @@ do
     esac
     shift
 done
+
+# Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
+if [ `uname -s` = "Darwin" ]; then
+  java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
+fi
 
 # Add a property to report memory max
 JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
