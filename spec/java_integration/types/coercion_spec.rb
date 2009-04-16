@@ -370,62 +370,65 @@ end
 
 describe "Java primitive-box-typed interface methods" do
   it "should coerce to Ruby types for the implementer" do
-    pending "We do not coerce numerics to boxed Java numerics (yet?)" do
-      impl = Class.new {
-        attr_accessor :result
-        include ValueReceivingInterface
+    impl = Class.new {
+      attr_accessor :result
+      include ValueReceivingInterface
 
-        def receiveByte(obj)
-          self.result = obj
-          obj
-        end
+      def receiveByte(obj)
+        self.result = obj
+        obj
+      end
 
-        %w[Short Char Int Long Float Double True False].each do |type|
-          alias_method "receive#{type}".intern, :receiveByte
-        end
-      }
+      alias_method :receiveByteObj, :receiveByte
 
-      vri = impl.new
-      vri_handler = ValueReceivingInterfaceHandler.new(vri);
+      %w[Short Char Int Long Float Double True False].each do |type|
+        alias_method "receive#{type}".intern, :receiveByte
+        alias_method "receive#{type}Obj".intern, :receiveByte
+      end
+    }
 
-      obj = 1
+    vri = impl.new
+    vri_handler = ValueReceivingInterfaceHandler.new(vri);
 
-      vri_handler.receiveByteObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Fixnum
+    obj = 1
 
-      vri_handler.receiveShortObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Fixnum
+    vri_handler.receiveByteObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
 
+    vri_handler.receiveShortObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+
+    pending "char appears to be getting signed/unsigned-garbled" do
       vri_handler.receiveCharObj(obj).should == obj
       vri.result.should == obj
       vri.result.class.should == Fixnum
-
-      vri_handler.receiveIntObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Fixnum
-
-      vri_handler.receiveLongObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Fixnum
-
-      vri_handler.receiveFloatObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Float
-
-      vri_handler.receiveDoubleObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Float
-
-      vri_handler.receiveTrueObj(true).should == true
-      vri.result.should == true
-      vri.result.class.should == TrueClass
-
-      vri_handler.receiveFalseObj(false).should == false
-      vri.result.should == false
-      vri.result.class.should == FalseClass
     end
+
+    vri_handler.receiveIntObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveLongObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveFloatObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Float
+
+    vri_handler.receiveDoubleObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Float
+
+    vri_handler.receiveTrueObj(true).should == true
+    vri.result.should == true
+    vri.result.class.should == TrueClass
+
+    vri_handler.receiveFalseObj(false).should == false
+    vri.result.should == false
+    vri.result.class.should == FalseClass
   end
 end
 
