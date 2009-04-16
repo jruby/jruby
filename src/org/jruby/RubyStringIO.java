@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -494,28 +495,32 @@ public class RubyStringIO extends RubyObject {
         }
 
         for (int i = 0; i < args.length; i++) {
-            String line;
+            RubyString line;
             
             if (args[i].isNil()) {
-                line = "nil";
+                line = getRuntime().newString("nil");
             } else {
                 IRubyObject tmp = args[i].checkArrayType();
                 if (!tmp.isNil()) {
                     RubyArray arr = (RubyArray) tmp;
                     if (getRuntime().isInspecting(arr)) {
-                        line = "[...]";
+                        line = getRuntime().newString("[...]");
                     } else {
                         inspectPuts(context, arr);
                         continue;
                     }
                 } else {
-                    line = args[i].toString();
+                    if (args[i] instanceof RubyString) {
+                        line = (RubyString)args[i];
+                    } else {
+                        line = args[i].asString();
+                    }
                 }
             }
 
-            callMethod(context, "write", getRuntime().newString(line));
+            callMethod(context, "write", line);
 
-            if (!line.endsWith("\n")) {
+            if (!line.getByteList().endsWith(NEWLINE)) {
                 callMethod(context, "write", RubyString.newStringShared(getRuntime(), NEWLINE));
             }
         }
