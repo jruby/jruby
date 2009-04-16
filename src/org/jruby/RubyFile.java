@@ -1239,7 +1239,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     element = inspectJoin(context, recv, ary, ((RubyArray)args[i]));
                 }
             } else {
-                element = args[i].convertToString().toString();
+                IRubyObject path = args[i];
+                if (runtime.is1_9()) path = path(context, recv, path);
+                element = path.convertToString().toString();
             }
             
             chomp(buffer);

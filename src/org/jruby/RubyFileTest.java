@@ -300,15 +300,26 @@ public class RubyFileTest {
         if (pathOrFile instanceof RubyFile) {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
         } else {
+            if (runtime.is1_9()) {
+                // do to_path coercion
+                pathOrFile = RubyFile.path(runtime.getCurrentContext(), runtime.getFile(), pathOrFile);
+            }
             return JRubyFile.create(runtime.getCurrentDirectory(), pathOrFile.convertToString().getUnicodeValue());
         }
     }
 
     private static ZipEntry file_in_archive(IRubyObject path) {
+        Ruby runtime = path.getRuntime();
+        
         if (path instanceof RubyFile) {
             return null;
         }
 
+        if (runtime.is1_9()) {
+            // do to_path coercion
+            path = RubyFile.path(runtime.getCurrentContext(), runtime.getFile(), path);
+        }
+        
         if (path.convertToString().toString().startsWith("file:")) {
             String file = path.convertToString().toString().substring(5);
             int bang = file.indexOf('!');

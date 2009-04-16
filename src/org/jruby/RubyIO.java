@@ -571,7 +571,7 @@ public class RubyIO extends RubyObject {
             throw runtime.newArgumentError("illegal access mode " + modes);
         }
 
-        for (int n = 1; n < length; n++) {
+        ModifierLoop: for (int n = 1; n < length; n++) {
             switch (modesString.charAt(n)) {
             case 'b':
                 modes |= ModeFlags.BINARY;
@@ -579,6 +579,9 @@ public class RubyIO extends RubyObject {
             case '+':
                 modes = (modes & ~ModeFlags.ACCMODE) | ModeFlags.RDWR;
                 break;
+            case ':':
+                // TODO: 1.9 encoding handling
+                break ModifierLoop;
             default:
                 throw runtime.newArgumentError("illegal access mode " + modes);
             }
