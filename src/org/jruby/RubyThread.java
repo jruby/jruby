@@ -227,7 +227,11 @@ public class RubyThread extends RubyObject {
             // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
             runtime.getThreadService().associateThread(thread, this);
         }
-        
+
+        // JRUBY-3568, inherit threadgroup
+        IRubyObject group = getRuntime().getCurrentContext().getThread().group();
+        if (!group.isNil()) ((RubyThreadGroup) group).add(this, null);
+
         // We yield here to hopefully permit the target thread to schedule
         // MRI immediately schedules it, so this is close but not exact
         Thread.yield();

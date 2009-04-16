@@ -284,4 +284,13 @@ class TestThread < Test::Unit::TestCase
       end
     end
   end
+  
+  # JRUBY-3568: thread group is inherited from parent
+  def test_inherits_thread_group
+    tg = ThreadGroup.new
+    og = nil
+    tg.add(Thread.current)
+    Thread.new { og = Thread.current.group }.join
+    assert_equal(tg, og)
+  end
 end
