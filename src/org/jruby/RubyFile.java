@@ -642,6 +642,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getLastModified(context.getRuntime(), path);
     }
 
+    @JRubyMethod(meta = true, frame = true)
+    public static IRubyObject path(ThreadContext context, IRubyObject self, IRubyObject str) {
+        if (str instanceof RubyString) {
+            return (RubyString)str;
+        } else {
+            if (str.respondsTo("to_path")) {
+                return str.callMethod(context, "to_path");
+            } else {
+                return str.convertToString();
+            }
+        }
+    }
+
     @JRubyMethod
     public RubyString path(ThreadContext context) {
         return context.getRuntime().newString(path);
