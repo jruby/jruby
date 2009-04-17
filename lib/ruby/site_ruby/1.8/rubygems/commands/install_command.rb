@@ -6,6 +6,11 @@ require 'rubygems/local_remote_options'
 require 'rubygems/validator'
 require 'rubygems/version_option'
 
+##
+# Gem installer command line tool
+#
+# See `gem help install`
+
 class Gem::Commands::InstallCommand < Gem::Command
 
   include Gem::VersionOption
@@ -14,11 +19,11 @@ class Gem::Commands::InstallCommand < Gem::Command
 
   def initialize
     defaults = Gem::DependencyInstaller::DEFAULT_OPTIONS.merge({
-      :generate_rdoc => true,
-      :generate_ri   => true,
+      :generate_rdoc     => true,
+      :generate_ri       => true,
       :format_executable => false,
-      :test => false,
-      :version => Gem::Requirement.default,
+      :test              => false,
+      :version           => Gem::Requirement.default,
     })
 
     super 'install', 'Install a gem into the local repository', defaults
@@ -43,7 +48,7 @@ class Gem::Commands::InstallCommand < Gem::Command
 The install command installs local or remote gem into a gem repository.
 
 For gems with executables ruby installs a wrapper file into the executable
-directory by deault.  This can be overridden with the --no-wrappers option.
+directory by default.  This can be overridden with the --no-wrappers option.
 The wrapper allows you to choose among alternate gem versions using _version_.
 
 For example `rake _0.7.3_ --version` will run rake version 0.7.3 if a newer
@@ -65,24 +70,11 @@ version is also installed.
 
     ENV.delete 'GEM_PATH' if options[:install_dir].nil? and RUBY_VERSION > '1.9'
 
-    install_options = {
-      :env_shebang => options[:env_shebang],
-      :domain => options[:domain],
-      :force => options[:force],
-      :format_executable => options[:format_executable],
-      :ignore_dependencies => options[:ignore_dependencies],
-      :install_dir => options[:install_dir],
-      :security_policy => options[:security_policy],
-      :wrappers => options[:wrappers],
-      :bin_dir => options[:bin_dir],
-      :development => options[:development],
-    }
-
     exit_code = 0
 
     get_all_gem_names.each do |gem_name|
       begin
-        inst = Gem::DependencyInstaller.new install_options
+        inst = Gem::DependencyInstaller.new options
         inst.install gem_name, options[:version]
 
         inst.installed_gems.each do |spec|
@@ -96,46 +88,40 @@ version is also installed.
       rescue Gem::GemNotFoundException => e
         alert_error e.message
         exit_code |= 2
-#      rescue => e
-#        # TODO: Fix this handle to allow the error to propagate to
-#        # the top level handler.  Examine the other errors as
-#        # well.  This implementation here looks suspicious to me --
-#        # JimWeirich (4/Jan/05)
-#        alert_error "Error installing gem #{gem_name}: #{e.message}"
-#        return
       end
     end
 
     unless installed_gems.empty? then
       gems = installed_gems.length == 1 ? 'gem' : 'gems'
       say "#{installed_gems.length} #{gems} installed"
-    end
 
-    # NOTE: *All* of the RI documents must be generated first.
-    # For some reason, RI docs cannot be generated after any RDoc
-    # documents are generated.
+      # NOTE: *All* of the RI documents must be generated first.  For some
+      # reason, RI docs cannot be generated after any RDoc documents are
+      # generated.
 
-    if options[:generate_ri] then
-      installed_gems.each do |gem|
-        Gem::DocManager.new(gem, options[:rdoc_args]).generate_ri
+      if options[:generate_ri] then
+        installed_gems.each do |gem|
+          Gem::DocManager.new(gem, options[:rdoc_args]).generate_ri
+        end
+
+        Gem::DocManager.update_ri_cache
       end
 
-      Gem::DocManager.update_ri_cache
-    end
-
-    if options[:generate_rdoc] then
-      installed_gems.each do |gem|
-        Gem::DocManager.new(gem, options[:rdoc_args]).generate_rdoc
+      if options[:generate_rdoc] then
+        installed_gems.each do |gem|
+          Gem::DocManager.new(gem, options[:rdoc_args]).generate_rdoc
+        end
       end
-    end
 
-    if options[:test] then
-      installed_gems.each do |spec|
-        gem_spec = Gem::SourceIndex.from_installed_gems.search(spec.name, spec.version.version).first
-        result = Gem::Validator.new.unit_test(gem_spec)
-        if result and not result.passed?
-          unless ask_yes_no("...keep Gem?", true) then
-            Gem::Uninstaller.new(spec.name, :version => spec.version.version).uninstall
+      if options[:test] then
+        installed_gems.each do |spec|
+          gem_spec = Gem::SourceIndex.from_installed_gems.search(spec.name, spec.version.version).first
+          result = Gem::Validator.new.unit_test(gem_spec)
+          if result and not result.passed?
+            unless ask_yes_no("...keep Gem?", true)
+              require 'rubygems/uninstaller'
+              Gem::Uninstaller.new(spec.name, :version => spec.version.version).uninstall
+            end
           end
         end
       end

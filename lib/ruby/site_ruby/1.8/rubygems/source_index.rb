@@ -7,9 +7,12 @@
 require 'rubygems'
 require 'rubygems/user_interaction'
 require 'rubygems/specification'
+
+# :stopdoc:
 module Gem
-  autoload(:SpecFetcher, 'rubygems/spec_fetcher')
+  autoload :SpecFetcher, 'rubygems/spec_fetcher'
 end
+# :startdoc:
 
 ##
 # The SourceIndex object indexes all the gems available from a
@@ -28,7 +31,7 @@ class Gem::SourceIndex
 
   include Gem::UserInteraction
 
-  attr_reader :gems # :nodoc:
+  attr_reader :gems, :prerelease_gems # :nodoc:
 
   ##
   # Directories to use to refresh this SourceIndex when calling refresh!
@@ -81,13 +84,15 @@ class Gem::SourceIndex
     # loaded spec.
 
     def load_specification(file_name)
-      begin
-        spec_code = if RUBY_VERSION < '1.9' then
-                      File.read file_name
-                    else
-                      File.read file_name, :encoding => 'UTF-8'
-                    end.untaint
+      return nil unless file_name and File.exist? file_name
 
+      spec_code = if RUBY_VERSION < '1.9' then
+                    File.read file_name
+                  else
+                    File.read file_name, :encoding => 'UTF-8'
+                  end.untaint
+
+      begin
         gemspec = eval spec_code, binding, file_name
 
         if gemspec.is_a?(Gem::Specification)
@@ -104,6 +109,7 @@ class Gem::SourceIndex
         alert_warning "#{e.inspect}\n#{spec_code}"
         alert_warning "Invalid .gemspec format in '#{file_name}'"
       end
+
       return nil
     end
 
@@ -117,7 +123,8 @@ class Gem::SourceIndex
   #   [Hash] hash of [Gem name, Gem::Specification] pairs
 
   def initialize(specifications={})
-    @gems = specifications
+    @gems, @prerelease_gems = [{}, {}]
+    specifications.each{ |full_name, spec| add_spec spec }
     @spec_dirs = nil
   end
 
@@ -170,14 +177,29 @@ class Gem::SourceIndex
       result[name] << spec
     end
 
+    # TODO: why is this a hash while @gems is an array? Seems like
+    # structural similarity would be good.
     result.values.flatten
+  end
+
+  ##
+  # An array including only the prerelease gemspecs
+
+  def prerelease_specs
+    @prerelease_gems.values
   end
 
   ##
   # Add a gem specification to the source index.
 
-  def add_spec(gem_spec)
-    @gems[gem_spec.full_name] = gem_spec
+  def add_spec(gem_spec, name = gem_spec.full_name)
+    # No idea why, but the Indexer wants to insert them using original_name
+    # instead of full_name. So we make it an optional arg.
+    if gem_spec.version.prerelease?
+      @prerelease_gems[name] = gem_spec
+    else
+      @gems[name] = gem_spec
+    end
   end
 
   ##
@@ -238,7 +260,7 @@ class Gem::SourceIndex
   # Find a gem by an exact match on the short name.
 
   def find_name(gem_name, version_requirement = Gem::Requirement.default)
-    dep = Gem::Dependency.new(/^#{gem_name}$/, version_requirement)
+    dep = Gem::Dependency.new gem_name, version_requirement
     search dep
   end
 
@@ -545,15 +567,15 @@ class Gem::SourceIndex
 
 end
 
+# :stopdoc:
 module Gem
 
-  # :stopdoc:
-
+  ##
   # Cache is an alias for SourceIndex to allow older YAMLized source index
   # objects to load properly.
+
   Cache = SourceIndex
 
-  # :startdoc:
-
 end
+# :startdoc:
 

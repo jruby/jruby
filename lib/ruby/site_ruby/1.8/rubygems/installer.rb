@@ -13,13 +13,18 @@ require 'rubygems/ext'
 require 'rubygems/require_paths_builder'
 
 ##
-# The installer class processes RubyGem .gem files and installs the
-# files contained in the .gem into the Gem.path.
+# The installer class processes RubyGem .gem files and installs the files
+# contained in the .gem into the Gem.path.
 #
 # Gem::Installer does the work of putting files in all the right places on the
 # filesystem including unpacking the gem into its gem dir, installing the
 # gemspec in the specifications dir, storing the cached gem in the cache dir,
 # and installing either wrappers or symlinks for executables.
+#
+# The installer fires pre and post install hooks.  Hooks can be added either
+# through a rubygems_plugin.rb file in an installed gem or via a
+# rubygems/defaults/#{RUBY_ENGINE}.rb or rubygems/defaults/operating_system.rb
+# file.  See Gem.pre_install and Gem.post_install for details.
 
 class Gem::Installer
 
@@ -98,17 +103,17 @@ class Gem::Installer
       :source_index => Gem.source_index,
     }.merge options
 
-    @env_shebang = options[:env_shebang]
-    @force = options[:force]
-    gem_home = options[:install_dir]
-    @gem_home = Pathname.new(gem_home).expand_path
+    @env_shebang         = options[:env_shebang]
+    @force               = options[:force]
+    gem_home             = options[:install_dir]
+    @gem_home            = Pathname.new(gem_home).expand_path
     @ignore_dependencies = options[:ignore_dependencies]
-    @format_executable = options[:format_executable]
-    @security_policy = options[:security_policy]
-    @wrappers = options[:wrappers]
-    @bin_dir = options[:bin_dir]
-    @development = options[:development]
-    @source_index = options[:source_index]
+    @format_executable   = options[:format_executable]
+    @security_policy     = options[:security_policy]
+    @wrappers            = options[:wrappers]
+    @bin_dir             = options[:bin_dir]
+    @development         = options[:development]
+    @source_index        = options[:source_index]
 
     begin
       @format = Gem::Format.from_file_by_path @gem, @security_policy
@@ -129,7 +134,7 @@ class Gem::Installer
       if options[:user_install] == false then # You don't want to use ~
         raise Gem::FilePermissionError, @gem_home
       elsif options[:user_install].nil? then
-        unless self.class.home_install_warning then
+        unless self.class.home_install_warning or options[:unpack] then
           alert_warning "Installing to ~/.gem since #{@gem_home} and\n\t  #{Gem.bindir} aren't both writable."
           self.class.home_install_warning = true
         end
@@ -270,11 +275,8 @@ class Gem::Installer
   end
 
   ##
-  # Writes the .gemspec specification (in Ruby) to the supplied
-  # spec_path.
-  #
-  # spec:: [Gem::Specification] The Gem specification to output
-  # spec_path:: [String] The location (path) to write the gemspec to
+  # Writes the .gemspec specification (in Ruby) to the gem home's
+  # specifications directory.
 
   def write_spec
     rubycode = @spec.to_ruby
@@ -433,7 +435,7 @@ if ARGV.first =~ /^_(.*)_$/ and Gem::Version.correct? $1 then
 end
 
 gem '#{@spec.name}', version
-load '#{bin_file_name}'
+load Gem.bin_path('#{@spec.name}', '#{bin_file_name}', version)
 TEXT
   end
 
@@ -444,10 +446,10 @@ TEXT
     <<-TEXT
 @ECHO OFF
 IF NOT "%~f0" == "~f0" GOTO :WinNT
-@"#{File.basename(Gem.ruby)}" "#{File.join(bindir, bin_file_name)}" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@"#{File.basename(Gem.ruby).chomp('"')}" "#{File.join(bindir, bin_file_name)}" %1 %2 %3 %4 %5 %6 %7 %8 %9
 GOTO :EOF
 :WinNT
-@"#{File.basename(Gem.ruby)}" "%~dpn0" %*
+@"#{File.basename(Gem.ruby).chomp('"')}" "%~dpn0" %*
 TEXT
   end
 
@@ -532,6 +534,7 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
         raise Gem::InstallError, msg
       end
 
+      FileUtils.rm_rf(path) if File.exists?(path)
       FileUtils.mkdir_p File.dirname(path)
 
       File.open(path, "wb") do |out|

@@ -2,9 +2,11 @@ require 'rubygems/command'
 require 'rubygems/local_remote_options'
 require 'rubygems/spec_fetcher'
 require 'rubygems/version_option'
+require 'rubygems/text'
 
 class Gem::Commands::QueryCommand < Gem::Command
 
+  include Gem::Text
   include Gem::LocalRemoteOptions
   include Gem::VersionOption
 
@@ -145,6 +147,12 @@ class Gem::Commands::QueryCommand < Gem::Command
         version
       end.reverse
 
+      platforms = Hash.new { |h,version| h[version] = [] }
+
+      matching_tuples.map do |(name, version, platform,_),_|
+        platforms[version] << platform if platform
+      end
+
       seen = {}
 
       matching_tuples.delete_if do |(name, version,_),_|
@@ -174,6 +182,28 @@ class Gem::Commands::QueryCommand < Gem::Command
                end
 
         entry << "\n"
+
+        non_ruby = platforms.any? do |_, pls|
+          pls.any? { |pl| pl != Gem::Platform::RUBY }
+        end
+
+        if non_ruby then
+          if platforms.length == 1 then
+            title = platforms.values.length == 1 ? 'Platform' : 'Platforms'
+            entry << "    #{title}: #{platforms.values.sort.join ', '}\n"
+          else
+            entry << "    Platforms:\n"
+            platforms.sort_by do |version,|
+              version
+            end.each do |version, pls|
+              label = "        #{version}: "
+              data = format_text pls.sort.join(', '), 68, label.length
+              data[0, label.length] = label
+              entry << data << "\n"
+            end
+          end
+        end
+
         authors = "Author#{spec.authors.length > 1 ? 's' : ''}: "
         authors << spec.authors.join(', ')
         entry << format_text(authors, 68, 4)
@@ -185,6 +215,12 @@ class Gem::Commands::QueryCommand < Gem::Command
 
         if spec.homepage and not spec.homepage.empty? then
           entry << "\n" << format_text("Homepage: #{spec.homepage}", 68, 4)
+        end
+
+        if spec.license and not spec.license.empty? then
+          licenses = "License#{spec.licenses.length > 1 ? 's' : ''}: "
+          licenses << spec.licenses.join(', ')
+          entry << "\n" << format_text(licenses, 68, 4)
         end
 
         if spec.loaded_from then
@@ -207,26 +243,6 @@ class Gem::Commands::QueryCommand < Gem::Command
     end
 
     say output.join(options[:details] ? "\n\n" : "\n")
-  end
-
-  ##
-  # Used for wrapping and indenting text
-
-  def format_text(text, wrap, indent=0)
-    result = []
-    work = text.dup
-
-    while work.length > wrap
-      if work =~ /^(.{0,#{wrap}})[ \n]/o then
-        result << $1
-        work.slice!(0, $&.length)
-      else
-        result << work.slice!(0, wrap)
-      end
-    end
-
-    result << work if work.length.nonzero?
-    result.join("\n").gsub(/^/, " " * indent)
   end
 
 end

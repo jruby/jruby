@@ -29,7 +29,7 @@ class Gem::Requirement
     "~>" =>  lambda { |v, r| v >= r && v < r.bump }
   }
 
-  OP_RE = /#{OPS.keys.map{ |k| Regexp.quote k }.join '|'}/o
+  OP_RE = OPS.keys.map{ |k| Regexp.quote k }.join '|'
 
   ##
   # Factory method to create a Gem::Requirement object.  Input may be a
@@ -99,11 +99,15 @@ class Gem::Requirement
     as_list.join(", ")
   end
 
+  def pretty_print(q) # :nodoc:
+    q.group 1, 'Gem::Requirement.new(', ')' do
+      q.pp as_list
+    end
+  end
+
   def as_list
     normalize
-    @requirements.collect { |req|
-      "#{req[0]} #{req[1]}"
-    }
+    @requirements.map do |op, version| "#{op} #{version}" end
   end
 
   def normalize
@@ -129,6 +133,11 @@ class Gem::Requirement
     OPS[op].call(version, required_version)
   end
 
+  def prerelease?
+    # TODO: why is @requirements a nested array?
+    @requirements.any?{ |r| r[1].prerelease? }
+  end
+
   ##
   # Parse the version requirement obj returning the operator and version.
   #
@@ -138,9 +147,9 @@ class Gem::Requirement
 
   def parse(obj)
     case obj
-    when /^\s*(#{OP_RE})\s*([0-9.]+)\s*$/o then
+    when /^\s*(#{OP_RE})\s*(#{Gem::Version::VERSION_PATTERN})\s*$/o then
       [$1, Gem::Version.new($2)]
-    when /^\s*([0-9.]+)\s*$/ then
+    when /^\s*(#{Gem::Version::VERSION_PATTERN})\s*$/o then
       ['=', Gem::Version.new($1)]
     when /^\s*(#{OP_RE})\s*$/o then
       [$1, Gem::Version.new('0')]
