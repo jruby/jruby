@@ -75,6 +75,7 @@ describe "Struct tests" do
     smp = FFI::MemoryPointer.new :pointer
     s = PointerMember.new smp
     lambda { s[:pointer] = s }.should_not raise_error
+    foo = s[:pointer] # should not crash with a java.lang.ClassCastException: org.jruby.ext.ffi.Struct cannot be cast to org.jruby.ext.ffi.AbstractMemory
   end
   it "Struct#[:pointer]=nil" do
     smp = FFI::MemoryPointer.new :pointer
