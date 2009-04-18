@@ -365,8 +365,8 @@ public final class StructLayoutBuilder extends RubyObject {
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
             IRubyObject old = cache.getCachedValue(this);
-            if (old != null) {
-                MemoryIO oldMemory = ((AbstractMemory) old).getMemoryIO();
+            if (old instanceof Pointer) {
+                MemoryIO oldMemory = ((Pointer) old).getMemoryIO();
                 if ((memory != null && memory.equals(oldMemory)) || (memory == null && oldMemory.isNull())) {
                     return old;
                 }
