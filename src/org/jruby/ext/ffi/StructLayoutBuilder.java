@@ -88,6 +88,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         private static final ObjectAllocator INSTANCE = new Allocator();
     }
+    
     public static RubyClass createStructLayoutBuilderClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getObject(),
                 Allocator.INSTANCE, module);
@@ -314,11 +315,11 @@ public final class StructLayoutBuilder extends RubyObject {
             super(type, index, offset);
             op = MemoryOp.getMemoryOp(type.getNativeType());
         }
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             op.put(runtime, getMemoryIO(ptr), offset, value);
         }
 
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             return op.get(runtime, getMemoryIO(ptr), offset);
         }
     }
@@ -329,7 +330,7 @@ public final class StructLayoutBuilder extends RubyObject {
             super(type, index, offset);
         }
 
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             if (value instanceof Pointer) {
                 getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Pointer) value).getMemoryIO());
             } else if (value instanceof Struct) {
@@ -348,20 +349,9 @@ public final class StructLayoutBuilder extends RubyObject {
             } else {
                 throw runtime.newArgumentError("Invalid pointer value");
             }
+            cache.putReference(this, value);
         }
 
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return ((AbstractMemory) ptr).getPointer(runtime, getOffset(ptr));
-        }
-
-        @Override
-        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
-            put(runtime, ptr, value);
-            cache.putCachedValue(this, value);
-        }
-
-
-        @Override
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
             IRubyObject old = cache.getCachedValue(this);
@@ -376,8 +366,14 @@ public final class StructLayoutBuilder extends RubyObject {
             cache.putCachedValue(this, retval);
             return retval;
         }
+
         @Override
         protected boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        protected boolean isValueReferenceNeeded() {
             return true;
         }
     }
@@ -392,11 +388,12 @@ public final class StructLayoutBuilder extends RubyObject {
             return true;
         }
 
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            throw runtime.newArgumentError("Cannot set :string fields");
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
         }
 
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
             if (io == null || io.isNull()) {
                 return runtime.getNil();
@@ -408,9 +405,8 @@ public final class StructLayoutBuilder extends RubyObject {
         
             return runtime.newString(bl);
         }
-
-        @Override
-        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
+        
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             ByteList bl = value.convertToString().getByteList();
 
             MemoryPointer mem = MemoryPointer.allocate(runtime, 1, bl.length() + 1, false);
@@ -418,7 +414,7 @@ public final class StructLayoutBuilder extends RubyObject {
             // Keep a reference to the temporary memory in the cache so it does
             // not get freed by the GC until the struct is freed
             //
-            cache.putCachedValue(this, mem);
+            cache.putReference(this, mem);
 
             MemoryIO io = mem.getMemoryIO();            
             io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
@@ -434,7 +430,7 @@ public final class StructLayoutBuilder extends RubyObject {
             super(type, index, offset);
             this.length = size;
         }
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             MemoryIO io = getMemoryIO(ptr);
             ByteList bl = value.convertToString().getByteList();
             // Clamp to no longer than 
@@ -443,7 +439,7 @@ public final class StructLayoutBuilder extends RubyObject {
             io.putByte(getOffset(ptr) + len, (byte) 0);
         }
 
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             MemoryIO io = getMemoryIO(ptr);
             int len = (int) io.indexOf(getOffset(ptr), (byte) 0, length);
             if (len < 0) {
@@ -481,11 +477,11 @@ public final class StructLayoutBuilder extends RubyObject {
             return true;
         }
 
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
-            throw runtime.newArgumentError("Cannot set callback fields");
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
         }
 
-        @Override
         public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
             if (value.isNil()) {
                 getMemoryIO(ptr).putAddress(getOffset(ptr), 0L);
@@ -493,10 +489,11 @@ public final class StructLayoutBuilder extends RubyObject {
                 Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, cbInfo, value);
                 getMemoryIO(ptr).putMemoryIO(getOffset(ptr), cb.getMemoryIO());
                 cache.putCachedValue(this, cb);
+                cache.putReference(this, cb);
             }
         }
 
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             throw runtime.newNotImplementedError("Cannot get callback struct fields");
         }
     }
@@ -511,15 +508,10 @@ public final class StructLayoutBuilder extends RubyObject {
             this.layout = layout;
         }
         
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             throw runtime.newNotImplementedError("Cannot set Struct fields");
         }
 
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)));
-        }
-
-        @Override
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             IRubyObject s = cache.getCachedValue(this);
             if (s == null) {
@@ -533,7 +525,12 @@ public final class StructLayoutBuilder extends RubyObject {
         protected boolean isCacheable() {
             return true;
         }
-        
+
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
+        }
+
         public Collection<StructLayout.Member> getMembers() {
             return layout.getFields();
         }
@@ -549,15 +546,10 @@ public final class StructLayoutBuilder extends RubyObject {
             this.length = length;
         }
 
-        public void put(Ruby runtime, IRubyObject ptr, IRubyObject value) {
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             throw runtime.newNotImplementedError("Cannot set Array fields");
         }
-
-        public IRubyObject get(Ruby runtime, IRubyObject ptr) {
-            return new StructLayout.Array(runtime, ptr, offset, length, type.getNativeSize(), op);
-        }
-
-        @Override
+        
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             IRubyObject s = cache.getCachedValue(this);
             if (s == null) {

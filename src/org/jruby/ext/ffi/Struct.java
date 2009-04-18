@@ -15,8 +15,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject implements StructLayout.Storage {
     private final StructLayout layout;
+    private final IRubyObject[] referenceCache;
     private IRubyObject memory;
-    private StructLayout.Cache cache;
+    private IRubyObject[] valueCache;
     
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -69,6 +70,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         super(runtime, klass);
         this.layout = layout;
         this.memory = memory;
+        this.referenceCache = new IRubyObject[layout.getReferenceFieldCount()];
     }
 
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
@@ -189,13 +191,19 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     final MemoryIO getMemoryIO() {
         return ((AbstractMemory) memory).getMemoryIO();
     }
+
     public final IRubyObject getCachedValue(StructLayout.Member member) {
-        return cache != null ? cache.get(member) : null;
+        return valueCache != null ? valueCache[layout.getCacheableFieldIndex(member)] : null;
     }
+
     public final void putCachedValue(StructLayout.Member member, IRubyObject value) {
-        if (cache == null) {
-            cache = new StructLayout.Cache(layout);
+        if (valueCache == null) {
+            valueCache = new IRubyObject[layout.getCacheableFieldCount()];
         }
-        cache.put(member, value);
+        valueCache[layout.getCacheableFieldIndex(member)] = value;
+    }
+    
+    public void putReference(StructLayout.Member member, IRubyObject value) {
+        referenceCache[layout.getReferenceFieldIndex(member)] = value;
     }
 }

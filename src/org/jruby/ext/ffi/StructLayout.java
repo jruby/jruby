@@ -53,6 +53,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name=StructLayout.CLASS_NAME, parent="Object")
 public final class StructLayout extends Type {
+    static final Storage nullStorage = new NullStorage();
+    
     /** The name to use to register this class in the JRuby runtime */
     static final String CLASS_NAME = "StructLayout";
 
@@ -64,6 +66,9 @@ public final class StructLayout extends Type {
     
     private final int cacheableFieldCount;
     private final int[] cacheIndexMap;
+
+    private final int referenceFieldCount;
+    private final int[] referenceIndexMap;
 
     /**
      * Registers the StructLayout class in the JRuby runtime.
@@ -97,17 +102,23 @@ public final class StructLayout extends Type {
         //
         this.fields = immutableMap(fields);
         this.cacheIndexMap = new int[fields.size()];
+        this.referenceIndexMap = new int[fields.size()];
 
-        int i = 0, cfCount = 0;
+        int cfCount = 0, refCount = 0;
         for (Member m : fields.values()) {
             if (m.isCacheable()) {
-                cacheIndexMap[m.index] = i++;
-                ++cfCount;
+                cacheIndexMap[m.index] = cfCount++;
             } else {
                 cacheIndexMap[m.index] = -1;
             }
+            if (m.isValueReferenceNeeded()) {
+                referenceIndexMap[m.index] = refCount++;
+            } else {
+                referenceIndexMap[m.index] = -1;
+            }
         }
         this.cacheableFieldCount = cfCount;
+        this.referenceFieldCount = refCount;
 
         // Create the ordered list of field names from the map
         List<RubySymbol> names = new ArrayList<RubySymbol>(fields.size());
@@ -142,7 +153,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "get", required = 2)
     public IRubyObject get(ThreadContext context, IRubyObject ptr, IRubyObject name) {
-        return getMember(context.getRuntime(), name).get(context.getRuntime(), ptr);
+        return getMember(context.getRuntime(), name).get(context.getRuntime(), nullStorage, ptr);
     }
     
     /**
@@ -154,7 +165,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "put", required = 3)
     public IRubyObject put(ThreadContext context, IRubyObject ptr, IRubyObject name, IRubyObject value) {
-        getMember(context.getRuntime(), name).put(context.getRuntime(), ptr, value);
+        getMember(context.getRuntime(), name).put(context.getRuntime(), nullStorage, ptr, value);
         return value;
     }
     
@@ -246,6 +257,22 @@ public final class StructLayout extends Type {
         return getNativeSize();
     }
 
+    final int getReferenceFieldCount() {
+        return referenceFieldCount;
+    }
+
+    final int getReferenceFieldIndex(Member member) {
+        return referenceIndexMap[member.index];
+    }
+
+    final int getCacheableFieldCount() {
+        return cacheableFieldCount;
+    }
+
+    final int getCacheableFieldIndex(Member member) {
+        return cacheIndexMap[member.index];
+    }
+
     public final int getFieldCount() {
         return fields.size();
     }
@@ -306,24 +333,7 @@ public final class StructLayout extends Type {
         public int hashCode() {
             return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32));
         }
-
-        /**
-         * Writes a ruby value to the native struct member as the appropriate native value.
-         * 
-         * @param ptr The struct memory area.
-         * @param value The ruby value to write to the native struct member.
-         */
-        public abstract void put(Ruby runtime, IRubyObject ptr, IRubyObject value);
-
         
-        
-        /**
-         * Reads a ruby value from the struct member.
-         * @param ptr The memory area of the struct.
-         * @return A ruby object equivalent to the native member value.
-         */
-        public abstract IRubyObject get(Ruby runtime, IRubyObject ptr);
-
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
@@ -332,9 +342,7 @@ public final class StructLayout extends Type {
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
          */
-        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
-            put(runtime, ptr, value);
-        }
+        public abstract void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value);
 
         /**
          * Reads a ruby value from the struct member.
@@ -343,9 +351,7 @@ public final class StructLayout extends Type {
          * @param ptr The struct memory area.
          * @return A ruby object equivalent to the native member value.
          */
-        public IRubyObject get(Ruby runtime, Storage cache, IRubyObject ptr) {
-            return get(runtime, ptr);
-        }
+        public abstract IRubyObject get(Ruby runtime, Storage cache, IRubyObject ptr);
 
         /**
          * Gets the cacheable status of this Struct member
@@ -353,6 +359,15 @@ public final class StructLayout extends Type {
          * @return <tt>true</tt> if this member type is cacheable
          */
         protected boolean isCacheable() {
+            return false;
+        }
+
+        /**
+         * Checks if a reference to the ruby object assigned to this field needs to be stored
+         *
+         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         */
+        protected boolean isValueReferenceNeeded() {
             return false;
         }
     }
@@ -364,24 +379,13 @@ public final class StructLayout extends Type {
     public static interface Storage {
         IRubyObject getCachedValue(Member member);
         void putCachedValue(Member member, IRubyObject value);
+        void putReference(Member member, IRubyObject value);
     }
 
-    static final class Cache {
-        private final int[] cacheIndexMap;
-        private final IRubyObject[] array;
-
-        Cache(StructLayout layout) {
-            this.cacheIndexMap = layout.cacheIndexMap;
-            this.array = new IRubyObject[layout.cacheableFieldCount];
-        }
-        public IRubyObject get(Member member) {
-            return cacheIndexMap[member.index] != -1 ? array[cacheIndexMap[member.index]] : null;
-        }
-        public void put(Member member, IRubyObject value) {
-            if (cacheIndexMap[member.index] != -1) {
-                array[cacheIndexMap[member.index]] = value;
-            }
-        }
+    static class NullStorage implements Storage {
+        public IRubyObject getCachedValue(Member member) { return null; }
+        public void putCachedValue(Member member, IRubyObject value) { }
+        public void putReference(Member member, IRubyObject value) { }
     }
     
     @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
