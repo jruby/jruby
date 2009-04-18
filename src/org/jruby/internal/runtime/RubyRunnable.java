@@ -91,9 +91,9 @@ public class RubyRunnable implements Runnable {
             rubyThread.cleanTerminate(result);
         } catch (ThreadKill tk) {
             // notify any killer waiting on our thread that we're going bye-bye
-            synchronized (rubyThread.killLock) {
-                rubyThread.killLock.notifyAll();
-            }
+//            synchronized (rubyThread.killLock) {
+//                rubyThread.killLock.notifyAll();
+//            }
         } catch (JumpException.ReturnJump rj) {
             rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
         } catch (RaiseException e) {
@@ -102,13 +102,11 @@ public class RubyRunnable implements Runnable {
             // Someone called exit!, so we need to kill the main thread
             runtime.getThreadService().getMainThread().kill();
         } finally {
+            rubyThread.beDead();
             runtime.getThreadService().setCritical(false);
             runtime.getThreadService().unregisterThread(rubyThread);
             
-            // synchronize on the RubyThread object for threadgroup updates
-            synchronized (rubyThread) {
-                ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
-            }
+            ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
             
             // restore context classloader, in case we're using a thread pool
             try {

@@ -546,20 +546,24 @@ public class ShellLauncher {
         @Override
         public void destroy() {
             try {
-                child.destroy();
                 if (input != null) input.close();
                 if (inerr != null) inerr.close();
                 if (output != null) output.close();
                 if (inputChannel != null) inputChannel.close();
                 if (inerrChannel != null) inerrChannel.close();
                 if (outputChannel != null) outputChannel.close();
-                if (inputPumper != null) inputPumper.quit();
-                if (inerrPumper != null) inerrPumper.quit();
-                if (outputPumper != null) outputPumper.quit();
+                
+                // processes seem to have some peculiar locking sequences, so we
+                // need to ensure nobody is trying to close/destroy while we are
+                synchronized (this) {
+                    if (inputPumper != null) synchronized(inputPumper) {inputPumper.quit();}
+                    if (inerrPumper != null) synchronized(inerrPumper) {inerrPumper.quit();}
+                    if (outputPumper != null) synchronized(outputPumper) {outputPumper.quit();}
+                    child.destroy();
+                }
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
-            child.destroy();
         }
 
         private void prepareInput(Process child) {
@@ -608,9 +612,9 @@ public class ShellLauncher {
                 parentOutChannel = ((FileOutputStream) parentOut).getChannel();
             }
             if (childInChannel != null && parentOutChannel != null) {
-                inputPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN);
+                inputPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN, this);
             } else {
-                inputPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
+                inputPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN, this);
             }
             inputPumper.start();
             input = null;
@@ -630,35 +634,13 @@ public class ShellLauncher {
                 parentOutChannel = ((FileOutputStream) parentOut).getChannel();
             }
             if (childInChannel != null && parentOutChannel != null) {
-                inerrPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN);
+                inerrPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN, this);
             } else {
-                inerrPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN);
+                inerrPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN, this);
             }
             inerrPumper.start();
             inerr = null;
             inerrChannel = null;
-        }
-
-        private void pumpOutput(Process child, Ruby runtime) {
-            // no write requested, hook up write to parent runtime's input
-            OutputStream childOut = unwrapBufferedStream(child.getOutputStream());
-            FileChannel childOutChannel = null;
-            if (childOut instanceof FileOutputStream) {
-                childOutChannel = ((FileOutputStream) childOut).getChannel();
-            }
-            InputStream parentIn = unwrapBufferedStream(runtime.getIn());
-            FileChannel parentInChannel = null;
-            if (parentIn instanceof FileInputStream) {
-                parentInChannel = ((FileInputStream) parentIn).getChannel();
-            }
-            if (parentInChannel != null && childOutChannel != null) {
-                outputPumper = new ChannelPumper(parentInChannel, childOutChannel, Pumper.Slave.OUT);
-            } else {
-                outputPumper = new StreamPumper(parentIn, childOut, false, Pumper.Slave.OUT);
-            }
-            outputPumper.start();
-            output = null;
-            outputChannel = null;
         }
     }
     
@@ -708,14 +690,16 @@ public class ShellLauncher {
         private final OutputStream out;
         private final boolean onlyIfAvailable;
         private final Object waitLock = new Object();
+        private final Object sync;
         private final Slave slave;
         private volatile boolean quit;
         
-        StreamPumper(InputStream in, OutputStream out, boolean avail, Slave slave) {
+        StreamPumper(InputStream in, OutputStream out, boolean avail, Slave slave, Object sync) {
             this.in = in;
             this.out = out;
             this.onlyIfAvailable = avail;
             this.slave = slave;
+            this.sync = sync;
             setDaemon(true);
         }
         @Override
@@ -754,14 +738,16 @@ public class ShellLauncher {
             } catch (Exception e) {
             } finally {
                 if (onlyIfAvailable) {
-                    // We need to close the out, since some
-                    // processes would just wait for the stream
-                    // to be closed before they process its content,
-                    // and produce the output. E.g.: "cat".
-                    if (slave == Slave.OUT) {
-                        // we only close out if it's the slave stream, to avoid
-                        // closing a directly-mapped stream from parent process
-                        try { out.close(); } catch (IOException ioe) {}
+                    synchronized (sync) {
+                        // We need to close the out, since some
+                        // processes would just wait for the stream
+                        // to be closed before they process its content,
+                        // and produce the output. E.g.: "cat".
+                        if (slave == Slave.OUT) {
+                            // we only close out if it's the slave stream, to avoid
+                            // closing a directly-mapped stream from parent process
+                            try { out.close(); } catch (IOException ioe) {}
+                        }
                     }
                 }
             }
@@ -778,13 +764,15 @@ public class ShellLauncher {
         private final FileChannel inChannel;
         private final FileChannel outChannel;
         private final Slave slave;
+        private final Object sync;
         private volatile boolean quit;
         
-        ChannelPumper(FileChannel inChannel, FileChannel outChannel, Slave slave) {
+        ChannelPumper(FileChannel inChannel, FileChannel outChannel, Slave slave, Object sync) {
             if (DEBUG) out.println("using channel pumper");
             this.inChannel = inChannel;
             this.outChannel = outChannel;
             this.slave = slave;
+            this.sync = sync;
             setDaemon(true);
         }
         @Override
@@ -801,12 +789,16 @@ public class ShellLauncher {
                 }
             } catch (Exception e) {
             } finally {
-                switch (slave) {
-                case OUT:
-                    try { outChannel.close(); } catch (IOException ioe) {}
-                    break;
-                case IN:
-                    try { inChannel.close(); } catch (IOException ioe) {}
+                // processes seem to have some peculiar locking sequences, so we
+                // need to ensure nobody is trying to close/destroy while we are
+                synchronized (sync) {
+                    switch (slave) {
+                    case OUT:
+                        try { outChannel.close(); } catch (IOException ioe) {}
+                        break;
+                    case IN:
+                        try { inChannel.close(); } catch (IOException ioe) {}
+                    }
                 }
             }
         }
@@ -821,13 +813,13 @@ public class ShellLauncher {
         InputStream pErr = p.getErrorStream();
         OutputStream pIn = p.getOutputStream();
 
-        StreamPumper t1 = new StreamPumper(pOut, out, false, Pumper.Slave.IN);
-        StreamPumper t2 = new StreamPumper(pErr, err, false, Pumper.Slave.IN);
+        StreamPumper t1 = new StreamPumper(pOut, out, false, Pumper.Slave.IN, p);
+        StreamPumper t2 = new StreamPumper(pErr, err, false, Pumper.Slave.IN, p);
 
         // The assumption here is that the 'in' stream provides
         // proper available() support. If available() always
         // returns 0, we'll hang!
-        StreamPumper t3 = new StreamPumper(in, pIn, true, Pumper.Slave.OUT);
+        StreamPumper t3 = new StreamPumper(in, pIn, true, Pumper.Slave.OUT, p);
 
         t1.start();
         t2.start();
