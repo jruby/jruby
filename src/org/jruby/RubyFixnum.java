@@ -451,11 +451,8 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_mul(ThreadContext context, long otherValue) {
         Ruby runtime = context.getRuntime();
-        if (value == 0 || otherValue == 0) {
-            return RubyFixnum.zero(runtime);
-        }
         long result = value * otherValue;
-        if (result == 0 || result / value != otherValue) {
+        if (value != 0 && result / value != otherValue) {
             return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
         }
         return newFixnum(runtime, result);
