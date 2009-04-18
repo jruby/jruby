@@ -58,9 +58,14 @@ public class StrNode extends Node implements ILiteralNode {
     public StrNode(ISourcePosition position, StrNode head, StrNode tail) {
         super(position);
         
-        this.value = (ByteList) head.getValue();
-        
-        value.append(tail.getValue());
+        ByteList headBL = head.getValue();
+        ByteList tailBL = tail.getValue();
+
+        ByteList myValue = new ByteList(headBL.realSize + tailBL.realSize);
+        myValue.append(headBL);
+        myValue.append(tailBL);
+
+        value = myValue;
     }
 
     public NodeType getNodeType() {
