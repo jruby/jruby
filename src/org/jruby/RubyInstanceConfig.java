@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007, 2008 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007-2009 Nick Sieger <nicksieger@gmail.com>
  * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -500,7 +500,7 @@ public class RubyInstanceConfig {
         }
 
         String fullVersion = String.format(
-                "jruby %s (ruby %sp%d) (%s r%s) (%s %s) [%s-java]",
+                "jruby %s (ruby %sp%d) (%s %s) (%s %s) [%s-java]",
                 Constants.VERSION, ver, patchlevel,
                 Constants.COMPILE_DATE, Constants.REVISION,
                 System.getProperty("java.vm.name"), System.getProperty("java.version"),
