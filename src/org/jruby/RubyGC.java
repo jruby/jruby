@@ -40,9 +40,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * GC (Garbage Collection) Module
  *
  * Note: Since we rely on Java's memory model we can't provide the
- * kind of control over garbage collection that MRI provides.
+ * kind of control over garbage collection that MRI provides.  Also note
+ * that since all Ruby libraries make GC assumptions based on MRI's GC
+ * that we decided to no-op explicit collection through these APIs.
+ * You can use Java Integration in your libraries to force a Java
+ * GC (assuming you really want to).
  *
- * @author Anders
  */
 @JRubyModule(name="GC")
 public class RubyGC {
@@ -57,13 +60,11 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject start(IRubyObject recv) {
-        System.gc();
         return recv.getRuntime().getNil();
     }
 
     @JRubyMethod
     public static IRubyObject garbage_collect(IRubyObject recv) {
-        System.gc();
         return recv.getRuntime().getNil();
     }
 
