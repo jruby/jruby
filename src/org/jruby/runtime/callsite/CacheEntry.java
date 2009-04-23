@@ -5,17 +5,16 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 
 public class CacheEntry {
-    public static final CacheEntry NULL_CACHE = new CacheEntry(UndefinedMethod.INSTANCE, -1);
+    public static final CacheEntry NULL_CACHE = new CacheEntry(UndefinedMethod.INSTANCE, new Object());
     public final DynamicMethod method;
-    public final int generation;
+    public final Object token;
 
-    public CacheEntry(DynamicMethod method, int gen) {
-        super();
+    public CacheEntry(DynamicMethod method, Object token) {
         this.method = method;
-        generation = gen;
+        this.token = token;
     }
 
     public boolean typeOk(RubyClass incomingType) {
-        return generation == incomingType.getSerialNumber();
+        return token == incomingType.getCacheToken();
     }
 }

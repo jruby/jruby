@@ -207,12 +207,12 @@ public class RubyModule extends RubyObject {
     }
     
     protected static class Generation {
-        public volatile int hash;
+        public Object token;
         public Generation() {
-            hash = hashCode();
+            token = new Object();
         }
         public synchronized void update() {
-            hash = hash + (hashCode() * 31);
+            token = new Object();
         }
     }
     protected final Generation generation;
@@ -968,21 +968,21 @@ public class RubyModule extends RubyObject {
 
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
-        int serial = getSerialNumber();
+        Object token = getCacheToken();
         DynamicMethod method = searchMethodInner(name);
 
-        return method != null ? addToCache(name, method, serial) : addToCache(name, UndefinedMethod.getInstance(), serial);
+        return method != null ? addToCache(name, method, token) : addToCache(name, UndefinedMethod.getInstance(), token);
     }
     
-    public final int getSerialNumber() {
-        return generation.hash;
+    public final Object getCacheToken() {
+        return generation.token;
     }
     
     private CacheEntry cacheHit(String name) {
         CacheEntry cacheEntry = cachedMethods.get(name);
 
         if (cacheEntry != null) {
-            if (cacheEntry.generation == getSerialNumber()) {
+            if (cacheEntry.token == getCacheToken()) {
                 return cacheEntry;
             }
         }
@@ -990,8 +990,8 @@ public class RubyModule extends RubyObject {
         return null;
     }
     
-    private CacheEntry addToCache(String name, DynamicMethod method, int serial) {
-        CacheEntry entry = new CacheEntry(method, serial);
+    private CacheEntry addToCache(String name, DynamicMethod method, Object token) {
+        CacheEntry entry = new CacheEntry(method, token);
         cachedMethods.put(name, entry);
 
         return entry;
