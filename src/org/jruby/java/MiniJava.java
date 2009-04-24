@@ -192,7 +192,6 @@ public class MiniJava implements Library {
         }
         
         Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll);
-        populateOldStyleImplClass(ruby, rubyClass, newClass, simpleToAll);
         
         return newClass;
     }
@@ -363,9 +362,15 @@ public class MiniJava implements Library {
         cw.visitSource(pathName + ".gen", null);
         
         // fields needed for dispatch and such
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "$ruby", ci(Ruby.class), null, null).visitEnd();
-        cw.visitField(ACC_STATIC | ACC_PRIVATE, "$rubyClass", ci(RubyClass.class), null, null).visitEnd();
+        cw.visitField(ACC_STATIC | ACC_FINAL | ACC_PRIVATE, "$monitor", ci(Object.class), null, null).visitEnd();
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$self", ci(IRubyObject.class), null, null).visitEnd();
+
+        // create static init, for a monitor object
+        SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null));
+        clinitMethod.newobj(p(Object.class));
+        clinitMethod.dup();
+        clinitMethod.invokespecial(p(Object.class), "<init>", sig(void.class));
+        clinitMethod.putstatic(pathName, "$monitor", ci(Object.class));
         
         // create constructor
         SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null));
@@ -381,19 +386,6 @@ public class MiniJava implements Library {
         initMethod.voidreturn();
         initMethod.end();
         
-        // start setup method
-        SkinnyMethodAdapter setupMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_STATIC | ACC_PUBLIC | ACC_SYNTHETIC, "__setup__", sig(void.class, RubyClass.class), null, null));
-        setupMethod.start();
-        
-        // set RubyClass
-        setupMethod.aload(0);
-        setupMethod.dup();
-        setupMethod.putstatic(pathName, "$rubyClass", ci(RubyClass.class));
-        
-        // set Ruby
-        setupMethod.invokevirtual(p(RubyClass.class), "getClassRuntime", sig(Ruby.class));
-        setupMethod.putstatic(pathName, "$ruby", ci(Ruby.class));
-        
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
@@ -402,8 +394,8 @@ public class MiniJava implements Library {
             // set up a field for the CacheEntry
             // TODO: make this an array so it's not as much class metadata; similar to AbstractScript stuff
             cw.visitField(ACC_STATIC | ACC_PUBLIC | ACC_VOLATILE, simpleName, ci(CacheEntry.class), null, null).visitEnd();
-            setupMethod.getstatic(p(CacheEntry.class), "NULL_CACHE", ci(CacheEntry.class));
-            setupMethod.putstatic(pathName, simpleName, ci(CacheEntry.class));
+            clinitMethod.getstatic(p(CacheEntry.class), "NULL_CACHE", ci(CacheEntry.class));
+            clinitMethod.putstatic(pathName, simpleName, ci(CacheEntry.class));
 
             Set<String> implementedNames = new HashSet<String>();
             
@@ -414,6 +406,18 @@ public class MiniJava implements Library {
                 String fullName = simpleName + prettyParams(paramTypes);
                 if (implementedNames.contains(fullName)) continue;
                 implementedNames.add(fullName);
+
+                // indices for temp values
+                int baseIndex = 1;
+                for (Class paramType : paramTypes) {
+                    if (paramType == double.class || paramType == long.class) {
+                        baseIndex += 2;
+                    } else {
+                        baseIndex += 1;
+                    }
+                }
+                int selfIndex = baseIndex;
+                int rubyIndex = selfIndex + 1;
                 
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
                         cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
@@ -444,20 +448,26 @@ public class MiniJava implements Library {
                     Label end = new Label();
                     Label recheckMethod = new Label();
 
-                    // Try to look up field for simple name
+                    // prepare temp locals
+                    mv.aload(0);
+                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.astore(selfIndex);
+                    mv.aload(selfIndex);
+                    mv.invokeinterface(p(IRubyObject.class), "getRuntime", sig(Ruby.class));
+                    mv.astore(rubyIndex);
 
+                    // Try to look up field for simple name
                     // get field; if nonnull, go straight to dispatch
                     mv.getstatic(pathName, simpleName, ci(CacheEntry.class));
                     mv.dup();
-                    mv.aload(0);
-                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.aload(selfIndex);
                     mv.invokestatic(p(MiniJava.class), "isCacheOk", sig(boolean.class, params(CacheEntry.class, IRubyObject.class)));
                     mv.iftrue(dispatch);
 
                     // field is null, lock class and try to populate
                     mv.line(6);
                     mv.pop();
-                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "$monitor", ci(Object.class));
                     mv.monitorenter();
 
                     // try/finally block to ensure unlock
@@ -468,8 +478,7 @@ public class MiniJava implements Library {
                     mv.line(7);
                     mv.label(tryStart);
 
-                    mv.aload(0);
-                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.aload(selfIndex);
                     for (String eachName : nameSet) {
                         mv.ldc(eachName);
                     }
@@ -479,7 +488,7 @@ public class MiniJava implements Library {
                     mv.putstatic(pathName, simpleName, ci(CacheEntry.class));
 
                     // all done with lookup attempts, release monitor
-                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "$monitor", ci(Object.class));
                     mv.monitorexit();
                     mv.go_to(recheckMethod);
 
@@ -489,7 +498,7 @@ public class MiniJava implements Library {
                     // finally block to release monitor
                     mv.label(finallyStart);
                     mv.line(9);
-                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
+                    mv.getstatic(pathName, "$monitor", ci(Object.class));
                     mv.monitorexit();
                     mv.label(finallyEnd);
                     mv.athrow();
@@ -512,10 +521,9 @@ public class MiniJava implements Library {
                     mv.pop();
                     // exit monitor before making call
                     // FIXME: this not being in a finally is a little worrisome
-                    mv.aload(0);
-                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.aload(selfIndex);
                     mv.ldc(simpleName);
-                    coerceArgumentsToRuby(mv, paramTypes, pathName);
+                    coerceArgumentsToRuby(mv, paramTypes, pathName, rubyIndex);
                     mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
                     mv.go_to(end);
                 
@@ -524,17 +532,17 @@ public class MiniJava implements Library {
                     mv.line(12, dispatch);
                     // get current context
                     mv.getfield(p(CacheEntry.class), "method", ci(DynamicMethod.class));
-                    mv.getstatic(pathName, "$ruby", ci(Ruby.class));
+                    mv.aload(rubyIndex);
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
                 
                     // load self, class, and name
-                    mv.aload(0);
-                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
-                    mv.getstatic(pathName, "$rubyClass", ci(RubyClass.class));
+                    mv.aload(selfIndex);
+                    mv.aload(selfIndex);
+                    mv.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
                     mv.ldc(simpleName);
                 
                     // coerce arguments
-                    coerceArgumentsToRuby(mv, paramTypes, pathName);
+                    coerceArgumentsToRuby(mv, paramTypes, pathName, rubyIndex);
                 
                     // load null block
                     mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
@@ -551,8 +559,8 @@ public class MiniJava implements Library {
         }
         
         // end setup method
-        setupMethod.voidreturn();
-        setupMethod.end();
+        clinitMethod.voidreturn();
+        clinitMethod.end();
         
         // end class
         cw.visitEnd();
@@ -584,7 +592,7 @@ public class MiniJava implements Library {
         return newClass;
     }
 
-    private static void coerceArgumentsToRuby(SkinnyMethodAdapter mv, Class[] paramTypes, String name) {
+    private static void coerceArgumentsToRuby(SkinnyMethodAdapter mv, Class[] paramTypes, String name, int rubyIndex) {
         // load arguments into IRubyObject[] for dispatch
         if (paramTypes.length != 0) {
             mv.pushInt(paramTypes.length);
@@ -596,7 +604,7 @@ public class MiniJava implements Library {
                 mv.dup();
                 mv.pushInt(i);
                 // convert to IRubyObject
-                mv.getstatic(name, "$ruby", ci(Ruby.class));
+                mv.aload(rubyIndex);
                 if (paramTypes[i].isPrimitive()) {
                     if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
                         mv.iload(argIndex++);
@@ -731,21 +739,6 @@ public class MiniJava implements Library {
         rubyCls.getSingletonClass().addMethod("method_added", method_added);
         
         return rubyCls;
-    }
-
-    public static void populateOldStyleImplClass(Ruby ruby, RubyClass rubyCls, final Class newClass, Map<String, List<Method>> simpleToAll) {
-        // setup the class
-        try {
-            newClass.getMethod("__setup__", new Class[]{RubyClass.class}).invoke(null, rubyCls);
-        } catch (IllegalAccessException ex) {
-            throw error(ruby, ex, "Could not setup class: " + newClass);
-        } catch (IllegalArgumentException ex) {
-            throw error(ruby, ex, "Could not setup class: " + newClass);
-        } catch (InvocationTargetException ex) {
-            throw error(ruby, ex, "Could not setup class: " + newClass);
-        } catch (NoSuchMethodException ex) {
-            throw error(ruby, ex, "Could not setup class: " + newClass);
-        }
     }
     
     protected static String mangleMethodFieldName(String baseName, Class[] paramTypes) {
