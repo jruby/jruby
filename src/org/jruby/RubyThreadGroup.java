@@ -103,8 +103,10 @@ public class RubyThreadGroup extends RubyObject {
     }
     
     public synchronized void remove(RubyThread rubyThread) {
-        rubyThread.setThreadGroup(null);
-        rubyThreadList.remove(rubyThread);
+        synchronized (rubyThread) {
+            rubyThread.setThreadGroup(null);
+            rubyThreadList.remove(rubyThread);
+        }
     }
     
     @JRubyMethod(name = "enclose", frame = true)

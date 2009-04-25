@@ -48,7 +48,6 @@ public class RubyNativeThread extends Thread {
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
-    private boolean setContextCC;
     
     public RubyNativeThread(RubyThread rubyThread, IRubyObject[] args, Block currentBlock, boolean setContextCC) {
         throw new RuntimeException("RubyNativeThread is deprecated; do not use it");
@@ -81,9 +80,9 @@ public class RubyNativeThread extends Thread {
             rubyThread.cleanTerminate(result);
         } catch (ThreadKill tk) {
             // notify any killer waiting on our thread that we're going bye-bye
-            synchronized (rubyThread.killLock) {
-                rubyThread.killLock.notifyAll();
-            }
+//            synchronized (rubyThread.killLock) {
+//                rubyThread.killLock.notifyAll();
+//            }
         } catch (JumpException.ReturnJump rj) {
             rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
         } catch (RaiseException e) {

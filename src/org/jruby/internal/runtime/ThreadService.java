@@ -42,6 +42,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 
 public class ThreadService {
@@ -211,5 +212,32 @@ public class ThreadService {
     
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
+    }
+    
+    public static class Event {
+        public enum Type { KILL, RAISE, WAKEUP }
+        public final RubyThread sender;
+        public final RubyThread target;
+        public final Type type;
+        public final IRubyObject exception;
+
+        public Event(RubyThread sender, RubyThread target, Type type) {
+            this(sender, target, type, null);
+        }
+
+        public Event(RubyThread sender, RubyThread target, Type type, IRubyObject exception) {
+            this.sender = sender;
+            this.target = target;
+            this.type = type;
+            this.exception = exception;
+        }
+    }
+
+    public synchronized void deliverEvent(Event event) {
+        // first, check if the sender has unreceived mail
+        event.sender.checkMail(getCurrentContext());
+
+        // then deliver mail to the target
+        event.target.receiveMail(event);
     }
 }
