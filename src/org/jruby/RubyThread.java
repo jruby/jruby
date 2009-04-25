@@ -404,7 +404,7 @@ public class RubyThread extends RubyObject {
 
     @JRubyMethod(name = "alive?")
     public RubyBoolean alive_p() {
-        return threadImpl.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return threadImpl.isAlive() && status != Status.ABORTING ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "join", optional = 1, backtrace = true)
