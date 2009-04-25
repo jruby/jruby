@@ -636,6 +636,21 @@ public class RubyThread extends RubyObject {
         return this;
     }
 
+    /**
+     * This is intended to be used to raise exceptions in Ruby threads from non-
+     * Ruby threads like Timeout's thread.
+     * 
+     * @param args Same args as for Thread#raise
+     * @param block Same as for Thread#raise
+     */
+    public void internalRaise(IRubyObject[] args) {
+        Ruby runtime = getRuntime();
+
+        IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
+
+        receiveMail(new ThreadService.Event(this, this, ThreadService.Event.Type.RAISE, exception));
+    }
+
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         if(args.length == 0) {
             IRubyObject lastException = errorInfo;

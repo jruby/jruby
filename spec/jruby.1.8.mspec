@@ -57,6 +57,7 @@ class MSpecScript
     DIR + '/ruby/library/stringscanner',
     DIR + '/ruby/library/tempfile',
     DIR + '/ruby/library/time',
+    DIR + '/ruby/library/timeout',
     DIR + '/ruby/library/tmpdir',
     DIR + '/ruby/library/uri',
     DIR + '/ruby/library/yaml',
