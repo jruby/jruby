@@ -8,6 +8,7 @@
 ########################################################################
 require 'test/unit'
 require 'weakref'
+require 'jruby'
 
 class TC_WeakRef < Test::Unit::TestCase
    def setup
@@ -27,13 +28,13 @@ class TC_WeakRef < Test::Unit::TestCase
       assert_nothing_raised{ @ref = WeakRef.new(@str) }
       assert_equal('hello', @ref)
 
-      assert_nothing_raised{ GC.start }
+      assert_nothing_raised{ JRuby.gc }
       assert_equal('hello', @ref)
 
       assert_nothing_raised{ @str = nil }
       assert_equal('hello', @ref)
 
-      assert_nothing_raised{ GC.start }
+      assert_nothing_raised{ JRuby.gc }
       assert_raise(WeakRef::RefError){ @str = @ref * 3 }
    end
 
@@ -47,13 +48,13 @@ class TC_WeakRef < Test::Unit::TestCase
       assert_nothing_raised{ @ref = WeakRef.new(@str) }
       assert_equal(true, @ref.weakref_alive?)
 
-      assert_nothing_raised{ GC.start }
+      assert_nothing_raised{ JRuby.gc }
       assert_equal(true, @ref.weakref_alive?)
 
       assert_nothing_raised{ @str = nil }
       assert_equal(true, @ref.weakref_alive?)
 
-      assert_nothing_raised{ GC.start }
+      assert_nothing_raised{ JRuby.gc }
       assert_equal(false, @ref.weakref_alive?)
    end
 

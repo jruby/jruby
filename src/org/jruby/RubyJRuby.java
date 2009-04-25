@@ -38,9 +38,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
 
 import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ListNode;
-import org.jruby.ast.LocalAsgnNode;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
@@ -135,6 +133,11 @@ public class RubyJRuby {
             
             return TypeConverter.convertToTypeOrRaise(object, rubyClass, methodSym.asJavaString());
         }
+    }
+
+    @JRubyMethod(module = true)
+    public static void gc(IRubyObject recv) {
+        System.gc();
     }
     
     @JRubyMethod(name = "runtime", frame = true, module = true)

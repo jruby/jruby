@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'tempfile'
 require 'rbconfig'
-require 'java'
+require 'jruby'
 
 #
 # Find the name of the interpreter.
@@ -107,7 +107,7 @@ class TestObjectSpace < Test::Unit::TestCase
     x = nil
 
     # force GC (and wait until var is gone)
-    java.lang.System.gc()
+    JRuby.gc
     sleep 1
 
     # straight reference should succeed
