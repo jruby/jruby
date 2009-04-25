@@ -1143,7 +1143,7 @@ public class RubyKernel {
         return context.getRuntime().newProc(Block.Type.PROC, block);
     }
 
-    @JRubyMethod(name = "loop", frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = {"loop"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         IRubyObject nil = context.getRuntime().getNil();
         while (true) {
@@ -1153,6 +1153,24 @@ public class RubyKernel {
         }
     }
     
+    @JRubyMethod(name = {"loop"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject loop_1_9(ThreadContext context, IRubyObject recv, Block block) {
+        IRubyObject nil = context.getRuntime().getNil();
+        RubyClass stopIteration = context.getRuntime().getStopIteration();
+        try {
+            while (true) {
+                block.yield(context, nil);
+
+                context.pollThreadEvents();
+            }
+        } catch (RaiseException ex) {
+            if (!stopIteration.op_eqq(context, ex.getException()).isTrue()) {
+                throw ex;
+            }
+        }
+        return nil;
+    }
+
     @JRubyMethod(name = "test", required = 2, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) throw context.getRuntime().newArgumentError("wrong number of arguments");

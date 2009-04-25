@@ -6,4 +6,4 @@ test_fixnum_1_9
 test_integer_1_9
 test_object_1_9
 test_symbol_1_9
-#externals/mri/ruby/test_fiber
+test_loop_1_9
