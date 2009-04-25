@@ -29,7 +29,6 @@
 package org.jruby.internal.runtime.methods;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import org.jruby.Ruby;
@@ -1241,6 +1240,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             } else {
                 // virtual invocation
                 method.invokevirtual(typePath, javaMethodName, desc.signature);
+            }
+
+            if (desc.getReturnClass() == void.class) {
+                // void return type, so we need to load a nil for returning below
+                method.aload(THREADCONTEXT_INDEX);
+                method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
             }
         }
         method.label(tryEnd);

@@ -137,12 +137,15 @@ public class ReflectedJavaMethod extends JavaMethod {
                 try {
                     if (isTrace) {
                         runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
-                    }  
-                    if (isStatic) {
-                        return (IRubyObject)method.invoke(null, params);
-                    } else {
-                        return (IRubyObject)method.invoke(self, params);
                     }
+                    IRubyObject result;
+                    if (isStatic) {
+                        result = (IRubyObject)method.invoke(null, params);
+                    } else {
+                        result = (IRubyObject)method.invoke(self, params);
+                    }
+
+                    return result == null ? runtime.getNil() : result;
                 } finally {
                     if (isTrace) {
                         runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());

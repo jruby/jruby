@@ -7,7 +7,6 @@ package org.jruby.anno;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import org.jruby.util.CodegenUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -28,6 +27,7 @@ public class JavaMethodDescriptor {
     public final int optional;
     public final boolean rest;
     private final Class[] parameters;
+    private final Class returnClass;
     public final JRubyMethod anno;
     public final int modifiers;
     private final Class declaringClass;
@@ -47,6 +47,7 @@ public class JavaMethodDescriptor {
         name = method.getName();
         isStatic = Modifier.isStatic(modifiers);
         parameters = method.getParameterTypes();
+        returnClass = method.getReturnType();
         if (parameters.length > 0) {
             hasContext = parameters[0] == ThreadContext.class;
             hasBlock = parameters[parameters.length - 1] == Block.class;
@@ -127,5 +128,9 @@ public class JavaMethodDescriptor {
     
     public Class[] getParameterClasses() {
         return parameters;
+    }
+
+    public Class getReturnClass() {
+        return returnClass;
     }
 }

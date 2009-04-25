@@ -83,6 +83,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestCodeCache.class);
         suite.addTestSuite(TestJavaReentrantExceptions.class);
         suite.addTestSuite(EventHookTest.class);
+        suite.addTestSuite(TestMethodFactories.class);
         return suite;
     }
 }
