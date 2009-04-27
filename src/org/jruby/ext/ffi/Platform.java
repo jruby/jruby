@@ -43,7 +43,7 @@ public class Platform {
     public static final OS OS = determineOS();
 
     public static final String NAME = CPU + "-" + OS;
-    public static final String LIBC = OS == OS.WINDOWS ? "msvcrt" : OS == OS.LINUX ? "libc.so.6" : "c";
+    public static final String LIBC = determineLibC();
     public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
     public static final String LIBSUFFIX = OS == OS.WINDOWS ? "dll" : OS == OS.DARWIN ? "dylib" : "so";
     public static final int BIG_ENDIAN = 4321;
@@ -55,6 +55,7 @@ public class Platform {
     private final long addressMask;
     protected final Pattern libPattern;
     private final int javaVersionMajor;
+
     public enum OS {
         DARWIN,
         FREEBSD,
@@ -62,12 +63,14 @@ public class Platform {
         OPENBSD,
         LINUX,
         SOLARIS,
+        AIX,
         WINDOWS,
 
         UNKNOWN;
         @Override
         public String toString() { return name().toLowerCase(); }
     }
+
     public enum CPU {
         I386,
         X86_64,
@@ -79,9 +82,11 @@ public class Platform {
         @Override
         public String toString() { return name().toLowerCase(); }
     }
+
     private static final class SingletonHolder {
         private static final Platform PLATFORM = determinePlatform(determineOS());
     }
+
     private static final OS determineOS() {
         String osName = System.getProperty("os.name").split(" ")[0].toLowerCase();
         if (osName.startsWith("mac") || osName.startsWith("darwin")) {
@@ -96,12 +101,15 @@ public class Platform {
         }
         return OS.UNKNOWN;
     }
+
     private static final Platform determinePlatform(OS os) {
         switch (os) {
             case DARWIN:
                 return new Darwin();
             case LINUX:
                 return new Linux();
+            case AIX:
+                return new AIX();
             case WINDOWS:
                 return new Windows();
             case UNKNOWN:
@@ -110,6 +118,7 @@ public class Platform {
                 return new Default(os);
         }
     }
+
     private static final CPU determineCPU() {
         String archString = System.getProperty("os.arch").toLowerCase();
         if ("x86".equals(archString) || "i386".equals(archString) || "i86pc".equals(archString)) {
@@ -128,7 +137,24 @@ public class Platform {
             return CPU.UNKNOWN;
         }
     }
-    
+
+    private static final String determineLibC() {
+        switch (OS) {
+            case WINDOWS:
+                return "msvcrt";
+            case LINUX:
+                return "libc.so.6";
+            case AIX:
+                if (Integer.getInteger("sun.arch.data.model") == 32) {
+                    return "libc.a(shr.o)";
+                } else {
+                    return "libc.a(shr_64.o)";
+                }
+            default:
+                return "c";
+        }
+    }
+
     protected Platform(OS os) {
         int dataModel = Integer.getInteger("sun.arch.data.model");
         if (dataModel != 32 && dataModel != 64) {
@@ -374,6 +400,7 @@ public class Platform {
             return "darwin";
         }
     }
+
     /**
      * A {@link Platform} subclass representing the Linux operating system.
      */
@@ -389,6 +416,23 @@ public class Platform {
             // Older JDK on linux map 'c' to 'libc.so' which doesn't work
             return "c".equals(libName) || "libc.so".equals(libName)
                     ? "libc.so.6" : super.mapLibraryName(libName);
+        }
+    }
+
+    /**
+     * A {@link Platform} subclass representing the Linux operating system.
+     */
+    private static final class AIX extends Supported {
+
+        public AIX() {
+            super(OS.AIX);
+        }
+
+
+        @Override
+        public String mapLibraryName(String libName) {
+            return "c".equals(libName) || "libc.so".equals(libName)
+                    ? LIBC : super.mapLibraryName(libName);
         }
     }
 
