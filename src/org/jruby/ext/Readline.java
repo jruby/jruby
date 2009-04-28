@@ -54,6 +54,7 @@ import jline.Completor;
 import jline.FileNameCompletor;
 import jline.CandidateListCompletionHandler;
 import jline.History;
+import org.jruby.CompatVersion;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -242,6 +243,18 @@ public class Readline {
             line = RubyString.newUnicodeString(recv.getRuntime(), v);
         }
         return line;
+    }
+
+    @JRubyMethod(name = "input=", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject setInput(ThreadContext context, IRubyObject recv, IRubyObject input) {
+        // FIXME: JRUBY-3604
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "output=", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject setOutput(ThreadContext context, IRubyObject recv, IRubyObject output) {
+        // FIXME: JRUBY-3604
+        return context.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
