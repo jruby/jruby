@@ -2206,6 +2206,11 @@ public final class Ruby {
             return;
         }
 
+        if (RubyException.TRACE_TYPE == RubyException.RUBINIUS) {
+            printRubiniusTrace(excp);
+            return;
+        }
+
         ThreadContext context = getCurrentContext();
         IRubyObject backtrace = excp.callMethod(context, "backtrace");
 
@@ -2262,6 +2267,60 @@ public final class Ruby {
         }
 
         excp.printBacktrace(errorStream);
+    }
+
+    private void printRubiniusTrace(RubyException exception) {
+
+        ThreadContext.RubyStackTraceElement[] frames = exception.getBacktraceFrames();
+
+        ArrayList firstParts = new ArrayList();
+        int longestFirstPart = 0;
+        for (ThreadContext.RubyStackTraceElement frame : frames) {
+            String firstPart = frame.getClassName() + "#" + frame.getMethodName();
+            if (firstPart.length() > longestFirstPart) longestFirstPart = firstPart.length();
+            firstParts.add(firstPart);
+        }
+
+        // determine spacing
+        int center = longestFirstPart
+                + 2 // initial spaces
+                + 1; // spaces before "at"
+
+        StringBuffer buffer = new StringBuffer();
+
+        buffer
+                .append("An exception has occurred:\n")
+                .append("    ");
+
+        if (exception.getMetaClass() == getRuntimeError() && exception.message(getCurrentContext()).toString().length() == 0) {
+            buffer.append("No current exception (RuntimeError)");
+        } else {
+            buffer.append(exception.message(getCurrentContext()).toString());
+        }
+
+        buffer
+                .append('\n')
+                .append('\n')
+                .append("Backtrace:\n");
+
+        int i = 0;
+        for (ThreadContext.RubyStackTraceElement frame : frames) {
+            String firstPart = (String)firstParts.get(i);
+            String secondPart = frame.getFileName() + ":" + frame.getLineNumber();
+            
+            buffer.append("  ");
+            for (int j = 0; j < center - firstPart.length(); j++) {
+                buffer.append(' ');
+            }
+            buffer.append(firstPart);
+            buffer.append(" at ");
+            buffer.append(secondPart);
+            buffer.append('\n');
+            i++;
+        }
+
+        PrintStream errorStream = getErrorStream();
+        errorStream.print(buffer.toString());
     }
 
     private void printErrorPos(ThreadContext context, PrintStream errorStream) {

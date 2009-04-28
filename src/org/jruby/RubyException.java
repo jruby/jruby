@@ -149,6 +149,7 @@ public class RubyException extends RubyObject {
     public static final int RUBY_FRAMED = 2;
     public static final int RUBY_COMPILED = 3;
     public static final int RUBY_HYBRID = 4;
+    public static final int RUBINIUS = 5;
 
     public static final int RAW_FRAME_CROP_COUNT = 10;
     
@@ -157,11 +158,12 @@ public class RubyException extends RubyObject {
     static {
         String style = SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed").toLowerCase();
         
-        if (style.equals("raw")) TRACE_TYPE = RAW;
-        else if (style.equals("raw_filtered")) TRACE_TYPE = RAW_FILTERED;
-        else if (style.equals("ruby_framed")) TRACE_TYPE = RUBY_FRAMED;
-        else if (style.equals("ruby_compiled")) TRACE_TYPE = RUBY_COMPILED;
-        else if (style.equals("ruby_hybrid")) TRACE_TYPE = RUBY_HYBRID;
+        if (style.equalsIgnoreCase("raw")) TRACE_TYPE = RAW;
+        else if (style.equalsIgnoreCase("raw_filtered")) TRACE_TYPE = RAW_FILTERED;
+        else if (style.equalsIgnoreCase("ruby_framed")) TRACE_TYPE = RUBY_FRAMED;
+        else if (style.equalsIgnoreCase("ruby_compiled")) TRACE_TYPE = RUBY_COMPILED;
+        else if (style.equalsIgnoreCase("ruby_hybrid")) TRACE_TYPE = RUBY_HYBRID;
+        else if (style.equalsIgnoreCase("rubinius")) TRACE_TYPE = RUBINIUS;
         else TRACE_TYPE = RUBY_FRAMED;
     }
     
@@ -181,6 +183,7 @@ public class RubyException extends RubyObject {
             backtrace = ThreadContext.createRawBacktrace(getRuntime(), javaStackTrace, true);
             break;
         case RUBY_FRAMED:
+        case RUBINIUS:
             backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
             break;
         case RUBY_COMPILED:
