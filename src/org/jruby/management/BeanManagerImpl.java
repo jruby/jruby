@@ -111,7 +111,7 @@ public class BeanManagerImpl implements BeanManager {
         } catch (Error e) {
             // all errors, just info; do not prevent unloading
             // IKVM does not support JMX, and throws an error
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.INFO, null, e);
+            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.FINE, null, e);
         }
     }
 }
