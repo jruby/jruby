@@ -45,7 +45,7 @@ public class Platform {
     public static final String NAME = CPU + "-" + OS;
     public static final String LIBC = determineLibC();
     public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
-    public static final String LIBSUFFIX = OS == OS.WINDOWS ? "dll" : OS == OS.DARWIN ? "dylib" : "so";
+    public static final String LIBSUFFIX = determineLibExt();
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
@@ -155,6 +155,19 @@ public class Platform {
         }
     }
 
+    private static final String determineLibExt() {
+        switch (OS) {
+            case WINDOWS:
+                return "dll";
+            case AIX:
+                return "a";
+            case DARWIN:
+                return "dylib";
+            default:
+                return "so";
+        }
+    }
+
     protected Platform(OS os) {
         int dataModel = Integer.getInteger("sun.arch.data.model");
         if (dataModel != 32 && dataModel != 64) {
@@ -183,6 +196,9 @@ public class Platform {
                 break;
             case DARWIN:
                 libpattern = "lib.*\\.(dylib|jnilib)$";
+                break;
+            case AIX:
+                libpattern = "lib.*\\.a$";
                 break;
             default:
                 libpattern = "lib.*\\.so.*$";
