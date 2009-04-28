@@ -70,6 +70,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.KCode;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.ShellLauncher;
@@ -810,7 +811,66 @@ public class RubyIO extends RubyObject {
         return klass.newInstance(context, args, block);
     }
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    private IRubyObject initializeCommon19(int fileno, ModeFlags modes) {
+        try {
+            ChannelDescriptor descriptor = getDescriptorByFileno(fileno);
+
+            if (descriptor == null) throw getRuntime().newErrnoEBADFError();
+
+            descriptor.checkOpen();
+
+            if (modes == null) modes = descriptor.getOriginalModes();
+
+            openFile.setMode(modes.getOpenFileFlags());
+            openFile.setMainStream(fdopen(descriptor, modes));
+        } catch (BadDescriptorException ex) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (InvalidValueException ive) {
+            throw getRuntime().newErrnoEINVALError();
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, Block unusedBlock) {
+        return initializeCommon19(RubyNumeric.fix2int(fileNumber), null);
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unusedBlock) {
+        int fileno = RubyNumeric.fix2int(fileNumber);
+        ModeFlags modes;
+        if (second instanceof RubyHash) {
+            // TODO: Add option parsing here [JRUBY-3605]
+            modes = null;
+        } else {
+            modes = parseModes(second);
+        }
+
+        return initializeCommon19(fileno, modes);
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unusedBlock) {
+        int fileno = RubyNumeric.fix2int(fileNumber);
+        ModeFlags modes = parseModes(modeValue);
+
+        // TODO: Add option parsing here [JRUBY-3605]
+        return initializeCommon19(fileno, modes);
+    }
+
+    private ModeFlags parseModes(IRubyObject arg) {
+        try {
+            if (arg instanceof RubyFixnum) return new ModeFlags(RubyFixnum.fix2long(arg));
+
+            return getIOModes(getRuntime(), arg.convertToString().toString());
+        } catch (InvalidValueException e) {
+            throw getRuntime().newErrnoEINVALError();
+        }
+    }
+
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         int argCount = args.length;
         ModeFlags modes;
@@ -882,6 +942,30 @@ public class RubyIO extends RubyObject {
             // IOHandler (and fileno).
             return ChannelStream.fdopen(getRuntime(), existingDescriptor, modes);
         }
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject external_encoding(ThreadContext context) {
+        // FIXME: JRUBY-3607
+        return context.getRuntime().getEncodingService().getEncoding(KCode.NONE.getEncoding()).asString();
+    }
+
+    @JRubyMethod(compat=CompatVersion.RUBY1_9)
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString) {
+        // FIXME: JRUBY-3606
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(compat=CompatVersion.RUBY1_9)
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding) {
+        // FIXME: JRUBY-3606
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding, IRubyObject options) {
+        // FIXME: JRUBY-3606
+        return context.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
