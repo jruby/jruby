@@ -3,6 +3,9 @@
 # detect windows platform:
 require 'rbconfig'
 WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+require 'java'
+
+IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 
 DIR = File.dirname(__FILE__)
 
@@ -17,6 +20,13 @@ class MSpecScript
     # 1.9
     '^' + DIR + '/ruby/core/basicobject'
   ]
+
+  if IKVM
+    # ftype_spec freezes for some reason under IKVM
+    set(:core, get(:core) + ['^' + DIR + '/ruby/core/file'])
+    # Process.kill spec hangs
+    set(:core, get(:core) + ['^' + DIR + '/ruby/core/process'])
+  end
 
   # An ordered list of the directories containing specs to run
   # as the CI process.
