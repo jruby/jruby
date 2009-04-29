@@ -161,7 +161,19 @@ module DL
       @enable_close = false
     end
   end
-  
+
+  def self.find_return_type(type)
+    # Restrict types to the known-supported ones
+    raise "Unsupported type '#{type}" unless type =~ /[CHILFDPS]/
+    DL.find_type(type)
+  end
+
+  def self.find_param_type(type)
+    # Restrict types to the known-supported ones
+    raise "Unsupported type '#{type}" unless type =~ /[CHILFDPS]/
+    DL.find_type(types)
+  end
+
   class Symbol
 
     attr_reader :name, :proto
@@ -171,9 +183,9 @@ module DL
       @name = name
       @proto = type
       
-      rt = DL.find_type(type[0].chr)
+      rt = DL.find_return_type(type[0].chr)
       arg_types = []
-      type[1..-1].each_byte { |t| arg_types << DL.find_type(t.chr) } if type.length > 1
+      type[1..-1].each_byte { |t| arg_types << DL.find_param_type(t.chr) } if type.length > 1
 
       @invoker = FFI::Invoker.new(address, arg_types, rt, "default")
       
