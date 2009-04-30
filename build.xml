@@ -30,8 +30,6 @@
   <patternset id="java.src.pattern">
     <include name="**/*.java"/>
     <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
-    <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
-    <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
     <exclude unless="sun-misc-signal" name="**/SunSignalFacade.java"/>
   </patternset>
 
@@ -42,8 +40,6 @@
   <patternset id="other.src.pattern">
     <include name="**/*.properties"/>
   </patternset>
-
-  <taskdef name="retro" classname="net.sourceforge.retroweaver.ant.RetroWeaverTask" classpathref="build.classpath"/>
 
   <import file="netbeans-ant.xml" optional="true"/>
 
@@ -81,7 +77,6 @@
   <!-- Checks if specific libs and versions are avaiable -->
   <target name="check-for-optional-java4-packages"
           depends="init">
-    <available property="jdk1.4+" classname="java.lang.CharSequence"/>
     <available property="jdk1.5+" classname="java.lang.StringBuilder"/>
     <available property="bsf.present" classname="org.apache.bsf.BSFManager"
                classpathref="build.classpath"/>
@@ -297,46 +292,6 @@
     </bndwrap>
     <move file="${jar.wrap}$" tofile="${jar.wrap}"
       overwrite="true" />
-  </target>
-
-  <path id="lib.classpath">
-    <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
-    <pathelement location="${build.lib.dir}/backport-util-concurrent.jar"/>
-    <pathelement location="/usr/java/j2sdk1.4.2_16/jre/lib/rt.jar" />
-    <pathelement location="${lib.dir}/bsf-2.4.0.jar" />
-    <pathelement location="${build.lib.dir}/commons-logging-1.1.1.jar"/>
-  </path>
-
-  <target name="jar-1.4" depends="jar-jruby">
-    <copy file="${lib.dir}/jruby.jar" tofile="${lib.dir}/jruby1.5.jar"/>
-    <retro inputjar="${lib.dir}/jruby1.5.jar" outputjar="${lib.dir}/jruby-weaved.jar" target="1.4" failonerror="true" verify="true">
-      <classpath>
-        <path refid="lib.classpath"/>
-        <pathelement location="${lib.dir}/jruby-weaved.jar" />
-      </classpath>
-    </retro>
-
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc8.jar"/>
-      <jarjar destfile="${lib.dir}/jruby.jar">
-        <zipfileset src="${lib.dir}/jruby-weaved.jar"/>
-        <zipfileset src="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
-        <zipfileset src="${build.lib.dir}/backport-util-concurrent.jar"/>
-        <rule pattern="edu.emory.mathcs.backport.**" result="jruby.backport.@1"/>
-        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-      </jarjar>
-    <delete file="${lib.dir}/jruby-weaved.jar"/>
-    <delete file="${lib.dir}/jruby1.5.jar"/>
-  </target>
-
-  <target name="jar-complete-1.4" depends="jar-complete">
-    <copy file="${lib.dir}/jruby-complete.jar" tofile="${lib.dir}/jruby-complete1.5.jar"/>
-    <retro inputjar="${lib.dir}/jruby-complete1.5.jar" outputjar="${lib.dir}/jruby-complete.jar" target="1.4" failonerror="false" verify="true">
-      <classpath>
-        <path refid="lib.classpath"/>
-        <pathelement location="${lib.dir}/jruby-complete.jar" />
-      </classpath>
-    </retro>
-    <delete file="${lib.dir}/jruby-complete1.5.jar"/>
   </target>
 
     <target name="jar-complete" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
@@ -569,46 +524,6 @@
       compile-stdlib,
       coverage-report"
 	  description="Runs unit tests in all modes."/>
-
-  <target name="weave-tests" description="weave the test classes">
-    <retro srcdir="${test.classes.dir}" target="1.4" failonerror="true" verify="true">
-      <classpath>
-        <path refid="lib.classpath"/>
-        <pathelement location="${lib.dir}/jruby.jar" />
-        <pathelement location="${build.lib.dir}/junit.jar" />
-        <pathelement location="${build.lib.dir}/asm-3.1.jar" />
-        <pathelement location="${test.classes.dir}" />
-      </classpath>
-    </retro>
-  </target>
-
-  <target name="test-1.4" depends="
-    copy-test-files,
-    jar-1.4,
-    weave-tests,
-    instrument,
-    run-junit-compiled,
-    run-junit-compiled-1.9,
-    coverage-report"
-  	description="Runs unit tests with 1.4-weaved jruby classes.">
-  </target>
-
-  <target name="test-all-1.4" depends="
-      copy-test-files,
-      jar-1.4,
-      weave-tests,
-      instrument,
-      run-junit-interpreted,
-      run-junit-compiled,
-      run-junit-precompiled,
-      run-junit-interpreted-1.9,
-      run-junit-compiled-1.9,
-      run-junit-precompiled-1.9,
-      run-junit-reflected-precompiled,
-      run-junit-precompiled-threadpool,
-      compile-stdlib,
-      coverage-report"
-	  description="Runs unit tests in all modes with weaved jruby classes."/>
 
   <!-- All junit permutations for 1.8 and 1.9 support -->
   <target name="run-junit-interpreted"><run-junit-1.8/></target>
