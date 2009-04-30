@@ -609,9 +609,19 @@ public class RubyStringIO extends RubyObject {
             
             if (length > rest) length = rest;
 
-            // Yow...this is ugly
-            buf.realSize = length;
-            buf.replace(0, length, internal.getByteList().bytes, (int) pos, length);
+            // Yow...this is still ugly
+            byte[] target = buf.bytes;
+            if (target.length > length) {
+                System.arraycopy(internal.getByteList().bytes, (int) pos, target, 0, length);
+                buf.begin = 0;
+                buf.realSize = length;
+            } else {
+                target = new byte[length];
+                System.arraycopy(internal.getByteList().bytes, (int) pos, target, 0, length);
+                buf.begin = 0;
+                buf.realSize = length;
+                buf.bytes = target;
+            }
         }
         
         if (buf == null) {
