@@ -410,11 +410,6 @@ public class Platform {
             }
             return "lib" + libName + ".dylib";
         }
-
-        @Override
-        public String getName() {
-            return "darwin";
-        }
     }
 
     /**
