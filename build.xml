@@ -17,7 +17,6 @@
 
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
-    <fileset dir="${lib.dir}" includes="bsf.jar"/>
   </path>
 
   <!-- directory that contains emma.jar and emma_ant.jar: -->
@@ -304,7 +303,8 @@
     <pathelement location="${build.lib.dir}/retroweaver-rt-2.0.5.jar"/>
     <pathelement location="${build.lib.dir}/backport-util-concurrent.jar"/>
     <pathelement location="/usr/java/j2sdk1.4.2_16/jre/lib/rt.jar" />
-    <pathelement location="${lib.dir}/bsf.jar" />
+    <pathelement location="${lib.dir}/bsf-2.4.0.jar" />
+    <pathelement location="${build.lib.dir}/commons-logging-1.1.1.jar"/>
   </path>
 
   <target name="jar-1.4" depends="jar-jruby">
@@ -636,7 +636,6 @@
       <exclude name="jcodings.jar"/>
       <exclude name="joni.jar"/>
     </fileset>
-    <pathelement path="${lib.dir}/bsf.jar"/>
     <pathelement path="${java.class.path}"/>
     <pathelement path="${lib.dir}/jruby.jar"/>
     <pathelement location="${test.classes.dir}"/>
