@@ -1,0 +1,1 @@
+fails(JRUBY-3612):File.join raises an ArgumentError if passed a recursive array
