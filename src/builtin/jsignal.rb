@@ -8,14 +8,28 @@ class ::Object
   }
   
   begin
-    def __jtrap(*args, &block)
-      sig = args.shift
+    def __jtrap(sig, cmd = nil, &block)
       sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
       sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
-      block = args.shift unless args.empty?
-      
-      Signal::__jtrap_kernel(block, sig)
+      if block
+        Signal::__jtrap_kernel(block, sig)
+      elsif cmd
+        case cmd
+        when Proc
+          Signal::__jtrap_kernel(cmd, sig)
+        when 'EXIT'
+          Signal::__jtrap_kernel(proc{exit}, sig)
+        when 'SIG_IGN', 'IGNORE'
+          Signal::__jtrap_kernel(proc{}, sig)
+        when 'SIG_DFL', 'DEFAULT'
+          # do nothing...because I don't think we can return to old default
+        when String
+          Signal::__jtrap_kernel(proc{eval cmd, TOP_LEVEL_BINDING}, sig)
+        else
+          Signal::__jtrap_kernel(proc{cmd.call}, sig)
+        end
+      end
     rescue Exception
       warn "The signal #{sig} is in use by the JVM and will not work correctly on this platform"
     end
