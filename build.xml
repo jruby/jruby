@@ -760,6 +760,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="java.security.manager" value=""/>
       <sysproperty key="java.security.policy" value="file:test/restricted.policy"/>
+      <sysproperty key="java.awt.headless" value="true"/>
       <arg value="-e"/>
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
