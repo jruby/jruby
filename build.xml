@@ -219,7 +219,7 @@
         <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
         <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist-1.0.1.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
@@ -254,7 +254,7 @@
         <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist-1.0.1.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
@@ -338,7 +338,7 @@
         <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
         <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist-1.0.1.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
@@ -1293,7 +1293,7 @@
       <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
       <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
       <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
-      <zipfileset src="${build.lib.dir}/bytelist-1.0.1.jar"/>
+      <zipfileset src="${build.lib.dir}/bytelist.jar"/>
       <zipfileset src="${build.lib.dir}/constantine.jar"/>
       <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
       <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
