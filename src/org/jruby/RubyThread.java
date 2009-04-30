@@ -231,7 +231,7 @@ public class RubyThread extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize", rest = true, frame = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
 
@@ -240,7 +240,7 @@ public class RubyThread extends RubyObject {
             FutureThread futureThread = new FutureThread(this, runnable);
             threadImpl = futureThread;
 
-            runtime.getDefaultThreadGroup().addDirectly(this);
+            addToCorrectThreadGroup(context);
 
             threadImpl.start();
 
@@ -250,19 +250,14 @@ public class RubyThread extends RubyObject {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
             threadImpl = new NativeThread(this, thread);
-
-            // set to default thread group
-            runtime.getDefaultThreadGroup().addDirectly(this);
+            
+            addToCorrectThreadGroup(context);
 
             threadImpl.start();
 
             // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
             runtime.getThreadService().associateThread(thread, this);
         }
-
-        // JRUBY-3568, inherit threadgroup
-        IRubyObject group = getRuntime().getCurrentContext().getThread().group();
-        if (!group.isNil()) ((RubyThreadGroup) group).add(this, null);
 
         // We yield here to hopefully permit the target thread to schedule
         // MRI immediately schedules it, so this is close but not exact
@@ -278,7 +273,7 @@ public class RubyThread extends RubyObject {
             rubyThread.callInit(args, block);
         } else {
             // for Thread::start, which does not call the subclass's initialize
-            rubyThread.initialize(args, block);
+            rubyThread.initialize(recv.getRuntime().getCurrentContext(), args, block);
         }
         
         return rubyThread;
@@ -352,6 +347,16 @@ public class RubyThread extends RubyObject {
     	RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
         return recv.getRuntime().newArrayNoCopy(activeThreads);
+    }
+
+    private void addToCorrectThreadGroup(ThreadContext context) {
+        // JRUBY-3568, inherit threadgroup or use default
+        IRubyObject group = context.getThread().group();
+        if (!group.isNil()) {
+            ((RubyThreadGroup) group).addDirectly(this);
+        } else {
+            context.getRuntime().getDefaultThreadGroup().addDirectly(this);
+        }
     }
     
     private IRubyObject getSymbolKey(IRubyObject originalKey) {
