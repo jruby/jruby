@@ -763,6 +763,13 @@ public class JavaUtil {
         return converter.convert(runtime, object);
     }
 
+    public static IRubyObject convertJavaToRuby(Ruby runtime, JavaConverter converter, Object object) {
+        if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
+            return Java.getInstance(runtime, object);
+        }
+        return converter.convert(runtime, object);
+    }
+
     public static Class<?> primitiveToWrapper(Class<?> type) {
         if (type.isPrimitive()) {
             if (type == Integer.TYPE) {

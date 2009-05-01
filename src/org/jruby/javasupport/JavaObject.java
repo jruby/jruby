@@ -63,10 +63,20 @@ import org.jruby.util.IOInputStream;
 public class JavaObject extends RubyObject {
 
     private static Object NULL_LOCK = new Object();
+    private final RubyClass.VariableAccessor objectAccessor;
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
         super(runtime, rubyClass);
+        objectAccessor = rubyClass.getVariableAccessorForWrite("__wrap_struct__");
         dataWrapStruct(value);
+    }
+
+    public Object dataGetStruct() {
+        return objectAccessor.get(this);
+    }
+
+    public void dataWrapStruct(Object object) {
+        objectAccessor.set(this, object);
     }
 
     protected JavaObject(Ruby runtime, Object value) {

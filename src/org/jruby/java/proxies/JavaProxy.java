@@ -23,8 +23,18 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaProxy extends RubyObject {
+    protected final RubyClass.VariableAccessor objectAccessor;
     public JavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
+        objectAccessor = klazz.getVariableAccessorForWrite("__wrap_struct__");
+    }
+
+    public Object dataGetStruct() {
+        return objectAccessor.get(this);
+    }
+
+    public void dataWrapStruct(Object object) {
+        objectAccessor.set(this, object);
     }
     
     public static RubyClass createJavaProxy(ThreadContext context) {

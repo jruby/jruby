@@ -55,10 +55,21 @@ public class ArrayJavaProxy extends JavaProxy {
         return getJavaArray().length();
     }
     
+    @JRubyMethod(name = "[]", backtrace = true)
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof RubyInteger) {
+            int index = (int)((RubyInteger)arg).getLongValue();
+            return getJavaArray().arefDirect(index);
+        } else {
+            return getRange(context, arg);
+        }
+    }
+
     @JRubyMethod(name = "[]", required = 1, rest = true, backtrace = true)
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0] instanceof RubyInteger) {
-            return JavaUtil.java_to_ruby(context.getRuntime(), getJavaArray().aref(args[0]));
+            int index = (int)((RubyInteger)args[0]).getLongValue();
+            return getJavaArray().arefDirect(index);
         } else {
             return getRange(context, args);
         }
@@ -82,7 +93,7 @@ public class ArrayJavaProxy extends JavaProxy {
         long index = indexI.getLongValue();
         
         if (index >= 0 && index < lengthF.getLongValue()) {
-            return JavaUtil.java_to_ruby(context.getRuntime(), getJavaArray().aref(indexI));
+            return getJavaArray().arefDirect((int)indexI.getLongValue());
         } else {
             return context.getRuntime().getNil();
         }
