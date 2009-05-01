@@ -15,6 +15,10 @@
        setting local overrides, but that's how Ant works. -->
   <property file="default.build.properties"/>
 
+  <!-- Gem file names -->
+  <property name="rspec.gem" value="rspec-1.2.6.gem"/>
+  <property name="rake.gem" value="rake-0.8.4.gem"/>
+
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
   </path>
@@ -319,8 +323,8 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <arg value="--command"/>
         <arg value="maybe_install_gems"/>
-        <arg value="rspec"/>
-        <arg value="rake"/>
+        <arg value="${build.lib.dir}/${rspec.gem}"/>
+        <arg value="${build.lib.dir}/${rake.gem}"/>
         <arg value="--no-ri"/>
         <arg value="--no-rdoc"/>
         <arg value="--env-shebang"/>
@@ -409,8 +413,8 @@
       <sysproperty key="jruby.home" value="${jruby.home}"/>
       <arg value="--command"/>
       <arg value="maybe_install_gems"/>
-      <arg value="rspec"/>
-      <arg value="rake"/>
+      <arg value="${build.lib.dir}/${rspec.gem}"/>
+      <arg value="${build.lib.dir}/${rake.gem}"/>
       <arg value="--env-shebang"/>
     </java>
   </target>
