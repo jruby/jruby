@@ -35,6 +35,7 @@ import java.lang.reflect.Array;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
@@ -103,7 +104,7 @@ public class JavaArray extends JavaObject {
                                     "index out of bounds for java array (" + intIndex +
                                     " for length " + getLength() + ")");
         }
-        return JavaUtil.convertJavaToRuby(getRuntime(), javaConverter, Array.get(getValue(), intIndex));
+        return JavaUtil.convertJavaArrayElementToRuby(getRuntime(), javaConverter, getValue(), intIndex);
     }
     
     public IRubyObject at(int index) {
