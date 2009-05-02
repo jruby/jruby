@@ -32,6 +32,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
+import com.kenai.constantine.platform.OpenFlags;
+
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
  * ChannelDescriptor) can have. It provides the basic flags for read/write as
@@ -45,27 +47,25 @@ package org.jruby.util.io;
  */
 public class ModeFlags implements Cloneable {
     /** read-only flag (default value if no other flags set) */
-    public static final int RDONLY = 0x0000;
+    public static final int RDONLY = OpenFlags.O_RDONLY.value();
     /** write-only flag */
-    public static final int WRONLY = 0x0001;
+    public static final int WRONLY = OpenFlags.O_WRONLY.value();
     /** read/write flag */
-    public static final int RDWR = 0x0002;
+    public static final int RDWR = OpenFlags.O_RDWR.value();
     /** create flag, to specify non-existing file should be created */
-    public static final int CREAT = 0x0100;
+    public static final int CREAT = OpenFlags.O_CREAT.value();
     /** exclusive access flag, to require locking the target file */
-    public static final int EXCL = 0x0400;
-    /** no ctty flag (?) */
-    public static final int NOCTTY = 256; // what is this?
+    public static final int EXCL = OpenFlags.O_EXCL.value();
     /** truncate flag, to truncate the target file to zero length */
-    public static final int TRUNC = 0x0200;
+    public static final int TRUNC = OpenFlags.O_TRUNC.value();
     /** append flag, to seek to the end of the file */
-    public static final int APPEND = 0x0008;
+    public static final int APPEND = OpenFlags.O_APPEND.value();
     /** nonblock flag, to perform all operations non-blocking. Unused currently */
-    public static final int NONBLOCK = 0x0004;
+    public static final int NONBLOCK = OpenFlags.O_NONBLOCK.value();
     /** binary flag, to ensure no encoding changes are made while writing */
-    public static final int BINARY = 0x8000;
-    /** accmode flag (?) */
-    public static final int ACCMODE = 0x10000;
+    public static final int BINARY = OpenFlags.O_BINARY.value();
+    /** accmode flag, used to mask the read/write mode */
+    public static final int ACCMODE = RDWR | WRONLY | RDONLY;
     
     /** the set of flags for this ModeFlags instance */
     private final int flags;

@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.kenai.constantine.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
@@ -192,6 +193,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     public static RubyClass createFileClass(Ruby runtime) {
         RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);
+        // Create Constants class
+        RubyModule constants = fileClass.defineModuleUnder("Constants");
         runtime.setFile(fileClass);
         RubyString separator = runtime.newString("/");
         ThreadContext context = runtime.getCurrentContext();
@@ -223,9 +226,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // File::Constants below? File::Constants is included in IO.
 
         // TODO: These were missing, so we're not handling them elsewhere?
-        // FIXME: The old value, 32786, didn't match what IOModes expected, so I reference
-        // the constant here. THIS MAY NOT BE THE CORRECT VALUE.
-        fileClass.fastSetConstant("BINARY", runtime.newFixnum(ModeFlags.BINARY));
         fileClass.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
         fileClass.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
         fileClass.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
@@ -233,15 +233,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fileClass.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         
         // Create constants for open flags
-        fileClass.fastSetConstant("RDONLY", runtime.newFixnum(ModeFlags.RDONLY));
-        fileClass.fastSetConstant("WRONLY", runtime.newFixnum(ModeFlags.WRONLY));
-        fileClass.fastSetConstant("RDWR", runtime.newFixnum(ModeFlags.RDWR));
-        fileClass.fastSetConstant("CREAT", runtime.newFixnum(ModeFlags.CREAT));
-        fileClass.fastSetConstant("EXCL", runtime.newFixnum(ModeFlags.EXCL));
-        fileClass.fastSetConstant("NOCTTY", runtime.newFixnum(ModeFlags.NOCTTY));
-        fileClass.fastSetConstant("TRUNC", runtime.newFixnum(ModeFlags.TRUNC));
-        fileClass.fastSetConstant("APPEND", runtime.newFixnum(ModeFlags.APPEND));
-        fileClass.fastSetConstant("NONBLOCK", runtime.newFixnum(ModeFlags.NONBLOCK));
+        for (OpenFlags f : OpenFlags.values()) {
+            // Strip off the O_ prefix, so they become File::RDONLY, and so on
+            final String name = f.name();
+            if (name.startsWith("O_")) {
+                final String cname = name.substring(2);
+                // Special case for handling ACCMODE, since constantine will generate
+                // an invalid value if it is not defined by the platform.
+                final RubyFixnum cvalue = f == OpenFlags.O_ACCMODE
+                        ? runtime.newFixnum(ModeFlags.ACCMODE)
+                        : runtime.newFixnum(f.value());
+                fileClass.fastSetConstant(cname, cvalue);
+                constants.fastSetConstant(cname, cvalue);
+            }
+        }
         
         // Create constants for flock
         fileClass.fastSetConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
@@ -249,28 +254,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fileClass.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
         fileClass.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
-        // Create Constants class
-        RubyModule constants = fileClass.defineModuleUnder("Constants");
-        
-        // TODO: These were missing, so we're not handling them elsewhere?
-        constants.fastSetConstant("BINARY", runtime.newFixnum(ModeFlags.BINARY));
-        constants.fastSetConstant("SYNC", runtime.newFixnum(0x1000));
         constants.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
         constants.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
         constants.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
         constants.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
         constants.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
-        
-        // Create constants for open flags
-        constants.fastSetConstant("RDONLY", runtime.newFixnum(ModeFlags.RDONLY));
-        constants.fastSetConstant("WRONLY", runtime.newFixnum(ModeFlags.WRONLY));
-        constants.fastSetConstant("RDWR", runtime.newFixnum(ModeFlags.RDWR));
-        constants.fastSetConstant("CREAT", runtime.newFixnum(ModeFlags.CREAT));
-        constants.fastSetConstant("EXCL", runtime.newFixnum(ModeFlags.EXCL));
-        constants.fastSetConstant("NOCTTY", runtime.newFixnum(ModeFlags.NOCTTY));
-        constants.fastSetConstant("TRUNC", runtime.newFixnum(ModeFlags.TRUNC));
-        constants.fastSetConstant("APPEND", runtime.newFixnum(ModeFlags.APPEND));
-        constants.fastSetConstant("NONBLOCK", runtime.newFixnum(ModeFlags.NONBLOCK));
         
         // Create constants for flock
         constants.fastSetConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
