@@ -1,7 +1,9 @@
 package org.jruby.ext;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -18,6 +20,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.threading.DaemonThreadFactory;
 
 public class Timeout implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
@@ -36,6 +39,8 @@ public class Timeout implements Library {
         runtime.getObject().defineConstant("TimeoutError", timeoutError);
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
+
+    private static ExecutorService timeoutExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory());
 
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1)
@@ -73,10 +78,11 @@ public class Timeout implements Library {
         final Object monitor = new Object();
         final AtomicBoolean doRaise = new AtomicBoolean(true);
         
-        Thread timeoutThread = prepareThread(monitor, waitTime, doRaise, currentThread, runtime);
+        Runnable timeoutRunnable = prepareRunnable(monitor, waitTime, doRaise, currentThread, runtime);
+        Future timeoutFuture = null;
 
         try {
-            timeoutThread.start();
+            timeoutFuture = timeoutExecutor.submit(timeoutRunnable);
 
             return block.yield(context, seconds);
         } catch (RaiseException re) {
@@ -86,7 +92,7 @@ public class Timeout implements Library {
                 throw re;
             }
         } finally {
-            killTimeoutThread(context, timeoutThread, monitor, doRaise);
+            killTimeoutThread(context, timeoutFuture, monitor, doRaise);
         }
     }
 
@@ -110,10 +116,11 @@ public class Timeout implements Library {
         final Object monitor = new Object();
         final AtomicBoolean doRaise = new AtomicBoolean(true);
 
-        Thread timeoutThread = prepareThreadWithException(monitor, waitTime, doRaise, currentThread, exception, runtime);
+        Runnable timeoutRunnable = prepareRunnableWithException(monitor, waitTime, doRaise, currentThread, exception, runtime);
+        Future timeoutFuture = null;
 
         try {
-            timeoutThread.start();
+            timeoutFuture = timeoutExecutor.submit(timeoutRunnable);
 
             return block.yield(context, seconds);
         } catch (RaiseException re) {
@@ -128,12 +135,12 @@ public class Timeout implements Library {
             // otherwise, rethrow
             throw re;
         } finally {
-            killTimeoutThread(context, timeoutThread, monitor, doRaise);
+            killTimeoutThread(context, timeoutFuture, monitor, doRaise);
         }
     }
 
-    private static Thread prepareThread(final Object monitor, final long waitTime, final AtomicBoolean doRaise, final RubyThread currentThread, final Ruby runtime) {
-        Thread timeoutThread = new Thread() {
+    private static Runnable prepareRunnable(final Object monitor, final long waitTime, final AtomicBoolean doRaise, final RubyThread currentThread, final Ruby runtime) {
+        Runnable timeoutRunnable = new Runnable() {
             public void run() {
                 synchronized (monitor) {
                     doTimedWait(waitTime, doRaise, monitor);
@@ -143,12 +150,11 @@ public class Timeout implements Library {
                 }
             }
         };
-        timeoutThread.setDaemon(true);
-        return timeoutThread;
+        return timeoutRunnable;
     }
 
-    private static Thread prepareThreadWithException(final Object monitor, final long waitTime, final AtomicBoolean doRaise, final RubyThread currentThread, final IRubyObject exception, final Ruby runtime) {
-        Thread timeoutThread = new Thread() {
+    private static Runnable prepareRunnableWithException(final Object monitor, final long waitTime, final AtomicBoolean doRaise, final RubyThread currentThread, final IRubyObject exception, final Ruby runtime) {
+        Runnable timeoutRunnable = new Runnable() {
             public void run() {
                 synchronized (monitor) {
                     doTimedWait(waitTime, doRaise, monitor);
@@ -158,16 +164,13 @@ public class Timeout implements Library {
                 }
             }
         };
-        timeoutThread.setDaemon(true);
-        return timeoutThread;
+        return timeoutRunnable;
     }
 
-    private static void killTimeoutThread(ThreadContext context, Thread timeoutThread, Object monitor, AtomicBoolean doRaise) {
+    private static void killTimeoutThread(ThreadContext context, Future timeoutFuture, Object monitor, AtomicBoolean doRaise) {
         synchronized (monitor) {
-            if (timeoutThread.isAlive()) {
-                doRaise.set(false);
-                timeoutThread.interrupt();
-            }
+            doRaise.set(false);
+            timeoutFuture.cancel(true);
             context.pollThreadEvents();
         }
     }
