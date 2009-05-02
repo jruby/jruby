@@ -1309,7 +1309,7 @@ public final class Ruby {
             }
         });
         
-        String[] builtins = {"yaml", "yaml/syck", "jsignal" };
+        String[] builtins = {"fcntl", "yaml", "yaml/syck", "jsignal" };
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }
