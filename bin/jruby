@@ -128,6 +128,8 @@ JAVA_VM=-client
 declare -a java_args
 declare -a ruby_args
 
+java_class=org.jruby.Main
+
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
 if $darwin; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
@@ -204,6 +206,14 @@ do
         java_args=("${java_args[@]}" "-Djruby.compat.version=RUBY1_9") ;;
      --1.8)
         java_args=("${java_args[@]}" "-Djruby.compat.version=RUBY1_8") ;;
+     --ng-server)
+        # Start up as Nailgun server
+        java_class=com.martiansoftware.nailgun.NGServer
+        JAVA_VM=-server
+        VERIFY_JRUBY=true ;;
+     --ng)
+        # Use native Nailgun client to toss commands to server
+        nailgun_client=true ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
@@ -263,6 +273,14 @@ if $cygwin; then
   JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
 fi
 
+if [ "$nailgun_client" != "" ]; then
+  if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
+    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"
+  else
+    echo "error: ng executable not found; run 'make' in tool/nailgun"
+    exit 1
+  fi
+else
 if [ "$VERIFY_JRUBY" != "" ]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
@@ -272,7 +290,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    org.jruby.Main $JRUBY_OPTS "$@"
+    $java_class $JRUBY_OPTS "$@"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?
@@ -295,7 +313,7 @@ else
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      org.jruby.Main $JRUBY_OPTS "$@"
+      $java_class $JRUBY_OPTS "$@"
 
     # Record the exit status immediately, or it will be overridden.
     JRUBY_STATUS=$?
@@ -308,8 +326,9 @@ else
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      org.jruby.Main $JRUBY_OPTS "$@"
+      $java_class $JRUBY_OPTS "$@"
   fi
+fi
 fi
 
 # Be careful adding code down here, you might override the exit

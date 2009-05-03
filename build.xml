@@ -239,6 +239,7 @@
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -273,6 +274,7 @@
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -358,6 +360,7 @@
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
@@ -1092,6 +1095,7 @@
     <exclude name="docs/rdocs.tar.gz"/>
     <exclude name="bench/**"/>
     <include name="share/**"/>
+    <include name="tool/nailgun/**"/>
   </patternset>
 
   <patternset id="dist.src.files">
@@ -1281,44 +1285,6 @@
   <target name="jruby-nailgun" depends="generate-method-classes,build-ng"
     description="Set up JRuby to be run with Nailgun (jruby-ng, jruby-ng-server)">
     <mkdir dir="${build.dir}/nailmain"/>
-    <javac srcdir="${nailgun.home}/src/java" destdir="${build.dir}/nailmain"
-      classpath="${nailgun.home}/nailgun-0.7.1.jar:${jruby.classes.dir}" debug="true"
-      source="${javac.version}" target="${javac.version}"
-      deprecation="true" encoding="UTF-8" />
-    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
-      classpath="${build.lib.dir}/jarjar-1.0rc8.jar"/>
-    <jarjar destfile="${nailgun.home}/jruby-nailgun.jar">
-      <fileset dir="${jruby.classes.dir}">
-        <exclude name="org/jruby/util/ant/**/*.class"/>
-      </fileset>
-      <fileset dir="${build.dir}/nailmain"/>
-      <zipfileset src="${build.lib.dir}/asm-3.1.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-commons-3.1.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
-      <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-      <zipfileset src="${build.lib.dir}/constantine.jar"/>
-      <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
-      <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
-      <zipfileset src="${build.lib.dir}/jcodings.jar"/>
-      <zipfileset src="${build.lib.dir}/joni.jar"/>
-      <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
-      <zipfileset src="${build.lib.dir}/jna.jar"/>
-      <zipfileset src="${build.lib.dir}/jffi.jar"/>
-      <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
-      <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
-      <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
-      <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
-      <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
-      <zipfileset src="${nailgun.home}/nailgun-0.7.1.jar"/>
-      <zipfileset src="${build.lib.dir}/yydebug.jar"/>
-      <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Main-Class" value="org.jruby.Main"/>
-      </manifest>
-    </jarjar>
   </target>
 
   <target name="fetch-rails">
