@@ -1,9 +1,11 @@
 package org.jruby.ext;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -40,7 +42,7 @@ public class Timeout implements Library {
         runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
     }
 
-    private static ExecutorService timeoutExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory());
+    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
 
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1)
@@ -73,16 +75,14 @@ public class Timeout implements Library {
             return raiseBecauseCritical(context);
         }
 
-        final long waitTime = 1000 * seconds.convertToInteger().getLongValue();
         final RubyThread currentThread = context.getThread();
-        final Object monitor = new Object();
-        final AtomicBoolean doRaise = new AtomicBoolean(true);
         
-        Runnable timeoutRunnable = prepareRunnable(monitor, waitTime, doRaise, currentThread, runtime);
+        Runnable timeoutRunnable = prepareRunnable(currentThread, runtime);
         Future timeoutFuture = null;
 
         try {
-            timeoutFuture = timeoutExecutor.submit(timeoutRunnable);
+            timeoutFuture = timeoutExecutor.schedule(timeoutRunnable, 
+                    seconds.convertToInteger().getLongValue(), TimeUnit.SECONDS);
 
             return block.yield(context, seconds);
         } catch (RaiseException re) {
@@ -92,7 +92,7 @@ public class Timeout implements Library {
                 throw re;
             }
         } finally {
-            killTimeoutThread(context, timeoutFuture, monitor, doRaise);
+            killTimeoutThread(context, timeoutFuture);
         }
     }
 
@@ -111,16 +111,14 @@ public class Timeout implements Library {
         }
 
         final IRubyObject exception = exceptionType.isNil() ? runtime.getClassFromPath("Timeout::ExitException") : exceptionType;
-        final long waitTime = 1000 * seconds.convertToInteger().getLongValue();
         final RubyThread currentThread = context.getThread();
-        final Object monitor = new Object();
-        final AtomicBoolean doRaise = new AtomicBoolean(true);
-
-        Runnable timeoutRunnable = prepareRunnableWithException(monitor, waitTime, doRaise, currentThread, exception, runtime);
+        
+        Runnable timeoutRunnable = prepareRunnableWithException(currentThread, exception, runtime);
         Future timeoutFuture = null;
 
         try {
-            timeoutFuture = timeoutExecutor.submit(timeoutRunnable);
+            timeoutFuture = timeoutExecutor.schedule(timeoutRunnable, 
+                    seconds.convertToInteger().getLongValue(), TimeUnit.SECONDS);
 
             return block.yield(context, seconds);
         } catch (RaiseException re) {
@@ -135,61 +133,52 @@ public class Timeout implements Library {
             // otherwise, rethrow
             throw re;
         } finally {
-            killTimeoutThread(context, timeoutFuture, monitor, doRaise);
+            killTimeoutThread(context, timeoutFuture);
         }
     }
 
-    private static Runnable prepareRunnable(final Object monitor, final long waitTime, final AtomicBoolean doRaise, final RubyThread currentThread, final Ruby runtime) {
+    private static Runnable prepareRunnable(final RubyThread currentThread, final Ruby runtime) {
         Runnable timeoutRunnable = new Runnable() {
             public void run() {
-                synchronized (monitor) {
-                    doTimedWait(waitTime, doRaise, monitor);
-                    if (doRaise.get()) {
-                        raiseInThread(runtime, currentThread, runtime.getClassFromPath("Timeout::ExitException"));
-                    }
-                }
+                raiseInThread(runtime, currentThread, runtime.getClassFromPath("Timeout::ExitException"));
             }
         };
         return timeoutRunnable;
     }
 
-    private static Runnable prepareRunnableWithException(final Object monitor, final long waitTime, final AtomicBoolean doRaise, final RubyThread currentThread, final IRubyObject exception, final Ruby runtime) {
+    private static Runnable prepareRunnableWithException(final RubyThread currentThread, final IRubyObject exception, final Ruby runtime) {
         Runnable timeoutRunnable = new Runnable() {
             public void run() {
-                synchronized (monitor) {
-                    doTimedWait(waitTime, doRaise, monitor);
-                    if (doRaise.get()) {
-                        raiseInThread(runtime, currentThread, exception);
-                    }
-                }
+                raiseInThread(runtime, currentThread, exception);
             }
         };
         return timeoutRunnable;
     }
 
-    private static void killTimeoutThread(ThreadContext context, Future timeoutFuture, Object monitor, AtomicBoolean doRaise) {
-        synchronized (monitor) {
-            doRaise.set(false);
-            timeoutFuture.cancel(true);
-            context.pollThreadEvents();
-        }
-    }
+    private static void killTimeoutThread(ThreadContext context, Future timeoutFuture) {
+        boolean cancelled = timeoutFuture.cancel(false);
 
-    private static void doTimedWait(long waitTime, AtomicBoolean doRaise, Object monitor) {
-        try {
-            long end = System.currentTimeMillis() + waitTime;
-            while (doRaise.get()) {
-                long remain = end - System.currentTimeMillis();
-                if (remain <= 0) {
-                    break;
-                }
-                monitor.wait(remain);
+        //
+        // Remove the Executor task now, to avoid cancelled tasks accumulating
+        // until an Executor thread can schedule and remove them
+        //
+        if (cancelled && timeoutExecutor instanceof ScheduledThreadPoolExecutor && timeoutFuture instanceof Runnable) {
+            ((ScheduledThreadPoolExecutor) timeoutExecutor).remove((Runnable) timeoutFuture);
+        }
+        //
+        // If the task was scheduled, wait for it to finish before polling
+        // for the exception it would have thrown.
+        //
+        if (!cancelled) {
+            try {
+                timeoutFuture.get();
+            } catch (java.util.concurrent.ExecutionException ex) {
+            } catch (InterruptedException ex) {
             }
-        } catch (InterruptedException ie) {
-            doRaise.set(false);
         }
+        context.pollThreadEvents();
     }
-
+    
     private static void raiseInThread(Ruby runtime, RubyThread currentThread, IRubyObject exception) {
         if (currentThread.alive_p().isTrue()) {
             currentThread.internalRaise(new IRubyObject[]{runtime.getClassFromPath("Timeout::ExitException"), runtime.newString("execution expired")});
