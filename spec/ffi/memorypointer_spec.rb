@@ -31,6 +31,7 @@ end
 describe "MemoryPointer argument" do
   module Ptr
     extend FFI::Library
+    ffi_lib 'c'
     attach_function :memset, [ :pointer, :int, :ulong ], :pointer
     attach_function :memcpy, [ :pointer, :pointer, :ulong ], :pointer
   end
