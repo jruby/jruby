@@ -7,6 +7,8 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -65,6 +67,23 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     @Override
     public CallbackManager getCallbackManager() {
         return CallbackManager.getInstance();
+    }
+
+    private static final com.kenai.jffi.Type getType(NativeType type) {
+        com.kenai.jffi.Type jffiType = FFIUtil.getFFIType(type);
+        if (jffiType == null) {
+            throw new UnsupportedOperationException("Cannot determine native type for " + type);
+        }
+
+        return jffiType;
+    }
+
+    public int sizeOf(NativeType type) {
+        return getType(type).size();
+    }
+
+    public int alignmentOf(NativeType type) {
+        return getType(type).alignment();
     }
 
     private static final class LastError {

@@ -187,4 +187,7 @@ public abstract class Factory {
 
 
     public abstract CallbackManager getCallbackManager();
+
+    public abstract int sizeOf(NativeType type);
+    public abstract int alignmentOf(NativeType type);
 }
