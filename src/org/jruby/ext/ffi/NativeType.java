@@ -28,7 +28,6 @@
 
 package org.jruby.ext.ffi;
 
-import org.jruby.RubyInteger;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
