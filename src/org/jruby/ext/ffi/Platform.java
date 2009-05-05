@@ -74,8 +74,8 @@ public class Platform {
     public enum CPU {
         I386,
         X86_64,
-        PPC,
-        PPC64,
+        POWERPC,
+        POWERPC64,
         SPARC,
         SPARCV9,
         UNKNOWN;
@@ -126,9 +126,9 @@ public class Platform {
         } else if ("x86_64".equals(archString) || "amd64".equals(archString)) {
             return CPU.X86_64;
         } else if ("ppc".equals(archString) || "powerpc".equals(archString)) {
-            return CPU.PPC;
+            return CPU.POWERPC;
         } else if ("ppc64".equals(archString)) {
-            return CPU.PPC64;
+            return CPU.POWERPC64;
         } else if ("sparc".equals(archString)) {
             return CPU.SPARC;
         } else if ("sparcv9".equals(archString)) {
@@ -173,12 +173,12 @@ public class Platform {
         if (dataModel != 32 && dataModel != 64) {
             switch (CPU) {
                 case I386:
-                case PPC:
+                case POWERPC:
                 case SPARC:
                     dataModel = 32;
                     break;
                 case X86_64:
-                case PPC64:
+                case POWERPC64:
                 case SPARCV9:
                     dataModel = 64;
                     break;
