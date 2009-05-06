@@ -125,11 +125,12 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * Holds the JFFI return type and parameter types to avoid
      */
     private static class ClosureInfo {
-        private final CallbackInfo cbInfo;
-        private final CallingConvention convention;
-        private final NativeType[] nativeParameterTypes;
-        private final com.kenai.jffi.Type[] ffiParameterTypes;
-        private final com.kenai.jffi.Type ffiReturnType;
+        final CallbackInfo cbInfo;
+        final CallingConvention convention;
+        final Type returnType;
+        final Type[] parameterTypes;
+        final com.kenai.jffi.Type[] ffiParameterTypes;
+        final com.kenai.jffi.Type ffiReturnType;
         
         public ClosureInfo(CallbackInfo cbInfo, CallingConvention convention) {
             this.cbInfo = cbInfo;
@@ -137,18 +138,22 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
 
             Type[] paramTypes = cbInfo.getParameterTypes();
             ffiParameterTypes = new com.kenai.jffi.Type[paramTypes.length];
-            nativeParameterTypes = new NativeType[paramTypes.length];
+
             for (int i = 0; i < paramTypes.length; ++i) {
                 if (!isParameterTypeValid(paramTypes[i])) {
                     throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + paramTypes[i]);
                 }
-                nativeParameterTypes[i] = paramTypes[i].getNativeType();
-                ffiParameterTypes[i] = FFIUtil.getFFIType(nativeParameterTypes[i]);
+                ffiParameterTypes[i] = FFIUtil.getFFIType(paramTypes[i].getNativeType());
             }
+
             if (!isReturnTypeValid(cbInfo.getReturnType())) {
                 throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
             }
-            this.ffiReturnType = FFIUtil.getFFIType(cbInfo.getReturnType().getNativeType());
+
+            this.returnType = cbInfo.getReturnType();
+            this.parameterTypes = (Type[]) cbInfo.getParameterTypes().clone();
+            this.ffiReturnType = FFIUtil.getFFIType(returnType.getNativeType());
+            
         }
     }
 
@@ -189,9 +194,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 buffer.setIntReturn(0);
                 return;
             }
-            IRubyObject[] params = new IRubyObject[closureInfo.nativeParameterTypes.length];
+            IRubyObject[] params = new IRubyObject[closureInfo.parameterTypes.length];
             for (int i = 0; i < params.length; ++i) {
-                params[i] = fromNative(runtime, closureInfo.nativeParameterTypes[i], buffer, i);
+                params[i] = fromNative(runtime, closureInfo.parameterTypes[i], buffer, i);
             }
             IRubyObject retVal;
             if (recv instanceof RubyProc) {
@@ -322,9 +327,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @param index The index of the parameter in the buffer.
      * @return A new Ruby object.
      */
-    private static final IRubyObject fromNative(Ruby runtime, NativeType type,
+    private static final IRubyObject fromNative(Ruby runtime, Type type,
             Closure.Buffer buffer, int index) {
-        switch (type) {
+        switch (type.getNativeType()) {
             case VOID:
                 return runtime.getNil();
             case INT8:
@@ -348,8 +353,20 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             case FLOAT64:
                 return runtime.newFloat(buffer.getDouble(index));
             case POINTER: {
-                final long  address = buffer.getAddress(index);
-                return new BasePointer(runtime, address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(runtime));
+                final long address = buffer.getAddress(index);
+                if (type instanceof CallbackInfo) {
+                    CallbackInfo cbInfo = (CallbackInfo) type;
+                    if (address != 0) {
+                        return new JFFIInvoker(runtime, address,
+                                cbInfo.getReturnType(), cbInfo.getParameterTypes());
+                    } else {
+                        return runtime.getNil();
+                    }
+                } else {
+                    return new BasePointer(runtime, address != 0
+                            ? new NativeMemoryIO(address)
+                            : new NullMemoryIO(runtime));
+                }
             }
             case STRING:
                 return getStringParameter(runtime, buffer, index);
@@ -439,6 +456,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 case STRING:
                     return true;
             }
+        } else if (type instanceof CallbackInfo) {
+            return true;
         }
         return false;
     }
