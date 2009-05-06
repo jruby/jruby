@@ -236,6 +236,7 @@
         <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -270,6 +271,7 @@
         <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -355,6 +357,7 @@
         <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
