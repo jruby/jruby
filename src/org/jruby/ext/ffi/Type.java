@@ -50,33 +50,7 @@ public abstract class Type extends RubyObject {
         return typeClass;
     }
     
-    /**
-     * Gets the native type of this <tt>Type</tt> when passed as a parameter
-     *
-     * @return The native type of this Type.
-     */
-    public final NativeType getNativeType() {
-        return nativeType;
-    }
-
-    /**
-     * Gets the native size of this <tt>Type</tt> in bytes
-     *
-     * @return The native size of this Type.
-     */
-    public final int getNativeSize() {
-        return size;
-    }
-
-    /**
-     * Gets the native alignment this <tt>Type</tt> in bytes
-     *
-     * @return The native alignment of this Type.
-     */
-    public final int getNativeAlignment() {
-        return alignment;
-    }
-
+    
     /**
      * Initializes a new <tt>Type</tt> instance.
      */
@@ -97,6 +71,55 @@ public abstract class Type extends RubyObject {
         this.alignment = getNativeAlignment(type);
     }
 
+    /**
+     * Gets the native type of this <tt>Type</tt> when passed as a parameter
+     *
+     * @return The native type of this Type.
+     */
+    public final NativeType getNativeType() {
+        return nativeType;
+    }
+
+    /**
+     * Gets the native size of this <tt>Type</tt> in bytes
+     *
+     * @return The native size of this Type.
+     */
+    public final int getNativeSize() {
+        return size;
+    }
+
+    /**
+     * Gets the native alignment of this <tt>Type</tt> in bytes
+     *
+     * @return The native alignment of this Type.
+     */
+    public final int getNativeAlignment() {
+        return alignment;
+    }
+
+    /**
+     * Gets the native size of this <tt>Type</tt> in bytes
+     *
+     * @param context The Ruby thread context.
+     * @return The native size of this Type.
+     */
+    @JRubyMethod(name = "size")
+    public IRubyObject size(ThreadContext context) {
+        return context.getRuntime().newFixnum(getNativeSize());
+    }
+
+    /**
+     * Gets the native alignment of this <tt>Type</tt> in bytes
+     *
+     * @param context The Ruby thread context.
+     * @return The native alignment of this Type.
+     */
+    @JRubyMethod(name = "alignment")
+    public IRubyObject alignment(ThreadContext context) {
+        return context.getRuntime().newFixnum(getNativeAlignment());
+    }
+
     @JRubyClass(name = "FFI::Type::Builtin", parent = "FFI::Type")
     public final static class Builtin extends Type {
         
@@ -110,7 +133,8 @@ public abstract class Type extends RubyObject {
         @JRubyMethod(name = "to_s")
         public final IRubyObject to_s(ThreadContext context) {
             return RubyString.newString(context.getRuntime(),
-                    String.format("#<FFI::Type::Builtin:%s>", nativeType.name()));
+                    String.format("#<FFI::Type::Builtin:%s size=%d alignment=%d>",
+                    nativeType.name(), size, alignment));
         }
         
         @Override
