@@ -235,35 +235,39 @@ public class RubyThread extends RubyObject {
         Ruby runtime = getRuntime();
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
 
-        RubyRunnable runnable = new RubyRunnable(this, args, context.getFrames(0), block);
-        if (RubyInstanceConfig.POOLING_ENABLED) {
-            FutureThread futureThread = new FutureThread(this, runnable);
-            threadImpl = futureThread;
+        try {
+            RubyRunnable runnable = new RubyRunnable(this, args, context.getFrames(0), block);
+            if (RubyInstanceConfig.POOLING_ENABLED) {
+                FutureThread futureThread = new FutureThread(this, runnable);
+                threadImpl = futureThread;
 
-            addToCorrectThreadGroup(context);
+                addToCorrectThreadGroup(context);
 
-            threadImpl.start();
+                threadImpl.start();
 
-            // JRUBY-2380, associate future early so it shows up in Thread.list right away, in case it doesn't run immediately
-            runtime.getThreadService().associateThread(futureThread.getFuture(), this);
-        } else {
-            Thread thread = new Thread(runnable);
-            thread.setDaemon(true);
-            threadImpl = new NativeThread(this, thread);
+                // JRUBY-2380, associate future early so it shows up in Thread.list right away, in case it doesn't run immediately
+                runtime.getThreadService().associateThread(futureThread.getFuture(), this);
+            } else {
+                Thread thread = new Thread(runnable);
+                thread.setDaemon(true);
+                threadImpl = new NativeThread(this, thread);
             
-            addToCorrectThreadGroup(context);
+                addToCorrectThreadGroup(context);
 
-            threadImpl.start();
+                threadImpl.start();
 
-            // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
-            runtime.getThreadService().associateThread(thread, this);
-        }
+                // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
+                runtime.getThreadService().associateThread(thread, this);
+            }
 
-        // We yield here to hopefully permit the target thread to schedule
-        // MRI immediately schedules it, so this is close but not exact
-        Thread.yield();
+            // We yield here to hopefully permit the target thread to schedule
+            // MRI immediately schedules it, so this is close but not exact
+            Thread.yield();
         
-        return this;
+            return this;
+        } catch (SecurityException ex) {
+          throw runtime.newThreadError(ex.getMessage());
+        }
     }
     
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
