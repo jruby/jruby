@@ -222,11 +222,8 @@ public class RubyArray extends RubyObject implements List {
         return arr;
     }
 
-    public static RubyArray newArray(Ruby runtime, Collection<IRubyObject> collection) {
-        RubyArray arr = new RubyArray(runtime, collection.size());
-        collection.toArray(arr.values);
-        arr.realLength = arr.values.length;
-        return arr;
+    public static RubyArray newArray(Ruby runtime, Collection<? extends IRubyObject> collection) {
+        return new RubyArray(runtime, collection.toArray(new IRubyObject[collection.size()]));
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;    
