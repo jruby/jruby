@@ -28,4 +28,17 @@ describe "Callback" do
     end
     args.should == [ 1, 2 ]
   end  
+  it "can be inlined" do
+    module LibC
+    extend FFI::Library
+    attach_function :qsort, [ :pointer, :int, :int, callback(:qsort_cmp, [ :pointer, :pointer ], :int) ], :int
+    end
+  end
+
+  it "can be anonymous" do
+    module LibC
+    extend FFI::Library
+    attach_function :qsort, [ :pointer, :int, :int, callback([ :pointer, :pointer ], :int) ], :int
+  end
+end
 end
