@@ -93,7 +93,7 @@ public class RubyThreadGroup extends RubyObject {
     void addDirectly(RubyThread rubyThread) {
         synchronized (rubyThread) {
             IRubyObject oldGroup = rubyThread.group();
-            if (oldGroup != getRuntime().getNil()) {
+            if (!oldGroup.isNil()) {
                 RubyThreadGroup threadGroup = (RubyThreadGroup) oldGroup;
                 threadGroup.rubyThreadList.remove(rubyThread);
             }
@@ -119,7 +119,7 @@ public class RubyThreadGroup extends RubyObject {
     
     @JRubyMethod(name = "enclosed?", frame = true)
     public IRubyObject enclosed_p(Block block) {
-        return new RubyBoolean(getRuntime(), enclosed);
+        return getRuntime().newBoolean(enclosed);
     }
 
     @JRubyMethod(name = "list", frame = true)
