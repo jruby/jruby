@@ -241,12 +241,14 @@ public class UnmarshalStream extends InputStream {
         int length = unmarshalInt();
         byte[] buffer = new byte[length];
 
-        if (length > 0) {
-            int i = inputStream.read(buffer, 0, length);
+        int readLength = 0;
+        while (readLength < length) {
+            int read = inputStream.read(buffer, 0, length);
 
-            if (i < length) {
+            if (read == -1) {
                 throw getRuntime().newArgumentError("marshal data too short");
             }
+            readLength += read;
         }
         
         return new ByteList(buffer,false);
