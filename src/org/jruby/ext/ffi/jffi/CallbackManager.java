@@ -20,8 +20,8 @@ import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
-import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.NullMemoryIO;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
@@ -35,6 +35,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+    private static final int LONG_SIZE = Platform.getPlatform().longSize();
 
     /** Holder for the single instance of CallbackManager */
     private static final class SingletonHolder {
@@ -298,6 +299,23 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     buffer.setLongReturn(Util.int64Value(value)); break;
                 case UINT64:
                     buffer.setLongReturn(Util.uint64Value(value)); break;
+
+                case LONG:
+                    if (LONG_SIZE == 32) {
+                        buffer.setIntReturn((int) longValue(value));
+                    } else {
+                        buffer.setLongReturn(Util.int64Value(value));
+                    }
+                    break;
+
+                case ULONG:
+                    if (LONG_SIZE == 32) {
+                        buffer.setIntReturn((int) longValue(value));
+                    } else {
+                        buffer.setLongReturn(Util.uint64Value(value));
+                    }
+                    break;
+
                 case FLOAT32:
                     buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
                 case FLOAT64:
@@ -348,6 +366,16 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 return Util.newSigned64(runtime, buffer.getLong(index));
             case UINT64:
                 return Util.newUnsigned64(runtime, buffer.getLong(index));
+
+            case LONG:
+                return LONG_SIZE == 32
+                        ? Util.newSigned32(runtime, buffer.getInt(index))
+                        : Util.newSigned64(runtime, buffer.getLong(index));
+            case ULONG:
+                return LONG_SIZE == 32
+                        ? Util.newUnsigned32(runtime, buffer.getInt(index))
+                        : Util.newUnsigned64(runtime, buffer.getLong(index));
+
             case FLOAT32:
                 return runtime.newFloat(buffer.getFloat(index));
             case FLOAT64:
