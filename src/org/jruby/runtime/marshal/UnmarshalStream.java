@@ -240,16 +240,15 @@ public class UnmarshalStream extends InputStream {
     public ByteList unmarshalString() throws IOException {
         int length = unmarshalInt();
         byte[] buffer = new byte[length];
+
+        if (length > 0) {
+            int i = inputStream.read(buffer, 0, length);
+
+            if (i < length) {
+                throw getRuntime().newArgumentError("marshal data too short");
+            }
+        }
         
-        // FIXME: sooper inefficient, but it's working better...
-        int b = 0;
-        int i = 0;
-        while (i < length && (b = read()) != -1) {
-            buffer[i++] = (byte)b;
-        }
-        if (i < length) {
-            throw getRuntime().newArgumentError("marshal data too short");
-        }
         return new ByteList(buffer,false);
     }
 
