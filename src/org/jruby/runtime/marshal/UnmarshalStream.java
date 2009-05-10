@@ -243,7 +243,7 @@ public class UnmarshalStream extends InputStream {
 
         int readLength = 0;
         while (readLength < length) {
-            int read = inputStream.read(buffer, 0, length);
+            int read = inputStream.read(buffer, readLength, length - readLength);
 
             if (read == -1) {
                 throw getRuntime().newArgumentError("marshal data too short");
