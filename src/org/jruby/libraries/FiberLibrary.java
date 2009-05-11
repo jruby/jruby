@@ -104,7 +104,9 @@ public class FiberLibrary implements Library {
         public IRubyObject resume(ThreadContext context, IRubyObject[] args) throws InterruptedException {
             synchronized (yieldLock) {
                 // FIXME: Broken but behaving
-                if (args.length == 1) {
+                if (args.length == 0) {
+                    result = context.getRuntime().getNil();
+                } else if (args.length == 1) {
                     result = args[0];
                 } else {
                     result = context.getRuntime().newArrayNoCopyLight(args);
@@ -136,10 +138,17 @@ public class FiberLibrary implements Library {
     }
 
     public static class FiberMeta {
-        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
-        public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject value) throws InterruptedException {
+        @JRubyMethod(compat = CompatVersion.RUBY1_9, rest = true, meta = true)
+        public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] args) throws InterruptedException {
             Fiber fiber = context.getFiber();
-            fiber.result = value;
+            // FIXME: Broken but behaving
+            if (args.length == 0) {
+                fiber.result = context.getRuntime().getNil();
+            } else if (args.length == 1) {
+                fiber.result = args[0];
+            } else {
+                fiber.result = context.getRuntime().newArrayNoCopyLight(args);
+            }
             synchronized (fiber.yieldLock) {
                 fiber.yieldLock.notify();
                 fiber.yieldLock.wait();
