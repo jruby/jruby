@@ -382,6 +382,25 @@ public final class Ruby {
             return parseFile(inputStream, filename, getCurrentContext().getCurrentScope());
         }
     }
+
+    /**
+     * Run the given script with a "while gets; end" loop wrapped around it.
+     * This is primarily used for the -n command-line flag, to allow writing
+     * a short script that processes input lines using the specified code.
+     *
+     * @param scriptNode The root node of the script to execute
+     * @param printing Whether $_ should be printed after each loop (as in the
+     * -p command-line flag)
+     * @param processLineEnds Whether line endings should be processed by
+     * setting $\ to $/ and <code>chop!</code>ing every line read
+     * @param split Whether to split each line read using <code>String#split</code>
+     * bytecode before executing.
+     * @return The result of executing the specified script
+     */
+    @Deprecated
+    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean unused) {
+        return runWithGetsLoop(scriptNode, printing, processLineEnds, split);
+    }
     
     /**
      * Run the given script with a "while gets; end" loop wrapped around it.
@@ -454,6 +473,19 @@ public final class Ruby {
         }
         
         return getNil();
+    }
+
+    /**
+     * Run the specified script without any of the loop-processing wrapper
+     * code.
+     *
+     * @param scriptNode The root node of the script to be executed
+     * bytecode before execution
+     * @return The result of executing the script
+     */
+    @Deprecated
+    public IRubyObject runNormally(Node scriptNode, boolean unused) {
+        return runNormally(scriptNode);
     }
     
     /**
