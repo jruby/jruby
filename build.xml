@@ -1069,6 +1069,8 @@
     <include name="bin/generate_yaml_index.rb"/>
     <include name="bin/testrb"/>
     <include name="bin/ast*"/>
+    <include name="bin/spec.bat"/>
+    <include name="bin/rake.bat"/>
   </patternset>
 
   <patternset id="dist.lib.files">
