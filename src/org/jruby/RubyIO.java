@@ -1484,6 +1484,13 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = "print", rest = true, reads = FrameField.LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
+        return print(context, this, args);
+    }
+
+    /** Print some objects to the stream.
+     *
+     */
+    public static IRubyObject print(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
         if (args.length == 0) {
             args = new IRubyObject[] { context.getCurrentScope().getLastLine(context.getRuntime()) };
         }
@@ -1491,19 +1498,19 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         IRubyObject fs = runtime.getGlobalVariables().get("$,");
         IRubyObject rs = runtime.getGlobalVariables().get("$\\");
-        
+
         for (int i = 0; i < args.length; i++) {
             if (i > 0 && !fs.isNil()) {
-                callMethod(context, "write", fs);
+                maybeIO.callMethod(context, "write", fs);
             }
             if (args[i].isNil()) {
-                callMethod(context, "write", runtime.newString("nil"));
+                maybeIO.callMethod(context, "write", runtime.newString("nil"));
             } else {
-                callMethod(context, "write", args[i]);
+                maybeIO.callMethod(context, "write", args[i]);
             }
         }
         if (!rs.isNil()) {
-            callMethod(context, "write", rs);
+            maybeIO.callMethod(context, "write", rs);
         }
 
         return runtime.getNil();
@@ -1517,21 +1524,31 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "putc", required = 1, backtrace = true)
     public IRubyObject putc(ThreadContext context, IRubyObject object) {
+        return putc(context, this, object);
+    }
 
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();            
-            myOpenFile.checkWritable(context.getRuntime());
-            Stream writeStream = myOpenFile.getWriteStream();
-            writeStream.fputc(RubyNumeric.num2chr(object));
-            if (myOpenFile.isSync()) myOpenFile.fflush(writeStream);
-        } catch (IOException ex) {
-            throw context.getRuntime().newIOErrorFromException(ex);
-        } catch (BadDescriptorException e) {
-            throw context.getRuntime().newErrnoEBADFError();
-        } catch (InvalidValueException ex) {
-            throw context.getRuntime().newErrnoEINVALError();
-        } catch (PipeException ex) {
-            throw context.getRuntime().newErrnoEPIPEError();
+    public static IRubyObject putc(ThreadContext context, IRubyObject maybeIO, IRubyObject object) {
+        int c = RubyNumeric.num2chr(object);
+        if (maybeIO instanceof RubyIO) {
+            // FIXME we should probably still be dyncalling 'write' here
+            RubyIO io = (RubyIO)maybeIO;
+            try {
+                OpenFile myOpenFile = io.getOpenFileChecked();
+                myOpenFile.checkWritable(context.getRuntime());
+                Stream writeStream = myOpenFile.getWriteStream();
+                writeStream.fputc(RubyNumeric.num2chr(object));
+                if (myOpenFile.isSync()) myOpenFile.fflush(writeStream);
+            } catch (IOException ex) {
+                throw context.getRuntime().newIOErrorFromException(ex);
+            } catch (BadDescriptorException e) {
+                throw context.getRuntime().newErrnoEBADFError();
+            } catch (InvalidValueException ex) {
+                throw context.getRuntime().newErrnoEINVALError();
+            } catch (PipeException ex) {
+                throw context.getRuntime().newErrnoEPIPEError();
+            }
+        } else {
+            maybeIO.callMethod(context, "write", RubyString.newStringNoCopy(context.getRuntime(), new byte[] {(byte)c}));
         }
 
         return object;
@@ -2052,33 +2069,37 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
+        return puts(context, this, args);
+    }
+
+    public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
         RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
-        
+
         if (args.length == 0) {
-            write(context, separator.getByteList());
+            write(context, maybeIO, separator.getByteList());
             return runtime.getNil();
         }
 
         for (int i = 0; i < args.length; i++) {
             ByteList line;
-            
+
             if (args[i].isNil()) {
                 line = NIL_BYTELIST;
             } else if (runtime.isInspecting(args[i])) {
                 line = RECURSIVE_BYTELIST;
             } else if (args[i] instanceof RubyArray) {
-                inspectPuts(context, (RubyArray) args[i]);
+                inspectPuts(context, maybeIO, (RubyArray) args[i]);
                 continue;
             } else {
                 line = args[i].asString().getByteList();
             }
-            
-            write(context, line);
-            
+
+            write(context, maybeIO, line);
+
             if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-                write(context, separator.getByteList());
+                write(context, maybeIO, separator.getByteList());
             }
         }
         return runtime.getNil();
@@ -2088,10 +2109,23 @@ public class RubyIO extends RubyObject {
         callMethod(context, "write", RubyString.newStringShared(context.getRuntime(), byteList));
     }
 
+    protected static void write(ThreadContext context, IRubyObject maybeIO, ByteList byteList) {
+        maybeIO.callMethod(context, "write", RubyString.newStringShared(context.getRuntime(), byteList));
+    }
+
     private IRubyObject inspectPuts(ThreadContext context, RubyArray array) {
         try {
             context.getRuntime().registerInspecting(array);
             return puts(context, array.toJavaArray());
+        } finally {
+            context.getRuntime().unregisterInspecting(array);
+        }
+    }
+
+    private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
+        try {
+            context.getRuntime().registerInspecting(array);
+            return puts(context, maybeIO, array.toJavaArray());
         } finally {
             context.getRuntime().unregisterInspecting(array);
         }
