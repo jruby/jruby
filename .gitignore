@@ -22,3 +22,5 @@ spec/ruby
 test/rails
 gem/lib/*.jar
 gem/pkg
+*.orig
+*.rej
