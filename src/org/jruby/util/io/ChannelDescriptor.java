@@ -34,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -612,24 +613,33 @@ public class ChannelDescriptor {
             Channel nullChannel = new NullChannel();
             // FIXME: don't use RubyIO for this
             return new ChannelDescriptor(nullChannel, RubyIO.getNewFileno(), flags, new FileDescriptor());
-        } else if(path.startsWith("file:")) {
-            String filePath = path.substring(5, path.indexOf("!"));
-            String internalPath = path.substring(path.indexOf("!") + 2);
+        } else if (path.startsWith("file:")) {
+            int bangIndex = path.indexOf("!");
+            if (bangIndex > 0) {
+                String filePath = path.substring(5, bangIndex);
+                String internalPath = path.substring(bangIndex + 2);
 
-            if (!new File(filePath).exists()) {
-                throw new FileNotFoundException(path);
+                if (!new File(filePath).exists()) {
+                    throw new FileNotFoundException(path);
+                }
+
+                JarFile jf = new JarFile(filePath);
+                ZipEntry zf = jf.getEntry(internalPath);
+
+                if(zf == null) {
+                    throw new FileNotFoundException(path);
+                }
+
+                InputStream is = jf.getInputStream(zf);
+                // FIXME: don't use RubyIO for this
+                return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
+            } else {
+                // raw file URL, just open directly
+                URL url = new URL(path);
+                InputStream is = url.openStream();
+                // FIXME: don't use RubyIO for this
+                return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
             }
-            
-            JarFile jf = new JarFile(filePath);
-            ZipEntry zf = jf.getEntry(internalPath);
-
-            if(zf == null) {
-                throw new FileNotFoundException(path);
-            }
-
-            InputStream is = jf.getInputStream(zf);
-            // FIXME: don't use RubyIO for this
-            return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
         } else {
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
