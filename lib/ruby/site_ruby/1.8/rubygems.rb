@@ -11,9 +11,26 @@ require 'thread'
 require 'etc'
 
 module Gem
+
+  ##
+  # Raised when RubyGems is unable to load or activate a gem.  Contains the
+  # name and version requirements of the gem that either conflicts with
+  # already activated gems or that RubyGems is otherwise unable to activate.
+
   class LoadError < ::LoadError
-    attr_accessor :name, :version_requirement
+
+    ##
+    # Name of gem
+
+    attr_accessor :name
+
+    ##
+    # Version requirement of gem
+
+    attr_accessor :version_requirement
+
   end
+
 end
 
 module Kernel
@@ -249,13 +266,17 @@ module Gem
 
       unless matches.any? { |spec| spec.version == existing_spec.version } then
          sources_message = sources.map { |spec| spec.full_name }
-         stack_message = @loaded_stacks[gem.name].map { |spec| spec.full_name } 
+         stack_message = @loaded_stacks[gem.name].map { |spec| spec.full_name }
 
          msg = "can't activate #{gem} for #{sources_message.inspect}, "
          msg << "already activated #{existing_spec.full_name} for "
          msg << "#{stack_message.inspect}"
 
-         raise Gem::Exception, msg
+         e = Gem::LoadError.new msg
+         e.name = gem.name
+         e.version_requirement = gem.version_requirements
+
+         raise e
       end
 
       return false
@@ -362,7 +383,7 @@ module Gem
       raise Gem::Exception, msg
     end
 
-    File.join spec.full_gem_path, spec.bindir, exec_name
+    File.join(spec.full_gem_path, spec.bindir, exec_name).sub(/.*\s.*/m, '"\&"')
   end
 
   ##
