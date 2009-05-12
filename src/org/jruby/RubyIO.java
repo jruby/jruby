@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.kenai.constantine.platform.Fcntl;
 import java.io.EOFException;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -2044,8 +2045,9 @@ public class RubyIO extends RubyObject {
         
         OpenFile myOpenFile = getOpenFileChecked();
 
-        // Fixme: Only F_SETFL is current supported
-        if (realCmd == 1L) {  // cmd is F_SETFL
+        // Fixme: Only F_SETFL and F_GETFL is current supported
+        // FIXME: Only NONBLOCK flag is supported
+        if (realCmd == Fcntl.F_SETFL.value()) {  // cmd is F_SETFL
             boolean block = true;
             
             if ((nArg & ModeFlags.NONBLOCK) == ModeFlags.NONBLOCK) {
@@ -2057,6 +2059,8 @@ public class RubyIO extends RubyObject {
             } catch (IOException e) {
                 throw runtime.newIOError(e.getMessage());
             }
+        } else if (realCmd == Fcntl.F_GETFL.value()) {
+            return myOpenFile.getMainStream().isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
         } else {
             throw runtime.newNotImplementedError("JRuby only supports F_SETFL for fcntl/ioctl currently");
         }
