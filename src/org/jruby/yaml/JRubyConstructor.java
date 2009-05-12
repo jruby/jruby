@@ -68,6 +68,7 @@ import org.jruby.util.ByteList;
 
 import org.joda.time.DateTime;
 import org.jruby.runtime.ThreadContext;
+import org.jvyamlb.nodes.ScalarNode;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -234,9 +235,11 @@ public class JRubyConstructor extends ConstructorImpl {
 
     public static Object constructYamlStr(final Constructor ctor, final Node node) {
         final Object _str = ((JRubyConstructor)ctor).constructRubyScalar(node);
-        if(_str instanceof org.jruby.RubyString) {
-            final org.jruby.RubyString str = (org.jruby.RubyString)_str;
-            return (str.getByteList().realSize == 0 && ((org.jvyamlb.nodes.ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
+        if(_str instanceof RubyString) {
+            final RubyString str = (RubyString)_str;
+            if (node instanceof ScalarNode) {
+                return (str.getByteList().realSize == 0 && ((ScalarNode)node).getStyle() == 0) ? str.getRuntime().getNil() : str;
+            }
         }
         return _str;
     }
