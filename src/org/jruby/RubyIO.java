@@ -2062,7 +2062,7 @@ public class RubyIO extends RubyObject {
         } else if (realCmd == Fcntl.F_GETFL.value()) {
             return myOpenFile.getMainStream().isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
         } else {
-            throw runtime.newNotImplementedError("JRuby only supports F_SETFL for fcntl/ioctl currently");
+            throw runtime.newNotImplementedError("JRuby only supports F_SETFL and F_GETFL with NONBLOCK for fcntl/ioctl");
         }
         
         return runtime.newFixnum(0);
