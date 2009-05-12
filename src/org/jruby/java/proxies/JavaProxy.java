@@ -3,6 +3,7 @@ package org.jruby.java.proxies;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -123,13 +124,15 @@ public class JavaProxy extends RubyObject {
             Field field, RubyModule module, boolean asReader, boolean asWriter) {
         boolean isFinal = Modifier.isFinal(field.getModifiers());
 
-        for (String key : fieldMap.keySet()) {
+        for (Iterator<Map.Entry<String,String>> iter = fieldMap.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<String,String> entry = iter.next();
+            String key = entry.getKey();
             if (key.equals(field.getName())) {
                 if (Ruby.isSecurityRestricted() && !Modifier.isPublic(field.getModifiers())) {
                     throw context.getRuntime().newSecurityError("Cannot change accessibility on fields in a restricted mode: field '" + field.getName() + "'");
                 }
                 
-                String asName = fieldMap.get(key);
+                String asName = entry.getValue();
 
                 if (asReader) module.addMethod(asName, new InstanceFieldGetter(key, module, field));
                 if (asWriter) {
@@ -137,7 +140,7 @@ public class JavaProxy extends RubyObject {
                     module.addMethod(asName + "=", new InstanceFieldSetter(key, module, field));
                 }
                 
-                fieldMap.remove(key);
+                iter.remove();
                 break;
             }
         }

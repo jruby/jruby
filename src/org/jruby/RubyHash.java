@@ -1579,9 +1579,9 @@ public class RubyHash extends RubyObject implements Map {
 
     public void putAll(Map map) {
         Ruby runtime = getRuntime();
-        for (Iterator iter = map.keySet().iterator(); iter.hasNext();) {
-            Object key = iter.next();
-            internalPut(JavaUtil.convertJavaToRuby(runtime, key), JavaUtil.convertJavaToRuby(runtime, map.get(key)));
+        for (Iterator<Map.Entry> iter = map.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = iter.next();
+            internalPut(JavaUtil.convertJavaToRuby(runtime, entry.getKey()), JavaUtil.convertJavaToRuby(runtime, entry.getValue()));
         }
     }
 

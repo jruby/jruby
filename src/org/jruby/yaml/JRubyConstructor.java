@@ -306,8 +306,9 @@ public class JRubyConstructor extends ConstructorImpl {
         final RubyObject oo = (RubyObject)theCls.getAllocator().allocate(runtime, theCls);
         final Map vars = (Map)(ctor.constructMapping(node));
         ctor.doRecursionFix(node, oo);
-        for(final Iterator iter = vars.keySet().iterator();iter.hasNext();) {
-            final IRubyObject key = (IRubyObject)iter.next();
+        for(final Iterator<Map.Entry> iter = vars.entrySet().iterator();iter.hasNext();) {
+            Map.Entry entry = iter.next();
+            final IRubyObject key = (IRubyObject)entry.getKey();
             final Object val = vars.get(key);
             if(val instanceof LinkNode) {
                 final String KEY = "@" + key.toString();
