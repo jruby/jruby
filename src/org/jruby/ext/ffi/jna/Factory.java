@@ -31,7 +31,6 @@ package org.jruby.ext.ffi.jna;
 import com.sun.jna.Native;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
-import java.nio.channels.ByteChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
@@ -39,6 +38,7 @@ import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ThreadContext;
@@ -110,7 +110,89 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         };
     }
 
-    private static final class LastError {
+    private static final boolean isSparc() {
+        final Platform.CPU cpu = Platform.getPlatform().getCPU();
+        return cpu == Platform.CPU.SPARC || cpu == Platform.CPU.SPARCV9;
+    }
+
+    static final int LONG_SIZE = Platform.getPlatform().longSize();
+    static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
+    static final int REGISTER_SIZE = Platform.getPlatform().addressSize();
+    static final long LONG_MASK = LONG_SIZE == 32 ? 0x7FFFFFFFL : 0x7FFFFFFFFFFFFFFFL;
+    static final int LONG_ALIGN = isSparc() ? 64 : LONG_SIZE;
+    static final int ADDRESS_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
+    static final int DOUBLE_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
+    static final int FLOAT_ALIGN = isSparc() ? 64 : Float.SIZE;
+    
+    public int sizeOf(NativeType type) {
+        switch (type) {
+            case VOID: return 0;
+            case INT8:
+            case UINT8:
+                return 1;
+            case INT16:
+            case UINT16:
+                return 2;
+            case INT32:
+            case UINT32:
+                return 4;
+            case INT64:
+            case UINT64:
+                return 8;
+            case LONG:
+            case ULONG:
+                return Platform.getPlatform().longSize() >> 3;
+            case FLOAT32:
+                return Float.SIZE >> 3;
+            case FLOAT64:
+                return Double.SIZE >> 3;
+            case BUFFER_IN:
+            case BUFFER_INOUT:
+            case BUFFER_OUT:
+            case POINTER:
+            case STRING:
+            case RBXSTRING:
+                return Platform.getPlatform().addressSize() >> 3;
+            default:
+                throw new UnsupportedOperationException("Cannot determine native type for " + type);
+        }
+    }
+
+    public int alignmentOf(NativeType type) {
+        switch (type) {
+            case VOID: return 0;
+            case INT8:
+            case UINT8:
+                return 1;
+            case INT16:
+            case UINT16:
+                return 2;
+            case INT32:
+            case UINT32:
+                return 4;
+            case INT64:
+            case UINT64:
+                return LONG_ALIGN / 8;
+            case LONG:
+            case ULONG:
+                return LONG_ALIGN / 8;
+            case FLOAT32:
+                return FLOAT_ALIGN / 8;
+            case FLOAT64:
+                return DOUBLE_ALIGN / 8;
+            case BUFFER_IN:
+            case BUFFER_INOUT:
+            case BUFFER_OUT:
+            case POINTER:
+            case STRING:
+            case RBXSTRING:
+                return ADDRESS_ALIGN / 8;
+            default:
+                throw new UnsupportedOperationException("Cannot determine native type for " + type);
+        }
+    }
+
+    public static final class LastError {
         @JRubyMethod(name = {  "error" }, meta = true)
         public static final  IRubyObject error(ThreadContext context, IRubyObject recv) {
             return context.getRuntime().newFixnum(Native.getLastError());

@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A native invoker that uses JNA.
  */
-final class JNAInvoker extends AbstractInvoker {
+public final class JNAInvoker extends AbstractInvoker {
 
     private final Function function;
     private final FunctionInvoker functionInvoker;

@@ -547,3 +547,12 @@ array:
 EXPECTED
 
 test_ok [ex1, ex2].include?(hash.to_yaml)
+
+jruby3639 = <<Y
+--- !ruby/object:MySoap::InterfaceOne::DiscountServiceRequestType 
+orderRequest: !ruby/object:MySoap::InterfaceOne::OrderType 
+  brand: !str 
+    str: ""
+Y
+
+test_no_exception { YAML.load(jruby3639) }

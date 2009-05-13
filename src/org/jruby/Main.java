@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.File;
 
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -273,7 +274,19 @@ public class Main {
     public void printProperties() {
         config.getOutput().print(config.getPropertyHelp());
     }
-    
+    /**
+     * The intent here is to gather up any options that might have
+     * been specified in the shebang line and return them so they can
+     * be merged into the ones specified on the commandline.  This is
+     * kind of a hopeless task because it's impossible to figure out
+     * where the command invocation stops and the parameters start.
+     * We try to work with the common scenarios where /usr/bin/env is
+     * used to invoke the jruby shell script, and skip any parameters
+     * it might have.  Then we look for the interpreter invokation and
+     * assume that the binary will have the word "ruby" in the name.
+     * This is error prone but should cover more cases than the
+     * previous code.
+     */
     private String[] parseShebangOptions(InputStream in) {
         BufferedReader reader = null;
         String[] result = new String[0];
@@ -282,22 +295,30 @@ public class Main {
             in.mark(1024);
             reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
             String firstLine = reader.readLine();
+            boolean usesEnv = false;
             if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
-                int index = firstLine.indexOf("ruby", 2);
-
-                // JRUBY-3456: This was not considering that the executable
-                // name may actually be "jruby.bat" and the arg processing
-                // should happen after it.
-                if (firstLine.indexOf("ruby.bat", 2) == index) {
-                    index += 4;
+                String[] options = firstLine.substring(2).split("\\s+");
+                int i;
+                for (i = 0; i < options.length; i++) {
+                    // Skip /usr/bin/env if it's first
+                    if (i == 0 && options[i].endsWith("/env")) {
+                        usesEnv = true;
+                        continue;
+                    }
+                    // Skip any assignments if /usr/bin/env is in play
+                    if (usesEnv && options[i].indexOf('=') > 0) {
+                        continue;
+                    }
+                    // Skip any commandline args if /usr/bin/env is in play
+                    if (usesEnv && options[i].startsWith("-")) {
+                        continue;
+                    }
+                    String basename = (new File(options[i])).getName();
+                    if (basename.indexOf("ruby") > 0) {
+                        break;
+                    }
                 }
-
-                if (firstLine.length() < index + 5) {
-                    in.reset();
-                    return result;
-                }
-                String option = firstLine.substring(index + 5);
-                result = option.split("\\s");
+                System.arraycopy(options, i, result, 0, options.length - i);
             }
         } catch (Exception ex) {
             // ignore error

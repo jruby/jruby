@@ -1026,28 +1026,35 @@ public class RubyInstanceConfig {
         }
 
         private String resolveScript(String scriptName) {
-            // try cwd first
-            File fullName = new File(scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                return fullName.getAbsolutePath();
-            }
+            // This try/catch is to allow failing over to the "commands" logic
+            // when running from within a jruby-complete jar file, which has
+            // jruby.home = a jar file URL that does not resolve correctly with
+            // JRubyFile.create.
+            try {
+                // try cwd first
+                File fullName = JRubyFile.create(currentDirectory, scriptName);
+                if (fullName.exists() && fullName.isFile()) {
+                    return fullName.getAbsolutePath();
+                }
 
-            fullName = new File(getJRubyHome(), "bin/" + scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                return fullName.getAbsolutePath();
-            }
+                fullName = JRubyFile.create(getJRubyHome(), "bin/" + scriptName);
+                if (fullName.exists() && fullName.isFile()) {
+                    return fullName.getAbsolutePath();
+                }
 
-            String path = System.getenv("PATH");
-            if (path != null) {
-                String[] paths = path.split(System.getProperty("path.separator"));
-                for (int i = 0; i < paths.length; i++) {
-                    fullName = new File(paths[i], scriptName);
-                    if (fullName.exists() && fullName.isFile()) {
-                        return fullName.getAbsolutePath();
+                String path = System.getenv("PATH");
+                if (path != null) {
+                    String[] paths = path.split(System.getProperty("path.separator"));
+                    for (int i = 0; i < paths.length; i++) {
+                        fullName = JRubyFile.create(paths[i], scriptName);
+                        if (fullName.exists() && fullName.isFile()) {
+                            return fullName.getAbsolutePath();
+                        }
                     }
                 }
+            } catch (IllegalArgumentException iae) {
+                if (debug) System.err.println("warning: could not resolve -S script on filesystem: " + scriptName);
             }
-
             return scriptName;
         }
 

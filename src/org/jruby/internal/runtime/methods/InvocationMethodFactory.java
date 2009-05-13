@@ -575,12 +575,17 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
      */
     public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
+        JavaMethodDescriptor desc1 = descs.get(0);
+
         if (descs.size() == 1) {
             // simple path, no multimethod
-            return getAnnotatedMethodClass(descs.get(0));
+            return getAnnotatedMethodClass(desc1);
+        }
+
+        if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
+            System.err.println("warning: binding non-public class" + desc1.declaringClassName + "; reflected handles won't work");
         }
         
-        JavaMethodDescriptor desc1 = descs.get(0);
         String javaMethodName = desc1.name;
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
@@ -693,6 +698,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public Class getAnnotatedMethodClass(JavaMethodDescriptor desc) throws Exception {
         String javaMethodName = desc.name;
+
+        if (!Modifier.isPublic(desc.getDeclaringClass().getModifiers())) {
+            System.err.println("warning: binding non-public class " + desc.declaringClassName + "; reflected handles won't work");
+        }
         
         String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false, desc.anno.frame());
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {

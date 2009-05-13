@@ -94,7 +94,7 @@ public class DynamicLibrary extends RubyObject {
     public IRubyObject name(ThreadContext context) {
         return name != null ? RubyString.newString(context.getRuntime(), name) : context.getRuntime().getNil();
     }
-    static final class Symbol extends BasePointer {
+    public static final class Symbol extends BasePointer {
         private final DynamicLibrary library;
         private final String name;
         

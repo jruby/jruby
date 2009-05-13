@@ -1,5 +1,7 @@
 require 'test/minirunit'
 
+is_windows = RUBY_PLATFORM =~ /mswin/i || (RUBY_PLATFORM =~ /java/i && ENV_JAVA['os.name'] =~ /windows/i)
+
 #test_check('test_bracket')
 test_equal(nil, ENV['test'])
 test_equal(nil, ENV['TEST'])
@@ -7,11 +9,11 @@ test_equal(nil, ENV['TEST'])
 ENV['test'] = 'foo'
 
 test_equal('foo', ENV['test'])
-test_equal(nil, ENV['TEST'])
+test_equal(is_windows ? 'foo' : nil, ENV['TEST'])
 
 ENV['TEST'] = 'bar'
 test_equal('bar', ENV['TEST'])
-test_equal('foo', ENV['test'])
+test_equal(is_windows ? 'bar' : 'foo', ENV['test'])
 
 test_exception(TypeError) {
   tmp = ENV[1]

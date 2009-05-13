@@ -46,6 +46,7 @@ import org.jruby.environment.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
@@ -80,7 +81,8 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return super.op_aref(context, key.convertToString());
+            RubyString actualKey = getCorrectKey(key, context);
+            return super.op_aref(context, actualKey);
         }
 
         @Override
@@ -91,13 +93,15 @@ public class RubyGlobal {
             if (!value.respondsTo("to_str") && !value.isNil()) {
                 throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
             }
+            
+            RubyString actualKey = getCorrectKey(key, context);
 
             if (value.isNil()) {
-                return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
+                return super.delete(context, actualKey, org.jruby.runtime.Block.NULL_BLOCK);
             }
             
             //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
-            return super.op_aset(context, RuntimeHelpers.invoke(context, key, "to_str"),
+            return super.op_aset(context, RuntimeHelpers.invoke(context, actualKey, "to_str"),
                     value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
         }
         
@@ -105,6 +109,25 @@ public class RubyGlobal {
         @Override
         public IRubyObject to_s(){
             return getRuntime().newString("ENV");
+        }
+
+        private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
+            RubyString originalKey = key.convertToString();
+            RubyString actualKey = originalKey;
+            Ruby runtime = context.getRuntime();
+            if (Platform.IS_WINDOWS) {
+                // this is a rather ugly hack, but similar to MRI. See hash.c:ruby_setenv and similar in MRI
+                // we search all keys for a case-insensitive match, and use that
+                RubyArray keys = super.keys();
+                for (int i = 0; i < keys.size(); i++) {
+                    RubyString candidateKey = keys.eltInternal(i).convertToString();
+                    if (candidateKey.casecmp(context, originalKey).op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
+                        actualKey = candidateKey;
+                        break;
+                    }
+                }
+            }
+            return actualKey;
         }
     }
     

@@ -63,7 +63,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -1392,14 +1391,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Ruby runtime = context.getRuntime();
         IRubyObject backref = scope.getBackRef(runtime);
         final RubyMatchData match;
+        boolean setBackRef = false;
         if (backref.isNil() || ((RubyMatchData)backref).used()) {
             match = new RubyMatchData(runtime);
-            scope.setBackRef(match);
+            setBackRef = true;
         } else {
             match = (RubyMatchData)backref;
             match.setTaint(runtime.getSafeLevel() >= 3);
         }
 
+        // FIXME: This is pretty gross; we should have a cleaner initialization
+        // that doesn't depend on package-visible fields and ideally is atomic,
+        // probably using an immutable structure we replace all at once.
         match.regs = matcher.getRegion(); // lazy, null when no groups defined
         match.begin = matcher.getBegin();
         match.end = matcher.getEnd();
@@ -1407,6 +1410,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         match.str = (RubyString)str.strDup(runtime).freeze(context);
 
         match.infectBy(str);
+
+        // JRUBY-3625: delay setting backref until the MatchData is completely initialized
+        if (setBackRef) scope.setBackRef(match);
+
         return match;
     }
 

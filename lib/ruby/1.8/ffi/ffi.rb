@@ -87,7 +87,7 @@ module FFI
   
   def self.map_library_name(lib)
     # Mangle the library name to reflect the native library naming conventions
-    lib = Platform::LIBC if Platform.linux? && lib == 'c'
+    lib = Platform::LIBC if lib == 'c'
     if lib && File.basename(lib) == lib
       ext = ".#{Platform::LIBSUFFIX}"
       lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/

@@ -54,22 +54,7 @@ import org.jruby.util.ByteList;
 @JRubyClass(name=StructLayoutBuilder.CLASS_NAME, parent="Object")
 public final class StructLayoutBuilder extends RubyObject {
     public static final String CLASS_NAME = "StructLayoutBuilder";
-    private static final boolean isSparc() {
-        final Platform.CPU cpu = Platform.getPlatform().getCPU();
-        return cpu == Platform.CPU.SPARC || cpu == Platform.CPU.SPARCV9;
-    }
-    /*
-     * Most arches align long/double on the same size as a native long (or a pointer)
-     * Sparc (32bit) requires it to be aligned on an 8 byte boundary
-     */
-    static final int LONG_SIZE = Platform.getPlatform().longSize();
-    static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
-    static final int REGISTER_SIZE = Platform.getPlatform().addressSize();
-    static final long LONG_MASK = LONG_SIZE == 32 ? 0x7FFFFFFFL : 0x7FFFFFFFFFFFFFFFL;
-    static final int LONG_ALIGN = isSparc() ? 64 : LONG_SIZE;
-    static final int ADDRESS_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
-    static final int DOUBLE_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
-    static final int FLOAT_ALIGN = isSparc() ? 64 : Float.SIZE;
+
     private final Map<IRubyObject, StructLayout.Member> fields = new LinkedHashMap<IRubyObject, StructLayout.Member>();
     /** The current size of the layout in bytes */
     private int size = 0;

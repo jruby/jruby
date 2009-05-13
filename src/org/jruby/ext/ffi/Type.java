@@ -50,33 +50,7 @@ public abstract class Type extends RubyObject {
         return typeClass;
     }
     
-    /**
-     * Gets the native type of this <tt>Type</tt> when passed as a parameter
-     *
-     * @return The native type of this Type.
-     */
-    public final NativeType getNativeType() {
-        return nativeType;
-    }
-
-    /**
-     * Gets the native size of this <tt>Type</tt> in bytes
-     *
-     * @return The native size of this Type.
-     */
-    public final int getNativeSize() {
-        return size;
-    }
-
-    /**
-     * Gets the native alignment this <tt>Type</tt> in bytes
-     *
-     * @return The native alignment of this Type.
-     */
-    public final int getNativeAlignment() {
-        return alignment;
-    }
-
+    
     /**
      * Initializes a new <tt>Type</tt> instance.
      */
@@ -97,6 +71,55 @@ public abstract class Type extends RubyObject {
         this.alignment = getNativeAlignment(type);
     }
 
+    /**
+     * Gets the native type of this <tt>Type</tt> when passed as a parameter
+     *
+     * @return The native type of this Type.
+     */
+    public final NativeType getNativeType() {
+        return nativeType;
+    }
+
+    /**
+     * Gets the native size of this <tt>Type</tt> in bytes
+     *
+     * @return The native size of this Type.
+     */
+    public final int getNativeSize() {
+        return size;
+    }
+
+    /**
+     * Gets the native alignment of this <tt>Type</tt> in bytes
+     *
+     * @return The native alignment of this Type.
+     */
+    public final int getNativeAlignment() {
+        return alignment;
+    }
+
+    /**
+     * Gets the native size of this <tt>Type</tt> in bytes
+     *
+     * @param context The Ruby thread context.
+     * @return The native size of this Type.
+     */
+    @JRubyMethod(name = "size")
+    public IRubyObject size(ThreadContext context) {
+        return context.getRuntime().newFixnum(getNativeSize());
+    }
+
+    /**
+     * Gets the native alignment of this <tt>Type</tt> in bytes
+     *
+     * @param context The Ruby thread context.
+     * @return The native alignment of this Type.
+     */
+    @JRubyMethod(name = "alignment")
+    public IRubyObject alignment(ThreadContext context) {
+        return context.getRuntime().newFixnum(getNativeAlignment());
+    }
+
     @JRubyClass(name = "FFI::Type::Builtin", parent = "FFI::Type")
     public final static class Builtin extends Type {
         
@@ -110,7 +133,8 @@ public abstract class Type extends RubyObject {
         @JRubyMethod(name = "to_s")
         public final IRubyObject to_s(ThreadContext context) {
             return RubyString.newString(context.getRuntime(),
-                    String.format("#<FFI::Type::Builtin:%s>", nativeType.name()));
+                    String.format("#<FFI::Type::Builtin:%s size=%d alignment=%d>",
+                    nativeType.name(), size, alignment));
         }
         
         @Override
@@ -130,85 +154,39 @@ public abstract class Type extends RubyObject {
             return hash;
         }
     }
-    private static final boolean isSparc() {
-        final Platform.CPU cpu = Platform.getPlatform().getCPU();
-        return cpu == Platform.CPU.SPARC || cpu == Platform.CPU.SPARCV9;
-    }
 
-    static final int LONG_SIZE = Platform.getPlatform().longSize();
-    static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
-    static final int REGISTER_SIZE = Platform.getPlatform().addressSize();
-    static final long LONG_MASK = LONG_SIZE == 32 ? 0x7FFFFFFFL : 0x7FFFFFFFFFFFFFFFL;
-    static final int LONG_ALIGN = isSparc() ? 64 : LONG_SIZE;
-    static final int ADDRESS_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
-    static final int DOUBLE_ALIGN = isSparc() ? 64 : REGISTER_SIZE;
-    static final int FLOAT_ALIGN = isSparc() ? 64 : Float.SIZE;
-
-    private static final int getNativeAlignment(NativeType type) {
+    private static final boolean isPrimitive(NativeType type) {
         switch (type) {
-            case VOID: return 0;
+            case VOID:
             case INT8:
             case UINT8:
-                return 1;
             case INT16:
             case UINT16:
-                return 2;
             case INT32:
             case UINT32:
-                return 4;
             case INT64:
             case UINT64:
-                return LONG_ALIGN / 8;
             case LONG:
             case ULONG:
-                return LONG_ALIGN / 8;
             case FLOAT32:
-                return FLOAT_ALIGN / 8;
             case FLOAT64:
-                return DOUBLE_ALIGN / 8;
             case BUFFER_IN:
             case BUFFER_INOUT:
             case BUFFER_OUT:
             case POINTER:
             case STRING:
             case RBXSTRING:
-                return ADDRESS_ALIGN / 8;
+                return true;
             default:
-                return 0;
+                return false;
         }
+
+    }
+    private static final int getNativeAlignment(NativeType type) {
+        return isPrimitive(type) ? Factory.getInstance().alignmentOf(type) : 1;
     }
     private static final int getNativeSize(NativeType type) {
-        switch (type) {
-            case VOID: return 0;
-            case INT8:
-            case UINT8:
-                return 1;
-            case INT16:
-            case UINT16:
-                return 2;
-            case INT32:
-            case UINT32:
-                return 4;
-            case INT64:
-            case UINT64:
-                return 8;
-            case LONG:
-            case ULONG:
-                return Platform.getPlatform().longSize() >> 3;
-            case FLOAT32:
-                return Float.SIZE >> 3;
-            case FLOAT64:
-                return Double.SIZE >> 3;
-            case BUFFER_IN:
-            case BUFFER_INOUT:
-            case BUFFER_OUT:
-            case POINTER:
-            case STRING:
-            case RBXSTRING:
-                return Platform.getPlatform().addressSize() >> 3;
-            default:
-                return 0;
-        }
+        return isPrimitive(type) ? Factory.getInstance().sizeOf(type) : 0;
     }
 
 }

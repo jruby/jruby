@@ -10,19 +10,7 @@ require 'rubygems/requirement'
 require 'rubygems/platform'
 
 # :stopdoc:
-# Time::today has been deprecated in 0.9.5 and will be removed.
-if RUBY_VERSION < '1.9' then
-  def Time.today
-    file, lineno = location_of_caller
-    warn "#{file}:#{lineno}:Warning: Time::today is deprecated and will be removed in RubyGems 1.4."
-
-    t = Time.now
-    t - ((t.to_f + t.gmt_offset) % 86400)
-  end unless defined? Time.today
-end
-
 class Date; end # for ruby_code if date.rb wasn't required
-
 # :startdoc:
 
 ##
@@ -621,7 +609,11 @@ class Gem::Specification
   # The directory that this gem was installed into.
 
   def installation_path
-    File.expand_path(File.dirname(File.dirname(@loaded_from)))
+    unless @loaded_from then
+      raise Gem::Exception, "spec #{full_name} is not from an installed gem"
+    end
+
+    File.expand_path File.dirname(File.dirname(@loaded_from))
   end
 
   ##
@@ -822,7 +814,9 @@ class Gem::Specification
 
     @files.delete_if            do |file| File.directory? file end
     @test_files.delete_if       do |file| File.directory? file end
-    @executables.delete_if      do |file| File.directory? file end
+    @executables.delete_if      do |file|
+      File.directory? File.join(bindir, file)
+    end
     @extra_rdoc_files.delete_if do |file| File.directory? file end
     @extensions.delete_if       do |file| File.directory? file end
 
@@ -883,7 +877,8 @@ class Gem::Specification
             '"FIXME" or "TODO" is not a summary'
     end
 
-    unless homepage.empty? or homepage =~ /\A[a-z][a-z\d+.-]*:/i then
+    if homepage and not homepage.empty? and
+       homepage !~ /\A[a-z][a-z\d+.-]*:/i then
       raise Gem::InvalidSpecificationException,
             "\"#{homepage}\" is not a URI"
     end
@@ -898,9 +893,6 @@ class Gem::Specification
     if summary and not summary.empty? and description == summary then
       alert_warning 'description and summary are identical'
     end
-
-    alert_warning "RDoc will not be generated (has_rdoc == false)" unless
-      has_rdoc
 
     alert_warning "deprecated autorequire specified" if autorequire
 
@@ -1144,9 +1136,11 @@ class Gem::Specification
   ##
   # :attr_accessor: has_rdoc
   #
-  # True if this gem is RDoc-compliant
+  # Deprecated and ignored, defaults to true.
+  #
+  # Formerly used to indicate this gem was RDoc-capable.
 
-  attribute :has_rdoc, false
+  attribute :has_rdoc, true
 
   ##
   # True if this gem supports RDoc
@@ -1304,6 +1298,20 @@ class Gem::Specification
   # Singular accessor for #test_files
 
   attribute_alias_singular :test_file, :test_files
+
+  ##
+  # has_rdoc is now ignored
+
+  overwrite_accessor :has_rdoc do
+    true
+  end
+
+  ##
+  # has_rdoc is now ignored
+
+  overwrite_accessor :has_rdoc= do |value|
+    @has_rdoc = true
+  end
 
   overwrite_accessor :version= do |version|
     @version = Gem::Version.create(version)
