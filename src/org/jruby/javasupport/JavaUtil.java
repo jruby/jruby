@@ -889,7 +889,7 @@ public class JavaUtil {
 
     public static IRubyObject convertJavaArrayElementToRuby(Ruby runtime, JavaConverter converter, Object array, int i) {
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
-            return Java.getInstance(runtime, ((Object[])array)[i]);
+            return convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
         }
         return converter.get(runtime, array, i);
     }

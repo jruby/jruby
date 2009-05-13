@@ -583,7 +583,7 @@ describe "A Java primitive Array of type" do
     end
   end
 
-  describe "Object ref" do 
+  describe "Object" do
     it "should be possible to create empty array" do 
       arr = java.util.HashMap[0].new
       arr.java_class.to_s.should == "[Ljava.util.HashMap;"
@@ -666,6 +666,17 @@ describe "A Java primitive Array of type" do
       arr = [h1, h2, h3].to_java java.util.HashMap
       ret = ArrayReceiver::call_with_object(arr)
       ret.to_a.should == [h1, h2, h3]
+    end
+
+    it "should coerce strings, booleans, and numerics via []" do
+      ary = [1, 1.0, "blah", true, false, nil].to_java
+
+      ary[0].class.should == Fixnum
+      ary[1].class.should == Float
+      ary[2].class.should == String
+      ary[3].class.should == TrueClass
+      ary[4].class.should == FalseClass
+      ary[5].class.should == NilClass
     end
   end
 
