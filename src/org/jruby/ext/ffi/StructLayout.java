@@ -389,7 +389,7 @@ public final class StructLayout extends Type {
     }
     
     @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
-    static final class Array extends RubyObject {
+    public static final class Array extends RubyObject {
         private final AbstractMemory ptr;
         private final MemoryOp aio;
         private final long offset;

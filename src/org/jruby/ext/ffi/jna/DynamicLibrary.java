@@ -85,7 +85,7 @@ public class DynamicLibrary extends RubyObject {
     public IRubyObject name(ThreadContext context) {
         return RubyString.newString(context.getRuntime(), name);
     }
-    static final class Symbol extends BasePointer {
+    public static final class Symbol extends BasePointer {
         private final DynamicLibrary library;
         private final com.sun.jna.Pointer address;
         private final String name;

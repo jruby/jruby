@@ -85,6 +85,10 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         try {
+            if (!Modifier.isPublic(desc.getDeclaringClass().getModifiers())) {
+                System.err.println("warning: binding non-public class" + desc.declaringClassName + "; reflected handles won't work");
+            }
+
             Method method = desc.getDeclaringClass().getDeclaredMethod(desc.name, desc.getParameterClasses());
             JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, desc.anno);
 
@@ -105,6 +109,10 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         try {
+            if (!Modifier.isPublic(descs.get(0).getDeclaringClass().getModifiers())) {
+                System.err.println("warning: binding non-public class" + descs.get(0).declaringClassName + "; reflected handles won't work");
+            }
+            
             List<Method> methods = new ArrayList();
             List<JRubyMethod> annotations = new ArrayList();
             
