@@ -3275,6 +3275,16 @@ public final class Ruby {
         }
     }
 
+    /**
+     * Get the global object used to synchronize class-hierarchy modifications like
+     * cache invalidation, subclass sets, and included hierarchy sets.
+     *
+     * @return The object to use for locking when modifying the hierarchy
+     */
+    public Object getHierarchyLock() {
+        return hierarchyLock;
+    }
+
     private volatile int constantGeneration = 1;
     private final ThreadService threadService;
     
@@ -3452,4 +3462,6 @@ public final class Ruby {
     
     // A thread pool to use for executing this runtime's Ruby threads
     private ExecutorService executor;
+
+    private Object hierarchyLock = new Object();
 }

@@ -219,15 +219,12 @@ public class RubyModule extends RubyObject {
     
     protected Set<RubyClass> includingHierarchies;
     
-    public synchronized void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
-        Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
-        Set<RubyClass> myIncludingHierarchies =
-                new WeakHashSet<RubyClass>(oldIncludingHierarchies == null ? 1 : oldIncludingHierarchies.size() + 1);
-        if (includingHierarchies != null) {
-            myIncludingHierarchies.addAll(oldIncludingHierarchies);
+    public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
+        synchronized (getRuntime().getHierarchyLock()) {
+            Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
+            if (oldIncludingHierarchies == null) includingHierarchies = oldIncludingHierarchies = new WeakHashSet(4);
+            oldIncludingHierarchies.add(hierarchy);
         }
-        myIncludingHierarchies.add(hierarchy);
-        includingHierarchies = Collections.unmodifiableSet(myIncludingHierarchies);
     }
     
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
@@ -1008,8 +1005,10 @@ public class RubyModule extends RubyObject {
     protected void invalidateCacheDescendants() {
         generation.update();
         // update all hierarchies into which this module has been included
-        if (includingHierarchies != null) for (RubyClass includingHierarchy : includingHierarchies) {
-            includingHierarchy.invalidateCacheDescendants();
+        synchronized (getRuntime().getHierarchyLock()) {
+            if (includingHierarchies != null) for (RubyClass includingHierarchy : includingHierarchies) {
+                includingHierarchy.invalidateCacheDescendants();
+            }
         }
     }
     
@@ -2240,8 +2239,7 @@ public class RubyModule extends RubyObject {
             // if there's a non-null superclass, we're including into a normal class hierarchy;
             // update subclass relationships to avoid stale parent/child relationships
             if (insertAboveClass.getSuperClass() != null) {
-                insertAboveClass.getSuperClass().removeSubclass(insertAboveClass);
-                insertAboveClass.getSuperClass().addSubclass(wrapper);
+                insertAboveClass.getSuperClass().replaceSubclass(insertAboveClass, wrapper);
             }
             
             wrapper.addSubclass(insertAboveClass);

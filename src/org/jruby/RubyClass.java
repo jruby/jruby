@@ -727,12 +727,11 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to add
      */
     public synchronized void addSubclass(RubyClass subclass) {
-        Set<RubyClass> oldSubclasses = subclasses;
-        Set<RubyClass> mySubclasses =
-                new WeakHashSet<RubyClass>(oldSubclasses == null ? 1 : oldSubclasses.size() + 1);
-        if (oldSubclasses != null) mySubclasses.addAll(oldSubclasses);
-        mySubclasses.add(subclass);
-        subclasses = Collections.unmodifiableSet(mySubclasses);
+        synchronized (runtime.getHierarchyLock()) {
+            Set<RubyClass> oldSubclasses = subclasses;
+            if (oldSubclasses == null) subclasses = oldSubclasses = new WeakHashSet<RubyClass>(4);
+            oldSubclasses.add(subclass);
+        }
     }
     
     /**
@@ -745,14 +744,32 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to remove
      */
     public synchronized void removeSubclass(RubyClass subclass) {
-        Set<RubyClass> oldSubclasses = subclasses;
-        if (oldSubclasses == null) return;
-        
-        Set<RubyClass> mySubclasses = new WeakHashSet<RubyClass>(oldSubclasses.size() + 1);
-        mySubclasses.addAll(oldSubclasses);
-        mySubclasses.remove(subclass);
+        synchronized (runtime.getHierarchyLock()) {
+            Set<RubyClass> oldSubclasses = subclasses;
+            if (oldSubclasses == null) return;
 
-        subclasses = Collections.unmodifiableSet(mySubclasses);
+            oldSubclasses.remove(subclass);
+        }
+    }
+
+    /**
+     * Replace an existing subclass with a new one.
+     *
+     * This version always constructs a new set to avoid having to synchronize
+     * against the set when iterating it for invalidation in
+     * invalidateCacheDescendants.
+     *
+     * @param subclass The subclass to remove
+     * @param newSubclass The subclass to replace it with
+     */
+    public synchronized void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
+        synchronized (runtime.getHierarchyLock()) {
+            Set<RubyClass> oldSubclasses = subclasses;
+            if (oldSubclasses == null) return;
+
+            oldSubclasses.remove(subclass);
+            oldSubclasses.add(newSubclass);
+        }
     }
 
     /**
@@ -771,9 +788,11 @@ public class RubyClass extends RubyModule {
     protected void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
         // update all subclasses
-        Set<RubyClass> mySubclasses = subclasses;
-        if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-            subclass.invalidateCacheDescendants();
+        synchronized (runtime.getHierarchyLock()) {
+            Set<RubyClass> mySubclasses = subclasses;
+            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
+                subclass.invalidateCacheDescendants();
+            }
         }
     }
     
