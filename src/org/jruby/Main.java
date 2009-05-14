@@ -44,9 +44,12 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.File;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -212,8 +215,44 @@ public class Main {
         if (in == null) {
             // no script to run, return success below
         } else if (config.isShouldCheckSyntax()) {
-            runtime.parseFromMain(in, filename);
-            config.getOutput().println("Syntax OK");
+            int status = 0;
+            try {
+                runtime.parseFromMain(in, filename);
+                config.getOutput().println("Syntax OK for " + filename);
+            } catch (RaiseException re) {
+                status = -1;
+                if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                    config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                } else {
+                    throw re;
+                }
+            }
+            
+            if (config.getArgv().length > 0) {
+                for (String arg : config.getArgv()) {
+                    File argFile = new File(arg);
+                    if (argFile.exists()) {
+                        try {
+                            runtime.parseFromMain(new FileInputStream(argFile), arg);
+                            config.getOutput().println("Syntax OK for " + arg);
+                        } catch (FileNotFoundException fnfe) {
+                            status = -1;
+                            config.getOutput().println("File not found: " + arg);
+                        } catch (RaiseException re) {
+                            status = -1;
+                            if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                                config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                            } else {
+                                throw re;
+                            }
+                        }
+                    } else {
+                        status = -1;
+                        config.getOutput().println("File not found: " + arg);
+                    }
+                }
+            }
+            return status;
         } else {
             long now = -1;
 

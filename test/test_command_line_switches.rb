@@ -25,7 +25,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_little_c_checks_syntax_only
     with_jruby_shell_spawning do
       with_temp_script(%q{ puts "a" }) do |s|
-        assert_equal "Syntax OK", jruby(" -c #{s.path} 2>&1").chomp
+        assert_match /Syntax OK/, jruby(" -c #{s.path} 2>&1").chomp
       end
     end
   end
