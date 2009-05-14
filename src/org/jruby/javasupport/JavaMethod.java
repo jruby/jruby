@@ -157,16 +157,19 @@ public class JavaMethod extends JavaCallable {
         return null;
     }
     
+    @Override
     public boolean equals(Object other) {
         return other instanceof JavaMethod &&
             this.method == ((JavaMethod)other).method;
     }
     
+    @Override
     public int hashCode() {
         return method.hashCode();
     }
 
     @JRubyMethod
+    @Override
     public RubyString name() {
         return getRuntime().newString(method.getName());
     }
@@ -176,6 +179,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     @JRubyMethod(name = "public?")
+    @Override
     public RubyBoolean public_p() {
         return getRuntime().newBoolean(Modifier.isPublic(method.getModifiers()));
     }

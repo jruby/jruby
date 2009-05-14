@@ -18,6 +18,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         super(host, methods);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         createJavaMethods(self.getRuntime());
 
@@ -30,12 +31,14 @@ public class InstanceMethodInvoker extends MethodInvoker {
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         createJavaMethods(self.getRuntime());
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), EMPTY_OBJECT_ARRAY), Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         createJavaMethods(self.getRuntime());
         Object[] convertedArgs = new Object[1];
@@ -44,6 +47,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         createJavaMethods(self.getRuntime());
 
@@ -55,6 +59,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         return Java.java_to_ruby(self, method.invoke((JavaObject) self.dataGetStruct(), convertedArgs), Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         createJavaMethods(self.getRuntime());
 
@@ -85,6 +90,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         createJavaMethods(self.getRuntime());
         if (block.isGiven()) {
@@ -98,6 +104,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         createJavaMethods(self.getRuntime());
         if (block.isGiven()) {
@@ -112,6 +119,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         createJavaMethods(self.getRuntime());
         if (block.isGiven()) {
@@ -127,6 +135,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         }
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         createJavaMethods(self.getRuntime());
         if (block.isGiven()) {

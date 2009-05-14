@@ -49,11 +49,9 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.IOInputStream;
 
 /**
  *
@@ -71,10 +69,12 @@ public class JavaObject extends RubyObject {
         dataWrapStruct(value);
     }
 
+    @Override
     public Object dataGetStruct() {
         return objectAccessor.get(this);
     }
 
+    @Override
     public void dataWrapStruct(Object object) {
         objectAccessor.set(this, object);
     }
@@ -94,6 +94,7 @@ public class JavaObject extends RubyObject {
         return new JavaObject(runtime, value);
     }
 
+    @Override
     public Class<?> getJavaClass() {
         Object dataStruct = dataGetStruct();
         return dataStruct != null ? dataStruct.getClass() : Void.TYPE;
@@ -120,11 +121,13 @@ public class JavaObject extends RubyObject {
         result.defineAnnotatedMethods(JavaObject.class);
     }
 
+    @Override
     public boolean equals(Object other) {
         return other instanceof JavaObject &&
                 this.dataGetStruct() == ((JavaObject) other).dataGetStruct();
     }
 
+    @Override
     public int hashCode() {
         Object dataStruct = dataGetStruct();
         if (dataStruct != null) {
@@ -134,11 +137,13 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod
+    @Override
     public RubyFixnum hash() {
         return getRuntime().newFixnum(hashCode());
     }
 
     @JRubyMethod
+    @Override
     public IRubyObject to_s() {
         Object dataStruct = dataGetStruct();
         if (dataStruct != null) {
