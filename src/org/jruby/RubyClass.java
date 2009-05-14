@@ -64,19 +64,6 @@ import org.jruby.util.collections.WeakHashSet;
  */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
-    public static final int CS_IDX_INITIALIZE = 0;
-    public static final String[] CS_NAMES = {
-        "initialize"
-    };
-    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
-    {
-        for(int i = 0; i < CS_NAMES.length; i++) {
-            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES[i]);
-        }
-    }
-    
-    private CallSite[] extraCallSites;
-    
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.index = ClassIndex.CLASS;
         classClass.kindOf = new RubyModule.KindOf() {
@@ -231,11 +218,6 @@ public class RubyClass extends RubyModule {
         obj.setBaseName(name);
         return obj;
     }
-
-    protected final Ruby runtime;
-    private ObjectAllocator allocator; // the default allocator
-    protected ObjectMarshal marshal;
-    private Set<RubyClass> subclasses;
 
     /** separate path for MetaClass and IncludedModuleWrapper construction
      *  (rb_class_boot version for MetaClasses)
@@ -910,5 +892,22 @@ public class RubyClass extends RubyModule {
 
             return result;
         }
-    };    
+    };
+
+    protected final Ruby runtime;
+    private ObjectAllocator allocator; // the default allocator
+    protected ObjectMarshal marshal;
+    private Set<RubyClass> subclasses;
+    public static final int CS_IDX_INITIALIZE = 0;
+    public static final String[] CS_NAMES = {
+        "initialize"
+    };
+    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
+    {
+        for(int i = 0; i < CS_NAMES.length; i++) {
+            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES[i]);
+        }
+    }
+
+    private CallSite[] extraCallSites;
 }
