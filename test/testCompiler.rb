@@ -511,3 +511,11 @@ syms = [:a]
 test_equal(syms, compile_and_run(syms.inspect))
 # 100 first instances and 100 second instances (caching)
 test_equal([syms,syms], compile_and_run("[#{syms.inspect},#{syms.inspect}]"))
+
+# class created using local var as superclass
+test_equal('AFromLocal', compile_and_run(<<EOS))
+a = Object
+class AFromLocal < a
+end
+AFromLocal.to_s
+EOS
