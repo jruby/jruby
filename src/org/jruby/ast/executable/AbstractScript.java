@@ -16,6 +16,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyClass.VariableAccessor;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
@@ -423,6 +424,10 @@ public abstract class AbstractScript implements Script {
         Arrays.fill(methodCache, CacheEntry.NULL_CACHE);
     }
 
+    public final void initGlobalCache(int size) {
+        globalVariables = new GlobalVariable[size];
+    }
+
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
         callSites[index] = MethodIndex.getCallSite(name);
         return callSites;
@@ -657,6 +662,56 @@ public abstract class AbstractScript implements Script {
         return getMethod(context, self, 9, methodName);
     }
 
+    protected IRubyObject getGlobal(ThreadContext context, int index, String name) {
+        Ruby runtime = context.getRuntime();
+        GlobalVariable gvar = globalVariables[index];
+        if (gvar == null) globalVariables[index] = gvar = runtime.getGlobalVariables().getVariable(name);
+
+        if (gvar != null) {
+            return gvar.getAccessor().getValue();
+        } else {
+	    if (runtime.isVerbose()) {
+	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
+	    }
+
+            return runtime.getNil();
+        }
+    }
+    
+    public static final int NUMBERED_GLOBAL_COUNT = 10;
+
+    protected IRubyObject getGlobal0(ThreadContext context, String name) {return getGlobal(context, 0, name);}
+    protected IRubyObject getGlobal1(ThreadContext context, String name) {return getGlobal(context, 1, name);}
+    protected IRubyObject getGlobal2(ThreadContext context, String name) {return getGlobal(context, 2, name);}
+    protected IRubyObject getGlobal3(ThreadContext context, String name) {return getGlobal(context, 3, name);}
+    protected IRubyObject getGlobal4(ThreadContext context, String name) {return getGlobal(context, 4, name);}
+    protected IRubyObject getGlobal5(ThreadContext context, String name) {return getGlobal(context, 5, name);}
+    protected IRubyObject getGlobal6(ThreadContext context, String name) {return getGlobal(context, 6, name);}
+    protected IRubyObject getGlobal7(ThreadContext context, String name) {return getGlobal(context, 7, name);}
+    protected IRubyObject getGlobal8(ThreadContext context, String name) {return getGlobal(context, 8, name);}
+    protected IRubyObject getGlobal9(ThreadContext context, String name) {return getGlobal(context, 9, name);}
+
+    protected IRubyObject setGlobal(ThreadContext context, int index, String name, IRubyObject value) {
+        Ruby runtime = context.getRuntime();
+        GlobalVariable gvar = globalVariables[index];
+        if (gvar == null) globalVariables[index] = gvar = runtime.getGlobalVariables().getVariableForSet(name);
+
+        gvar.getAccessor().setValue(value);
+        gvar.trace(value);
+        return value;
+    }
+
+    protected IRubyObject setGlobal0(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 0, name, value);}
+    protected IRubyObject setGlobal1(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 1, name, value);}
+    protected IRubyObject setGlobal2(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 2, name, value);}
+    protected IRubyObject setGlobal3(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 3, name, value);}
+    protected IRubyObject setGlobal4(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 4, name, value);}
+    protected IRubyObject setGlobal5(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 5, name, value);}
+    protected IRubyObject setGlobal6(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 6, name, value);}
+    protected IRubyObject setGlobal7(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 7, name, value);}
+    protected IRubyObject setGlobal8(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 8, name, value);}
+    protected IRubyObject setGlobal9(ThreadContext context, String name, IRubyObject value) {return setGlobal(context, 9, name, value);}
+
     public StaticScope[] scopes;
     public CallSite[] callSites;
     public CacheEntry[] methodCache;
@@ -673,4 +728,5 @@ public abstract class AbstractScript implements Script {
     public IRubyObject[] constants;
     public int[] constantGenerations;
     public int[] constantTargetHashes;
+    public GlobalVariable[] globalVariables;
 }

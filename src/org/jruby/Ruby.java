@@ -130,6 +130,7 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.util.EnumSet;
 import org.jruby.ast.RootNode;
+import org.jruby.internal.runtime.ReadonlyAccessor;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
@@ -2082,7 +2083,7 @@ public final class Ruby {
      *
      */
     public void defineReadonlyVariable(String name, IRubyObject value) {
-        globalVariables.defineReadonly(name, new ValueAccessor(value));
+        globalVariables.getVariableForSet(name).setAccessor(new ReadonlyAccessor(name, new ValueAccessor(value)));
     }
 
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {

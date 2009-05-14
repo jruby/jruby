@@ -47,6 +47,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
+    Map<String, Integer> globalIndices = new HashMap<String, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedStringCount = 0;
     int inheritedRegexpCount = 0;
@@ -58,6 +59,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int inheritedBlockBodyCount = 0;
     int inheritedBlockCallbackCount = 0;
     int inheritedMethodCount = 0;
+    int inheritedGlobalCount = 0;
     
     public InheritedCacheCompiler(StandardASMCompiler scriptCompiler) {
         this.scriptCompiler = scriptCompiler;
@@ -426,6 +428,46 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedMethodCount++;
     }
 
+    public void getGlobal(BaseBodyCompiler method, String name) {
+        method.loadThis();
+        method.loadThreadContext();
+
+        Integer index = globalIndices.get(name);
+        if (index == null) {
+            index = inheritedGlobalCount++;
+            globalIndices.put(name, index);
+        }
+        if (index < AbstractScript.NUMBERED_GLOBAL_COUNT) {
+            method.method.ldc(name);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getGlobal" + index, sig(IRubyObject.class, ThreadContext.class, String.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.ldc(name);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getGlobal", sig(IRubyObject.class, ThreadContext.class, int.class, String.class));
+        }
+    }
+
+    public void setGlobal(BaseBodyCompiler method, String name, CompilerCallback value) {
+        method.loadThis();
+        method.loadThreadContext();
+
+        Integer index = globalIndices.get(name);
+        if (index == null) {
+            index = inheritedGlobalCount++;
+            globalIndices.put(name, index);
+        }
+        if (index < AbstractScript.NUMBERED_GLOBAL_COUNT) {
+            method.method.ldc(name);
+            value.call(method);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "setGlobal" + index, sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.ldc(name);
+            value.call(method);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "setGlobal", sig(IRubyObject.class, ThreadContext.class, int.class, String.class, IRubyObject.class));
+        }
+    }
+
     public void finish() {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
 
@@ -558,6 +600,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
             initMethod.aload(0);
             initMethod.pushInt(size);
             initMethod.invokevirtual(scriptCompiler.getClassname(), "initMethodCache", sig(void.class, params(int.class)));
+        }
+
+        // generate method cache initialization code
+        size = inheritedGlobalCount;
+        if (size != 0) {
+            initMethod.aload(0);
+            initMethod.pushInt(size);
+            initMethod.invokevirtual(scriptCompiler.getClassname(), "initGlobalCache", sig(void.class, params(int.class)));
         }
     }
 }
