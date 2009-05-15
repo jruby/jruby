@@ -49,7 +49,6 @@ import java.io.FileNotFoundException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
-import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -129,14 +128,14 @@ public class Main {
             if (memoryMax != null) {
                 message = " of " + memoryMax;
             }
-            System.err.println("Error: Your application used more memory than the safety cap" + message + ".");
-            System.err.println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+            config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
+            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
             
             if (config.getVerbose()) {
-                System.err.println("Exception trace follows:");
+                config.getError().println("Exception trace follows:");
                 oome.printStackTrace();
             } else {
-                System.err.println("Specify -w for full OutOfMemoryError stack trace");
+                config.getError().println("Specify -w for full OutOfMemoryError stack trace");
             }
             return 1;
         } catch (StackOverflowError soe) {
@@ -148,25 +147,25 @@ public class Main {
             if (stackMax != null) {
                 message = " of " + stackMax;
             }
-            System.err.println("Error: Your application used more stack memory than the safety cap" + message + ".");
-            System.err.println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
+            config.getError().println("Error: Your application used more stack memory than the safety cap" + message + ".");
+            config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
             
             if (config.getVerbose()) {
-                System.err.println("Exception trace follows:");
+                config.getError().println("Exception trace follows:");
                 soe.printStackTrace();
             } else {
-                System.err.println("Specify -w for full StackOverflowError stack trace");
+                config.getError().println("Specify -w for full StackOverflowError stack trace");
             }
             return 1;
         } catch (UnsupportedClassVersionError ucve) {
-            System.err.println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
-            System.err.println("Please use libraries built with the version you intend to use or an earlier one.");
+            config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
+            config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
             
             if (config.getVerbose()) {
-                System.err.println("Exception trace follows:");
+                config.getError().println("Exception trace follows:");
                 ucve.printStackTrace();
             } else {
-                System.err.println("Specify -w for full UnsupportedClassVersionError stack trace");
+                config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
             }
             return 1;
         } catch (ThreadKill kill) {
@@ -208,7 +207,7 @@ public class Main {
         } catch (SecurityException se) {
             // can't set TC classloader
             if (runtime.getInstanceConfig().isVerbose()) {
-                System.err.println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
+                config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
             }
         }
 
