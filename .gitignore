@@ -24,3 +24,4 @@ gem/lib/*.jar
 gem/pkg
 *.orig
 *.rej
+tool/nailgun/ng
