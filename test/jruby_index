@@ -70,6 +70,7 @@ test_string_java_bytes
 test_string_printf
 test_string_sub
 test_string_to_number
+test_super_call_site_caching
 test_symbol
 test_tb_yaml
 test_timeout
