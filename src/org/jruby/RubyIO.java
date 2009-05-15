@@ -64,6 +64,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.libraries.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -2047,17 +2048,25 @@ public class RubyIO extends RubyObject {
 
         // Fixme: Only F_SETFL and F_GETFL is current supported
         // FIXME: Only NONBLOCK flag is supported
-        if (realCmd == Fcntl.F_SETFL.value()) {  // cmd is F_SETFL
-            boolean block = true;
-            
-            if ((nArg & ModeFlags.NONBLOCK) == ModeFlags.NONBLOCK) {
-                block = false;
-            }
+        // FIXME: F_SETFL and F_SETFD are treated as the same thing here.  For the case of dup(fd) we
+        //   should actually have F_SETFL only affect one (it is unclear how well we do, but this TODO
+        //   is here to at least document that we might need to do more work here.  Mostly SETFL is
+        //   for mode changes which should persist across fork() boundaries.  Since JVM has no fork
+        //   this is not a problem for us.
+        if (realCmd == FcntlLibrary.FD_CLOEXEC) {
+            // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
+            // And why the hell does webrick pass this in as a first argument!!!!!
+        } else if (realCmd == Fcntl.F_SETFL.value() || realCmd == Fcntl.F_SETFD.value()) {
+            if ((nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
+                // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
+            } else {
+                try {
+                    boolean block = (nArg & ModeFlags.NONBLOCK) != ModeFlags.NONBLOCK;
 
-            try {
-                myOpenFile.getMainStream().setBlocking(block);
-            } catch (IOException e) {
-                throw runtime.newIOError(e.getMessage());
+                    myOpenFile.getMainStream().setBlocking(block);
+                } catch (IOException e) {
+                    throw runtime.newIOError(e.getMessage());
+                }
             }
         } else if (realCmd == Fcntl.F_GETFL.value()) {
             return myOpenFile.getMainStream().isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
