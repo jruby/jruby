@@ -1,0 +1,1 @@
+fails(JRUBY-3657):SortedSet#initialize takes only comparable values

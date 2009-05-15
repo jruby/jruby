@@ -1,0 +1,2 @@
+fails(JRUBY-3653):Hash#eql? computes equality for complex recursive hashes
+fails(JRUBY-3653):Hash#eql? computes equality for recursive hashes & arrays

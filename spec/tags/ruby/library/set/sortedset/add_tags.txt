@@ -1,0 +1,1 @@
+fails(JRUBY-3657):SortedSet#add takes only values which responds <=>
