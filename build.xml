@@ -768,12 +768,12 @@
   <target name="fetch-stable-specs" depends="fetch-specs, detect-stable-specs-need-update" if="stable-specs-need-update">
       <echo message="Rolling rubyspec to stable version"/>
       <exec dir="${rubyspec.dir}" executable="git">
-          <arg line="co ${rubyspecs.revision}"/>
+          <arg line="checkout ${rubyspecs.revision}"/>
       </exec>
 
       <echo message="Rolling mspec to stable version"/>
       <exec dir="${mspec.dir}" executable="git">
-          <arg line="co ${mspec.revision}"/>
+          <arg line="checkout ${mspec.revision}"/>
       </exec>
 
   	<!-- Write down the revision of downloaded specs -->
