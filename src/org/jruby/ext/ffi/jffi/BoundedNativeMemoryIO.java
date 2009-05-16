@@ -43,6 +43,11 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         checkBounds(offset, 1);
         return offset == 0 ? this :new BoundedNativeMemoryIO(this, offset);
     }
+
+    public final java.nio.ByteBuffer asByteBuffer() {
+        return IO.newDirectByteBuffer(address, size);
+    }
+
     @Override
     public final boolean equals(Object obj) {
         return (obj instanceof DirectMemoryIO) && ((DirectMemoryIO) obj).getAddress() == address;

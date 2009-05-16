@@ -129,25 +129,12 @@ public final class FFIUtil {
         s.setTaint(true);
         return s;
     }
-
-    private static final byte[] EMPTY_BYTE_STRING = new byte[0];
-
-    private static final byte[] getByteString(long address, int len) {
-        if (len < 1) {
-            return EMPTY_BYTE_STRING;
-        }
-        byte[] bytes = new byte[len];
-        IO.getByteArray(address, bytes, 0, len);
-
-        return bytes;
-    }
-
+    
     static final byte[] getZeroTerminatedByteArray(long address) {
-        return getByteString(address, (int) IO.getStringLength(address));
+        return IO.getZeroTerminatedByteArray(address);
     }
 
     static final byte[] getZeroTerminatedByteArray(long address, int maxlen) {
-        int len = (int) IO.indexOf(address, (byte) 0, maxlen);
-        return getByteString(address, len < 0 ? maxlen : len);
+        return IO.getZeroTerminatedByteArray(address, maxlen);
     }
 }

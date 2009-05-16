@@ -63,6 +63,10 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public final boolean isDirect() {
         return true;
     }
+    
+    public final java.nio.ByteBuffer asByteBuffer() {
+        return ptr.getByteBuffer(0, Long.MAX_VALUE);
+    }
 
     public final byte getByte(long offset) {
         return ptr.getByte(offset);

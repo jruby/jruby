@@ -26,6 +26,11 @@ public abstract class InvalidMemoryIO implements MemoryIO {
     public MemoryIO slice(long offset) {
         return this;
     }
+
+    public java.nio.ByteBuffer asByteBuffer() {
+        throw ex();
+    }
+
     public final byte getByte(long offset) {
         throw ex();
     }

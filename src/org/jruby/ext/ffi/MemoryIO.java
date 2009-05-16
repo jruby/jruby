@@ -63,6 +63,13 @@ public interface MemoryIO {
     public MemoryIO slice(long offset);
 
     /**
+     * Creates a view of this memory object as a java NIO byte buffer.
+     *
+     * @return A ByteBuffer instance
+     */
+    public java.nio.ByteBuffer asByteBuffer();
+    
+    /**
      * Reads an 8 bit integer value from the memory area.
      * 
      * @param offset The offset within the memory area to read the value.

@@ -62,6 +62,10 @@ public class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return ptr;
     }
 
+    public final java.nio.ByteBuffer asByteBuffer() {
+        return ptr.getByteBuffer(0, size);
+    }
+
     public final long getAddress() {
         PointerByReference ref = new PointerByReference(ptr);
         return ADDRESS_SIZE == 32
