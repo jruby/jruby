@@ -599,21 +599,18 @@ abstract public class AbstractMemory extends RubyObject {
         s.setTaint(true);
         return s;
     }
+
     @JRubyMethod(name = "get_string", required = 2)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
-        long off = getOffset(offArg);
-        int maxlen = Util.int32Value(lenArg);
-        int len = (int) getMemoryIO().indexOf(off, (byte) 0, maxlen);
-        if (len < 0 || len > maxlen) {
-            len = maxlen;
-        }
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        RubyString s = context.getRuntime().newString(bl);
+        
+        byte[] bytes = getMemoryIO().getZeroTerminatedByteArray(getOffset(offArg), Util.int32Value(lenArg));
+        
+        RubyString s = RubyString.newStringNoCopy(context.getRuntime(), bytes);
         s.setTaint(true);
+
         return s;
     }
+
     @JRubyMethod(name = "put_string")
     public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
         long off = getOffset(offArg);
@@ -623,6 +620,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().putByte(off + bl.length(), (byte) 0);
         return this;
     }
+
     @JRubyMethod(name = "get_bytes")
     public IRubyObject get_bytes(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
         long off = getOffset(offArg);
