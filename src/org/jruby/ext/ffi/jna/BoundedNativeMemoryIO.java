@@ -258,6 +258,15 @@ public class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         checkBounds(offset, size);
         ptr.setMemory(offset, size, value);
     }
+    public byte[] getZeroTerminatedByteArray(long offset) {
+        checkBounds(offset, 1);
+        return ptr.getByteArray(offset, (int) ptr.indexOf(offset, (byte) 0));
+    }
+
+    public byte[] getZeroTerminatedByteArray(long offset, int maxlen) {
+        checkBounds(offset, 1);
+        return ptr.getByteArray(offset, (int) ptr.indexOf(offset, (byte) 0));
+    }
 
     public BoundedNativeMemoryIO slice(long offset) {
         checkBounds(offset, 1);

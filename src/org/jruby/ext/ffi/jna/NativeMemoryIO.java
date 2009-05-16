@@ -214,6 +214,14 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         ptr.setMemory(offset, size, value);
     }
 
+    public byte[] getZeroTerminatedByteArray(long offset) {
+        return ptr.getByteArray(offset, (int) ptr.indexOf(offset, (byte) 0));
+    }
+
+    public byte[] getZeroTerminatedByteArray(long offset, int maxlen) {
+        return ptr.getByteArray(offset, (int) ptr.indexOf(offset, (byte) 0));
+    }
+
     public NativeMemoryIO slice(long offset) {
         return offset == 0 ? this : new NativeMemoryIO(ptr.share(offset));
     }

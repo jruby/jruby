@@ -383,12 +383,8 @@ public final class StructLayoutBuilder extends RubyObject {
             if (io == null || io.isNull()) {
                 return runtime.getNil();
             }
-            int len = (int) io.indexOf(0, (byte) 0, Integer.MAX_VALUE);
-            ByteList bl = new ByteList(len);
-            bl.length(len);
-            io.get(0, bl.unsafeBytes(), bl.begin(), len);
-        
-            return runtime.newString(bl);
+            
+            return RubyString.newStringNoCopy(runtime, io.getZeroTerminatedByteArray(0));
         }
         
         public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {

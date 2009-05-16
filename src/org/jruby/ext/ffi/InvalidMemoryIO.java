@@ -159,4 +159,13 @@ public abstract class InvalidMemoryIO implements MemoryIO {
     public final void clear() {
         throw ex();
     }
+
+    public byte[] getZeroTerminatedByteArray(long offset) {
+        throw ex();
+    }
+
+    public byte[] getZeroTerminatedByteArray(long offset, int maxlen) {
+        throw ex();
+    }
+
 }
