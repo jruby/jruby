@@ -1219,7 +1219,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             String element;
             if (args[i] instanceof RubyString) {
-                element = args[i].toString();
+                element = args[i].convertToString().getUnicodeValue(); //toString();
             } else if (args[i] instanceof RubyArray) {
                 if (runtime.isInspecting(args[i])) {
                     element = "[...]";

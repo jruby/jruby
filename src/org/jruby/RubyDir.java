@@ -249,7 +249,7 @@ public class RubyDir extends RubyObject {
         RubyString path = args.length == 1 ? 
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(
-                recv.getRuntime(), path.toString(), null);
+                recv.getRuntime(), path.getUnicodeValue(), null);
         checkDirIsTwoSlashesOnWindows(recv.getRuntime(), adjustedPath);
         JRubyFile dir = getDir(recv.getRuntime(), adjustedPath, true);
         String realPath = null;
@@ -297,7 +297,7 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true)
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
-        JRubyFile directory = getDir(recv.getRuntime(), path.convertToString().toString(), true);
+        JRubyFile directory = getDir(recv.getRuntime(), path.convertToString().getUnicodeValue(), true);
         
         if (!directory.delete()) {
             throw recv.getRuntime().newSystemCallError("No such directory");
@@ -344,7 +344,8 @@ public class RubyDir extends RubyObject {
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         runtime.checkSafeString(args[0]);
-        String path = args[0].toString();
+        
+        String path= args[0].convertToString().getUnicodeValue();
 
         File newDir = getDir(runtime, path, false);
         if (File.separatorChar == '\\') {

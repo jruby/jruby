@@ -1,2 +1,0 @@
-fails(JRUBY-3142):Dir.pwd correctly displays dirs with unicode characters in them
-fails:Dir.pwd correctly displays dirs with unicode characters in them
