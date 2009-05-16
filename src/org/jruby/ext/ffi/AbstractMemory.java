@@ -206,12 +206,13 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().setMemory(0, size, (byte) 0);
         return this;
     }
+
     /**
-     * Gets the total size (in bytes) of the MemoryPointer.
+     * Gets the total size (in bytes) of the Memory.
      *
      * @return The total size in bytes.
      */
-    @JRubyMethod(name = "total")
+    @JRubyMethod(name = { "total", "size", "length" })
     public IRubyObject total(ThreadContext context) {
         return RubyFixnum.newFixnum(context.getRuntime(), size);
     }
