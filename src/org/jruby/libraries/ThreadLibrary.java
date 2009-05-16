@@ -220,8 +220,7 @@ public class ThreadLibrary implements Library {
             if (timeout != null) {
                 return context.getRuntime().newBoolean(success);
             } else {
-                // backwards-compatibility
-                return context.getRuntime().getNil();
+                return this;
             }
         }
 
