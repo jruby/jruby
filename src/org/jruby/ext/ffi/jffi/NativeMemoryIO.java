@@ -28,7 +28,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final java.nio.ByteBuffer asByteBuffer() {
-        return IO.newDirectByteBuffer(address, Long.MAX_VALUE);
+        return IO.newDirectByteBuffer(address, Integer.MAX_VALUE);
     }
 
     @Override
