@@ -3,6 +3,7 @@ package org.jruby.ext.ffi;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFloat;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MemoryUtil {
@@ -216,5 +217,23 @@ public final class MemoryUtil {
         }
 
         io.put(offset, array, 0, array.length);
+    }
+
+    public static final IRubyObject getTaintedString(Ruby runtime, MemoryIO io, long offset) {
+        byte[] bytes = io.getZeroTerminatedByteArray(offset);
+
+        RubyString s = RubyString.newStringNoCopy(runtime, bytes);
+        s.setTaint(true);
+
+        return s;
+    }
+
+    public static final IRubyObject getTaintedString(Ruby runtime, MemoryIO io, long offset, int length) {
+        byte[] bytes = io.getZeroTerminatedByteArray(offset, length);
+
+        RubyString s = RubyString.newStringNoCopy(runtime, bytes);
+        s.setTaint(true);
+
+        return s;
     }
 }

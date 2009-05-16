@@ -589,26 +589,34 @@ abstract public class AbstractMemory extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "get_string", required = 1)
-    public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
+    private final IRubyObject getTaintedString(ThreadContext context, long offset) {
+        byte[] bytes = getMemoryIO().getZeroTerminatedByteArray(offset);
 
-        byte[] bytes = getMemoryIO().getZeroTerminatedByteArray(getOffset(offArg));
-        
         RubyString s = RubyString.newStringNoCopy(context.getRuntime(), bytes);
         s.setTaint(true);
 
         return s;
     }
 
+    @JRubyMethod(name = "read_string")
+    public IRubyObject read_string(ThreadContext context) {
+        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
+    }
+
+    @JRubyMethod(name = "read_string")
+    public IRubyObject read_string(ThreadContext context, IRubyObject rbLength) {
+        return MemoryUtil.getTaintedString(context.getRuntime(), io, 0, Util.int32Value(rbLength));
+    }
+
+    @JRubyMethod(name = "get_string", required = 1)
+    public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
+        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), getOffset(offArg));
+    }
+
     @JRubyMethod(name = "get_string", required = 2)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
-        
-        byte[] bytes = getMemoryIO().getZeroTerminatedByteArray(getOffset(offArg), Util.int32Value(lenArg));
-        
-        RubyString s = RubyString.newStringNoCopy(context.getRuntime(), bytes);
-        s.setTaint(true);
-
-        return s;
+        return MemoryUtil.getTaintedString(context.getRuntime(), io,
+                getOffset(offArg), Util.int32Value(lenArg));
     }
 
     @JRubyMethod(name = "put_string")
