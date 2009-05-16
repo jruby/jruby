@@ -688,6 +688,7 @@ abstract public class AbstractMemory extends RubyObject {
         getMemoryIO().putZeroTerminatedByteArray(off, bl.unsafeBytes(), bl.begin(), bl.length());
         return this;
     }
+
     @JRubyMethod(name = "get_bytes")
     public IRubyObject get_bytes(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
         return MemoryUtil.getTaintedByteString(context.getRuntime(), getMemoryIO(),
