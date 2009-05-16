@@ -275,8 +275,11 @@ if $cygwin; then
   fi
 
   # fix JLine to use UnixTerminal
-  stty -icanon min 1 -echo
-  JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
+  stty -icanon min 1 -echo > /dev/null 2>&1
+  if [ $? = 0 ]; then
+    JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
+  fi
+
 fi
 
 if [ "$nailgun_client" != "" ]; then
@@ -308,7 +311,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
   fi
 
   if $cygwin; then
-    stty icanon echo
+    stty icanon echo > /dev/null 2>&1
   fi
 
   exit $JRUBY_STATUS
@@ -324,7 +327,7 @@ else
     # Record the exit status immediately, or it will be overridden.
     JRUBY_STATUS=$?
 
-    stty icanon echo
+    stty icanon echo > /dev/null 2>&1
 
     exit $JRUBY_STATUS
   else
