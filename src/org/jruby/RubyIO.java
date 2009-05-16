@@ -3100,7 +3100,7 @@ public class RubyIO extends RubyObject {
             String[] tokens = args[0].convertToString().toString().split(" ", 2);
             if (tokens.length > 1) {
                 cmdObj = new RubyString(runtime, (RubyClass) recv,
-                        (tokens[0].replace('/', '\\') + tokens[1]));
+                        (tokens[0].replace('/', '\\') + ' ' + tokens[1]));
             }
             else {
                 cmdObj = new RubyString(runtime, (RubyClass) recv,
