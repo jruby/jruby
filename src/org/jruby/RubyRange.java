@@ -55,6 +55,8 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -83,10 +85,6 @@ public class RubyRange extends RubyObject {
         
         result.setMarshal(RANGE_MARSHAL);
         result.includeModule(runtime.getEnumerable());
-
-        // We override Enumerable#member? since ranges in 1.8.1 are continuous.
-        //        result.defineMethod("member?", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
-        //        result.defineMethod("===", callbackFactory.getMethod("include_p", RubyKernel.IRUBY_OBJECT));
 
         result.defineAnnotatedMethods(RubyRange.class);
         return result;
@@ -200,8 +198,11 @@ public class RubyRange extends RubyObject {
         this.isExclusive = isExclusive;
     }
     
-    @JRubyMethod(name = "initialize", required = 2, optional = 1, frame = true)
+    @JRubyMethod(name = "initialize", required = 2, optional = 1, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
+        if (!begin.isNil() || !end.isNil()) {
+            throw getRuntime().newNameError("`initialize' called twice", "initialize");
+        }
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
         return getRuntime().getNil();
     }

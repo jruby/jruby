@@ -1,2 +1,0 @@
-fails(JRUBY-3658):Range#initialize is private
-fails(JRUBY-3658):Range#initialize raises a NameError if passed with two or three arguments
