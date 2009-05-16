@@ -9,12 +9,7 @@ module FFI
     # 
     # This will be optimized at some future time to eliminate the double copy
     #
-    def self.native_read(io, buf, len)
-      tmp = io.read(len)
-      return -1 unless tmp
-      buf.put_bytes(0, tmp)
-      tmp.length
-    end
+    # def self.native_read(io, buf, len)
 
   end
 end
