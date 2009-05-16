@@ -74,6 +74,10 @@ public final class ArrayMemoryIO implements MemoryIO {
         checkBounds(offset, 1);
         return offset == 0 ? this : new ArrayMemoryIO(runtime, array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
     }
+    
+    public java.nio.ByteBuffer asByteBuffer() {
+        return java.nio.ByteBuffer.wrap(buffer, offset, length).duplicate();
+    }
 
     public final DirectMemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
