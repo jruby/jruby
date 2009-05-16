@@ -740,6 +740,88 @@ public class ChannelStream implements Stream, Finalizable {
         return result;
     }
     
+    private int copyBufferedBytes(ByteBuffer dst) {
+        int bytesToRead = dst.remaining();
+        if (buffer.remaining() > dst.remaining()) {
+            ByteBuffer src = buffer.duplicate();
+            src.limit(dst.remaining());
+            dst.put(buffer);
+        } else {
+            dst.put(buffer);
+        }
+        
+        return bytesToRead - dst.remaining();
+    }
+
+    private int bufferedRead(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException {
+        checkReadable();
+        ensureRead();
+
+        boolean done = false;
+        int bytesRead = 0;
+
+        // already have some bytes buffered, so bulk copy to the destination
+        if (buffer.hasRemaining()) {
+            bytesRead += copyBufferedBytes(dst);
+        }
+
+        //
+        // Avoid double-copying for reads that are larger than the buffer size, or
+        // the destination is a direct buffer.
+        //
+        while ((dst.remaining() >= BUFSIZE || dst.isDirect()) && (bytesRead < 1 || !partial)) {
+            ByteBuffer tmpDst = dst;
+            if (!dst.isDirect()) {
+                //
+                // We limit reads to BULK_READ_SIZED chunks to avoid NIO allocating
+                // a huge temporary native buffer, when doing reads into a heap buffer
+                // If the dst buffer is direct, then no need to limit.
+                //
+                int bytesToRead = Math.min(BULK_READ_SIZE, dst.remaining());
+                if (bytesToRead < dst.remaining()) {
+                    tmpDst = dst.duplicate();
+                    tmpDst.limit(bytesToRead);
+                }
+            }
+            int n = descriptor.read(tmpDst);
+            if (n == -1) {
+                eof = true;
+                done = true;
+                break;
+            } else if (n == 0) {
+                done = true;
+                break;
+            } else {
+                bytesRead += n;
+            }
+        }
+
+        //
+        // Complete the request by filling the read buffer first
+        //
+        while (!done && dst.hasRemaining() && (bytesRead < 1 || !partial)) {
+            int read = refillBuffer();
+
+            if (read == -1) {
+                eof = true;
+                done = true;
+                break;
+            } else if (read == 0) {
+                done = true;
+                break;
+            } else {
+                // append what we read into our buffer and allow the loop to continue
+                bytesRead += copyBufferedBytes(dst);
+            }
+        }
+
+        if (eof && bytesRead == 0 && dst.remaining() != 0) {
+            throw new EOFException();
+        }
+
+        return bytesRead;
+    }
+
     private int bufferedRead() throws IOException, BadDescriptorException {
         ensureRead();
         
@@ -952,6 +1034,7 @@ public class ChannelStream implements Stream, Finalizable {
             return descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
         }
     }
+
     public synchronized ByteList fread(int number) throws IOException, BadDescriptorException {
         try {
             if (number == 0) {
@@ -975,7 +1058,7 @@ public class ChannelStream implements Stream, Finalizable {
             return null;
         }
     }
-
+    
     public synchronized ByteList readnonblock(int number) throws IOException, BadDescriptorException, EOFException {
         assert number >= 0;
 
@@ -1034,6 +1117,31 @@ public class ChannelStream implements Stream, Finalizable {
             // otherwise, we try an unbuffered read to get whatever's available
             return read(number);
         }        
+    }
+
+    public synchronized int read(ByteBuffer dst) throws IOException, BadDescriptorException, EOFException {
+        return read(dst, !(descriptor.getChannel() instanceof FileChannel));
+    }
+    
+    public synchronized int read(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException, EOFException {
+        assert dst.hasRemaining();
+        
+        int bytesRead = 0;
+
+        // make sure that the ungotc is not forgotten
+        if (ungotc != -1 && dst.hasRemaining()) {
+            dst.put((byte) ungotc);
+            ungotc = -1;
+            ++bytesRead;
+        }
+
+        // If no bytes read, or there are buffered bytes available, then do a partial 
+        // buffered read to scoop up bytes from the buffer and possibly from the channel.
+        if (bytesRead < 1 || !partial || buffer.hasRemaining()) {
+            return bufferedRead(dst, partial);
+        } else {
+            return eof ? -1 : bytesRead;
+        }
     }
 
     public synchronized int read() throws IOException, BadDescriptorException {
