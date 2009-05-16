@@ -588,15 +588,15 @@ abstract public class AbstractMemory extends RubyObject {
 
         return this;
     }
+
     @JRubyMethod(name = "get_string", required = 1)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
-        long off = getOffset(offArg);
-        int len = (int) getMemoryIO().indexOf(off, (byte) 0);
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        RubyString s = context.getRuntime().newString(bl);
+
+        byte[] bytes = getMemoryIO().getZeroTerminatedByteArray(getOffset(offArg));
+        
+        RubyString s = RubyString.newStringNoCopy(context.getRuntime(), bytes);
         s.setTaint(true);
+
         return s;
     }
 
