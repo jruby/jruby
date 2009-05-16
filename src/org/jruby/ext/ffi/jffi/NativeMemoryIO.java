@@ -37,6 +37,11 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public NativeMemoryIO slice(long offset) {
         return offset == 0 ? this :new NativeMemoryIO(this, offset);
     }
+
+    public final java.nio.ByteBuffer asByteBuffer() {
+        return IO.newDirectByteBuffer(address, Long.MAX_VALUE);
+    }
+
     @Override
     public final boolean equals(Object obj) {
         return (obj instanceof DirectMemoryIO) && ((DirectMemoryIO) obj).getAddress() == address;
