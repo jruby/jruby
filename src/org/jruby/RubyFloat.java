@@ -46,6 +46,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
+import java.util.regex.Pattern;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -647,25 +648,20 @@ public class RubyFloat extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
+    // CRuby uses sprintf(buf, "%.*g", FLOAT_DIG, d);
+    // This pattern adjusts the output of String.pattern("%g") to mimic
+    // the C version.
+    private static final Pattern pattern = Pattern.compile("\\.?0+(e|$)");
+
+    private static String formatDouble(double x) {
+        return pattern.matcher(String.format("%.32g", x)).replaceFirst("$1");
+    }
+
     private String marshalDump() {
         if (Double.isInfinite(value)) return value < 0 ? "-inf" : "inf";
         if (Double.isNaN(value)) return "nan";
 
-        String val = String.valueOf(value);
-
-        if(val.indexOf('E') != -1) {
-            String v2 = FORMAT.format(value);
-            int ix = v2.length()-1;
-            while(v2.charAt(ix) == '0' && v2.charAt(ix-1) != '.') {
-                ix--;
-            }
-            if(ix > 16 || (v2.charAt(0) != '-' && ix > 15) || "0.0".equals(v2.substring(0,ix+1))) {
-                val = val.replaceFirst("E(\\d)", "e+$1").replaceFirst("E-","e-");
-            } else {
-                val = v2.substring(0,ix+1);
-            }
-        }
-        return val;
+        return formatDouble(value);
     }
 
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
