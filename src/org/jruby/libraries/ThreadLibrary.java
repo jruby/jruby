@@ -299,8 +299,12 @@ public class ThreadLibrary implements Library {
             numWaiting++;
             while ( entries.size() == 0 ) {
                 try {
+                    // TODO: No, this isn't atomic; we need to improve it
+                    context.getThread().enterSleep();
                     wait();
                 } catch (InterruptedException e) {
+                } finally {
+                    context.getThread().exitSleep();
                 }
             }
             numWaiting--;

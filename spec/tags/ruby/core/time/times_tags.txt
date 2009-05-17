@@ -1,0 +1,1 @@
+fails(JRUBY-3671):Time.times is an obsolete method
