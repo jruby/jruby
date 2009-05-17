@@ -125,7 +125,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
 
-                    Set<String> frameAwareMethods = new HashSet<String>();
+                    Set<String> frameOrScopeAwareMethods = new HashSet<String>();
+                    Set<String> scopeAwareMethods = new HashSet<String>();
 
                     int methodCount = 0;
                     for (MethodDeclaration md : cd.getMethods()) {
@@ -166,7 +167,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         methodDescs.add(md);
 
                         if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
-                            frameAwareMethods.add(name);
+                            frameOrScopeAwareMethods.add(name);
                         }
                     }
 
@@ -208,16 +209,17 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("    }");
 
                     // write out a static initializer for frame names, so it only fires once
-                    if (!frameAwareMethods.isEmpty()) {
+                    if (!frameOrScopeAwareMethods.isEmpty()) {
                         StringBuffer frameMethodsString = new StringBuffer();
                         boolean first = true;
-                        for (String name : frameAwareMethods) {
+                        for (String name : frameOrScopeAwareMethods) {
                             if (!first) frameMethodsString.append(',');
                             first = false;
                             frameMethodsString.append('"').append(name).append('"');
                         }
                         out.println("    static {");
                         out.println("        ASTInspector.FRAME_AWARE_METHODS.addAll((List<String>)Arrays.asList(" + frameMethodsString + "));");
+                        out.println("        ASTInspector.SCOPE_AWARE_METHODS.addAll((List<String>)Arrays.asList(" + frameMethodsString + "));");
                         out.println("     }");
                     }
 
@@ -387,13 +389,6 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
             }
 
             public void generateMethodAddCalls(MethodDeclaration md, JRubyMethod jrubyMethod) {
-                // TODO: This information
-                if (jrubyMethod.frame()) {
-                    for (String name : jrubyMethod.name()) {
-                        out.println("        ASTInspector.FRAME_AWARE_METHODS.add(\"" + name + "\");");
-                    }
-                }
-
                 if (jrubyMethod.meta()) {
                     String baseName;
                     if (jrubyMethod.name().length == 0) {

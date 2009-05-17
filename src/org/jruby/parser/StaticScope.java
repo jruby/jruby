@@ -39,6 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.DummyDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
 
 /**
@@ -381,7 +382,7 @@ public abstract class StaticScope implements Serializable {
     }
     
     public DynamicScope getDummyScope() {
-        return dummyScope == null ? dummyScope = new NoVarsDynamicScope(this) : dummyScope;
+        return dummyScope == null ? dummyScope = new DummyDynamicScope(this) : dummyScope;
     }
 
     private void growVariableNames(String name) {

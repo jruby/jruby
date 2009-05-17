@@ -16,6 +16,7 @@ import org.jruby.runtime.scope.OneVarDynamicScope;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.DummyDynamicScope;
 import org.jruby.runtime.scope.FourVarDynamicScope;
 import org.jruby.runtime.scope.ThreeVarDynamicScope;
 import org.jruby.runtime.scope.TwoVarDynamicScope;
@@ -66,7 +67,7 @@ public abstract class DynamicScope {
     }
     
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
-        return new NoVarsDynamicScope(staticScope, parent);
+        return new DummyDynamicScope(staticScope, parent);
     }
 
     /**
@@ -168,7 +169,7 @@ public abstract class DynamicScope {
     /**
      * Get backref
      */
-    public final IRubyObject getBackRef(Ruby runtime) {
+    public IRubyObject getBackRef(Ruby runtime) {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.getBackRef(runtime);
         }
@@ -178,7 +179,7 @@ public abstract class DynamicScope {
     /**
      * Set backref
      */
-    public final IRubyObject setBackRef(IRubyObject backref) {
+    public IRubyObject setBackRef(IRubyObject backref) {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.setBackRef(backref);
         }
@@ -188,7 +189,7 @@ public abstract class DynamicScope {
     /**
      * Get lastline
      */
-    public final IRubyObject getLastLine(Ruby runtime) {
+    public IRubyObject getLastLine(Ruby runtime) {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.getLastLine(runtime);
         }
@@ -198,7 +199,7 @@ public abstract class DynamicScope {
     /**
      * Set lastline
      */
-    public final IRubyObject setLastLine(IRubyObject lastline) {
+    public IRubyObject setLastLine(IRubyObject lastline) {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.setLastLine(lastline);
         }

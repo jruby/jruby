@@ -134,7 +134,7 @@ public class ASTInspector {
     private boolean noFrame;
     
     public static Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
-    private static Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+    public static Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     
     public static Set<String> PRAGMAS = Collections.synchronizedSet(new HashSet<String>());
     
@@ -706,6 +706,8 @@ public class ASTInspector {
             inspect(((WhenNode)node).getBodyNode());
             inspect(((WhenNode)node).getExpressionNodes());
             inspect(((WhenNode)node).getNextCase());
+            // Because Regexp#=== sets backref, we have to make this backref-aware
+            setFlag(BACKREF);
             break;
         case WHILENODE:
             WhileNode whileNode = (WhileNode)node;

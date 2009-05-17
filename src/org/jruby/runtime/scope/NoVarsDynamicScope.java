@@ -131,7 +131,7 @@ public class NoVarsDynamicScope extends DynamicScope {
     }
 
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        assert false : "NoVarsDynamicScope does not support any variables";
+        assert false : this.getClass().getSimpleName() + " does not support any variables";
     }
 
     @Override
@@ -141,7 +141,7 @@ public class NoVarsDynamicScope extends DynamicScope {
             return parent.getArgValues();
         }
         int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        assert totalArgs == 0 : "NoVarsDynamicScope only supports scopes with no variables";
+        assert totalArgs == 0 : this.getClass().getSimpleName() + " only supports scopes with no variables";
         
         return IRubyObject.NULL_ARRAY;
     }

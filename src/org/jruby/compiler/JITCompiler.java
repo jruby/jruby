@@ -227,14 +227,7 @@ public class JITCompiler implements JITCompilerMBean {
             
             // if we haven't already decided on a do-nothing call
             if (jitCallConfig == null) {
-                // if we're not doing any of the operations that still need
-                // a scope, use the scopeless config
-                if (inspector.hasClosure() || inspector.hasScopeAwareMethods()) {
-                    jitCallConfig = CallConfiguration.FrameFullScopeFull;
-                } else {
-                    // switch to a slightly faster call config
-                    jitCallConfig = CallConfiguration.FrameFullScopeDummy;
-                }
+                jitCallConfig = inspector.getCallConfig();
             }
             
             bytecode = asmCompiler.getClassByteArray();

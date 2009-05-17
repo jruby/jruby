@@ -1278,7 +1278,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_match
      * 
      */
-    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "=~", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         Ruby runtime = context.getRuntime();
@@ -1291,7 +1291,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyFixnum.newFixnum(runtime, start);
     }
     
-    @JRubyMethod(name = "=~", required = 1, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "=~", required = 1, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         if (arg.isNil()) {

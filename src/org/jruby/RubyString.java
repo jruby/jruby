@@ -1436,7 +1436,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_match
      *
      */
-    @JRubyMethod(name = "=~", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "=~", compat = CompatVersion.RUBY1_8, writes = BACKREF)
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
@@ -1444,7 +1444,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return other.callMethod(context, "=~", this);
     }
 
-    @JRubyMethod(name = "=~", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "=~", compat = CompatVersion.RUBY1_9, writes = BACKREF)
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match19(context, this);
         if (other instanceof RubyString) throw context.getRuntime().newTypeError("type mismatch: String given");
@@ -1457,18 +1457,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      * @param pattern Regexp or String
      */
-    @JRubyMethod(name = "match", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "match", compat = CompatVersion.RUBY1_8, reads = BACKREF)
     public IRubyObject match(ThreadContext context, IRubyObject pattern) {
         return getPattern(pattern).callMethod(context, "match", this);
     }
 
-    @JRubyMethod(name = "match", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "match", frame = true, compat = CompatVersion.RUBY1_9, reads = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
         IRubyObject result = getPattern(pattern).callMethod(context, "match", this);
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", frame = true, required = 2, rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "match", frame = true, required = 2, rest = true, compat = CompatVersion.RUBY1_9, reads = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject[]args, Block block) {
         RubyRegexp pattern = getPattern(args[0]);
         args[0] = this;
