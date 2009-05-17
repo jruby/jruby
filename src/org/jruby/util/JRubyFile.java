@@ -86,14 +86,7 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public String getCanonicalPath() throws IOException {
-        String canonicalPath = super.getCanonicalPath().replace(File.separatorChar, '/');
-        
-        // Java 1.4 canonicalPath does not strip off '.'
-        if (canonicalPath.endsWith("/.")) {
-            canonicalPath = canonicalPath.substring(0, canonicalPath.length() - 1);
-        }
-        
-        return canonicalPath;
+        return super.getCanonicalPath().replace(File.separatorChar, '/');
     }
 
     @Override
