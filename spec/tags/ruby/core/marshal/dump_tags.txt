@@ -1,4 +1,0 @@
-fails(JRUBY-3357):Marshal.dump dumps a Float 0.0
-fails(JRUBY-3357):Marshal.dump dumps a Float -0.0
-fails(JRUBY-3357):Marshal.dump dumps a Float 1.0
-fails(JRUBY-3357):Marshal.dump dumps a Regexp subclass /i
