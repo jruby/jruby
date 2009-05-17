@@ -455,4 +455,8 @@ public class MarshalStream extends FilterOutputStream {
             out.write(buf, 0, i + 1);
         }
     }
+
+    public void writeByte(int value) throws IOException {
+        out.write(value);
+    }
 }
