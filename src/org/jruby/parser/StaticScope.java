@@ -95,8 +95,16 @@ public abstract class StaticScope implements Serializable {
         this.variableCaptured = new boolean[variableNames.length];
     }
 
+    /**
+     * Check that all strings in the given array are the interned versions.
+     *
+     * @param names The array of strings
+     * @return true if they are all interned, false otherwise
+     */
     private static boolean namesAreInterned(String[] names) {
         for (String name : names) {
+            // Note that this object equality check is intentional, to ensure
+            // the string and its interned version are the same object.
             if (name != name.intern()) return false;
         }
         return true;
