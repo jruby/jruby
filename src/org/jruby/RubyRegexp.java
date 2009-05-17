@@ -2076,7 +2076,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.unmarshalInt());
+        RubyRegexp result = newRegexp(input.getRuntime(), input.unmarshalString(), input.readSignedByte());
         input.registerLinkTarget(result);
         return result;
     }
