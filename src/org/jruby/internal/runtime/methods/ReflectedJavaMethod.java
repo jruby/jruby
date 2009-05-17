@@ -122,7 +122,7 @@ public class ReflectedJavaMethod extends JavaMethod {
                 if (isStatic) {
                     params[offset++] = self;
                 }
-                if (optional == 0 && !rest) {
+                if (required < 4 && optional == 0 && !rest) {
                     for (int i = 0; i < args.length; i++) {
                         params[offset++] = args[i];
                     }
@@ -153,6 +153,7 @@ public class ReflectedJavaMethod extends JavaMethod {
                 }
             }
         } catch (IllegalArgumentException e) {
+            System.out.println(method);
             throw RaiseException.createNativeRaiseException(runtime, e);
         } catch (IllegalAccessException e) {
             throw RaiseException.createNativeRaiseException(runtime, e);
@@ -180,7 +181,7 @@ public class ReflectedJavaMethod extends JavaMethod {
         if (isStatic) {
             argsLength++;
         }
-        if (optional == 0 && !rest) {
+        if (required < 4 && optional == 0 && !rest) {
             argsLength += required;
         } else {
             argsLength++;

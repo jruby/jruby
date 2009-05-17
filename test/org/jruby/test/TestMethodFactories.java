@@ -28,30 +28,53 @@
 package org.jruby.test;
 
 
+import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
 public class TestMethodFactories extends TestRubyBase {
-    // TODO: explicitly test InvocationMethodFactory and ReflectionMethodFactory separately?
-
     public void setUp() {
         runtime = Ruby.newInstance();
     }
     
-    public void testMethodFactory() {
+    public void testInvocationMethodFactory() {
         RubyModule mod = runtime.defineModule("Wombat" + hashCode());
 
         mod.defineAnnotatedMethods(MyBoundClass.class);
 
-        assertFalse("module should have method defined", mod.searchMethod("void_returning_method").isUndefined());
+    }
+
+    public void testReflectionMethodFactory() {
+        RubyModule mod = runtime.defineModule("Wombat" + hashCode());
+
+        mod.defineAnnotatedMethods(MyBoundClass.class);
+
+        confirmMethods(mod);
+    }
+
+    private void confirmMethods(RubyModule mod) {
+        ThreadContext context = runtime.getCurrentContext();
+        
+        assertTrue("module should have method defined", !mod.searchMethod("void_returning_method").isUndefined());
+        IRubyObject nil = runtime.getNil();
+        assertTrue("four-arg method should be callable",
+                mod.searchMethod("four_arg_method").call(context, mod, mod.getMetaClass(), "four_arg_method", new IRubyObject[] {nil, nil, nil, nil}).isTrue());
     }
 
     public static class MyBoundClass {
         // void methods should work
         @JRubyMethod
         public static void void_returning_method(IRubyObject obj) {}
+
+        // methods with required = 4 or higher should bind and be callable using reflection
+        // JRUBY-3649
+        @JRubyMethod(required = 4)
+        public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
+            return self.getRuntime().getTrue();
+        }
     }
 }
