@@ -17,7 +17,7 @@
 
   <!-- Gem file names -->
   <property name="rspec.gem" value="rspec-1.2.6.gem"/>
-  <property name="rake.gem" value="rake-0.8.4.gem"/>
+  <property name="rake.gem" value="rake-0.8.7.gem"/>
 
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
