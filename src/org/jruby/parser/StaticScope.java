@@ -85,7 +85,15 @@ public abstract class StaticScope implements Serializable {
     private boolean isBackrefLastlineScope = false;
     
     private DynamicScope dummyScope;
-    
+
+    /**
+     * Construct a new static scope. The array of strings should all be the
+     * interned versions, since several other optimizations depend on being
+     * able to do object equality checks.
+     *
+     * @param enclosingScope The lexically containing scope.
+     * @param names The list of interned String variable names.
+     */
     protected StaticScope(StaticScope enclosingScope, String[] names) {
         assert names != null : "names is not null";
         assert namesAreInterned(names);
