@@ -1,3 +1,4 @@
+
 /*
  ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
@@ -45,6 +46,9 @@ import org.objectweb.asm.Label;
 public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler {
     public InvokeDynamicInvocationCompiler(BaseBodyCompiler methodCompiler, SkinnyMethodAdapter method) {
         super(methodCompiler, method);
+
+        // HACK: force clinit to be created
+        methodCompiler.getScriptCompiler().getClassInitMethod();
     }
 
     public SkinnyMethodAdapter getMethodAdapter() {
@@ -389,27 +393,22 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
     }
 
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
-        //methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+        
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
 
         if (receiverCallback != null) {
             receiverCallback.call(methodCompiler);
         } else {
             methodCompiler.loadSelf();
         }
-        
-        methodCompiler.loadThreadContext(); // [adapter, tc]
+
         methodCompiler.method.ldc(name);
-        
+
         String signature;
-        String callName;
-        if (callType == CallType.NORMAL) {
-            callName = "c";
-        } else if (callType == CallType.FUNCTIONAL) {
-            callName = "f";
-        } else {//if (callType == CallType.VARIABLE) {
-            callName = "v";
-        }
-        
+
         // args
         if (argsCallback == null) {
             // block
@@ -418,7 +417,6 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 signature = sig(IRubyObject.class, params(ThreadContext.class, String.class));
             } else {
                 // no args, with block
-                if (iterator) callName += "b";
                 closureArg.call(methodCompiler);
                 signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, Block.class));
             }
@@ -429,7 +427,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 // with args, no block
                 switch (argsCallback.getArity()) {
                 case 1:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
                     break;
                 case 2:
                     signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class));
@@ -442,7 +440,6 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 }
             } else {
                 // with args, with block
-                if (iterator) callName += "b";
                 closureArg.call(methodCompiler);
                 
                 switch (argsCallback.getArity()) {
@@ -462,7 +459,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic(p(IRubyObject.class), callName, signature);
+        method.invokedynamic(p(Object.class), "invoke", signature);
     }
 
     public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {

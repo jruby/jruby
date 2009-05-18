@@ -159,7 +159,6 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3);
     }
 
-    public static final int INVOKEDYNAMIC = 186;
     public void invokedynamic(String arg1, String arg2, String arg3) {
         getMethodVisitor().visitMethodInsn(INVOKEDYNAMIC, arg1, arg2, arg3);
     }
