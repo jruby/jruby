@@ -121,9 +121,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         Method installerMethod = null;
         try {
             if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic")) {
-                // try to load java.dyn.Dynamic first
-                Class.forName("java.dyn.Dynamic");
-
                 // if that succeeds, the others should as well
                 Class compiler =
                         Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
@@ -133,6 +130,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 installerMethod = support.getDeclaredMethod("installBytecode", MethodVisitor.class, String.class);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             // leave it null and fall back on our normal invocation logic
         }
         invDynInvCompilerConstructor = compilerConstructor;
@@ -395,12 +393,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // install invokedynamic bootstrapper
             // TODO need to abstract this setup behind another compiler interface
             try {
-                invDynSupportInstaller.invoke(null, clinitMethod,getClassname());
+                invDynSupportInstaller.invoke(null, clinitMethod, getClassname());
             } catch (IllegalAccessException ex) {
+                ex.printStackTrace();
                 // ignore; we won't use invokedynamic
             } catch (IllegalArgumentException ex) {
+                ex.printStackTrace();
                 // ignore; we won't use invokedynamic
             } catch (InvocationTargetException ex) {
+                ex.printStackTrace();
                 // ignore; we won't use invokedynamic
             }
         }
