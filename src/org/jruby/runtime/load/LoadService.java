@@ -40,6 +40,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -270,6 +271,29 @@ public class LoadService {
 
         return state;
     }
+
+    public boolean lockAndRequire(String requireName) {
+        Object requireLock;
+        try {
+            synchronized (requireLocks) {
+                requireLock = requireLocks.get(requireName);
+                if (requireLock == null) {
+                    requireLock = new Object();
+                    requireLocks.put(requireName, requireLock);
+                }
+            }
+
+            synchronized (requireLock) {
+                return require(requireName);
+            }
+        } finally {
+            synchronized (requireLocks) {
+                requireLocks.remove(requireName);
+            }
+        }
+    }
+
+    private Map requireLocks = new Hashtable();
 
     public boolean smartLoad(final String file) {
         checkEmptyLoad(file);
