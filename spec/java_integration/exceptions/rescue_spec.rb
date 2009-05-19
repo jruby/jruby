@@ -1,17 +1,17 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import java.lang.NullPointerException
+import java.lang.OutOfMemoryError
 
-describe "Non-wrapped Java exceptions" do
+describe "Non-wrapped Java throwables" do
   it "can be rescued" do
-    exception = NullPointerException.new
+    exception = OutOfMemoryError.new
     begin
       raise exception
-    rescue NullPointerException => npe
+    rescue OutOfMemoryError => oome
     end
     
-    npe.should_not == nil
-    npe.should == exception
+    oome.should_not == nil
+    oome.should == exception
   end
 end
 

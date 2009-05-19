@@ -1390,7 +1390,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void storeExceptionInErrorInfo() {
         loadException();
         loadThreadContext();
-        invokeUtilityMethod("storeExceptionInErrorInfo", sig(void.class, Exception.class, ThreadContext.class));
+        invokeUtilityMethod("storeExceptionInErrorInfo", sig(void.class, Throwable.class, ThreadContext.class));
     }
 
     public void clearErrorInfo() {
@@ -1542,7 +1542,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label rubyCatchBlock = new Label();
         Label flowCatchBlock = new Label();
         method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
-        method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Exception.class));
+        method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Throwable.class));
 
         method.visitLabel(beforeBody);
         {
@@ -2210,16 +2210,16 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         switch (rescueArgs.getArity()) {
         case 1:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, ThreadContext.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Throwable.class, IRubyObject.class, ThreadContext.class));
             break;
         case 2:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Throwable.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
             break;
         case 3:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Throwable.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, ThreadContext.class));
             break;
         default:
-            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Exception.class, IRubyObject[].class, ThreadContext.class));
+            invokeUtilityMethod("isJavaExceptionHandled", sig(IRubyObject.class, Throwable.class, IRubyObject[].class, ThreadContext.class));
         }
     }
 

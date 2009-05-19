@@ -873,13 +873,13 @@ public class RuntimeHelpers {
         return isExceptionHandled(currentException, exception1, exception2, context);
     }
 
-    private static boolean checkJavaException(Exception currentException, IRubyObject exception) {
-        if (exception instanceof RubyClass) {
-            RubyClass rubyClass = (RubyClass)exception;
+    private static boolean checkJavaException(Throwable currentThrowable, IRubyObject throwable) {
+        if (throwable instanceof RubyClass) {
+            RubyClass rubyClass = (RubyClass)throwable;
             JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
             if (javaClass != null) {
                 Class cls = javaClass.javaClass();
-                if (cls.isInstance(currentException)) {
+                if (cls.isInstance(currentThrowable)) {
                     return true;
                 }
             }
@@ -887,12 +887,12 @@ public class RuntimeHelpers {
         return false;
     }
     
-    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject[] exceptions, ThreadContext context) {
-        if (currentException instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentException).getException(), exceptions, context);
+    public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject[] throwables, ThreadContext context) {
+        if (currentThrowable instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwables, context);
         } else {
-            for (int i = 0; i < exceptions.length; i++) {
-                if (checkJavaException(currentException, exceptions[0])) {
+            for (int i = 0; i < throwables.length; i++) {
+                if (checkJavaException(currentThrowable, throwables[0])) {
                     return context.getRuntime().getTrue();
                 }
             }
@@ -901,11 +901,11 @@ public class RuntimeHelpers {
         }
     }
 
-    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject exception, ThreadContext context) {
-        if (currentException instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentException).getException(), exception, context);
+    public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable, ThreadContext context) {
+        if (currentThrowable instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwable, context);
         } else {
-            if (checkJavaException(currentException, exception)) {
+            if (checkJavaException(currentThrowable, throwable)) {
                 return context.getRuntime().getTrue();
             }
 
@@ -913,14 +913,14 @@ public class RuntimeHelpers {
         }
     }
 
-    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject exception0, IRubyObject exception1, ThreadContext context) {
-        if (currentException instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentException).getException(), exception0, exception1, context);
+    public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, ThreadContext context) {
+        if (currentThrowable instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwable0, throwable1, context);
         } else {
-            if (checkJavaException(currentException, exception0)) {
+            if (checkJavaException(currentThrowable, throwable0)) {
                 return context.getRuntime().getTrue();
             }
-            if (checkJavaException(currentException, exception1)) {
+            if (checkJavaException(currentThrowable, throwable1)) {
                 return context.getRuntime().getTrue();
             }
 
@@ -928,17 +928,17 @@ public class RuntimeHelpers {
         }
     }
 
-    public static IRubyObject isJavaExceptionHandled(Exception currentException, IRubyObject exception0, IRubyObject exception1, IRubyObject exception2, ThreadContext context) {
-        if (currentException instanceof RaiseException) {
-            return isExceptionHandled(((RaiseException)currentException).getException(), exception0, exception1, exception2, context);
+    public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, IRubyObject throwable2, ThreadContext context) {
+        if (currentThrowable instanceof RaiseException) {
+            return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwable0, throwable1, throwable2, context);
         } else {
-            if (checkJavaException(currentException, exception0)) {
+            if (checkJavaException(currentThrowable, throwable0)) {
                 return context.getRuntime().getTrue();
             }
-            if (checkJavaException(currentException, exception1)) {
+            if (checkJavaException(currentThrowable, throwable1)) {
                 return context.getRuntime().getTrue();
             }
-            if (checkJavaException(currentException, exception2)) {
+            if (checkJavaException(currentThrowable, throwable2)) {
                 return context.getRuntime().getTrue();
             }
 
@@ -946,12 +946,12 @@ public class RuntimeHelpers {
         }
     }
 
-    public static void storeExceptionInErrorInfo(Exception currentException, ThreadContext context) {
+    public static void storeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
         IRubyObject exception = null;
-        if (currentException instanceof RaiseException) {
-            exception = ((RaiseException)currentException).getException();
+        if (currentThrowable instanceof RaiseException) {
+            exception = ((RaiseException)currentThrowable).getException();
         } else {
-            exception = JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), currentException);
+            exception = JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), currentThrowable);
         }
         context.setErrorInfo(exception);
     }

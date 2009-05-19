@@ -157,9 +157,9 @@ public class RescueNode extends Node {
             } catch (JumpException.FlowControlException flow) {
                 // just rethrow
                 throw flow;
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 try {
-                    return handleJavaException(runtime, context, self, aBlock, e);
+                    return handleJavaException(runtime, context, self, aBlock, t);
                 } catch (JumpException.RetryJump rj) {
                     // let RescuedBlock continue
                 } catch (RaiseException je) {
@@ -197,14 +197,14 @@ public class RescueNode extends Node {
         throw raiseJump;
     }
     
-    private IRubyObject handleJavaException(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, Exception exception) {
+    private IRubyObject handleJavaException(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, Throwable throwable) {
         RescueBodyNode cRescueNode = rescueNode;
 
         while (cRescueNode != null) {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
-            if (RuntimeHelpers.isJavaExceptionHandled(exception, exceptions, context).isTrue()) {
-                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
+            if (RuntimeHelpers.isJavaExceptionHandled(throwable, exceptions, context).isTrue()) {
+                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, throwable));
                 return cRescueNode.interpret(runtime, context, self, aBlock);
             }
 
@@ -212,7 +212,7 @@ public class RescueNode extends Node {
         }
 
         // no takers; bubble up
-        UnsafeFactory.getUnsafe().throwException(exception);
+        UnsafeFactory.getUnsafe().throwException(throwable);
         throw new RuntimeException("Unsafe.throwException failed");
     }
 
