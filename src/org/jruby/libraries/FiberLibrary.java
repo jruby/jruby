@@ -61,9 +61,15 @@ public class FiberLibrary implements Library {
 
         cFiber.defineAnnotatedMethods(Fiber.class);
         cFiber.defineAnnotatedMethods(FiberMeta.class);
+
+        if (runtime.getExecutor() != null) {
+            executor = runtime.getExecutor();
+        } else {
+            executor = Executors.newCachedThreadPool(new DaemonThreadFactory());
+        }
     }
 
-    private Executor executor = Executors.newCachedThreadPool(new DaemonThreadFactory());
+    private Executor executor;
 
     @JRubyClass(name="Fiber")
     public class Fiber extends RubyObject {
