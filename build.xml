@@ -721,6 +721,7 @@
     <attribute name="jvm.args" default="-ea"/>
 
     <sequential>
+      <echo message="Running rake @{rake.targets}"/>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="@{dir}">
