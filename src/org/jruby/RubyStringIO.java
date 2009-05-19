@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -62,6 +63,10 @@ public class RubyStringIO extends RubyObject {
 
         stringIOClass.defineAnnotatedMethods(RubyStringIO.class);
         stringIOClass.includeModule(runtime.getEnumerable());
+
+        if (runtime.getObject().isConstantDefined("Java")) {
+            stringIOClass.defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
+        }
 
         return stringIOClass;
     }

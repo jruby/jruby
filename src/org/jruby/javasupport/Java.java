@@ -147,6 +147,10 @@ public class Java implements Library {
         runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
         runtime.getString().defineAnnotatedMethods(StringJavaAddons.class);
         runtime.getIO().defineAnnotatedMethods(IOJavaAddons.class);
+
+        if (runtime.getObject().isConstantDefined("StringIO")) {
+            ((RubyClass)runtime.getObject()).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
+        }
         
         // add all name-to-class mappings
         addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
