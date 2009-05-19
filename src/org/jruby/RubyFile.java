@@ -456,6 +456,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
+        int umask = getRuntime().getPosix().umask(0);
+        perm = perm - (perm & umask);
         
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
