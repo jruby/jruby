@@ -424,7 +424,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() &&
                     !runtime.getException().isInstance(value) &&
-                    !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Exception)) {
+                    !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
                 throw runtime.newTypeError("assigning non-exception to $!");
             }
             
