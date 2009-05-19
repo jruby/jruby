@@ -1,2 +1,0 @@
-fails(JRUBY-2839):BigDecimal.mode raise an exception if the flag is true
-fails:BigDecimal.mode raise an exception if the flag is true
