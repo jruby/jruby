@@ -41,6 +41,7 @@ import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -53,7 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @since 0.2.3
  */
 @JRubyClass(name="Method")
-public class RubyMethod extends RubyObject {
+public class RubyMethod extends RubyObject implements DataType {
     protected RubyModule implementationModule;
     protected String methodName;
     protected RubyModule originModule;

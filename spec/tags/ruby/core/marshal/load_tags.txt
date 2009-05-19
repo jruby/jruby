@@ -1,1 +1,0 @@
-fails(JRUBY-3357):Marshal::load loads an Array with proc
