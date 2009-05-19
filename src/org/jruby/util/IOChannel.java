@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <Ola.Bini@ki.se>
+ * Copyright (C) 2009 Sun Microsystems, Inc
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -62,7 +61,6 @@ public abstract class IOChannel implements Channel {
         this.io = io;
     }
     
-    @Override
     public void close() throws IOException {
         if (io.respondsTo("close")) closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
     }
