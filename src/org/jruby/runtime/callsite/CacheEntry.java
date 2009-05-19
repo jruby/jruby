@@ -14,7 +14,7 @@ public class CacheEntry {
         this.token = token;
     }
 
-    public boolean typeOk(RubyClass incomingType) {
+    public final boolean typeOk(RubyClass incomingType) {
         return token == incomingType.getCacheToken();
     }
 }
