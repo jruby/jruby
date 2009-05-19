@@ -49,12 +49,13 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 /**
  * @author  jpetersen
  */
 @JRubyClass(name="Proc")
-public class RubyProc extends RubyObject implements JumpTarget {
+public class RubyProc extends RubyObject implements JumpTarget, DataType {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;
     private String file;
@@ -153,6 +154,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     }
     
     @JRubyMethod(name = "clone")
+    @Override
     public IRubyObject rbClone() {
     	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
     	newProc.block = getBlock();
@@ -163,6 +165,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     }
 
     @JRubyMethod(name = "dup")
+    @Override
     public IRubyObject dup() {
         RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
         newProc.block = getBlock();
@@ -183,6 +186,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     }
     
     @JRubyMethod(name = "to_s")
+    @Override
     public IRubyObject to_s() {
         return RubyString.newString(getRuntime(), 
                 "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" + 
@@ -265,6 +269,7 @@ public class RubyProc extends RubyObject implements JumpTarget {
     	return this;
     }
     
+    @Override
     public IRubyObject as(Class asClass) {
         final Ruby ruby = getRuntime();
         if (!asClass.isInterface()) {

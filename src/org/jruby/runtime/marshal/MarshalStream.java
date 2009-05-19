@@ -203,6 +203,9 @@ public class MarshalStream extends FilterOutputStream {
         // classes that have extended core native types to piggyback on their
         // marshalling logic.
         if (value instanceof CoreObjectType) {
+            if (value instanceof DataType) {
+                throw value.getRuntime().newTypeError("no marshal_dump is defined for class " + value.getMetaClass().getName());
+            }
             int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
 
             switch (nativeTypeIndex) {
