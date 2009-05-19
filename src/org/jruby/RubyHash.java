@@ -1296,7 +1296,7 @@ public class RubyHash extends RubyObject implements Map {
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (block.yield(context, RubyArray.newArray(runtime, key, value), null, null, true).isTrue()) {
-                    self.delete(context, key, block);
+                    self.delete(context, key, Block.NULL_BLOCK);
                 }
             }
         });

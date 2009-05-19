@@ -246,39 +246,39 @@ class TestHash < Test::Unit::TestCase
   end
 
   # Part of this is broken, see JRUBY-3496
-#  def test_delete_if
-#    base = @cls[ 1 => 'one', 2 => false, true => 'true', 'cat' => 99 ]
-#    h1   = @cls[ 1 => 'one', 2 => false, true => 'true' ]
-#    h2   = @cls[ 2 => false, 'cat' => 99 ]
-#    h3   = @cls[ 2 => false ]
-#
-#    h = base.dup
-#    assert_equal(h, h.delete_if { false })
-#    assert_equal(@cls[], h.delete_if { true })
-#
-#    h = base.dup
-#    assert_equal(h1, h.delete_if {|k,v| k.instance_of?(String) })
-#    assert_equal(h1, h)
-#
-#    h = base.dup
-#    assert_equal(h2, h.delete_if {|k,v| v.instance_of?(String) })
-#    assert_equal(h2, h)
-#
-#    h = base.dup
-#    assert_equal(h3, h.delete_if {|k,v| v })
-#    assert_equal(h3, h)
-#
-#    h = base.dup
-#    n = 0
-#    h.delete_if {|*a|
-#      n += 1
-#      assert_equal(2, a.size)
-#      assert_equal(base[a[0]], a[1])
-#      h.shift
-#      true
-#    }
-#    assert_equal(base.size, n)
-#  end
+  def test_delete_if
+    base = @cls[ 1 => 'one', 2 => false, true => 'true', 'cat' => 99 ]
+    h1   = @cls[ 1 => 'one', 2 => false, true => 'true' ]
+    h2   = @cls[ 2 => false, 'cat' => 99 ]
+    h3   = @cls[ 2 => false ]
+
+    h = base.dup
+    assert_equal(h, h.delete_if { false })
+    assert_equal(@cls[], h.delete_if { true })
+
+    h = base.dup
+    assert_equal(h1, h.delete_if {|k,v| k.instance_of?(String) })
+    assert_equal(h1, h)
+
+    h = base.dup
+    assert_equal(h2, h.delete_if {|k,v| v.instance_of?(String) })
+    assert_equal(h2, h)
+
+    h = base.dup
+    assert_equal(h3, h.delete_if {|k,v| v })
+    assert_equal(h3, h)
+
+    h = base.dup
+    n = 0
+    h.delete_if {|*a|
+      n += 1
+      assert_equal(2, a.size)
+      assert_equal(base[a[0]], a[1])
+      h.shift
+      true
+    }
+    assert_equal(base.size, n)
+  end
 
   def test_dup
     for taint in [ false, true ]
