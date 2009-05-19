@@ -615,6 +615,12 @@ public class RubyTime extends RubyObject {
         return newInstance(context, recv);
     }
 
+    @JRubyMethod(name = "times", meta = true, compat = CompatVersion.RUBY1_8)
+    public static IRubyObject times(ThreadContext context, IRubyObject recv) {
+        context.getRuntime().getWarnings().warn("obsolete method Time::times; use Process::times");
+        return RubyProcess.times(context, recv, Block.NULL_BLOCK);
+    }
+
     @JRubyMethod(name = "now", backtrace = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv) {
         IRubyObject obj = ((RubyClass) recv).allocate();
