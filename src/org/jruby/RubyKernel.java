@@ -899,7 +899,7 @@ public class RubyKernel {
     public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
         Ruby runtime = recv.getRuntime();
         
-        if (runtime.getLoadService().require(name.convertToString().toString())) {
+        if (runtime.getLoadService().lockAndRequire(name.convertToString().toString())) {
             return runtime.getTrue();
         }
         return runtime.getFalse();
