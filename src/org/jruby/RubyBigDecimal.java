@@ -77,7 +77,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyConstant
     public final static int SIGN_POSITIVE_INFINITE=3;
     @JRubyConstant
-    public final static int EXCEPTION_OVERFLOW=1;
+    public final static int EXCEPTION_OVERFLOW=8;
     @JRubyConstant
     public final static int SIGN_POSITIVE_ZERO=1;
     @JRubyConstant
@@ -245,6 +245,17 @@ public class RubyBigDecimal extends RubyNumeric {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_NaN)
                         : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_NaN).getLongValue()));
             }
+            
+            RubyFixnum EXCEPTION_UNDERFLOW = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_UNDERFLOW");
+            if ((longMode & EXCEPTION_UNDERFLOW.getLongValue()) != 0) {
+                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_UNDERFLOW)
+                        : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_UNDERFLOW).getLongValue()));
+            }
+            RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_OVERFLOW");
+            if ((longMode & EXCEPTION_OVERFLOW.getLongValue()) != 0) {
+                newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_OVERFLOW)
+                        : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_OVERFLOW).getLongValue()));
+            }
             c.setInternalModuleVariable("vpExceptionMode", newExceptionMode);
             return newExceptionMode;
         }
@@ -281,6 +292,30 @@ public class RubyBigDecimal extends RubyNumeric {
         return RoundingMode.valueOf((int)roundingMode.getLongValue());
     }
 
+    private static boolean isNaNExceptionMode(Ruby runtime) {
+        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .searchInternalModuleVariable("vpExceptionMode");
+        RubyFixnum EXCEPTION_NaN = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .fastGetConstant("EXCEPTION_NaN");
+        return (currentExceptionMode.getLongValue() & EXCEPTION_NaN.getLongValue()) != 0;
+    }
+
+    private static boolean isInfinityExceptionMode(Ruby runtime) {
+        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .searchInternalModuleVariable("vpExceptionMode");
+        RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .fastGetConstant("EXCEPTION_INFINITY");
+        return (currentExceptionMode.getLongValue() & EXCEPTION_INFINITY.getLongValue()) != 0;
+    }
+    
+    private static boolean isOverflowExceptionMode(Ruby runtime) {
+        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .searchInternalModuleVariable("vpExceptionMode");
+        RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+                .fastGetConstant("EXCEPTION_OVERFLOW");
+        return (currentExceptionMode.getLongValue() & EXCEPTION_OVERFLOW.getLongValue()) != 0;
+    }
+
     private static RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
         if(v instanceof RubyBigDecimal) {
             return (RubyBigDecimal)v;
@@ -313,13 +348,14 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
     public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
         BigDecimal decimal;
+        Ruby runtime = recv.getRuntime();
         if (args.length == 0) { 
             decimal = new BigDecimal(0);
         } else {
             String strValue = args[0].convertToString().toString();
             strValue = strValue.trim();
             if ("NaN".equals(strValue)) {
-                return newNaN(recv.getRuntime());
+                return newNaN(runtime);
             }
 
             Matcher m = INFINITY_PATTERN.matcher(strValue);
@@ -329,7 +365,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 if ("-".equals(signGroup)) {
                     sign = -1;
                 }
-                return newInfinity(recv.getRuntime(), sign);
+                return newInfinity(runtime, sign);
             }
 
             // Clean-up string representation so that it could be understood
@@ -344,18 +380,21 @@ public class RubyBigDecimal extends RubyNumeric {
             try {
                 decimal = new BigDecimal(strValue);
             } catch(NumberFormatException e) {
+                if (isOverflowExceptionMode(runtime)) {
+                    throw runtime.newFloatDomainError("exponent overflow");
+                }
                 decimal = new BigDecimal(0);
             }
             if (decimal.signum() == 0) {
                 // MRI behavior: -0 and +0 are two different things
                 if (strValue.matches("^\\s*-.*")) {
-                    return newZero(recv.getRuntime(), -1);
+                    return newZero(runtime, -1);
                 } else {
-                    return newZero(recv.getRuntime(), 1);
+                    return newZero(runtime, 1);
                 }
             }
         }
-        return new RubyBigDecimal(recv.getRuntime(), decimal);
+        return new RubyBigDecimal(runtime, decimal);
     }
 
     private static RubyBigDecimal newZero(Ruby runtime, int sign) {
@@ -369,6 +408,9 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RubyBigDecimal newNaN(Ruby runtime) {
+        if (isNaNExceptionMode(runtime)) {
+            throw runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
+        }
         RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO);
         rbd.isNaN = true;
         return rbd;
@@ -376,6 +418,9 @@ public class RubyBigDecimal extends RubyNumeric {
     
     private static RubyBigDecimal newInfinity(Ruby runtime, int sign) {
         RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO);
+        if (isInfinityExceptionMode(runtime)) {
+            throw runtime.newFloatDomainError("Computation results to 'Infinity'");
+        }
         if (sign < 0) {
             rbd.infinitySign = -1;
         } else {
