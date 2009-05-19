@@ -168,4 +168,4 @@ test_ok c1.private_methods.include?("initialize_copy")
 
 # JRUBY-2247
 test_equal ['now'], Time.methods.grep('now')
-test_equal ["_load", "at", "gm", "local", "mktime", "now", "utc"], Time.methods(false).sort
+test_equal ["_load", "at", "gm", "local", "mktime", "now", "times", "utc"], Time.methods(false).sort
