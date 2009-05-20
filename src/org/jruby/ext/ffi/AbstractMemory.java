@@ -55,6 +55,10 @@ abstract public class AbstractMemory extends RubyObject {
 
     /** The total size of the memory area */
     protected final long size;
+
+    /** The size of each element of this memory area - e.g. :char is 1, :int is 4 */
+    protected final int typeSize;
+
     /** The Memory I/O object */
     protected final MemoryIO io;
     
@@ -95,10 +99,16 @@ abstract public class AbstractMemory extends RubyObject {
     }
 
     protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
+        this(runtime, klass, io, size, 1);
+    }
+
+    protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long size, int typeSize) {
         super(runtime, klass);
         this.io = io;
         this.size = size;
+        this.typeSize = typeSize;
     }
+
     /**
      * Gets the memory I/O accessor to read/write to the memory area.
      *
@@ -141,6 +151,16 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
         return RubyString.newString(context.getRuntime(), ABSTRACT_MEMORY_RUBY_CLASS + "[size=" + size + "]");
+    }
+
+    @JRubyMethod(name = "[]")
+    public final IRubyObject aref(ThreadContext context, IRubyObject indexArg) {
+        final int index = RubyNumeric.num2int(indexArg);
+        final int offset = index * typeSize;
+        if (offset >= size) {
+            throw context.getRuntime().newIndexError(String.format("Index %d out of range", index));
+        }
+        return slice(context.getRuntime(), offset);
     }
 
     /**
@@ -195,6 +215,17 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "total", "size", "length" })
     public IRubyObject total(ThreadContext context) {
         return RubyFixnum.newFixnum(context.getRuntime(), size);
+    }
+    
+    /**
+     * Indicates how many bytes the intrinsic type of the memory uses.
+     *
+     * @param context
+     * @return
+     */
+    @JRubyMethod(name = "type_size")
+    public final IRubyObject type_size(ThreadContext context) {
+        return context.getRuntime().newFixnum(typeSize);
     }
 
     /**
