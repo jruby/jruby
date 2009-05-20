@@ -104,6 +104,25 @@ public class RubyClass extends RubyModule {
         this.allocator = allocator;
     }
 
+    /**
+     * Set an allocator that calls the default constructor for a given class.
+     *
+     * @param cls The class on which to call the default constructor to allocate
+     */
+    public void setClassAllocator(final Class cls) {
+        this.allocator = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+                try {
+                    return (IRubyObject)cls.newInstance();
+                } catch (InstantiationException ie) {
+                    throw runtime.newTypeError("could not allocate " + cls + " with default constructor");
+                } catch (IllegalAccessException iae) {
+                    throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor");
+                }
+            }
+        };
+    }
+
     @JRubyMethod(name = "allocate")
     public IRubyObject allocate() {
         if (superClass == null) throw runtime.newTypeError("can't instantiate uninitialized class");
