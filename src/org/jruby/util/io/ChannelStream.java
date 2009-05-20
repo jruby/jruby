@@ -606,7 +606,7 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * @see org.jruby.util.IOHandler#sync()
      */
-    public void sync() throws IOException, BadDescriptorException {
+    public synchronized void sync() throws IOException, BadDescriptorException {
         flushWrite();
     }
 
@@ -781,7 +781,7 @@ public class ChannelStream implements Stream, Finalizable {
             buffer.put(buf.unsafeBytes(), buf.begin(), buf.length());
         }
         
-        if (isSync()) sync();
+        if (isSync()) flushWrite();
         
         return buf.realSize;
     }
@@ -799,7 +799,7 @@ public class ChannelStream implements Stream, Finalizable {
         
         buffer.put((byte) c);
             
-        if (isSync()) sync();
+        if (isSync()) flushWrite();
             
         return 1;
     }
