@@ -46,7 +46,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final java.nio.ByteBuffer asByteBuffer() {
-        return IO.newDirectByteBuffer(address, size);
+        return IO.newDirectByteBuffer(address, (int) size);
     }
 
     @Override
