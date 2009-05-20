@@ -3,6 +3,7 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -37,8 +38,22 @@ public abstract class Pointer extends AbstractMemory {
     protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size, int typeSize) {
         super(runtime, klass, io, size, typeSize);
     }
-    
-   /**
+
+    @JRubyMethod(name = { "new" }, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject address) {
+        return new BasePointer(context.getRuntime(),
+                Factory.getInstance().wrapDirectMemory(RubyFixnum.num2long(address)));
+    }
+
+    @JRubyMethod(name = { "new" }, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv,
+            IRubyObject type, IRubyObject address) {
+        return new BasePointer(context.getRuntime(), 
+                Factory.getInstance().wrapDirectMemory(RubyFixnum.num2long(address)),
+                Long.MAX_VALUE, calculateSize(context, type));
+    }
+
+    /**
      * Tests if this <tt>Pointer</tt> represents the C <tt>NULL</tt> value.
      *
      * @return true if the address is NULL.
