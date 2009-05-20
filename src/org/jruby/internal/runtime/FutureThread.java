@@ -57,7 +57,15 @@ public class FutureThread implements ThreadLike {
      * a job to the pool.
      */
     public void start() {
-        future = rubyThread.getRuntime().getExecutor().submit(runnable);
+        future = rubyThread.getRuntime().getExecutor().submit(new Runnable() {
+            public void run() {
+                try {
+                    runnable.run();
+                } finally {
+                    rubyThread.getRuntime().getThreadService().dissociateThread(future);
+                }
+            }
+        });
     }
     
     /**
