@@ -194,6 +194,10 @@ public class ThreadService {
     public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
         rubyThreadMap.put(threadOrFuture, rubyThread);
     }
+
+    public synchronized void dissociateThread(Object threadOrFuture) {
+        rubyThreadMap.remove(threadOrFuture);
+    }
     
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
