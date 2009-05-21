@@ -16,8 +16,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class SuperCallSite extends CallSite {
     protected volatile CacheEntry cache = CacheEntry.NULL_CACHE;
-    // This can go away if we determine that the following is officially a bug:
-    // http://redmine.ruby-lang.org/issues/show/1151
     protected volatile String lastName;
     
     public SuperCallSite() {
@@ -34,7 +32,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, args);
         }
         return cacheAndCall(caller, selfType, args, context, self, name);
@@ -46,7 +44,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, args, block);
         }
         return cacheAndCall(caller, selfType, block, args, context, self, name);
@@ -80,7 +78,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name);
         }
         return cacheAndCall(caller, selfType, context, self, name);
@@ -92,7 +90,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name);
@@ -126,7 +124,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1);
@@ -138,7 +136,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1);
@@ -172,7 +170,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2);
@@ -184,7 +182,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2);
@@ -218,7 +216,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2, arg3);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2, arg3);
@@ -230,7 +228,7 @@ public class SuperCallSite extends CallSite {
         RubyClass selfType = pollAndGetClass(context, self, klazz, name);
 
         CacheEntry myCache = cache;
-        if (selfType != null && myCache.typeOk(selfType)) {
+        if (name == lastName && selfType != null && myCache.typeOk(selfType)) {
             return myCache.method.call(context, self, selfType, name, arg1, arg2, arg3, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2, arg3);
@@ -264,6 +262,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, args, block);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, args, block);
     }
@@ -274,6 +273,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, args);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, args);
     }
@@ -284,6 +284,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name);
     }
@@ -294,6 +295,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, block);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, block);
     }
@@ -304,6 +306,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, arg);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, arg);
     }
@@ -314,6 +317,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, arg, block);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, arg, block);
     }
@@ -324,6 +328,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, arg1, arg2);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, arg1, arg2);
     }
@@ -334,6 +339,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, arg1, arg2, block);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, arg1, arg2, block);
     }
@@ -344,6 +350,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, arg1, arg2, arg3);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, arg1, arg2, arg3);
     }
@@ -354,6 +361,7 @@ public class SuperCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, name, method, arg1, arg2, arg3, block);
         }
+        lastName = name;
         cache = entry;
         return method.call(context, self, selfType, name, arg1, arg2, arg3, block);
     }

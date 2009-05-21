@@ -414,8 +414,11 @@ end
 test_equal('a', Bar222.new.b)
 # I'm proactively calling this a bug and testing the correct behavior
 # http://redmine.ruby-lang.org/issues/show/1151
-# test_equal('b', Bar222.new.method(:b).call)
-test_equal('a', Bar222.new.method(:b).call)
+# Update May 21, 2009: It turns out we started doing the right behavioe
+# only because of a bug in super caching (JRUBY-3678), so I'm reverting
+# the bad test again. Sigh...
+test_equal('b', Bar222.new.method(:b).call)
+#test_equal('a', Bar222.new.method(:b).call)
 
 # JRUBY-2267 frames getting overwritten and super failing as a result
 class Foo2267
