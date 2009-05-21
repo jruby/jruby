@@ -1,1 +1,0 @@
-fails(JRUBY-3472):FileTest.grpowned? return true if the file exist
