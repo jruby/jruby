@@ -83,7 +83,18 @@ class Gem::SourceIndex
 
     def spec_directories_from_classpath
       require 'jruby'
-      JRuby.runtime.getJRubyClassLoader.getResources("specifications").map {|u| u.getFile }
+      require 'uri'
+
+      JRuby.runtime.getJRubyClassLoader.getResources("specifications").map do |u|
+
+        if u.getProtocol == 'jar' and u.getFile =~ /^file:/
+          file_url = URI.unescape(u.getFile)
+        else
+          file_url = u.getFile
+        end
+
+        file_url
+      end
     end
   end
 end
