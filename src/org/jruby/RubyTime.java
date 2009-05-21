@@ -651,7 +651,9 @@ public class RubyTime extends RubyObject {
             // the decimal point is honored.
             if (arg instanceof RubyFloat) {
                 double dbl = ((RubyFloat) arg).getDoubleValue();
-                long micro = (long) ((dbl - seconds) * 1000000);
+                long micro = Math.round((dbl - seconds) * 1000000);
+                if(dbl < 0)
+                    micro += 1000000;
                 millisecs = micro / 1000;
                 microsecs = micro % 1000;
             }

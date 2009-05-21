@@ -82,15 +82,15 @@ class TestTime < Test::Unit::TestCase
     assert_equal(1, Time.at(0.000001).usec)
     assert_equal(0, Time.at(1e-7).usec)
     assert_equal(0, Time.at(4e-7).usec)
-#    assert_equal(1, Time.at(6e-7).usec)
+    assert_equal(1, Time.at(6e-7).usec)
     assert_equal(1, Time.at(14e-7).usec)
-#    assert_equal(2, Time.at(16e-7).usec)
+    assert_equal(2, Time.at(16e-7).usec)
     if negative_time_t?
       assert_equal(0, Time.at(-1e-7).usec)
       assert_equal(0, Time.at(-4e-7).usec)
-#      assert_equal(999999, Time.at(-6e-7).usec)
-#      assert_equal(999999, Time.at(-14e-7).usec)
-#      assert_equal(999998, Time.at(-16e-7).usec)
+      assert_equal(999999, Time.at(-6e-7).usec)
+      assert_equal(999999, Time.at(-14e-7).usec)
+      assert_equal(999998, Time.at(-16e-7).usec)
     end
   end
 end
