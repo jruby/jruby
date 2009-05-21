@@ -506,7 +506,7 @@ test_equal(nil, compile_and_run("foo(until true; end)"))
 
 # test that 100 symbols compiles ok; that hits both types of symbol caching/creation
 syms = [:a]
-99.times { syms << syms[-1].to_s.succ.intern }
+99.times {|i| syms << ('foo' + i.to_s).intern }
 # 100 first instances of a symbol
 test_equal(syms, compile_and_run(syms.inspect))
 # 100 first instances and 100 second instances (caching)
