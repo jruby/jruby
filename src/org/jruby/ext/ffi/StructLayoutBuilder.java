@@ -319,7 +319,13 @@ public final class StructLayoutBuilder extends RubyObject {
             if (value instanceof Pointer) {
                 getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Pointer) value).getMemoryIO());
             } else if (value instanceof Struct) {
-                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Struct) value).getMemoryIO());
+                MemoryIO mem = ((Struct) value).getMemoryIO();
+
+                if (!(mem instanceof DirectMemoryIO)) {
+                    throw runtime.newArgumentError("Struct memory not backed by a native pointer");
+                }
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), mem);
+
             } else if (value instanceof RubyInteger) {
                 getMemoryIO(ptr).putAddress(offset, Util.int64Value(ptr));
             } else if (value.respondsTo("to_ptr")) {
