@@ -67,6 +67,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.libraries.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -309,6 +310,14 @@ public class RubyIO extends RubyObject {
             return new RubyIO(runtime, klass);
         }
     };
+
+    /*
+     * We use FILE versus IO to match T_FILE in MRI.
+     */
+    @Override
+    public int getNativeTypeIndex() {
+        return ClassIndex.FILE;
+    }
 
     public static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);

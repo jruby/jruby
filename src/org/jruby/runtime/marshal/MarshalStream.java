@@ -54,6 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.IncludedModuleWrapper;
+import org.jruby.RubyBasicObject;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -288,6 +289,8 @@ public class MarshalStream extends FilterOutputStream {
             case ClassIndex.TRUE:
                 write('T');
                 return;
+            default:
+                throw runtime.newTypeError("can't dump " + value.getMetaClass().getName());
             }
         } else {
             dumpDefaultObjectHeader(value.getMetaClass());
