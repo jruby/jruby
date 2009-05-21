@@ -1,2 +1,0 @@
-fails(JRUBY-3472):File.grpowned? return true if the file exist
-fails(JRUBY-3472):File.grpowned? returns false if file the does not exist
