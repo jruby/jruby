@@ -110,7 +110,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context) {
 
-        memory = new Buffer(context.getRuntime(), layout.getSize(), flags);
+        memory = MemoryPointer.allocate(context.getRuntime(), layout.getSize(), 1, true);
 
         return this;
     }
