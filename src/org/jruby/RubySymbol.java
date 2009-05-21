@@ -76,6 +76,12 @@ public class RubySymbol extends RubyObject {
 
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
+        for (int i = 0; i < symbolBytes.bytes.length; i++) {
+            if (symbolBytes.bytes[i] == 0) {
+                throw runtime.newSyntaxError("symbol cannot contain '\\0'");
+            }
+        }
+
         this.symbol = internedSymbol;
         this.symbolBytes = symbolBytes;
         this.id = runtime.allocSymbolId();

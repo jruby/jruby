@@ -1,1 +1,0 @@
-fails(JRUBY-3670):A Symbol literal does not contain null in the string
