@@ -1482,7 +1482,7 @@ public class Pack {
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
-            
+
             // Skip all whitespace in pack format string
             while (ASCII.isSpace(type)) {
                 if (next == 0) break mainLoop;
@@ -1518,7 +1518,7 @@ public class Pack {
                     if ("@XxumM".indexOf(type) != -1) {
                         occurrences = 0;
                     } else {
-                        occurrences = listSize - idx;
+                        occurrences = list.size() - idx;
                         isStar = true;
                     }
                     next = safeGet(format);

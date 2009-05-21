@@ -75,6 +75,13 @@ class TestPack < Test::Unit::TestCase
       ["A"*50].pack('u'))
   end
 
+  # JRUBY-3677
+  def test_pack_N_star_regression
+    arr = ["head",1,1,1]
+    assert_equal(arr.pack("A4N3"), arr.pack("A4N*"))
+  end
+
+
   # JRUBY-2502
   def test_pack_M_regression
     assert_equal("ABCDEF=\n", ['ABCDEF'].pack('M'))
