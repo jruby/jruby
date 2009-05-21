@@ -3056,7 +3056,12 @@ public class RubyIO extends RubyObject {
        
         try {
             if (!arg1.isNil()) {
-                return file.read(context, arg1);
+                if (arg1 instanceof RubyInteger) {
+                    return file.read(context, arg1);
+                } else {
+                    // TODO: hash args for encoding, etc, are not yet supported; ignore
+                    return file.read(context);
+                }
             } else {
                 return file.read(context);
             }
