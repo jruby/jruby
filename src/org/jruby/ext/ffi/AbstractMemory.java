@@ -613,6 +613,33 @@ abstract public class AbstractMemory extends RubyObject {
         s.setTaint(true);
         return s;
     }
+
+    @JRubyMethod(name = { "get_array_of_string" }, required = 2)
+    public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset, IRubyObject rbCount) {
+        final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
+        final long off = getOffset(rbOffset);
+        final int count = Util.int32Value(rbCount);
+
+        final Ruby runtime = context.getRuntime();
+        final RubyArray arr = RubyArray.newArray(runtime, count);
+
+        for (int i = 0; i < count; ++i) {
+            MemoryIO mem = getMemoryIO().getMemoryIO(off + (i * POINTER_SIZE));
+            if (mem != null && !mem.isNull()) {
+                int len = (int) mem.indexOf(0, (byte) 0);
+                byte[] bytes = new byte[len];
+                mem.get(0, bytes, 0, len);
+                RubyString s = RubyString.newStringNoCopy(runtime, bytes, 0, len);
+                s.setTaint(true);
+                arr.add(s);
+            } else {
+                arr.add(runtime.getNil());
+            }
+        }
+
+        return arr;
+    }
+
     @JRubyMethod(name = "put_string")
     public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
         long off = getOffset(offArg);
