@@ -457,7 +457,7 @@ public abstract class AbstractScript implements Script {
 
         // We can callsite cache const_missing if we want
         return value != null ? value :
-            context.getRubyClass().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(name));
+            context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(name));
     }
 
     public static final int NUMBERED_CONSTANT_COUNT = 10;

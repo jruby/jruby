@@ -88,7 +88,7 @@ public class ConstNode extends Node implements INameNode {
 
         // We can callsite cache const_missing if we want
         return value != null ? value :
-            context.getRubyClass().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
+            context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
     }
 
     @Override
