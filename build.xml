@@ -1343,4 +1343,61 @@
       <run-rake dir="${rails.dir}/activemodel" rake.targets="test"/>
       <run-rake dir="${rails.dir}/railties" rake.targets="test"/>
   </target>
+
+  <target name="fetch-prawn">
+      <condition property="prawn-repo-exists">
+          <available file="test/prawn/.git"/>
+      </condition>
+
+      <antcall target="do-fetch-prawn"/>
+      <antcall target="do-update-prawn"/>
+  </target>
+
+  <target name="do-fetch-prawn" unless="prawn-repo-exists">
+      <!-- Rails repo might already have been pulled, so delete it -->
+      <antcall target="clear-prawn" inheritall="false"/>
+
+      <echo message="Cloning prawn repo to: test/prawn"/>
+      <exec executable="git">
+          <arg value="clone"/>
+          <arg value="--depth"/><arg value="1"/>
+          <arg value="git://github.com/sandal/prawn.git"/>
+          <arg value="test/prawn"/>
+      </exec>
+      <exec executable="git" dir="test/prawn">
+          <arg value="checkout"/>
+          <arg value="0.4.1"/>
+      </exec>
+      <exec executable="git" dir="test/prawn">
+          <arg value="submodule"/>
+          <arg value="init"/>
+      </exec>
+      <exec executable="git" dir="test/prawn">
+          <arg value="submodule"/>
+          <arg value="update"/>
+      </exec>
+  </target>
+
+  <target name="do-update-prawn" if="prawn-repo-exists">
+      <echo message="Updating rubyspec repo -- test/prawn"/>
+      <exec dir="test/prawn" executable="git">
+        <arg value="pull"/>
+      </exec>
+      <exec executable="git" dir="test/prawn">
+          <arg value="checkout"/>
+          <arg value="0.4.1"/>
+      </exec>
+      <exec executable="git" dir="test/prawn">
+          <arg value="submodule"/>
+          <arg value="update"/>
+      </exec>
+  </target>
+
+  <target name="clear-prawn">
+      <delete dir="test/prawn"/>
+  </target>
+
+  <target name="test-prawn" depends="jar,install-build-gems,fetch-prawn">
+      <run-rake dir="test/prawn" rake.targets="test examples"/>
+  </target>
 </project>
