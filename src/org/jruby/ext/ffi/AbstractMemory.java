@@ -587,31 +587,16 @@ abstract public class AbstractMemory extends RubyObject {
 
         return this;
     }
+
     @JRubyMethod(name = "get_string", required = 1)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
-        long off = getOffset(offArg);
-        int len = (int) getMemoryIO().indexOf(off, (byte) 0);
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        RubyString s = context.getRuntime().newString(bl);
-        s.setTaint(true);
-        return s;
+        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), getOffset(offArg));
     }
+
     @JRubyMethod(name = "get_string", required = 2)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
-        long off = getOffset(offArg);
-        int maxlen = Util.int32Value(lenArg);
-        int len = (int) getMemoryIO().indexOf(off, (byte) 0, maxlen);
-        if (len < 0 || len > maxlen) {
-            len = maxlen;
-        }
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        RubyString s = context.getRuntime().newString(bl);
-        s.setTaint(true);
-        return s;
+        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(),
+                getOffset(offArg), Util.int32Value(lenArg));
     }
 
     @JRubyMethod(name = { "get_array_of_string" }, required = 2)
@@ -624,17 +609,10 @@ abstract public class AbstractMemory extends RubyObject {
         final RubyArray arr = RubyArray.newArray(runtime, count);
 
         for (int i = 0; i < count; ++i) {
-            MemoryIO mem = getMemoryIO().getMemoryIO(off + (i * POINTER_SIZE));
-            if (mem != null && !mem.isNull()) {
-                int len = (int) mem.indexOf(0, (byte) 0);
-                byte[] bytes = new byte[len];
-                mem.get(0, bytes, 0, len);
-                RubyString s = RubyString.newStringNoCopy(runtime, bytes, 0, len);
-                s.setTaint(true);
-                arr.add(s);
-            } else {
-                arr.add(runtime.getNil());
-            }
+            final MemoryIO mem = getMemoryIO().getMemoryIO(off + (i * POINTER_SIZE));
+            arr.add(mem != null && !mem.isNull()
+                    ? MemoryUtil.getTaintedString(runtime, mem, 0)
+                    : runtime.getNil());
         }
 
         return arr;
