@@ -2016,7 +2016,14 @@ public class RubyIO extends RubyObject {
         return ((ChannelStream) openFile.getMainStream()).isBlocking();
     }
 
-    @JRubyMethod(name = "fcntl", required = 2)
+    @JRubyMethod(name = "fcntl")
+    public IRubyObject fcntl(ThreadContext context, IRubyObject cmd) {
+        // TODO: This version differs from ioctl by checking whether fcntl exists
+        // and raising notimplemented if it doesn't; perhaps no difference for us?
+        return ctl(context.getRuntime(), cmd, null);
+    }
+
+    @JRubyMethod(name = "fcntl")
     public IRubyObject fcntl(ThreadContext context, IRubyObject cmd, IRubyObject arg) {
         // TODO: This version differs from ioctl by checking whether fcntl exists
         // and raising notimplemented if it doesn't; perhaps no difference for us?
@@ -2043,7 +2050,7 @@ public class RubyIO extends RubyObject {
         
         // FIXME: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
         // protocol conversion is not happening in Ruby on this arg?
-        if (arg.isNil() || arg == runtime.getFalse()) {
+        if (arg == null || arg.isNil() || arg == runtime.getFalse()) {
             nArg = 0;
         } else if (arg instanceof RubyFixnum) {
             nArg = RubyFixnum.fix2long(arg);
