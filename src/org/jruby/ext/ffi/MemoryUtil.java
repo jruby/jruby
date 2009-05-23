@@ -220,23 +220,17 @@ public final class MemoryUtil {
     }
 
     public static final IRubyObject getTaintedString(Ruby runtime, MemoryIO io, long offset) {
+        byte[] bytes = io.getZeroTerminatedByteArray(offset);
 
-        int len = (int) io.indexOf(offset, (byte) 0);
-        byte[] bytes = new byte[len];
-        io.get(offset, bytes, 0, len);
         RubyString s = RubyString.newStringNoCopy(runtime, bytes);
         s.setTaint(true);
 
         return s;
     }
 
-    public static final IRubyObject getTaintedString(Ruby runtime, MemoryIO io, long offset, int maxlen) {
-        int len = (int) io.indexOf(offset, (byte) 0, maxlen);
-        if (len < 0 || len > maxlen) {
-            len = maxlen;
-        }
-        byte[] bytes = new byte[len];
-        io.get(offset, bytes, 0, len);
+    public static final IRubyObject getTaintedString(Ruby runtime, MemoryIO io, long offset, int length) {
+        byte[] bytes = io.getZeroTerminatedByteArray(offset, length);
+
         RubyString s = RubyString.newStringNoCopy(runtime, bytes);
         s.setTaint(true);
 

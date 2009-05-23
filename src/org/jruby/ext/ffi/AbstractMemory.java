@@ -619,6 +619,19 @@ abstract public class AbstractMemory extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "read_string")
+    public IRubyObject read_string(ThreadContext context) {
+        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
+    }
+
+    @JRubyMethod(name = "read_string")
+    public IRubyObject read_string(ThreadContext context, IRubyObject rbLength) {
+        /* When a length is given, read_string acts like get_bytes */
+        return !rbLength.isNil()
+                ? get_bytes(context, RubyFixnum.zero(context.getRuntime()), rbLength)
+                : MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
+    }
+
     @JRubyMethod(name = "get_string", required = 1)
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
         return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), getOffset(offArg));
