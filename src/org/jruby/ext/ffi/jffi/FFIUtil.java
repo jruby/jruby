@@ -5,15 +5,19 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Some utility functions for FFI <=> jffi conversions
  */
 public final class FFIUtil {
+    private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+    
     private FFIUtil() {}
     private static final Map<NativeType, com.kenai.jffi.Type> typeMap = buildTypeMap();
 
@@ -102,5 +106,48 @@ public final class FFIUtil {
      */
     static final com.kenai.jffi.Struct newStruct(StructLayout layout) {
         return newStruct(layout.getRuntime(), layout.getFields());
+    }
+
+    /**
+     * Reads a nul-terminated string from native memory and boxes it up in a ruby
+     * string.
+     *
+     * @param runtime The ruby runtime for the resulting string.
+     * @param address The memory address to read the string from.
+     * @return A ruby string.
+     */
+    static final IRubyObject getString(Ruby runtime, long address) {
+        if (address == 0) {
+            return runtime.getNil();
+        }
+        byte[] bytes = getZeroTerminatedByteArray(address);
+        if (bytes.length == 0) {
+            return RubyString.newEmptyString(runtime);
+        }
+
+        RubyString s = RubyString.newStringNoCopy(runtime, bytes);
+        s.setTaint(true);
+        return s;
+    }
+
+    private static final byte[] EMPTY_BYTE_STRING = new byte[0];
+
+    private static final byte[] getByteString(long address, int len) {
+        if (len < 1) {
+            return EMPTY_BYTE_STRING;
+        }
+        byte[] bytes = new byte[len];
+        IO.getByteArray(address, bytes, 0, len);
+
+        return bytes;
+    }
+
+    static final byte[] getZeroTerminatedByteArray(long address) {
+        return getByteString(address, (int) IO.getStringLength(address));
+    }
+
+    static final byte[] getZeroTerminatedByteArray(long address, int maxlen) {
+        int len = (int) IO.indexOf(address, (byte) 0, maxlen);
+        return getByteString(address, len < 0 ? maxlen : len);
     }
 }
