@@ -684,9 +684,7 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
         long off = getOffset(offArg);
         ByteList bl = strArg.convertToString().getByteList();
-
-        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin(), bl.length());
-        getMemoryIO().putByte(off + bl.length(), (byte) 0);
+        getMemoryIO().putZeroTerminatedByteArray(off, bl.unsafeBytes(), bl.begin(), bl.length());
         return this;
     }
     @JRubyMethod(name = "get_bytes")

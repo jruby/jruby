@@ -222,6 +222,11 @@ public class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return ptr.getByteArray(offset, (int) ptr.indexOf(offset, (byte) 0));
     }
 
+    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len) {
+        ptr.write(offset, bytes, off, len);
+        ptr.setByte(offset + len, (byte) 0);
+    }
+
     public NativeMemoryIO slice(long offset) {
         return offset == 0 ? this : new NativeMemoryIO(ptr.share(offset));
     }

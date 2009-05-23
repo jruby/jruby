@@ -150,4 +150,8 @@ public final class FFIUtil {
         int len = (int) IO.indexOf(address, (byte) 0, maxlen);
         return getByteString(address, len < 0 ? maxlen : len);
     }
+    static final void putZeroTerminatedByteArray(long address, byte[] bytes, int off, int len) {
+        IO.putByteArray(address, bytes, off, len);
+        IO.putByte(address + len, (byte) 0);
+    }
 }

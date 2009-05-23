@@ -192,4 +192,9 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public final byte[] getZeroTerminatedByteArray(long offset, int maxlen) {
         return FFIUtil.getZeroTerminatedByteArray(address + offset, maxlen);
     }
+
+    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len) {
+        FFIUtil.putZeroTerminatedByteArray(address + offset, bytes, off, len);
+    }
+
 }

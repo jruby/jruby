@@ -168,4 +168,8 @@ public abstract class InvalidMemoryIO implements MemoryIO {
         throw ex();
     }
 
+    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len) {
+        throw ex();
+    }
+
 }

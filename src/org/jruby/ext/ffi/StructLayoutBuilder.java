@@ -418,12 +418,9 @@ public final class StructLayoutBuilder extends RubyObject {
             this.length = size;
         }
         public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
-            MemoryIO io = getMemoryIO(ptr);
             ByteList bl = value.convertToString().getByteList();
-            // Clamp to no longer than 
-            int len = Math.min(bl.length(), length - 1);
-            io.put(getOffset(ptr), bl.unsafeBytes(), bl.begin(), len);
-            io.putByte(getOffset(ptr) + len, (byte) 0);
+            getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.unsafeBytes(), bl.begin(),
+                    Math.min(bl.length(), length - 1));
         }
 
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
