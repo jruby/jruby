@@ -239,4 +239,11 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return FFIUtil.getZeroTerminatedByteArray(address + offset, 
                 Math.min(maxlen, (int) (size - offset)));
     }
+
+    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len) {
+        // Ensure room for terminating zero byte
+        checkBounds(offset, len + 1);
+        FFIUtil.putZeroTerminatedByteArray(address + offset, bytes, off, len);
+    }
+
 }

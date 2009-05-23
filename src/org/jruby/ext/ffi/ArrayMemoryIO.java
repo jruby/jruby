@@ -296,6 +296,14 @@ public final class ArrayMemoryIO implements MemoryIO {
         return bytes;
     }
 
+    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len) {
+        // Ensure room for terminating zero byte
+        checkBounds(offset, len + 1);
+        System.arraycopy(bytes, off, buffer, index(offset), len);
+        buffer[len] = (byte) 0;
+    }
+
+
     public final void clear() {
         Arrays.fill(buffer, offset, length, (byte) 0);
     }

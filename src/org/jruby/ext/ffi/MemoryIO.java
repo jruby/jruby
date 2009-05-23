@@ -381,4 +381,14 @@ public interface MemoryIO {
      * @return A byte array containing a copy of the data.
      */
     public byte[] getZeroTerminatedByteArray(long offset, int maxlen);
+
+    /**
+     * Writes a byte array to memory, and appends a zero terminator
+     *
+     * @param offset The offset within the memory area of the start of the string.
+     * @param bytes The byte array to write to the memory.
+     * @param off The offset with the byte array to start copying.
+     * @param maxlen The number of bytes of the byte array to write to the memory area. (not including zero byte)
+     */
+    public void putZeroTerminatedByteArray(long offset, byte[] bytes, int off, int len);
 }
