@@ -427,16 +427,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            MemoryIO io = getMemoryIO(ptr);
-            int len = (int) io.indexOf(getOffset(ptr), (byte) 0, length);
-            if (len < 0) {
-                len = length;
-            }
-            ByteList bl = new ByteList(len);
-            bl.length(len);
-            io.get(0, bl.unsafeBytes(), bl.begin(), len);
-        
-            return runtime.newString(bl);
+            return MemoryUtil.getTaintedString(runtime, getMemoryIO(ptr), getOffset(ptr), length);
         }
 
         public Collection<StructLayout.Member> getMembers() {
