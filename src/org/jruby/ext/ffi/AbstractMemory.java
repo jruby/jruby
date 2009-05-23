@@ -599,6 +599,24 @@ abstract public class AbstractMemory extends RubyObject {
                 getOffset(offArg), Util.int32Value(lenArg));
     }
 
+    @JRubyMethod(name = { "get_array_of_string" }, required = 1)
+    public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset) {
+        final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
+        
+        final Ruby runtime = context.getRuntime();
+        final RubyArray arr = RubyArray.newArray(runtime);
+
+        for (long off = getOffset(rbOffset); ; off += POINTER_SIZE) {
+            final MemoryIO mem = getMemoryIO().getMemoryIO(off);
+            if (mem == null || mem.isNull()) {
+                break;
+            }
+            arr.add(MemoryUtil.getTaintedString(runtime, mem, 0));
+        }
+
+        return arr;
+    }
+
     @JRubyMethod(name = { "get_array_of_string" }, required = 2)
     public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset, IRubyObject rbCount) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
