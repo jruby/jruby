@@ -650,7 +650,7 @@ abstract public class AbstractMemory extends RubyObject {
         final Ruby runtime = context.getRuntime();
         final RubyArray arr = RubyArray.newArray(runtime);
 
-        for (long off = getOffset(rbOffset); ; off += POINTER_SIZE) {
+        for (long off = getOffset(rbOffset); off <= size - POINTER_SIZE; off += POINTER_SIZE) {
             final MemoryIO mem = getMemoryIO().getMemoryIO(off);
             if (mem == null || mem.isNull()) {
                 break;
