@@ -19,13 +19,6 @@ module FFI
       def read_long
         get_long(0)
       end
-      def read_string(len=nil)
-        if len
-          get_bytes(0, len)
-        else
-          get_string(0)
-        end
-      end
 
       def write_string(str, len=nil)
         len = str.size unless len
