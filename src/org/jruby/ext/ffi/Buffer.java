@@ -23,9 +23,6 @@ public final class Buffer extends AbstractMemory {
     /** Indicates that the Buffer is used for data copied OUT from native memory */
     public static final int OUT = 0x2;
     
-    /** The size of the primitive type this <tt>Buffer</tt> was allocated for */
-    private final int typeSize;
-    
     private final int inout;
     public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Buffer",
@@ -38,9 +35,8 @@ public final class Buffer extends AbstractMemory {
     }
 
     public Buffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, new ArrayMemoryIO(runtime, 0), 0);
+        super(runtime, klass, new ArrayMemoryIO(runtime, 0), 0, 0);
         this.inout = IN | OUT;
-        this.typeSize = 1;
     }
     Buffer(Ruby runtime, int size) {
         this(runtime, size, IN | OUT);
@@ -54,8 +50,7 @@ public final class Buffer extends AbstractMemory {
             new ArrayMemoryIO(runtime, data, offset, size), size, 1, IN | OUT);
     }
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int typeSize, int inout) {
-        super(runtime, (RubyClass) klass, io, size);
-        this.typeSize = typeSize;
+        super(runtime, (RubyClass) klass, io, size, typeSize);
         this.inout = inout;
     }
     
@@ -115,26 +110,7 @@ public final class Buffer extends AbstractMemory {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Buffer size=%d>", size));
     }
-    /**
-     * Indicates how many bytes the type that the pointer is cast as uses.
-     *
-     * @param context
-     * @return
-     */
-    @JRubyMethod(name = "type_size")
-    public final IRubyObject type_size(ThreadContext context) {
-        return context.getRuntime().newFixnum(typeSize);
-    }
-
-    @JRubyMethod(name = "[]")
-    public final IRubyObject slice(ThreadContext context, IRubyObject indexArg) {
-        final int index = RubyNumeric.num2int(indexArg);
-        final int offset = index * typeSize;
-        if (offset >= size) {
-            throw context.getRuntime().newIndexError(String.format("Index %d out of range", index));
-        }
-        return new Buffer(context.getRuntime(), getMetaClass(), io.slice(offset), size - offset, typeSize, this.inout);
-    }
+    
     ArrayMemoryIO getArrayMemoryIO() {
         return (ArrayMemoryIO) getMemoryIO();
     }

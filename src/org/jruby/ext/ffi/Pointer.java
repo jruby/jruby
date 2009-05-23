@@ -34,6 +34,9 @@ public abstract class Pointer extends AbstractMemory {
     protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         super(runtime, klass, io, size);
     }
+    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size, int typeSize) {
+        super(runtime, klass, io, size, typeSize);
+    }
     
    /**
      * Tests if this <tt>Pointer</tt> represents the C <tt>NULL</tt> value.
