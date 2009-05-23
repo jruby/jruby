@@ -28,6 +28,9 @@
 
 package org.jruby.ext.ffi;
 
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  * Abstracted memory operations.
  * <p>
@@ -361,4 +364,21 @@ public interface MemoryIO {
      * @param value The value to set each byte to.
      */
     public void setMemory(long offset, long size, byte value);
+
+    /**
+     * Reads a zero terminated byte array (e.g. an ascii or utf-8 string)
+     *
+     * @param offset The offset within the memory area of the start of the string.
+     * @return A byte array containing a copy of the data.
+     */
+    public byte[] getZeroTerminatedByteArray(long offset);
+
+    /**
+     * Reads a zero terminated byte array (e.g. an ascii or utf-8 string)
+     *
+     * @param offset The offset within the memory area of the start of the string.
+     * @param maxlen The maximum length to search for the zero byte terminator.
+     * @return A byte array containing a copy of the data.
+     */
+    public byte[] getZeroTerminatedByteArray(long offset, int maxlen);
 }

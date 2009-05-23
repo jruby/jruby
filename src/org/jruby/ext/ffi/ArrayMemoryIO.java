@@ -280,6 +280,22 @@ public final class ArrayMemoryIO implements MemoryIO {
         Arrays.fill(buffer, index(offset), (int) size, value);
     }
 
+    public final byte[] getZeroTerminatedByteArray(long offset) {
+        checkBounds(offset, 1);
+        int len = indexOf(offset, (byte) 0);
+        byte[] bytes = new byte[len != -1 ? len : length - (int) offset];
+        System.arraycopy(buffer, index(offset), bytes, 0, bytes.length);
+        return bytes;
+    }
+
+    public final byte[] getZeroTerminatedByteArray(long offset, int maxlen) {
+        checkBounds(offset, 1);
+        int len = indexOf(offset, (byte) 0, maxlen);
+        byte[] bytes = new byte[len != -1 ? len : length - (int) offset];
+        System.arraycopy(buffer, index(offset), bytes, 0, bytes.length);
+        return bytes;
+    }
+
     public final void clear() {
         Arrays.fill(buffer, offset, length, (byte) 0);
     }
