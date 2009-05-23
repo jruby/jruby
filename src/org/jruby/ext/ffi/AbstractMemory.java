@@ -628,7 +628,7 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject read_string(ThreadContext context, IRubyObject rbLength) {
         /* When a length is given, read_string acts like get_bytes */
         return !rbLength.isNil()
-                ? get_bytes(context, RubyFixnum.zero(context.getRuntime()), rbLength)
+                ? MemoryUtil.getTaintedByteString(context.getRuntime(), getMemoryIO(), 0, Util.int32Value(rbLength))
                 : MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
     }
 
@@ -691,15 +691,10 @@ abstract public class AbstractMemory extends RubyObject {
     }
     @JRubyMethod(name = "get_bytes")
     public IRubyObject get_bytes(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
-        long off = getOffset(offArg);
-        int len = Util.int32Value(lenArg);
-        ByteList bl = new ByteList(len);
-        getMemoryIO().get(off, bl.unsafeBytes(), bl.begin(), len);
-        bl.length(len);
-        RubyString s = context.getRuntime().newString(bl);
-        s.setTaint(true);
-        return s;
+        return MemoryUtil.getTaintedByteString(context.getRuntime(), getMemoryIO(),
+                getOffset(offArg), Util.int32Value(lenArg));
     }
+
     @JRubyMethod(name = "put_bytes", required = 2, optional = 2)
     public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
         long off = getOffset(args[0]);
