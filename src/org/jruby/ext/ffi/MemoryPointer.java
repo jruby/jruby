@@ -18,8 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::BasePointer")
 public final class MemoryPointer extends BasePointer {
     private static final Factory factory = Factory.getInstance();
-    private final int typeSize;
-
+    
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("MemoryPointer",
                 module.getClass(BasePointer.BASE_POINTER_NAME),
@@ -31,8 +30,7 @@ public final class MemoryPointer extends BasePointer {
     }
 
     private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long total, int typeSize) {
-        super(runtime, (RubyClass) klass, io, total);
-        this.typeSize = typeSize;
+        super(runtime, (RubyClass) klass, io, total, typeSize);
     }
     
     private static final IRubyObject allocate(ThreadContext context, IRubyObject recv,
@@ -99,29 +97,7 @@ public final class MemoryPointer extends BasePointer {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<MemoryPointer address=%#x size=%d>", getAddress(), size));
     }
-
-    /**
-     * Indicates how many bytes the type that the pointer is cast as uses.
-     * 
-     * @param context
-     * @return
-     */
-    @JRubyMethod(name = "type_size")
-    public final IRubyObject type_size(ThreadContext context) {
-        return context.getRuntime().newFixnum(typeSize);
-    }
     
-    @JRubyMethod(name = "[]")
-    public final IRubyObject slice(ThreadContext context, IRubyObject indexArg) {
-        final int index = RubyNumeric.num2int(indexArg);
-        final int offset = index * typeSize;
-        if (offset >= size) {
-            throw context.getRuntime().newIndexError(String.format("Index %d out of range", index));
-        }
-        return new MemoryPointer(context.getRuntime(), getMetaClass(), (DirectMemoryIO) io.slice(offset),
-                size - offset, typeSize);
-    }
-
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).free();
