@@ -69,7 +69,7 @@ public class BasePointer extends Pointer {
                 String.format("#<Pointer address=0x%s>", hex));
     }
     
-    @JRubyMethod(name = "address")
+    @JRubyMethod(name = { "address", "to_i" })
     public IRubyObject address(ThreadContext context) {
         return context.getRuntime().newFixnum(getAddress());
     }
