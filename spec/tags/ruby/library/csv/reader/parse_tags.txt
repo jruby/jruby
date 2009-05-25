@@ -1,1 +1,0 @@
-fails(JRUBY-3393):CSV::Reader.parse calls block once for one row of input
