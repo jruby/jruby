@@ -754,8 +754,14 @@ abstract public class AbstractMemory extends RubyObject {
 
         long off = getOffset(offset);
         for (int i = 0; i < count; ++i) {
-            Pointer ptr = (Pointer) arr.entry(i);
-            getMemoryIO().putMemoryIO(off + (i * POINTER_SIZE), ptr.getMemoryIO());
+            IRubyObject ptr = arr.entry(i);
+            if (ptr instanceof Pointer) {
+                getMemoryIO().putMemoryIO(off + (i * POINTER_SIZE), ((Pointer) ptr).getMemoryIO());
+            } else if (ptr.isNil()) {
+                getMemoryIO().putAddress(off + (i * POINTER_SIZE), 0);
+            } else {
+                throw context.getRuntime().newTypeError(ptr, context.getRuntime().fastGetModule("FFI").fastGetClass("Pointer"));
+            }
         }
         return this;
     }
