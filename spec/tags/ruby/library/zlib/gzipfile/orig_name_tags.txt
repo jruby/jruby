@@ -1,2 +1,0 @@
-fails(JRUBY-2838):Zlib::GzipFile#orig_name returns the name
-fails(JRUBY-2838):Zlib::GzipFile#orig_name raises an error on a closed stream

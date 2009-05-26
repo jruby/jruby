@@ -12,6 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2009 Aurelian Oancea <aurelian@locknet.ro>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.joda.time.DateTime;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -272,7 +274,7 @@ public class RubyZlib {
             return this;
         }
 
-        @JRubyMethod(name = "flust_next_out")
+        @JRubyMethod(name = "flush_next_out")
         public IRubyObject flush_next_out() {
             return getRuntime().getNil();
         }
@@ -396,6 +398,12 @@ public class RubyZlib {
             return this;
         }
 
+        @Override
+        @JRubyMethod(name = "flush_next_out")
+        public IRubyObject flush_next_out() {
+            return infl.flush();
+        }
+
         @JRubyMethod(name = "<<", required = 1)
         public IRubyObject append(IRubyObject arg) {
             infl.append(arg);
@@ -422,6 +430,12 @@ public class RubyZlib {
             return infl.sync(string);
         }
 
+        @Override
+        @JRubyMethod(name = "finished?")
+        public IRubyObject finished_p() {
+            return infl.getInflater().finished() ? getRuntime().getTrue() : getRuntime().getFalse();
+        }
+
         protected int internalTotalOut() {
             return infl.getInflater().getTotalOut();
         }
@@ -443,12 +457,9 @@ public class RubyZlib {
         }
 
         protected IRubyObject internalFinish() throws Exception {
+            IRubyObject obj= infl.inflate(null);
             infl.finish();
-            return getRuntime().getNil();
-        }
-
-        public IRubyObject finished_p() {
-            return infl.getInflater().finished() ? getRuntime().getTrue() : getRuntime().getFalse();
+            return obj;
         }
 
         protected int internalTotalIn() {
@@ -640,14 +651,14 @@ public class RubyZlib {
         protected boolean finished = false;
         private int os_code = 255;
         private int level = -1;
-        private String orig_name;
-        private String comment;
+        protected String orig_name;
+        protected String comment;
         protected IRubyObject realIo;
-        private IRubyObject mtime;
+        protected RubyTime mtime;
 
         public RubyGzipFile(Ruby runtime, RubyClass type) {
             super(runtime, type);
-            mtime = runtime.getNil();
+            mtime = RubyTime.newTime(runtime, new DateTime());
         }
         
         @JRubyMethod(name = "os_code")
@@ -666,6 +677,10 @@ public class RubyZlib {
         
         @JRubyMethod(name = "orig_name")
         public IRubyObject orig_name() {
+            if(closed) {
+                RubyClass errorClass = getRuntime().fastGetModule("Zlib").fastGetClass("GzipFile").fastGetClass("Error");
+                throw new RaiseException(RubyException.newException(getRuntime(), errorClass, "closed gzip stream"));
+            }
             return orig_name == null ? getRuntime().getNil() : getRuntime().newString(orig_name);
         }
         
@@ -673,12 +688,16 @@ public class RubyZlib {
         public IRubyObject to_io() {
             return realIo;
         }
-        
+
         @JRubyMethod(name = "comment")
         public IRubyObject comment() {
-            return comment == null ? getRuntime().getNil() : getRuntime().newString(comment);
+            if(closed) {
+                RubyClass errorClass = getRuntime().fastGetModule("Zlib").fastGetClass("GzipFile").fastGetClass("Error");
+                throw new RaiseException(RubyException.newException(getRuntime(), errorClass, "closed gzip stream"));
+            }
+            return comment == null ? getRuntime().getNil() : RubyString.newString(getRuntime(), comment);
         }
-        
+
         @JRubyMethod(name = "crc")
         public IRubyObject crc() {
             return RubyFixnum.zero(getRuntime());
@@ -717,6 +736,7 @@ public class RubyZlib {
         public IRubyObject set_sync(IRubyObject ignored) {
             return getRuntime().getNil();
         }
+
     }
 
     @JRubyClass(name="Zlib::GzipReader", parent="Zlib::GzipFile", include="Enumerable")
@@ -750,6 +770,7 @@ public class RubyZlib {
         }
         
         private int line;
+        private int position;
         private InputStream io;
         
         @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE)
@@ -764,12 +785,16 @@ public class RubyZlib {
             }
 
             line = 1;
+            position= 0;
             
             return this;
         }
         
         @JRubyMethod(name = "rewind")
         public IRubyObject rewind() {
+            this.position= 0;
+            // should invoke seek on realIo
+            realIo.callMethod(getRuntime().getCurrentContext(), "seek", getRuntime().newFixnum(0));
             return getRuntime().getNil();
         }
         
@@ -808,6 +833,7 @@ public class RubyZlib {
               return getRuntime().getNil();
             }
             line++;
+            this.position= result.length();
             result.append(sep);
             return RubyString.newString(getRuntime(),result);
         }
@@ -833,6 +859,7 @@ public class RubyZlib {
                     val.append(buffer,0,read);
                     read = io.read(buffer);
                 }
+                this.position += val.length();
                 return RubyString.newString(getRuntime(),val);
             } 
 
@@ -852,6 +879,7 @@ public class RubyZlib {
             		toRead -= read;
             		offset += read;
             	} // hmm...
+                this.position += buffer.length;
             	return RubyString.newString(getRuntime(),new ByteList(buffer,0,len-toRead,false));
             }
                 
@@ -866,7 +894,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "pos")
         public IRubyObject pos() {
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.int2fix(getRuntime(), position);
         }
         
         @JRubyMethod(name = "readchar")
@@ -875,6 +903,7 @@ public class RubyZlib {
             if (value == -1) {
                 throw getRuntime().newEOFError();
             }
+            position++;
             return getRuntime().newFixnum(value);
         }
 
@@ -888,6 +917,7 @@ public class RubyZlib {
             return ((GZIPInputStream)io).available() == 0;
         }
 
+        @Override
         @JRubyMethod(name = "close")
         public IRubyObject close() throws IOException {
             if (!closed) {
@@ -1019,6 +1049,7 @@ public class RubyZlib {
             return this;
         }
 
+        @Override
         @JRubyMethod(name = "close")
         public IRubyObject close() throws IOException {
             if (!closed) {
@@ -1063,13 +1094,15 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "orig_name=", required = 1)
-        public IRubyObject set_orig_name(IRubyObject ignored) {
-            return getRuntime().getNil();
+        public IRubyObject set_orig_name(IRubyObject str) {
+            this.orig_name= str.convertToString().toString();
+            return str;
         }
 
         @JRubyMethod(name = "comment=", required = 1)
-        public IRubyObject set_comment(IRubyObject ignored) {
-            return getRuntime().getNil();
+        public IRubyObject set_comment(IRubyObject str) {
+            this.comment= str.convertToString().toString();
+            return str;
         }
 
         @JRubyMethod(name = "putc", required = 1)
@@ -1104,7 +1137,15 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "mtime=", required = 1)
-        public IRubyObject set_mtime(IRubyObject ignored) {
+        public IRubyObject set_mtime(IRubyObject arg) {
+            // XXX: cannot access gzip header infos on GZIPOutputStream, so this method does ...nothing.
+            if (arg instanceof RubyTime) {
+                this.mtime = ((RubyTime) arg);
+            } else if(arg.isNil()) {
+                // ...nothing
+            } else {
+                this.mtime.setDateTime(new DateTime( RubyNumeric.fix2long(arg)*1000 ));
+            }
             return getRuntime().getNil();
         }
 
