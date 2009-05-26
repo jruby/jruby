@@ -1,1 +1,0 @@
-fails(JRUBY-2838):Zlib::GzipFile#close finishes the stream and closes the io

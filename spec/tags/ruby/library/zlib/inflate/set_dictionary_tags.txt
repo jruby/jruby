@@ -1,1 +1,0 @@
-fails(JRUBY-2838):Zlib::Inflate#set_dictionary sets the inflate dictionary

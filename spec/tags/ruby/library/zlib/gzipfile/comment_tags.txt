@@ -1,2 +1,0 @@
-fails(JRUBY-2838):Zlib::GzipFile#comment returns the name
-fails(JRUBY-2838):Zlib::GzipFile#comment raises an error on a closed stream

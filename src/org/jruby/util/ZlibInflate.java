@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2006 Ola Bini <ola.bini@ki.se>
  * Copyright (C) 2006 Dave Brosius <dbrosius@mebigfatguy.com>
+ * Copyright (C) 2009 Aurelian Oancea <aurelian@locknet.ro>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,13 +35,17 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibInflate {
     private final Ruby runtime;
     private Inflater flater;    
     private ByteList collected;
+    private ByteList appended;
     
     public static final int BASE_SIZE = 100;
 
@@ -49,6 +54,7 @@ public class ZlibInflate {
         flater = new Inflater(false);
         collected = new ByteList(BASE_SIZE);
         runtime = caller.getRuntime();
+        appended= new ByteList();
     }
 
     public static IRubyObject s_inflate(IRubyObject caller, ByteList str) 
@@ -64,53 +70,8 @@ public class ZlibInflate {
         return flater;
     }
 
-    public void append(IRubyObject obj) {
-        append(obj.convertToString().getByteList());
-    }
-
-    public void append(ByteList obj) {
-        collected.append(obj);
-    }
-
     public IRubyObject sync_point() {
         return runtime.getFalse();
-    }
-
-    public IRubyObject set_dictionary(IRubyObject str) throws UnsupportedEncodingException {
-        flater.setDictionary(str.convertToString().getBytes());
-        return str;
-    }
-
-    public IRubyObject inflate(ByteList str) throws DataFormatException {
-        if (null != str) {
-            append(str);
-        }
-        ByteList result = new ByteList(collected.realSize);
-        byte[] outp = new byte[64 * 1024];
-        ByteList buf = collected;
-        collected = new ByteList(BASE_SIZE);
-        int resultLength = -1;
-        try {
-            flater.setInput(buf.bytes, buf.begin, buf.realSize);
-            while (!flater.finished() && resultLength != 0) {
-                resultLength = flater.inflate(outp);
-                result.append(outp, 0, resultLength);
-                if (resultLength == outp.length) {
-                    outp = new byte[outp.length * 2];
-                }
-            }
-        } catch (DataFormatException e) {
-            flater = new Inflater(true);
-            flater.setInput(buf.bytes, buf.begin, buf.realSize);
-            while (!flater.finished() && resultLength != 0) {
-                resultLength = flater.inflate(outp);
-                result.append(outp, 0, resultLength);
-                if (resultLength == outp.length) {
-                    outp = new byte[outp.length * 2];
-                }
-            }
-        }
-        return RubyString.newString(runtime, result);
     }
 
     public IRubyObject sync(IRubyObject str) {
@@ -118,8 +79,78 @@ public class ZlibInflate {
         return runtime.getFalse();
     }
 
-    public void finish() {
+    public void append(IRubyObject obj) {
+        append(obj.convertToString().getByteList());
+    }
+
+    public void append(ByteList obj) {
+        flater.setInput(obj.unsafeBytes(), obj.begin, obj.realSize);
+        appended.append(obj);
+        run();
+    }
+
+    private void run() {
+        byte[] outp = new byte[1024];
+        int resultLength = -1;
+
+        while (!flater.finished() && resultLength != 0) {
+            try {
+                resultLength = flater.inflate(outp);
+                if(flater.needsDictionary()) {
+                    RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("NeedDict");
+                    throw new RaiseException(RubyException.newException(runtime, errorClass, "need dictionary"));
+                }
+            } catch (DataFormatException ex) {
+                flater= new Inflater(true);
+                flater.setInput(appended.unsafeBytes(), appended.begin, appended.realSize);
+                appended= new ByteList();
+                run();
+                return;
+            }
+            collected.append(outp, 0, resultLength);
+            if (resultLength == outp.length) {
+                outp = new byte[outp.length * 2];
+            }
+            
+        }
+
+    }
+
+    public IRubyObject set_dictionary(IRubyObject str) throws UnsupportedEncodingException {
+        flater.setDictionary(str.convertToString().getBytes());
+        run();
+        return str;
+    }
+
+    public IRubyObject inflate(ByteList str) {
+        if (null == str) {
+            return finish();
+        } else {
+            append(str);
+            if(flater.finished()) {
+                return finish();
+            }
+            return RubyString.newEmptyString(runtime);
+        }
+    }
+
+    /*
+     * scenario:
+     * append ( str )
+     * flush -> str
+     * finished== true
+     * flush -> ""
+     */
+    public IRubyObject flush() {
+        IRubyObject ro= inflate(new ByteList(0));
+        collected= new ByteList(0);
+        return ro;
+    }
+
+    public IRubyObject finish() {
         flater.end();
+        run();
+        return RubyString.newString(runtime, collected);
     }
     
     public void close() {

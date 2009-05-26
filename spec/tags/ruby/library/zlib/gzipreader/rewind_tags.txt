@@ -1,2 +1,0 @@
-fails(JRUBY-2249):GzipReader#rewind resets the position of the file pointer
-fails(JRUBY-2249):GzipReader#rewind invokes seek method on the associated IO object
