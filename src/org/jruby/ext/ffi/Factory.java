@@ -183,7 +183,7 @@ public abstract class Factory {
      * 
      * @return A new <tt>MemoryIO</tt>.
      */
-    public abstract DirectMemoryIO wrapDirectMemory(long address);
+    public abstract DirectMemoryIO wrapDirectMemory(Ruby runtime, long address);
 
 
     public abstract CallbackManager getCallbackManager();

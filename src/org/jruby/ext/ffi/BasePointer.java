@@ -26,6 +26,9 @@ public class BasePointer extends Pointer {
         result.defineAnnotatedMethods(BasePointer.class);
         result.defineAnnotatedConstants(BasePointer.class);
 
+        // Add Pointer::NULL as a constant
+        module.getClass("Pointer").fastSetConstant("NULL", new BasePointer(runtime, new NullMemoryIO(runtime)));
+
         return result;
     }
     public static final RubyClass getBasePointerClass(Ruby runtime) {

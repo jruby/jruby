@@ -77,7 +77,7 @@ public final class ArrayMemoryIO implements MemoryIO {
 
     public final DirectMemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
-        return factory.wrapDirectMemory(getAddress(offset));
+        return factory.wrapDirectMemory(runtime, getAddress(offset));
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
