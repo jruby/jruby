@@ -414,11 +414,11 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
             // block
             if (closureArg == null) {
                 // no args, no block
-                signature = sig(IRubyObject.class, params(ThreadContext.class, String.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
             } else {
                 // no args, with block
                 closureArg.call(methodCompiler);
-                signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, Block.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
             }
         } else {
             argsCallback.call(methodCompiler);
@@ -430,13 +430,13 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                     signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
                     break;
                 case 2:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
                     break;
                 case 3:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
                     break;
                 default:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject[].class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
                 }
             } else {
                 // with args, with block
@@ -444,16 +444,16 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 
                 switch (argsCallback.getArity()) {
                 case 1:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
                     break;
                 case 2:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
                 case 3:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
                 default:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, String.class, IRubyObject[].class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
                 }
             }
         }
