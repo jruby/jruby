@@ -196,6 +196,11 @@ public class RubyDateFormat extends DateFormat {
                     case 'p':
                         compiledPattern.add(new Token(FORMAT_MERIDIAN));
                         break;
+                    case 'R':
+                        compiledPattern.add(new Token(FORMAT_HOUR));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(new Token(FORMAT_MINUTES));
+                        break;                        
                     case 'S':
                         compiledPattern.add(new Token(FORMAT_SECONDS));
                         break;
