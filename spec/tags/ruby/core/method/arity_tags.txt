@@ -1,0 +1,1 @@
+fails(JRUBY-3706):Method#arity returns n, where n is the number of required arguments, when there are zero or more required arguments only

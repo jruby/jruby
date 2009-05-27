@@ -310,8 +310,12 @@ public class RubyStruct extends RubyObject {
             throw getRuntime().newArgumentError("struct size differs (" + args.length +" for " + size + ")");
         }
 
-        for (int i = 0; i < args.length; i++) {
-            values[i] = args[i];
+        for (int i = 0; i < size; i++) {
+            if (i < args.length) {
+                values[i] = args[i];
+            } else {
+                values[i] = getRuntime().getNil();
+            }
         }
 
         return getRuntime().getNil();
