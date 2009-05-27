@@ -21,4 +21,15 @@ public class NullMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
     public final boolean isDirect() {
         return true;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof DirectMemoryIO && ((DirectMemoryIO) obj).getAddress() == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
 }
