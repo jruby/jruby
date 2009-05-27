@@ -166,8 +166,10 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
                         methodDescs.add(md);
 
+                        // check for frame field reads or writes
                         if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
-                            frameOrScopeAwareMethods.add(name);
+                            // add all names for this annotation
+                            frameOrScopeAwareMethods.addAll(Arrays.asList(anno.name()));
                         }
                     }
 
