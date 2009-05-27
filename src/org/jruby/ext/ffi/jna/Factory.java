@@ -39,6 +39,7 @@ import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ThreadContext;
@@ -90,7 +91,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return AllocatedNativeMemoryIO.allocate(size, clear);
     }
 
-    public DirectMemoryIO wrapDirectMemory(long address) {
+    public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
         com.sun.jna.Pointer ptr;
         if (Platform.getPlatform().addressSize() == 32) {
             IntByReference ref = new IntByReference((int) address);
@@ -99,7 +100,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             LongByReference ref = new LongByReference(address);
             ptr = ref.getPointer().getPointer(0);
         }
-        return ptr != null ? new NativeMemoryIO(ptr) : null;
+        return ptr != null ? new NativeMemoryIO(ptr) : new NullMemoryIO(runtime);
     }
     public CallbackManager getCallbackManager() {
         return new CallbackManager() {
