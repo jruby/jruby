@@ -29,6 +29,7 @@ public abstract class Pointer extends AbstractMemory {
 
         return result;
     }
+
     protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io) {
         super(runtime, klass, io, Long.MAX_VALUE);
     }
@@ -42,14 +43,14 @@ public abstract class Pointer extends AbstractMemory {
     @JRubyMethod(name = { "new" }, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject address) {
         return new BasePointer(context.getRuntime(),
-                Factory.getInstance().wrapDirectMemory(RubyFixnum.num2long(address)));
+                Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address)));
     }
 
     @JRubyMethod(name = { "new" }, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv,
             IRubyObject type, IRubyObject address) {
         return new BasePointer(context.getRuntime(), 
-                Factory.getInstance().wrapDirectMemory(RubyFixnum.num2long(address)),
+                Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address)),
                 Long.MAX_VALUE, calculateSize(context, type));
     }
 
