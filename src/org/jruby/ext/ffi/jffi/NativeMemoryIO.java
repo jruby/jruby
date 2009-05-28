@@ -1,22 +1,33 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.Ruby;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
+import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 
 class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     protected static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     final NativeMemoryIO parent; // keep a reference to avoid the memory being freed
     final long address;
+    private final Ruby runtime;
 
-    NativeMemoryIO(long address) {
+    static final DirectMemoryIO wrap(Ruby runtime, long address) {
+        return address != 0
+                ? new NativeMemoryIO(runtime, address)
+                : new NullMemoryIO(runtime);
+    }
+
+    NativeMemoryIO(Ruby runtime, long address) {
+        this.runtime = runtime;
         this.address = address;
         this.parent = null;
     }
     private NativeMemoryIO(NativeMemoryIO parent, long offset) {
         this.parent = parent;
         this.address = parent.address + offset;
+        this.runtime = parent.runtime;
     }
 
     public final long getAddress() {
@@ -82,7 +93,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public final DirectMemoryIO getMemoryIO(long offset) {
         final long ptr = IO.getAddress(address + offset);
-        return ptr != 0 ? new NativeMemoryIO(ptr) : null;
+        return ptr != 0 ? new NativeMemoryIO(runtime, ptr) : new NullMemoryIO(runtime);
     }
 
     public final void putByte(long offset, byte value) {

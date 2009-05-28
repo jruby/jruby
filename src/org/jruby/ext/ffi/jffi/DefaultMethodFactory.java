@@ -435,7 +435,7 @@ public final class DefaultMethodFactory {
     private static final class PointerInvoker extends BaseInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
             final long address = invoker.invokeAddress(function, args);
-            return new BasePointer(runtime, address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(runtime));
+            return new BasePointer(runtime, NativeMemoryIO.wrap(runtime, address));
         }
         public static final FunctionInvoker INSTANCE = new PointerInvoker();
     }

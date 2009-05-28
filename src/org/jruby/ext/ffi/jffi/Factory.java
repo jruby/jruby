@@ -62,12 +62,8 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return AllocatedNativeMemoryIO.allocate(runtime, size, clear);
     }
 
-    public DirectMemoryIO wrapDirectMemory(long address) {
-        return address != 0 ? new NativeMemoryIO(address) : null;
-    }
-
     public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
-        return address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(runtime);
+        return address != 0 ? new NativeMemoryIO(runtime, address) : new NullMemoryIO(runtime);
     }
 
     @Override

@@ -4,6 +4,7 @@ package org.jruby.ext.ffi.jffi;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
+import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Util;
 
@@ -105,7 +106,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public final DirectMemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
         final long ptr = IO.getAddress(address + offset);
-        return ptr != 0 ? new NativeMemoryIO(ptr) : null;
+        return ptr != 0 ? new NativeMemoryIO(runtime, ptr) : new NullMemoryIO(runtime);
     }
 
     public final void putByte(long offset, byte value) {

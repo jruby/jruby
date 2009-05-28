@@ -79,8 +79,10 @@ public class DynamicLibrary extends RubyObject {
         if (address == 0L) {
             return context.getRuntime().getNil();
         }
-        return new Symbol(context.getRuntime(), this, sym, new NativeMemoryIO(address));
+
+        return new Symbol(context.getRuntime(), this, sym, new NativeMemoryIO(context.getRuntime(), address));
     }
+
     @JRubyMethod(name = {  "find_function" })
     public IRubyObject findFunction(ThreadContext context, IRubyObject symbolName) {
         final String sym = symbolName.toString();
