@@ -14,7 +14,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
@@ -391,9 +390,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                         return runtime.getNil();
                     }
                 } else {
-                    return new BasePointer(runtime, address != 0
-                            ? new NativeMemoryIO(address)
-                            : new NullMemoryIO(runtime));
+                    return new BasePointer(runtime, NativeMemoryIO.wrap(runtime, address));
                 }
             }
             case STRING:

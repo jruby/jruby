@@ -3,9 +3,10 @@ package org.jruby.ext.ffi.jna;
 import com.sun.jna.Memory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 
-final class AllocatedNativeMemoryIO extends NativeMemoryIO implements AllocatedDirectMemoryIO {
+final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
 
     /**
      * Used to hold a permanent reference to a memory pointer so it does not get
@@ -22,16 +23,16 @@ final class AllocatedNativeMemoryIO extends NativeMemoryIO implements AllocatedD
      *
      * @return A new <tt>MemoryIO</tt> instance that can access the memory.
      */
-    static final AllocatedNativeMemoryIO allocate(int size, boolean clear) {
+    static final AllocatedNativeMemoryIO allocate(Ruby runtime, int size, boolean clear) {
         Memory memory = new Memory(size);
         if (clear) {
             memory.setMemory(0, size, (byte) 0);
         }
-        return new AllocatedNativeMemoryIO(memory, size);
+        return new AllocatedNativeMemoryIO(runtime, memory, size);
     }
 
-    public AllocatedNativeMemoryIO(Memory memory, int size) {
-        super(memory);
+    public AllocatedNativeMemoryIO(Ruby runtime, Memory memory, int size) {
+        super(runtime, memory, size);
     }
 
     public final void free() {

@@ -225,8 +225,7 @@ public class FastIntMethodFactory {
         public static final IntResultConverter INSTANCE = new PointerResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
             final long address = ((long) value) & ADDRESS_MASK;
-            return new BasePointer(context.getRuntime(),
-                    address != 0 ? new NativeMemoryIO(address) : new NullMemoryIO(context.getRuntime()));
+            return new BasePointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
         }
     }
 

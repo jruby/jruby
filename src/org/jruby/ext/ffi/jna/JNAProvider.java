@@ -284,7 +284,7 @@ public final class JNAProvider {
     private static final class PointerInvoker implements FunctionInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, Object[] args) {
             com.sun.jna.Pointer ptr = function.invokePointer(args);
-            return new BasePointer(runtime, ptr != null ? new NativeMemoryIO(ptr) : new NullMemoryIO(runtime));
+            return new BasePointer(runtime, NativeMemoryIO.wrap(runtime, ptr));
         }
         public static final FunctionInvoker INSTANCE = new PointerInvoker();
     }

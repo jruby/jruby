@@ -88,7 +88,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      * @return A new <tt>MemoryIO</tt>.
      */
     public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
-        return AllocatedNativeMemoryIO.allocate(size, clear);
+        return AllocatedNativeMemoryIO.allocate(runtime, size, clear);
     }
 
     public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
@@ -100,8 +100,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             LongByReference ref = new LongByReference(address);
             ptr = ref.getPointer().getPointer(0);
         }
-        return ptr != null ? new NativeMemoryIO(ptr) : new NullMemoryIO(runtime);
+        return NativeMemoryIO.wrap(runtime, ptr);
     }
+
     public CallbackManager getCallbackManager() {
         return new CallbackManager() {
             @Override

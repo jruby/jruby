@@ -85,9 +85,6 @@ public class BasePointer extends Pointer {
     }
 
     protected BasePointer getPointer(Ruby runtime, long offset) {
-        DirectMemoryIO ptr = (DirectMemoryIO) getMemoryIO().getMemoryIO(offset);
-        return new BasePointer(runtime,
-                ptr != null && !ptr.isNull() ? ptr : new NullMemoryIO(runtime),
-                Long.MAX_VALUE);
+        return new BasePointer(runtime, getMemoryIO().getMemoryIO(offset), Long.MAX_VALUE);
     }
 }

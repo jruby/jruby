@@ -109,8 +109,7 @@ public class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public final DirectMemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
-        Pointer p = ptr.getPointer(offset);
-        return p != null ? new NativeMemoryIO(p) : null;
+        return NativeMemoryIO.wrap(runtime, ptr.getPointer(offset));
     }
 
     public final float getFloat(long offset) {
