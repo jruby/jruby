@@ -3,7 +3,8 @@ externals/ruby1.8/csv/test_csv
 # seems to not load correctly in test run
 #externals/ruby1.8/digest/test_digest
 externals/ruby1.8/logger/test_logger
-externals/ruby1.8/io/nonblock/test_flush
+# JRUBY-3711
+#externals/ruby1.8/io/nonblock/test_flush
 externals/ruby1.8/monitor/test_monitor
 externals/ruby1.8/net/http/test_httpheader
 externals/ruby1.8/nkf/test_nkf
