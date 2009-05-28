@@ -7,7 +7,8 @@ externals/ruby1.8/logger/test_logger
 #externals/ruby1.8/io/nonblock/test_flush
 externals/ruby1.8/monitor/test_monitor
 externals/ruby1.8/net/http/test_httpheader
-externals/ruby1.8/nkf/test_nkf
+# JRUBY-3712
+#externals/ruby1.8/nkf/test_nkf
 externals/ruby1.8/openssl/test_hmac
 externals/ruby1.8/openssl/test_digest
 externals/ruby1.8/optparse/test_getopts
