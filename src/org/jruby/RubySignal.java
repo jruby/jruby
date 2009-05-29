@@ -87,7 +87,7 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(name = "__jtrap_kernel", required = 2,meta = true)
+    @JRubyMethod(name = "__jtrap_kernel", required = 2, module = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return SIGNALS.trap(recv, block, sig);
     }
