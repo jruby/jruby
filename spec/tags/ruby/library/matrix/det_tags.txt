@@ -1,0 +1,1 @@
+fails(JRUBY-3716):Matrix#det returns the determinant of a square Matrix

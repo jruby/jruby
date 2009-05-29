@@ -1940,12 +1940,12 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "included", required = 1)
+    @JRubyMethod(name = "included", required = 1, visibility = PRIVATE)
     public IRubyObject included(ThreadContext context, IRubyObject other) {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "extended", required = 1, frame = true)
+    @JRubyMethod(name = "extended", required = 1, frame = true, visibility = PRIVATE)
     public IRubyObject extended(ThreadContext context, IRubyObject other, Block block) {
         return context.getRuntime().getNil();
     }
