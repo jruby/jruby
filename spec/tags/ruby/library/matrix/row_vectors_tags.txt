@@ -1,0 +1,3 @@
+fails(JRUBY-3716):Matrix#row_vectors returns an Array
+fails(JRUBY-3716):Matrix#row_vectors returns an Array of Vectors
+fails(JRUBY-3716):Matrix#row_vectors returns an empty Array for empty matrices
