@@ -1,6 +1,9 @@
 # Our own test/unit-based tests
 # NOTE: test_globals comes first here because it has tests that $? be nil
 test_globals
+# NOTE: test_object_class_default_methods comes early because it depends
+#       on no additional methods existing on the Object class
+test_object_class_default_methods
 test_argf
 test_array
 test_array_subclass_behavior
