@@ -416,6 +416,15 @@ public final class ThreadContext {
     public int getFrameCount() {
         return frameIndex + 1;
     }
+
+    public Frame[] getFrames(int delta) {
+        int top = frameIndex + delta;
+        Frame[] frames = new Frame[top + 1];
+        for (int i = 0; i <= top; i++) {
+            frames[i] = frameStack[i].duplicateForBacktrace();
+        }
+        return frames;
+    }
     
     public String getFrameName() {
         return getCurrentFrame().getName();
@@ -1238,9 +1247,11 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preRunThread(Frame currentFrame) {
-        setFileAndLine(currentFrame);
-        pushFrame(currentFrame);
+    public void preRunThread(Frame[] currentFrames) {
+        for (Frame frame : currentFrames) {
+            pushFrame(frame);
+        }
+        setFileAndLine(getCurrentFrame());
     }
     
     public void preTrace() {
