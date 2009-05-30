@@ -325,10 +325,16 @@ public class ChannelStream implements Stream, Finalizable {
     }
     
     public synchronized ByteList readall() throws IOException, BadDescriptorException {
-        if (descriptor.isSeekable()) {
+        final long fileSize = descriptor.getChannel() instanceof FileChannel
+                ? ((FileChannel) descriptor.getChannel()).size() : 0;
+        //
+        // Check file size - special files in /proc have zero size and need to be
+        // handled by the generic read path.
+        //
+        if (fileSize > 0) {
             invalidateBuffer();
             FileChannel channel = (FileChannel)descriptor.getChannel();
-            long left = channel.size() - channel.position();
+            long left = fileSize - channel.position();
             if (left <= 0) {
                 eof = true;
                 return null;
@@ -342,7 +348,7 @@ public class ChannelStream implements Stream, Finalizable {
                 ungotc = -1;
             }
             while (buf.hasRemaining()) {
-                int n = ((ReadableByteChannel) descriptor.getChannel()).read(buf);
+                int n = channel.read(buf);
                 if (n <= 0) {
                     break;
                 }
