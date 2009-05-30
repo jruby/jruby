@@ -292,6 +292,10 @@ public abstract class StaticScope implements Serializable {
         return previousCRefScope;
     }
 
+    public void setPreviousCRefScope(StaticScope crefScope) {
+        this.previousCRefScope = crefScope;
+    }
+
     public void setModule(RubyModule module) {
         this.cref = module;
         
