@@ -235,7 +235,7 @@ public class RubyThread extends RubyObject {
         Ruby runtime = getRuntime();
         if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
 
-        RubyRunnable runnable = new RubyRunnable(this, args, block);
+        RubyRunnable runnable = new RubyRunnable(this, args, context.getFrames(0), block);
         if (RubyInstanceConfig.POOLING_ENABLED) {
             FutureThread futureThread = new FutureThread(this, runnable);
             threadImpl = futureThread;
@@ -486,7 +486,7 @@ public class RubyThread extends RubyObject {
 	}
     }
 
-    @JRubyMethod(name = "value")
+    @JRubyMethod(name = "value", frame = true)
     public IRubyObject value() {
         join(new IRubyObject[0]);
         synchronized (this) {

@@ -229,6 +229,21 @@ public final class Frame implements JumpTarget {
     }
 
     /**
+     * Clone this frame for use in backtraces only (avoiding long-lived
+     * references to other elements.
+     *
+     * @return A new frame with identical backtrace information to this frame
+     */
+    public Frame duplicateForBacktrace() {
+        Frame backtraceFrame = new Frame();
+        backtraceFrame.fileName = fileName;
+        backtraceFrame.line = line;
+        backtraceFrame.name = name;
+        backtraceFrame.isBindingFrame = isBindingFrame;
+        return backtraceFrame;
+    }
+
+    /**
      * Get the jump target for non-local returns in this frame.
      * 
      * @return The jump target for non-local returns
