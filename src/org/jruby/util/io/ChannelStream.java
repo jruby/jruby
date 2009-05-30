@@ -332,14 +332,17 @@ public class ChannelStream implements Stream, Finalizable {
         // handled by the generic read path.
         //
         if (fileSize > 0) {
-            invalidateBuffer();
+            ensureRead();
+            
             FileChannel channel = (FileChannel)descriptor.getChannel();
-            long left = fileSize - channel.position();
+            final long left = fileSize - channel.position()
+                    + buffer.remaining()
+                    + (ungotc != -1 ? 1 : 0);
             if (left <= 0) {
                 eof = true;
                 return null;
             }
-            left += ungotc != -1 ? 1 : 0;
+            
             ByteList result = new ByteList((int) left);
             ByteBuffer buf = ByteBuffer.wrap(result.unsafeBytes(), 
                     result.begin(), (int) left);
@@ -347,6 +350,12 @@ public class ChannelStream implements Stream, Finalizable {
                 buf.put((byte) ungotc);
                 ungotc = -1;
             }
+
+            copyBufferedBytes(buf);
+            
+            //
+            // Now read unbuffered directly from the file
+            //
             while (buf.hasRemaining()) {
                 int n = channel.read(buf);
                 if (n <= 0) {
@@ -377,7 +386,29 @@ public class ChannelStream implements Stream, Finalizable {
             return byteList;
         } 
     }
-    
+
+    /**
+     * Copies bytes from the channel buffer into a destination <tt>ByteBuffer</tt>
+     *
+     * @param dst A <tt>ByteBuffer</tt> to place the data in.
+     * @return The number of bytes copied.
+     */
+    private final int copyBufferedBytes(ByteBuffer dst) {
+        final int bytesToCopy = dst.remaining();
+        //
+        // Copy out any buffered bytes
+        //
+        if (dst.remaining() >= buffer.remaining()) {
+            dst.put(buffer);
+        } else {
+            ByteBuffer tmp = buffer.duplicate();
+            tmp.limit(dst.remaining());
+            dst.put(tmp);
+        }
+        
+        return bytesToCopy - dst.remaining();
+    }
+
     /**
      * <p>Close IO handler resources.</p>
      * @throws IOException 
