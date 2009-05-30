@@ -69,10 +69,11 @@ public class InvokeDynamicSupport {
         MethodHandle myTarget = MethodHandles.insertArgument(target, 0, entry);
         MethodHandle myFallback = MethodHandles.insertArgument(fallback, 0, site);
         MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, myTarget, myFallback);
+        
         return MethodHandles.convertArguments(guardWithTest, site.type());
     }
 
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name) {
+    public static boolean test(CacheEntry entry, IRubyObject self) {
         return entry.typeOk(self.getMetaClass());
     }
 
@@ -92,10 +93,6 @@ public class InvokeDynamicSupport {
         return entry.method.call(context, self, selfClass, name);
     }
 
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0) {
-        return entry.typeOk(self.getMetaClass());
-    }
-
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0) {
         RubyClass selfClass = pollAndGetClass(context, self);
         return entry.method.call(context, self, selfClass, name, arg0);
@@ -112,10 +109,6 @@ public class InvokeDynamicSupport {
         return entry.method.call(context, self, selfClass, name, arg0);
     }
 
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
-        return entry.typeOk(self.getMetaClass());
-    }
-
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
         RubyClass selfClass = pollAndGetClass(context, self);
         return entry.method.call(context, self, selfClass, name, arg0, arg1);
@@ -130,10 +123,6 @@ public class InvokeDynamicSupport {
         site.setTarget(createGWT(TEST_2, TARGET_2, FALLBACK_2, entry, site));
 
         return entry.method.call(context, self, selfClass, name, arg0, arg1);
-    }
-
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return entry.typeOk(self.getMetaClass());
     }
 
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
@@ -172,10 +161,6 @@ public class InvokeDynamicSupport {
         return entry.method.call(context, self, selfClass, name, args);
     }
 
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) {
-        return entry.typeOk(self.getMetaClass());
-    }
-
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) {
         try {
             RubyClass selfClass = pollAndGetClass(context, self);
@@ -206,10 +191,6 @@ public class InvokeDynamicSupport {
         } finally {
             block.escape();
         }
-    }
-
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) {
-        return entry.typeOk(self.getMetaClass());
     }
 
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) {
@@ -244,10 +225,6 @@ public class InvokeDynamicSupport {
         }
     }
 
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return entry.typeOk(self.getMetaClass());
-    }
-
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         try {
             RubyClass selfClass = pollAndGetClass(context, self);
@@ -280,10 +257,6 @@ public class InvokeDynamicSupport {
         }
     }
 
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return entry.typeOk(self.getMetaClass());
-    }
-
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         try {
             RubyClass selfClass = pollAndGetClass(context, self);
@@ -314,10 +287,6 @@ public class InvokeDynamicSupport {
         } finally {
             block.escape();
         }
-    }
-
-    public static boolean test(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) {
-        return entry.typeOk(self.getMetaClass());
     }
 
     public static IRubyObject target(CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) {
@@ -417,71 +386,67 @@ public class InvokeDynamicSupport {
     private static final MethodType BOOTSTRAP_TYPE = MethodType.make(CallSite.class, Class.class, String.class, MethodType.class);
     private static final MethodHandle BOOTSTRAP = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "bootstrap", BOOTSTRAP_TYPE);
 
-    private static final MethodHandle TEST_0 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+    private static final MethodHandle TEST = MethodHandles.dropArguments(
+            MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
+                MethodType.make(boolean.class, CacheEntry.class, IRubyObject.class)),
+            1,
+            ThreadContext.class, IRubyObject.class);
+
+    private static final MethodHandle TEST_0 = MethodHandles.dropArguments(TEST, 4, String.class);
     private static final MethodHandle TARGET_0 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
     private static final MethodHandle FALLBACK_0 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
 
-    private static final MethodHandle TEST_1 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+    private static final MethodHandle TEST_1 = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject.class);
     private static final MethodHandle TARGET_1 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
     private static final MethodHandle FALLBACK_1 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_2 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+    private static final MethodHandle TEST_2 = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject.class, IRubyObject.class);
     private static final MethodHandle TARGET_2 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FALLBACK_2 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_3 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+    private static final MethodHandle TEST_3 = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
     private static final MethodHandle TARGET_3 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FALLBACK_3 = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_N = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+    private static final MethodHandle TEST_N = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject[].class);
     private static final MethodHandle TARGET_N = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
     private static final MethodHandle FALLBACK_N = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
 
-    private static final MethodHandle TEST_0_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+    private static final MethodHandle TEST_0_B = MethodHandles.dropArguments(TEST, 4, String.class, Block.class);
     private static final MethodHandle TARGET_0_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
     private static final MethodHandle FALLBACK_0_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
 
-    private static final MethodHandle TEST_1_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+    private static final MethodHandle TEST_1_B = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject.class, Block.class);
     private static final MethodHandle TARGET_1_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
     private static final MethodHandle FALLBACK_1_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_2_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+    private static final MethodHandle TEST_2_B = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject.class, IRubyObject.class, Block.class);
     private static final MethodHandle TARGET_2_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FALLBACK_2_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_3_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+    private static final MethodHandle TEST_3_B = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
     private static final MethodHandle TARGET_3_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FALLBACK_3_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_N_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "test",
-            MethodType.make(boolean.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+    private static final MethodHandle TEST_N_B = MethodHandles.dropArguments(TEST, 4, String.class, IRubyObject[].class, Block.class);
     private static final MethodHandle TARGET_N_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "target",
             MethodType.make(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
     private static final MethodHandle FALLBACK_N_B = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
