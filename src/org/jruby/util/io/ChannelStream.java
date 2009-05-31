@@ -325,7 +325,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
     
     public synchronized ByteList readall() throws IOException, BadDescriptorException {
-        final long fileSize = descriptor.getChannel() instanceof FileChannel
+        final long fileSize = descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel
                 ? ((FileChannel) descriptor.getChannel()).size() : 0;
         //
         // Check file size - special files in /proc have zero size and need to be
@@ -771,26 +771,49 @@ public class ChannelStream implements Stream, Finalizable {
     private ByteList bufferedRead(int number) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();
-        
-        ByteList result = new ByteList(0);
-        
-        int len = -1;
 
+        int resultSize = 0;
+
+        // 128K seems to be the minimum at which the stat+seek is faster than reallocation
+        final int BULK_THRESHOLD = 128 * 1024; 
+        if (number >= BULK_THRESHOLD && descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
+            //
+            // If it is a file channel, then we can pre-allocate the output buffer
+            // to the total size of buffered + remaining bytes in file
+            //
+            FileChannel fileChannel = (FileChannel) descriptor.getChannel();
+            resultSize = (int) Math.min(fileChannel.size() - fileChannel.position() + bufferedBytesAvailable(), number);
+        } else {
+            //
+            // Cannot discern the total read length - allocate at least enough for the buffered data
+            //
+            resultSize = Math.min(bufferedBytesAvailable(), number);
+        }
+
+        ByteList result = new ByteList(resultSize);
+        bufferedRead(result, number);
+        return result;
+    }
+
+    private int bufferedRead(ByteList dst, int number) throws IOException, BadDescriptorException {
+  
+        int bytesRead = 0;
+        
         //
         // Copy what is in the buffer, if there is some buffered data
         //
-        copyBufferedBytes(result, number);
+        bytesRead += copyBufferedBytes(dst, number);
         
         boolean done = false;
         //
         // Avoid double-copying for reads that are larger than the buffer size
         //
-        while ((number - result.length()) >= BUFSIZE) {
+        while ((number - bytesRead) >= BUFSIZE) {
             //
             // limit each iteration to a max of BULK_READ_SIZE to avoid over-size allocations
             //
-            int bytesToRead = Math.min(BULK_READ_SIZE, number - result.length());
-            int n = descriptor.read(bytesToRead, result);
+            final int bytesToRead = Math.min(BULK_READ_SIZE, number - bytesRead);
+            final int n = descriptor.read(bytesToRead, dst);
             if (n == -1) {
                 eof = true;
                 done = true;
@@ -799,12 +822,13 @@ public class ChannelStream implements Stream, Finalizable {
                 done = true;
                 break;
             }
+            bytesRead += n;
         }
         
         //
         // Complete the request by filling the read buffer first
         //
-        while (!done && result.length() != number) {
+        while (!done && bytesRead < number) {
             int read = refillBuffer();
             
             if (read == -1) {
@@ -815,17 +839,18 @@ public class ChannelStream implements Stream, Finalizable {
             }
             
             // append what we read into our buffer and allow the loop to continue
-            int desired = number - result.length();
-            len = (desired < read) ? desired : read;
-            result.append(buffer, len);
+            final int len = Math.min(buffer.remaining(), number - bytesRead);
+            dst.append(buffer, len);
+            bytesRead += len;
         }
         
-        if (result.length() == 0 && number != 0) {
+        if (bytesRead == 0 && number != 0) {
             if (eof) {
                 throw new EOFException();
             }
         }
-        return result;
+
+        return bytesRead;
     }
 
     private int bufferedRead(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException {
