@@ -335,9 +335,7 @@ public class ChannelStream implements Stream, Finalizable {
             ensureRead();
             
             FileChannel channel = (FileChannel)descriptor.getChannel();
-            final long left = fileSize - channel.position()
-                    + buffer.remaining()
-                    + (ungotc != -1 ? 1 : 0);
+            final long left = fileSize - channel.position() + bufferedBytesAvailable();
             if (left <= 0) {
                 eof = true;
                 return null;
@@ -346,11 +344,10 @@ public class ChannelStream implements Stream, Finalizable {
             ByteList result = new ByteList((int) left);
             ByteBuffer buf = ByteBuffer.wrap(result.unsafeBytes(), 
                     result.begin(), (int) left);
-            if (ungotc != -1) {
-                buf.put((byte) ungotc);
-                ungotc = -1;
-            }
-
+            
+            //
+            // Copy any buffered data (including ungetc byte)
+            //
             copyBufferedBytes(buf);
             
             //
@@ -395,18 +392,40 @@ public class ChannelStream implements Stream, Finalizable {
      */
     private final int copyBufferedBytes(ByteBuffer dst) {
         final int bytesToCopy = dst.remaining();
-        //
-        // Copy out any buffered bytes
-        //
-        if (dst.remaining() >= buffer.remaining()) {
-            dst.put(buffer);
-        } else {
-            ByteBuffer tmp = buffer.duplicate();
-            tmp.limit(dst.remaining());
-            dst.put(tmp);
+
+        if (ungotc != -1 && dst.hasRemaining()) {
+            dst.put((byte) ungotc);
+            ungotc = -1;
         }
         
+        if (buffer.hasRemaining() && dst.hasRemaining()) {
+
+            if (dst.remaining() >= buffer.remaining()) {
+                //
+                // Copy out any buffered bytes
+                //
+                dst.put(buffer);
+
+            } else {
+                //
+                // Need to clamp source (buffer) size to avoid overrun
+                //
+                ByteBuffer tmp = buffer.duplicate();
+                tmp.limit(dst.remaining());
+                dst.put(tmp);
+            }
+        }
+
         return bytesToCopy - dst.remaining();
+    }
+
+    /**
+     * Returns a count of how many bytes are available in the read buffer
+     * 
+     * @return The number of bytes that can be read without reading the underlying stream.
+     */
+    private final int bufferedBytesAvailable() {
+        return buffer.remaining() + (reading && ungotc != -1 ? 1 : 0);
     }
 
     /**
@@ -785,7 +804,7 @@ public class ChannelStream implements Stream, Finalizable {
         int bytesRead = 0;
 
         // already have some bytes buffered, so bulk copy to the destination
-        if (buffer.hasRemaining()) {
+        if (bufferedBytesAvailable() > 0) {
             bytesRead += copyBufferedBytes(dst);
         }
 
@@ -793,7 +812,7 @@ public class ChannelStream implements Stream, Finalizable {
         // Avoid double-copying for reads that are larger than the buffer size, or
         // the destination is a direct buffer.
         //
-        while ((dst.remaining() >= BUFSIZE || dst.isDirect()) && (bytesRead < 1 || !partial)) {
+        while ((bytesRead < 1 || !partial) && (dst.remaining() >= BUFSIZE || dst.isDirect())) {
             ByteBuffer tmpDst = dst;
             if (!dst.isDirect()) {
                 //
@@ -1149,23 +1168,8 @@ public class ChannelStream implements Stream, Finalizable {
     
     public synchronized int read(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException, EOFException {
         assert dst.hasRemaining();
-        
-        int bytesRead = 0;
 
-        // make sure that the ungotc is not forgotten
-        if (ungotc != -1 && dst.hasRemaining()) {
-            dst.put((byte) ungotc);
-            ungotc = -1;
-            ++bytesRead;
-        }
-
-        // If no bytes read, or there are buffered bytes available, then do a partial 
-        // buffered read to scoop up bytes from the buffer and possibly from the channel.
-        if (bytesRead < 1 || !partial || buffer.hasRemaining()) {
-            return bufferedRead(dst, partial);
-        } else {
-            return eof ? -1 : bytesRead;
-        }
+        return bufferedRead(dst, partial);
     }
 
     public synchronized int read() throws IOException, BadDescriptorException {
