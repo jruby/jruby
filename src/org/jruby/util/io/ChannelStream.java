@@ -776,19 +776,6 @@ public class ChannelStream implements Stream, Finalizable {
         }
         return result;
     }
-    
-    private int copyBufferedBytes(ByteBuffer dst) {
-        int bytesToRead = dst.remaining();
-        if (buffer.remaining() > dst.remaining()) {
-            ByteBuffer src = buffer.duplicate();
-            src.limit(dst.remaining());
-            dst.put(buffer);
-        } else {
-            dst.put(buffer);
-        }
-        
-        return bytesToRead - dst.remaining();
-    }
 
     private int bufferedRead(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException {
         checkReadable();
