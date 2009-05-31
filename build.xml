@@ -46,6 +46,7 @@
   </patternset>
 
   <import file="netbeans-ant.xml" optional="true"/>
+  <import file="ivy/build.xml" />
 
   <!-- Initializes the build -->
   <target name="init">

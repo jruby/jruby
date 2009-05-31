@@ -26,3 +26,4 @@ gem/pkg
 *.orig
 *.rej
 tool/nailgun/ng
+jruby-findbugs.html
