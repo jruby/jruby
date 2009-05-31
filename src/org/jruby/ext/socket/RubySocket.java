@@ -536,9 +536,20 @@ public class RubySocket extends RubyBasicSocket {
             String arg = ((RubyString)arg0).toString();
             Matcher m = STRING_ADDRESS_PATTERN.matcher(arg);
             if (!m.matches()) {
-                throw runtime.newArgumentError("invalid address string");
-            }
-            if ((host = m.group(HOST_GROUP)) == null || host.length() == 0 ||
+                IRubyObject obj = unpack_sockaddr_in(context, recv, arg0);
+                if (obj instanceof RubyArray) {
+                    List list = ((RubyArray)obj).getList();
+                    int len = list.size();
+                    if (len != 2) {
+                        throw runtime.newArgumentError("invalid address representation");
+                    }
+                    host = list.get(1).toString();
+                    port = list.get(0).toString();
+                }
+                else {
+                    throw runtime.newArgumentError("invalid address string");
+                }
+            } else if ((host = m.group(HOST_GROUP)) == null || host.length() == 0 ||
                     (port = m.group(PORT_GROUP)) == null || port.length() == 0) {
                 throw runtime.newArgumentError("invalid address string");
             }
@@ -556,6 +567,12 @@ public class RubySocket extends RubyBasicSocket {
             host = addr.getCanonicalHostName();
         } else {
             host = addr.getHostAddress();
+        }
+        if ((flags & NI_NUMERICSERV.value()) == 0) {
+            String serv = IANA.portToService.get(Integer.parseInt(port));
+            if (serv != null) {
+                port = serv.substring(0, serv.indexOf('/') );
+            }
         }
         return runtime.newArray(runtime.newString(host), runtime.newString(port));
 
