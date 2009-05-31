@@ -420,6 +420,36 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     /**
+     * Copies bytes from the channel buffer into a destination <tt>ByteBuffer</tt>
+     *
+     * @param dst A <tt>ByteList</tt> to place the data in.
+     * @param len The maximum number of bytes to copy.
+     * @return The number of bytes copied.
+     */
+    private final int copyBufferedBytes(ByteList dst, int len) {
+        int bytesCopied = 0;
+
+        dst.ensure(Math.min(len, bufferedBytesAvailable()));
+
+        if (bytesCopied < len && ungotc != -1) {
+            ++bytesCopied;
+            dst.append((byte) ungotc);            
+            ungotc = -1;
+        }
+
+        //
+        // Copy out any buffered bytes
+        //
+        if (bytesCopied < len && buffer.hasRemaining()) {
+            int n = Math.min(buffer.remaining(), len - bytesCopied);
+            dst.append(buffer, n);
+            bytesCopied += n;
+        }
+
+        return bytesCopied;
+    }
+    
+    /**
      * Returns a count of how many bytes are available in the read buffer
      * 
      * @return The number of bytes that can be read without reading the underlying stream.
@@ -745,10 +775,12 @@ public class ChannelStream implements Stream, Finalizable {
         ByteList result = new ByteList(0);
         
         int len = -1;
-        if (buffer.hasRemaining()) { // already have some bytes buffered
-            len = (number <= buffer.remaining()) ? number : buffer.remaining();
-            result.append(buffer, len);
-        }
+
+        //
+        // Copy what is in the buffer, if there is some buffered data
+        //
+        copyBufferedBytes(result, number);
+        
         boolean done = false;
         //
         // Avoid double-copying for reads that are larger than the buffer size
@@ -803,11 +835,11 @@ public class ChannelStream implements Stream, Finalizable {
         boolean done = false;
         int bytesRead = 0;
 
-        // already have some bytes buffered, so bulk copy to the destination
-        if (bufferedBytesAvailable() > 0) {
-            bytesRead += copyBufferedBytes(dst);
-        }
-
+        //
+        // Copy what is in the buffer, if there is some buffered data
+        //
+        bytesRead += copyBufferedBytes(dst);
+        
         //
         // Avoid double-copying for reads that are larger than the buffer size, or
         // the destination is a direct buffer.
@@ -1088,13 +1120,6 @@ public class ChannelStream implements Stream, Finalizable {
                 }
             }
 
-            if (ungotc >= 0) {
-                ByteList buf2 = bufferedRead(number - 1);
-                buf2.prepend((byte)ungotc);
-                ungotc = -1;
-                return buf2;
-            }
-
             return bufferedRead(number);
         } catch (EOFException e) {
             eof = true;
@@ -1136,26 +1161,10 @@ public class ChannelStream implements Stream, Finalizable {
         if (descriptor.getChannel() instanceof FileChannel) {
             return fread(number);
         }
-        // make sure that the ungotc is not forgotten
-        if (ungotc >= 0) {
-            number--;
-            if (number == 0 || !buffer.hasRemaining()) {
-                ByteList result = new ByteList(new byte[] {(byte)ungotc}, false);
-                ungotc = -1;
-                return result;
-            }
-        }
 
-        if (buffer.hasRemaining()) {
+        if (bufferedBytesAvailable() > 0) {
             // already have some bytes buffered, just return those
-
-            ByteList result = bufferedRead(Math.min(buffer.remaining(), number));
-
-            if (ungotc >= 0) {
-                result.prepend((byte)ungotc);
-                ungotc = -1;
-            }
-            return result;
+            return bufferedRead(Math.min(bufferedBytesAvailable(), number));
         } else {
             // otherwise, we try an unbuffered read to get whatever's available
             return read(number);
