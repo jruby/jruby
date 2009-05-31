@@ -661,16 +661,15 @@ public final class DefaultMethodFactory {
      */
     static final class BufferMarshaller extends BaseMarshaller {
         static final ParameterMarshaller IN = new BufferMarshaller(ArrayFlags.IN);
-        static final ParameterMarshaller OUT = new BufferMarshaller(ArrayFlags.OUT);
-        static final ParameterMarshaller INOUT = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT);
+        static final ParameterMarshaller OUT = new BufferMarshaller(0);
+        static final ParameterMarshaller INOUT = new BufferMarshaller(0);
         private final int flags;
         public BufferMarshaller(int flags) {
             this.flags = flags;
         }
         private static final int bufferFlags(Buffer buffer) {
             int f = buffer.getInOutFlags();
-            return ((f & Buffer.IN) != 0 ? ArrayFlags.IN: 0)
-                    | ((f & Buffer.OUT) != 0 ? ArrayFlags.OUT : 0);
+            return ((f & (Buffer.OUT | Buffer.IN)) == Buffer.IN) ? ArrayFlags.IN: 0;
         }
         @Override
         public boolean needsInvocationSession() {
@@ -679,7 +678,7 @@ public final class DefaultMethodFactory {
         private static final void addBufferParameter(InvocationBuffer buffer, IRubyObject parameter, int flags) {
             ArrayMemoryIO memory = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(),
-                        flags & bufferFlags((Buffer) parameter));
+                        flags | bufferFlags((Buffer) parameter));
         }
         private static final long getAddress(Pointer ptr) {
             return ((DirectMemoryIO) ptr.getMemoryIO()).getAddress();
