@@ -1,4 +1,0 @@
-fails(JRUBY-3716):Matrix.column_vector returns a single column Matrix when called with an Array
-fails(JRUBY-3716):Matrix.column_vector returns an empty Matrix when called with an empty Array
-fails(JRUBY-3716):Matrix.column_vector returns a single column Matrix when called with a Fixnum
-fails(JRUBY-3716):Matrix.column_vector returns a single column Matrix when called with a Float

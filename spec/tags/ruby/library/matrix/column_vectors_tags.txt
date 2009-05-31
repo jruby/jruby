@@ -1,2 +1,0 @@
-fails(JRUBY-3716):Matrix#column_vectors returns an Array
-fails(JRUBY-3716):Matrix#column_vectors returns an Array of Vectors
