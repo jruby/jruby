@@ -413,13 +413,21 @@ public final class JNAProvider {
         }
         public static final Marshaller INSTANCE = new Float64Marshaller();
     }
-    private static final Object getNativeMemory(Pointer memory) {
+    private static final Object getNativeMemory(Ruby runtime, Pointer memory) {
         MemoryIO io = memory.getMemoryIO();
-        return io instanceof NativeMemoryIO ? ((NativeMemoryIO) io).getPointer() : null;
+        if (io instanceof NativeMemoryIO) {
+            return ((NativeMemoryIO) io).getPointer();
+        } else if (io instanceof BoundedNativeMemoryIO) {
+            return ((BoundedNativeMemoryIO) io).getPointer();
+        } else if (io instanceof NullMemoryIO) {
+            return com.sun.jna.Pointer.NULL;
+        }
+        throw runtime.newRuntimeError("Invalid pointer type");
     }
+    
     private static final Object getNativeMemory(Ruby runtime, IRubyObject memory) {
         if (memory instanceof Pointer) {
-            return getNativeMemory((Pointer) memory);
+            return getNativeMemory(runtime, (Pointer) memory);
         } else if (memory instanceof Buffer) {
             ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) memory).getMemoryIO();
             return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
@@ -435,7 +443,7 @@ public final class JNAProvider {
     static final class PointerMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             if (parameter instanceof Pointer) {
-                return getNativeMemory((Pointer) parameter);
+                return getNativeMemory(invocation.getThreadContext().getRuntime(), (Pointer) parameter);
             } else if (parameter instanceof Buffer) {
                 ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
@@ -530,7 +538,7 @@ public final class JNAProvider {
     private static final class BufferMarshaller implements Marshaller {
         public final Object marshal(Invocation invocation, IRubyObject parameter) {
             if (parameter instanceof Pointer) {
-                return getNativeMemory((Pointer) parameter);
+                return getNativeMemory(invocation.getThreadContext().getRuntime(), (Pointer) parameter);
             } else if (parameter instanceof Buffer) {
                 ArrayMemoryIO io = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
                 return ByteBuffer.wrap(io.array(), io.arrayOffset(), io.arrayLength());
