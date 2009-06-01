@@ -340,7 +340,15 @@ public class ChannelStream implements Stream, Finalizable {
                 eof = true;
                 return null;
             }
-            
+
+            if (left > Integer.MAX_VALUE) {
+                if (getRuntime() != null) {
+                    throw getRuntime().newIOError("File too large");
+                } else {
+                    throw new IOException("File too large");
+                }
+            }
+
             ByteList result = new ByteList((int) left);
             ByteBuffer buf = ByteBuffer.wrap(result.unsafeBytes(), 
                     result.begin(), (int) left);
