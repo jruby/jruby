@@ -3,7 +3,7 @@ require 'ffi'
 
 module Posix
   extend FFI::Library
-  attach_function :gettimeofday, [ :pointer, :pointer ], :int
+  attach_function :gettimeofday, [ :buffer_out, :pointer ], :int
 end
 class Timeval < FFI::Struct
   layout :tv_sec => :ulong, :tv_nsec => :ulong
@@ -17,11 +17,11 @@ puts "Benchmark FFI gettimeofday(2) (nil, nil) performance, #{iter}x"
     iter.times { Posix.gettimeofday(nil, nil) }
   }
 }
-puts "Benchmark FFI gettimeofday(2) (Timeval.alloc_out.pointer, nil) performance, #{iter}x"
+puts "Benchmark FFI gettimeofday(2) (Timeval.alloc_out, nil) performance, #{iter}x"
 
 10.times {
   puts Benchmark.measure {
-    iter.times { Posix.gettimeofday(Timeval.alloc_out.pointer, nil) }
+    iter.times { Posix.gettimeofday(Timeval.alloc_out, nil) }
   }
 }
 puts "Benchmark Time.now performance, #{iter}x"
