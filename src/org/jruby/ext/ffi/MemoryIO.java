@@ -28,9 +28,6 @@
 
 package org.jruby.ext.ffi;
 
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
-
 /**
  * Abstracted memory operations.
  * <p>
