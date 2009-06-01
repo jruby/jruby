@@ -87,6 +87,9 @@ public abstract class Factory {
 
             RubyModule ffi = runtime.defineModule("FFI");
             Factory factory = Factory.getInstance();
+            if (factory.getClass().getName().contains("org.jruby.ext.ffi.jna")) {
+                runtime.getWarnings().warn("Deprecated JNA backend used for FFI");
+            }
             factory.init(runtime, ffi);
         }
     }
