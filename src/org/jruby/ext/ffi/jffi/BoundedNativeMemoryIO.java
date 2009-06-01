@@ -110,8 +110,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public final DirectMemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
-        final long ptr = IO.getAddress(address + offset);
-        return ptr != 0 ? new NativeMemoryIO(runtime, ptr) : new NullMemoryIO(runtime);
+        return NativeMemoryIO.wrap(runtime, IO.getAddress(address + offset));
     }
 
     public final void putByte(long offset, byte value) {

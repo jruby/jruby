@@ -97,8 +97,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     }
 
     public final DirectMemoryIO getMemoryIO(long offset) {
-        final long ptr = IO.getAddress(address + offset);
-        return ptr != 0 ? new NativeMemoryIO(runtime, ptr) : new NullMemoryIO(runtime);
+        return wrap(runtime, IO.getAddress(address + offset));
     }
 
     public final void putByte(long offset, byte value) {
