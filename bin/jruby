@@ -15,8 +15,8 @@ cygwin=false
 
 # ----- Identify OS we are running under --------------------------------------
 case "`uname`" in
-CYGWIN*) cygwin=true;;
-Darwin) darwin=true;;
+  CYGWIN*) cygwin=true;;
+  Darwin) darwin=true;;
 esac
 
 #
@@ -109,8 +109,13 @@ else
     done
 
     if $cygwin; then
-	CP=`cygpath -p -w "$CP"`
+        CP=`cygpath -p -w "$CP"`
     fi
+fi
+
+if $cygwin; then
+    # switch delimiter only after building Unix style classpaths
+    CP_DELIMITER=";"
 fi
 
 # ----- Execute The Requested Command -----------------------------------------
@@ -124,16 +129,12 @@ if [ -z "$JAVA_STACK" ] ; then
 fi
 
 JAVA_VM=-client
+JAVA_ENCODING=""
 
 declare -a java_args
 declare -a ruby_args
 
 java_class=org.jruby.Main
-
-# Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
-if $darwin; then
-  java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
-fi
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
@@ -163,8 +164,10 @@ do
             shift
         else
             if [ "${val:0:3}" = "-ea" ]; then
-		VERIFY_JRUBY="yes"
-	    fi
+                VERIFY_JRUBY="yes"
+            elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
+                JAVA_ENCODING=$val
+            fi
             java_args=("${java_args[@]}" "${1:2}")
         fi
         ;;
@@ -231,7 +234,7 @@ do
 done
 
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
-if [ `uname -s` = "Darwin" ]; then
+if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
 fi
 
@@ -295,7 +298,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  "$JAVA_CMD" $PROFILE_ARGS $JAVA_OPTS "$JAVA_JNA" "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMETER$CLASSPATH" \
+  "$JAVA_CMD" $PROFILE_ARGS $JAVA_OPTS "$JAVA_JNA" "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
