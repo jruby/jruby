@@ -103,24 +103,6 @@ public class GlobalVariables {
         globalVariables.put(name, oldVariable);
     }
 
-    public GlobalVariable getVariable(String name) {
-        assert name != null;
-        assert name.startsWith("$");
-
-        return (GlobalVariable)globalVariables.get(name);
-    }
-
-    public GlobalVariable getVariableForSet(String name) {
-        assert name != null;
-        assert name.startsWith("$");
-
-        if (runtime.getSafeLevel() >= 4) {
-            throw runtime.newSecurityError("Insecure: can't change global variable value");
-        }
-
-        return createIfNotDefined(name);
-    }
-
     public IRubyObject get(String name) {
 	    assert name != null;
 	    assert name.startsWith("$");
@@ -131,7 +113,7 @@ public class GlobalVariables {
 	    if (runtime.isVerbose()) {
 	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
 	    }
-            return runtime.getNil();
+		return runtime.getNil();
 	}
 
     public IRubyObject set(String name, IRubyObject value) {

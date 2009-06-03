@@ -1004,7 +1004,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveGlobalVariable(String name) {
-        getScriptCompiler().getCacheCompiler().getGlobal(this, name);
+        loadRuntime();
+        method.ldc(name);
+        invokeUtilityMethod("getGlobalVariable", sig(IRubyObject.class, Ruby.class, String.class));
     }
 
     public void assignGlobalVariable(String name) {
@@ -1014,7 +1016,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void assignGlobalVariable(String name, CompilerCallback value) {
-        getScriptCompiler().getCacheCompiler().setGlobal(this, name, value);
+        value.call(this);
+        loadRuntime();
+        method.ldc(name);
+        invokeUtilityMethod("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
     }
 
     public void negateCurrentValue() {
