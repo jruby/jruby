@@ -51,9 +51,5 @@ public interface CacheCompiler {
 
     public void cacheMethod(BaseBodyCompiler method, String methodName, int receiverLocal);
 
-    public void getGlobal(BaseBodyCompiler method, String varName);
-
-    public void setGlobal(BaseBodyCompiler method, String varName, CompilerCallback value);
-
     public void finish();
 }

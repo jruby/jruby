@@ -36,8 +36,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -48,7 +46,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class GlobalVarNode extends Node implements INameNode {
     private String name;
-    private GlobalVariable gvar;
 
     public GlobalVarNode(ISourcePosition position, String name) {
         super(position);
@@ -81,17 +78,7 @@ public class GlobalVarNode extends Node implements INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (gvar == null) gvar = runtime.getGlobalVariables().getVariable(name);
-
-        if (gvar != null) {
-            return gvar.getAccessor().getValue();
-        } else {
-	    if (runtime.isVerbose()) {
-	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
-	    }
-            
-            return runtime.getNil();
-        }
+        return runtime.getGlobalVariables().get(name);
     }
     
     @Override

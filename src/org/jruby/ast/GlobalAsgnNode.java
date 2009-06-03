@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -49,7 +48,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
     private String name;
-    private GlobalVariable gvar;
 
     public GlobalAsgnNode(ISourcePosition position, String name, Node valueNode) {
         super(position, valueNode);
@@ -84,21 +82,16 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject result = getValueNode().interpret(runtime,context, self, aBlock);
-
-        return setGlobal(context, name, result);
+   
+        runtime.getGlobalVariables().set(name, result);
+   
+        return result;
     }
 
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        return setGlobal(context, name, value);
-    }
-
-    private IRubyObject setGlobal(ThreadContext context, String name, IRubyObject value) {
-        Ruby runtime = context.getRuntime();
-        if (gvar == null) gvar = runtime.getGlobalVariables().getVariableForSet(name);
-
-        gvar.getAccessor().setValue(value);
-        gvar.trace(value);
-        return value;
+        runtime.getGlobalVariables().set(name, value);
+        
+        return runtime.getNil();
     }
 }
