@@ -272,10 +272,10 @@
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-amd64-Linux.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
@@ -362,10 +362,10 @@
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-amd64-Linux.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-amd64-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
