@@ -28,6 +28,8 @@
 
 package org.jruby.ext.ffi.io;
 
+import com.kenai.jaffl.annotations.In;
+import com.kenai.jaffl.annotations.Out;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
@@ -37,7 +39,7 @@ import java.nio.channels.ByteChannel;
  * file descriptor.
  */
 public class FileDescriptorByteChannel implements ByteChannel {
-    private final static LibC libc = (LibC) com.sun.jna.Native.loadLibrary("c", LibC.class);
+    private final static LibC libc = com.kenai.jaffl.Library.loadLibrary("c", LibC.class);
     private final int fd;
     private volatile boolean isOpen = true;
 
@@ -114,8 +116,8 @@ public class FileDescriptorByteChannel implements ByteChannel {
      * The native library functions used to access the file descriptor.
      */
     private static interface LibC extends com.sun.jna.Library {
-        int read(int fd, ByteBuffer dst, int len);
-        int write(int fd, ByteBuffer src, int len);
+        int read(int fd, @Out ByteBuffer dst, int len);
+        int write(int fd, @In ByteBuffer src, int len);
         int close(int fd);
     }
 }
