@@ -48,10 +48,6 @@ public class AutoPointer extends Pointer {
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return pointer.slice(runtime, offset);
     }
-    @Override
-    protected Pointer getPointer(Ruby runtime, long offset) {
-        return pointer.getPointer(runtime, offset);
-    }
     
     private static final class PointerHolder {
         private static final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());

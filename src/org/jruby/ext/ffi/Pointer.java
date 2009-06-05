@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * </p>
  */
 @JRubyClass(name="FFI::Pointer", parent=AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
-public abstract class Pointer extends AbstractMemory {
+public class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Pointer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
@@ -28,9 +28,15 @@ public abstract class Pointer extends AbstractMemory {
         result.defineAnnotatedMethods(Pointer.class);
         result.defineAnnotatedConstants(Pointer.class);
 
+        // Add Pointer::NULL as a constant
+        module.getClass("Pointer").fastSetConstant("NULL", new Pointer(runtime, result, new NullMemoryIO(runtime)));
+
         return result;
     }
 
+    protected Pointer(Ruby runtime, DirectMemoryIO io) {
+        this(runtime, getPointerClass(runtime), io);
+    }
     protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io) {
         super(runtime, klass, io, Long.MAX_VALUE);
     }
@@ -39,6 +45,10 @@ public abstract class Pointer extends AbstractMemory {
     }
     protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io, long size, int typeSize) {
         super(runtime, klass, io, size, typeSize);
+    }
+
+    public static final RubyClass getPointerClass(Ruby runtime) {
+        return runtime.fastGetModule("FFI").fastGetClass("Pointer");
     }
 
     @JRubyMethod(name = { "new" }, meta = true)
@@ -65,14 +75,6 @@ public abstract class Pointer extends AbstractMemory {
         return context.getRuntime().newBoolean(getMemoryIO().isNull());
     }
 
-    /**
-     * Gets the native memory address of this pointer.
-     *
-     * @return A long containing the native memory address.
-     */
-    public final long getAddress() {
-        return ((DirectMemoryIO) getMemoryIO()).getAddress();
-    }
 
     @Override
     @JRubyMethod(name = "to_s", optional = 1)
@@ -91,6 +93,26 @@ public abstract class Pointer extends AbstractMemory {
     @JRubyMethod(name = { "address", "to_i" })
     public IRubyObject address(ThreadContext context) {
         return context.getRuntime().newFixnum(getAddress());
+    }
+
+    /**
+     * Gets the native memory address of this pointer.
+     *
+     * @return A long containing the native memory address.
+     */
+    public final long getAddress() {
+        return ((DirectMemoryIO) getMemoryIO()).getAddress();
+    }
+    
+    @Override
+    protected AbstractMemory slice(Ruby runtime, long offset) {
+        return new Pointer(runtime, getPointerClass(runtime),
+                (DirectMemoryIO) getMemoryIO().slice(offset),
+                size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset, typeSize);
+    }
+
+    protected Pointer getPointer(Ruby runtime, long offset) {
+        return new Pointer(runtime, getPointerClass(runtime), getMemoryIO().getMemoryIO(offset), Long.MAX_VALUE);
     }
 
 }

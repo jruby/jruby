@@ -22,9 +22,6 @@ public class BasePointer extends Pointer {
         result.defineAnnotatedMethods(BasePointer.class);
         result.defineAnnotatedConstants(BasePointer.class);
 
-        // Add Pointer::NULL as a constant
-        module.getClass("Pointer").fastSetConstant("NULL", new BasePointer(runtime, new NullMemoryIO(runtime)));
-
         return result;
     }
     public static final RubyClass getBasePointerClass(Ruby runtime) {
@@ -51,14 +48,4 @@ public class BasePointer extends Pointer {
     }
 
     
-    @Override
-    protected final AbstractMemory slice(Ruby runtime, long offset) {
-        return new BasePointer(runtime, getBasePointerClass(runtime),
-                (DirectMemoryIO) getMemoryIO().slice(offset), 
-                size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset, typeSize);
-    }
-
-    protected BasePointer getPointer(Ruby runtime, long offset) {
-        return new BasePointer(runtime, getMemoryIO().getMemoryIO(offset), Long.MAX_VALUE);
-    }
 }
