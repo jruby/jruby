@@ -99,6 +99,12 @@
       <version>0.5</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>jaffl</artifactId>
+      <version>0.2</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
