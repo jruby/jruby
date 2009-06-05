@@ -36,7 +36,7 @@ public class AutoPointer extends Pointer {
      */
     private AutoPointer(Ruby runtime, Pointer pointer, IRubyObject proc) {
         super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME),
-                pointer.getMemoryIO(), pointer.getSize());
+                (DirectMemoryIO) pointer.getMemoryIO(), pointer.getSize());
         this.pointer = pointer;
         holder = new PointerHolder(pointer, proc);
     }

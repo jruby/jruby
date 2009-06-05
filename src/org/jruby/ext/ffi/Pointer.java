@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -30,13 +31,13 @@ public abstract class Pointer extends AbstractMemory {
         return result;
     }
 
-    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io) {
+    protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io) {
         super(runtime, klass, io, Long.MAX_VALUE);
     }
-    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
+    protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io, long size) {
         super(runtime, klass, io, size);
     }
-    protected Pointer(Ruby runtime, RubyClass klass, MemoryIO io, long size, int typeSize) {
+    protected Pointer(Ruby runtime, RubyClass klass, DirectMemoryIO io, long size, int typeSize) {
         super(runtime, klass, io, size, typeSize);
     }
 
@@ -63,4 +64,33 @@ public abstract class Pointer extends AbstractMemory {
     public IRubyObject null_p(ThreadContext context) {
         return context.getRuntime().newBoolean(getMemoryIO().isNull());
     }
+
+    /**
+     * Gets the native memory address of this pointer.
+     *
+     * @return A long containing the native memory address.
+     */
+    public final long getAddress() {
+        return ((DirectMemoryIO) getMemoryIO()).getAddress();
+    }
+
+    @Override
+    @JRubyMethod(name = "to_s", optional = 1)
+    public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
+        return RubyString.newString(context.getRuntime(),
+                String.format("Pointer [address=%x]", getAddress()));
+    }
+
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect(ThreadContext context) {
+        String hex = Long.toHexString(getAddress());
+        return RubyString.newString(context.getRuntime(),
+                String.format("#<Pointer address=0x%s>", hex));
+    }
+
+    @JRubyMethod(name = { "address", "to_i" })
+    public IRubyObject address(ThreadContext context) {
+        return context.getRuntime().newFixnum(getAddress());
+    }
+
 }

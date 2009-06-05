@@ -4,12 +4,8 @@ package org.jruby.ext.ffi;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Base pointer class for all JFFI pointers.
@@ -54,28 +50,6 @@ public class BasePointer extends Pointer {
         super(runtime, klass, io, size, typeSize);
     }
 
-    public final long getAddress() {
-        return ((DirectMemoryIO) getMemoryIO()).getAddress();
-    }
-
-    @Override
-    @JRubyMethod(name = "to_s", optional = 1)
-    public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        return RubyString.newString(context.getRuntime(), 
-                String.format("Pointer [address=%x]", getAddress()));
-    }
-
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        String hex = Long.toHexString(getAddress());
-        return RubyString.newString(context.getRuntime(),
-                String.format("#<Pointer address=0x%s>", hex));
-    }
-    
-    @JRubyMethod(name = { "address", "to_i" })
-    public IRubyObject address(ThreadContext context) {
-        return context.getRuntime().newFixnum(getAddress());
-    }
     
     @Override
     protected final AbstractMemory slice(Ruby runtime, long offset) {
