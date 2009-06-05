@@ -27,14 +27,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Fcntl;
 import com.kenai.constantine.platform.OpenFlags;
 import com.kenai.constantine.platform.SocketLevel;
 import com.kenai.constantine.platform.SocketOption;
+import com.kenai.jaffl.LastError;
+import com.kenai.jaffl.annotations.In;
+import com.kenai.jaffl.annotations.Out;
+import com.kenai.jaffl.annotations.Transient;
+import com.kenai.jaffl.byref.IntByReference;
 import java.io.IOException;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -42,13 +45,7 @@ import java.nio.channels.WritableByteChannel;
 import static com.kenai.constantine.platform.AddressFamily.*;
 import static com.kenai.constantine.platform.ProtocolFamily.*;
 import static com.kenai.constantine.platform.Sock.*;
-import static com.kenai.constantine.platform.IPProto.*;
 
-import com.sun.jna.Library;
-import com.sun.jna.Native;
-import com.sun.jna.Structure;
-import com.sun.jna.Union;
-import com.sun.jna.ptr.IntByReference;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -132,7 +129,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 if(INSTANCE != null) {
                     return true;
                 }
-                INSTANCE = (LibCSocket)Native.loadLibrary("c", LibCSocket.class);
+                INSTANCE = (LibCSocket)com.kenai.jaffl.Library.loadLibrary("c", LibCSocket.class);
                 return true;
             }
         } catch(Throwable e) {
@@ -140,24 +137,24 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    public static interface LibCSocket extends Library {
+    public static interface LibCSocket {
         int socketpair(int d, int type, int protocol, int[] sv);
         int socket(int domain, int type, int protocol);
-        int connect(int s, sockaddr_un name, int namelen);
-        int bind(int s, sockaddr_un name, int namelen);
+        int connect(int s, @In @Transient sockaddr_un name, int namelen);
+        int bind(int s, @Transient sockaddr_un name, int namelen);
         int listen(int s, int backlog);
-        int accept(int s, sockaddr_un addr, IntByReference addrlen);
+        int accept(int s, @Transient sockaddr_un addr, IntByReference addrlen);
 
-        int getsockname(int s, sockaddr_un addr, IntByReference addrlen);
-        int getpeername(int s, sockaddr_un addr, IntByReference addrlen);
+        int getsockname(int s, @Out @Transient sockaddr_un addr, IntByReference addrlen);
+        int getpeername(int s, @Out @Transient sockaddr_un addr, IntByReference addrlen);
 
-        int getsockopt(int s, int level, int optname, byte[] optval, IntByReference optlen);
-        int setsockopt(int s, int level, int optname, byte[] optval, int optlen);
+        int getsockopt(int s, int level, int optname, @Out byte[] optval, IntByReference optlen);
+        int setsockopt(int s, int level, int optname, @In byte[] optval, int optlen);
 
-        int recv(int s, Buffer buf, int len, int flags);
-        int recvfrom(int s, Buffer buf, int len, int flags, sockaddr_un from, IntByReference fromlen);
+        int recv(int s, @Out ByteBuffer buf, int len, int flags);
+        int recvfrom(int s, @Out ByteBuffer buf, int len, int flags, @Out @Transient sockaddr_un from, IntByReference fromlen);
 
-        int send(int s, Buffer msg, int len, int flags);
+        int send(int s, @In ByteBuffer msg, int len, int flags);
 
         int fcntl(int fd, int cmd, int arg);
 
@@ -168,43 +165,45 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         // Sockaddr_un has different structure on different platforms.
         // See JRUBY-2213 for more details.
-        public static class sockaddr_un extends Structure {
+        public static abstract class sockaddr_un extends com.kenai.jaffl.struct.Struct {
             public final static int LENGTH = 106;
-            public final static boolean hasLen = Platform.IS_BSD;
-
-            public header sun_header;
-            public byte[] sun_path = new byte[LENGTH - 2];
-
-            public static final class header extends Union {
-                public static final class famlen extends Structure {
-                    public byte sun_len;
-                    public byte sun_family;
-                }
-                public famlen famlen;
-                public short sun_family;
-                public header() {
-                    setType(hasLen ? famlen.class : short.class);
-                }
-            }
-
-            public void setFamily(int family) {
-                if(hasLen) {
-                    sun_header.famlen.sun_family = (byte) family;
-                } else {
-                    sun_header.sun_family = (short) family;
-                }
-            }
-
-            public int getFamily() {
-                if(hasLen) {
-                    return sun_header.famlen.sun_family;
-                } else {
-                    return sun_header.sun_family;
-                }
+            public abstract void setFamily(int family);
+            public abstract int getFamily();
+            public abstract UTF8String path();
+            
+            public static final sockaddr_un newInstance() {
+                return Platform.IS_BSD ? new LibCSocket.BSDSockAddrUnix() : new DefaultSockAddrUnix();
             }
         }
-    }
 
+        public static final class BSDSockAddrUnix extends sockaddr_un {
+            public final Signed8 sun_len = new Signed8();
+            public final Signed8 sun_family = new Signed8();
+            public final UTF8String sun_path = new UTF8String(LENGTH - 2);
+            public final void setFamily(int family) {
+                sun_family.set((byte) family);
+            }
+            public final int getFamily() {
+                return sun_family.get();
+            }
+            public final UTF8String path() { return sun_path; }
+        }
+        
+        public static final class DefaultSockAddrUnix extends sockaddr_un {
+            public final Signed16 sun_family = new Signed16();
+            public final UTF8String sun_path = new UTF8String(LENGTH - 2);
+
+            public final void setFamily(int family) {
+                sun_family.set((short) family);
+            }
+            public final int getFamily() {
+                return sun_family.get();
+            }
+            public final UTF8String path() { return sun_path; }
+        }
+
+    }
+    
     private static ObjectAllocator UNIXSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyUNIXSocket(runtime, klass);
@@ -226,8 +225,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     protected String fpath;
 
     protected static void rb_sys_fail(Ruby runtime, String message) {
-        int n = Native.getLastError();
-        Native.setLastError(0);
+        final int n = LastError.getLastError();
 
         IRubyObject arg = (message != null) ? runtime.newString(message) : runtime.getNil();
 
@@ -255,17 +253,17 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             rb_sys_fail(runtime, "socket(2)");
         }
 
-        LibCSocket.sockaddr_un sockaddr = new LibCSocket.sockaddr_un();
+        LibCSocket.sockaddr_un sockaddr = LibCSocket.sockaddr_un.newInstance();
         sockaddr.setFamily(AF_UNIX.value());
 
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
 
-        if(sockaddr.sun_path.length <= path.realSize) {
-            throw runtime.newArgumentError("too long unix socket path (max: " + (sockaddr.sun_path.length-1) + "bytes)");
+        if(sockaddr.path().length() <= path.realSize) {
+            throw runtime.newArgumentError("too long unix socket path (max: " + (sockaddr.path().length()-1) + "bytes)");
         }
 
-        System.arraycopy(path.bytes, path.begin, sockaddr.sun_path, 0, path.realSize);
+        sockaddr.path().set(fpath);
 
         if(server) {
             status = INSTANCE.bind(fd, sockaddr, LibCSocket.sockaddr_un.LENGTH);
@@ -339,16 +337,9 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     private String unixpath(LibCSocket.sockaddr_un addr, IntByReference len) {
-        int firstZero = 0;
-        for(int i=0;i<addr.sun_path.length;i++) {
-            if(addr.sun_path[i] == 0) {
-                firstZero = i;
-                break;
-            }
-        }
-
-        if(len.getValue()>0) {
-            return new String(addr.sun_path, 0, firstZero);
+        if (len.getValue() > 2) {
+            // There is something valid in the sun_path component
+            return addr.path().toString();
         } else {
             return "";
         }
@@ -364,7 +355,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
         if(openFile.getPath() == null) {
-            LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
+            LibCSocket.sockaddr_un addr = LibCSocket.sockaddr_un.newInstance();
             IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
             if(INSTANCE.getsockname(fd, addr, len) < 0) {
                 rb_sys_fail(context.getRuntime(), null);
@@ -380,7 +371,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
+        LibCSocket.sockaddr_un addr = LibCSocket.sockaddr_un.newInstance();
         IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
         if(INSTANCE.getsockname(fd, addr, len) < 0) {
             rb_sys_fail(context.getRuntime(), "getsockname(2)");
@@ -393,7 +384,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
-        LibCSocket.sockaddr_un addr = new LibCSocket.sockaddr_un();
+        LibCSocket.sockaddr_un addr = LibCSocket.sockaddr_un.newInstance();
         IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
         if(INSTANCE.getpeername(fd, addr, len) < 0) {
             rb_sys_fail(context.getRuntime(), "getpeername(2)");
@@ -408,7 +399,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
         ByteBuffer str = ByteBuffer.allocateDirect(1024);
-        LibCSocket.sockaddr_un buf = new LibCSocket.sockaddr_un();
+        LibCSocket.sockaddr_un buf = LibCSocket.sockaddr_un.newInstance();
         IntByReference alen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
 
         IRubyObject len, flg;

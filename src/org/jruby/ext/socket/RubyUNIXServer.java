@@ -27,8 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.sun.jna.ptr.IntByReference;
 
+import com.kenai.jaffl.byref.IntByReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
@@ -76,7 +76,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
-        LibCSocket.sockaddr_un from = new LibCSocket.sockaddr_un();
+        LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
         int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
         if(fd2 < 0) {
             rb_sys_fail(context.getRuntime(), null);
@@ -86,7 +86,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
         
         sock.fd = fd2;
-        sock.fpath = new String(from.sun_path);
+        sock.fpath = from.path().toString();
 
         sock.init_sock(context.getRuntime());
 
@@ -98,7 +98,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
     @JRubyMethod
     public IRubyObject accept_nonblock(ThreadContext context) {
-        LibCSocket.sockaddr_un from = new LibCSocket.sockaddr_un();
+        LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
         IntByReference fromlen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
         
         int flags = INSTANCE.fcntl(fd, RubyUNIXSocket.F_GETFL ,0);
@@ -113,7 +113,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
         
         sock.fd = fd2;
-        sock.fpath = new String(from.sun_path);
+        sock.fpath = from.path().toString();
 
         sock.init_sock(context.getRuntime());
 
