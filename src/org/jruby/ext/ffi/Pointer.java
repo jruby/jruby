@@ -28,12 +28,16 @@ public class Pointer extends AbstractMemory {
         result.defineAnnotatedMethods(Pointer.class);
         result.defineAnnotatedConstants(Pointer.class);
 
+
+        module.defineClassUnder("NullPointerError", runtime.getRuntimeError(),
+                runtime.getRuntimeError().getAllocator());
+
         // Add Pointer::NULL as a constant
-        module.getClass("Pointer").fastSetConstant("NULL", new Pointer(runtime, result, new NullMemoryIO(runtime)));
+        result.fastSetConstant("NULL", new Pointer(runtime, result, new NullMemoryIO(runtime)));
 
         return result;
     }
-
+    
     protected Pointer(Ruby runtime, DirectMemoryIO io) {
         this(runtime, getPointerClass(runtime), io);
     }

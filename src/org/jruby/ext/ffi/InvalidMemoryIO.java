@@ -3,6 +3,8 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.exceptions.RaiseException;
 
 /**
  * An implementation of MemoryIO that throws an exception on any access.
@@ -19,10 +21,15 @@ public abstract class InvalidMemoryIO implements MemoryIO {
         this.runtime = runtime;
         this.message = message;
     }
-    
-    private final RuntimeException ex() {
-        return runtime.newRuntimeError(message);
+
+    protected RubyClass getErrorClass(Ruby runtime) {
+        return runtime.getRuntimeError();
     }
+
+    protected RaiseException ex() {
+        return new RaiseException(runtime, getErrorClass(runtime), message, true);
+    }
+    
     public MemoryIO slice(long offset) {
         return this;
     }
