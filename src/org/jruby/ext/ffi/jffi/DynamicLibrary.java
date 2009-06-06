@@ -34,7 +34,7 @@ public class DynamicLibrary extends RubyObject {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         RubyClass symClass = result.defineClassUnder("Symbol",
-                module.fastGetClass("BasePointer"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+                module.fastGetClass("Pointer"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         symClass.defineAnnotatedMethods(Symbol.class);
         result.defineAnnotatedMethods(DynamicLibrary.class);
         result.defineAnnotatedConstants(DynamicLibrary.class);
