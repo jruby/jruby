@@ -11,9 +11,9 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -96,7 +96,7 @@ public class DynamicLibrary extends RubyObject {
     public IRubyObject name(ThreadContext context) {
         return name != null ? RubyString.newString(context.getRuntime(), name) : context.getRuntime().getNil();
     }
-    public static final class Symbol extends BasePointer {
+    public static final class Symbol extends Pointer {
         private final DynamicLibrary library;
         private final String name;
         

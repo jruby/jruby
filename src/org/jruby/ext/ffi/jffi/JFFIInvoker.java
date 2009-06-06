@@ -3,7 +3,6 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Function;
-import com.kenai.jffi.Library;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -14,11 +13,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
-import org.jruby.ext.ffi.BasePointer;
-import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.Enum;
-import org.jruby.ext.ffi.StructByValue;
-import org.jruby.ext.ffi.StructLayout;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
@@ -92,7 +87,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     @JRubyMethod(name = { "new" }, meta = true, required = 4)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
 
-        if (!(args[0] instanceof BasePointer)) {
+        if (!(args[0] instanceof Pointer)) {
             throw context.getRuntime().newTypeError("Invalid function address "
                     + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
         }
@@ -105,7 +100,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         if (!(args[2] instanceof Type)) {
             throw context.getRuntime().newTypeError("Invalid return type " + args[2]);
         }
-        BasePointer ptr = (BasePointer) args[0];
+        Pointer ptr = (Pointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];
         Type returnType = (Type) args[2];
 

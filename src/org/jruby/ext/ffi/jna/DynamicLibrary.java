@@ -10,8 +10,8 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -32,7 +32,7 @@ public class DynamicLibrary extends RubyObject {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         RubyClass symClass = result.defineClassUnder("Symbol",
-                module.fastGetClass(BasePointer.BASE_POINTER_NAME), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+                module.fastGetClass("Pointer"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         symClass.defineAnnotatedMethods(Symbol.class);
         result.defineAnnotatedMethods(DynamicLibrary.class);
         result.defineAnnotatedConstants(DynamicLibrary.class);
@@ -85,7 +85,7 @@ public class DynamicLibrary extends RubyObject {
     public IRubyObject name(ThreadContext context) {
         return RubyString.newString(context.getRuntime(), name);
     }
-    public static final class Symbol extends BasePointer {
+    public static final class Symbol extends Pointer {
         private final DynamicLibrary library;
         private final com.sun.jna.Pointer address;
         private final String name;

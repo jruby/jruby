@@ -15,13 +15,13 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::BasePointer")
-public final class MemoryPointer extends BasePointer {
+@JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
+public final class MemoryPointer extends Pointer {
     private static final Factory factory = Factory.getInstance();
     
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("MemoryPointer",
-                module.getClass(BasePointer.BASE_POINTER_NAME),
+                module.fastGetClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(MemoryPointer.class);
         result.defineAnnotatedConstants(MemoryPointer.class);

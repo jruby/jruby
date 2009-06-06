@@ -37,12 +37,10 @@ import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
-import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
@@ -280,7 +278,7 @@ final class CallbackMarshaller implements Marshaller {
             case FLOAT64:
                 return runtime.newFloat((Double) value);
             case POINTER:
-                return new BasePointer(runtime, NativeMemoryIO.wrap(runtime, (com.sun.jna.Pointer) value));
+                return new Pointer(runtime, NativeMemoryIO.wrap(runtime, (com.sun.jna.Pointer) value));
             default:
                 throw new IllegalArgumentException("Invalid type " + type);
         }

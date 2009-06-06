@@ -6,7 +6,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -118,7 +117,7 @@ public final class Buffer extends AbstractMemory {
         return new Buffer(runtime, getMetaClass(), this.io.slice(offset), this.size - offset, this.typeSize, this.inout);
     }
     protected Pointer getPointer(Ruby runtime, long offset) {
-        return new BasePointer(runtime, (DirectMemoryIO) getMemoryIO().getMemoryIO(offset));
+        return new Pointer(runtime, (DirectMemoryIO) getMemoryIO().getMemoryIO(offset));
     }
     public int getInOutFlags() {
         return inout;

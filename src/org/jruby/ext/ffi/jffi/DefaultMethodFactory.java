@@ -15,14 +15,12 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
-import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
@@ -435,7 +433,7 @@ public final class DefaultMethodFactory {
     private static final class PointerInvoker extends BaseInvoker {
         public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
             final long address = invoker.invokeAddress(function, args);
-            return new BasePointer(runtime, NativeMemoryIO.wrap(runtime, address));
+            return new Pointer(runtime, NativeMemoryIO.wrap(runtime, address));
         }
         public static final FunctionInvoker INSTANCE = new PointerInvoker();
     }

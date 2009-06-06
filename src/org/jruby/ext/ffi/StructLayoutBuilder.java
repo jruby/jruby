@@ -352,7 +352,7 @@ public final class StructLayoutBuilder extends RubyObject {
                     return old;
                 }
             }
-            Pointer retval = new BasePointer(runtime, memory);
+            Pointer retval = new Pointer(runtime, memory);
             cache.putCachedValue(this, retval);
             return retval;
         }

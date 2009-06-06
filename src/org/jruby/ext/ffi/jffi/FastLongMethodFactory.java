@@ -4,10 +4,8 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.ext.ffi.BasePointer;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -226,7 +224,7 @@ public class FastLongMethodFactory {
         public static final LongResultConverter INSTANCE = new PointerResultConverter();
         public final IRubyObject fromNative(ThreadContext context, long value) {
             final long address = ((long) value) & ADDRESS_MASK;
-            return new BasePointer(context.getRuntime(),
+            return new Pointer(context.getRuntime(),
                     NativeMemoryIO.wrap(context.getRuntime(), address));
         }
     }

@@ -4,12 +4,9 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
@@ -225,7 +222,7 @@ public class FastIntMethodFactory {
         public static final IntResultConverter INSTANCE = new PointerResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
             final long address = ((long) value) & ADDRESS_MASK;
-            return new BasePointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
+            return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
         }
     }
 

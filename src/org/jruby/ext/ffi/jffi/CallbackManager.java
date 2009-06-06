@@ -15,11 +15,9 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
-import org.jruby.ext.ffi.BasePointer;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
@@ -160,8 +158,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     /**
      * Wrapper around the native callback, to represent it as a ruby object
      */
-    @JRubyClass(name = "FFI::Callback", parent = "FFI::BasePointer")
-    static class Callback extends BasePointer {
+    @JRubyClass(name = "FFI::Callback", parent = "FFI::Pointer")
+    static class Callback extends Pointer {
         private final CallbackInfo cbInfo;
         private final Object proc;
         
@@ -260,8 +258,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final long addressValue(IRubyObject value) {
         if (value instanceof RubyNumeric) {
             return ((RubyNumeric) value).getLongValue();
-        } else if (value instanceof BasePointer) {
-            return ((BasePointer) value).getAddress();
+        } else if (value instanceof Pointer) {
+            return ((Pointer) value).getAddress();
         } else if (value.isNil()) {
             return 0L;
         }
@@ -390,7 +388,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                         return runtime.getNil();
                     }
                 } else {
-                    return new BasePointer(runtime, NativeMemoryIO.wrap(runtime, address));
+                    return new Pointer(runtime, NativeMemoryIO.wrap(runtime, address));
                 }
             }
             case STRING:

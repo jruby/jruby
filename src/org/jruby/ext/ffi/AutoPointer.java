@@ -14,7 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 
-@JRubyClass(name = "FFI::" + AutoPointer.CLASS_NAME, parent = "JRuby::FFI::AbstractMemoryPointer")
+@JRubyClass(name = "FFI::" + AutoPointer.CLASS_NAME, parent = "FFI::Pointer")
 public class AutoPointer extends Pointer {
     public static final String CLASS_NAME = "AutoPointer";
     private final Pointer pointer;
