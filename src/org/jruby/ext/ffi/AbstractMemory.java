@@ -54,13 +54,13 @@ abstract public class AbstractMemory extends RubyObject {
     public final static String ABSTRACT_MEMORY_RUBY_CLASS = "AbstractMemory";
 
     /** The total size of the memory area */
-    protected final long size;
+    protected long size;
 
     /** The size of each element of this memory area - e.g. :char is 1, :int is 4 */
-    protected final int typeSize;
+    protected int typeSize;
 
     /** The Memory I/O object */
-    protected final MemoryIO io;
+    protected MemoryIO io;
     
     public static RubyClass createAbstractMemoryClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(ABSTRACT_MEMORY_RUBY_CLASS,

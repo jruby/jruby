@@ -23,7 +23,7 @@ public class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Pointer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+                PointerAllocator.INSTANCE);
 
         result.defineAnnotatedMethods(Pointer.class);
         result.defineAnnotatedConstants(Pointer.class);
@@ -37,7 +37,19 @@ public class Pointer extends AbstractMemory {
 
         return result;
     }
-    
+
+    private static final class PointerAllocator implements ObjectAllocator {
+        static final ObjectAllocator INSTANCE = new PointerAllocator();
+
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new Pointer(runtime, klazz);
+        }
+    }
+
+    private Pointer(Ruby runtime, RubyClass klazz) {
+        super(runtime, klazz, new NullMemoryIO(runtime), 0);
+    }
+
     public Pointer(Ruby runtime, DirectMemoryIO io) {
         this(runtime, getPointerClass(runtime), io);
     }
@@ -58,18 +70,22 @@ public class Pointer extends AbstractMemory {
         return runtime.fastGetModule("FFI").fastGetClass("Pointer");
     }
 
-    @JRubyMethod(name = { "new" }, meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject address) {
-        return new Pointer(context.getRuntime(),
-                Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address)));
+    @JRubyMethod(name = { "initialize" })
+    public IRubyObject initialize(ThreadContext context, IRubyObject address) {
+        io = Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
+        size = Long.MAX_VALUE;
+        typeSize = 1;
+
+        return this;
     }
 
-    @JRubyMethod(name = { "new" }, meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv,
-            IRubyObject type, IRubyObject address) {
-        return new Pointer(context.getRuntime(), 
-                Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address)),
-                Long.MAX_VALUE, calculateSize(context, type));
+    @JRubyMethod(name = { "initialize" })
+    public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
+        io = Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
+        size = Long.MAX_VALUE;
+        typeSize = calculateSize(context, type);
+
+        return this;
     }
 
     /**
