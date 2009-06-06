@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi;
 
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.jruby.Ruby;
@@ -15,63 +16,123 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 
 @JRubyClass(name = "FFI::" + AutoPointer.CLASS_NAME, parent = "FFI::Pointer")
-public class AutoPointer extends Pointer {
+public final class AutoPointer extends Pointer {
     public static final String CLASS_NAME = "AutoPointer";
-    private final Pointer pointer;
-    private final PointerHolder holder;
+    private Pointer pointer;
+    private PointerHolder holder;
 
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
                 module.getClass("Pointer"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+                AutoPointerAllocator.INSTANCE);
         result.defineAnnotatedMethods(AutoPointer.class);
         result.defineAnnotatedConstants(AutoPointer.class);
 
         return result;
     }
 
-    /**
-     * Creates a new <tt>AutoPointer</tt> instance.
-     * @param pointer - the pointer to free when this AutoPointer is garbage collected
-     */
-    private AutoPointer(Ruby runtime, Pointer pointer, IRubyObject proc) {
-        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME),
-                (DirectMemoryIO) pointer.getMemoryIO(), pointer.getSize());
-        this.pointer = pointer;
-        holder = new PointerHolder(pointer, proc);
+    private static final class AutoPointerAllocator implements ObjectAllocator {
+        static final ObjectAllocator INSTANCE = new AutoPointerAllocator();
+
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new AutoPointer(runtime, klazz);
+        }
+
     }
-    @JRubyMethod(name = "__alloc", meta = true)
-    public static IRubyObject newAutoPointer(ThreadContext context, IRubyObject self, IRubyObject pointerArg, IRubyObject proc) {
-        return new AutoPointer(context.getRuntime(), (Pointer) pointerArg, proc);
-    }
-    @Override
-    protected AbstractMemory slice(Ruby runtime, long offset) {
-        return pointer.slice(runtime, offset);
+
+    private AutoPointer(Ruby runtime, RubyClass klazz) {
+        super(runtime, klazz, new NullMemoryIO(runtime));
     }
     
+    private static final void checkPointer(Ruby runtime, IRubyObject ptr) {
+        if (!(ptr instanceof Pointer)) {
+            throw runtime.newTypeError(ptr, runtime.fastGetModule("FFI").fastGetClass("Pointer"));
+        }
+        if (ptr instanceof MemoryPointer || ptr instanceof AutoPointer) {
+            throw runtime.newTypeError("Cannot use AutoPointer with MemoryPointer or AutoPointer instances");
+        }
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static final IRubyObject newAutoPointer(ThreadContext context, IRubyObject klazz, IRubyObject ptr) {
+        AutoPointer p = new AutoPointer(context.getRuntime(), (RubyClass) klazz);
+        p.callMethod(context, "initialize", ptr);
+
+        return p;
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static final IRubyObject newAutoPointer(ThreadContext context, IRubyObject klazz, IRubyObject ptr, IRubyObject proc) {
+        AutoPointer p = new AutoPointer(context.getRuntime(), (RubyClass) klazz);
+        p.callMethod(context, "initialize", new IRubyObject[] { ptr, proc });
+
+        return p;
+    }
+
+    @JRubyMethod(name = "initialize")
+    public final IRubyObject initialize(ThreadContext context, IRubyObject pointerArg) {
+
+        checkPointer(context.getRuntime(), pointerArg);
+
+        this.io = ((Pointer) pointerArg).getMemoryIO();
+        this.pointer = (Pointer) pointerArg;
+        this.holder = new PointerHolder(pointer, new ReleaseMethodReaper(pointer, getMetaClass()));
+
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize")
+    public final IRubyObject initialize(ThreadContext context, IRubyObject self,
+            IRubyObject pointerArg, IRubyObject releaser) {
+
+        checkPointer(context.getRuntime(), pointerArg);
+
+        this.io = ((Pointer) pointerArg).getMemoryIO();
+        this.pointer = (Pointer) pointerArg;
+        this.holder = new PointerHolder(pointer, new ProcReaper(pointer, releaser));
+
+        return this;
+    }    
+    
     private static final class PointerHolder {
-        private static final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
-        private final Pointer pointer;
-        private final IRubyObject proc;
-        private PointerHolder(Pointer pointer, IRubyObject proc) {
+        static final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
+        
+        protected final Pointer pointer;
+        protected final Runnable reaper;
+        public PointerHolder(Pointer pointer, Runnable reaper) {
             this.pointer = pointer;
-            this.proc = proc;
+            this.reaper = reaper;
         }
         @Override
         protected void finalize() throws Exception {
-            executor.execute(new Reaper(pointer, proc));
+            executor.execute(reaper);
         }
     }
-    private static final class Reaper implements Runnable {
+    
+    private static final class ProcReaper implements Runnable {
         private final Pointer pointer;
         private final IRubyObject proc;
-        private Reaper(Pointer pointer, IRubyObject proc) {
+        private ProcReaper(Pointer pointer, IRubyObject proc) {
             this.pointer = pointer;
             this.proc = proc;
         }
         public void run() {
             try {
                 proc.callMethod(pointer.getRuntime().getCurrentContext(), "call", pointer);
+            } catch (Exception ex) {}
+        }
+    }
+
+    private static final class ReleaseMethodReaper implements Runnable {
+        private final Pointer pointer;
+        private final IRubyObject releaser;
+        private ReleaseMethodReaper(Pointer pointer, IRubyObject releaser) {
+            this.pointer = pointer;
+            this.releaser = releaser;
+        }
+        public void run() {
+            try {
+                releaser.callMethod(pointer.getRuntime().getCurrentContext(), "release", pointer);
             } catch (Exception ex) {}
         }
     }

@@ -27,33 +27,5 @@ module FFI
     # going to be useful if you subclass AutoPointer, and override
     # release(), which by default does nothing.
     #
-    def self.new(ptr, proc=nil)
-      raise ArgumentError, "Invalid pointer" if ptr.nil? || !ptr.kind_of?(Pointer) \
-        || ptr.kind_of?(MemoryPointer) || ptr.kind_of?(AutoPointer)
-      free = if proc and proc.is_a? Method
-        finalize(ptr, self.method_to_proc(proc))
-      elsif proc and proc.is_a? Proc
-        finalize(ptr, proc)
-      else
-        finalize(ptr, self.method_to_proc(self.method(:release)))
-      end
-      self.__alloc(ptr, free)
-    end
-    def self.release(ptr)
-    end
-
-    private
-    def self.finalize(ptr, proc)
-      #
-      #  having a method create the lambda eliminates inadvertent
-      #  references to the underlying object, which would prevent GC
-      #  from running.
-      #
-      Proc.new { |*args| proc.call(ptr) }
-    end
-    def self.method_to_proc method
-      #  again, can't call this inline as it causes a memory leak.
-      method.to_proc
-    end
   end
 end
