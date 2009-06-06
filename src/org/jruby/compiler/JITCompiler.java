@@ -32,12 +32,15 @@ package org.jruby.compiler;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.MetaClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -104,13 +107,24 @@ public class JITCompiler implements JITCompilerMBean {
 
             // Check if the method has been explicitly excluded
             String moduleName = method.getImplementationClass().getName();
-            if (instanceConfig.getExcludedMethods().size() > 0 &&
-                    (instanceConfig.getExcludedMethods().contains(moduleName) ||
-                    instanceConfig.getExcludedMethods().contains(moduleName+"#"+name) ||
-                    instanceConfig.getExcludedMethods().contains(name))) {
-                method.setCallCount(-1);
-                return null;
+            if(instanceConfig.getExcludedMethods().size() > 0) {
+                String excludeModuleName = moduleName;
+                if(method.getImplementationClass().isSingleton()) {
+                    IRubyObject possibleRealClass = ((MetaClass)method.getImplementationClass()).getAttached();
+                    if(possibleRealClass instanceof RubyModule) {
+                        excludeModuleName = "Meta:" + ((RubyModule)possibleRealClass).getName();
+                    }
+                }
+
+                if ((instanceConfig.getExcludedMethods().contains(excludeModuleName) ||
+                     instanceConfig.getExcludedMethods().contains(excludeModuleName +"#"+name) ||
+                     instanceConfig.getExcludedMethods().contains(name))) {
+                    method.setCallCount(-1);
+                    return null;
+                }
             }
+
+
 
             JITClassGenerator generator = new JITClassGenerator(name, context.getRuntime(), method, context);
 
