@@ -991,7 +991,7 @@ public class RubyInstanceConfig {
                         POSITIONLESS_COMPILE_ENABLED = true;
                         FASTCASE_COMPILE_ENABLED = true;
                         FASTSEND_COMPILE_ENABLED = true;
-                        RubyException.TRACE_TYPE = RubyException.RAW;
+                        RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
