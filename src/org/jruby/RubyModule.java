@@ -1094,7 +1094,7 @@ public class RubyModule extends RubyObject {
         // We warn because we treat certain method names as "special" for purposes of
         // optimization. Hopefully this will be enough to convince people not to alias
         // them.
-        if (ASTInspector.SCOPE_AWARE_METHODS.contains(oldName)) {
+        if (SCOPE_CAPTURING_METHODS.contains(oldName)) {
             runtime.getWarnings().warn("`" + oldName + "' should not be aliased");
         }
 
