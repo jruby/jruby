@@ -273,7 +273,6 @@ public class Java implements Library {
         
         @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
         public static IRubyObject set_java_object(IRubyObject recv, IRubyObject self, IRubyObject java_object) {
-            self.getInstanceVariables().fastSetInstanceVariable("@java_object", java_object);
             self.dataWrapStruct(java_object);
             return java_object;
         }
@@ -413,7 +412,6 @@ public class Java implements Library {
         }
         // in theory we should never get here, keeping around temporarily
         IRubyObject new_instance = ((RubyClass) recv).allocate();
-        new_instance.getInstanceVariables().fastSetInstanceVariable("@java_object", java_object);
         new_instance.dataWrapStruct(java_object);
         return new_instance;
     }

@@ -76,8 +76,6 @@ public class JavaSupport {
         public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
             IRubyObject proxy = clazz.allocate();
             JavaObject wrappedObject = JavaObject.wrap(clazz.getRuntime(), javaObject);
-            proxy.getInstanceVariables().fastSetInstanceVariable("@java_object",
-                   wrappedObject);
             proxy.dataWrapStruct(wrappedObject);
             
             return proxy;

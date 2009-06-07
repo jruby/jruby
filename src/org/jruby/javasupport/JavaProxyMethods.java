@@ -13,8 +13,6 @@ public class JavaProxyMethods {
         Ruby runtime = context.getRuntime();
         RubyModule javaProxyMethods = runtime.defineModule("JavaProxyMethods");
         
-        javaProxyMethods.addReadWriteAttribute(context, "java_object");
-        
         javaProxyMethods.defineAnnotatedMethods(JavaProxyMethods.class);
         
         return javaProxyMethods;
@@ -23,6 +21,18 @@ public class JavaProxyMethods {
     @JRubyMethod
     public static IRubyObject java_class(ThreadContext context, IRubyObject recv) {
         return recv.getMetaClass().getRealClass().fastGetInstanceVariable("@java_class");
+    }
+
+    @JRubyMethod
+    public static IRubyObject java_object(ThreadContext context, IRubyObject recv) {
+        return (IRubyObject)recv.dataGetStruct();
+    }
+
+    @JRubyMethod(name = "java_object=")
+    public static IRubyObject java_object_set(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        // XXX: Check if it's appropriate type?
+        recv.dataWrapStruct(obj);
+        return obj;
     }
 
     @JRubyMethod(name = {"=="})

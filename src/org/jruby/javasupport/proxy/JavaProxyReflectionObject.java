@@ -66,10 +66,11 @@ public class JavaProxyReflectionObject extends RubyObject {
     @JRubyMethod(name = {"==", "eql?"})
     public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof JavaProxyReflectionObject)) {
-            other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
-            if (!(other instanceof JavaObject)) {
+            Object otherObj = other.dataGetStruct();
+            if (!(otherObj instanceof JavaObject)) {
                 return getRuntime().getFalse();
             }
+            other = (IRubyObject)otherObj;
         }
 
         boolean isEqual = equals(other);
@@ -91,10 +92,11 @@ public class JavaProxyReflectionObject extends RubyObject {
     @JRubyMethod(name = "equal?")
     public IRubyObject same(IRubyObject other) {
         if (!(other instanceof JavaObject)) {
-            other = other.getInstanceVariables().fastGetInstanceVariable("@java_object");
-            if (!(other instanceof JavaObject)) {
+            Object otherObj = other.dataGetStruct();
+            if (!(otherObj instanceof JavaObject)) {
                 return getRuntime().getFalse();
             }
+            other = (IRubyObject)otherObj;
         }
 
         boolean isSame = this == other;
