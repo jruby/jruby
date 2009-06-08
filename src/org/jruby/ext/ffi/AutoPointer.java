@@ -2,7 +2,6 @@
 package org.jruby.ext.ffi;
 
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.jruby.Ruby;
@@ -53,22 +52,7 @@ public final class AutoPointer extends Pointer {
         }
     }
 
-    @JRubyMethod(name = "new", meta = true)
-    public static final IRubyObject newAutoPointer(ThreadContext context, IRubyObject klazz, IRubyObject ptr) {
-        AutoPointer p = new AutoPointer(context.getRuntime(), (RubyClass) klazz);
-        p.callMethod(context, "initialize", ptr);
-
-        return p;
-    }
-
-    @JRubyMethod(name = "new", meta = true)
-    public static final IRubyObject newAutoPointer(ThreadContext context, IRubyObject klazz, IRubyObject ptr, IRubyObject proc) {
-        AutoPointer p = new AutoPointer(context.getRuntime(), (RubyClass) klazz);
-        p.callMethod(context, "initialize", new IRubyObject[] { ptr, proc });
-
-        return p;
-    }
-
+    @Override
     @JRubyMethod(name = "initialize")
     public final IRubyObject initialize(ThreadContext context, IRubyObject pointerArg) {
 
@@ -81,9 +65,9 @@ public final class AutoPointer extends Pointer {
         return this;
     }
 
+    @Override
     @JRubyMethod(name = "initialize")
-    public final IRubyObject initialize(ThreadContext context, IRubyObject self,
-            IRubyObject pointerArg, IRubyObject releaser) {
+    public final IRubyObject initialize(ThreadContext context, IRubyObject pointerArg, IRubyObject releaser) {
 
         checkPointer(context.getRuntime(), pointerArg);
 
