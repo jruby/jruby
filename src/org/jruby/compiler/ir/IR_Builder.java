@@ -1841,10 +1841,11 @@ public class IR_Builder
         if (opt > 0 || rest > -1) {
             Node optArgs = argsNode.getOptArgs();
             for (j = 0; j < opt; j++, i++) {
+					 	// Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = m.getNewLabel();
                 m.addInstr(new RECV_OPT_ARG_Instr(m.getNewVariable("arg"), new Constant(i), l));
-                m.addInstr(new LABEL_Instr(l));
                 build(((ListNode)object).get(j), m, true);
+                m.addInstr(new LABEL_Instr(l));
             }
 
             if (rest > -1) {
