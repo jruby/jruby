@@ -1,2 +1,0 @@
-fails(JRUBY-3297):Array.new with (size, object=nil) returns the value passed to break
-fails:Array.new with (size, object=nil) returns the value passed to break

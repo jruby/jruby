@@ -599,34 +599,59 @@ public class RubyClass extends RubyModule {
             super(implClass, visibility);
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            RubyClass cls = (RubyClass)self;
-            IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, args, block);
-            return obj;
+            preBacktraceOnly(context, name);
+            try {
+                RubyClass cls = (RubyClass)self;
+                IRubyObject obj = cls.allocate();
+                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, args, block);
+                return obj;
+            } finally {
+                postBacktraceOnly(context);
+            }
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            RubyClass cls = (RubyClass)self;
-            IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, block);
-            return obj;
+            preBacktraceOnly(context, name);
+            try {
+                RubyClass cls = (RubyClass)self;
+                IRubyObject obj = cls.allocate();
+                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, block);
+                return obj;
+            } finally {
+                postBacktraceOnly(context);
+            }
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            RubyClass cls = (RubyClass)self;
-            IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, block);
-            return obj;
+            preBacktraceOnly(context, name);
+            try {
+                RubyClass cls = (RubyClass)self;
+                IRubyObject obj = cls.allocate();
+                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, block);
+                return obj;
+            } finally {
+                postBacktraceOnly(context);
+            }
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            RubyClass cls = (RubyClass)self;
-            IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, block);
-            return obj;
+            preBacktraceOnly(context, name);
+            try {
+                RubyClass cls = (RubyClass)self;
+                IRubyObject obj = cls.allocate();
+                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, block);
+                return obj;
+            } finally {
+                postBacktraceOnly(context);
+            }
         }
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            RubyClass cls = (RubyClass)self;
-            IRubyObject obj = cls.allocate();
-            cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, arg2, block);
-            return obj;
+            preBacktraceOnly(context, name);
+            try {
+                RubyClass cls = (RubyClass)self;
+                IRubyObject obj = cls.allocate();
+                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, arg2, block);
+                return obj;
+            } finally {
+                postBacktraceOnly(context);
+            }
         }
     }
 
