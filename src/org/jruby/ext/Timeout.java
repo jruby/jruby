@@ -6,7 +6,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -82,7 +81,7 @@ public class Timeout implements Library {
 
         try {
             timeoutFuture = timeoutExecutor.schedule(timeoutRunnable, 
-                    seconds.convertToInteger().getLongValue(), TimeUnit.SECONDS);
+                    (long)(seconds.convertToFloat().getDoubleValue() * 1000000), TimeUnit.MICROSECONDS);
 
             return block.yield(context, seconds);
         } catch (RaiseException re) {
@@ -118,7 +117,7 @@ public class Timeout implements Library {
 
         try {
             timeoutFuture = timeoutExecutor.schedule(timeoutRunnable, 
-                    seconds.convertToInteger().getLongValue(), TimeUnit.SECONDS);
+                    (long)(seconds.convertToFloat().getDoubleValue() * 1000000), TimeUnit.MICROSECONDS);
 
             return block.yield(context, seconds);
         } catch (RaiseException re) {
