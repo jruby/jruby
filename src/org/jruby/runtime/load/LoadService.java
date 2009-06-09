@@ -126,7 +126,7 @@ public class LoadService {
         Source, Extension, Both, Neither;
         
         public static final String[] sourceSuffixes = { ".class", ".rb" };
-        public static final String[] extensionSuffixes = { ".so", ".jar" };
+        public static final String[] extensionSuffixes = { ".jar", ".so" };
         private static final String[] allSuffixes = { ".class", ".rb", ".so", ".jar" };
         private static final String[] emptySuffixes = { "" };
         
