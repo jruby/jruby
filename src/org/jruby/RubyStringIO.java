@@ -757,7 +757,7 @@ public class RubyStringIO extends RubyObject {
         IRubyObject obj = read(args);
 
         if (isEOF()) {
-            if (obj.isNil() || ((RubyString) obj).getByteList().length() == 0) {
+            if (obj.isNil()) {
                 throw getRuntime().newEOFError();
             }
         }
