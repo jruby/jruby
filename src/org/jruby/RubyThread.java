@@ -593,6 +593,7 @@ public class RubyThread extends RubyObject {
     
     @JRubyMethod(name = "wakeup")
     public synchronized RubyThread wakeup() {
+        status = Status.RUN;
         notifyAll();
     	
     	return this;
@@ -698,9 +699,7 @@ public class RubyThread extends RubyObject {
     
     @JRubyMethod(name = "run")
     public synchronized IRubyObject run() {
-        notifyAll();
-    	
-    	return this;
+        return wakeup();
     }
 
     /**
@@ -718,6 +717,7 @@ public class RubyThread extends RubyObject {
                 status = Status.SLEEP;
                 wait(millis);
             } finally {
+                result = (status != Status.RUN);
                 pollThreadEvents();
                 status = Status.RUN;
             }
