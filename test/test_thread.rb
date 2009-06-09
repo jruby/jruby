@@ -293,4 +293,21 @@ class TestThread < Test::Unit::TestCase
     Thread.new { og = Thread.current.group }.join
     assert_equal(tg, og)
   end
+
+  # JRUBY-3740: Thread#wakeup not working
+  def test_wakeup_wakes_sleeping_thread
+    awoke = false
+    t = Thread.new { sleep; awoke = true }
+    Thread.pass until t.status == "sleep"
+    t.wakeup.join
+    assert awoke
+
+    awoke = false
+    start_time = Time.now
+    end_time = nil
+    t = Thread.new { sleep 100; end_time = Time.now }
+    Thread.pass until t.status == "sleep"
+    t.wakeup.join
+    assert (end_time - start_time) < 1
+  end
 end
