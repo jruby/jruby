@@ -14,6 +14,6 @@ package org.jruby.compiler.ir;
 //
 public class Attribute extends Operand
 {
-	Operand 			_target;	// The operand that this attribute targets
-	AttributeValue _val;		// Attribute value
+    Operand        _target;    // The operand that this attribute targets
+    AttributeValue _val;       // Attribute value
 }

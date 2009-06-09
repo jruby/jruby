@@ -4,5 +4,5 @@ package org.jruby.compiler.ir.targets;
 // and outputs bytecode
 public class JVM implements CompilerTarget
 {
-	public void codegen() { }
+    public void codegen() { }
 }

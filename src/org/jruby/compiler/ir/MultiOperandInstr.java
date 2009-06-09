@@ -5,5 +5,5 @@ package org.jruby.compiler.ir;
 
 public class MultiOperandInstr extends IR_Instr
 {
-	public Operand[] _args;
+    public Operand[] _args;
 }

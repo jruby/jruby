@@ -5,11 +5,11 @@ package org.jruby.compiler.ir;
 
 public class OneOperandInstr extends IR_Instr
 {
-	public final Operand _arg;
+    public final Operand _arg;
 
-	public OneOperandInstr(Operation op, Operand dest, Operand arg)
-	{
-		super(op, dest);
-		_arg = arg;
-	}
+    public OneOperandInstr(Operation op, Operand dest, Operand arg)
+    {
+        super(op, dest);
+        _arg = arg;
+    }
 }
