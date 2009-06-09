@@ -1,1 +1,0 @@
-fails(JRUBY-3558):Defining instance methods on an eigenclass define public methods
