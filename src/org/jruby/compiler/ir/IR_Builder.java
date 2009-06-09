@@ -1824,9 +1824,8 @@ public class IR_Builder
     }
 
     public void buildArgs(Node node, IR_BuilderContext context, boolean expr) {
-        IR_Method m = (IR_Method)context;
-
-        final ArgsNode argsNode = (ArgsNode) node;
+        final IR_Method m = (IR_Method)context;
+        final ArgsNode argsNode = (ArgsNode)node;
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
@@ -1834,27 +1833,38 @@ public class IR_Builder
           // TODO: Add IR instructions for checking method arity!
         // m.getVariableCompiler().checkMethodArity(required, opt, rest);
 
+            // FIXME: Is this correct?  Where is the receiver object??
+            // We need to set self = args[0]
+        int argIndex = 0;
+
             // Both for fixed arity and variable arity methods
-        for (int i = 0; i < m.numRequiredArgs(); i++)
-            m.addInstr(new RECV_ARG_Instr(m.getNewVariable("arg"), new Constant(i)));
+        ListNode preArgs  = argsNode.getPre();
+        for (int i = 0; i < m.numRequiredArgs(); i++, argIndex++) {
+            ArgumentNode a = (ArgumentNode)preArgs.get(i);
+            m.addInstr(new RECV_ARG_Instr(a.getName(), new Constant(argIndex)));
+        }
 
         if (opt > 0 || rest > -1) {
-            Node optArgs = argsNode.getOptArgs();
-            for (j = 0; j < opt; j++, i++) {
-					 	// Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
+            ListNode optArgs = argsNode.getOptArgs();
+            for (j = 0; j < opt; j++, argIndex++) {
+                    // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = m.getNewLabel();
-                m.addInstr(new RECV_OPT_ARG_Instr(m.getNewVariable("arg"), new Constant(i), l));
-                build(((ListNode)object).get(j), m, true);
+                LoclAsgnNode n = optArgs.get(j);
+                m.addInstr(new RECV_OPT_ARG_Instr(n.getName(), new Constant(argIndex), l));
+                build(n, m, true);
                 m.addInstr(new LABEL_Instr(l));
             }
 
             if (rest > -1) {
-                m.addInstr(new RECV_ARG_Instr(m.getNewVariable("arg"), new Constant(i)));
+                m.addInstr(new RECV_ARG_Instr(argsNode.getRestArgNode().getName(), new Constant(argIndex)));
+                argIndex++;
             }
         }
 
+        // FIXME: Ruby 1.9 post args code needs to come here
+
         if (argsNode.getBlock() != null)
-            m.addInstr(new RECV_ARG_Instr(m.getNewVariable("arg"), new Constant(argsNode.getBlock().getCount())));
+            m.addInstr(new RECV_ARG_Instr(argsNode.getBlockNode().getName(), new Constant(argIndex)));
 
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
