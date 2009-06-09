@@ -14,14 +14,14 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 
-@JRubyClass(name = "FFI::" + AutoPointer.CLASS_NAME, parent = "FFI::Pointer")
+@JRubyClass(name = "FFI::" + AutoPointer.AUTOPTR_CLASS_NAME, parent = "FFI::Pointer")
 public final class AutoPointer extends Pointer {
-    public static final String CLASS_NAME = "AutoPointer";
+    static final String AUTOPTR_CLASS_NAME = "AutoPointer";
     private Pointer pointer;
     private PointerHolder holder;
 
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(CLASS_NAME,
+        RubyClass result = module.defineClassUnder(AUTOPTR_CLASS_NAME,
                 module.getClass("Pointer"),
                 AutoPointerAllocator.INSTANCE);
         result.defineAnnotatedMethods(AutoPointer.class);
@@ -56,9 +56,16 @@ public final class AutoPointer extends Pointer {
     @JRubyMethod(name = "initialize")
     public final IRubyObject initialize(ThreadContext context, IRubyObject pointerArg) {
 
-        checkPointer(context.getRuntime(), pointerArg);
+        Ruby runtime = context.getRuntime();
 
-        this.io = ((Pointer) pointerArg).getMemoryIO();
+        checkPointer(runtime, pointerArg);
+
+        // If no release method is defined, then memory leaks will result.
+        if (!getMetaClass().respondsTo("release")) {
+                throw runtime.newRuntimeError("No release method defined");
+        }
+
+        setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
         this.holder = new PointerHolder(pointer, new ReleaseMethodReaper(pointer, getMetaClass()));
 
@@ -71,7 +78,7 @@ public final class AutoPointer extends Pointer {
 
         checkPointer(context.getRuntime(), pointerArg);
 
-        this.io = ((Pointer) pointerArg).getMemoryIO();
+        setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
         this.holder = new PointerHolder(pointer, new ProcReaper(pointer, releaser));
 
