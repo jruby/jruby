@@ -101,6 +101,8 @@ public final class MemoryPointer extends Pointer {
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).free();
+        // Replace memory object with one that throws an exception on any access
+        setMemoryIO(new FreedMemoryIO(context.getRuntime()));
         return context.getRuntime().getNil();
     }
 
@@ -108,5 +110,33 @@ public final class MemoryPointer extends Pointer {
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
         return context.getRuntime().getNil();
+    }
+
+    private static final class FreedMemoryIO extends InvalidMemoryIO implements AllocatedDirectMemoryIO {
+
+        public FreedMemoryIO(Ruby runtime) {
+            super(runtime, "Attempting to access freed memory");
+        }
+
+        public boolean isNull() {
+            return false;
+        }
+
+        public boolean isDirect() {
+            return true;
+        }
+
+        public void free() {
+            throw ex();
+        }
+
+        public void setAutoRelease(boolean autorelease) {
+            throw ex();
+        }
+
+        public long getAddress() {
+            return 0;
+        }
+        
     }
 }
