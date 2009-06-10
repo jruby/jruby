@@ -69,7 +69,7 @@ public class RubyFloat extends RubyNumeric {
     public static final int MANT_DIG = 53;
     public static final int DIG = 15;
     public static final int MIN_EXP = -1021;
-    public static final int MAX_EXP = 1021;
+    public static final int MAX_EXP = 1024;
     public static final int MAX_10_EXP = 308;
     public static final int MIN_10_EXP = -307;
     public static final double EPSILON = 2.2204460492503131e-16;
