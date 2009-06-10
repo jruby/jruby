@@ -119,6 +119,18 @@ abstract public class AbstractMemory extends RubyObject {
     }
 
     /**
+     * Replaces the native memory object backing this ruby memory object
+     *
+     * @param io The new memory I/O object
+     * @return The old memory I/O object
+     */
+    protected final MemoryIO setMemoryIO(MemoryIO io) {
+        MemoryIO old = this.io;
+        this.io = io;
+        return old;
+    }
+
+    /**
      * Calculates the absoluate offset within the base memory pointer for a given offset.
      *
      * @param offset The offset to add to the base offset.
