@@ -270,7 +270,7 @@ public class JavaEmbedUtils {
      * Convert a Ruby object to a Java object.
      */
     public static Object rubyToJava(Ruby runtime, IRubyObject value, Class type) {
-        return JavaUtil.convertArgument(runtime, Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
+        return JavaUtil.convertArgument(runtime, JavaUtil.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), type);
     }
 
     /**
@@ -280,8 +280,7 @@ public class JavaEmbedUtils {
      */
     public static Object rubyToJava(IRubyObject value) {
         Ruby runtime = value.getRuntime();
-
-        return JavaUtil.convertArgument(runtime, Java.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), Object.class);
+        return JavaUtil.convertArgument(runtime, JavaUtil.ruby_to_java(runtime.getObject(), value, Block.NULL_BLOCK), Object.class);
     }
 
     /**
