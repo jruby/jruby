@@ -219,4 +219,15 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_marshal_regression
     assert_equal BigDecimal('0.0'), Marshal.load(Marshal.dump(BigDecimal.new('0.0')))
   end
+
+  def test_large_bigdecimal_to_f
+    pos_inf = BigDecimal.new("5E69999999").to_f
+    assert pos_inf.infinite?
+    assert pos_inf > 0
+    assert BigDecimal.new("0E69999999").to_f < Float::EPSILON
+    neg_inf = BigDecimal.new("-5E69999999").to_f
+    assert neg_inf.infinite?
+    assert neg_inf < 0
+    assert BigDecimal.new("5E-69999999").to_f < Float::EPSILON
+  end
 end

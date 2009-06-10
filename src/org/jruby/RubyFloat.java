@@ -64,6 +64,15 @@ import org.jruby.util.Sprintf;
  */
 @JRubyClass(name="Float", parent="Numeric", include="Precision")
 public class RubyFloat extends RubyNumeric {
+    public static final int ROUNDS = 1;
+    public static final int RADIX = 2;
+    public static final int MANT_DIG = 53;
+    public static final int DIG = 15;
+    public static final int MIN_EXP = -1021;
+    public static final int MAX_EXP = 1021;
+    public static final int MAX_10_EXP = 308;
+    public static final int MIN_10_EXP = -307;
+    public static final double EPSILON = 2.2204460492503131e-16;
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -82,19 +91,19 @@ public class RubyFloat extends RubyNumeric {
         }
 
         // Java Doubles are 64 bit long:            
-        floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, 1));
-        floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, 2));
-        floatc.defineConstant("MANT_DIG", RubyFixnum.newFixnum(runtime, 53));
-        floatc.defineConstant("DIG", RubyFixnum.newFixnum(runtime, 15));
+        floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, ROUNDS));
+        floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, RADIX));
+        floatc.defineConstant("MANT_DIG", RubyFixnum.newFixnum(runtime, MANT_DIG));
+        floatc.defineConstant("DIG", RubyFixnum.newFixnum(runtime, DIG));
         // Double.MAX_EXPONENT since Java 1.6
-        floatc.defineConstant("MIN_EXP", RubyFixnum.newFixnum(runtime, -1021));
+        floatc.defineConstant("MIN_EXP", RubyFixnum.newFixnum(runtime, MIN_EXP));
         // Double.MAX_EXPONENT since Java 1.6            
-        floatc.defineConstant("MAX_EXP", RubyFixnum.newFixnum(runtime, 1024));
-        floatc.defineConstant("MIN_10_EXP", RubyFixnum.newFixnum(runtime, -307));
-        floatc.defineConstant("MAX_10_EXP", RubyFixnum.newFixnum(runtime, 308));
+        floatc.defineConstant("MAX_EXP", RubyFixnum.newFixnum(runtime, MAX_EXP));
+        floatc.defineConstant("MIN_10_EXP", RubyFixnum.newFixnum(runtime, MIN_10_EXP));
+        floatc.defineConstant("MAX_10_EXP", RubyFixnum.newFixnum(runtime, MAX_10_EXP));
         floatc.defineConstant("MIN", RubyFloat.newFloat(runtime, Double.MIN_VALUE));
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
-        floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, 2.2204460492503131e-16));
+        floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, EPSILON));
         
         floatc.defineAnnotatedMethods(RubyFloat.class);
 
