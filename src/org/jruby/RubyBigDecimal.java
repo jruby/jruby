@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -111,8 +110,6 @@ public class RubyBigDecimal extends RubyNumeric {
     
     public static RubyClass createBigDecimal(Ruby runtime) {
         RubyClass result = runtime.defineClass("BigDecimal",runtime.getNumeric(), BIGDECIMAL_ALLOCATOR);
-
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyBigDecimal.class);
 
         runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
 
@@ -1183,6 +1180,21 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isZero()) {
             return RubyFloat.newFloat(getRuntime(),
                     zeroSign < 0 ? -0.0 : 0.0);
+        }
+        if (-value.scale() > RubyFloat.MAX_10_EXP) {
+            switch (value.signum()) {
+            case -1:
+                return RubyFloat.newFloat(getRuntime(), Double.NEGATIVE_INFINITY);
+            case 0:
+                return RubyFloat.newFloat(getRuntime(), 0);
+            case 1:
+                return RubyFloat.newFloat(getRuntime(), Double.POSITIVE_INFINITY);
+            default:
+                // eh?!
+            }
+        }
+        if (-value.scale() < RubyFloat.MIN_10_EXP) {
+            return RubyFloat.newFloat(getRuntime(), 0);
         }
         return RubyFloat.newFloat(getRuntime(), value.doubleValue());
     }
