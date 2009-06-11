@@ -1,0 +1,1 @@
+fails(JRUBY-3747):String#gsub! with pattern and block raises a RuntimeError when self is frozen

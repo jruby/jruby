@@ -1,0 +1,1 @@
+fails(JRUBY-3749):BigDecimal.new doesn't segfault when using a very large string to build the number
