@@ -7,7 +7,13 @@
 
 CC=gcc
 WIN32_CC=/usr/local/mingw32/bin/mingw32-gcc
+
+# Solaris fix
+ifeq ($(shell uname), SunOS)
+CFLAGS=-Wall -pedantic -s -O3 -lsocket -lnsl
+else
 CFLAGS=-Wall -pedantic -s -O3
+endif
 
 ng: src/c/ng.c
 	@echo "Building ng client.  To build a Windows binary, type 'make ng.exe'"
