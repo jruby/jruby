@@ -40,6 +40,8 @@ describe "SkinnyMethodAdapter" do
         false
       when "GOTO", "RETURN", "INSTANCEOF", "NEW"
         false
+      when "INVOKEDYNAMIC_OWNER"
+        false
       else
         true
       end
