@@ -227,25 +227,25 @@ public class IR_Builder
         }
     }
 
-    public List<Operand> buildArguments(Node node, IR_BuilderContext context) {
+    public void buildArguments(List<Operand> args, Node node, IR_BuilderContext context) {
         switch (node.getNodeType()) {
-            case ARGSCATNODE: return buildArgsCatArguments(node, context, true);
-            case ARGSPUSHNODE: return buildArgsPushArguments(node, context, true);
-            case ARRAYNODE: return buildArrayArguments(node, context, true);
-            case SPLATNODE: return buildSplatArguments(node, context, true);
+            case ARGSCATNODE: buildArgsCatArguments(args, node, context, true);
+            case ARGSPUSHNODE: buildArgsPushArguments(args, node, context, true);
+            case ARRAYNODE: buildArrayArguments(args, node, context, true);
+            case SPLATNODE: buildSplatArguments(args, node, context, true);
             default: 
-                Operand retVal = build(node, context, true); 
+                Operand retVal = build(node, context, true);
                 context.convertToJavaArray(); 
                 return (retVal == null) ? null : new ArrayList<Operand>(retVal);
         }
     }
     
-    public List<Operand>Operand buildVariableArityArguments(node, context) {
+    public void buildVariableArityArguments(List<Operand> args, Node node, IR_BuilderContext m) {
         // public int getArity() { return -1; }
-       return buildArguments(node, m);
+       buildArguments(args, node, m);
     }
 
-    public List<Operand> buildSpecificArityArguments (node, context) {
+    public void buildSpecificArityArguments (List<Operand> args, Node node, IR_BuilderContext m) {
 /**
         public int getArity() {
             if (node.getNodeType() == NodeType.ARRAYNODE && ((ArrayNode)node).isLightweight()) {
@@ -257,7 +257,6 @@ public class IR_Builder
             }
         }
 **/
-        List<Operand> args = new ArrayList<Operand>();
         if (node.getNodeType() == NodeType.ARRAYNODE) {
             ArrayNode arrayNode = (ArrayNode)node;
             if (arrayNode.isLightweight()) {
@@ -268,40 +267,65 @@ public class IR_Builder
                         args.add(new Operand(((INameNode)n).getName()));
                     else
 **/
-                    args.add(build(n, context, true));
+                    args.add(build(n, m, true));
                 }
             } else {
                 // use array as-is, it's a literal array
-                args.add(build(arrayNode, context, true));
+                args.add(build(arrayNode, m, true));
             }
         } else {
-            args.add(build(node, context, true));
+            args.add(build(node, m, true));
         }
     }
 
-    public List<Operand> setupArgs(Node node, IR_BuilderContext context) {
-        if (node == null)
+    public List<Operand> setupArgs(Node receiver, Node args, IR_BuilderContext context) {
+        if (args == null)
+            return null;
+
+        List<Operand> argsList = new ArrayList<Operand>();
+        // unwrap newline nodes to get their actual type
+        while (args.getNodeType() == NodeType.NEWLINENODE) {
+            args = ((NewlineNode)args).getNextNode();
+        }
+
+        buildArgs(argsList, args, context);
+
+        return argsList;
+    }
+
+    public List<Operand> setupArgs(Node args, IR_BuilderContext context) {
+        if (args == null)
             return null;
 
         // unwrap newline nodes to get their actual type
-        while (node.getNodeType() == NodeType.NEWLINENODE) {
-            node = ((NewlineNode)node).getNextNode();
+        while (args.getNodeType() == NodeType.NEWLINENODE) {
+            args = ((NewlineNode)args).getNextNode();
         }
-        switch (node.getNodeType()) {
+
+        List<Operand> argList = new ArrayList<Operand>();
+        argList.add(new Variable("self"));
+
+        buildArgs(argList, args, context);
+
+        return argList;
+    }
+
+    public void buildArgs(List<Operand> argsList, Node args, IR_BuilderContext context) {
+        switch (args.getNodeType()) {
             case ARGSCATNODE:
             case ARGSPUSHNODE:
             case SPLATNODE:
-                return buildVariableArityArguments(node, context);
+                buildVariableArityArguments(argsList, args, context);
                 break;
             case ARRAYNODE:
-                ArrayNode arrayNode = (ArrayNode)node;
+                ArrayNode arrayNode = (ArrayNode)args;
                 if (arrayNode.size() > 3)
-                    return buildVariableArityArguments(node, context);
+                    buildVariableArityArguments(argsList, arrayNode, context);
                 else if (arrayNode.size() > 0)
-                    return buildSpecificArityArguments(node, context);
+                    buildSpecificArityArguments(argsList, arrayNode, context);
                 break;
             default:
-                return buildSpecificArityArguments(node, context);
+                buildSpecificArityArguments(argsList, arrayNode, context);
                 break;
         }
     }
@@ -499,50 +523,60 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildCall(Node node, IR_BuilderContext m, boolean expr) {
-        final CallNode callNode = (CallNode) node;
+    public Operand buildCall(Node node, IR_BuilderContext context, boolean expr) {
+        CallNode callNode = (CallNode) node;
 
-        CompilerCallback receiverCallback = new CompilerCallback() {
-            public void call(IR_BuilderContext m) {
-                build(callNode.getReceiverNode(), m, true);
-            }
-        };
+        Node          callArgsNode = callNode.getArgsNode();
+        Node          receiverNode = callNode.getReceiverNode();
+        List<Operand> args         = setupArgs(receiverNode, callArgsNode, context);
+        Operand       block        = setupCallClosure(callNode.getIterNode(), context);
+        Variable      callResult   = context.getNewVariable("tmp");
+		  // FIXME: What happened to the receiver?  Is it implicitly the first argument to the call?
+        IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
+        context.addInstr(callInstr);
+        return callResult;
 
-        ArgumentsCallback argsCallback = setupArgs(callNode.getArgsNode());
-        CompilerCallback closureArg = setupCallClosure(callNode.getIterNode());
-
-        String name = callNode.getName();
-        CallType callType = CallType.NORMAL;
-
-        if (argsCallback != null && argsCallback.getArity() == 1) {
-            Node argument = callNode.getArgsNode().childNodes().get(0);
-            if (name.length() == 1) {
-                switch (name.charAt(0)) {
-                case '+': case '-': case '<':
-                    if (argument instanceof FixnumNode) {
-                        m.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
-                        if (!expr) m.consumeCurrentValue();
-                        return;
-                    }
-                }
-            }
-        }
-
-        // if __send__ with a literal symbol, build it as a direct fcall
-        if (RubyInstanceConfig.FASTSEND_COMPILE_ENABLED) {
-            String literalSend = getLiteralSend(callNode);
-            if (literalSend != null) {
-                name = literalSend;
-                callType = CallType.FUNCTIONAL;
-            }
-        }
-        
-        m.getInvocationCompiler().invokeDynamic(
-                name, receiverCallback, argsCallback,
-                callType, closureArg, callNode.getIterNode() instanceof IterNode);
-        
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+//        CompilerCallback receiverCallback = new CompilerCallback() {
+//            public void call(IR_BuilderContext m) {
+//                build(callNode.getReceiverNode(), m, true);
+//            }
+//        };
+//
+//        ArgumentsCallback argsCallback = setupArgs(callNode.getArgsNode());
+//        CompilerCallback closureArg = setupCallClosure(callNode.getIterNode());
+//
+//        String name = callNode.getName();
+//        CallType callType = CallType.NORMAL;
+//
+//        if (argsCallback != null && argsCallback.getArity() == 1) {
+//            Node argument = callNode.getArgsNode().childNodes().get(0);
+//            if (name.length() == 1) {
+//                switch (name.charAt(0)) {
+//                case '+': case '-': case '<':
+//                    if (argument instanceof FixnumNode) {
+//                        m.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
+//                        if (!expr) m.consumeCurrentValue();
+//                        return;
+//                    }
+//                }
+//            }
+//        }
+//
+//        // if __send__ with a literal symbol, build it as a direct fcall
+//        if (RubyInstanceConfig.FASTSEND_COMPILE_ENABLED) {
+//            String literalSend = getLiteralSend(callNode);
+//            if (literalSend != null) {
+//                name = literalSend;
+//                callType = CallType.FUNCTIONAL;
+//            }
+//        }
+//
+//        m.getInvocationCompiler().invokeDynamic(
+//                name, receiverCallback, argsCallback,
+//                callType, closureArg, callNode.getIterNode() instanceof IterNode);
+//
+//        // TODO: don't require pop
+//        if (!expr) m.consumeCurrentValue();
     }
 
     private String getLiteralSend(CallNode callNode) {
@@ -1872,7 +1906,7 @@ public class IR_Builder
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), context);
         Variable      callResult   = context.getNewVariable("tmp");
 		  // FIXME: What happened to the receiver?  Is it implicitly the first argument to the call?
-        IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(), block);
+        IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
         context.addInstr(callInstr);
         return callResult;
 
@@ -3407,10 +3441,10 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public List<Operand> buildArgsCatArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public void buildArgsCatArguments(List<Operand> args, Node node, IR_BuilderContext m, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
-        buildArguments(argsCatNode.getFirstNode(), m);
+        buildArguments(args, argsCatNode.getFirstNode(), m);
         // arguments buildrs always create IRubyObject[], but we want to use RubyArray.concat here;
         // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an array
         m.createNewArray(true);
@@ -3422,7 +3456,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public List<Operand> buildArgsPushArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public void buildArgsPushArguments(List<Operand> args, Node node, IR_BuilderContext m, boolean expr) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
         build(argsPushNode.getFirstNode(), m,true);
         build(argsPushNode.getSecondNode(), m,true);
@@ -3432,7 +3466,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public List<Operand> buildArrayArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public void buildArrayArguments(List<Operand> args, Node node, IR_BuilderContext m, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
 
         ArrayCallback callback = new ArrayCallback() {
@@ -3450,7 +3484,7 @@ public class IR_Builder
     // leave as a normal array
     }
 
-    public List<Operand> buildSplatArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public void buildSplatArguments(List<Operand> args, Node node, IR_BuilderContext m, boolean expr) {
         SplatNode splatNode = (SplatNode) node;
 
         build(splatNode.getValue(), m,true);

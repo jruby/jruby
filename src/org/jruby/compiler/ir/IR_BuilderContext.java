@@ -10,4 +10,7 @@ public interface IR_BuilderContext
 
         // methods, scripts, classes, and modules
     public void addInstr(IR_Instr i);
+
+    // create a new variable
+    public Variable getNewVariable(String name);
 }

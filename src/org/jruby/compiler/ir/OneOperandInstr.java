@@ -7,7 +7,7 @@ public class OneOperandInstr extends IR_Instr
 {
     public final Operand _arg;
 
-    public OneOperandInstr(Operation op, Operand dest, Operand arg)
+    public OneOperandInstr(Operation op, Variable dest, Operand arg)
     {
         super(op, dest);
         _arg = arg;
