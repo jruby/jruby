@@ -219,11 +219,11 @@
 
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${build.lib.dir}/asm-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
@@ -259,11 +259,11 @@
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0rc8.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${build.lib.dir}/asm-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
@@ -350,11 +350,11 @@
           <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
           <exclude name="META-INF/jruby.home/lib/ruby/1.9/**"/>
         </fileset>
-        <zipfileset src="${build.lib.dir}/asm-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.1.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.1.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
