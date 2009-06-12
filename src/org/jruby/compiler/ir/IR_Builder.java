@@ -123,328 +123,129 @@ public class IR_Builder
         return m;
     }
 
-    public void build(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand build(Node node, IR_BuilderContext m, boolean expr) {
         if (node == null) {
-            return;
+            return null;
         }
         switch (node.getNodeType()) {
-            case ALIASNODE:
-                buildAlias(node, m, expr);
-                break;
-            case ANDNODE:
-                buildAnd(node, m, expr);
-                break;
-            case ARGSCATNODE:
-                buildArgsCat(node, m, expr);
-                break;
-            case ARGSPUSHNODE:
-                buildArgsPush(node, m, expr);
-                break;
-            case ARRAYNODE:
-                buildArray(node, m, expr);
-                break;
-            case ATTRASSIGNNODE:
-                buildAttrAssign(node, m, expr);
-                break;
-            case BACKREFNODE:
-                buildBackref(node, m, expr);
-                break;
-            case BEGINNODE:
-                buildBegin(node, m, expr);
-                break;
-            case BIGNUMNODE:
-                buildBignum(node, m, expr);
-                break;
-            case BLOCKNODE:
-                buildBlock(node, m, expr);
-                break;
-            case BREAKNODE:
-                buildBreak(node, m, expr);
-                break;
-            case CALLNODE:
-                buildCall(node, m, expr);
-                break;
-            case CASENODE:
-                buildCase(node, m, expr);
-                break;
-            case CLASSNODE:
-                buildClass(node, m, expr);
-                break;
-            case CLASSVARNODE:
-                buildClassVar(node, m, expr);
-                break;
-            case CLASSVARASGNNODE:
-                buildClassVarAsgn(node, m, expr);
-                break;
-            case CLASSVARDECLNODE:
-                buildClassVarDecl(node, m, expr);
-                break;
-            case COLON2NODE:
-                buildColon2(node, m, expr);
-                break;
-            case COLON3NODE:
-                buildColon3(node, m, expr);
-                break;
-            case CONSTDECLNODE:
-                buildConstDecl(node, m, expr);
-                break;
-            case CONSTNODE:
-                buildConst(node, m, expr);
-                break;
-            case DASGNNODE:
-                buildDAsgn(node, m, expr);
-                break;
-            case DEFINEDNODE:
-                buildDefined(node, m, expr);
-                break;
-            case DEFNNODE:
-                buildDefn(node, m, expr);
-                break;
-            case DEFSNODE:
-                buildDefs(node, m, expr);
-                break;
-            case DOTNODE:
-                buildDot(node, m, expr);
-                break;
-            case DREGEXPNODE:
-                buildDRegexp(node, m, expr);
-                break;
-            case DSTRNODE:
-                buildDStr(node, m, expr);
-                break;
-            case DSYMBOLNODE:
-                buildDSymbol(node, m, expr);
-                break;
-            case DVARNODE:
-                buildDVar(node, m, expr);
-                break;
-            case DXSTRNODE:
-                buildDXStr(node, m, expr);
-                break;
-            case ENSURENODE:
-                buildEnsureNode(node, m, expr);
-                break;
-            case EVSTRNODE:
-                buildEvStr(node, m, expr);
-                break;
-            case FALSENODE:
-                buildFalse(node, m, expr);
-                break;
-            case FCALLNODE:
-                buildFCall(node, m, expr);
-                break;
-            case FIXNUMNODE:
-                buildFixnum(node, m, expr);
-                break;
-            case FLIPNODE:
-                buildFlip(node, m, expr);
-                break;
-            case FLOATNODE:
-                buildFloat(node, m, expr);
-                break;
-            case FORNODE:
-                buildFor(node, m, expr);
-                break;
-            case GLOBALASGNNODE:
-                buildGlobalAsgn(node, m, expr);
-                break;
-            case GLOBALVARNODE:
-                buildGlobalVar(node, m, expr);
-                break;
-            case HASHNODE:
-                buildHash(node, m, expr);
-                break;
-            case IFNODE:
-                buildIf(node, m, expr);
-                break;
-            case INSTASGNNODE:
-                buildInstAsgn(node, m, expr);
-                break;
-            case INSTVARNODE:
-                buildInstVar(node, m, expr);
-                break;
-            case ITERNODE:
-                buildIter(node, m);
-                break;
-            case LOCALASGNNODE:
-                buildLocalAsgn(node, m, expr);
-                break;
-            case LOCALVARNODE:
-                buildLocalVar(node, m, expr);
-                break;
-            case MATCH2NODE:
-                buildMatch2(node, m, expr);
-                break;
-            case MATCH3NODE:
-                buildMatch3(node, m, expr);
-                break;
-            case MATCHNODE:
-                buildMatch(node, m, expr);
-                break;
-            case MODULENODE:
-                buildModule(node, m, expr);
-                break;
-            case MULTIPLEASGNNODE:
-                buildMultipleAsgn(node, m, expr);
-                break;
-            case NEWLINENODE:
-                buildNewline(node, m, expr);
-                break;
-            case NEXTNODE:
-                buildNext(node, m, expr);
-                break;
-            case NTHREFNODE:
-                buildNthRef(node, m, expr);
-                break;
-            case NILNODE:
-                buildNil(node, m, expr);
-                break;
-            case NOTNODE:
-                buildNot(node, m, expr);
-                break;
-            case OPASGNANDNODE:
-                buildOpAsgnAnd(node, m, expr);
-                break;
-            case OPASGNNODE:
-                buildOpAsgn(node, m, expr);
-                break;
-            case OPASGNORNODE:
-                buildOpAsgnOr(node, m, expr);
-                break;
-            case OPELEMENTASGNNODE:
-                buildOpElementAsgn(node, m, expr);
-                break;
-            case ORNODE:
-                buildOr(node, m, expr);
-                break;
-            case POSTEXENODE:
-                buildPostExe(node, m, expr);
-                break;
-            case PREEXENODE:
-                buildPreExe(node, m, expr);
-                break;
-            case REDONODE:
-                buildRedo(node, m, expr);
-                break;
-            case REGEXPNODE:
-                buildRegexp(node, m, expr);
-                break;
+            case ALIASNODE: return buildAlias(node, m, expr);
+            case ANDNODE: return buildAnd(node, m, expr);
+            case ARGSCATNODE: return buildArgsCat(node, m, expr);
+            case ARGSPUSHNODE: return buildArgsPush(node, m, expr);
+            case ARRAYNODE: return buildArray(node, m, expr);
+            case ATTRASSIGNNODE: return buildAttrAssign(node, m, expr);
+            case BACKREFNODE: return buildBackref(node, m, expr);
+            case BEGINNODE: return buildBegin(node, m, expr);
+            case BIGNUMNODE: return buildBignum(node, m, expr);
+            case BLOCKNODE: return buildBlock(node, m, expr);
+            case BREAKNODE: return buildBreak(node, m, expr);
+            case CALLNODE: return buildCall(node, m, expr);
+            case CASENODE: return buildCase(node, m, expr);
+            case CLASSNODE: return buildClass(node, m, expr);
+            case CLASSVARNODE: return buildClassVar(node, m, expr);
+            case CLASSVARASGNNODE: return buildClassVarAsgn(node, m, expr);
+            case CLASSVARDECLNODE: return buildClassVarDecl(node, m, expr);
+            case COLON2NODE: return buildColon2(node, m, expr);
+            case COLON3NODE: return buildColon3(node, m, expr);
+            case CONSTDECLNODE: return buildConstDecl(node, m, expr);
+            case CONSTNODE: return buildConst(node, m, expr);
+            case DASGNNODE: return buildDAsgn(node, m, expr);
+            case DEFINEDNODE: return buildDefined(node, m, expr);
+            case DEFNNODE: return buildDefn(node, m, expr);
+            case DEFSNODE: return buildDefs(node, m, expr);
+            case DOTNODE: return buildDot(node, m, expr);
+            case DREGEXPNODE: return buildDRegexp(node, m, expr);
+            case DSTRNODE: return buildDStr(node, m, expr);
+            case DSYMBOLNODE: return buildDSymbol(node, m, expr);
+            case DVARNODE: return buildDVar(node, m, expr);
+            case DXSTRNODE: return buildDXStr(node, m, expr);
+            case ENSURENODE: return buildEnsureNode(node, m, expr);
+            case EVSTRNODE: return buildEvStr(node, m, expr);
+            case FALSENODE: return buildFalse(node, m, expr);
+            case FCALLNODE: return buildFCall(node, m, expr);
+            case FIXNUMNODE: return buildFixnum(node, m, expr);
+            case FLIPNODE: return buildFlip(node, m, expr);
+            case FLOATNODE: return buildFloat(node, m, expr);
+            case FORNODE: return buildFor(node, m, expr);
+            case GLOBALASGNNODE: return buildGlobalAsgn(node, m, expr);
+            case GLOBALVARNODE: return buildGlobalVar(node, m, expr);
+            case HASHNODE: return buildHash(node, m, expr);
+            case IFNODE: return buildIf(node, m, expr);
+            case INSTASGNNODE: return buildInstAsgn(node, m, expr);
+            case INSTVARNODE: return buildInstVar(node, m, expr);
+            case ITERNODE: return buildIter(node, m);
+            case LOCALASGNNODE: return buildLocalAsgn(node, m, expr);
+            case LOCALVARNODE: return buildLocalVar(node, m, expr);
+            case MATCH2NODE: return buildMatch2(node, m, expr);
+            case MATCH3NODE: return buildMatch3(node, m, expr);
+            case MATCHNODE: return buildMatch(node, m, expr);
+            case MODULENODE: return buildModule(node, m, expr);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m, expr);
+            case NEWLINENODE: return buildNewline(node, m, expr);
+            case NEXTNODE: return buildNext(node, m, expr);
+            case NTHREFNODE: return buildNthRef(node, m, expr);
+            case NILNODE: return buildNil(node, m, expr);
+            case NOTNODE: return buildNot(node, m, expr);
+            case OPASGNANDNODE: return buildOpAsgnAnd(node, m, expr);
+            case OPASGNNODE: return buildOpAsgn(node, m, expr);
+            case OPASGNORNODE: return buildOpAsgnOr(node, m, expr);
+            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m, expr);
+            case ORNODE: return buildOr(node, m, expr);
+            case POSTEXENODE: return buildPostExe(node, m, expr);
+            case PREEXENODE: return buildPreExe(node, m, expr);
+            case REDONODE: return buildRedo(node, m, expr);
+            case REGEXPNODE: return buildRegexp(node, m, expr);
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
-            case RESCUENODE:
-                buildRescue(node, m, expr);
-                break;
-            case RETRYNODE:
-                buildRetry(node, m, expr);
-                break;
-            case RETURNNODE:
-                buildReturn(node, m, expr);
-                break;
+            case RESCUENODE: return buildRescue(node, m, expr);
+            case RETRYNODE: return buildRetry(node, m, expr);
+            case RETURNNODE: return buildReturn(node, m, expr);
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
-            case SCLASSNODE:
-                buildSClass(node, m, expr);
-                break;
-            case SELFNODE:
-                buildSelf(node, m, expr);
-                break;
-            case SPLATNODE:
-                buildSplat(node, m, expr);
-                break;
-            case STRNODE:
-                buildStr(node, m, expr);
-                break;
-            case SUPERNODE:
-                buildSuper(node, m, expr);
-                break;
-            case SVALUENODE:
-                buildSValue(node, m, expr);
-                break;
-            case SYMBOLNODE:
-                buildSymbol(node, m, expr);
-                break;
-            case TOARYNODE:
-                buildToAry(node, m, expr);
-                break;
-            case TRUENODE:
-                buildTrue(node, m, expr);
-                break;
-            case UNDEFNODE:
-                buildUndef(node, m, expr);
-                break;
-            case UNTILNODE:
-                buildUntil(node, m, expr);
-                break;
-            case VALIASNODE:
-                buildVAlias(node, m, expr);
-                break;
-            case VCALLNODE:
-                buildVCall(node, m, expr);
-                break;
-            case WHILENODE:
-                buildWhile(node, m, expr);
-                break;
-            case WHENNODE:
-                assert false : "When nodes are handled by case node compilation.";
-                break;
-            case XSTRNODE:
-                buildXStr(node, m, expr);
-                break;
-            case YIELDNODE:
-                buildYield(node, m, expr);
-                break;
-            case ZARRAYNODE:
-                buildZArray(node, m, expr);
-                break;
-            case ZSUPERNODE:
-                buildZSuper(node, m, expr);
-                break;
-            default:
-                throw new NotCompilableException("Unknown node encountered in buildr: " + node);
+            case SCLASSNODE: return buildSClass(node, m, expr);
+            case SELFNODE: return buildSelf(node, m, expr);
+            case SPLATNODE: return buildSplat(node, m, expr);
+            case STRNODE: return buildStr(node, m, expr);
+            case SUPERNODE: return buildSuper(node, m, expr);
+            case SVALUENODE: return buildSValue(node, m, expr);
+            case SYMBOLNODE: return buildSymbol(node, m, expr);
+            case TOARYNODE: return buildToAry(node, m, expr);
+            case TRUENODE: return buildTrue(node, m, expr);
+            case UNDEFNODE: return buildUndef(node, m, expr);
+            case UNTILNODE: return buildUntil(node, m, expr);
+            case VALIASNODE: return buildVAlias(node, m, expr);
+            case VCALLNODE: return buildVCall(node, m, expr);
+            case WHILENODE: return buildWhile(node, m, expr);
+            case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
+            case XSTRNODE: return buildXStr(node, m, expr);
+            case YIELDNODE: return buildYield(node, m, expr);
+            case ZARRAYNODE: return buildZArray(node, m, expr);
+            case ZSUPERNODE: return buildZSuper(node, m, expr);
+            default: throw new NotCompilableException("Unknown node encountered in buildr: " + node);
         }
     }
 
-    public void buildArguments(Node node, IR_BuilderContext m) {
+    public List<Operand> buildArguments(Node node, IR_BuilderContext context) {
         switch (node.getNodeType()) {
-            case ARGSCATNODE:
-                buildArgsCatArguments(node, m, true);
-                break;
-            case ARGSPUSHNODE:
-                buildArgsPushArguments(node, m, true);
-                break;
-            case ARRAYNODE:
-                buildArrayArguments(node, m, true);
-                break;
-            case SPLATNODE:
-                buildSplatArguments(node, m, true);
-                break;
-            default:
-                build(node, m, true);
-                m.convertToJavaArray();
+            case ARGSCATNODE: return buildArgsCatArguments(node, context, true);
+            case ARGSPUSHNODE: return buildArgsPushArguments(node, context, true);
+            case ARRAYNODE: return buildArrayArguments(node, context, true);
+            case SPLATNODE: return buildSplatArguments(node, context, true);
+            default: 
+                Operand retVal = build(node, context, true); 
+                context.convertToJavaArray(); 
+                return (retVal == null) ? null : new ArrayList<Operand>(retVal);
         }
     }
     
-    public class VariableArityArguments implements ArgumentsCallback {
-        private Node node;
-        
-        public VariableArityArguments(Node node) {
-            this.node = node;
-        }
-        
+    public List<Operand>Operand buildVariableArityArguments(node, context) {
+        // public int getArity() { return -1; }
+       return buildArguments(node, m);
+    }
+
+    public List<Operand> buildSpecificArityArguments (node, context) {
+/**
         public int getArity() {
-            return -1;
-        }
-        
-        public void call(IR_BuilderContext m) {
-            buildArguments(node, m);
-        }
-    }
-    
-    public class SpecificArityArguments implements ArgumentsCallback {
-        private int arity;
-        private Node node;
-        
-        public SpecificArityArguments(Node node) {
             if (node.getNodeType() == NodeType.ARRAYNODE && ((ArrayNode)node).isLightweight()) {
                 // only arrays that are "lightweight" are being used as args arrays
                 this.arity = ((ArrayNode)node).size();
@@ -452,35 +253,34 @@ public class IR_Builder
                 // otherwise, it's a literal array
                 this.arity = 1;
             }
-            this.node = node;
         }
-        
-        public int getArity() {
-            return arity;
-        }
-        
-        public void call(IR_BuilderContext m) {
-            if (node.getNodeType() == NodeType.ARRAYNODE) {
-                ArrayNode arrayNode = (ArrayNode)node;
-                if (arrayNode.isLightweight()) {
-                    // explode array, it's an internal "args" array
-                    for (Node n : arrayNode.childNodes()) {
-                        build(n, m,true);
-                    }
-                } else {
-                    // use array as-is, it's a literal array
-                    build(arrayNode, m,true);
+**/
+        List<Operand> args = new ArrayList<Operand>();
+        if (node.getNodeType() == NodeType.ARRAYNODE) {
+            ArrayNode arrayNode = (ArrayNode)node;
+            if (arrayNode.isLightweight()) {
+                // explode array, it's an internal "args" array
+                for (Node n : arrayNode.childNodes()) {
+/**
+                    if (n instanceof INameNode)
+                        args.add(new Operand(((INameNode)n).getName()));
+                    else
+**/
+                    args.add(build(n, context, true));
                 }
             } else {
-                build(node, m,true);
+                // use array as-is, it's a literal array
+                args.add(build(arrayNode, context, true));
             }
+        } else {
+            args.add(build(node, context, true));
         }
     }
 
-    public ArgumentsCallback getArgsCallback(Node node) {
-        if (node == null) {
+    public List<Operand> setupArgs(Node node, IR_BuilderContext context) {
+        if (node == null)
             return null;
-        }
+
         // unwrap newline nodes to get their actual type
         while (node.getNodeType() == NodeType.NEWLINENODE) {
             node = ((NewlineNode)node).getNextNode();
@@ -489,22 +289,22 @@ public class IR_Builder
             case ARGSCATNODE:
             case ARGSPUSHNODE:
             case SPLATNODE:
-                return new VariableArityArguments(node);
+                return buildVariableArityArguments(node, context);
+                break;
             case ARRAYNODE:
                 ArrayNode arrayNode = (ArrayNode)node;
-                if (arrayNode.size() == 0) {
-                    return null;
-                } else if (arrayNode.size() > 3) {
-                    return new VariableArityArguments(node);
-                } else {
-                    return new SpecificArityArguments(node);
-                }
+                if (arrayNode.size() > 3)
+                    return buildVariableArityArguments(node, context);
+                else if (arrayNode.size() > 0)
+                    return buildSpecificArityArguments(node, context);
+                break;
             default:
-                return new SpecificArityArguments(node);
+                return buildSpecificArityArguments(node, context);
+                break;
         }
     }
 
-    public void buildAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildAssignment(Node node, IR_BuilderContext m, boolean expr) {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
                 buildAttrAssignAssignment(node, m, expr);
@@ -542,7 +342,7 @@ public class IR_Builder
         }
     }
 
-    public void buildAlias(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildAlias(Node node, IR_BuilderContext m, boolean expr) {
         final AliasNode alias = (AliasNode) node;
 
         m.defineAlias(alias.getNewName(), alias.getOldName());
@@ -550,7 +350,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildAnd(Node node, IR_BuilderContext m, final boolean expr) {
+    public Operand buildAnd(Node node, IR_BuilderContext m, final boolean expr) {
         final AndNode andNode = (AndNode) node;
 
         if (andNode.getFirstNode().getNodeType().alwaysTrue()) {
@@ -573,7 +373,7 @@ public class IR_Builder
         }
     }
 
-    public void buildArray(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildArray(Node node, IR_BuilderContext m, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
 
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
@@ -599,7 +399,7 @@ public class IR_Builder
         }
     }
 
-    public void buildArgsCat(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildArgsCat(Node node, IR_BuilderContext m, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
         build(argsCatNode.getFirstNode(), m,true);
@@ -611,7 +411,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildArgsPush(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildArgsPush(Node node, IR_BuilderContext m, boolean expr) {
         throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
     }
 
@@ -624,14 +424,14 @@ public class IR_Builder
             }
         };
         
-        ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
+        ArgumentsCallback argsCallback = setupArgs(attrAssignNode.getArgsNode());
 
         m.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildAttrAssignAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildAttrAssignAssignment(Node node, IR_BuilderContext m, boolean expr) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -639,14 +439,14 @@ public class IR_Builder
                 build(attrAssignNode.getReceiverNode(), m,true);
             }
         };
-        ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
+        ArgumentsCallback argsCallback = setupArgs(attrAssignNode.getArgsNode());
 
         m.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildBackref(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildBackref(Node node, IR_BuilderContext m, boolean expr) {
         BackRefNode iVisited = (BackRefNode) node;
 
         m.performBackref(iVisited.getType());
@@ -654,13 +454,13 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildBegin(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildBegin(Node node, IR_BuilderContext m, boolean expr) {
         BeginNode beginNode = (BeginNode) node;
 
         build(beginNode.getBodyNode(), m, expr);
     }
 
-    public void buildBignum(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildBignum(Node node, IR_BuilderContext m, boolean expr) {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) m.createNewBignum(((BignumNode) node).getValue());
         } else {
@@ -669,7 +469,7 @@ public class IR_Builder
         }
     }
 
-    public void buildBlock(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildBlock(Node node, IR_BuilderContext m, boolean expr) {
         BlockNode blockNode = (BlockNode) node;
 
         for (Iterator<Node> iter = blockNode.childNodes().iterator(); iter.hasNext();) {
@@ -678,7 +478,7 @@ public class IR_Builder
         }
     }
 
-    public void buildBreak(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildBreak(Node node, IR_BuilderContext m, boolean expr) {
         final BreakNode breakNode = (BreakNode) node;
 
         CompilerCallback valueCallback = new CompilerCallback() {
@@ -697,7 +497,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildCall(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildCall(Node node, IR_BuilderContext m, boolean expr) {
         final CallNode callNode = (CallNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -706,8 +506,8 @@ public class IR_Builder
             }
         };
 
-        ArgumentsCallback argsCallback = getArgsCallback(callNode.getArgsNode());
-        CompilerCallback closureArg = getBlock(callNode.getIterNode());
+        ArgumentsCallback argsCallback = setupArgs(callNode.getArgsNode());
+        CompilerCallback closureArg = setupCallClosure(callNode.getIterNode());
 
         String name = callNode.getName();
         CallType callType = CallType.NORMAL;
@@ -757,7 +557,7 @@ public class IR_Builder
         return null;
     }
 
-    public void buildCase(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildCase(Node node, IR_BuilderContext m, boolean expr) {
         CaseNode caseNode = (CaseNode) node;
 
         boolean hasCase = caseNode.getCaseNode() != null;
@@ -836,7 +636,7 @@ public class IR_Builder
         return foundType;
     }
 
-    public void buildWhen(final Node value, List<Node> whenNodes, final Node elseNode, IR_BuilderContext m, final boolean expr, final boolean hasCase) {
+    public Operand buildWhen(final Node value, List<Node> whenNodes, final Node elseNode, IR_BuilderContext m, final boolean expr, final boolean hasCase) {
         CompilerCallback caseValue = null;
         if (value != null) caseValue = new CompilerCallback() {
             public void call(IR_BuilderContext m) {
@@ -941,10 +741,10 @@ public class IR_Builder
             }
         }
         // otherwise, use normal args buildr
-        conditionals.add(getArgsCallback(whenNode.getExpressionNodes()));
+        conditionals.add(setupArgs(whenNode.getExpressionNodes()));
     }
 
-    public void buildClass(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildClass(Node node, IR_BuilderContext m, boolean expr) {
         final ClassNode classNode = (ClassNode) node;
 
         final Node superNode = classNode.getSuperNode();
@@ -1001,7 +801,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildSClass(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildSClass(Node node, IR_BuilderContext m, boolean expr) {
         final SClassNode sclassNode = (SClassNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -1033,14 +833,14 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildClassVar(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildClassVar(Node node, IR_BuilderContext m, boolean expr) {
         ClassVarNode classVarNode = (ClassVarNode) node;
 
         m.retrieveClassVariable(classVarNode.getName());
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildClassVarAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildClassVarAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
@@ -1054,7 +854,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildClassVarAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildClassVarAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
 
         m.assignClassVariable(classVarAsgnNode.getName());
@@ -1062,7 +862,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildClassVarDecl(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildClassVarDecl(Node node, IR_BuilderContext m, boolean expr) {
         final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
         CompilerCallback value = new CompilerCallback() {
@@ -1076,7 +876,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildClassVarDeclAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildClassVarDeclAssignment(Node node, IR_BuilderContext m, boolean expr) {
         ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
 
         m.declareClassVariable(classVarDeclNode.getName());
@@ -1084,7 +884,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildConstDecl(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildConstDecl(Node node, IR_BuilderContext m, boolean expr) {
         // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
@@ -1107,7 +907,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildConstDeclAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildConstDeclAssignment(Node node, IR_BuilderContext m, boolean expr) {
         // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
@@ -1125,7 +925,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildConst(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildConst(Node node, IR_BuilderContext m, boolean expr) {
         ConstNode constNode = (ConstNode) node;
 
         m.retrieveConstant(constNode.getName());
@@ -1134,7 +934,7 @@ public class IR_Builder
         // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
     }
 
-    public void buildColon2(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildColon2(Node node, IR_BuilderContext m, boolean expr) {
         final Colon2Node iVisited = (Colon2Node) node;
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
@@ -1160,7 +960,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildColon3(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildColon3(Node node, IR_BuilderContext m, boolean expr) {
         Colon3Node iVisited = (Colon3Node) node;
         String name = iVisited.getName();
 
@@ -1169,7 +969,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildGetDefinitionBase(final Node node, IR_BuilderContext m) {
+    public Operand buildGetDefinitionBase(final Node node, IR_BuilderContext m) {
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
@@ -1214,7 +1014,7 @@ public class IR_Builder
         }
     }
 
-    public void buildDefined(final Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDefined(final Node node, IR_BuilderContext m, boolean expr) {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) {
                 buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
@@ -1227,7 +1027,7 @@ public class IR_Builder
         }
     }
 
-    public void buildGetArgumentDefinition(final Node node, IR_BuilderContext m, String type) {
+    public Operand buildGetArgumentDefinition(final Node node, IR_BuilderContext m, String type) {
         if (node == null) {
             m.pushString(type);
         } else if (node instanceof ArrayNode) {
@@ -1256,7 +1056,7 @@ public class IR_Builder
         }
     }
 
-    public void buildGetDefinition(final Node node, IR_BuilderContext m) {
+    public Operand buildGetDefinition(final Node node, IR_BuilderContext m) {
         switch (node.getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
@@ -1707,7 +1507,7 @@ public class IR_Builder
         }
     }
 
-    public void buildDAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
@@ -1719,13 +1519,13 @@ public class IR_Builder
         m.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value, expr);
     }
 
-    public void buildDAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
         DAsgnNode dasgnNode = (DAsgnNode) node;
 
         m.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), expr);
     }
 
-    public void buildDefn(Node node, IR_BuilderContext context, boolean expr) {
+    public Operand buildDefn(Node node, IR_BuilderContext context, boolean expr) {
         final DefnNode defnNode = (DefnNode) node;
         final ArgsNode argsNode = defnNode.getArgsNode();
 
@@ -1769,7 +1569,7 @@ public class IR_Builder
           context.addMethod(m);
     }
 
-    public void buildDefs(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDefs(Node node, IR_BuilderContext m, boolean expr) {
         final DefsNode defsNode = (DefsNode) node;
         final ArgsNode argsNode = defsNode.getArgsNode();
 
@@ -1823,7 +1623,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildArgs(Node node, IR_BuilderContext context, boolean expr) {
+    public Operand buildArgs(Node node, IR_BuilderContext context, boolean expr) {
         final IR_Method m = (IR_Method)context;
         final ArgsNode argsNode = (ArgsNode)node;
         final int required = argsNode.getRequiredArgsCount();
@@ -1868,9 +1668,12 @@ public class IR_Builder
 
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
+
+            // This is not an expression that computes anything
+        return null;
     }
 
-    public void buildDot(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDot(Node node, IR_BuilderContext m, boolean expr) {
         final DotNode dotNode = (DotNode) node;
 
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
@@ -1889,7 +1692,7 @@ public class IR_Builder
         if (popit) m.consumeCurrentValue();
     }
 
-    public void buildDRegexp(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDRegexp(Node node, IR_BuilderContext m, boolean expr) {
         final DRegexpNode dregexpNode = (DRegexpNode) node;
 
         CompilerCallback createStringCallback = new CompilerCallback() {
@@ -1920,7 +1723,7 @@ public class IR_Builder
         }
     }
 
-    public void buildDStr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDStr(Node node, IR_BuilderContext m, boolean expr) {
         final DStrNode dstrNode = (DStrNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
@@ -1945,7 +1748,7 @@ public class IR_Builder
         }
     }
 
-    public void buildDSymbol(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDSymbol(Node node, IR_BuilderContext m, boolean expr) {
         final DSymbolNode dsymbolNode = (DSymbolNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
@@ -1970,7 +1773,7 @@ public class IR_Builder
         }
     }
 
-    public void buildDVar(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDVar(Node node, IR_BuilderContext m, boolean expr) {
         DVarNode dvarNode = (DVarNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -1981,7 +1784,7 @@ public class IR_Builder
         }
     }
 
-    public void buildDXStr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildDXStr(Node node, IR_BuilderContext m, boolean expr) {
         final DXStrNode dxstrNode = (DXStrNode) node;
 
         final ArrayCallback dstrCallback = new ArrayCallback() {
@@ -2007,7 +1810,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildEnsureNode(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildEnsureNode(Node node, IR_BuilderContext m, boolean expr) {
         final EnsureNode ensureNode = (EnsureNode) node;
 
         if (ensureNode.getEnsureNode() != null) {
@@ -2038,7 +1841,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildEvStr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildEvStr(Node node, IR_BuilderContext m, boolean expr) {
         final EvStrNode evStrNode = (EvStrNode) node;
 
         build(evStrNode.getBody(), m,true);
@@ -2047,7 +1850,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildFalse(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildFalse(Node node, IR_BuilderContext m, boolean expr) {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) {
                 m.loadFalse();
@@ -2060,49 +1863,43 @@ public class IR_Builder
         }
     }
 
-    public void buildFCall(Node node, IR_BuilderContext m, boolean expr) {
-        final FCallNode fcallNode = (FCallNode) node;
+    public Operand buildFCall(Node node, IR_BuilderContext context, boolean expr) {
+        FCallNode     fcallNode    = (FCallNode)node;
+        Node          callArgsNode = fcallNode.getArgsNode();
+        List<Operand> args         = setupArgs(callArgsNode, context);
+        Operand       block        = setupCallClosure(fcallNode.getIterNode(), context);
+        Variable      callResult   = context.getNewVariable("tmp");
+		  // FIXME: What happened to the receiver?  Is it implicitly the first argument to the call?
+        IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(), block);
+        context.addInstr(callInstr);
+        return callResult;
 
-        ArgumentsCallback argsCallback = getArgsCallback(fcallNode.getArgsNode());
-        
-        CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
-
+/**
         m.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
+**/
     }
 
-    private CompilerCallback getBlock(Node node) {
-        if (node == null) {
+    private Operand setupCallClosure(Node node, IR_BuilderContext context) {
+        if (node == null)
             return null;
-        }
 
         switch (node.getNodeType()) {
             case ITERNODE:
-                final IterNode iterNode = (IterNode) node;
-
-                return new CompilerCallback() {
-
-                            public void call(IR_BuilderContext m) {
-                                build(iterNode, m,true);
-                            }
-                        };
+                build((IterNode)node, context, true);
+                return new Operand(); //FIXME
             case BLOCKPASSNODE:
-                final BlockPassNode blockPassNode = (BlockPassNode) node;
-
-                return new CompilerCallback() {
-
-                            public void call(IR_BuilderContext m) {
-                                build(blockPassNode.getBodyNode(), m,true);
-                                m.unwrapPassedBlock();
-                            }
-                        };
+                build(((BlockPassNode)node).getBodyNode(), context, true);
+                // FIXME: Translate this call below!
+                context.unwrapPassedBlock();
+                return new Operand(); //FIXME
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
     }
 
-    public void buildFixnum(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildFixnum(Node node, IR_BuilderContext m, boolean expr) {
         FixnumNode fixnumNode = (FixnumNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -2113,7 +1910,7 @@ public class IR_Builder
         }
     }
 
-    public void buildFlip(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildFlip(Node node, IR_BuilderContext m, boolean expr) {
         final FlipNode flipNode = (FlipNode) node;
 
         m.getVariableCompiler().retrieveLocalVariable(flipNode.getIndex(), flipNode.getDepth());
@@ -2215,7 +2012,7 @@ public class IR_Builder
                 });
     }
 
-    public void buildFloat(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildFloat(Node node, IR_BuilderContext m, boolean expr) {
         FloatNode floatNode = (FloatNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -2226,7 +2023,7 @@ public class IR_Builder
         }
     }
 
-    public void buildFor(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildFor(Node node, IR_BuilderContext m, boolean expr) {
         final ForNode forNode = (ForNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -2248,7 +2045,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildForIter(Node node, IR_BuilderContext m) {
+    public Operand buildForIter(Node node, IR_BuilderContext m) {
         final ForNode forNode = (ForNode) node;
 
         // create the closure class and instantiate it
@@ -2300,7 +2097,7 @@ public class IR_Builder
         }
     }
 
-    public void buildGlobalAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildGlobalAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
@@ -2328,7 +2125,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildGlobalAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildGlobalAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
         GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
 
         if (globalAsgnNode.getName().length() == 2) {
@@ -2350,7 +2147,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildGlobalVar(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildGlobalVar(Node node, IR_BuilderContext m, boolean expr) {
         GlobalVarNode globalVarNode = (GlobalVarNode) node;
 
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
@@ -2376,7 +2173,7 @@ public class IR_Builder
         if (popit) m.consumeCurrentValue();
     }
 
-    public void buildHash(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildHash(Node node, IR_BuilderContext m, boolean expr) {
         HashNode hashNode = (HashNode) node;
 
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
@@ -2408,7 +2205,7 @@ public class IR_Builder
         }
     }
 
-    public void buildIf(Node node, IR_BuilderContext m, final boolean expr) {
+    public Operand buildIf(Node node, IR_BuilderContext m, final boolean expr) {
         final IfNode ifNode = (IfNode) node;
 
         // optimizations if we know ahead of time it will always be true or false
@@ -2451,7 +2248,7 @@ public class IR_Builder
         }
     }
 
-    public void buildInstAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildInstAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final InstAsgnNode instAsgnNode = (InstAsgnNode) node;
 
         CompilerCallback value = new CompilerCallback() {
@@ -2465,14 +2262,14 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildInstAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildInstAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
         InstAsgnNode instAsgnNode = (InstAsgnNode) node;
         m.assignInstanceVariable(instAsgnNode.getName());
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildInstVar(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildInstVar(Node node, IR_BuilderContext m, boolean expr) {
         InstVarNode instVarNode = (InstVarNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -2483,7 +2280,7 @@ public class IR_Builder
         }
     }
 
-    public void buildIter(Node node, IR_BuilderContext m) {
+    public Operand buildIter(Node node, IR_BuilderContext m) {
         final IterNode iterNode = (IterNode) node;
 
         // create the closure class and instantiate it
@@ -2529,7 +2326,7 @@ public class IR_Builder
         }
     }
 
-    public void buildLocalAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildLocalAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
         // just push nil for pragmas
@@ -2546,14 +2343,14 @@ public class IR_Builder
         }
     }
 
-    public void buildLocalAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildLocalAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
         // "assignment" means the value is already on the stack
         LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
         m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), expr);
     }
 
-    public void buildLocalVar(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildLocalVar(Node node, IR_BuilderContext m, boolean expr) {
         LocalVarNode localVarNode = (LocalVarNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -2564,7 +2361,7 @@ public class IR_Builder
         }
     }
 
-    public void buildMatch(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildMatch(Node node, IR_BuilderContext m, boolean expr) {
         MatchNode matchNode = (MatchNode) node;
 
         build(matchNode.getRegexpNode(), m,true);
@@ -2574,7 +2371,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildMatch2(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildMatch2(Node node, IR_BuilderContext m, boolean expr) {
         final Match2Node matchNode = (Match2Node) node;
 
         build(matchNode.getReceiverNode(), m,true);
@@ -2589,7 +2386,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildMatch3(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildMatch3(Node node, IR_BuilderContext m, boolean expr) {
         Match3Node matchNode = (Match3Node) node;
 
         build(matchNode.getReceiverNode(), m,true);
@@ -2600,7 +2397,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildModule(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildModule(Node node, IR_BuilderContext m, boolean expr) {
         final ModuleNode moduleNode = (ModuleNode) node;
 
         final Node cpathNode = moduleNode.getCPath();
@@ -2641,7 +2438,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildMultipleAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildMultipleAsgn(Node node, IR_BuilderContext m, boolean expr) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
         if (expr) {
@@ -2698,7 +2495,7 @@ public class IR_Builder
         buildMultipleAsgnAssignment(multipleAsgnNode, m, expr);
     }
 
-    public void buildMultipleAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildMultipleAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
         final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
         // normal items at the "head" of the masgn
@@ -2753,7 +2550,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildNewline(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildNewline(Node node, IR_BuilderContext m, boolean expr) {
         // TODO: add trace call?
         m.lineNumber(node.getPosition());
 
@@ -2764,7 +2561,7 @@ public class IR_Builder
         build(newlineNode.getNextNode(), m, expr);
     }
 
-    public void buildNext(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildNext(Node node, IR_BuilderContext m, boolean expr) {
         final NextNode nextNode = (NextNode) node;
 
         CompilerCallback valueCallback = new CompilerCallback() {
@@ -2784,7 +2581,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildNthRef(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildNthRef(Node node, IR_BuilderContext m, boolean expr) {
         NthRefNode nthRefNode = (NthRefNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -2795,7 +2592,7 @@ public class IR_Builder
         }
     }
 
-    public void buildNil(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildNil(Node node, IR_BuilderContext m, boolean expr) {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) {
                 m.loadNil();
@@ -2808,7 +2605,7 @@ public class IR_Builder
         }
     }
 
-    public void buildNot(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildNot(Node node, IR_BuilderContext m, boolean expr) {
         NotNode notNode = (NotNode) node;
 
         build(notNode.getConditionNode(), m, true);
@@ -2818,7 +2615,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpAsgnAnd(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpAsgnAnd(Node node, IR_BuilderContext m, boolean expr) {
         final BinaryOperatorNode andNode = (BinaryOperatorNode) node;
 
         build(andNode.getFirstNode(), m,true);
@@ -2836,7 +2633,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpAsgnOr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpAsgnOr(Node node, IR_BuilderContext m, boolean expr) {
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
 
         if (needsDefinitionCheck(orNode.getFirstNode())) {
@@ -2922,7 +2719,7 @@ public class IR_Builder
         }
     }
 
-    public void buildOpAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         if (opAsgnNode.getOperatorName().equals("||")) {
@@ -2938,7 +2735,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpAsgnWithOr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpAsgnWithOr(Node node, IR_BuilderContext m, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
@@ -2948,14 +2745,14 @@ public class IR_Builder
             }
         };
         
-        ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
+        ArgumentsCallback argsCallback = setupArgs(opAsgnNode.getValueNode());
         
         m.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpAsgnWithAnd(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpAsgnWithAnd(Node node, IR_BuilderContext m, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
@@ -2965,14 +2762,14 @@ public class IR_Builder
             }
         };
         
-        ArgumentsCallback argsCallback = getArgsCallback(opAsgnNode.getValueNode());
+        ArgumentsCallback argsCallback = setupArgs(opAsgnNode.getValueNode());
         
         m.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpAsgnWithMethod(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpAsgnWithMethod(Node node, IR_BuilderContext m, boolean expr) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         final CompilerCallback receiverCallback = new CompilerCallback() {
@@ -2997,7 +2794,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpElementAsgn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpElementAsgn(Node node, IR_BuilderContext m, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
         if (opElementAsgnNode.getOperatorName() == "||") {
@@ -3047,7 +2844,7 @@ public class IR_Builder
         }
     };
 
-    public void buildOpElementAsgnWithOr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpElementAsgnWithOr(Node node, IR_BuilderContext m, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -3069,7 +2866,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpElementAsgnWithAnd(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpElementAsgnWithAnd(Node node, IR_BuilderContext m, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -3091,7 +2888,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOpElementAsgnWithMethod(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOpElementAsgnWithMethod(Node node, IR_BuilderContext m, boolean expr) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         CompilerCallback receiverCallback = new CompilerCallback() {
@@ -3100,7 +2897,7 @@ public class IR_Builder
             }
         };
 
-        ArgumentsCallback argsCallback = getArgsCallback(opElementAsgnNode.getArgsNode());
+        ArgumentsCallback argsCallback = setupArgs(opElementAsgnNode.getArgsNode());
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(IR_BuilderContext m) {
@@ -3113,7 +2910,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildOr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildOr(Node node, IR_BuilderContext m, boolean expr) {
         final OrNode orNode = (OrNode) node;
 
         if (orNode.getFirstNode().getNodeType().alwaysTrue()) {
@@ -3139,7 +2936,7 @@ public class IR_Builder
         }
     }
 
-    public void buildPostExe(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildPostExe(Node node, IR_BuilderContext m, boolean expr) {
         final PostExeNode postExeNode = (PostExeNode) node;
 
         // create the closure class and instantiate it
@@ -3158,7 +2955,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildPreExe(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildPreExe(Node node, IR_BuilderContext m, boolean expr) {
         final PreExeNode preExeNode = (PreExeNode) node;
 
         // create the closure class and instantiate it
@@ -3177,7 +2974,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildRedo(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildRedo(Node node, IR_BuilderContext m, boolean expr) {
         //RedoNode redoNode = (RedoNode)node;
 
         m.issueRedoEvent();
@@ -3185,7 +2982,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildRegexp(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildRegexp(Node node, IR_BuilderContext m, boolean expr) {
         RegexpNode reNode = (RegexpNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
@@ -3196,7 +2993,7 @@ public class IR_Builder
         }
     }
 
-    public void buildRescue(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildRescue(Node node, IR_BuilderContext m, boolean expr) {
         buildRescueInternal(node, m, false);
         
         // TODO: don't require pop
@@ -3242,7 +3039,7 @@ public class IR_Builder
         m.loadException();
 
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
-        ArgumentsCallback rescueArgs = getArgsCallback(exceptionList);
+        ArgumentsCallback rescueArgs = setupArgs(exceptionList);
         if (rescueArgs == null) rescueArgs = new ArgumentsCallback() {
             public int getArity() {
                 return 1;
@@ -3298,7 +3095,7 @@ public class IR_Builder
         m.performBooleanBranch(trueBranch, falseBranch);
     }
 
-    public void buildRetry(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildRetry(Node node, IR_BuilderContext m, boolean expr) {
         m.pollThreadEvents();
 
         m.issueRetryEvent();
@@ -3306,7 +3103,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildReturn(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildReturn(Node node, IR_BuilderContext m, boolean expr) {
         ReturnNode returnNode = (ReturnNode) node;
 
         if (returnNode.getValueNode() != null) {
@@ -3320,11 +3117,11 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildRoot(Node node, ScriptCompiler m, ASTInspector inspector) {
+    public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector) {
         buildRoot(node, m, inspector, true, true);
     }
 
-    public void buildRoot(Node node, ScriptCompiler m, ASTInspector inspector, boolean load, boolean main) {
+    public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector, boolean load, boolean main) {
         RootNode rootNode = (RootNode) node;
         StaticScope staticScope = rootNode.getStaticScope();
 
@@ -3361,7 +3158,7 @@ public class IR_Builder
         m.endScript(load, main);
     }
 
-    public void buildSelf(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildSelf(Node node, IR_BuilderContext m, boolean expr) {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) m.retrieveSelf();
         } else {
@@ -3370,7 +3167,7 @@ public class IR_Builder
         }
     }
 
-    public void buildSplat(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildSplat(Node node, IR_BuilderContext m, boolean expr) {
         SplatNode splatNode = (SplatNode) node;
 
         build(splatNode.getValue(), m, true);
@@ -3380,7 +3177,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildStr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildStr(Node node, IR_BuilderContext m, boolean expr) {
         StrNode strNode = (StrNode) node;
 
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
@@ -3396,19 +3193,19 @@ public class IR_Builder
         if (popit) m.consumeCurrentValue();
     }
 
-    public void buildSuper(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildSuper(Node node, IR_BuilderContext m, boolean expr) {
         final SuperNode superNode = (SuperNode) node;
 
-        ArgumentsCallback argsCallback = getArgsCallback(superNode.getArgsNode());
+        ArgumentsCallback argsCallback = setupArgs(superNode.getArgsNode());
 
-        CompilerCallback closureArg = getBlock(superNode.getIterNode());
+        CompilerCallback closureArg = setupCallClosure(superNode.getIterNode());
 
         m.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildSValue(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildSValue(Node node, IR_BuilderContext m, boolean expr) {
         SValueNode svalueNode = (SValueNode) node;
 
         build(svalueNode.getValue(), m,true);
@@ -3418,13 +3215,13 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildSymbol(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildSymbol(Node node, IR_BuilderContext m, boolean expr) {
         m.createNewSymbol(((SymbolNode) node).getName());
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }    
     
-    public void buildToAry(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildToAry(Node node, IR_BuilderContext m, boolean expr) {
         ToAryNode toAryNode = (ToAryNode) node;
 
         build(toAryNode.getValue(), m,true);
@@ -3434,7 +3231,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildTrue(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildTrue(Node node, IR_BuilderContext m, boolean expr) {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) {
                 m.loadTrue();
@@ -3447,13 +3244,13 @@ public class IR_Builder
         }
     }
 
-    public void buildUndef(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildUndef(Node node, IR_BuilderContext m, boolean expr) {
         m.undefMethod(((UndefNode) node).getName());
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildUntil(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildUntil(Node node, IR_BuilderContext m, boolean expr) {
         final UntilNode untilNode = (UntilNode) node;
 
         if (untilNode.getConditionNode().getNodeType().alwaysTrue() &&
@@ -3491,7 +3288,7 @@ public class IR_Builder
         }
     }
 
-    public void buildVAlias(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildVAlias(Node node, IR_BuilderContext m, boolean expr) {
         VAliasNode valiasNode = (VAliasNode) node;
 
         m.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
@@ -3499,7 +3296,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildVCall(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildVCall(Node node, IR_BuilderContext m, boolean expr) {
         VCallNode vcallNode = (VCallNode) node;
         
         m.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
@@ -3507,7 +3304,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildWhile(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildWhile(Node node, IR_BuilderContext m, boolean expr) {
         final WhileNode whileNode = (WhileNode) node;
 
         if (whileNode.getConditionNode().getNodeType().alwaysFalse() &&
@@ -3543,7 +3340,7 @@ public class IR_Builder
         }
     }
 
-    public void buildXStr(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildXStr(Node node, IR_BuilderContext m, boolean expr) {
         final XStrNode xstrNode = (XStrNode) node;
 
         ArgumentsCallback argsCallback = new ArgumentsCallback() {
@@ -3560,10 +3357,10 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildYield(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildYield(Node node, IR_BuilderContext m, boolean expr) {
         final YieldNode yieldNode = (YieldNode) node;
 
-        ArgumentsCallback argsCallback = getArgsCallback(yieldNode.getArgsNode());
+        ArgumentsCallback argsCallback = setupArgs(yieldNode.getArgsNode());
 
         // TODO: This filtering is kind of gross...it would be nice to get some parser help here
         if (argsCallback == null || argsCallback.getArity() == 0) {
@@ -3587,7 +3384,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildZArray(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildZArray(Node node, IR_BuilderContext m, boolean expr) {
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
         boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
 
@@ -3598,17 +3395,17 @@ public class IR_Builder
         if (popit) m.consumeCurrentValue();
     }
 
-    public void buildZSuper(Node node, IR_BuilderContext m, boolean expr) {
+    public Operand buildZSuper(Node node, IR_BuilderContext m, boolean expr) {
         ZSuperNode zsuperNode = (ZSuperNode) node;
 
-        CompilerCallback closure = getBlock(zsuperNode.getIterNode());
+        CompilerCallback closure = setupCallClosure(zsuperNode.getIterNode());
 
         m.callZSuper(closure);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildArgsCatArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public List<Operand> buildArgsCatArguments(Node node, IR_BuilderContext m, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
         buildArguments(argsCatNode.getFirstNode(), m);
@@ -3623,7 +3420,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildArgsPushArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public List<Operand> buildArgsPushArguments(Node node, IR_BuilderContext m, boolean expr) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
         build(argsPushNode.getFirstNode(), m,true);
         build(argsPushNode.getSecondNode(), m,true);
@@ -3633,7 +3430,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildArrayArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public List<Operand> buildArrayArguments(Node node, IR_BuilderContext m, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
 
         ArrayCallback callback = new ArrayCallback() {
@@ -3651,7 +3448,7 @@ public class IR_Builder
     // leave as a normal array
     }
 
-    public void buildSplatArguments(Node node, IR_BuilderContext m, boolean expr) {
+    public List<Operand> buildSplatArguments(Node node, IR_BuilderContext m, boolean expr) {
         SplatNode splatNode = (SplatNode) node;
 
         build(splatNode.getValue(), m,true);

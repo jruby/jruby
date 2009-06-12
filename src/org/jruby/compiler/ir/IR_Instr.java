@@ -16,11 +16,11 @@ package org.jruby.compiler.ir;
 public abstract class IR_Instr
 {
     public final Operation _op;
-    public final Operand   _result; 
+    public final Variable  _result; 
 
     public Attribute[] _attributes;
 
-    public IR_Instr(Operation op, Operand res)
+    public IR_Instr(Operation op, Variable res)
     {
         _op = op;
         _result = res;
