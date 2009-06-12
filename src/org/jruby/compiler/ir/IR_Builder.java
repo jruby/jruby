@@ -1,4 +1,4 @@
-package org.jruby.buildr.ir;
+package org.jruby.compiler.ir;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,6 +104,8 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhenOneArgNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
+import org.jruby.compiler.ASTInspector;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 

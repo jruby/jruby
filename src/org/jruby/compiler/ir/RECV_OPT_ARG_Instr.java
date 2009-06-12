@@ -1,4 +1,4 @@
-package org.jruby.buildr.ir;
+package org.jruby.compiler.ir;
 
 public class RECV_OPT_ARG_Instr extends TwoOperandInstr
 {

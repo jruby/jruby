@@ -1,4 +1,4 @@
-package org.jruby.buildr.ir;
+package org.jruby.compiler.ir;
 
 public interface IR_BuilderContext
 {

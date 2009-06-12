@@ -1,4 +1,10 @@
-package org.jruby.buildr.ir;
+package org.jruby.compiler.ir;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.jruby.util.JavaNameMangler;
 
 public class IR_Method implements IR_BuilderContext
 {
@@ -6,9 +12,9 @@ public class IR_Method implements IR_BuilderContext
     String         _irName;        // Generated name
     List<IR_Instr> _instrs;        // List of ir instructions for this method
 
-    private HashMap<String, Integer> _nextVarIndex;
+    private Map<String, Integer> _nextVarIndex;
 
-    public void IR_Method(String name, boolean isRoot)
+    public IR_Method(String name, boolean isRoot)
     {
         _name = name;
         if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
