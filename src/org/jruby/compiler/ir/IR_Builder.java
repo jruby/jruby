@@ -282,12 +282,14 @@ public class IR_Builder
         if (args == null)
             return null;
 
-        List<Operand> argsList = new ArrayList<Operand>();
         // unwrap newline nodes to get their actual type
         while (args.getNodeType() == NodeType.NEWLINENODE) {
             args = ((NewlineNode)args).getNextNode();
         }
 
+        List<Operand> argsList = new ArrayList<Operand>();
+            // SSS FIXME: I added this in.  Is this correct?
+        argList.add(build(receiver, context, true));
         buildArgs(argsList, args, context);
 
         return argsList;
@@ -304,7 +306,6 @@ public class IR_Builder
 
         List<Operand> argList = new ArrayList<Operand>();
         argList.add(new Variable("self"));
-
         buildArgs(argList, args, context);
 
         return argList;
@@ -531,7 +532,6 @@ public class IR_Builder
         List<Operand> args         = setupArgs(receiverNode, callArgsNode, context);
         Operand       block        = setupCallClosure(callNode.getIterNode(), context);
         Variable      callResult   = context.getNewVariable("tmp");
-		  // FIXME: What happened to the receiver?  Is it implicitly the first argument to the call?
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
         context.addInstr(callInstr);
         return callResult;
@@ -1583,10 +1583,10 @@ public class IR_Builder
 
         IR_Method m = defineNewMethod(defnNode.getName(), defnNode.getArgsNode().getArity().getValue(), defnNode.getScope(), inspector, isAtRoot);
 
-              // Build IR for args
+            // Build IR for args
         buildArgs(argsNode, m, true);
 
-              // Build IR for body
+            // Build IR for body
         if (defnNode.getBodyNode() != null) {
             if (defnNode.getBodyNode() instanceof RescueNode) {
                 // if root of method is rescue, build as a light rescue
@@ -1601,8 +1601,8 @@ public class IR_Builder
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
 
-                  // Add the new method to the current context
-          context.addMethod(m);
+            // Add the new method to the current context
+        context.addMethod(m);
     }
 
     public Operand buildDefs(Node node, IR_BuilderContext m, boolean expr) {
@@ -1669,15 +1669,18 @@ public class IR_Builder
           // TODO: Add IR instructions for checking method arity!
         // m.getVariableCompiler().checkMethodArity(required, opt, rest);
 
-            // FIXME: Is this correct?  Where is the receiver object??
-            // We need to set self = args[0]
-        int argIndex = 0;
+            // self = args[0]
+            // SSS FIXME: Verify that this is correct
+        m.addInstr(new RECV_ARG_Instr(new Variable("self"), new Constant(0)));
+
+            // Other args begin at index 1
+        int argIndex = 1;
 
             // Both for fixed arity and variable arity methods
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < m.numRequiredArgs(); i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            m.addInstr(new RECV_ARG_Instr(a.getName(), new Constant(argIndex)));
+            m.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), new Constant(argIndex)));
         }
 
         if (opt > 0 || rest > -1) {
@@ -1686,13 +1689,13 @@ public class IR_Builder
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = m.getNewLabel();
                 LoclAsgnNode n = optArgs.get(j);
-                m.addInstr(new RECV_OPT_ARG_Instr(n.getName(), new Constant(argIndex), l));
+                m.addInstr(new RECV_OPT_ARG_Instr(new Variable(n.getName()), new Constant(argIndex), l));
                 build(n, m, true);
                 m.addInstr(new LABEL_Instr(l));
             }
 
             if (rest > -1) {
-                m.addInstr(new RECV_ARG_Instr(argsNode.getRestArgNode().getName(), new Constant(argIndex)));
+                m.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), new Constant(argIndex)));
                 argIndex++;
             }
         }
@@ -1905,16 +1908,9 @@ public class IR_Builder
         List<Operand> args         = setupArgs(callArgsNode, context);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), context);
         Variable      callResult   = context.getNewVariable("tmp");
-		  // FIXME: What happened to the receiver?  Is it implicitly the first argument to the call?
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
         context.addInstr(callInstr);
         return callResult;
-
-/**
-        m.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
-**/
     }
 
     private Operand setupCallClosure(Node node, IR_BuilderContext context) {
@@ -2362,21 +2358,15 @@ public class IR_Builder
         }
     }
 
-    public Operand buildLocalAsgn(Node node, IR_BuilderContext m, boolean expr) {
-        final LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
-
-        // just push nil for pragmas
+    public Operand buildLocalAsgn(Node node, IR_BuilderContext context, boolean expr) {
+        context.addIntsr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), context, true)));
+/**
+ * SSS FIXME: How does this PRAGMA business affect the IR? 
+ *
         if (ASTInspector.PRAGMAS.contains(localAsgnNode.getName())) {
             if (expr) m.loadNil();
-        } else {
-            CompilerCallback value = new CompilerCallback() {
-                public void call(IR_BuilderContext m) {
-                    build(localAsgnNode.getValueNode(), m,true);
-                }
-            };
-
-            m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth(), value, expr);
         }
+**/
     }
 
     public Operand buildLocalAsgnAssignment(Node node, IR_BuilderContext m, boolean expr) {
