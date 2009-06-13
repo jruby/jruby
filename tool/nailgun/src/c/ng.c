@@ -596,7 +596,7 @@ int main(int argc, char *argv[], char *env[]) {
   }
   
   /* now send the working directory */
-  cwd = getcwd(NULL, 0);
+  cwd = getcwd(NULL, BUFSIZE);
   sendText(CHUNKTYPE_DIR, cwd);
   free(cwd);
   
