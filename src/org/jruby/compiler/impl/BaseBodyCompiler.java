@@ -1945,6 +1945,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(p(GlobalVariables.class), "alias", sig(Void.TYPE, params(String.class, String.class)));
         loadNil();
     }
+    
+    public void raiseTypeError(String msg) {
+        loadRuntime();        
+        method.ldc(msg);
+        invokeRuby("newTypeError", sig(RaiseException.class, params(String.class)));
+        method.athrow();                                    
+    }    
 
     public void undefMethod(String name) {
         loadThreadContext();

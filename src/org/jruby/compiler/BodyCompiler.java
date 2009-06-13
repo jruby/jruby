@@ -587,4 +587,6 @@ public interface BodyCompiler {
             List<ArgumentsCallback> conditionals,
             List<CompilerCallback> bodies,
             CompilerCallback fallback);
+
+    public void raiseTypeError(String string);
 }
