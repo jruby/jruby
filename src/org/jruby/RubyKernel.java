@@ -1362,7 +1362,7 @@ public class RubyKernel {
         Ruby runtime = context.getRuntime();
         int resultCode;
         try {
-            resultCode = ShellLauncher.runAndWaitNoError(runtime, args);
+            resultCode = ShellLauncher.runAndWait(runtime, args);
         } catch (Exception e) {
             resultCode = 127;
         }
