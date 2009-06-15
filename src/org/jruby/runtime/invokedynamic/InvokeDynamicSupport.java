@@ -44,7 +44,7 @@ public class InvokeDynamicSupport {
         }
         
         MethodType fallbackType = type.insertParameterType(0, JRubyCallSite.class);
-        MethodHandle myFallback = MethodHandles.insertArgument(
+        MethodHandle myFallback = MethodHandles.insertArguments(
                 MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "fallback",
                 fallbackType),
                 0,
@@ -65,9 +65,9 @@ public class InvokeDynamicSupport {
     }
 
     private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, CallSite site) {
-        MethodHandle myTest = MethodHandles.insertArgument(test, 0, entry);
-        MethodHandle myTarget = MethodHandles.insertArgument(target, 0, entry);
-        MethodHandle myFallback = MethodHandles.insertArgument(fallback, 0, site);
+        MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry);
+        MethodHandle myTarget = MethodHandles.insertArguments(target, 0, entry);
+        MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
         MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, myTarget, myFallback);
         
         return MethodHandles.convertArguments(guardWithTest, site.type());
