@@ -192,10 +192,6 @@ public class ShellLauncher {
         return runAndWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
-    public static int runAndWaitNoError(Ruby runtime, IRubyObject[] rawArgs) {
-        return runAndWaitNoError(runtime, rawArgs, runtime.getOutputStream());
-    }
-
     public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
@@ -239,19 +235,6 @@ public class ShellLauncher {
         try {
             Process aProcess = run(runtime, rawArgs);
             handleStreams(aProcess,input,output,error);
-            return aProcess.waitFor();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        } catch (InterruptedException e) {
-            throw runtime.newThreadError("unexpected interrupt");
-        }
-    }
-
-    public static int runAndWaitNoError(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
-        InputStream input = runtime.getInputStream();
-        try {
-            Process aProcess = run(runtime, rawArgs);
-            handleStreams(aProcess,input,output);
             return aProcess.waitFor();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
@@ -852,35 +835,6 @@ public class ShellLauncher {
         try { pIn.close(); } catch (IOException io) {}
         try { pOut.close(); } catch (IOException io) {}
         try { pErr.close(); } catch (IOException io) {}
-
-        // Force t3 to quit, just in case if it's stuck.
-        // Note: On some platforms, even interrupt might not
-        // have an effect if the thread is IO blocked.
-        try { t3.interrupt(); } catch (SecurityException se) {}
-    }
-
-    private static void handleStreams(Process p, InputStream in, OutputStream out) throws IOException {
-        InputStream pOut = p.getInputStream();
-        p.getErrorStream().close();
-        OutputStream pIn = p.getOutputStream();
-
-        StreamPumper t1 = new StreamPumper(pOut, out, false, Pumper.Slave.IN, p);
-
-        // The assumption here is that the 'in' stream provides
-        // proper available() support. If available() always
-        // returns 0, we'll hang!
-        StreamPumper t3 = new StreamPumper(in, pIn, true, Pumper.Slave.OUT, p);
-
-        t1.start();
-        t3.start();
-
-        try { t1.join(); } catch (InterruptedException ie) {}
-        t3.quit();
-
-        try { out.flush(); } catch (IOException io) {}
-
-        try { pIn.close(); } catch (IOException io) {}
-        try { pOut.close(); } catch (IOException io) {}
 
         // Force t3 to quit, just in case if it's stuck.
         // Note: On some platforms, even interrupt might not
