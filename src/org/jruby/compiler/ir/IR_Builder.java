@@ -1932,14 +1932,7 @@ public class IR_Builder
     }
 
     public Operand buildFixnum(Node node, IR_BuilderContext m, boolean expr) {
-        FixnumNode fixnumNode = (FixnumNode) node;
-
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.createNewFixnum(fixnumNode.getValue());
-        } else {
-            m.createNewFixnum(fixnumNode.getValue());
-            if (!expr) m.consumeCurrentValue();
-        }
+		  return new Fixnum(((FixnumNode)node).getValue());
     }
 
     public Operand buildFlip(Node node, IR_BuilderContext m, boolean expr) {
