@@ -346,6 +346,7 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             return call(context, self, clazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
 
+        @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
     }
 
@@ -501,7 +502,9 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         }
 
         @Override
-        public Arity getArity() {return Arity.ONE_ARGUMENT;}
+        public Arity getArity() {
+            return Arity.ONE_ARGUMENT;
+        }
     }
 
     public static abstract class JavaMethodOneOrTwoBlock extends JavaMethodOneOrTwoOrNBlock {
@@ -825,6 +828,10 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
+        @Override
+        public Arity getArity() {
+            return Arity.NO_ARGUMENTS;
+        }
     }
 
     public static abstract class JavaMethodZeroOrOne extends JavaMethodZeroOrOneOrN {
@@ -909,6 +916,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 1) return raiseArgumentError(this, context, name, args.length, 1, 1);
             return call(context, self, clazz, name, args[0]);
         }
+
+        @Override
+        public Arity getArity() {
+            return Arity.ONE_ARGUMENT;
+        }
     }
 
     public static abstract class JavaMethodOneOrTwo extends JavaMethodOneOrTwoOrN {
@@ -967,6 +979,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
             if (args.length != 2) return raiseArgumentError(this, context, name, args.length, 2, 2);
             return call(context, self, clazz, name, args[0], args[1]);
         }
+
+        @Override
+        public Arity getArity() {
+            return Arity.TWO_ARGUMENTS;
+        }
     }
 
     public static abstract class JavaMethodTwoOrThree extends JavaMethodTwoOrThreeOrN {
@@ -1002,6 +1019,11 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             if (args.length != 3) return raiseArgumentError(this, context, name, args.length, 3, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2]);
+        }
+
+        @Override
+        public Arity getArity() {
+            return Arity.THREE_ARGUMENTS;
         }
     }
 }
