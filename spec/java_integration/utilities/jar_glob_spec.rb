@@ -92,3 +92,31 @@ describe 'Dir globs (Dir.glob and Dir.[]) +' do
     lambda{ Dir.glob(prefix + File.expand_path(Dir.pwd)) }.should_not raise_error
   end
 end
+
+describe "File.expand_path in a jar" do
+  before do
+    Dir.mkdir 'spaces test'
+    File.open('spaces_file.rb', 'w') do |file|
+      file << <<-CODE
+      $foo_dir = File.expand_path(File.dirname(__FILE__))
+CODE
+    end
+    `jar -cf test.jar spaces_file.rb`
+
+    File.delete('spaces_file.rb')
+    FileUtils.move 'test.jar', 'spaces test'
+  end
+
+  after do
+    File.delete('spaces test/test.jar')
+    Dir.rmdir 'spaces test'
+    $foo_dir = nil
+  end
+
+  it "does not encode URIs for jars on a filesystem" do
+    require 'spaces test/test.jar'
+    require 'spaces_file'
+    $foo_dir.should_not match(/%20/)
+  end
+end
+
