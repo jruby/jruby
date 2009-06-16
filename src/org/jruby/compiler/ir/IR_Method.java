@@ -8,9 +8,10 @@ import org.jruby.util.JavaNameMangler;
 
 public class IR_Method implements IR_BuilderContext
 {
+    IR_BuilderContext _container;   // The container for this method (can be a script, class, or module)
     String         _name;        // Ruby name 
-    String         _irName;        // Generated name
-    List<IR_Instr> _instrs;        // List of ir instructions for this method
+    String         _irName;      // Generated name
+    List<IR_Instr> _instrs;      // List of ir instructions for this method
 
     private Map<String, Integer> _nextVarIndex;
 
@@ -46,6 +47,9 @@ public class IR_Method implements IR_BuilderContext
         _nextVarIndex.put(prefix, idx+1);
         return new Label(prefix + idx);
     }
+
+      // Delegate method to the containing class/module
+    public StringLiteral getFileName() { return _container.getFileName(); }
 
     public void addInstr(IR_Instr i) { _instrs.append(i); }
 }

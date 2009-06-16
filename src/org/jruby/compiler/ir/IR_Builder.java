@@ -1743,27 +1743,11 @@ public class IR_Builder
 
     public Operand buildDStr(Node node, IR_BuilderContext m) {
         final DStrNode dstrNode = (DStrNode) node;
+        List<Operand> strPieces = new ArrayList<Operand>();
+        for (Node nextNode : dstrNode.childNodes()) {
+            strPieces.add(build(nextNode, m));
 
-        ArrayCallback dstrCallback = new ArrayCallback() {
-
-                    public void nextValue(IR_BuilderContext m, Object sourceArray,
-                            int index) {
-                        build(dstrNode.get(index), m, true);
-                    }
-                };
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
-            m.createNewString(dstrCallback, dstrNode.size());
-            if (popit) m.consumeCurrentValue();
-        } else {
-            // not an expression, only build the elements
-            for (Node nextNode : dstrNode.childNodes()) {
-                build(nextNode, m, false);
-            }
-        }
+        return new CompoundString(strPieces);
     }
 
     public Operand buildDSymbol(Node node, IR_BuilderContext m) {
@@ -1860,16 +1844,12 @@ public class IR_Builder
     }
 
     public Operand buildEvStr(Node node, IR_BuilderContext m) {
-        final EvStrNode evStrNode = (EvStrNode) node;
-
-        build(evStrNode.getBody(), m,true);
-        m.asString();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+            // SSS: FIXME: Somewhere here, we need to record information the type of this operand as String
+        return build(((EvStrNode) node).getBody(), context)
     }
 
     public Operand buildFalse(Node node, IR_BuilderContext m) {
-            // FIXME: What about the call to pollThreadEvents?
+            // SSS: FIXME: What about the call to pollThreadEvents?
         return BooleanLiteral.FALSE; 
 /**
             if (expr) {
@@ -2346,15 +2326,8 @@ public class IR_Builder
         m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
 
-    public Operand buildLocalVar(Node node, IR_BuilderContext m) {
-        LocalVarNode localVarNode = (LocalVarNode) node;
-
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
-        } else {
-            m.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
-            if (!expr) m.consumeCurrentValue();
-        }
+    public Operand buildLocalVar(Node node, IR_BuilderContext context) {
+        return context.getNewVariable(((LocalVarNode) node).getName());
     }
 
     public Operand buildMatch(Node node, IR_BuilderContext m) {
@@ -3173,20 +3146,9 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildStr(Node node, IR_BuilderContext m) {
+    public Operand buildStr(Node node, IR_BuilderContext context) {
         StrNode strNode = (StrNode) node;
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
-            if (strNode instanceof FileNode) {
-                m.loadFilename();
-            } else {
-                m.createNewString(strNode.getValue());
-            }
-        }
-        if (popit) m.consumeCurrentValue();
+        return (strNode instanceof FileNode) ? context.getFileName() : new StringLiteral(strNode.getValue());
     }
 
     public Operand buildSuper(Node node, IR_BuilderContext m) {
