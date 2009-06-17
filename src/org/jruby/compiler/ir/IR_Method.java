@@ -30,13 +30,23 @@ public class IR_Method implements IR_BuilderContext
         _nextVarIndex = new HashMap<String, Integer>();
     }
 
-    public Variable getNewVariable(String prefix)
+    public Variable getNewVariable(String name)
+    {
+        return new Variable(prefix + idx);
+    }
+
+    public Variable getNewVariableWithPrefix(prefix)
     {
         Integer idx = _nextVarIndex.get(prefix);
         if (idx == null)
             idx = 0;
         _nextVarIndex.put(prefix, idx+1);
         return new Variable(prefix + idx);
+    }
+
+    public Variable getNewTmpVariable()
+    {
+       return getNewVariableWithPrefix("tmp");
     }
 
     public Label getNewLabel()

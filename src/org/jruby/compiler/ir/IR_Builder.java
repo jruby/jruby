@@ -377,26 +377,38 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
+    // Translate ret = (a && b) to ret = (a ? b : false) as follows
+    // 
+    //    v1 = -- build(a) --
+    //       OPT: ret can be set to v1, but effectively v1 is false if we take the branch to L.
+    //            while this info can be inferred by using attributes, why bother if we can do this?
+    //    ret = false   
+    //    beq(v1, false, L)
+    //    v2 = -- build(b) --
+    //    ret = v2
+    // L:
+    //
     public Operand buildAnd(Node node, IR_BuilderContext m) {
         final AndNode andNode = (AndNode) node;
 
         if (andNode.getFirstNode().getNodeType().alwaysTrue()) {
-            // build first node as non-expr and then second node
-            build(andNode.getFirstNode(), m, false);
-            build(andNode.getSecondNode(), m);
-        } else if (andNode.getFirstNode().getNodeType().alwaysFalse()) {
-            // build first node only
+            // build first node (and ignore its result) and then second node
             build(andNode.getFirstNode(), m);
+            return build(andNode.getSecondNode(), m);
+        } else if (andNode.getFirstNode().getNodeType().alwaysFalse()) {
+            // build first node only and return false
+            build(andNode.getFirstNode(), m);
+            return BooleanLiteral.FALSE;
         } else {
-            build(andNode.getFirstNode(), m, true);
-            BranchCallback longCallback = new BranchCallback() {
-                        public void branch(IR_BuilderContext m) {
-                            build(andNode.getSecondNode(), m, true);
-                        }
-                    };
-
-            m.performLogicalAnd(longCallback);
-            if (!expr) m.consumeCurrentValue();
+            Variable ret = m.getNewTmpVariable();
+            Label    l   = m.getNewLabel();
+            Operand  v1  = build(andNode.getFirstNode(), m);
+            m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
+            m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
+            Operand  v2  = build(andNode.getSecondNode(), m);
+            m.addInstr(new COPY_Instr(ret, v2);
+            m.addInstr(new LABEL_Instr(l));
+            return ret;
         }
     }
 
@@ -524,7 +536,7 @@ public class IR_Builder
         Node          receiverNode = callNode.getReceiverNode();
         List<Operand> args         = setupArgs(receiverNode, callArgsNode, context);
         Operand       block        = setupCallClosure(callNode.getIterNode(), context);
-        Variable      callResult   = context.getNewVariable("tmp");
+        Variable      callResult   = context.getNewTmpVariable();
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
         context.addInstr(callInstr);
         return callResult;
@@ -1864,7 +1876,7 @@ public class IR_Builder
         Node          callArgsNode = fcallNode.getArgsNode();
         List<Operand> args         = setupArgs(callArgsNode, context);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), context);
-        Variable      callResult   = context.getNewVariable("tmp");
+        Variable      callResult   = context.getNewTmpVariable();
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
         context.addInstr(callInstr);
         return callResult;
@@ -2327,7 +2339,7 @@ public class IR_Builder
     }
 
     public Operand buildLocalVar(Node node, IR_BuilderContext context) {
-        return context.getNewVariable(((LocalVarNode) node).getName());
+        return new Variable(((LocalVarNode) node).getName());
     }
 
     public Operand buildMatch(Node node, IR_BuilderContext m) {
@@ -2879,29 +2891,38 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
+    // Translate ret = (a || b) to ret = (a ? true : b) as follows
+    // 
+    //    v1 = -- build(a) --
+    //       OPT: ret can be set to v1, but effectively v1 is true if we take the branch to L.
+    //            while this info can be inferred by using attributes, why bother if we can do this?
+    //    ret = true
+    //    beq(v1, true, L)
+    //    v2 = -- build(b) --
+    //    ret = v2
+    // L:
+    //
     public Operand buildOr(Node node, IR_BuilderContext m) {
         final OrNode orNode = (OrNode) node;
 
         if (orNode.getFirstNode().getNodeType().alwaysTrue()) {
-            // build first node only
+            // build first node only and return true
             build(orNode.getFirstNode(), m);
+            return BooleanLiteral.TRUE;
         } else if (orNode.getFirstNode().getNodeType().alwaysFalse()) {
             // build first node as non-expr and build second node
-            build(orNode.getFirstNode(), m, false);
-            build(orNode.getSecondNode(), m);
+            build(orNode.getFirstNode(), m);
+            return build(orNode.getSecondNode(), m);
         } else {
-            build(orNode.getFirstNode(), m, true);
-
-            BranchCallback longCallback = new BranchCallback() {
-
-                        public void branch(IR_BuilderContext m) {
-                            build(orNode.getSecondNode(), m, true);
-                        }
-                    };
-
-            m.performLogicalOr(longCallback);
-            // TODO: don't require pop
-            if (!expr) m.consumeCurrentValue();
+            Variable ret = m.getNewTmpVariable();
+            Label    l   = m.getNewLabel();
+            Operand  v1  = build(orNode.getFirstNode(), m);
+            m.addInstr(new COPY_Instr(ret, BooleanLiteral.TRUE));
+            m.addInstr(new BEQ_Instr(v1, BooleanLiteral.TRUE, l));
+            Operand  v2  = build(orNode.getSecondNode(), m);
+            m.addInstr(new COPY_Instr(ret, v2);
+            m.addInstr(new LABEL_Instr(l));
+            return ret;
         }
     }
 
