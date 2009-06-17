@@ -9,7 +9,7 @@ package org.jruby.compiler.ir;
 // that appends the components of the compound string into a single string object
 public class CompoundString extends Operand
 {
-	final public List<Operand> _pieces;
+    final public List<Operand> _pieces;
 
-	public CompoundString(List<Operand> pieces) { _pieces = pieces; }
+    public CompoundString(List<Operand> pieces) { _pieces = pieces; }
 }
