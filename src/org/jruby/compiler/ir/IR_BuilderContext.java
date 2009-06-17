@@ -8,11 +8,14 @@ public interface IR_BuilderContext
         // scripts, classes, and modules
     public void addMethod(IR_Method m);
 
-        // methods, scripts, classes, and modules
+        // scripts, classes, modules, methods, and closures
     public void addInstr(IR_Instr i);
 
         // create a new variable
-    public Variable getNewVariable(String name);
+    public Variable getNewVariable();
+
+        // create a new variable using the prefix
+    public Variable getNewVariable(String prefix);
 
         // scripts
     public StringLiteral getFileName();

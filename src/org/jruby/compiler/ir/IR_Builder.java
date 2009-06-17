@@ -413,37 +413,19 @@ public class IR_Builder
     }
 
     public Operand buildArray(Node node, IR_BuilderContext m) {
-        ArrayNode arrayNode = (ArrayNode) node;
+        List<Operand> elts = new ArrayList<Operand>();
+        for (Node e: node.childNodes())
+            elts.add(build(e, m));
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-        
-        if (doit) {
-            ArrayCallback callback = new ArrayCallback() {
-
-                        public void nextValue(IR_BuilderContext m, Object sourceArray, int index) {
-                            Node node = (Node) ((Object[]) sourceArray)[index];
-                            build(node, m, true);
-                        }
-                    };
-
-            m.createNewArray(arrayNode.childNodes().toArray(), callback, arrayNode.isLightweight());
-
-            if (popit) m.consumeCurrentValue();
-        } else {
-            for (Iterator<Node> iter = arrayNode.childNodes().iterator(); iter.hasNext();) {
-                Node nextNode = iter.next();
-                build(nextNode, m, false);
-            }
-        }
+        return new Array(elts);
     }
 
     public Operand buildArgsCat(Node node, IR_BuilderContext m) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
-        build(argsCatNode.getFirstNode(), m,true);
+        build(argsCatNode.getFirstNode(), m);
         m.ensureRubyArray();
-        build(argsCatNode.getSecondNode(), m,true);
+        build(argsCatNode.getSecondNode(), m);
         m.splatCurrentValue();
         m.concatArrays();
         // TODO: don't require pop
@@ -512,21 +494,10 @@ public class IR_Builder
 
     public Operand buildBreak(Node node, IR_BuilderContext m) {
         final BreakNode breakNode = (BreakNode) node;
+        m.addInstr(new BREAK_Instr(build(breakNode.getValueNode(), m)));
 
-        CompilerCallback valueCallback = new CompilerCallback() {
-
-                    public void call(IR_BuilderContext m) {
-                        if (breakNode.getValueNode() != null) {
-                            build(breakNode.getValueNode(), m, true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-        m.issueBreakEvent(valueCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+            // SSS FIXME: Should I be returning the operand constructed here?
+        return null;
     }
 
     public Operand buildCall(Node node, IR_BuilderContext context) {
