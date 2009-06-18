@@ -30,6 +30,8 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 
+import java.util.WeakHashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.jruby.CompatVersion;
@@ -39,6 +41,7 @@ import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicContext;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
@@ -72,8 +75,9 @@ public class FiberLibrary implements Library {
     private Executor executor;
 
     @JRubyClass(name="Fiber")
-    public class Fiber extends RubyObject {
+    public class Fiber extends RubyObject implements DynamicContext {
         private final Object yieldLock = new Object();
+        private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
         private Block block;
         private IRubyObject result;
         private Runnable runnable;
@@ -140,6 +144,10 @@ public class FiberLibrary implements Library {
         @JRubyMethod(name = "alive?", compat = CompatVersion.RUBY1_9)
         public IRubyObject alive_p(ThreadContext context) {
             return context.getRuntime().newBoolean(alive);
+        }
+
+        public Map<Object, IRubyObject> getContextVariables() {
+            return contextVariables;
         }
     }
 

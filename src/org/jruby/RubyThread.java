@@ -37,6 +37,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,6 +53,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.DynamicContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.concurrent.ExecutionException;
@@ -73,10 +75,11 @@ import org.jruby.util.io.BlockingIO;
  * Note: For CVS history, see ThreadClass.java.
  */
 @JRubyClass(name="Thread")
-public class RubyThread extends RubyObject {
+public class RubyThread extends RubyObject implements DynamicContext {
     private ThreadLike threadImpl;
     private RubyFixnum priority;
     private transient Map<IRubyObject, IRubyObject> threadLocalVariables;
+    private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
     private boolean abortOnException;
     private IRubyObject finalResult;
     private RaiseException exitingException;
@@ -381,6 +384,10 @@ public class RubyThread extends RubyObject {
             threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
         }
         return threadLocalVariables;
+    }
+
+    public final Map<Object, IRubyObject> getContextVariables() {
+        return contextVariables;
     }
 
     @JRubyMethod(name = "[]", required = 1)
