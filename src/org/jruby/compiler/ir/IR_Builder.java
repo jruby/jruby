@@ -1978,14 +1978,7 @@ public class IR_Builder
     }
 
     public Operand buildFloat(Node node, IR_BuilderContext m) {
-        FloatNode floatNode = (FloatNode) node;
-
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.createNewFloat(floatNode.getValue());
-        } else {
-            m.createNewFloat(floatNode.getValue());
-            if (!expr) m.consumeCurrentValue();
-        }
+        return new Float(((FloatNode)node).getValue());
     }
 
     public Operand buildFor(Node node, IR_BuilderContext m) {
