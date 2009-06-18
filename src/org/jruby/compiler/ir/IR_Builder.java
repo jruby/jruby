@@ -165,17 +165,6 @@ public class IR_Builder
         return n;
     }
 
-    public IR_Method defineNewMethod(String name, int methodArity, StaticScope scope, ASTInspector inspector, boolean root)
-    {
-        IR_Method m = new IR_Method(name, root);
-            // Add IR instructions specific to receiving method arguments
-        m.addInstr(...)
-        ...
-        ...
-
-        return m;
-    }
-
     public Operand build(Node node, IR_Scope m) {
         if (node == null) {
             return null;
@@ -1511,46 +1500,25 @@ public class IR_Builder
 
     public Operand buildDefn(Node node, IR_Scope s) {
         final DefnNode defnNode = (DefnNode) node;
-        final ArgsNode argsNode = defnNode.getArgsNode();
-
-        // inspect body and args
-        ASTInspector inspector = new ASTInspector();
-        // check args first, since body inspection can depend on args
-        inspector.inspect(defnNode.getArgsNode());
-
-        // if body is a rescue node, inspect its pieces separately to avoid it disabling all optz
-        // TODO: this is gross.
-        if (defnNode.getBodyNode() instanceof RescueNode) {
-            RescueNode rescueNode = (RescueNode)defnNode.getBodyNode();
-            inspector.inspect(rescueNode.getBodyNode());
-            inspector.inspect(rescueNode.getElseNode());
-            inspector.inspect(rescueNode.getRescueNode());
-        } else {
-            inspector.inspect(defnNode.getBodyNode());
-        }
-
-        IR_Method m = defineNewMethod(defnNode.getName(), defnNode.getArgsNode().getArity().getValue(), defnNode.getScope(), inspector, isAtRoot);
+        IR_Method m = new IR_Method(s, defnNode.getName());
 
             // Build IR for args
-        buildArgs(argsNode, m, true);
+        buildArgs(defnNode.getArgsNode(), m);
 
             // Build IR for body
         if (defnNode.getBodyNode() != null) {
-            if (defnNode.getBodyNode() instanceof RescueNode) {
                 // if root of method is rescue, build as a light rescue
+            if (defnNode.getBodyNode() instanceof RescueNode)
                 buildRescueInternal(defnNode.getBodyNode(), m, true);
-            } else {
-                build(defnNode.getBodyNode(), m, true);
-            }
+            else
+                build(defnNode.getBodyNode(), m);
         } else {
-           m.loadNil();
+           m.addInstr(new RETURN_Instr(Nil.NIL));
         }
 
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
-
-            // Add the new method to the current context
-        s.addMethod(m);
+            // No value returned for a method definition 
+            // SSS FIXME: Verify from the ruby spec that this is true
+        return null;
     }
 
     public Operand buildDefs(Node node, IR_Scope m) {
@@ -1696,38 +1664,21 @@ public class IR_Builder
         }
     }
 
-    public Operand buildDStr(Node node, IR_Scope m) {
+    public Operand buildDStr(Node node, IR_Scope s) {
         final DStrNode dstrNode = (DStrNode) node;
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node nextNode : dstrNode.childNodes()) {
-            strPieces.add(build(nextNode, m));
+        for (Node n : dstrNode.childNodes()) {
+            strPieces.add(build(n, s));
 
         return new CompoundString(strPieces);
     }
 
-    public Operand buildDSymbol(Node node, IR_Scope m) {
-        final DSymbolNode dsymbolNode = (DSymbolNode) node;
+    public Operand buildDSymbol(Node node, IR_Scope s) {
+        List<Operand> strPieces = new ArrayList<Operand>();
+        for (Node n : node.childNodes()) {
+            strPieces.add(build(n, s));
 
-        ArrayCallback dstrCallback = new ArrayCallback() {
-
-                    public void nextValue(IR_Scope m, Object sourceArray,
-                            int index) {
-                        build(dsymbolNode.get(index), m, true);
-                    }
-                };
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
-            m.createNewSymbol(dstrCallback, dsymbolNode.size());
-            if (popit) m.consumeCurrentValue();
-        } else {
-            // not an expression, only build the elements
-            for (Node nextNode : dsymbolNode.childNodes()) {
-                build(nextNode, m, false);
-            }
-        }
+        return new DynamicSymbol(new CompoundString(strPieces));
     }
 
     public Operand buildDVar(Node node, IR_Scope m) {

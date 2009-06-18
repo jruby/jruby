@@ -22,6 +22,6 @@ public class BREAK_Instr extends OneOperandInstr
 
     public BREAK_Instr(Operand rv)
     {
-        super(BREAK, null, _retval);
+        super(Operation.BREAK, null, _retval);
     }
 }

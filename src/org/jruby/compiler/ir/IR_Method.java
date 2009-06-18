@@ -7,7 +7,7 @@ public class IR_Method extends IR_ScopeImpl
     String _name;        // Ruby name 
     String _irName;      // Generated name
 
-    public IR_Method(IR_Scope parent, String name, boolean isRoot)
+    public IR_Method(IR_Scope parent, String name)
     {
 		 super(parent);
         _name = name;

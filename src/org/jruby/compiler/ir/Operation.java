@@ -25,7 +25,7 @@ public enum Operation
     LSHIFT(alu_op), RSHIFT(alu_op),
 
 // method handle, arg receive, return value, and  call instructions
-    GET_METHOD(dont_care), RET(dont_care), RECV_ARG(dont_care), RECV_OPT_ARG(dont_care),
+    GET_METHOD(dont_care), RETURN(dont_care), RECV_ARG(dont_care), RECV_OPT_ARG(dont_care),
     CALL(call_op), OCALL(call_op), 
 
 // closure instructions
@@ -41,8 +41,8 @@ public enum Operation
     NEW_OBJ(obj_op), GET_FIELD(obj_op), SET_FIELD(obj_op),
 
 // jump and branch operations
-    LABEL(dont_care), 
-    JMP(branch_op), BEQ(branch_op), BNE(branch_op), BLE(branch_op), BLT(branch_op), BGE(branch_op), BGT(branch_op),
+    LABEL(dont_care), BREAK(dont_care),
+    JUMP(branch_op), BEQ(branch_op), BNE(branch_op), BLE(branch_op), BLT(branch_op), BGE(branch_op), BGT(branch_op),
 
 // others
     THREAD_POLL(dont_care)
