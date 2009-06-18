@@ -1006,31 +1006,33 @@ public class RubyObject extends RubyBasicObject {
      *                              "methods", "extend", "__send__", "instance_eval"]
      *     k.methods.length   #=> 42
      */
-    @JRubyMethod(name = "methods", optional = 1)
+    @JRubyMethod(name = "methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject methods(ThreadContext context, IRubyObject[] args) {
-        boolean all = true;
-        if (args.length == 1) {
-            all = args[0].isTrue();
-        }
-        
+        return methods(context, args, false);
+    }
+    @JRubyMethod(name = "methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
+        return methods(context, args, true);
+    }
+
+    public IRubyObject methods(ThreadContext context, IRubyObject[] args, boolean useSymbols) {
+        boolean all = args.length == 1 ? args[0].isTrue() : true;
         Ruby runtime = getRuntime();
-        RubyArray singletonMethods = runtime.newArray();
+        RubyArray methods = runtime.newArray();
         Set<String> seen = new HashSet<String>();
 
         if (getMetaClass().isSingleton()) {
-            getMetaClass().populateInstanceMethodNames(seen, singletonMethods, Visibility.PRIVATE, true, false, false);
+            getMetaClass().populateInstanceMethodNames(seen, methods, Visibility.PRIVATE, true, useSymbols, false);
             if (all) {
-                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, singletonMethods, Visibility.PRIVATE, true, false, true);
+                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, Visibility.PRIVATE, true, useSymbols, true);
             }
+        } else if (all) {
+            getMetaClass().populateInstanceMethodNames(seen, methods, Visibility.PRIVATE, true, useSymbols, true);
         } else {
-            if (all) {
-                getMetaClass().populateInstanceMethodNames(seen, singletonMethods, Visibility.PRIVATE, true, false, true);
-            } else {
-                // do nothing, leave empty
-            }
+            // do nothing, leave empty
         }
 
-        return singletonMethods;
+        return methods;
     }
 
     /** rb_obj_public_methods
@@ -1042,13 +1044,14 @@ public class RubyObject extends RubyBasicObject {
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
      *  in the receiver will be listed.
      */
-    @JRubyMethod(name = "public_methods", optional = 1)
+    @JRubyMethod(name = "public_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject public_methods(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) {
-            args = new IRubyObject[] { context.getRuntime().getTrue() };
-        }
+        return getMetaClass().public_instance_methods(trueIfNoArgument(context, args));
+    }
 
-        return getMetaClass().public_instance_methods(args);
+    @JRubyMethod(name = "public_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
+        return getMetaClass().public_instance_methods19(trueIfNoArgument(context, args));
     }
 
     /** rb_obj_protected_methods
@@ -1063,13 +1066,14 @@ public class RubyObject extends RubyBasicObject {
      *  Internally this implementation uses the
      *  {@link RubyModule#protected_instance_methods} method.
      */
-    @JRubyMethod(name = "protected_methods", optional = 1)
+    @JRubyMethod(name = "protected_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject protected_methods(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) {
-            args = new IRubyObject[] { context.getRuntime().getTrue() };
-        }
+        return getMetaClass().protected_instance_methods(trueIfNoArgument(context, args));
+    }
 
-        return getMetaClass().protected_instance_methods(args);
+    @JRubyMethod(name = "protected_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
+        return getMetaClass().protected_instance_methods19(trueIfNoArgument(context, args));
     }
 
     /** rb_obj_private_methods
@@ -1084,13 +1088,19 @@ public class RubyObject extends RubyBasicObject {
      *  Internally this implementation uses the
      *  {@link RubyModule#private_instance_methods} method.
      */
-    @JRubyMethod(name = "private_methods", optional = 1)
+    @JRubyMethod(name = "private_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) {
-            args = new IRubyObject[] { context.getRuntime().getTrue() };
-        }
+        return getMetaClass().private_instance_methods(trueIfNoArgument(context, args));
+    }
 
-        return getMetaClass().private_instance_methods(args);
+    @JRubyMethod(name = "private_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
+        return getMetaClass().private_instance_methods19(trueIfNoArgument(context, args));
+    }
+
+    // FIXME: If true array is common enough we should pre-allocate and stick somewhere
+    private IRubyObject[] trueIfNoArgument(ThreadContext context, IRubyObject[] args) {
+        return args.length == 0 ? new IRubyObject[] { context.getRuntime().getTrue() } : args;
     }
 
     /** rb_obj_singleton_methods

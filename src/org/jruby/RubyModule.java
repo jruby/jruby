@@ -1865,7 +1865,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
-        return instance_methods(args, PUBLIC, false, false);
+        return instance_methods(args, PUBLIC, false, true);
     }
 
     @JRubyMethod(name = "instance_method", required = 1)
