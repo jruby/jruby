@@ -7,9 +7,9 @@ public class IR_Method extends IR_BaseContext
     String _name;        // Ruby name 
     String _irName;      // Generated name
 
-    public IR_Method(String name, boolean isRoot)
+    public IR_Method(IR_BuilderContext parent, String name, boolean isRoot)
     {
-		 super();
+		 super(parent);
         _name = name;
         if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
             _irName = name;
@@ -19,7 +19,4 @@ public class IR_Method extends IR_BaseContext
             _irName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
         }
     }
-
-      // Delegate method to the containing class/module
-    public StringLiteral getFileName() { return _container.getFileName(); }
 }

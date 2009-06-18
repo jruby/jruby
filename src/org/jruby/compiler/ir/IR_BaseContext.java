@@ -7,13 +7,14 @@ import java.util.Map;
 
 public abstract class IR_BaseContext implements IR_BuilderContext
 {
-    IR_BuilderContext _container;   // The container for this context
-    List<IR_Instr>    _instrs;      // List of ir instructions for this method
+    IR_BuilderContext _parent;   // Parent container for this context
+    List<IR_Instr>    _instrs;   // List of ir instructions for this method
 
     private Map<String, Integer> _nextVarIndex;
 
-	 public IR_BaseContext()
+	 public IR_BaseContext(IR_BuilderContext parent)
 	 {
+        _parent = parent;
         _instrs = new ArrayList<IR_Instr>();
         _nextVarIndex = new HashMap<String, Integer>();
 	 }
@@ -45,7 +46,7 @@ public abstract class IR_BaseContext implements IR_BuilderContext
     }
 
       // Delegate method to the containing script/module/class
-    public StringLiteral getFileName() { return _container.getFileName(); }
+    public StringLiteral getFileName() { return _parent.getFileName(); }
 
     public void addInstr(IR_Instr i) { _instrs.append(i); }
 }

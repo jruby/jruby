@@ -2234,18 +2234,45 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildInstVar(Node node, IR_BuilderContext m) {
-        InstVarNode instVarNode = (InstVarNode) node;
+    // SSS FIXME: Note that in general, there will be lots of a = b kind of copies
+    // introduced in the IR because the translation is entirely single-node focused.
+    // An example will make this clear
+    //
+    // RUBY: 
+    //     v = @f 
+    // will translate to 
+    //
+    // AST: 
+    //     LocalAsgnNode v 
+    //       InstrVarNode f 
+    // will translate to
+    //
+    // IR: 
+    //     tmp = self.f [ GET_FIELD(tmp,self,f) ]
+    //     v = tmp      [ COPY(v, tmp) ]
+    //
+    // instead of
+    //     v = self.f   [ GET_FIELD(v, self, f) ]
+    //
+    // We could get smarter and pass in the variable into which this expression is going to get evaluated
+    // and use that to store the value of the expression (or not build the expression if the variable is null).
+    //
+    // But, that makes the code more complicated, and in any case, all this will get fixed in a single pass of
+    // copy propagation and dead-code elimination.
+    //
+    // Something to pay attention to and if this extra pass becomes a concern (not convinced that it is yet),
+    // this smart can be built in here.  Right now, the goal is to do something simple and straightforward that is going to be correct.
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.retrieveInstanceVariable(instVarNode.getName());
-        } else {
-            m.retrieveInstanceVariable(instVarNode.getName());
-            if (!expr) m.consumeCurrentValue();
-        }
+    public Operand buildInstVar(Node node, IR_BuilderContext m) {
+        Variable ret = m.getNewTmpVariable();
+        m.addInstr(new GET_FIELD_Instr(ret, ((InstrVarNode)node).getName()));
+        return ret;
     }
 
     public Operand buildIter(Node node, IR_BuilderContext m) {
+            // Create a new closure context
+        m = new IR_Closure(m);
+
         final IterNode iterNode = (IterNode) node;
 
         // create the closure class and instantiate it
@@ -2503,14 +2530,12 @@ public class IR_Builder
     }
 
     public Operand buildNewline(Node node, IR_BuilderContext m) {
-        // TODO: add trace call?
+        // SSS FIXME: We need to build debug information tracking into the IR in some fashion
+		  // So, these methods below would have to have equivalents in IR_BuilderContext implementations.
         m.lineNumber(node.getPosition());
-
         m.setLinePosition(node.getPosition());
 
-        NewlineNode newlineNode = (NewlineNode) node;
-
-        build(newlineNode.getNextNode(), m);
+        return build(((NewlineNode)node).getNextNode(), m);
     }
 
     public Operand buildNext(Node node, IR_BuilderContext m) {
@@ -2545,26 +2570,16 @@ public class IR_Builder
     }
 
     public Operand buildNil(Node node, IR_BuilderContext m) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) {
-                m.loadNil();
-                m.pollThreadEvents();
-            }
-        } else {
-            m.loadNil();
-            m.pollThreadEvents();
-            if (!expr) m.consumeCurrentValue();
-        }
+		 // SSS FIXME: There was a call to m.pollThreadEvents() here ... need to handle that
+		 // m.pollThreadEvents();
+
+		 return Nil.NIL;
     }
 
     public Operand buildNot(Node node, IR_BuilderContext m) {
-        NotNode notNode = (NotNode) node;
-
-        build(notNode.getConditionNode(), m, true);
-
-        m.negateCurrentValue();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+		  Variable ret = m.getNewTmpVariable();
+		  m.addInstr(new ALU_Instr(NOT, dst, build(((NotNode)node).getConditionNode(), m, true)));
+		  return ret;
     }
 
     public Operand buildOpAsgnAnd(Node node, IR_BuilderContext m) {

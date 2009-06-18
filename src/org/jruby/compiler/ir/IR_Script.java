@@ -6,5 +6,7 @@ public class IR_Script extends IR_BaseContext
         // Need to check with headius
     StringLiteral _fileName;
 
+    public IR_Script() { super(nil); }
+
     public StringLiteral getFileName() { return _fileName; }
 }
