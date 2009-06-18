@@ -826,11 +826,12 @@ public class RubyYaccLexer {
         commandStart = false;
 
         loop: for(;;) {
-            c = src.read();            
+            c = src.read();
             switch(c) {
-            case '\004':		/* ^D */
-            case '\032':		/* ^Z */
-            case EOF:			/* end of script. */
+            case '\000': /* NUL */
+            case '\004': /* ^D */
+            case '\032': /* ^Z */
+            case EOF:	 /* end of script. */
                 return EOF;
            
                 /* white spaces */
