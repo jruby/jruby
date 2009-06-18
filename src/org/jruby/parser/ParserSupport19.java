@@ -38,7 +38,6 @@ import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.ListNode;
-import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.SplatNode;
 import org.jruby.common.IRubyWarnings.ID;
@@ -54,25 +53,33 @@ public class ParserSupport19 extends ParserSupport {
 
         switch (lhs.getType()) {
             case Tokens.kSELF:
-                throw new SyntaxException(PID.CANNOT_CHANGE_SELF, lhs.getPosition(), "Can't change the value of self");
+                throw new SyntaxException(PID.CANNOT_CHANGE_SELF, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't change the value of self");
             case Tokens.kNIL:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to nil", "nil");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to nil", "nil");
             case Tokens.kTRUE:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to true", "true");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to true", "true");
             case Tokens.kFALSE:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to false", "false");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to false", "false");
             case Tokens.k__FILE__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __FILE__", "__FILE__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to __FILE__", "__FILE__");
             case Tokens.k__LINE__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __LINE__", "__LINE__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to __LINE__", "__LINE__");
             case Tokens.k__ENCODING__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __ENCODING__", "__ENCODING__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to __ENCODING__", "__ENCODING__");
             case Tokens.tIDENTIFIER:
                 // ENEBO: 1.9 has CURR nodes for local/block variables.  We don't.  I believe we follow proper logic
                 return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
-                    throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(), "dynamic constant assignment");
+                    throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(),
+                            lexer.getCurrentLine(), "dynamic constant assignment");
                 }
                 return new ConstDeclNode(lhs.getPosition(), (String) lhs.getValue(), null, value);
             case Tokens.tIVAR:
@@ -83,8 +90,8 @@ public class ParserSupport19 extends ParserSupport {
                 return new GlobalAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
         }
 
-        throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), "identifier " + 
-                (String) lhs.getValue() + " is not valid to set", lhs.getValue());
+        throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), lexer.getCurrentLine(),
+                "identifier " + (String) lhs.getValue() + " is not valid to set", lhs.getValue());
     }
 
     @Override

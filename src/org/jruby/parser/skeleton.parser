@@ -110,7 +110,7 @@ t
 .    */
 .  public void yyerror (String message) {
 .    //new Exception().printStackTrace();
-.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), message);
+.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), message);
 .  }
 .
 .  /** (syntax) error message.
@@ -119,9 +119,9 @@ t
 .      @param expected list of acceptable tokens, if available.
 .    */
 .  public void yyerror (String message, String[] expected, String found) {
-.    String text = ", unexpected " + found + "\n"; 
+.    String text = ", unexpected " + found + "\n";
 .    //new Exception().printStackTrace();
-.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), text, found);
+.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), text, found);
 .  }
 .
 .  /** computes list of expected tokens on error by tracing the tables.

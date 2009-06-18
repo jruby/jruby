@@ -135,6 +135,7 @@ public class Ruby19Parser implements RubyParser {
         this.support = support;
         lexer = new RubyYaccLexer(false);
         lexer.setParserSupport(support);
+        support.setLexer(lexer);
     }
 
     public void setWarnings(IRubyWarnings warnings) {
@@ -1092,7 +1093,7 @@ primary         : literal
                 | method_call brace_block {
                     if ($1 != null && 
                           $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
+                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setPosition(getPosition($1));
@@ -1401,10 +1402,10 @@ do_block        : kDO_BLOCK {
 block_call      : command do_block {
                     // Workaround for JRUBY-2326 (MRI does not enter this production for some reason)
                     if ($1 instanceof YieldNode) {
-                        throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, getPosition($1), "block given to yield");
+                        throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, getPosition($1), lexer.getCurrentLine(), "block given to yield");
                     }
                     if ($<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), "Both block arg and actual block given.");
+                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition($1), lexer.getCurrentLine(), "Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setPosition(getPosition($1));

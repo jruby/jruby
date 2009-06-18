@@ -66,6 +66,9 @@ public abstract class LexerSource {
     // For 'list' and only populated if list is not null.
     private StringBuilder lineBuffer;
 
+    // Last full line read.
+    private StringBuilder sourceLine;
+
     /**
      * Create our food-source for the lexer
      * 
@@ -80,6 +83,7 @@ public abstract class LexerSource {
         positionFactory = new SimplePositionFactory(this, line);
         this.list = list;
         lineBuffer = new StringBuilder();
+        sourceLine = new StringBuilder();
     }
 
     /**
@@ -138,18 +142,52 @@ public abstract class LexerSource {
                 configuration.hasExtraPositionInformation());
     }
 
-    protected void captureFeature(int c) {
+    private void captureFeatureNewline() {
+        StringBuilder temp = sourceLine;
+        // Save sourceLine for error reporting to display line where error occurred
+        sourceLine = lineBuffer;
+
+
         // Ruby's OMG capture all source in a Hash feature
-        if (list != null) {
-            // Only append real characters (EOF does not count). 
-            if (c != -1) lineBuffer.append((char) c);
-        
-            // Add each line to buffer when encountering newline or EOF for first time.
-            if (c == '\n' || (c == -1 && lineBuffer.length() > 0)) {
-                list.add(lineBuffer.toString());
-                lineBuffer.setLength(0);
-            }
+        // Add each line to buffer when encountering newline or EOF for first time.
+        if (list != null && lineBuffer.length() > 0) list.add(sourceLine.toString());
+
+        temp.setLength(0);
+        lineBuffer = temp;
+    }
+
+    protected void captureFeature(int c) {
+        switch(c) {
+            case '\n':
+                lineBuffer.append((char) c);
+            case -1:
+                captureFeatureNewline();
+                break;
+            default:
+                lineBuffer.append((char) c);
+                break;
         }
+    }
+
+    public String getCurrentLine() {
+        int errorLocation = lineBuffer.length() - 1;
+
+        // Get rest of line. lineBuffer filled as side-effect...
+        try { readLineBytes(); } catch (IOException e) {}
+
+
+        return sourceLine.toString() + makePointer(errorLocation);
+    }
+
+    private String makePointer(int length) {
+        StringBuilder buf = new StringBuilder();
+
+        for (int i = 0; i < length; i++) {
+            buf.append(' ');
+        }
+        buf.append('^');
+
+        return buf.toString();
     }
 
     /**

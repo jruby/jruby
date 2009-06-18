@@ -157,7 +157,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
+import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -171,6 +171,8 @@ import org.jruby.util.IdUtil;
 public class ParserSupport {
     // Parser states:
     protected StaticScope currentScope;
+
+    protected RubyYaccLexer lexer;
     
     // Is the parser current within a singleton (value is number of nested singletons)
     private int inSingleton;
@@ -190,7 +192,8 @@ public class ParserSupport {
     
     public void allowDubyExtension(ISourcePosition position) {
         if (!configuration.isDubyExtensionsEnabled()) {
-            throw new SyntaxException(PID.DUBY_EXTENSIONS_OFF, position, "Duby extensions not configured");
+            throw new SyntaxException(PID.DUBY_EXTENSIONS_OFF, position,
+                    lexer.getCurrentLine(), "Duby extensions not configured");
         }
     }
     
@@ -291,8 +294,8 @@ public class ParserSupport {
     }
     
     protected void getterIdentifierError(ISourcePosition position, String identifier) {
-        throw new SyntaxException(PID.BAD_IDENTIFIER, position, "identifier " +
-                identifier + " is not valid", identifier);
+        throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
+                "identifier " + identifier + " is not valid", identifier);
     }
     
     public AssignableNode assignable(Token lhs, Node value) {
@@ -300,22 +303,29 @@ public class ParserSupport {
 
         switch (lhs.getType()) {
             case Tokens.kSELF:
-                throw new SyntaxException(PID.CANNOT_CHANGE_SELF, lhs.getPosition(), "Can't change the value of self");
+                throw new SyntaxException(PID.CANNOT_CHANGE_SELF, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't change the value of self");
             case Tokens.kNIL:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to nil", "nil");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to nil", "nil");
             case Tokens.kTRUE:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to true", "true");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to true", "true");
             case Tokens.kFALSE:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to false", "false");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to false", "false");
             case Tokens.k__FILE__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __FILE__", "__FILE__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to __FILE__", "__FILE__");
             case Tokens.k__LINE__:
-                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(), "Can't assign to __LINE__", "__LINE__");
+                throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
+                        lexer.getCurrentLine(), "Can't assign to __LINE__", "__LINE__");
             case Tokens.tIDENTIFIER:
                 return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
                 if (isInDef() || isInSingle()) {
-                    throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(), "dynamic constant assignment");
+                    throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, lhs.getPosition(),
+                            lexer.getCurrentLine(), "dynamic constant assignment");
                 }
                 return new ConstDeclNode(lhs.getPosition(), (String) lhs.getValue(), null, value);
             case Tokens.tIVAR:
@@ -329,8 +339,8 @@ public class ParserSupport {
                 return new GlobalAsgnNode(lhs.getPosition(), (String) lhs.getValue(), value);
         }
 
-        throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), "identifier " + 
-                (String) lhs.getValue() + " is not valid", lhs.getValue());
+        throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), lexer.getCurrentLine(),
+                "identifier " + (String) lhs.getValue() + " is not valid", lhs.getValue());
     }
 
     /**
@@ -493,7 +503,8 @@ public class ParserSupport {
     public Node ret_args(Node node, ISourcePosition position) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, position, "Dynamic constant assignment.");
+                throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, position,
+                        lexer.getCurrentLine(), "Dynamic constant assignment.");
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
@@ -692,7 +703,8 @@ public class ParserSupport {
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
         if (node instanceof MultipleAsgnNode) {
-            throw new SyntaxException(PID.MULTIPLE_ASSIGNMENT_IN_CONDITIONAL, node.getPosition(), "Multiple assignment in conditional.");
+            throw new SyntaxException(PID.MULTIPLE_ASSIGNMENT_IN_CONDITIONAL, node.getPosition(),
+                    lexer.getCurrentLine(), "Multiple assignment in conditional.");
         } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (valueNode instanceof ILiteralNode || valueNode instanceof NilNode || valueNode instanceof TrueNode || valueNode instanceof FalseNode) {
@@ -894,7 +906,8 @@ public class ParserSupport {
         if (node instanceof ArrayNode && ((ArrayNode) node).size() == 1) { 
             return ((ListNode) node).get(0);
         } else if (node instanceof BlockPassNode) {
-            throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
+            throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
+                    lexer.getCurrentLine(), "Block argument should not be given.");
         }
         return node;
     }
@@ -947,7 +960,8 @@ public class ParserSupport {
         if (args instanceof BlockPassNode) {
             // Block and block pass passed in at same time....uh oh
             if (iter != null) {
-                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
+                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
+                        lexer.getCurrentLine(), "Both block arg and actual block given.");
             }
 
             return new_call_blockpass(receiver, name, (BlockPassNode) args);
@@ -1085,7 +1099,8 @@ public class ParserSupport {
         if (args instanceof BlockPassNode) {
             if (iter == null) return new_fcall_blockpass(operation, (BlockPassNode) args);
 
-            throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(), "Both block arg and actual block given.");
+            throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
+                    lexer.getCurrentLine(), "Both block arg and actual block given.");
         }
 
         if (iter != null) new FCallSpecialArgBlockNode(position(operation, args), (String) operation.getValue(), args, (IterNode) iter);
@@ -1165,6 +1180,10 @@ public class ParserSupport {
     public void setWarnings(IRubyWarnings warnings) {
         this.warnings = warnings;
     }
+
+    public void setLexer(RubyYaccLexer lexer) {
+        this.lexer = lexer;
+    }
     
     public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
         if (head == null) return tail;
@@ -1225,7 +1244,8 @@ public class ParserSupport {
         
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(), "Block argument should not be given.");
+                throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
+                        lexer.getCurrentLine(), "Block argument should not be given.");
             }
 
             // FIXME: This does not seem to be in 1.9

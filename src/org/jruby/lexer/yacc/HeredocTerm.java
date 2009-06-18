@@ -134,7 +134,7 @@ public class HeredocTerm extends StrTerm {
     }
     
     private void syntaxError(LexerSource src) {
-        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), "can't find string \"" + marker
-                + "\" anywhere before EOF", marker);
+        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), src.getCurrentLine(), 
+                "can't find string \"" + marker + "\" anywhere before EOF", marker);
     }
 }

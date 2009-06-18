@@ -100,7 +100,8 @@ public class StringTerm extends StrTerm {
             ByteList buffer = new ByteList();
             src.unread(c);
             if (parseSimpleStringIntoBuffer(src, buffer) == RubyYaccLexer.EOF) {
-                throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(), "unterminated string meets end of file");
+                throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(), 
+                        src.getCurrentLine(), "unterminated string meets end of file");
             }
             
             /*
@@ -133,7 +134,8 @@ public class StringTerm extends StrTerm {
         src.unread(c);
         
         if (parseStringIntoBuffer(lexer, src, buffer) == RubyYaccLexer.EOF) {
-            throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(), "unterminated string meets end of file");
+            throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(),
+                    src.getCurrentLine(), "unterminated string meets end of file");
         }
 
         lexer.setValue(new StrNode(lexer.getPosition(), buffer)); 
@@ -280,7 +282,8 @@ public class StringTerm extends StrTerm {
             parseEscapeIntoBuffer(src, buffer);
             break;
         case RubyYaccLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(), "Invalid escape character syntax");
+            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                    src.getCurrentLine(), "Invalid escape character syntax");
         default:
             buffer.append(c);
         }
@@ -305,7 +308,8 @@ public class StringTerm extends StrTerm {
             for (int i = 0; i < 2; i++) {
                 c = src.read();
                 if (c == RubyYaccLexer.EOF) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                            src.getCurrentLine(), "Invalid escape character syntax");
                 }
                 if (!RubyYaccLexer.isOctChar(c)) {
                     src.unread(c);
@@ -319,7 +323,8 @@ public class StringTerm extends StrTerm {
             buffer.append(c);
             c = src.read();
             if (!RubyYaccLexer.isHexChar(c)) {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(), "Invalid escape character syntax");
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                        src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(c);
             c = src.read();
@@ -331,14 +336,16 @@ public class StringTerm extends StrTerm {
             break;
         case 'M':
             if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(), "Invalid escape character syntax");
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                        src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'M', '-' });
             escaped(src, buffer);
             break;
         case 'C':
             if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(), "Invalid escape character syntax");
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                        src.getCurrentLine(), "Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'C', '-' });
             escaped(src, buffer);
@@ -348,7 +355,8 @@ public class StringTerm extends StrTerm {
             escaped(src, buffer);
             break;
         case RubyYaccLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(), "Invalid escape character syntax");
+            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
+                    src.getCurrentLine(), "Invalid escape character syntax");
         default:
             if (c != '\\' || c != end) {
                 buffer.append('\\');

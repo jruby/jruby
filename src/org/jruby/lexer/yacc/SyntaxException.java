@@ -70,11 +70,20 @@ public class SyntaxException extends RuntimeException {
     private ISourcePosition position;
     private PID pid;
 
-    public SyntaxException(PID pid, ISourcePosition position, String message, Object... data) {
-        super(message);
+    public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
+        super(prepareMessage(message, lastLine));
 
         this.pid = pid;
         this.position = position;
+    }
+
+    private static String prepareMessage(String message, String line) {
+        if (line != null && line.length() > 5) {
+            boolean addNewline = message != null && message.endsWith("\n");
+            return message + (addNewline ? "\n" : "") + line;
+        }
+        
+        return message;
     }
 
     public ISourcePosition getPosition() {
