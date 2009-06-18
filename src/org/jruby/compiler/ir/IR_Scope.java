@@ -2,7 +2,7 @@ package org.jruby.compiler.ir;
 
 // SSS FIXME: Probably should rename this to IR_Scope?
 // Easier to understand and it is in any case a scope, not just a IR builder context!
-public interface IR_BuilderContext
+public interface IR_Scope
 {
         // scripts
     public void addClass(IR_Class c);

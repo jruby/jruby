@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public class IR_Script extends IR_BaseContext
+public class IR_Script extends IR_ScopeImpl
 {
         // SSS FIXME: Should this be a string literal or a string?
         // Need to check with headius

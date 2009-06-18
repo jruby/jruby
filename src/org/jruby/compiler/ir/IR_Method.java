@@ -2,12 +2,12 @@ package org.jruby.compiler.ir;
 
 import org.jruby.util.JavaNameMangler;
 
-public class IR_Method extends IR_BaseContext
+public class IR_Method extends IR_ScopeImpl
 {
     String _name;        // Ruby name 
     String _irName;      // Generated name
 
-    public IR_Method(IR_BuilderContext parent, String name, boolean isRoot)
+    public IR_Method(IR_Scope parent, String name, boolean isRoot)
     {
 		 super(parent);
         _name = name;

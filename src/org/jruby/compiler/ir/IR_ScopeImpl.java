@@ -5,14 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class IR_BaseContext implements IR_BuilderContext
+public abstract class IR_ScopeImpl implements IR_Scope
 {
-    IR_BuilderContext _parent;   // Parent container for this context
-    List<IR_Instr>    _instrs;   // List of ir instructions for this method
+    IR_Scope       _parent;   // Parent container for this context
+    List<IR_Instr> _instrs;   // List of ir instructions for this method
 
     private Map<String, Integer> _nextVarIndex;
 
-	 public IR_BaseContext(IR_BuilderContext parent)
+	 public IR_ScopeImpl(IR_Scope parent)
 	 {
         _parent = parent;
         _instrs = new ArrayList<IR_Instr>();

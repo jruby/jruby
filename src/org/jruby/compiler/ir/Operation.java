@@ -42,5 +42,8 @@ public enum Operation
 
 // jump and branch operations
     LABEL(dont_care), 
-    JMP(branch_op), BEQ(branch_op), BNE(branch_op), BLE(branch_op), BLT(branch_op), BGE(branch_op), BGT(branch_op)
+    JMP(branch_op), BEQ(branch_op), BNE(branch_op), BLE(branch_op), BLT(branch_op), BGE(branch_op), BGT(branch_op),
+
+// others
+    THREAD_POLL(dont_care)
 }
