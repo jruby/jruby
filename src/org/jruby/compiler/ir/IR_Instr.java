@@ -18,11 +18,32 @@ public abstract class IR_Instr
     public final Operation _op;
     public final Variable  _result; 
 
-    public Attribute[] _attributes;
+        // Used during optimization passes to propagate type and other information
+    private Attribute[] _attributes;
+
+        // Is this instruction live or dead?  During optimization passes, if this instruction
+        // causes no side-effects and the result of the instruction is not needed by anyone else,
+        // we can remove this instruction altogether without affecting program correctness.
+    private boolean _isDead;
+
+    public IR_Instr(Operation op)
+    {
+       _op = op;
+    }
 
     public IR_Instr(Operation op, Variable res)
     {
         _op = op;
         _result = res;
+        _attributes = null;
+        _isDead = false;
     }
+
+    public void markDead() { _isDead = true; }
+    public boolean isDead() { return _isDead; }
+
+        // Does this instruction have side effects as a result of its operation
+        // This information is used in optimization phases to impact dead code elimination
+        // and other optimization passes
+    public abstract boolean hasSideEffects();
 }

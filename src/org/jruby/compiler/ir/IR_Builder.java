@@ -110,9 +110,60 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 
 // This class converts an AST into a bunch of IR instructions
+
+// IR Building Notes
+// -----------------
+//
+// 1. More copy instructions added than necessary
+// ----------------------------------------------
+// Note that in general, there will be lots of a = b kind of copies
+// introduced in the IR because the translation is entirely single-node focused.
+// An example will make this clear
+//
+// RUBY: 
+//     v = @f 
+// will translate to 
+//
+// AST: 
+//     LocalAsgnNode v 
+//       InstrVarNode f 
+// will translate to
+//
+// IR: 
+//     tmp = self.f [ GET_FIELD(tmp,self,f) ]
+//     v = tmp      [ COPY(v, tmp) ]
+//
+// instead of
+//     v = self.f   [ GET_FIELD(v, self, f) ]
+//
+// We could get smarter and pass in the variable into which this expression is going to get evaluated
+// and use that to store the value of the expression (or not build the expression if the variable is null).
+//
+// But, that makes the code more complicated, and in any case, all this will get fixed in a single pass of
+// copy propagation and dead-code elimination.
+//
+// Something to pay attention to and if this extra pass becomes a concern (not convinced that it is yet),
+// this smart can be built in here.  Right now, the goal is to do something simple and straightforward that is going to be correct.
+//
+// 2. Returning null vs Nil.NIL
+// ----------------------------
+// - We should be returning null from the build methods where it is a normal "error" condition
+// - We should be returning Nil.NIL where the actual return value of a build is the ruby nil operand
+//   Look in buildIfNode for an example of this
+
 public class IR_Builder
 {
     private boolean isAtRoot = false;
+
+    public static Node skipOverNewlines(Node n)
+    {
+        //Equivalent check ..
+        //while (n instanceof NewlineNode)
+        while (n.getNodeType() == NodeType.NEWLINENODE)
+            n = ((NewlineNode)n).getNextNode();
+
+        return n;
+    }
 
     public IR_Method defineNewMethod(String name, int methodArity, StaticScope scope, ASTInspector inspector, boolean root)
     {
@@ -240,41 +291,23 @@ public class IR_Builder
         }
     }
     
-    public void buildVariableArityArguments(List<Operand> args, Node node, IR_Scope m) {
-        // public int getArity() { return -1; }
-       buildArguments(args, node, m);
+    public void buildVariableArityArguments(List<Operand> args, Node node, IR_Scope s) {
+       buildArguments(args, node, s);
     }
 
-    public void buildSpecificArityArguments (List<Operand> args, Node node, IR_Scope m) {
-/**
-        public int getArity() {
-            if (node.getNodeType() == NodeType.ARRAYNODE && ((ArrayNode)node).isLightweight()) {
-                // only arrays that are "lightweight" are being used as args arrays
-                this.arity = ((ArrayNode)node).size();
-            } else {
-                // otherwise, it's a literal array
-                this.arity = 1;
-            }
-        }
-**/
+    public void buildSpecificArityArguments (List<Operand> args, Node node, IR_Scope s) {
         if (node.getNodeType() == NodeType.ARRAYNODE) {
             ArrayNode arrayNode = (ArrayNode)node;
             if (arrayNode.isLightweight()) {
                 // explode array, it's an internal "args" array
-                for (Node n : arrayNode.childNodes()) {
-/**
-                    if (n instanceof INameNode)
-                        args.add(new Operand(((INameNode)n).getName()));
-                    else
-**/
-                    args.add(build(n, m, true));
-                }
+                for (Node n : arrayNode.childNodes())
+                    args.add(build(n, s, true));
             } else {
                 // use array as-is, it's a literal array
-                args.add(build(arrayNode, m, true));
+                args.add(build(arrayNode, s, true));
             }
         } else {
-            args.add(build(node, m, true));
+            args.add(build(node, s, true));
         }
     }
 
@@ -283,13 +316,10 @@ public class IR_Builder
             return null;
 
         // unwrap newline nodes to get their actual type
-        while (args.getNodeType() == NodeType.NEWLINENODE) {
-            args = ((NewlineNode)args).getNextNode();
-        }
+        args = skipOverNewlines(args);
 
         List<Operand> argsList = new ArrayList<Operand>();
-            // SSS FIXME: I added this in.  Is this correct?
-        argList.add(build(receiver, s, true));
+        argList.add(build(receiver, s, true)); // SSS FIXME: I added this in.  Is this correct?
         buildArgs(argsList, args, s);
 
         return argsList;
@@ -300,9 +330,7 @@ public class IR_Builder
             return null;
 
         // unwrap newline nodes to get their actual type
-        while (args.getNodeType() == NodeType.NEWLINENODE) {
-            args = ((NewlineNode)args).getNextNode();
-        }
+        args = skipOverNewlines(args);
 
         List<Operand> argList = new ArrayList<Operand>();
         argList.add(m.getSelf());
@@ -377,7 +405,7 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    // Translate ret = (a && b) to ret = (a ? b : false) as follows
+    // Translate "ret = (a && b)" --> "ret = (a ? b : false)" -->
     // 
     //    v1 = -- build(a) --
     //       OPT: ret can be set to v1, but effectively v1 is false if we take the branch to L.
@@ -497,7 +525,7 @@ public class IR_Builder
         m.addInstr(new BREAK_Instr(build(breakNode.getValueNode(), m)));
 
             // SSS FIXME: Should I be returning the operand constructed here?
-        return null;
+        return Nil.NIL;
     }
 
     public Operand buildCall(Node node, IR_Scope s) {
@@ -511,63 +539,7 @@ public class IR_Builder
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
-
-//        CompilerCallback receiverCallback = new CompilerCallback() {
-//            public void call(IR_Scope m) {
-//                build(callNode.getReceiverNode(), m, true);
-//            }
-//        };
-//
-//        ArgumentsCallback argsCallback = setupArgs(callNode.getArgsNode());
-//        CompilerCallback closureArg = setupCallClosure(callNode.getIterNode());
-//
-//        String name = callNode.getName();
-//        CallType callType = CallType.NORMAL;
-//
-//        if (argsCallback != null && argsCallback.getArity() == 1) {
-//            Node argument = callNode.getArgsNode().childNodes().get(0);
-//            if (name.length() == 1) {
-//                switch (name.charAt(0)) {
-//                case '+': case '-': case '<':
-//                    if (argument instanceof FixnumNode) {
-//                        m.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
-//                        if (!expr) m.consumeCurrentValue();
-//                        return;
-//                    }
-//                }
-//            }
-//        }
-//
-//        // if __send__ with a literal symbol, build it as a direct fcall
-//        if (RubyInstanceConfig.FASTSEND_COMPILE_ENABLED) {
-//            String literalSend = getLiteralSend(callNode);
-//            if (literalSend != null) {
-//                name = literalSend;
-//                callType = CallType.FUNCTIONAL;
-//            }
-//        }
-//
-//        m.getInvocationCompiler().invokeDynamic(
-//                name, receiverCallback, argsCallback,
-//                callType, closureArg, callNode.getIterNode() instanceof IterNode);
-//
-//        // TODO: don't require pop
-//        if (!expr) m.consumeCurrentValue();
     }
-
-//   private String getLiteralSend(CallNode callNode) {
-//       if (callNode.getName().equals("__send__")) {
-//           if (callNode.getArgsNode() instanceof ArrayNode) {
-//               ArrayNode arrayNode = (ArrayNode)callNode.getArgsNode();
-//               if (arrayNode.get(0) instanceof SymbolNode) {
-//                   return ((SymbolNode)arrayNode.get(0)).getName();
-//               } else if (arrayNode.get(0) instanceof StrNode) {
-//                   return ((StrNode)arrayNode.get(0)).getValue().toString();
-//               }
-//           }
-//       }
-//       return null;
-//   }
 
     public Operand buildCase(Node node, IR_Scope m) {
         CaseNode caseNode = (CaseNode) node;
@@ -1815,7 +1787,7 @@ public class IR_Builder
     }
 
     public Operand buildFalse(Node node, IR_Scope m) {
-		  m.addInstr(new THREAD_POLL_Instr());
+        m.addInstr(new THREAD_POLL_Instr());
         return BooleanLiteral.FALSE; 
     }
 
@@ -2132,46 +2104,46 @@ public class IR_Builder
         }
     }
 
-    public Operand buildIf(Node node, IR_Scope m) {
+    // Translate "r = if (cond); .. thenbody ..; else; .. elsebody ..; end" to
+    //
+    //     v = -- build(cond) --
+    //     BEQ(v, FALSE, L1)
+    //     r = -- build(thenbody) --
+    //     jump L2
+    // L1:
+    //     r = -- build(elsebody) --
+    // L2:
+    //     --- r is the result of the if expression --
+    //
+    public Operand buildIf(Node node, IR_Scope s) {
         final IfNode ifNode = (IfNode) node;
 
-        // optimizations if we know ahead of time it will always be true or false
-        Node actualCondition = ifNode.getCondition();
-        while (actualCondition instanceof NewlineNode) {
-            actualCondition = ((NewlineNode)actualCondition).getNextNode();
-        }
+        Node actualCondition = skipOverNewlines(ifNode.getCondition());
 
+        // optimizations if we know ahead of time it will always be true or false
         if (actualCondition.getNodeType().alwaysTrue()) {
-            // build condition as non-expr and just build "then" body
-            build(actualCondition, m, false);
-            build(ifNode.getThenBody(), m);
+            build(actualCondition, s);
+            return build(ifNode.getThenBody(), s);
         } else if (actualCondition.getNodeType().alwaysFalse()) {
             // always false or nil
-            build(ifNode.getElseBody(), m);
+            return build(ifNode.getElseBody(), s);
         } else {
-            BranchCallback trueCallback = new BranchCallback() {
-                public void branch(IR_Scope m) {
-                    if (ifNode.getThenBody() != null) {
-                        build(ifNode.getThenBody(), m);
-                    } else {
-                        if (expr) m.loadNil();
-                    }
-                }
-            };
-
-            BranchCallback falseCallback = new BranchCallback() {
-                public void branch(IR_Scope m) {
-                    if (ifNode.getElseBody() != null) {
-                        build(ifNode.getElseBody(), m);
-                    } else {
-                        if (expr) m.loadNil();
-                    }
-                }
-            };
-            
-            // normal
-            build(actualCondition, m, true);
-            m.performBooleanBranch(trueCallback, falseCallback);
+            Variable result     = s.getNewTmpVariable();
+            Label    falseLabel = s.getNewLabel();
+            Label    doneLabel  = s.getNewLabel();
+            s.addInstr(new BEQ_Instr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
+            if (ifNode.getThenBody() != null)
+                s.addInstr(new COPY_Instr(result, build(ifNode.getThenBody(), s)));
+            else
+                s.addInstr(new COPY_Instr(result, Nil.NIL));
+            s.addInstr(new JUMP_Instr(doneLabel));
+            s.addInstr(new LABEL_Instr(falseLabel));
+            if (ifNode.getElseBody() != null)
+                s.addInstr(new COPY_Instr(result, build(ifNode.getElseBody(), s)));
+            else
+                s.addInstr(new COPY_Instr(result, Nil.NIL));
+            s.addInstr(new LABEL_Instr(doneLabel));
+            return result;
         }
     }
 
@@ -2195,35 +2167,6 @@ public class IR_Builder
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
-
-    // SSS FIXME: Note that in general, there will be lots of a = b kind of copies
-    // introduced in the IR because the translation is entirely single-node focused.
-    // An example will make this clear
-    //
-    // RUBY: 
-    //     v = @f 
-    // will translate to 
-    //
-    // AST: 
-    //     LocalAsgnNode v 
-    //       InstrVarNode f 
-    // will translate to
-    //
-    // IR: 
-    //     tmp = self.f [ GET_FIELD(tmp,self,f) ]
-    //     v = tmp      [ COPY(v, tmp) ]
-    //
-    // instead of
-    //     v = self.f   [ GET_FIELD(v, self, f) ]
-    //
-    // We could get smarter and pass in the variable into which this expression is going to get evaluated
-    // and use that to store the value of the expression (or not build the expression if the variable is null).
-    //
-    // But, that makes the code more complicated, and in any case, all this will get fixed in a single pass of
-    // copy propagation and dead-code elimination.
-    //
-    // Something to pay attention to and if this extra pass becomes a concern (not convinced that it is yet),
-    // this smart can be built in here.  Right now, the goal is to do something simple and straightforward that is going to be correct.
 
     public Operand buildInstVar(Node node, IR_Scope m) {
         Variable ret = m.getNewTmpVariable();
@@ -2491,13 +2434,13 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildNewline(Node node, IR_Scope m) {
+    public Operand buildNewline(Node node, IR_Scope s) {
         // SSS FIXME: We need to build debug information tracking into the IR in some fashion
         // So, these methods below would have to have equivalents in IR_Scope implementations.
-        m.lineNumber(node.getPosition());
-        m.setLinePosition(node.getPosition());
+        s.lineNumber(node.getPosition());
+        s.setLinePosition(node.getPosition());
 
-        return build(((NewlineNode)node).getNextNode(), m);
+        return build(((NewlineNode)node).getNextNode(), s);
     }
 
     public Operand buildNext(Node node, IR_Scope m) {
@@ -2532,7 +2475,7 @@ public class IR_Builder
     }
 
     public Operand buildNil(Node node, IR_Scope m) {
-		  m.addInstr(new THREAD_POLL_Instr());
+        m.addInstr(new THREAD_POLL_Instr());
         return Nil.NIL;
     }
 
@@ -2994,9 +2937,7 @@ public class IR_Builder
                 Node realBody = rescueBodyNode.getBodyNode();
                 if (realBody instanceof NewlineNode) {
                     m.setLinePosition(realBody.getPosition());
-                    while (realBody instanceof NewlineNode) {
-                        realBody = ((NewlineNode)realBody).getNextNode();
-                    }
+                    realBody = IR_Builder.skipOverNewlines(realBody);
                 }
 
                 if (realBody.getNodeType().isImmediate()) {
@@ -3150,7 +3091,7 @@ public class IR_Builder
     }
 
     public Operand buildTrue(Node node, IR_Scope m) {
-		  m.addInstr(new THREAD_POLL_Instr());
+        m.addInstr(new THREAD_POLL_Instr());
         return BooleanLiteral.TRUE; 
     }
 
@@ -3218,8 +3159,7 @@ public class IR_Builder
         final WhileNode whileNode = (WhileNode) node;
 
         if (whileNode.getConditionNode().getNodeType().alwaysFalse() && whileNode.evaluateAtStart()) {
-                // SSS FIXME: Should I return Nil.NIL instead in all the places where I am returning null?  Probably yes
-            return null;
+            return Nil.NIL;
         } else {
             BranchCallback condition = new BranchCallback() {
 
