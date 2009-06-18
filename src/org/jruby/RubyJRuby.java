@@ -63,7 +63,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
 import org.jruby.RubyObject;
-import org.jruby.runtime.DynamicContext;
+import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 
 /**
@@ -84,10 +84,10 @@ public class RubyJRuby {
         compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
 
         RubyClass threadLocalClass = jrubyModule.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR);
-        threadLocalClass.defineAnnotatedMethods(JRubyDynamicContextLocal.class);
+        threadLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
         RubyClass fiberLocalClass = jrubyModule.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR);
-        fiberLocalClass.defineAnnotatedMethods(JRubyDynamicContextLocal.class);
+        fiberLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
         return jrubyModule;
     }
@@ -293,10 +293,10 @@ public class RubyJRuby {
         }
     }
 
-    public abstract static class JRubyDynamicContextLocal extends RubyObject {
+    public abstract static class JRubyExecutionContextLocal extends RubyObject {
         private IRubyObject default_value;
 
-        public JRubyDynamicContextLocal(Ruby runtime, RubyClass type) {
+        public JRubyExecutionContextLocal(Ruby runtime, RubyClass type) {
             super(runtime, type);
             default_value = runtime.getNil();
         }
@@ -346,14 +346,14 @@ public class RubyJRuby {
         }
 
         private final Map<Object, IRubyObject> getContextVariables(ThreadContext context) {
-            return getDynamicContext(context).getContextVariables();
+            return getExecutionContext(context).getContextVariables();
         }
 
-        protected abstract DynamicContext getDynamicContext(ThreadContext context);
+        protected abstract ExecutionContext getExecutionContext(ThreadContext context);
     }
 
     @JRubyClass(name="JRuby::ThreadLocal")
-    public final static class JRubyThreadLocal extends JRubyDynamicContextLocal {
+    public final static class JRubyThreadLocal extends JRubyExecutionContextLocal {
         public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass type) {
                 return new JRubyThreadLocal(runtime, type);
@@ -364,13 +364,13 @@ public class RubyJRuby {
             super(runtime, type);
         }
 
-        protected final DynamicContext getDynamicContext(ThreadContext context) {
+        protected final ExecutionContext getExecutionContext(ThreadContext context) {
             return context.getThread();
         }
     }
 
     @JRubyClass(name="JRuby::FiberLocal")
-    public final static class JRubyFiberLocal extends JRubyDynamicContextLocal {
+    public final static class JRubyFiberLocal extends JRubyExecutionContextLocal {
         public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass type) {
                 return new JRubyFiberLocal(runtime, type);
@@ -381,8 +381,8 @@ public class RubyJRuby {
             super(runtime, type);
         }
 
-        protected final DynamicContext getDynamicContext(ThreadContext context) {
-            final DynamicContext fiber;
+        protected final ExecutionContext getExecutionContext(ThreadContext context) {
+            final ExecutionContext fiber;
             fiber = context.getFiber();
             if (fiber != null) {
                 return fiber;

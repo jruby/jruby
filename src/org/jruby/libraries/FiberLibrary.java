@@ -41,7 +41,7 @@ import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicContext;
+import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
@@ -75,7 +75,7 @@ public class FiberLibrary implements Library {
     private Executor executor;
 
     @JRubyClass(name="Fiber")
-    public class Fiber extends RubyObject implements DynamicContext {
+    public class Fiber extends RubyObject implements ExecutionContext {
         private final Object yieldLock = new Object();
         private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
         private Block block;

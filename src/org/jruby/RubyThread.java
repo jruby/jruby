@@ -53,7 +53,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.DynamicContext;
+import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.concurrent.ExecutionException;
@@ -75,7 +75,7 @@ import org.jruby.util.io.BlockingIO;
  * Note: For CVS history, see ThreadClass.java.
  */
 @JRubyClass(name="Thread")
-public class RubyThread extends RubyObject implements DynamicContext {
+public class RubyThread extends RubyObject implements ExecutionContext {
     private ThreadLike threadImpl;
     private RubyFixnum priority;
     private transient Map<IRubyObject, IRubyObject> threadLocalVariables;

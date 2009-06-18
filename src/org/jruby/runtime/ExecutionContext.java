@@ -33,6 +33,6 @@ package org.jruby.runtime;
 import java.util.Map;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public interface DynamicContext {
+public interface ExecutionContext {
     public Map<Object, IRubyObject> getContextVariables();
 }
