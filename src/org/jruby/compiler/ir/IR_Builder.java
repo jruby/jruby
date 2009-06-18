@@ -305,7 +305,7 @@ public class IR_Builder
         }
 
         List<Operand> argList = new ArrayList<Operand>();
-        argList.add(new Variable("self"));
+        argList.add(m.getSelf());
         buildArgs(argList, args, s);
 
         return argList;
@@ -653,7 +653,7 @@ public class IR_Builder
         if (value != null) caseValue = new CompilerCallback() {
             public void call(IR_Scope m) {
                 build(value, m, true);
-                m.pollThreadEvents();
+                m.addInstr(new THREAD_POLL_Instr());
             }
         };
 
@@ -1647,7 +1647,7 @@ public class IR_Builder
 
             // self = args[0]
             // SSS FIXME: Verify that this is correct
-        m.addInstr(new RECV_ARG_Instr(new Variable("self"), new Constant(0)));
+        m.addInstr(new RECV_ARG_Instr(m.getSelf(), new Constant(0)));
 
             // Other args begin at index 1
         int argIndex = 1;
@@ -1770,29 +1770,12 @@ public class IR_Builder
     }
 
     public Operand buildDXStr(Node node, IR_Scope m) {
-        final DXStrNode dxstrNode = (DXStrNode) node;
+        final DXStrNode dstrNode = (DXStrNode) node;
+        List<Operand> strPieces = new ArrayList<Operand>();
+        for (Node nextNode : dstrNode.childNodes()) {
+            strPieces.add(build(nextNode, m));
 
-        final ArrayCallback dstrCallback = new ArrayCallback() {
-
-                    public void nextValue(IR_Scope m, Object sourceArray,
-                            int index) {
-                        build(dxstrNode.get(index), m,true);
-                    }
-                };
-
-        ArgumentsCallback argsCallback = new ArgumentsCallback() {
-                    public int getArity() {
-                        return 1;
-                    }
-                    
-                    public void call(IR_Scope m) {
-                        m.createNewString(dstrCallback, dxstrNode.size());
-                    }
-                };
-
-        m.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return new BacktickString(strPieces);
     }
 
     public Operand buildEnsureNode(Node node, IR_Scope m) {
@@ -2127,33 +2110,25 @@ public class IR_Builder
 
     public Operand buildHash(Node node, IR_Scope m) {
         HashNode hashNode = (HashNode) node;
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
-            if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
-                m.createEmptyHash();
-                return;
-            }
-
-            ArrayCallback hashCallback = new ArrayCallback() {
-
-                        public void nextValue(IR_Scope m, Object sourceArray,
-                                int index) {
-                            ListNode listNode = (ListNode) sourceArray;
-                            int keyIndex = index * 2;
-                            build(listNode.get(keyIndex), m, true);
-                            build(listNode.get(keyIndex + 1), m, true);
-                        }
-                    };
-
-            m.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
-            if (popit) m.consumeCurrentValue();
-        } else {
+        if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
+            return new Hash(null);
+        }
+        else {
+            int     i     = 0;
+            Operand key   = null;
+            Operand value = null;
+            List<KeyValuePair> args = new ArrayList<KeyValuePair>();
             for (Node nextNode : hashNode.getListNode().childNodes()) {
-                build(nextNode, m, false);
+                Operand v = build(nextNode, m, false);
+                if (key == null) {
+                    key = v;
+                }
+                else {
+                    args.add(new KeyValuePair(key, v));
+                    key = null; 
+                }
             }
+            return new Hash(args);
         }
     }
 
@@ -2539,7 +2514,7 @@ public class IR_Builder
                     }
                 };
 
-        m.pollThreadEvents();
+        m.addInstr(new THREAD_POLL_Instr());
         m.issueNextEvent(valueCallback);
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
@@ -2580,7 +2555,7 @@ public class IR_Builder
                 };
 
         m.performLogicalAnd(longCallback);
-        m.pollThreadEvents();
+        m.addInstr(new THREAD_POLL_Instr());
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
@@ -2633,7 +2608,7 @@ public class IR_Builder
 
         }
 
-        m.pollThreadEvents();
+        m.addInstr(new THREAD_POLL_Instr());
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
@@ -2682,7 +2657,7 @@ public class IR_Builder
             buildOpAsgnWithMethod(opAsgnNode, m, true);
         }
 
-        m.pollThreadEvents();
+        m.addInstr(new THREAD_POLL_Instr());
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
@@ -3057,7 +3032,7 @@ public class IR_Builder
     }
 
     public Operand buildRetry(Node node, IR_Scope m) {
-        m.pollThreadEvents();
+        m.addInstr(new THREAD_POLL_Instr());
 
         m.issueRetryEvent();
         // TODO: don't require pop
@@ -3120,12 +3095,7 @@ public class IR_Builder
     }
 
     public Operand buildSelf(Node node, IR_Scope m) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.retrieveSelf();
-        } else {
-            m.retrieveSelf();
-            if (!expr) m.consumeCurrentValue();
-        }
+        return m.getSelf();
     }
 
     public Operand buildSplat(Node node, IR_Scope m) {
@@ -3166,9 +3136,7 @@ public class IR_Builder
     }
 
     public Operand buildSymbol(Node node, IR_Scope m) {
-        m.createNewSymbol(((SymbolNode) node).getName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return new Symbol(((SymbolNode) node).getName());
     }    
     
     public Operand buildToAry(Node node, IR_Scope m) {
@@ -3224,7 +3192,7 @@ public class IR_Builder
                 m.performBooleanLoopLight(condition, body, untilNode.evaluateAtStart());
             }
 
-            m.pollThreadEvents();
+            m.addInstr(new THREAD_POLL_Instr());
             // TODO: don't require pop
             if (!expr) m.consumeCurrentValue();
         }
@@ -3238,12 +3206,12 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildVCall(Node node, IR_Scope m) {
-        VCallNode vcallNode = (VCallNode) node;
-        
-        m.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+    public Operand buildVCall(Node node, IR_Scope s) {
+        List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
+        Variable      callResult = s.getNewTmpVariable();
+        IR_Instr      callInstr  = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
+        s.addInstr(callInstr);
+        return callResult;
     }
 
     public Operand buildWhile(Node node, IR_Scope m) {
@@ -3275,25 +3243,12 @@ public class IR_Builder
                 m.performBooleanLoopLight(condition, body, whileNode.evaluateAtStart());
             }
 
-            m.pollThreadEvents();
+            m.addInstr(new THREAD_POLL_Instr());
         }
     }
 
     public Operand buildXStr(Node node, IR_Scope m) {
-        final XStrNode xstrNode = (XStrNode) node;
-
-        ArgumentsCallback argsCallback = new ArgumentsCallback() {
-            public int getArity() {
-                return 1;
-            }
-
-            public void call(IR_Scope m) {
-                m.createNewString(xstrNode.getValue());
-            }
-        };
-        m.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return new BacktickString(((XStrNode)node).getValue());
     }
 
     public Operand buildYield(Node node, IR_Scope m) {

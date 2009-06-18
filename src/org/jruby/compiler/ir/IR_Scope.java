@@ -19,6 +19,9 @@ public interface IR_Scope
         // create a new variable using the prefix
     public Variable getNewVariable(String prefix);
 
+        // get "self"
+    public Variable getSelf();
+
         // scripts
     public StringLiteral getFileName();
 }

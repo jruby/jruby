@@ -10,4 +10,6 @@ public class Array extends Operand
     final public List<Operand> _elts;
 
     public Array(List<Operand> elts) { _elts = elts; }
+
+    public boolean isBlank() { return _elts == null || _elts.length() == 0; }
 }

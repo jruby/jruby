@@ -45,6 +45,9 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return new Label(prefix + idx);
     }
 
+        // get "self"
+    public Variable getSelf() { return new Variable("self"); }
+
       // Delegate method to the containing script/module/class
     public StringLiteral getFileName() { return _parent.getFileName(); }
 
