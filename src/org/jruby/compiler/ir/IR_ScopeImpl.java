@@ -10,14 +10,19 @@ public abstract class IR_ScopeImpl implements IR_Scope
     IR_Scope       _parent;   // Parent container for this context
     List<IR_Instr> _instrs;   // List of ir instructions for this method
 
+        // Map of constants defined in this scope (not valid for methods!)
+    private Map<String, Operand> _constMap;
+
+        // Map keep track of the next available variable index for a particular prefix
     private Map<String, Integer> _nextVarIndex;
 
-	 public IR_ScopeImpl(IR_Scope parent)
-	 {
+    public IR_ScopeImpl(IR_Scope parent)
+    {
         _parent = parent;
         _instrs = new ArrayList<IR_Instr>();
         _nextVarIndex = new HashMap<String, Integer>();
-	 }
+        _constMap = new HashMap<String, Operand>();
+    }
 
     public Variable getNewVariable(prefix)
     {
@@ -52,4 +57,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public StringLiteral getFileName() { return _parent.getFileName(); }
 
     public void addInstr(IR_Instr i) { _instrs.append(i); }
+
+    public Operand getConstantValue(String constRef) { _constMap.get(constRef); }
+
+    public void setConstantValue(String constRef, Operand val) { _constMap.put(constRef, val); }
 }

@@ -11,4 +11,6 @@ public class CALL_Instr extends MultiOperandInstr
       _closure = closure;
       super(Operation.CALL, result, args);
    }
+
+   public boolean isRubyImplementationCall() { return false; }
 }

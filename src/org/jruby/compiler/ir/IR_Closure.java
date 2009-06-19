@@ -5,4 +5,16 @@ package org.jruby.compiler.ir;
 public class IR_Closure implements IR_ScopeImpl
 {
     public IR_Closure(IR_Scope parent) { super(parent); }
+
+    public Operand getConstantValue(String constRef)
+    {
+           // Constants are defined in classes & modules, not in closures
+           // So, this reference is actually defined in the containing class/module
+       return _parent.getConstantValue(constRef);  
+    }
+
+    public void setConstantValue(String constRef, Operand val) 
+    { 
+       // SSS FIXME: Throw an exception here?
+    }
 }

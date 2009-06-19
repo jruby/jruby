@@ -386,12 +386,16 @@ public class IR_Builder
         }
     }
 
-    public Operand buildAlias(Node node, IR_Scope m) {
+    public Operand buildAlias(Node node, IR_Scope s) {
         final AliasNode alias = (AliasNode) node;
 
-        m.defineAlias(alias.getNewName(), alias.getOldName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+            // SSS FIXME: This method name should be fetched from some other place rather than be hardcoded here?
+        MethAddr   ma   = new MethAddr("defineAlias");  
+        Operand[]  args = new Operand[] { new MetaObject(s), new MethAddr(alias.getNewName()), new MethAddr(alias.getOldName()) };
+        m.addInstr(new RUBY_IMPL_CALL_Instr(null, ma, ));
+
+            // SSS FIXME: Can this return anything other than nil?
+        return Nil.NIL;
     }
 
     // Translate "ret = (a && b)" --> "ret = (a ? b : false)" -->
@@ -806,25 +810,18 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildClassVar(Node node, IR_Scope m) {
-        ClassVarNode classVarNode = (ClassVarNode) node;
-
-        m.retrieveClassVariable(classVarNode.getName());
-        if (!expr) m.consumeCurrentValue();
+    public Operand buildClassVar(Node node, IR_Scope s) {
+        Variable ret = s.getNewTmpVariable();
+            // SSS FIXME: Is this right?  What if 's' is not a class??  Can that happen?
+        s.addInstr(new GET_FIELD_Instr(ret, new MetaObject(s), ((ClassVarNode)node).getName()));
+        return ret;
     }
 
-    public Operand buildClassVarAsgn(Node node, IR_Scope m) {
+    public Operand buildClassVarAsgn(Node node, IR_Scope s) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
-
-        CompilerCallback value = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(classVarAsgnNode.getValueNode(), m, true);
-            }
-        };
-
-        m.assignClassVariable(classVarAsgnNode.getName(), value);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand val = build(classVarAsgnNode.getValueNode(), s);
+        s.addInstr(new PUT_FIELD_Instr(new MetaObject(s), ((ClassVarNode)node).getName(), val));
+        return val;
     }
 
     public Operand buildClassVarAsgnAssignment(Node node, IR_Scope m) {
@@ -898,13 +895,35 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildConst(Node node, IR_Scope m) {
-        ConstNode constNode = (ConstNode) node;
+    public Operand buildConst(Node node, IR_Scope s) {
+        String constName = ((ConstNode) node).getName();
 
-        m.retrieveConstant(constNode.getName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
-        // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
+            // Sometimes the value can be retrieved at compile time.
+            // If we succeed, nothing like it!  If not, either because the reference 
+            // is a forward-reference, or because the constant is missing, we just
+            // make a run-time call!
+            //
+            // SSS FIXME: 
+            // 1. The operand can be a literal array, range, or hash -- hence Operand
+            //    because Array, Range, and Hash derive from Operand and not Constant ...
+            //    Is there a way to fix this impedance mismatch?
+            // 2. It should be possible to handle the forward-reference by creating a new
+            //    ForwardReference operand and then inform the scope of the forward reference 
+            //    which the scope can fix up when the reference gets defined.  At code-gen time,
+            //    if the reference is unresolved, when a value is retrieved for the forward-ref
+            //    and we get a null, we can throw a ConstMissing exception!
+        Operand constVal = s.getConstantValue(constName);
+        if (constVal == null) {
+            constVal = s.getNewTmpVariable();
+                // SSS FIXME: 
+                // 1. Is "retrieveConstant" the right utility method for loading the constant?
+                // 2. This method name should be fetched from some other place rather than be hardcoded here?
+            s.addInstr(new RUBY_IMPL_CALL_Instr(constVal, 
+                                                new MethAddr("retrieveConstant"), 
+                                                new Operand[] { new MetaObject(s), new Reference(constName) }));
+            // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
+        }
+        return constVal;
     }
 
     public Operand buildColon2(Node node, IR_Scope m) {
@@ -2121,7 +2140,7 @@ public class IR_Builder
 
     public Operand buildInstVar(Node node, IR_Scope m) {
         Variable ret = m.getNewTmpVariable();
-        m.addInstr(new GET_FIELD_Instr(ret, ((InstrVarNode)node).getName()));
+        m.addInstr(new GET_FIELD_Instr(ret, m.getSelf(), ((InstrVarNode)node).getName()));
         return ret;
     }
 

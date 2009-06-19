@@ -7,10 +7,10 @@ package org.jruby.compiler.ir;
 // for a variable.  For example, the type of a variable can be different along two
 // different paths.  By adding an attribute along each path, we convert the path-specific
 // state into a path-independent state constant which lets us analyze this via standard
-// constant propagation algorithms like SCCP
+// constant propagation algorithms like SCCP.
 //
 // Example: v = BOXED_FIXNUM(n)
-//          v = HAS_TPE(Fixnum)
+//          v = HAS_TYPE(Fixnum)
 //
 public class Attribute extends Operand
 {

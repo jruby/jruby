@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public abstract class Reference extends Operand
+public class Reference extends Operand
 {
    final public String _refName;
 
