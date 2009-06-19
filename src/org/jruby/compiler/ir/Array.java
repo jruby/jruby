@@ -11,5 +11,14 @@ public class Array extends Operand
 
     public Array(List<Operand> elts) { _elts = elts; }
 
+    public boolean isConstant() 
+    {
+       for (Operand o: _elts)
+          if (!o.isConstant())
+             return false;
+
+       return true;
+    }
+
     public boolean isBlank() { return _elts == null || _elts.length() == 0; }
 }

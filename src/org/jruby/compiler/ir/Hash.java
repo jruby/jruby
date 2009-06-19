@@ -12,4 +12,13 @@ public class Hash extends Operand
     public Hash(List<KeyValuePair> pairs) { _pairs = pairs; }
 
     public boolean isBlank() { return _pairs == null || _pairs.length() == 0; }
+
+    public boolean isConstant() 
+    {
+       for (KeyValuePair kp: _pairs)
+          if (!kp._key.isConstant() || !kp._value.isConstant())
+             return false;
+
+       return true;
+    }
 }

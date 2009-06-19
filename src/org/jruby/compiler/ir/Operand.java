@@ -2,6 +2,9 @@ package org.jruby.compiler.ir;
 
 public abstract class Operand
 {
+    public boolean isConstant() { return false; }
+
+// ---------- Only static definitions further below ---------
     public static final Operand TOP    = new LatticeTop();
     public static final Operand BOTTOM = new LatticeBottom();
     public static final Operand ANY    = new Anything();

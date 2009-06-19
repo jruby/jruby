@@ -11,4 +11,9 @@ public class Range extends Operand
     final public Operand _end;
 
     public Range(Operand b, Operand e) { _begin = b; _end = e; }
+
+    public boolean isConstant() 
+    {
+       return _begin.isConstant() && _end.isConstant();
+    }
 }

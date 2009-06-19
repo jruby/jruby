@@ -58,7 +58,14 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addInstr(IR_Instr i) { _instrs.append(i); }
 
+	 	// SSS FIXME: This may not work all that well -- see note below
     public Operand getConstantValue(String constRef) { _constMap.get(constRef); }
 
-    public void setConstantValue(String constRef, Operand val) { _constMap.put(constRef, val); }
+	 	// SSS FIXME: This may not work all that well if this is not really a constant but
+		// a placeholder -- can happen because of temporary variable issues
+    public void setConstantValue(String constRef, Operand val) 
+	 {
+		 if (val.isConstant())
+			 _constMap.put(constRef, val); 
+	 }
 }

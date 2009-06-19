@@ -899,19 +899,21 @@ public class IR_Builder
         String constName = ((ConstNode) node).getName();
 
             // Sometimes the value can be retrieved at compile time.
-            // If we succeed, nothing like it!  If not, either because the reference 
-            // is a forward-reference, or because the constant is missing, we just
-            // make a run-time call!
+            // If we succeed, nothing like it!  We might not succeed for the following reasons:
+            // 1. The constant is missing,
+            // 2. The reference is a forward-reference,
+            // 3. The constant's value is known at runt-time on first-access,
+            // 4. Our compiler isn't able to right away infer that this is a constant.
             //
-            // SSS FIXME: 
+            // SSS FIXME:
             // 1. The operand can be a literal array, range, or hash -- hence Operand
             //    because Array, Range, and Hash derive from Operand and not Constant ...
             //    Is there a way to fix this impedance mismatch?
-            // 2. It should be possible to handle the forward-reference by creating a new
-            //    ForwardReference operand and then inform the scope of the forward reference 
+            // 2. It should be possible to handle the forward-reference case by creating a new
+            //    ForwardReference operand and then inform the scope of the forward reference
             //    which the scope can fix up when the reference gets defined.  At code-gen time,
             //    if the reference is unresolved, when a value is retrieved for the forward-ref
-            //    and we get a null, we can throw a ConstMissing exception!
+            //    and we get a null, we can throw a ConstMissing exception!  Not sure!
         Operand constVal = s.getConstantValue(constName);
         if (constVal == null) {
             constVal = s.getNewTmpVariable();
