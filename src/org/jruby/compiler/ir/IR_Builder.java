@@ -196,7 +196,7 @@ public class IR_Builder
             case DEFNNODE: return buildDefn(node, m); // done
             case DEFSNODE: return buildDefs(node, m); // done
             case DOTNODE: return buildDot(node, m); // done
-            case DREGEXPNODE: return buildDRegexp(node, m);
+            case DREGEXPNODE: return buildDRegexp(node, m); // done
             case DSTRNODE: return buildDStr(node, m); // done
             case DSYMBOLNODE: return buildDSymbol(node, m); // done
             case DVARNODE: return buildDVar(node, m);
@@ -213,7 +213,7 @@ public class IR_Builder
             case GLOBALVARNODE: return buildGlobalVar(node, m);
             case HASHNODE: return buildHash(node, m); // done
             case IFNODE: return buildIf(node, m); // done
-            case INSTASGNNODE: return buildInstAsgn(node, m);
+            case INSTASGNNODE: return buildInstAsgn(node, m); // done
             case INSTVARNODE: return buildInstVar(node, m); // done
             case ITERNODE: return buildIter(node, m);
             case LOCALASGNNODE: return buildLocalAsgn(node, m); // done
@@ -1004,21 +1004,13 @@ public class IR_Builder
     }
 
     public Operand buildDefined(final Node node, IR_Scope m) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) {
-                buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
-                m.stringOrNil();
-            }
-        } else {
-            buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
-            m.stringOrNil();
-            if (!expr) m.consumeCurrentValue();
-        }
+        buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
+        m.stringOrNil();
     }
 
     public Operand buildGetArgumentDefinition(final Node node, IR_Scope m, String type) {
         if (node == null) {
-            m.pushString(type);
+            return new StringLiteral(type);
         } else if (node instanceof ArrayNode) {
             Object endToken = m.getNewEnding();
             for (int i = 0; i < ((ArrayNode) node).size(); i++) {
@@ -1026,7 +1018,7 @@ public class IR_Builder
                 buildGetDefinition(iterNode, m);
                 m.ifNull(endToken);
             }
-            m.pushString(type);
+            Operand sl = new StringLiteral(type);
             Object realToken = m.getNewEnding();
             m.go(realToken);
             m.setEnding(endToken);
@@ -1036,7 +1028,7 @@ public class IR_Builder
             buildGetDefinition(node, m);
             Object endToken = m.getNewEnding();
             m.ifNull(endToken);
-            m.pushString(type);
+            Operand sl = new StringLiteral(type);
             Object realToken = m.getNewEnding();
             m.go(realToken);
             m.setEnding(endToken);
@@ -1056,133 +1048,101 @@ public class IR_Builder
             case MULTIPLEASGNNODE:
             case OPASGNNODE:
             case OPELEMENTASGNNODE:
-                m.pushString("assignment");
-                break;
+                return new StringLiteral("assignment");
             case BACKREFNODE:
-                m.backref();
-                m.isInstanceOf(RubyMatchData.class,
-                        new BranchCallback() {
-
-                            public void branch(IR_Scope m) {
-                                m.pushString("$" + ((BackRefNode) node).getType());
-                            }
-                        },
-                        new BranchCallback() {
-
-                            public void branch(IR_Scope m) {
-                                m.pushNull();
-                            }
-                        });
-                break;
-            case DVARNODE:
-                m.pushString("local-variable(in-block)");
-                break;
+                    // SSS FIXME!
+                Operand x = m.backref();
+                return x instanceof RubyMatchData.class ? new StringLiteral("$" + ((BackRefNode) node).getType()) : Nil.NIL;
+            case DVARNODE:  
+                return new StringLiteral("local-variable(in-block)");
             case FALSENODE:
-                m.pushString("false");
-                break;
+                return new StringLiteral("false");
             case TRUENODE:
-                m.pushString("true");
-                break;
-            case LOCALVARNODE:
-                m.pushString("local-variable");
-                break;
-            case MATCH2NODE:
-            case MATCH3NODE:
-                m.pushString("method");
-                break;
-            case NILNODE:
-                m.pushString("nil");
-                break;
+                return new StringLiteral("true");
+            case LOCALVARNODE: 
+                return new StringLiteral("local-variable");
+            case MATCH2NODE: 
+            case MATCH3NODE: 
+                return new StringLiteral("method");
+            case NILNODE: 
+                return new StringLiteral("nil");
             case NTHREFNODE:
                 m.isCaptured(((NthRefNode) node).getMatchNumber(),
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushString("$" + ((NthRefNode) node).getMatchNumber());
+                                return new StringLiteral("$" + ((NthRefNode) node).getMatchNumber());
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
             case SELFNODE:
-                m.pushString("self");
-                break;
+                return new StringLiteral("self");
             case VCALLNODE:
                 m.loadSelf();
                 m.isMethodBound(((VCallNode) node).getName(),
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushString("method");
+                                return new StringLiteral("method");
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
             case YIELDNODE:
                 m.hasBlock(new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushString("yield");
+                                return new StringLiteral("yield");
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
             case GLOBALVARNODE:
                 m.isGlobalDefined(((GlobalVarNode) node).getName(),
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushString("global-variable");
+                                return new StringLiteral("global-variable");
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
             case INSTVARNODE:
                 m.isInstanceVariableDefined(((InstVarNode) node).getName(),
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushString("instance-variable");
+                                return new StringLiteral("instance-variable");
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
             case CONSTNODE:
                 m.isConstantDefined(((ConstNode) node).getName(),
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushString("constant");
+                                return new StringLiteral("constant");
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
@@ -1190,15 +1150,13 @@ public class IR_Builder
                 m.loadSelf();
                 m.isMethodBound(((FCallNode) node).getName(),
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
                                 buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), m, "method");
                             }
                         },
                         new BranchCallback() {
-
                             public void branch(IR_Scope m) {
-                                m.pushNull();
+                                return Nil.NIL;
                             }
                         });
                 break;
@@ -1223,19 +1181,18 @@ public class IR_Builder
                     BranchCallback isConstant = new BranchCallback() {
 
                                 public void branch(IR_Scope m) {
-                                    m.pushString("constant");
+                                    return new StringLiteral("constant");
                                 }
                             };
                     BranchCallback isMethod = new BranchCallback() {
 
                                 public void branch(IR_Scope m) {
-                                    m.pushString("method");
+                                    return new StringLiteral("method");
                                 }
                             };
                     BranchCallback none = new BranchCallback() {
-
                                 public void branch(IR_Scope m) {
-                                    m.pushNull();
+                                    return Nil.NIL;
                                 }
                             };
                     m.isConstantBranch(setup, isConstant, isMethod, none, name);
@@ -1322,7 +1279,7 @@ public class IR_Builder
 
                                 public void branch(IR_Scope m) {
                                     m.consumeCurrentValue();
-                                    m.pushString("class variable");
+                                    Operand sl = new StringLiteral("class variable");
                                     m.go(ending);
                                 }
                             },
@@ -1338,7 +1295,7 @@ public class IR_Builder
 
                                 public void branch(IR_Scope m) {
                                     m.consumeCurrentValue();
-                                    m.pushString("class variable");
+                                    Operand sl = new StringLiteral("class variable");
                                     m.go(ending);
                                 }
                             },
@@ -1355,7 +1312,7 @@ public class IR_Builder
                     m.setEnding(singleton);
                     m.attached();//[RubyClass]
                     m.notIsModuleAndClassVarDefined(iVisited.getName(), failure); //[]
-                    m.pushString("class variable");
+                    Operand sl = new StringLiteral("class variable");
                     m.go(ending);
                     m.setEnding(failure);
                     m.pushNull();
@@ -1378,7 +1335,7 @@ public class IR_Builder
                     m.superClass();
                     m.ifNotSuperMethodBound(fail_easy);
 
-                    m.pushString("super");
+                    Operand sl = new StringLiteral("super");
                     m.go(ending);
 
                     m.setEnding(fail2);
@@ -1492,7 +1449,7 @@ public class IR_Builder
                             }
                         }, String.class);
                 m.consumeCurrentValue();
-                m.pushString("expression");
+                MPS_FIXME: new StringLiteral("expression");
         }
     }
 
@@ -1602,35 +1559,13 @@ public class IR_Builder
         return new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s));
     }
 
-    public Operand buildDRegexp(Node node, IR_Scope m) {
+    public Operand buildDRegexp(Node node, IR_Scope s) {
         final DRegexpNode dregexpNode = (DRegexpNode) node;
+        List<Operand> strPieces = new ArrayList<Operand>();
+        for (Node n : dregexpNode.childNodes()) {
+            strPieces.add(build(n, s));
 
-        CompilerCallback createStringCallback = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        ArrayCallback dstrCallback = new ArrayCallback() {
-
-                                    public void nextValue(IR_Scope m, Object sourceArray,
-                                            int index) {
-                                        build(dregexpNode.get(index), m, true);
-                                    }
-                                };
-                        m.createNewString(dstrCallback, dregexpNode.size());
-                    }
-                };
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
-            m.createNewRegexp(createStringCallback, dregexpNode.getOptions());
-            if (popit) m.consumeCurrentValue();
-        } else {
-            // not an expression, only build the elements
-            for (Node nextNode : dregexpNode.childNodes()) {
-                build(nextNode, m, false);
-            }
-        }
+        return new Regexp(new CompoundString(strPieces), dregexpNode.getOptions());
     }
 
     public Operand buildDStr(Node node, IR_Scope s) {
@@ -2067,18 +2002,11 @@ public class IR_Builder
         }
     }
 
-    public Operand buildInstAsgn(Node node, IR_Scope m) {
+    public Operand buildInstAsgn(Node node, IR_Scope s) {
         final InstAsgnNode instAsgnNode = (InstAsgnNode) node;
-
-        CompilerCallback value = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(instAsgnNode.getValueNode(), m, true);
-            }
-        };
-
-        m.assignInstanceVariable(instAsgnNode.getName(), value);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand val = build(instAsgnNode.getValueNode(), s);
+        s.addInstr(new PUT_FIELD_Instr(s.getSelf(), instAsgnNode.getName(), val));
+        return val;
     }
 
     public Operand buildInstAsgnAssignment(Node node, IR_Scope m) {

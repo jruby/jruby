@@ -11,4 +11,12 @@ public class BacktickString extends Operand
 
     public BacktickString(Operand val) { _pieces = new ArrayList<Operand>(); _pieces.add(val); }
     public BacktickString(List<Operand> pieces) { _pieces = pieces; }
+
+    public boolean isConstant() {
+       for (Operand o: _pieces)
+          if (!o.isConstant())
+             return false;
+
+       return true;
+    }
 }
