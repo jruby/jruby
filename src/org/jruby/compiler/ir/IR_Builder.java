@@ -170,73 +170,73 @@ public class IR_Builder
             return null;
         }
         switch (node.getNodeType()) {
-            case ALIASNODE: return buildAlias(node, m);
-            case ANDNODE: return buildAnd(node, m);
+            case ALIASNODE: return buildAlias(node, m); // done
+            case ANDNODE: return buildAnd(node, m); // done
             case ARGSCATNODE: return buildArgsCat(node, m);
             case ARGSPUSHNODE: return buildArgsPush(node, m);
-            case ARRAYNODE: return buildArray(node, m);
+            case ARRAYNODE: return buildArray(node, m); // done
             case ATTRASSIGNNODE: return buildAttrAssign(node, m);
-            case BACKREFNODE: return buildBackref(node, m);
-            case BEGINNODE: return buildBegin(node, m);
-            case BIGNUMNODE: return buildBignum(node, m);
-            case BLOCKNODE: return buildBlock(node, m);
-            case BREAKNODE: return buildBreak(node, m);
-            case CALLNODE: return buildCall(node, m);
+            case BACKREFNODE: return buildBackref(node, m); // done
+            case BEGINNODE: return buildBegin(node, m); // done
+            case BIGNUMNODE: return buildBignum(node, m); // done
+            case BLOCKNODE: return buildBlock(node, m); // done
+            case BREAKNODE: return buildBreak(node, m); // done
+            case CALLNODE: return buildCall(node, m); // done
             case CASENODE: return buildCase(node, m);
             case CLASSNODE: return buildClass(node, m);
-            case CLASSVARNODE: return buildClassVar(node, m);
+            case CLASSVARNODE: return buildClassVar(node, m); // done
             case CLASSVARASGNNODE: return buildClassVarAsgn(node, m);
             case CLASSVARDECLNODE: return buildClassVarDecl(node, m);
             case COLON2NODE: return buildColon2(node, m);
             case COLON3NODE: return buildColon3(node, m);
             case CONSTDECLNODE: return buildConstDecl(node, m);
-            case CONSTNODE: return buildConst(node, m);
+            case CONSTNODE: return buildConst(node, m); // done
             case DASGNNODE: return buildDAsgn(node, m);
             case DEFINEDNODE: return buildDefined(node, m);
-            case DEFNNODE: return buildDefn(node, m);
-            case DEFSNODE: return buildDefs(node, m);
-            case DOTNODE: return buildDot(node, m);
+            case DEFNNODE: return buildDefn(node, m); // done
+            case DEFSNODE: return buildDefs(node, m); // done
+            case DOTNODE: return buildDot(node, m); // done
             case DREGEXPNODE: return buildDRegexp(node, m);
-            case DSTRNODE: return buildDStr(node, m);
-            case DSYMBOLNODE: return buildDSymbol(node, m);
+            case DSTRNODE: return buildDStr(node, m); // done
+            case DSYMBOLNODE: return buildDSymbol(node, m); // done
             case DVARNODE: return buildDVar(node, m);
-            case DXSTRNODE: return buildDXStr(node, m);
+            case DXSTRNODE: return buildDXStr(node, m); // done
             case ENSURENODE: return buildEnsureNode(node, m);
-            case EVSTRNODE: return buildEvStr(node, m);
-            case FALSENODE: return buildFalse(node, m);
-            case FCALLNODE: return buildFCall(node, m);
-            case FIXNUMNODE: return buildFixnum(node, m);
+            case EVSTRNODE: return buildEvStr(node, m); // done
+            case FALSENODE: return buildFalse(node, m); // done
+            case FCALLNODE: return buildFCall(node, m); // done
+            case FIXNUMNODE: return buildFixnum(node, m); // done
             case FLIPNODE: return buildFlip(node, m);
-            case FLOATNODE: return buildFloat(node, m);
+            case FLOATNODE: return buildFloat(node, m); // done
             case FORNODE: return buildFor(node, m);
             case GLOBALASGNNODE: return buildGlobalAsgn(node, m);
             case GLOBALVARNODE: return buildGlobalVar(node, m);
-            case HASHNODE: return buildHash(node, m);
-            case IFNODE: return buildIf(node, m);
+            case HASHNODE: return buildHash(node, m); // done
+            case IFNODE: return buildIf(node, m); // done
             case INSTASGNNODE: return buildInstAsgn(node, m);
-            case INSTVARNODE: return buildInstVar(node, m);
+            case INSTVARNODE: return buildInstVar(node, m); // done
             case ITERNODE: return buildIter(node, m);
-            case LOCALASGNNODE: return buildLocalAsgn(node, m);
-            case LOCALVARNODE: return buildLocalVar(node, m);
+            case LOCALASGNNODE: return buildLocalAsgn(node, m); // done
+            case LOCALVARNODE: return buildLocalVar(node, m); // done
             case MATCH2NODE: return buildMatch2(node, m);
             case MATCH3NODE: return buildMatch3(node, m);
             case MATCHNODE: return buildMatch(node, m);
             case MODULENODE: return buildModule(node, m);
             case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m);
-            case NEWLINENODE: return buildNewline(node, m);
+            case NEWLINENODE: return buildNewline(node, m); // done
             case NEXTNODE: return buildNext(node, m);
             case NTHREFNODE: return buildNthRef(node, m);
-            case NILNODE: return buildNil(node, m);
-            case NOTNODE: return buildNot(node, m);
+            case NILNODE: return buildNil(node, m); // done
+            case NOTNODE: return buildNot(node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd(node, m);
             case OPASGNNODE: return buildOpAsgn(node, m);
             case OPASGNORNODE: return buildOpAsgnOr(node, m);
             case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m);
-            case ORNODE: return buildOr(node, m);
+            case ORNODE: return buildOr(node, m); // done
             case POSTEXENODE: return buildPostExe(node, m);
             case PREEXENODE: return buildPreExe(node, m);
             case REDONODE: return buildRedo(node, m);
-            case REGEXPNODE: return buildRegexp(node, m);
+            case REGEXPNODE: return buildRegexp(node, m); // done
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
             case RESCUENODE: return buildRescue(node, m);
@@ -245,21 +245,21 @@ public class IR_Builder
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE: return buildSClass(node, m);
-            case SELFNODE: return buildSelf(node, m);
+            case SELFNODE: return buildSelf(node, m); // done
             case SPLATNODE: return buildSplat(node, m);
-            case STRNODE: return buildStr(node, m);
+            case STRNODE: return buildStr(node, m); // done
             case SUPERNODE: return buildSuper(node, m);
             case SVALUENODE: return buildSValue(node, m);
-            case SYMBOLNODE: return buildSymbol(node, m);
+            case SYMBOLNODE: return buildSymbol(node, m); // done
             case TOARYNODE: return buildToAry(node, m);
-            case TRUENODE: return buildTrue(node, m);
+            case TRUENODE: return buildTrue(node, m); // done
             case UNDEFNODE: return buildUndef(node, m);
             case UNTILNODE: return buildUntil(node, m);
             case VALIASNODE: return buildVAlias(node, m);
-            case VCALLNODE: return buildVCall(node, m);
+            case VCALLNODE: return buildVCall(node, m); // done
             case WHILENODE: return buildWhile(node, m);
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
-            case XSTRNODE: return buildXStr(node, m);
+            case XSTRNODE: return buildXStr(node, m); // done
             case YIELDNODE: return buildYield(node, m);
             case ZARRAYNODE: return buildZArray(node, m);
             case ZSUPERNODE: return buildZSuper(node, m);
@@ -854,27 +854,22 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildConstDecl(Node node, IR_Scope m) {
+    public Operand buildConstDecl(Node node, IR_Scope s) {
         // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            build(constDeclNode.getValueNode(), m,true);
-
-            m.assignConstantInCurrent(constDeclNode.getName());
+            Operand val = build(constDeclNode.getValueNode(), s);
+            s.assignConstantInCurrent(constDeclNode.getName());
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            build(((Colon2Node) constNode).getLeftNode(), m,true);
-            build(constDeclNode.getValueNode(), m,true);
-
-            m.assignConstantInModule(constDeclNode.getName());
+            Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
+            Operand val = build(constDeclNode.getValueNode(), s);
+            s.assignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
-            build(constDeclNode.getValueNode(), m,true);
-
-            m.assignConstantInObject(constDeclNode.getName());
+            Operand val = build(constDeclNode.getValueNode(), s);
+            s.assignConstantInObject(constDeclNode.getName());
         }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildConstDeclAssignment(Node node, IR_Scope m) {
@@ -1501,27 +1496,21 @@ public class IR_Builder
         }
     }
 
-    public Operand buildDAsgn(Node node, IR_Scope m) {
+    public Operand buildDAsgn(Node node, IR_Scope s) {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
-
-        CompilerCallback value = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(dasgnNode.getValueNode(), m, true);
-            }
-        };
-        
-        m.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
+        Operand val = build(dasgnNode.getValueNode(), s);
+        s.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
     }
 
-    public Operand buildDAsgnAssignment(Node node, IR_Scope m) {
+    public Operand buildDAsgnAssignment(Node node, IR_Scope s) {
         DAsgnNode dasgnNode = (DAsgnNode) node;
-
-        m.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
+        s.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
 
-    public Operand buildDefn(Node node, IR_Scope s) {
+    private Operand defineNewMethod(Node n, IR_Scope s, boolean isInstanceMethod)
+    {
         final DefnNode defnNode = (DefnNode) node;
-        IR_Method m = new IR_Method(s, defnNode.getName());
+        IR_Method m = new IR_Method(s, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
         buildArgs(defnNode.getArgsNode(), m);
@@ -1542,58 +1531,17 @@ public class IR_Builder
         return null;
     }
 
+    public Operand buildDefn(Node node, IR_Scope s) {
+            // Instance method
+        return defineNewMethod(n, s, true);
+    }
+
     public Operand buildDefs(Node node, IR_Scope m) {
-        final DefsNode defsNode = (DefsNode) node;
-        final ArgsNode argsNode = defsNode.getArgsNode();
+            // Class method
+        return defineNewMethod(n, s, false);
 
-        CompilerCallback receiver = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        build(defsNode.getReceiverNode(), m, true);
-                    }
-                };
-
-        CompilerCallback body = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (defsNode.getBodyNode() != null) {
-                            if (defsNode.getBodyNode() instanceof RescueNode) {
-                                // if root of method is rescue, build as light rescue
-                                buildRescueInternal(defsNode.getBodyNode(), m, true);
-                            } else {
-                                build(defsNode.getBodyNode(), m, true);
-                            }
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-        CompilerCallback args = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        buildArgs(argsNode, m, true);
-                    }
-                };
-
-        // inspect body and args
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(defsNode.getArgsNode());
-
-        // if body is a rescue node, inspect its pieces separately to avoid it disabling all optz
-        // TODO: this is gross.
-        if (defsNode.getBodyNode() instanceof RescueNode) {
-            RescueNode rescueNode = (RescueNode)defsNode.getBodyNode();
-            inspector.inspect(rescueNode.getBodyNode());
-            inspector.inspect(rescueNode.getElseNode());
-            inspector.inspect(rescueNode.getRescueNode());
-        } else {
-            inspector.inspect(defsNode.getBodyNode());
-        }
-
-        m.defineNewMethod(defsNode.getName(), defsNode.getArgsNode().getArity().getValue(), defsNode.getScope(), body, args, receiver, inspector, false);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+            // SSS FIXME: Receiver -- this is the class meta object basically?
+        // Operand receiver = build(defsNode.getReceiverNode(), s);
     }
 
     public Operand buildArgs(Node node, IR_Scope s) {
@@ -2835,13 +2783,7 @@ public class IR_Builder
 
     public Operand buildRegexp(Node node, IR_Scope m) {
         RegexpNode reNode = (RegexpNode) node;
-
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.createNewRegexp(reNode.getValue(), reNode.getOptions());
-        } else {
-            m.createNewRegexp(reNode.getValue(), reNode.getOptions());
-            if (!expr) m.consumeCurrentValue();
-        }
+        return new Regexp(reNode.getValue(), reNode.getOptions());
     }
 
     public Operand buildRescue(Node node, IR_Scope m) {

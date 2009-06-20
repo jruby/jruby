@@ -4,10 +4,11 @@ import org.jruby.util.JavaNameMangler;
 
 public class IR_Method extends IR_ScopeImpl
 {
-    String _name;        // Ruby name 
-    String _irName;      // Generated name
+    String  _name;        // Ruby name 
+    String  _irName;      // Generated name
+    boolean _isInstanceMethod;
 
-    public IR_Method(IR_Scope parent, String name)
+    public IR_Method(IR_Scope parent, String name, boolean isInstanceMethod)
     {
         super(parent);
         _name = name;
@@ -18,6 +19,10 @@ public class IR_Method extends IR_ScopeImpl
             // FIXME: What is this script business here?
             _irName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
         }
+
+        _isInstanceMethod = isInstanceMethod;
+
+        // SSS: FIXME: More stuff needs to happen here with the parent scope
     }
 
     public Operand getConstantValue(String constRef)
