@@ -53,9 +53,7 @@ class TestLoad < Test::Unit::TestCase
 
   def call_extern_load_foo_bar(classpath = nil)
     cmd = ""
-    # FIX plain windows
-    cmd += "CLASSPATH=#{classpath}" if classpath 
-    cmd += "unset CLASSPATH &&" unless classpath
+    cmd += "env CLASSPATH=#{classpath}" # classpath=nil, becomes empty CLASSPATH
     cmd += " #{Config::CONFIG['bindir']}/#{Config::CONFIG['RUBY_INSTALL_NAME']} -e "
     cmd += "'"+'begin load "./test/foo.bar.rb"; rescue Exception => e; print "FAIL"; else print "OK"; end'+"'"
     `#{cmd}`
@@ -78,7 +76,7 @@ class TestLoad < Test::Unit::TestCase
   def test_load_relative_without_classpath
     # FIX for Windows
     unless WINDOWS
-      assert_equal call_extern_load_foo_bar(), 'OK'
+      assert_equal 'OK', call_extern_load_foo_bar()
     end
   end
 
