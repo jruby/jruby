@@ -230,8 +230,8 @@ public class IR_Builder
             case NOTNODE: return buildNot(node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd(node, m); // done
             case OPASGNNODE: return buildOpAsgn(node, m); // SSS FIXME: What code generates this AST?
-            case OPASGNORNODE: return buildOpAsgnOr(node, m);
-            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m);
+            case OPASGNORNODE: return buildOpAsgnOr(node, m); // SSS FIXME: What code generates this AST?
+            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // SSS FIXME: What code generates this AST?
             case ORNODE: return buildOr(node, m); // done
             case POSTEXENODE: return buildPostExe(node, m);
             case PREEXENODE: return buildPreExe(node, m);
@@ -246,7 +246,7 @@ public class IR_Builder
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE: return buildSClass(node, m);
             case SELFNODE: return buildSelf(node, m); // done
-            case SPLATNODE: return buildSplat(node, m);
+            case SPLATNODE: return buildSplat(node, m); // done
             case STRNODE: return buildStr(node, m); // done
             case SUPERNODE: return buildSuper(node, m);
             case SVALUENODE: return buildSValue(node, m);
@@ -2728,16 +2728,9 @@ public class IR_Builder
 
     public Operand buildReturn(Node node, IR_Scope m) {
         ReturnNode returnNode = (ReturnNode) node;
-
-        if (returnNode.getValueNode() != null) {
-            build(returnNode.getValueNode(), m,true);
-        } else {
-            m.loadNil();
-        }
-
-        m.performReturn();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
+        m.addInstr(new RETURN_Instr(retVal));
+        return null;
     }
 
     public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector) {
@@ -2745,40 +2738,37 @@ public class IR_Builder
     }
 
     public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector, boolean load, boolean main) {
+        // Top-level script!
+        IR_Script script = new IR_Script(m.getClassname(), m.getSourceName());
+        IR_Method rootMethod = script.getRootMethod();
+
         RootNode rootNode = (RootNode) node;
+            // SSS FIXME: How does this impact IR generation?
+            // If it does, does it need to go somewhere ... in script or rootMethod?
         StaticScope staticScope = rootNode.getStaticScope();
-
-        m.startScript(staticScope);
-
-        // force static scope to claim restarg at 0, so it only implements the [] version of __file__
-        staticScope.setRestArg(-2);
-
-        // create method for toplevel of script
-        IR_Scope methodCompiler = m.startRoot("__file__", "__file__", staticScope, inspector);
+        staticScope.setRestArg(-2); // force static scope to claim restarg at 0, so it only implements the [] version of __file__
 
         Node nextNode = rootNode.getBodyNode();
-        if (nextNode != null) {
+        if (nextNode == null) {
+            rootMethod.addInstr(new RETURN_Instr(Nil.NIL));
+        }
+        else {
             if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
                 // it's a multiple-statement body, iterate over all elements in turn and chain if it get too long
                 BlockNode blockNode = (BlockNode) nextNode;
-
                 for (int i = 0; i < blockNode.size(); i++) {
                     if ((i + 1) % RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT == 0) {
-                        methodCompiler = methodCompiler.chainToMethod("__file__from_line_" + (i + 1));
+                        rootMethod = rootMethod.chainToMethod("__file__from_line_" + (i + 1));
                     }
-                    build(blockNode.get(i), methodCompiler, i + 1 >= blockNode.size());
+                    build(blockNode.get(i), rootMethod);
                 }
             } else {
                 // single-statement body, just build it
-                build(nextNode, methodCompiler,true);
+                build(nextNode, rootMethod);
             }
-        } else {
-            methodCompiler.loadNil();
         }
 
-        methodCompiler.endBody();
-
-        m.endScript(load, main);
+        return null;
     }
 
     public Operand buildSelf(Node node, IR_Scope m) {
@@ -2787,17 +2777,13 @@ public class IR_Builder
 
     public Operand buildSplat(Node node, IR_Scope m) {
         SplatNode splatNode = (SplatNode) node;
-
-        build(splatNode.getValue(), m, true);
-
-        m.splatCurrentValue();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return new Splat(build(splatNode.getValue(), m));
     }
 
     public Operand buildStr(Node node, IR_Scope s) {
         StrNode strNode = (StrNode) node;
-        return (strNode instanceof FileNode) ? s.getFileName() : new StringLiteral(strNode.getValue());
+            // SSS FIXME: Should filename operand be something different than a string literal?
+        return new StringLiteral((strNode instanceof FileNode) ? s.getFileName() : strNode.getValue());
     }
 
     public Operand buildSuper(Node node, IR_Scope m) {

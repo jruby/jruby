@@ -54,7 +54,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public Variable getSelf() { return new Variable("self"); }
 
       // Delegate method to the containing script/module/class
-    public StringLiteral getFileName() { return _parent.getFileName(); }
+    public String getFileName() { return _parent.getFileName(); }
 
     public void addInstr(IR_Instr i) { _instrs.append(i); }
 

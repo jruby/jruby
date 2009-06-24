@@ -23,7 +23,7 @@ public interface IR_Scope
     public Variable getSelf();
 
         // scripts
-    public StringLiteral getFileName();
+    public String getFileName();
 
         // Tries to load at compile-time the constant referred to by 'constRef'.
         // This might be possible if the constant is defined and is not a forward reference
