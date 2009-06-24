@@ -714,12 +714,11 @@ public class Convert {
                 }
             case SPOST_SIGN:
                 if (strict) {
-                    int ibefore = i;
-                    for (; i < buflen && isWhitespace(bytes[i]); i++) ;
-                    if (ibefore != i) {
-                        // set this to enforce no-underscore rule (though I think 
-                        // it's an MRI bug)
-                        flags |= FLAG_WHITESPACE;
+                    // From the specs I have seen it is not possible for a + or - to be followed
+                    // by whitespace.  Unconditionally failing in this case versus whatever it
+                    // used to do.
+                    if (i < buflen && isWhitespace(bytes[i])) {
+                        throw new InvalidIntegerException();
                     }
                 } else {
                     for ( ; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) {

@@ -1,3 +1,0 @@
-fails(JRUBY-2838):Zlib::GzipWriter#mtime= sets mtime using Integer
-fails(JRUBY-2838):Zlib::GzipWriter#mtime= sets mtime using Time
-fails(JRUBY-2838):Zlib::GzipWriter#mtime= raises if the header was written

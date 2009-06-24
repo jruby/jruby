@@ -1,2 +1,0 @@
-fails(JRUBY-3748):Kernel.Integer raises an ArgumentError if there is a space between the + and number
-fails(JRUBY-3748):Kernel#Integer raises an ArgumentError if there is a space between the + and number
