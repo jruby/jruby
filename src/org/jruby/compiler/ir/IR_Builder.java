@@ -172,10 +172,10 @@ public class IR_Builder
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias(node, m); // done
             case ANDNODE: return buildAnd(node, m); // done
-            case ARGSCATNODE: return buildArgsCat(node, m);
-            case ARGSPUSHNODE: return buildArgsPush(node, m);
+            case ARGSCATNODE: return buildArgsCat(node, m); // SSS FIXME: What code generates this AST?
+            case ARGSPUSHNODE: return buildArgsPush(node, m); // Nothing to do for 1.8
             case ARRAYNODE: return buildArray(node, m); // done
-            case ATTRASSIGNNODE: return buildAttrAssign(node, m);
+            case ATTRASSIGNNODE: return buildAttrAssign(node, m); // Incomplete
             case BACKREFNODE: return buildBackref(node, m); // done
             case BEGINNODE: return buildBegin(node, m); // done
             case BIGNUMNODE: return buildBignum(node, m); // done
@@ -185,7 +185,7 @@ public class IR_Builder
             case CASENODE: return buildCase(node, m);
             case CLASSNODE: return buildClass(node, m);
             case CLASSVARNODE: return buildClassVar(node, m); // done
-            case CLASSVARASGNNODE: return buildClassVarAsgn(node, m);
+            case CLASSVARASGNNODE: return buildClassVarAsgn(node, m); // done
             case CLASSVARDECLNODE: return buildClassVarDecl(node, m);
             case COLON2NODE: return buildColon2(node, m);
             case COLON3NODE: return buildColon3(node, m);
@@ -206,7 +206,7 @@ public class IR_Builder
             case FALSENODE: return buildFalse(node, m); // done
             case FCALLNODE: return buildFCall(node, m); // done
             case FIXNUMNODE: return buildFixnum(node, m); // done
-            case FLIPNODE: return buildFlip(node, m);
+            case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
             case FLOATNODE: return buildFloat(node, m); // done
             case FORNODE: return buildFor(node, m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn(node, m);
@@ -218,9 +218,9 @@ public class IR_Builder
             case ITERNODE: return buildIter(node, m); // done
             case LOCALASGNNODE: return buildLocalAsgn(node, m); // done
             case LOCALVARNODE: return buildLocalVar(node, m); // done
-            case MATCH2NODE: return buildMatch2(node, m);
-            case MATCH3NODE: return buildMatch3(node, m);
-            case MATCHNODE: return buildMatch(node, m);
+            case MATCH2NODE: return buildMatch2(node, m); // done
+            case MATCH3NODE: return buildMatch3(node, m); // done
+            case MATCHNODE: return buildMatch(node, m); // done
             case MODULENODE: return buildModule(node, m);
             case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m);
             case NEWLINENODE: return buildNewline(node, m); // done
@@ -228,8 +228,8 @@ public class IR_Builder
             case NTHREFNODE: return buildNthRef(node, m);
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot(node, m); // done
-            case OPASGNANDNODE: return buildOpAsgnAnd(node, m);
-            case OPASGNNODE: return buildOpAsgn(node, m);
+            case OPASGNANDNODE: return buildOpAsgnAnd(node, m); // done
+            case OPASGNNODE: return buildOpAsgn(node, m); // SSS FIXME: What code generates this AST?
             case OPASGNORNODE: return buildOpAsgnOr(node, m);
             case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m);
             case ORNODE: return buildOr(node, m); // done
@@ -390,7 +390,7 @@ public class IR_Builder
     public Operand buildAlias(Node node, IR_Scope s) {
         final AliasNode alias = (AliasNode) node;
         Operand[] args = new Operand[] { new MetaObject(s), new MethAddr(alias.getNewName()), new MethAddr(alias.getOldName()) };
-        m.addInstr(new RUBY_IMPL_CALL_Instr(null, MethAddr.DEFINE_ALIAS, args));
+        m.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, args));
 
             // SSS FIXME: Can this return anything other than nil?
         return Nil.NIL;
@@ -407,6 +407,19 @@ public class IR_Builder
     //    ret = v2
     // L:
     //
+    private Operand buildAnd_2(Node node, IR_Scope m)
+    {
+        Variable ret = m.getNewTmpVariable();
+        Label    l   = m.getNewLabel();
+        Operand  v1  = build(andNode.getFirstNode(), m);
+        m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
+        m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
+        Operand  v2  = build(andNode.getSecondNode(), m);
+        m.addInstr(new COPY_Instr(ret, v2);
+        m.addInstr(new LABEL_Instr(l));
+        return ret;
+    }
+
     public Operand buildAnd(Node node, IR_Scope m) {
         final AndNode andNode = (AndNode) node;
 
@@ -419,15 +432,7 @@ public class IR_Builder
             build(andNode.getFirstNode(), m);
             return BooleanLiteral.FALSE;
         } else {
-            Variable ret = m.getNewTmpVariable();
-            Label    l   = m.getNewLabel();
-            Operand  v1  = build(andNode.getFirstNode(), m);
-            m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
-            m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
-            Operand  v2  = build(andNode.getSecondNode(), m);
-            m.addInstr(new COPY_Instr(ret, v2);
-            m.addInstr(new LABEL_Instr(l));
-            return ret;
+            return buildAnd_2(andNode, m);
         }
     }
 
@@ -442,13 +447,13 @@ public class IR_Builder
     public Operand buildArgsCat(Node node, IR_Scope m) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
-        build(argsCatNode.getFirstNode(), m);
+            // SSS FIXME: Is this going to be a custom instr/operand (like range, hash, etc.)?
+            // Need to understand what generates this AST
+        Operand v1 = build(argsCatNode.getFirstNode(), m);
         m.ensureRubyArray();
-        build(argsCatNode.getSecondNode(), m);
+        Operand v2 = build(argsCatNode.getSecondNode(), m);
         m.splatCurrentValue();
         m.concatArrays();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildArgsPush(Node node, IR_Scope m) {
@@ -457,18 +462,10 @@ public class IR_Builder
 
     private void buildAttrAssign(Node node, IR_Scope m) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
-
-        CompilerCallback receiverCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(attrAssignNode.getReceiverNode(), m,true);
-            }
-        };
-        
-        ArgumentsCallback argsCallback = setupArgs(attrAssignNode.getArgsNode());
-
+        List<Operand> args = setupArgs(attrAssignNode.getArgsNode());
+        Operand receiver   = build(attrAssignNode.getReceiverNode(), m);
+            // SSS FIXME: What is this?
         m.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildAttrAssignAssignment(Node node, IR_Scope m) {
@@ -891,11 +888,11 @@ public class IR_Builder
     public Operand buildConst(Node node, IR_Scope s) {
         String constName = ((ConstNode) node).getName();
 
-            // Sometimes the value can be retrieved at compile time.
-            // If we succeed, nothing like it!  We might not succeed for the following reasons:
+            // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
+            // We might not .. for the following reasons:
             // 1. The constant is missing,
             // 2. The reference is a forward-reference,
-            // 3. The constant's value is known at runt-time on first-access,
+            // 3. The constant's value is only known at run-time on first-access (but, this is runtime, isn't it??)
             // 4. Our compiler isn't able to right away infer that this is a constant.
             //
             // SSS FIXME:
@@ -910,12 +907,10 @@ public class IR_Builder
         Operand constVal = s.getConstantValue(constName);
         if (constVal == null) {
             constVal = s.getNewTmpVariable();
-                // SSS FIXME: 
-                // 1. Is "retrieveConstant" the right utility method for loading the constant?
-                // 2. This method name should be fetched from some other place rather than be hardcoded here?
-            s.addInstr(new RUBY_IMPL_CALL_Instr(constVal, 
-                                                MethAddr.RETRIEVE_CONSTANT,
-                                                new Operand[] { new MetaObject(s), new Reference(constName) }));
+                // SSS FIXME: Is this the right utility method for loading the constant?
+            s.addInstr(new RUBY_INTERNALS_CALL_Instr(constVal, 
+                                                     MethAddr.RETRIEVE_CONSTANT,
+                                                     new Operand[] { new MetaObject(s), new Reference(constName) }));
             // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
         }
         return constVal;
@@ -1790,7 +1785,7 @@ public class IR_Builder
         ForNode  forNode  = (ForNode) node;
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
-        m.addInstr(new RUBY_IMPL_CALL_Instr(ret, MethAddr.FOR_EACH, new Operand[]{receiver}, forBlock));
+        m.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.FOR_EACH, new Operand[]{receiver}, forBlock));
         return ret;
     }
 
@@ -2028,39 +2023,26 @@ public class IR_Builder
     }
 
     public Operand buildMatch(Node node, IR_Scope m) {
-        MatchNode matchNode = (MatchNode) node;
-
-        build(matchNode.getRegexpNode(), m,true);
-
-        m.match();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Variable ret    = m.getNewTmpVariable();
+        Operand  regexp = build(((MatchNode)node).getRegexpNode(), m);
+        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH, new Operand[]{regexp}));
+        return ret;
     }
 
     public Operand buildMatch2(Node node, IR_Scope m) {
-        final Match2Node matchNode = (Match2Node) node;
-
-        build(matchNode.getReceiverNode(), m,true);
-        CompilerCallback value = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(matchNode.getValueNode(), m,true);
-            }
-        };
-
-        m.match2(value);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Variable ret      = m.getNewTmpVariable();
+        Operand  receiver = build(matchNode.getReceiverNode(), m);
+        Operand  value    = build(matchNode.getValueNode(), m);
+        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH2, new Operand[]{receiver, value}));
+        return ret;
     }
 
     public Operand buildMatch3(Node node, IR_Scope m) {
-        Match3Node matchNode = (Match3Node) node;
-
-        build(matchNode.getReceiverNode(), m,true);
-        build(matchNode.getValueNode(), m,true);
-
-        m.match3();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Variable ret      = m.getNewTmpVariable();
+        Operand  receiver = build(matchNode.getReceiverNode(), m);
+        Operand  value    = build(matchNode.getValueNode(), m);
+        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH3, new Operand[]{receiver, value}));
+        return ret;
     }
 
     public Operand buildModule(Node node, IR_Scope m) {
@@ -2265,22 +2247,11 @@ public class IR_Builder
         return ret;
     }
 
+    // SSS FIXME: What is the diff between this and the AndNode?  Is this translation correct?
     public Operand buildOpAsgnAnd(Node node, IR_Scope m) {
-        final BinaryOperatorNode andNode = (BinaryOperatorNode) node;
-
-        build(andNode.getFirstNode(), m,true);
-
-        BranchCallback longCallback = new BranchCallback() {
-
-                    public void branch(IR_Scope m) {
-                        build(andNode.getSecondNode(), m,true);
-                    }
-                };
-
-        m.performLogicalAnd(longCallback);
+        Operand retVal = buildAnd_2((BinaryOperatorNode) node, m);
         m.addInstr(new THREAD_POLL_Instr());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return retVal;
     }
 
     public Operand buildOpAsgnOr(Node node, IR_Scope m) {
@@ -2369,20 +2340,21 @@ public class IR_Builder
         }
     }
 
+    // SSS FIXME: What code generates this AST?
     public Operand buildOpAsgn(Node node, IR_Scope m) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
+        Operand ret;
         if (opAsgnNode.getOperatorName().equals("||")) {
-            buildOpAsgnWithOr(opAsgnNode, m, true);
+            ret = buildOpAsgnWithOr(opAsgnNode, m);
         } else if (opAsgnNode.getOperatorName().equals("&&")) {
-            buildOpAsgnWithAnd(opAsgnNode, m, true);
+            ret = buildOpAsgnWithAnd(opAsgnNode, m);
         } else {
-            buildOpAsgnWithMethod(opAsgnNode, m, true);
+            ret = buildOpAsgnWithMethod(opAsgnNode, m);
         }
 
         m.addInstr(new THREAD_POLL_Instr());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return ret;
     }
 
     public Operand buildOpAsgnWithOr(Node node, IR_Scope m) {
@@ -2394,8 +2366,8 @@ public class IR_Builder
                 build(opAsgnNode.getReceiverNode(), m, true); // [recv]
             }
         };
-        
-        ArgumentsCallback argsCallback = setupArgs(opAsgnNode.getValueNode());
+
+        List<Operand> args = setupArgs(opAsgnNode.getValueNode());
         
         m.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
         // TODO: don't require pop
