@@ -191,7 +191,7 @@ public class IR_Builder
             case COLON3NODE: return buildColon3(node, m);
             case CONSTDECLNODE: return buildConstDecl(node, m);
             case CONSTNODE: return buildConst(node, m); // done
-            case DASGNNODE: return buildDAsgn(node, m);
+            case DASGNNODE: return buildDAsgn(node, m); // done
             case DEFINEDNODE: return buildDefined(node, m);
             case DEFNNODE: return buildDefn(node, m); // done
             case DEFSNODE: return buildDefs(node, m); // done
@@ -199,7 +199,7 @@ public class IR_Builder
             case DREGEXPNODE: return buildDRegexp(node, m); // done
             case DSTRNODE: return buildDStr(node, m); // done
             case DSYMBOLNODE: return buildDSymbol(node, m); // done
-            case DVARNODE: return buildDVar(node, m);
+            case DVARNODE: return buildDVar(node, m); // done
             case DXSTRNODE: return buildDXStr(node, m); // done
             case ENSURENODE: return buildEnsureNode(node, m);
             case EVSTRNODE: return buildEvStr(node, m); // done
@@ -208,14 +208,14 @@ public class IR_Builder
             case FIXNUMNODE: return buildFixnum(node, m); // done
             case FLIPNODE: return buildFlip(node, m);
             case FLOATNODE: return buildFloat(node, m); // done
-            case FORNODE: return buildFor(node, m);
+            case FORNODE: return buildFor(node, m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn(node, m);
             case GLOBALVARNODE: return buildGlobalVar(node, m);
             case HASHNODE: return buildHash(node, m); // done
             case IFNODE: return buildIf(node, m); // done
             case INSTASGNNODE: return buildInstAsgn(node, m); // done
             case INSTVARNODE: return buildInstVar(node, m); // done
-            case ITERNODE: return buildIter(node, m);
+            case ITERNODE: return buildIter(node, m); // done
             case LOCALASGNNODE: return buildLocalAsgn(node, m); // done
             case LOCALVARNODE: return buildLocalVar(node, m); // done
             case MATCH2NODE: return buildMatch2(node, m);
@@ -350,35 +350,36 @@ public class IR_Builder
 
     public Operand buildAssignment(Node node, IR_Scope m) {
         switch (node.getNodeType()) {
-            case ATTRASSIGNNODE:
-                buildAttrAssignAssignment(node, m);
-                break;
+            case ATTRASSIGNNODE: 
+                return buildAttrAssignAssignment(node, m);
+// SSS FIXME:
+//
+// There are also differences in variable scoping between 1.8 and 1.9 
+// Ruby 1.8 is the buggy semantics if I understand correctly.
+//
+// The semantics of how this shadows other variables outside the block needs
+// to be figured out during live var analysis.
             case DASGNNODE:
                 DAsgnNode dasgnNode = (DAsgnNode)node;
-                m.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
-                break;
+                Operand arg = new Variable(node.getName());
+                s.addInstr(new RECV_BLOCK_ARG_Instr(arg, new Constant(dasgnNode.getIndex())));
+                return arg;
             case CLASSVARASGNNODE:
-                buildClassVarAsgnAssignment(node, m);
-                break;
+                return buildClassVarAsgnAssignment(node, m);
             case CLASSVARDECLNODE:
-                buildClassVarDeclAssignment(node, m);
-                break;
+                return buildClassVarDeclAssignment(node, m);
             case CONSTDECLNODE:
-                buildConstDeclAssignment(node, m);
-                break;
+                return buildConstDeclAssignment(node, m);
             case GLOBALASGNNODE:
-                buildGlobalAsgnAssignment(node, m);
-                break;
+                return buildGlobalAsgnAssignment(node, m);
             case INSTASGNNODE:
-                buildInstAsgnAssignment(node, m);
-                break;
+                return buildInstAsgnAssignment(node, m);
             case LOCALASGNNODE:
                 LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
                 m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
                 break;
             case MULTIPLEASGNNODE:
-                buildMultipleAsgnAssignment(node, m);
-                break;
+                return buildMultipleAsgnAssignment(node, m);
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
@@ -388,11 +389,8 @@ public class IR_Builder
 
     public Operand buildAlias(Node node, IR_Scope s) {
         final AliasNode alias = (AliasNode) node;
-
-            // SSS FIXME: This method name should be fetched from some other place rather than be hardcoded here?
-        MethAddr   ma   = new MethAddr("defineAlias");  
-        Operand[]  args = new Operand[] { new MetaObject(s), new MethAddr(alias.getNewName()), new MethAddr(alias.getOldName()) };
-        m.addInstr(new RUBY_IMPL_CALL_Instr(null, ma, ));
+        Operand[] args = new Operand[] { new MetaObject(s), new MethAddr(alias.getNewName()), new MethAddr(alias.getOldName()) };
+        m.addInstr(new RUBY_IMPL_CALL_Instr(null, MethAddr.DEFINE_ALIAS, args));
 
             // SSS FIXME: Can this return anything other than nil?
         return Nil.NIL;
@@ -916,7 +914,7 @@ public class IR_Builder
                 // 1. Is "retrieveConstant" the right utility method for loading the constant?
                 // 2. This method name should be fetched from some other place rather than be hardcoded here?
             s.addInstr(new RUBY_IMPL_CALL_Instr(constVal, 
-                                                new MethAddr("retrieveConstant"), 
+                                                MethAddr.RETRIEVE_CONSTANT,
                                                 new Operand[] { new MetaObject(s), new Reference(constName) }));
             // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
         }
@@ -1455,14 +1453,23 @@ public class IR_Builder
 
     public Operand buildDAsgn(Node node, IR_Scope s) {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
-        Operand val = build(dasgnNode.getValueNode(), s);
-        s.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), value);
+
+        // SSS: Looks like we receive the arg in buildAssignment via the IterNode
+        // We won't get here for argument receives!  So, buildDasgn is called for
+        // assignments to block variables within a block.  As far as the IR is concerned,
+        // this is just a simple copy
+        Operand arg = new Variable(node.getName());
+        s.addIntsr(new COPY_Instr(arg, build(dasgnNode.getValueNode(), s)));
+        return arg;
     }
 
+/**
+ * SSS FIXME: Used anywhere?  I don't see calls to this anywhere
     public Operand buildDAsgnAssignment(Node node, IR_Scope s) {
         DAsgnNode dasgnNode = (DAsgnNode) node;
         s.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
+**/
 
     private Operand defineNewMethod(Node n, IR_Scope s, boolean isInstanceMethod)
     {
@@ -1586,14 +1593,7 @@ public class IR_Builder
     }
 
     public Operand buildDVar(Node node, IR_Scope m) {
-        DVarNode dvarNode = (DVarNode) node;
-
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
-        } else {
-            m.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
-            if (!expr) m.consumeCurrentValue();
-        }
+        return new Variable(((DarNode) node).getName());
     }
 
     public Operand buildDXStr(Node node, IR_Scope m) {
@@ -1786,77 +1786,35 @@ public class IR_Builder
     }
 
     public Operand buildFor(Node node, IR_Scope m) {
-        final ForNode forNode = (ForNode) node;
-
-        CompilerCallback receiverCallback = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        build(forNode.getIterNode(), m, true);
-                    }
-                };
-
-        final CompilerCallback closureArg = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        buildForIter(forNode, m);
-                    }
-                };
-
-        m.getInvocationCompiler().invokeDynamic("each", receiverCallback, null, CallType.NORMAL, closureArg, true);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Variable ret      = m.getNewTmpVariable();
+        ForNode  forNode  = (ForNode) node;
+        Operand  receiver = build(forNode.getIterNode(), m);
+        Operand  forBlock = buildForIter(forNode, m);     
+        m.addInstr(new RUBY_IMPL_CALL_Instr(ret, MethAddr.FOR_EACH, new Operand[]{receiver}, forBlock));
+        return ret;
     }
 
-    public Operand buildForIter(Node node, IR_Scope m) {
+    public Operand buildForIter(Node node, IR_Scope s) {
+            // Create a new closure context
+        IR_Scope closure = new IR_Closure(s);
+
+            // Build args
         final ForNode forNode = (ForNode) node;
-
-        // create the closure class and instantiate it
-        final CompilerCallback closureBody = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (forNode.getBodyNode() != null) {
-                            build(forNode.getBodyNode(), m,true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-        // create the closure class and instantiate it
-        final CompilerCallback closureArgs = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (forNode.getVarNode() != null) {
-                            buildAssignment(forNode.getVarNode(), m, false);
-                        }
-                    }
-                };
-
-        boolean hasMultipleArgsHead = false;
-        if (forNode.getVarNode() instanceof MultipleAsgnNode) {
-            hasMultipleArgsHead = ((MultipleAsgnNode) forNode.getVarNode()).getHeadNode() != null;
-        }
-
         NodeType argsNodeId = null;
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
+            if (argsNodeId != null)
+                buildAssignment(forNode.getVarNode(), closure);
         }
-        
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(forNode.getBodyNode());
-        inspector.inspect(forNode.getVarNode());
 
-        // force heap-scope behavior, since it uses parent's scope
-        inspector.setFlag(ASTInspector.CLOSURE);
+            // Build closure body and return the result of the closure
+        Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
+        closure.addInstr(new RETURN_Instr(closureRetVal));
 
-        if (argsNodeId == null) {
-            // no args, do not pass args processor
-            m.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
-        } else {
-            m.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
-        }
+            // Assign the closure to the block variable in the parent scope and return it
+        Operand blockVar = s.getNewTmpVariable();
+        s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
+        return blockVar;
     }
 
     public Operand buildGlobalAsgn(Node node, IR_Scope m) {
@@ -2022,57 +1980,33 @@ public class IR_Builder
         return ret;
     }
 
-    public Operand buildIter(Node node, IR_Scope m) {
+    public Operand buildIter(Node node, IR_Scope s) {
             // Create a new closure context
-        m = new IR_Closure(m);
+        IR_Scope closure = new IR_Closure(s);
 
+            // Build args
         final IterNode iterNode = (IterNode) node;
-
-        // create the closure class and instantiate it
-        final CompilerCallback closureBody = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (iterNode.getBodyNode() != null) {
-                            build(iterNode.getBodyNode(), m, true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-        // create the closure class and instantiate it
-        final CompilerCallback closureArgs = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (iterNode.getVarNode() != null) {
-                            buildAssignment(iterNode.getVarNode(), m, false);
-                        }
-                    }
-                };
-
-        boolean hasMultipleArgsHead = false;
-        if (iterNode.getVarNode() instanceof MultipleAsgnNode) {
-            hasMultipleArgsHead = ((MultipleAsgnNode) iterNode.getVarNode()).getHeadNode() != null;
-        }
-
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
+        if ((iterNode.getVarNode() != null) && (argsNodeId != null))
+            buildAssignment(iterNode.getVarNode(), closure);
 
+            // SSS FIXME: Needed?
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(iterNode.getBodyNode());
         inspector.inspect(iterNode.getVarNode());
-        
-        if (argsNodeId == null) {
-            // no args, do not pass args processor
-            m.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
-        } else {
-            m.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
-        }
+
+            // Build closure body and return the result of the closure
+        Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
+        closure.addInstr(new RETURN_Instr(closureRetVal));
+
+            // Assign the closure to the block variable in the parent scope and return it
+        Operand blockVar = s.getNewTmpVariable();
+        s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
+        return blockVar;
     }
 
     public Operand buildLocalAsgn(Node node, IR_Scope s) {
-        s.addIntsr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s, true)));
+        s.addIntsr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s)));
 /**
  * SSS FIXME: How does this PRAGMA business affect the IR? 
  *
@@ -2089,7 +2023,7 @@ public class IR_Builder
         m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
 
-    public Operand buildLocalVar(Node node, IR_Scope contexs) {
+    public Operand buildLocalVar(Node node, IR_Scope s) {
         return new Variable(((LocalVarNode) node).getName());
     }
 
@@ -2278,8 +2212,6 @@ public class IR_Builder
                 m.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
             }
         }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildNewline(Node node, IR_Scope s) {
