@@ -30,12 +30,15 @@ package org.jruby;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import java.util.List;
 import java.util.ArrayList;
 
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Deflater;
+import java.util.zip.CRC32;
 import org.joda.time.DateTime;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
@@ -1039,12 +1042,91 @@ public class RubyZlib {
             super(runtime, type);
         }
 
-        private GZIPOutputStream io;
+        public class HeaderModifyableGZIPOutputStream extends DeflaterOutputStream {
+            public HeaderModifyableGZIPOutputStream(OutputStream outputStream) throws IOException {
+                super(outputStream, new Deflater(Deflater.DEFAULT_COMPRESSION, true), DEFAULT_BUFFER_SIZE);
+            }
+
+            @Override
+            public synchronized void write(byte bytes[], int offset, int length) throws IOException {
+                writeHeaderIfNeeded();
+
+                super.write(bytes, offset, length);
+                checksum.update(bytes, offset, length);
+            }
+
+            @Override
+            public void finish() throws IOException {
+                writeHeaderIfNeeded();
+
+                super.finish();
+
+                writeTrailer();
+            }
+
+            public void setModifiedTime(long newModifiedTime) {
+                if (!headerIsWritten()) modifiedTime = newModifiedTime;
+            }
+
+            public boolean headerIsWritten() {
+                return headerIsWritten;
+            }
+
+            // Called before any write to make sure the
+            // header is always written before the first bytes
+            private void writeHeaderIfNeeded() throws IOException {
+                if (headerIsWritten == false) {
+                    writeHeader();
+                    headerIsWritten = true;
+                }
+            }
+
+            private void writeHeader() throws IOException {
+                //  See http://www.gzip.org/zlib/rfc-gzip.html
+                final byte header[] = { GZIP_MAGIC_ID_1, GZIP_MAGIC_ID_2,
+                    COMPRESSION_TYPE_DEFLATED,
+                    0, // flags
+                    (byte) (modifiedTime), (byte)(modifiedTime >> 8), // 4 bytes of modified time
+                    (byte) (modifiedTime >> 16),(byte)(modifiedTime >> 24),
+                    0, // extras flag
+                    GZIP_OS_TYPE_UNKNOWN
+                };
+
+                out.write(header);
+            }
+
+            private void writeTrailer() throws IOException {
+                final int originalDataSize = def.getTotalIn();
+                final int checksumInt = (int) checksum.getValue();
+
+                final byte[] trailer = {
+                    (byte) (checksumInt), (byte)(checksumInt >> 8),
+                    (byte) (checksumInt >> 16), (byte)(checksumInt >> 24),
+
+                    (byte) (originalDataSize), (byte)(originalDataSize >> 8),
+                    (byte) (originalDataSize >> 16), (byte)(originalDataSize >> 24)
+                };
+
+                out.write(trailer);
+            }
+
+            private CRC32   checksum        = new CRC32();
+            private boolean headerIsWritten = false;
+            private long    modifiedTime    = System.currentTimeMillis();
+
+            private final static int  DEFAULT_BUFFER_SIZE       = 512;
+            private final static byte COMPRESSION_TYPE_DEFLATED = (byte) 8;
+            private final static byte GZIP_MAGIC_ID_1           = (byte) 0x1f;
+            private final static byte GZIP_MAGIC_ID_2           = (byte) 0x8b;
+            private final static byte GZIP_OS_TYPE_UNKNOWN      = (byte) 255;
+        }
+
+        private HeaderModifyableGZIPOutputStream io;
         
         @JRubyMethod(name = "initialize", required = 1, rest = true, frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize2(IRubyObject[] args, Block unusedBlock) throws IOException {
-            realIo = (RubyObject)args[0];
-            this.io = new GZIPOutputStream(new IOOutputStream(args[0]));
+            realIo = (RubyObject) args[0];
+            io = new HeaderModifyableGZIPOutputStream(new IOOutputStream(args[0]));
             
             return this;
         }
@@ -1052,9 +1134,8 @@ public class RubyZlib {
         @Override
         @JRubyMethod(name = "close")
         public IRubyObject close() throws IOException {
-            if (!closed) {
-                io.close();
-            }
+            if (!closed) io.close();
+
             this.closed = true;
             
             return getRuntime().getNil();
@@ -1121,9 +1202,8 @@ public class RubyZlib {
         }
 
         public IRubyObject finish() throws IOException {
-            if (!finished) {
-                io.finish();
-            }
+            if (!finished) io.finish();
+
             finished = true;
             return realIo;
         }
@@ -1138,7 +1218,10 @@ public class RubyZlib {
 
         @JRubyMethod(name = "mtime=", required = 1)
         public IRubyObject set_mtime(IRubyObject arg) {
-            // XXX: cannot access gzip header infos on GZIPOutputStream, so this method does ...nothing.
+            if( io.headerIsWritten() ) {
+                RubyClass errorClass = getRuntime().fastGetModule("Zlib").fastGetClass("GzipFile").fastGetClass("Error");
+                throw new RaiseException(RubyException.newException(getRuntime(), errorClass, "header is already written"));
+            }
             if (arg instanceof RubyTime) {
                 this.mtime = ((RubyTime) arg);
             } else if(arg.isNil()) {
@@ -1146,6 +1229,8 @@ public class RubyZlib {
             } else {
                 this.mtime.setDateTime(new DateTime( RubyNumeric.fix2long(arg)*1000 ));
             }
+            
+            io.setModifiedTime( this.mtime.to_i().getLongValue() );
             return getRuntime().getNil();
         }
 
