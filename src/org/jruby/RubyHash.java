@@ -1006,14 +1006,21 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "each", frame = true)
     public RubyHash each(final ThreadContext context, final Block block) {
-        final Ruby runtime = getRuntime();
-
-        visitAll(new Visitor() {
-            public void visit(IRubyObject key, IRubyObject value) {
-                // rb_assoc_new equivalent
-                block.yield(context, RubyArray.newArray(runtime, key, value));
-            }
-        });
+        if (block.arity() == Arity.TWO_ARGUMENTS) {
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    block.yieldSpecific(context, key, value);
+                }
+            });
+        } else {
+            final Ruby runtime = context.getRuntime();
+            
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    block.yield(context, RubyArray.newArray(runtime, key, value));
+                }
+            });
+        }
 
         return this;
     }
