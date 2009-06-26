@@ -25,7 +25,7 @@ else
   arches = [ FFI::Platform::ARCH ]
   arch_options[FFI::Platform::ARCH] = {
     :platform_dir => FFI::Platform::CONF_DIR,
-    :cppflags => ""
+    :cppflags => FFI::Platform.solaris? ? "-m#{FFI::Platform::ADDRESS_SIZE}" : ""
     }
 end
 arches.each { |arch|
