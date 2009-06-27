@@ -32,16 +32,17 @@ public final class MemoryPointer extends Pointer {
     private MemoryPointer(Ruby runtime, IRubyObject klass, DirectMemoryIO io, long total, int typeSize) {
         super(runtime, (RubyClass) klass, io, total, typeSize);
     }
-    
+
+
     private static final IRubyObject allocate(ThreadContext context, IRubyObject recv,
-            IRubyObject sizeArg, int count, boolean clear, Block block) {
+            IRubyObject sizeArg, int count, int align, boolean clear, Block block) {
         int typeSize = calculateSize(context, sizeArg);
         int total = typeSize * count;
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
         }
         AllocatedDirectMemoryIO io = factory.allocateDirectMemory(context.getRuntime(),
-                total > 0 ? total : 1, clear);
+                total > 0 ? total : 1, align, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
@@ -69,30 +70,44 @@ public final class MemoryPointer extends Pointer {
 
         return new MemoryPointer(runtime, runtime.fastGetModule("FFI").fastGetClass("MemoryPointer"), io, total, typeSize);
     }
-
+    
     @JRubyMethod(name = { "new" }, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, Block block) {
-        return allocate(context, recv, sizeArg, 1, true, block);
+        return allocate(context, recv, sizeArg, 1, 1, true, block);
     }
+
     @JRubyMethod(name = { "new" }, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject count, Block block) {
-        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), true, block);
+        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), 1, true, block);
     }
+
     @JRubyMethod(name = { "new" }, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv,
             IRubyObject sizeArg, IRubyObject count, IRubyObject clear, Block block) {
-        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), clear.isTrue(), block);
+        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), 1, clear.isTrue(), block);
+    }
+
+    @JRubyMethod(name = { "new_aligned" }, meta = true)
+    public static IRubyObject newAligned(ThreadContext context, IRubyObject recv,
+            IRubyObject sizeArg, IRubyObject count, IRubyObject align, Block block) {
+        return allocate(context, recv, sizeArg, RubyNumeric.fix2int(count), 
+                RubyNumeric.num2int(align), true, block);
+    }
+
+    @JRubyMethod(name = { "new_aligned" }, meta = true, required = 3, optional = 1)
+    public static IRubyObject newAligned(ThreadContext context, IRubyObject recv,
+            IRubyObject[] args, Block block) {
+        return allocate(context, recv, args[0], RubyNumeric.fix2int(args[1]),
+                RubyNumeric.num2int(args[2]), args[3].isTrue(), block);
     }
 
     @Override
-    @JRubyMethod(name = "to_s", optional = 1)
-    public final IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        return RubyString.newString(context.getRuntime(),
-                String.format("MemoryPointer[address=%#x size=%d]", getAddress(), size));
+    public final String toString() {
+        return String.format("MemoryPointer[address=%#x, size=%d]", getAddress(), size);
     }
 
     @Override
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = { "to_s", "inspect" })
     public final IRubyObject inspect(ThreadContext context) {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<MemoryPointer address=%#x size=%d>", getAddress(), size));

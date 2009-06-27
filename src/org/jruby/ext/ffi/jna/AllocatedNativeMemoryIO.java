@@ -1,6 +1,7 @@
 package org.jruby.ext.ffi.jna;
 
 import com.sun.jna.Memory;
+import com.sun.jna.Pointer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
@@ -31,7 +32,23 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         return new AllocatedNativeMemoryIO(runtime, memory, size);
     }
 
-    public AllocatedNativeMemoryIO(Ruby runtime, Memory memory, int size) {
+    /**
+     * Allocates a new block of native memory and wraps it in a {@link MemoryIO}
+     * accessor.
+     *
+     * @param size The size in bytes of memory to allocate.
+     *
+     * @return A new <tt>MemoryIO</tt> instance that can access the memory.
+     */
+    static final AllocatedNativeMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
+        Pointer memory = new Memory(size + align - 1).align(align);
+        if (clear) {
+            memory.setMemory(0, size, (byte) 0);
+        }
+        return new AllocatedNativeMemoryIO(runtime, memory, size);
+    }
+
+    private AllocatedNativeMemoryIO(Ruby runtime, Pointer memory, int size) {
         super(runtime, memory, size);
     }
 

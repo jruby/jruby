@@ -29,7 +29,6 @@
 package org.jruby.ext.ffi;
 
 import java.io.IOException;
-import java.nio.channels.ByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.Ruby;
@@ -173,9 +172,19 @@ public abstract class Factory {
      *
      * @param size The number of bytes to allocate.
      * @param clear If the memory should be cleared.
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
      */
     public abstract AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear);
+
+    /**
+     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     *
+     * @param size The number of bytes to allocate.
+     * @param align The minimum alignment of the memory
+     * @param clear If the memory should be cleared.
+     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     */
+    public abstract AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
      * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.
