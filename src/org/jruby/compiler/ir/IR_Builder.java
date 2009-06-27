@@ -180,7 +180,7 @@ public class IR_Builder
             case BEGINNODE: return buildBegin(node, m); // done
             case BIGNUMNODE: return buildBignum(node, m); // done
             case BLOCKNODE: return buildBlock(node, m); // done
-            case BREAKNODE: return buildBreak(node, m); // done
+            case BREAKNODE: return buildBreak(node, m); // done?
             case CALLNODE: return buildCall(node, m); // done
             case CASENODE: return buildCase(node, m);
             case CLASSNODE: return buildClass(node, m);
@@ -224,7 +224,7 @@ public class IR_Builder
             case MODULENODE: return buildModule(node, m);
             case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m);
             case NEWLINENODE: return buildNewline(node, m); // done
-            case NEXTNODE: return buildNext(node, m);
+            case NEXTNODE: return buildNext(node, m); // done?
             case NTHREFNODE: return buildNthRef(node, m);
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot(node, m); // done
@@ -251,7 +251,7 @@ public class IR_Builder
             case SUPERNODE: return buildSuper(node, m);
             case SVALUENODE: return buildSValue(node, m);
             case SYMBOLNODE: return buildSymbol(node, m); // done
-            case TOARYNODE: return buildToAry(node, m);
+            case TOARYNODE: return buildToAry(node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
             case UNDEFNODE: return buildUndef(node, m);
             case UNTILNODE: return buildUntil(node, m);
@@ -260,7 +260,7 @@ public class IR_Builder
             case WHILENODE: return buildWhile(node, m);
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
             case XSTRNODE: return buildXStr(node, m); // done
-            case YIELDNODE: return buildYield(node, m);
+            case YIELDNODE: return buildYield(node, m); // done
             case ZARRAYNODE: return buildZArray(node, m);
             case ZSUPERNODE: return buildZSuper(node, m);
             default: throw new NotCompilableException("Unknown node encountered in buildr: " + node);
@@ -1789,6 +1789,13 @@ public class IR_Builder
         return ret;
     }
 
+    // SSS FIXME: Why is the for node being built using closures and not as a "regular" loop with branches?
+    //
+    // This has implications on inlining, implementations of closures, next, break, etc.
+    // When "each" and the block it consumes are inlined together in the caller, the "loop"
+    // from the each should become a normal loop without any closures.  But, in this implementation
+    // of for, we replace one closure with another!
+    //
     public Operand buildForIter(Node node, IR_Scope s) {
             // Create a new closure context
         IR_Scope closure = new IR_Closure(s);
@@ -1804,7 +1811,7 @@ public class IR_Builder
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
-        closure.addInstr(new RETURN_Instr(closureRetVal));
+        closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
             // Assign the closure to the block variable in the parent scope and return it
         Operand blockVar = s.getNewTmpVariable();
@@ -1992,7 +1999,7 @@ public class IR_Builder
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
-        closure.addInstr(new RETURN_Instr(closureRetVal));
+        closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
             // Assign the closure to the block variable in the parent scope and return it
         Operand blockVar = s.getNewTmpVariable();
@@ -2205,24 +2212,13 @@ public class IR_Builder
         return build(((NewlineNode)node).getNextNode(), s);
     }
 
-    public Operand buildNext(Node node, IR_Scope m) {
+    public Operand buildNext(Node node, IR_Scope s) {
         final NextNode nextNode = (NextNode) node;
-
-        CompilerCallback valueCallback = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (nextNode.getValueNode() != null) {
-                            build(nextNode.getValueNode(), m,true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
+        Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
+        // SSS FIXME: Is the ordering correct? (poll before next)
         m.addInstr(new THREAD_POLL_Instr());
-        m.issueNextEvent(valueCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        m.addInstr(new NEXT_Instr(rv)); // NOTE: If s is a closure, couldn't I convert this to a CLOSURE_RETURN?
+        return rv;
     }
 
     public Operand buildNthRef(Node node, IR_Scope m) {
@@ -2813,13 +2809,10 @@ public class IR_Builder
     }    
     
     public Operand buildToAry(Node node, IR_Scope m) {
-        ToAryNode toAryNode = (ToAryNode) node;
-
-        build(toAryNode.getValue(), m,true);
-
-        m.aryToAry();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand  array = build(((ToAryNode) node).getValue(), m);
+        Variable ret   = m.getNewTmpVariable();
+        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.TO_ARY, new Operand[]{array}));
+        return  ret;
     }
 
     public Operand buildTrue(Node node, IR_Scope m) {
@@ -2889,19 +2882,16 @@ public class IR_Builder
 
     public Operand buildWhile(Node node, IR_Scope m) {
         final WhileNode whileNode = (WhileNode) node;
-
         if (whileNode.getConditionNode().getNodeType().alwaysFalse() && whileNode.evaluateAtStart()) {
             return Nil.NIL;
         } else {
             BranchCallback condition = new BranchCallback() {
-
                 public void branch(IR_Scope m) {
                     build(whileNode.getConditionNode(), m, true);
                 }
             };
 
             BranchCallback body = new BranchCallback() {
-
                 public void branch(IR_Scope m) {
                     if (whileNode.getBodyNode() != null) {
                         build(whileNode.getBodyNode(), m, true);
@@ -2916,6 +2906,7 @@ public class IR_Builder
             }
 
             m.addInstr(new THREAD_POLL_Instr());
+            return Nil.NIL;
         }
     }
 
@@ -2923,31 +2914,11 @@ public class IR_Builder
         return new BacktickString(((XStrNode)node).getValue());
     }
 
-    public Operand buildYield(Node node, IR_Scope m) {
-        final YieldNode yieldNode = (YieldNode) node;
-
-        ArgumentsCallback argsCallback = setupArgs(yieldNode.getArgsNode());
-
-        // TODO: This filtering is kind of gross...it would be nice to get some parser help here
-        if (argsCallback == null || argsCallback.getArity() == 0) {
-            m.getInvocationCompiler().yieldSpecific(argsCallback);
-        } else if ((argsCallback.getArity() == 1 || argsCallback.getArity() == 2 || argsCallback.getArity() == 3) && yieldNode.getExpandArguments()) {
-            // send it along as arity-specific, we don't need the array
-            m.getInvocationCompiler().yieldSpecific(argsCallback);
-        } else {
-            CompilerCallback argsCallback2 = null;
-            if (yieldNode.getArgsNode() != null) {
-                argsCallback2 = new CompilerCallback() {
-                    public void call(IR_Scope m) {
-                        build(yieldNode.getArgsNode(), m,true);
-                    }
-                };
-            }
-
-            m.getInvocationCompiler().yield(argsCallback2, yieldNode.getExpandArguments());
-        }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+    public Operand buildYield(Node node, IR_Scope s) {
+        List<Operand> args = setupArgs(((YieldNode)node).getArgsNode());
+        Variable      ret  = s.getNewTmpVariable();
+        s.addInstr(new YIELD_Instr(ret, args));
+        return ret;
     }
 
     public Operand buildZArray(Node node, IR_Scope m) {
