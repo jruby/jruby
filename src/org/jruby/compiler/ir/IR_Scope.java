@@ -34,4 +34,13 @@ public interface IR_Scope
         // This might be possible if the constant is defined and is not a forward reference
         // to a value that will be defined later in the class.
     public Operand setConstantValue(String constRef);
+
+        // While processing loops, this returns the loop that we are processing.
+    public IR_Loop getCurrentLoop();
+
+        // Record the loop we are beginning to process
+    public void startLoop(IR_Loop l);
+
+        // Indicate that we are done processing the loop
+    public void endLoop(IR_Loop l);
 }

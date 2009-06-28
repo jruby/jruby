@@ -10,8 +10,8 @@ public class IR_Closure implements IR_ScopeImpl
     public IR_Closure(IR_Scope parent) 
 	 { 
 		 super(parent); 
-		  _startLabel = new Label("_LBL_start");
-		  _endLabel   = new Label("_LBL_end");
+		  _startLabel = getNewLabel("_CLOSURE_START_");
+		  _endLabel   = getNewLabel("_CLOSURE_END_");
 	 }
 
     public Operand getConstantValue(String constRef)

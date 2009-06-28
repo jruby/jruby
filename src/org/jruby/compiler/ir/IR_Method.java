@@ -17,8 +17,8 @@ public class IR_Method extends IR_ScopeImpl
         _name = name;
 		  _irName = javaName;
 		 _isInstanceMethod = isInstanceMethod;
-		  _startLabel = new Label("_LBL_start");
-		  _endLabel   = new Label("_LBL_end");
+		  _startLabel = getNewLabel("_METH_START_");
+		  _endLabel   = getNewLabel("_METH_END_");
 	 }
 
     public IR_Method(IR_Scope parent, String name, boolean isInstanceMethod)

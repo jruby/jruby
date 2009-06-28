@@ -257,7 +257,7 @@ public class IR_Builder
             case UNTILNODE: return buildUntil(node, m);
             case VALIASNODE: return buildVAlias(node, m);
             case VCALLNODE: return buildVCall(node, m); // done
-            case WHILENODE: return buildWhile(node, m);
+            case WHILENODE: return buildWhile(node, m); // done
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
             case XSTRNODE: return buildXStr(node, m); // done
             case YIELDNODE: return buildYield(node, m); // done
@@ -510,7 +510,9 @@ public class IR_Builder
 
     public Operand buildBreak(Node node, IR_Scope m) {
         final BreakNode breakNode = (BreakNode) node;
-        m.addInstr(new BREAK_Instr(build(breakNode.getValueNode(), m)));
+        Operand rv = build(breakNode.getValueNode(), m);
+            // If this is not a closure, the break is equivalent to jumping to the loop end label
+        m.addInstr((s instanceof IR_Closure) ? new BREAK_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._loopEndLabel));
 
             // SSS FIXME: Should I be returning the operand constructed here?
         return Nil.NIL;
@@ -2215,9 +2217,10 @@ public class IR_Builder
     public Operand buildNext(Node node, IR_Scope s) {
         final NextNode nextNode = (NextNode) node;
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
-        // SSS FIXME: Is the ordering correct? (poll before next)
+        // SSS FIXME: 1. Is the ordering correct? (poll before next)
+        // SSS FIXME: 2. If s is a closure, couldn't I convert this to a CLOSURE_RETURN?
         m.addInstr(new THREAD_POLL_Instr());
-        m.addInstr(new NEXT_Instr(rv)); // NOTE: If s is a closure, couldn't I convert this to a CLOSURE_RETURN?
+        m.addInstr((s instanceof IR_Closure) ? new NEXT_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._iterEndLabel));
         return rv;
     }
 
@@ -2767,13 +2770,13 @@ public class IR_Builder
         return null;
     }
 
-    public Operand buildSelf(Node node, IR_Scope m) {
-        return m.getSelf();
+    public Operand buildSelf(Node node, IR_Scope s) {
+        return s.getSelf();
     }
 
-    public Operand buildSplat(Node node, IR_Scope m) {
+    public Operand buildSplat(Node node, IR_Scope s) {
         SplatNode splatNode = (SplatNode) node;
-        return new Splat(build(splatNode.getValue(), m));
+        return new Splat(build(splatNode.getValue(), s));
     }
 
     public Operand buildStr(Node node, IR_Scope s) {
@@ -2880,32 +2883,37 @@ public class IR_Builder
         return callResult;
     }
 
-    public Operand buildWhile(Node node, IR_Scope m) {
+    public Operand buildWhile(Node node, IR_Scope s) {
         final WhileNode whileNode = (WhileNode) node;
-        if (whileNode.getConditionNode().getNodeType().alwaysFalse() && whileNode.evaluateAtStart()) {
+        boolean isDoWhile = !whileNode.evaluateAtStart();
+        if (whileNode.getConditionNode().getNodeType().alwaysFalse() && !isDoWhile) {
             return Nil.NIL;
-        } else {
-            BranchCallback condition = new BranchCallback() {
-                public void branch(IR_Scope m) {
-                    build(whileNode.getConditionNode(), m, true);
-                }
-            };
+        } 
+        else {
+            IR_Loop loop = new IR_Loop(s);
+            s.startLoop(loop);
+            s.addInstr(new LABEL_Instr(loop._loopStartLabel));
 
-            BranchCallback body = new BranchCallback() {
-                public void branch(IR_Scope m) {
-                    if (whileNode.getBodyNode() != null) {
-                        build(whileNode.getBodyNode(), m, true);
-                    }
-                }
-            };
+            if (!isDoWhile) {
+                Operand cv = build(whileNode.getConditionNode(), s);
+                s.addInstr(new BEQ_Instr(cv, BooleanLiteral.FALSE, loop._loopEndLabel));
+            }
+            s.addInstr(new LABEL_Instr(loop._iterStartLabel));
 
-            if (whileNode.containsNonlocalFlow) {
-                m.performBooleanLoopSafe(condition, body, whileNode.evaluateAtStart());
-            } else {
-                m.performBooleanLoopLight(condition, body, whileNode.evaluateAtStart());
+            if (whileNode.getBodyNode() != null)
+                build(whileNode.getBodyNode(), s);
+
+                // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
+            m.addInstr(new THREAD_POLL_Instr());
+
+            s.addInstr(new LABEL_Instr(loop._iterEndLabel));
+            if (isDoWhile) {
+                Operand cv = build(whileNode.getConditionNode(), s);
+                s.addInstr(new BEQ_Instr(cv, BooleanLiteral.TRUE, loop._iterStartLabel));
             }
 
-            m.addInstr(new THREAD_POLL_Instr());
+            s.addInstr(new LABEL_Instr(loop._loopEndLabel));
+            s.endLoop(loop);
             return Nil.NIL;
         }
     }
@@ -2967,31 +2975,15 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public void buildArrayArguments(List<Operand> args, Node node, IR_Scope m) {
-        ArrayNode arrayNode = (ArrayNode) node;
-
-        ArrayCallback callback = new ArrayCallback() {
-
-                    public void nextValue(IR_Scope m, Object sourceArray, int index) {
-                        Node node = (Node) ((Object[]) sourceArray)[index];
-                        build(node, m,true);
-                    }
-                };
-
-        m.setLinePosition(arrayNode.getPosition());
-        m.createObjectArray(arrayNode.childNodes().toArray(), callback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
-    // leave as a normal array
+    public void buildArrayArguments(List<Operand> args, Node node, IR_Scope s) {
+        // SSS FIXME: Where does this go?
+        // m.setLinePosition(arrayNode.getPosition());
+        args.add(buildArray(node, s));
     }
 
-    public void buildSplatArguments(List<Operand> args, Node node, IR_Scope m) {
-        SplatNode splatNode = (SplatNode) node;
-
-        build(splatNode.getValue(), m,true);
-        m.splatCurrentValue();
-        m.convertToJavaArray();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+    public void buildSplatArguments(List<Operand> args, Node node, IR_Scope s) {
+        // SSS FIXME: Why convert to java array?  And, where does this go?
+        // s.convertToJavaArray();
+        args.add(buildSplat(node, s));
     }
 }
