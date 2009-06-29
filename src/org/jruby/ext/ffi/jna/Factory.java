@@ -39,7 +39,6 @@ import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.CallbackManager;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ThreadContext;
@@ -146,6 +145,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             case INT16:
             case UINT16:
                 return 2;
+            case BOOL:
             case INT32:
             case UINT32:
                 return 4;
@@ -180,6 +180,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             case INT16:
             case UINT16:
                 return 2;
+            case BOOL:
             case INT32:
             case UINT32:
                 return 4;

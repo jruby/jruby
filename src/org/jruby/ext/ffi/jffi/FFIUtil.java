@@ -24,6 +24,7 @@ public final class FFIUtil {
     private static final Map<NativeType, com.kenai.jffi.Type> buildTypeMap() {
         Map<NativeType, com.kenai.jffi.Type> m = new EnumMap<NativeType, com.kenai.jffi.Type>(NativeType.class);
         m.put(NativeType.VOID, com.kenai.jffi.Type.VOID);
+        m.put(NativeType.BOOL, com.kenai.jffi.Type.UINT32);
         m.put(NativeType.INT8, com.kenai.jffi.Type.SINT8);
         m.put(NativeType.INT16, com.kenai.jffi.Type.SINT16);
         m.put(NativeType.INT32, com.kenai.jffi.Type.SINT32);

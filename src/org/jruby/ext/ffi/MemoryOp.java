@@ -8,6 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Defines memory operations for a primitive type
  */
 abstract class MemoryOp {
+    public static final MemoryOp BOOL = new BooleanOp();
     public static final MemoryOp INT8 = new Signed8();
     public static final MemoryOp UINT8 = new Unsigned8();
     public static final MemoryOp INT16 = new Signed16();
@@ -21,6 +22,8 @@ abstract class MemoryOp {
 
     public static final MemoryOp getMemoryOp(NativeType type) {
         switch (type) {
+            case BOOL:
+                return BOOL;
             case INT8:
                 return INT8;
             case UINT8:
@@ -54,6 +57,16 @@ abstract class MemoryOp {
     
     abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
     abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
+
+    static final class BooleanOp extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, value.isTrue() ? 1 : 0);
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return runtime.newBoolean(io.getInt(offset) != 0);
+        }
+    }
 
     static final class Signed8 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {

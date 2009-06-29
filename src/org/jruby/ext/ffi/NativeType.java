@@ -35,6 +35,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public enum NativeType implements NativeParam {
     VOID,
+    BOOL,
     INT8,
     UINT8,
     INT16,

@@ -158,6 +158,7 @@ public abstract class Type extends RubyObject {
     private static final boolean isPrimitive(NativeType type) {
         switch (type) {
             case VOID:
+            case BOOL:
             case INT8:
             case UINT8:
             case INT16:

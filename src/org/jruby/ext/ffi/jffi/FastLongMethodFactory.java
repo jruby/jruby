@@ -35,6 +35,7 @@ public class FastLongMethodFactory {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
                 case VOID:
+                case BOOL:
                 case INT8:
                 case UINT8:
                 case INT16:
@@ -56,6 +57,7 @@ public class FastLongMethodFactory {
     final boolean isFastLongParam(Type paramType) {
         if (paramType instanceof Type.Builtin) {
             switch (paramType.getNativeType()) {
+                case BOOL:
                 case INT8:
                 case UINT8:
                 case INT16:
@@ -96,6 +98,7 @@ public class FastLongMethodFactory {
     }
     final LongParameterConverter getLongParameterConverter(Type type) {
         switch (type.getNativeType()) {
+            case BOOL: return BooleanParameterConverter.INSTANCE;
             case INT8: return Signed8ParameterConverter.INSTANCE;
             case UINT8: return Unsigned8ParameterConverter.INSTANCE;
             case INT16: return Signed16ParameterConverter.INSTANCE;
@@ -125,6 +128,7 @@ public class FastLongMethodFactory {
     final LongResultConverter getLongResultConverter(Type type) {
         switch (type.getNativeType()) {
             case VOID: return VoidResultConverter.INSTANCE;
+            case BOOL: return BooleanResultConverter.INSTANCE;
             case INT8: return Signed8ResultConverter.INSTANCE;
             case UINT8: return Unsigned8ResultConverter.INSTANCE;
             case INT16: return Signed16ResultConverter.INSTANCE;
@@ -157,6 +161,14 @@ public class FastLongMethodFactory {
             return context.getRuntime().getNil();
         }
     }
+
+    static final class BooleanResultConverter implements LongResultConverter {
+        public static final LongResultConverter INSTANCE = new Signed8ResultConverter();
+        public final IRubyObject fromNative(ThreadContext context, long value) {
+            return context.getRuntime().newBoolean(value != 0);
+        }
+    }
+
     static final class Signed8ResultConverter implements LongResultConverter {
         public static final LongResultConverter INSTANCE = new Signed8ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, long value) {
@@ -239,6 +251,12 @@ public class FastLongMethodFactory {
     }
     static abstract class BaseParameterConverter implements LongParameterConverter {
         static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
+    }
+    static final class BooleanParameterConverter extends BaseParameterConverter {
+        public static final LongParameterConverter INSTANCE = new BooleanParameterConverter();
+        public final long longValue(ThreadContext context, IRubyObject obj) {
+            return obj.isTrue() ? 1 : 0;
+        }
     }
     static final class Signed8ParameterConverter extends BaseParameterConverter {
         public static final LongParameterConverter INSTANCE = new Signed8ParameterConverter();

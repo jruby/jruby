@@ -43,6 +43,7 @@ public class FastIntMethodFactory {
                 case UINT16:
                 case INT32:
                 case UINT32:
+                case BOOL:
                     return true;
                 case POINTER:
                 case STRING:
@@ -64,6 +65,7 @@ public class FastIntMethodFactory {
                 case UINT16:
                 case INT32:
                 case UINT32:
+                case BOOL:
 //                case FLOAT32:
                     return true;
                 case LONG:
@@ -102,6 +104,7 @@ public class FastIntMethodFactory {
     
     final IntParameterConverter getIntParameterConverter(NativeParam type) {
         switch ((NativeType) type) {
+            case BOOL: return BooleanParameterConverter.INSTANCE;
             case INT8: return Signed8ParameterConverter.INSTANCE;
             case UINT8: return Unsigned8ParameterConverter.INSTANCE;
             case INT16: return Signed16ParameterConverter.INSTANCE;
@@ -137,6 +140,7 @@ public class FastIntMethodFactory {
     final IntResultConverter getIntResultConverter(NativeType type) {
         switch (type) {
             case VOID: return VoidResultConverter.INSTANCE;
+            case BOOL: return BooleanResultConverter.INSTANCE;
             case INT8: return Signed8ResultConverter.INSTANCE;
             case UINT8: return Unsigned8ResultConverter.INSTANCE;
             case INT16: return Signed16ResultConverter.INSTANCE;
@@ -172,6 +176,12 @@ public class FastIntMethodFactory {
         public static final IntResultConverter INSTANCE = new VoidResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
             return context.getRuntime().getNil();
+        }
+    }
+    static final class BooleanResultConverter implements IntResultConverter {
+        public static final IntResultConverter INSTANCE = new BooleanResultConverter();
+        public final IRubyObject fromNative(ThreadContext context, int value) {
+            return context.getRuntime().newBoolean(value != 0);
         }
     }
     static final class Signed8ResultConverter implements IntResultConverter {
@@ -241,6 +251,12 @@ public class FastIntMethodFactory {
             return true;
         }
 
+    }
+    static final class BooleanParameterConverter extends BaseParameterConverter {
+        public static final IntParameterConverter INSTANCE = new BooleanParameterConverter();
+        public final int intValue(ThreadContext context, IRubyObject obj) {
+            return obj.isTrue() ? 1 : 0;
+        }
     }
     static final class Signed8ParameterConverter extends BaseParameterConverter {
         public static final IntParameterConverter INSTANCE = new Signed8ParameterConverter();

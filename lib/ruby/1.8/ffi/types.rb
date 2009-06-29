@@ -84,6 +84,9 @@ module FFI
   # For when a function has no return value
   add_typedef(NativeType::VOID, :void)
 
+  # Native boolean type
+  add_typedef(NativeType::BOOL, :bool)
+
   # Converts NUL-terminated C strings
   add_typedef(NativeType::STRING, :string)
 

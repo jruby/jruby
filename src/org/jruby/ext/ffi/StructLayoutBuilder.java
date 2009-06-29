@@ -265,6 +265,7 @@ public final class StructLayoutBuilder extends RubyObject {
     static StructLayout.Member createBuiltinMember(Type.Builtin type, final int index, final long offset) {
 
         switch (type.getNativeType()) {
+            case BOOL:
             case INT8:
             case UINT8:
             case INT16:

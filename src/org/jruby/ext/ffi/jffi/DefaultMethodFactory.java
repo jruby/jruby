@@ -151,6 +151,8 @@ public final class DefaultMethodFactory {
         switch (returnType) {
             case VOID:
                 return VoidInvoker.INSTANCE;
+            case BOOL:
+                return BooleanInvoker.INSTANCE;
             case POINTER:
                 return PointerInvoker.INSTANCE;
             case INT8:
@@ -242,6 +244,8 @@ public final class DefaultMethodFactory {
      */
     static final ParameterMarshaller getMarshaller(NativeType type) {
         switch (type) {
+            case BOOL:
+                return BooleanMarshaller.INSTANCE;
             case INT8:
                 return Signed8Marshaller.INSTANCE;
             case UINT8:
@@ -299,6 +303,17 @@ public final class DefaultMethodFactory {
             return runtime.getNil();
         }
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
+    }
+
+    /**
+     * Invokes the native function with a boolean return value.
+     * Returns a Boolean to ruby.
+     */
+    private static final class BooleanInvoker extends BaseInvoker {
+        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+            return runtime.newBoolean(invoker.invokeInt(function, args) != 0);
+        }
+        public static final FunctionInvoker INSTANCE = new BooleanInvoker();
     }
 
     /**
@@ -522,6 +537,19 @@ public final class DefaultMethodFactory {
         public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             marshal(invocation.getThreadContext(), buffer, parameter);
         }
+    }
+
+    /**
+     * Converts a ruby Boolean into an 32 bit native integer.
+     */
+    static final class BooleanMarshaller extends BaseMarshaller {
+        public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            buffer.putInt(parameter.isTrue() ? 1 : 0);
+        }
+        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            buffer.putInt(parameter.isTrue() ? 1 : 0);
+        }
+        public static final ParameterMarshaller INSTANCE = new BooleanMarshaller();
     }
 
     /**
