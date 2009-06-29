@@ -254,7 +254,7 @@ public class IR_Builder
             case TOARYNODE: return buildToAry(node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
             case UNDEFNODE: return buildUndef(node, m);
-            case UNTILNODE: return buildUntil(node, m);
+            case UNTILNODE: return buildUntil(node, m); // done
             case VALIASNODE: return buildVAlias(node, m);
             case VCALLNODE: return buildVCall(node, m); // done
             case WHILENODE: return buildWhile(node, m); // done
@@ -2827,42 +2827,46 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildUntil(Node node, IR_Scope m) {
-        final UntilNode untilNode = (UntilNode) node;
+    private Operand buildConditionalLoop(IR_Scope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
+    {
+        if (isLoopHeadCondition && (   (isWhile && conditionNode.getNodeType().alwaysFalse()) 
+                                    || (!isWhile && conditionNode.getNodeType().alwaysTrue())))
+        {
+            // we won't enter the loop -- just build the condition node
+            build(conditionNode, m);
+        } 
+        else {
+            IR_Loop loop = new IR_Loop(s);
+            s.startLoop(loop);
+            s.addInstr(new LABEL_Instr(loop._loopStartLabel));
 
-        if (untilNode.getConditionNode().getNodeType().alwaysTrue() &&
-                untilNode.evaluateAtStart()) {
-            // condition is always true, just build it and not body
-            build(untilNode.getConditionNode(), m, false);
-            if (expr) m.loadNil();
-        } else {
-            BranchCallback condition = new BranchCallback() {
+            if (isLoopHeadCondition) {
+                Operand cv = build(conditionNode, s);
+                s.addInstr(new BEQ_Instr(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, loop._loopEndLabel));
+            }
+            s.addInstr(new LABEL_Instr(loop._iterStartLabel));
 
-                public void branch(IR_Scope m) {
-                    build(untilNode.getConditionNode(), m, true);
-                    m.negateCurrentValue();
-                }
-            };
+            if (bodyNode != null)
+                build(bodyNode, s);
 
-            BranchCallback body = new BranchCallback() {
+                // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
+            m.addInstr(new THREAD_POLL_Instr());
 
-                public void branch(IR_Scope m) {
-                    if (untilNode.getBodyNode() != null) {
-                        build(untilNode.getBodyNode(), m, true);
-                    }
-                }
-            };
-
-            if (untilNode.containsNonlocalFlow) {
-                m.performBooleanLoopSafe(condition, body, untilNode.evaluateAtStart());
-            } else {
-                m.performBooleanLoopLight(condition, body, untilNode.evaluateAtStart());
+            s.addInstr(new LABEL_Instr(loop._iterEndLabel));
+            if (!isLoopHeadCondition) {
+                Operand cv = build(conditionNode, s);
+                s.addInstr(new BEQ_Instr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop._iterStartLabel));
             }
 
-            m.addInstr(new THREAD_POLL_Instr());
-            // TODO: don't require pop
-            if (!expr) m.consumeCurrentValue();
+            s.addInstr(new LABEL_Instr(loop._loopEndLabel));
+            s.endLoop(loop);
         }
+        return Nil.NIL;
+    }
+
+    public Operand buildUntil(Node node, IR_Scope m) {
+        final UntilNode untilNode = (UntilNode) node;
+        return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, !untilNode.evaluateAtStart());
     }
 
     public Operand buildVAlias(Node node, IR_Scope m) {
@@ -2883,37 +2887,7 @@ public class IR_Builder
 
     public Operand buildWhile(Node node, IR_Scope s) {
         final WhileNode whileNode = (WhileNode) node;
-        boolean isDoWhile = !whileNode.evaluateAtStart();
-        if (whileNode.getConditionNode().getNodeType().alwaysFalse() && !isDoWhile) {
-            return Nil.NIL;
-        } 
-        else {
-            IR_Loop loop = new IR_Loop(s);
-            s.startLoop(loop);
-            s.addInstr(new LABEL_Instr(loop._loopStartLabel));
-
-            if (!isDoWhile) {
-                Operand cv = build(whileNode.getConditionNode(), s);
-                s.addInstr(new BEQ_Instr(cv, BooleanLiteral.FALSE, loop._loopEndLabel));
-            }
-            s.addInstr(new LABEL_Instr(loop._iterStartLabel));
-
-            if (whileNode.getBodyNode() != null)
-                build(whileNode.getBodyNode(), s);
-
-                // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
-            m.addInstr(new THREAD_POLL_Instr());
-
-            s.addInstr(new LABEL_Instr(loop._iterEndLabel));
-            if (isDoWhile) {
-                Operand cv = build(whileNode.getConditionNode(), s);
-                s.addInstr(new BEQ_Instr(cv, BooleanLiteral.TRUE, loop._iterStartLabel));
-            }
-
-            s.addInstr(new LABEL_Instr(loop._loopEndLabel));
-            s.endLoop(loop);
-            return Nil.NIL;
-        }
+        return buildConditionalLoop(s, whileNode.getConditionNode(), whileNode.getBodyNode(), true, !whileNode.evaluateAtStart());
     }
 
     public Operand buildXStr(Node node, IR_Scope m) {
