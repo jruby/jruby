@@ -98,8 +98,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 if (cb != null) {
                     return cb;
                 }
+            } else {
+                callbackMap.put(proc, map = Collections.synchronizedMap(new HashMap<CallbackInfo, Callback>(2)));
             }
-            callbackMap.put(proc, map = Collections.synchronizedMap(new HashMap<CallbackInfo, Callback>(2)));
         }
 
         ClosureInfo info = infoMap.get(cbInfo);
@@ -199,8 +200,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             IRubyObject retVal;
             if (recv instanceof RubyProc) {
                 retVal = ((RubyProc) recv).call(runtime.getCurrentContext(), params);
-            } else {
+            } else if (recv instanceof Block) {
                 retVal = ((Block) recv).call(runtime.getCurrentContext(), params);
+            } else {
+                retVal = ((IRubyObject) recv).callMethod(runtime.getCurrentContext(), "call", params);
             }
             setReturnValue(runtime, cbInfo.getReturnType(), buffer, retVal);
         }
@@ -322,7 +325,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 default:
             }
         } else if (type instanceof CallbackInfo) {
-            if (value instanceof RubyProc) {
+            if (value instanceof RubyProc || value.respondsTo("call")) {
                 Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, (CallbackInfo) type, value);
                 buffer.setAddressReturn(addressValue(cb));
             } else {
