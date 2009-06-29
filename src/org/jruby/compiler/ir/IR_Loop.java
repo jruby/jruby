@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir;
 
+// SSS FIXME: I could make IR_Loop a scope too ... semantically, it is a scope, but, functionally, not sure if this is required yet ...
 public class IR_Loop
 {
     public final IR_Scope _container;

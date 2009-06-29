@@ -235,13 +235,13 @@ public class IR_Builder
             case ORNODE: return buildOr(node, m); // done
             case POSTEXENODE: return buildPostExe(node, m);
             case PREEXENODE: return buildPreExe(node, m);
-            case REDONODE: return buildRedo(node, m);
+            case REDONODE: return buildRedo(node, m); // done??
             case REGEXPNODE: return buildRegexp(node, m); // done
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
             case RESCUENODE: return buildRescue(node, m);
-            case RETRYNODE: return buildRetry(node, m);
-            case RETURNNODE: return buildReturn(node, m);
+            case RETRYNODE: return buildRetry(node, m); // done??
+            case RETURNNODE: return buildReturn(node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE: return buildSClass(node, m);
@@ -2604,12 +2604,10 @@ public class IR_Builder
         if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildRedo(Node node, IR_Scope m) {
-        //RedoNode redoNode = (RedoNode)node;
-
-        m.issueRedoEvent();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+    public Operand buildRedo(Node node, IR_Scope s) {
+        Label l = s.getCurrentLoop()._iterBeginLabel;
+        m.addInstr((s instanceof IR_Closure) ? new REDO_Instr(l) : new JUMP_Instr(l));
+        return Nil.NIL;
     }
 
     public Operand buildRegexp(Node node, IR_Scope m) {
@@ -2717,12 +2715,12 @@ public class IR_Builder
         m.performBooleanBranch(trueBranch, falseBranch);
     }
 
-    public Operand buildRetry(Node node, IR_Scope m) {
-        m.addInstr(new THREAD_POLL_Instr());
+    public Operand buildRetry(Node node, IR_Scope s) {
+        s.addInstr(new THREAD_POLL_Instr());
 
-        m.issueRetryEvent();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Label l = s.getCurrentLoop()._loopBeginLabel;
+        m.addInstr((s instanceof IR_Closure) ? new RETRY_Instr(l) : new JUMP_Instr(l));
+        return Nil.NIL;
     }
 
     public Operand buildReturn(Node node, IR_Scope m) {
