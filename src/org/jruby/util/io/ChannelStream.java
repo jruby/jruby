@@ -362,10 +362,22 @@ public class ChannelStream implements Stream, Finalizable {
             // Now read unbuffered directly from the file
             //
             while (buf.hasRemaining()) {
-                int n = channel.read(buf);
+                final int MAX_READ_CHUNK = 1 * 1024 * 1024;
+                //
+                // When reading into a heap buffer, the jvm allocates a temporary
+                // direct ByteBuffer of the requested size.  To avoid allocating
+                // a huge direct buffer when doing ludicrous reads (e.g. 1G or more)
+                // we split the read up into chunks of no more than 1M
+                //
+                ByteBuffer tmp = buf.duplicate();
+                if (tmp.remaining() > MAX_READ_CHUNK) {
+                    tmp.limit(tmp.position() + MAX_READ_CHUNK);
+                }
+                int n = channel.read(tmp);
                 if (n <= 0) {
                     break;
                 }
+                buf.position(tmp.position());
             }
             eof = true;
             result.length(buf.position());
