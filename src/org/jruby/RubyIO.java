@@ -1777,9 +1777,6 @@ public class RubyIO extends RubyObject {
         OpenFile newFile = openFile;
         
         try {
-            // TODO: I didn't see where MRI has this check, but it seems to be the right place
-            originalFile.checkClosed(runtime);
-            
             if (originalFile.getPipeStream() != null) {
                 originalFile.getPipeStream().fflush();
                 originalFile.getMainStream().lseek(0, Stream.SEEK_CUR);
@@ -1817,6 +1814,8 @@ public class RubyIO extends RubyObject {
             ChannelDescriptor descriptor = originalFile.getMainStream().getDescriptor().dup();
 
             newFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, modes));
+
+            newFile.getMainStream().setSync(originalFile.getMainStream().isSync());
             
             // TODO: the rest of this...seeking to same position is unnecessary since we share a channel
             // but some of this may be needed?
