@@ -30,6 +30,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.InvocationBuffer;
+import org.jruby.RubyProc;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.Block;
@@ -42,10 +43,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 final class CallbackMarshaller implements ParameterMarshaller {
     private final CallbackInfo cbInfo;
     private final CallingConvention convention;
+
     public CallbackMarshaller(CallbackInfo cbInfo, CallingConvention convention) {
         this.cbInfo = cbInfo;
         this.convention = convention;
     }
+
     public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject value) {
         marshal(invocation.getThreadContext(), buffer, value);
     }
@@ -53,14 +56,16 @@ final class CallbackMarshaller implements ParameterMarshaller {
     public void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject value) {
         if (value.isNil()) {
             buffer.putAddress(0);
-        } else {
+        } else if (value instanceof RubyProc || value.respondsTo("call")) {
             marshalParam(context, buffer, value);
+        } else {
+            throw context.getRuntime().newTypeError("wrong argument type.  Expected callable object");
         }
     }
     void marshal(ThreadContext context, InvocationBuffer buffer, Block value) {
         marshalParam(context, buffer, value);
     }
-    void marshalParam(ThreadContext context, InvocationBuffer buffer, Object value) {
+    private void marshalParam(ThreadContext context, InvocationBuffer buffer, Object value) {
         Pointer cb = CallbackManager.getInstance().getCallback(context.getRuntime(), cbInfo, value);
         buffer.putAddress(((CallbackManager.Callback) cb).getAddress());
     }
