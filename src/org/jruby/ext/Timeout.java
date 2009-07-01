@@ -180,7 +180,7 @@ public class Timeout implements Library {
     
     private static void raiseInThread(Ruby runtime, RubyThread currentThread, IRubyObject exception) {
         if (currentThread.alive_p().isTrue()) {
-            currentThread.internalRaise(new IRubyObject[]{runtime.getClassFromPath("Timeout::ExitException"), runtime.newString("execution expired")});
+            currentThread.internalRaise(new IRubyObject[]{exception, runtime.newString("execution expired")});
         }
     }
 
