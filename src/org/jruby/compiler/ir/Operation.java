@@ -18,6 +18,7 @@ public enum Operation
 
 // value copy and type conversation operations
     COPY(dont_care), TYPE_CVT(dont_care), BOX_VAL(dont_care), UNBOX_OBJ(dont_care),
+    GET_GLOBAL_VAR(dont_care), PUT_GLOBAL_VAR(dont_care),
 
 // alu operations
     ADD(alu_op), SUB(alu_op), MUL(alu_op), DIV(alu_op),
@@ -37,8 +38,8 @@ public enum Operation
 // exception instructions
     THROW(dont_care), RESCUE(dont_care),
 
-// allocate, and instance variable get/set operatiosn
-    NEW_OBJ(obj_op), GET_FIELD(obj_op), SET_FIELD(obj_op),
+// allocate, and instance variable get/set operations
+    NEW_OBJ(obj_op), GET_FIELD(obj_op), PUT_FIELD(obj_op), 
 
 // jump and branch operations
     LABEL(dont_care), BREAK(dont_care),

@@ -209,8 +209,8 @@ public class IR_Builder
             case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
             case FLOATNODE: return buildFloat(node, m); // done
             case FORNODE: return buildFor(node, m); // done
-            case GLOBALASGNNODE: return buildGlobalAsgn(node, m);
-            case GLOBALVARNODE: return buildGlobalVar(node, m);
+            case GLOBALASGNNODE: return buildGlobalAsgn(node, m); // done
+            case GLOBALVARNODE: return buildGlobalVar(node, m); // done
             case HASHNODE: return buildHash(node, m); // done
             case IFNODE: return buildIf(node, m); // done
             case INSTASGNNODE: return buildInstAsgn(node, m); // done
@@ -308,7 +308,7 @@ public class IR_Builder
         args = skipOverNewlines(args);
 
         List<Operand> argsList = new ArrayList<Operand>();
-        argList.add(build(receiver, s, true)); // SSS FIXME: I added this in.  Is this correct?
+        argList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
         buildArgs(argsList, args, s);
 
         return argsList;
@@ -1444,7 +1444,7 @@ public class IR_Builder
                             }
                         }, String.class);
                 m.consumeCurrentValue();
-                MPS_FIXME: new StringLiteral("expression");
+                //MPS_FIXME: new StringLiteral("expression");
         }
     }
 
@@ -1823,30 +1823,9 @@ public class IR_Builder
 
     public Operand buildGlobalAsgn(Node node, IR_Scope m) {
         final GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
-
-        CompilerCallback value = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(globalAsgnNode.getValueNode(), m, true);
-            }
-        };
-
-        if (globalAsgnNode.getName().length() == 2) {
-            switch (globalAsgnNode.getName().charAt(1)) {
-            case '_':
-                m.getVariableCompiler().assignLastLine(value);
-                break;
-            case '~':
-                m.getVariableCompiler().assignBackRef(value);
-                break;
-            default:
-                m.assignGlobalVariable(globalAsgnNode.getName(), value);
-            }
-        } else {
-            m.assignGlobalVariable(globalAsgnNode.getName(), value);
-        }
-
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand value = build(globalAsgnNode.getValueNode(), m);
+        m.addInstr(new PUT_GLOBAL_VAR_Instr(globalAsgnNode.getName(), value));
+        return value;
     }
 
     public Operand buildGlobalAsgnAssignment(Node node, IR_Scope m) {
@@ -1872,29 +1851,9 @@ public class IR_Builder
     }
 
     public Operand buildGlobalVar(Node node, IR_Scope m) {
-        GlobalVarNode globalVarNode = (GlobalVarNode) node;
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-        
-        if (doit) {
-            if (globalVarNode.getName().length() == 2) {
-                switch (globalVarNode.getName().charAt(1)) {
-                case '_':
-                    m.getVariableCompiler().retrieveLastLine();
-                    break;
-                case '~':
-                    m.getVariableCompiler().retrieveBackRef();
-                    break;
-                default:
-                    m.retrieveGlobalVariable(globalVarNode.getName());
-                }
-            } else {
-                m.retrieveGlobalVariable(globalVarNode.getName());
-            }
-        }
-        
-        if (popit) m.consumeCurrentValue();
+        Variable rv  = m.getNewTmpVariable();
+        m.addInstr(new GET_GLOBAL_VAR_Instr(rv, node.getName()));
+        return rv;
     }
 
     public Operand buildHash(Node node, IR_Scope m) {
@@ -2218,9 +2177,10 @@ public class IR_Builder
         final NextNode nextNode = (NextNode) node;
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
         // SSS FIXME: 1. Is the ordering correct? (poll before next)
-        // SSS FIXME: 2. If s is a closure, couldn't I convert this to a CLOSURE_RETURN?
         m.addInstr(new THREAD_POLL_Instr());
-        m.addInstr((s instanceof IR_Closure) ? new NEXT_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._iterEndLabel));
+        // If a closure, the next is simply a return from the closure!
+        // If a regular loop, the next is simply a jump to the end of the iteration
+        m.addInstr((s instanceof IR_Closure) ? new CLOSURE_RETURN_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._iterEndLabel));
         return rv;
     }
 
@@ -2605,8 +2565,9 @@ public class IR_Builder
     }
 
     public Operand buildRedo(Node node, IR_Scope s) {
-        Label l = s.getCurrentLoop()._iterBeginLabel;
-        m.addInstr((s instanceof IR_Closure) ? new REDO_Instr(l) : new JUMP_Instr(l));
+        // For closures, a redo is a jump to the beginning of the closure
+        // For non-closures, a redo is a jump to the beginning of the loop
+        m.addInstr(new JUMP_Instr((s instanceof IR_Closure) ? ((IR_Closure)s)._startLabel : s.getCurrentLoop()._iterBeginLabel));
         return Nil.NIL;
     }
 
@@ -2716,10 +2677,10 @@ public class IR_Builder
     }
 
     public Operand buildRetry(Node node, IR_Scope s) {
+        // JRuby only supports retry when present in rescue blocks!
+        // 1.9 doesn't support retry anywhere else.
         s.addInstr(new THREAD_POLL_Instr());
-
-        Label l = s.getCurrentLoop()._loopBeginLabel;
-        m.addInstr((s instanceof IR_Closure) ? new RETRY_Instr(l) : new JUMP_Instr(l));
+        s.addInstr(new RETRY_Instr(l));
         return Nil.NIL;
     }
 
