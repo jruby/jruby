@@ -532,188 +532,74 @@ public class IR_Builder
     public Operand buildCase(Node node, IR_Scope m) {
         CaseNode caseNode = (CaseNode) node;
 
-        boolean hasCase = caseNode.getCaseNode() != null;
+        // get the incoming case value
+        Operand value = build(caseNode.getCaseNode(), m);
 
-        // aggregate when nodes into a list, unfortunately, this is no
-        List<Node> cases = caseNode.getCases().childNodes();
+        // the CASE instruction
+        Label endLabel = m.getNewLabel();
+        CASE_Instr caseInstr = new CASE_Instr(null, value, endLabel);
+        m.addInstr(caseInstr);
 
-        // last node, either !instanceof WhenNode or null, is the else
-        Node elseNode = caseNode.getElseNode();
+        // lists to aggregate variables and bodies for whens
+        List<Variable> variables = new ArrayList<Variable>();
+        List<Label> labels = new ArrayList<Label>();
 
-        buildWhen(caseNode.getCaseNode(), cases, elseNode, m, hasCase);
-    }
+        Map<Label, Node> bodies = new HashMap<Label, Node>();
 
-    private FastSwitchType getHomogeneousSwitchType(List<Node> whenNodes) {
-        FastSwitchType foundType = null;
-        Outer: for (Node node : whenNodes) {
-            WhenNode whenNode = (WhenNode)node;
-            if (whenNode.getExpressionNodes() instanceof ArrayNode) {
-                ArrayNode arrayNode = (ArrayNode)whenNode.getExpressionNodes();
+        // build each "when"
+        for (Node aCase : caseNode.getCases().childNodes()) {
+            WhenNode whenNode = (WhenNode)aCase;
+            Label bodyLabel = m.getNewLabel();
 
-                for (Node maybeFixnum : arrayNode.childNodes()) {
-                    if (maybeFixnum instanceof FixnumNode) {
-                        FixnumNode fixnumNode = (FixnumNode)maybeFixnum;
-                        long value = fixnumNode.getValue();
-                        if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-                            if (foundType != null && foundType != FastSwitchType.FIXNUM) return null;
-                            if (foundType == null) foundType = FastSwitchType.FIXNUM;
-                            continue;
-                        } else {
-                            return null;
-                        }
-                    } else {
-                        return null;
-                    }
-                }
-            } else if (whenNode.getExpressionNodes() instanceof FixnumNode) {
-                FixnumNode fixnumNode = (FixnumNode)whenNode.getExpressionNodes();
-                long value = fixnumNode.getValue();
-                if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-                    if (foundType != null && foundType != FastSwitchType.FIXNUM) return null;
-                    if (foundType == null) foundType = FastSwitchType.FIXNUM;
-                    continue;
-                } else {
-                    return null;
-                }
-            } else if (whenNode.getExpressionNodes() instanceof StrNode) {
-                StrNode strNode = (StrNode)whenNode.getExpressionNodes();
-                if (strNode.getValue().length() == 1) {
-                    if (foundType != null && foundType != FastSwitchType.SINGLE_CHAR_STRING) return null;
-                    if (foundType == null) foundType = FastSwitchType.SINGLE_CHAR_STRING;
+            if (whenNode.getExpressionNodes() instanceof ListNode) {
+                // multiple conditions for when
+                for (Node expression : ((ListNode)whenNode.getExpressionNodes()).childNodes()) {
+                    Variable eqqResult = m.getNewVariable();
 
-                    continue;
-                } else {
-                    if (foundType != null && foundType != FastSwitchType.STRING) return null;
-                    if (foundType == null) foundType = FastSwitchType.STRING;
-
-                    continue;
-                }
-            } else if (whenNode.getExpressionNodes() instanceof SymbolNode) {
-                SymbolNode symbolNode = (SymbolNode)whenNode.getExpressionNodes();
-                if (symbolNode.getName().length() == 1) {
-                    if (foundType != null && foundType != FastSwitchType.SINGLE_CHAR_SYMBOL) return null;
-                    if (foundType == null) foundType = FastSwitchType.SINGLE_CHAR_SYMBOL;
-
-                    continue;
-                } else {
-                    if (foundType != null && foundType != FastSwitchType.SYMBOL) return null;
-                    if (foundType == null) foundType = FastSwitchType.SYMBOL;
-
-                    continue;
+                    variables.add(eqqResult);
+                    labels.add(bodyLabel);
+                    
+                    m.addInstr(new EQQ_Instr(eqqResult, build(expression, m), value));
+                    m.addInstr(new BTRUE_Instr(eqqResult, bodyLabel));
                 }
             } else {
-                return null;
+                Variable eqqResult = m.getNewVariable();
+
+                variables.add(eqqResult);
+                labels.add(bodyLabel);
+
+                m.addInstr(new EQQ_Instr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
+                m.addInstr(new BTRUE_Instr(eqqResult, bodyLabel));
             }
+
+            // add body to map for emitting later
+            bodies.put(bodyLabel, whenNode.getBodyNode());
         }
-        return foundType;
-    }
 
-    public Operand buildWhen(final Node value, List<Node> whenNodes, final Node elseNode, IR_Scope m, final boolean expr, final boolean hasCase) {
-        CompilerCallback caseValue = null;
-        if (value != null) caseValue = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(value, m, true);
-                m.addInstr(new THREAD_POLL_Instr());
-            }
-        };
+        // build "else" if it exists
+        if (caseNode.getElseNode() != null) {
+            Label elseLbl = m.getNewLabel();
+            caseInstr.setElse(elseLbl);
 
-        List<ArgumentsCallback> conditionals = new ArrayList<ArgumentsCallback>();
-        List<CompilerCallback> bodies = new ArrayList<CompilerCallback>();
-        Map<CompilerCallback, int[]> switchCases = null;
-        FastSwitchType switchType = getHomogeneousSwitchType(whenNodes);
-        if (switchType != null) {
-            // NOTE: Currently this optimization is limited to the following situations:
-            // * All expressions must be int-ranged literal fixnums
-            // It also still emits the code for the "safe" when logic, which is rather
-            // wasteful (since it essentially doubles each code body). As such it is
-            // normally disabled, but it serves as an example of how this optimization
-            // could be done. Ideally, it should be combined with the when processing
-            // to improve code reuse before it's generally available.
-            switchCases = new HashMap<CompilerCallback, int[]>();
+            bodies.put(elseLbl, caseNode.getElseNode());
         }
-        for (Node node : whenNodes) {
-            final WhenNode whenNode = (WhenNode)node;
-            CompilerCallback body = new CompilerCallback() {
-                public void call(IR_Scope m) {
-                    build(whenNode.getBodyNode(), m);
-                }
-            };
-            addConditionalForWhen(whenNode, conditionals, bodies, body);
-            if (switchCases != null) switchCases.put(body, getOptimizedCases(whenNode));
+
+        // now emit bodies
+        for (Map.Entry<Label, Node> entry : bodies.entrySet()) {
+            m.addInstr(new LABEL_Instr(entry.getKey()));
+            build(entry.getValue(), m);
+            m.addInstr(new JUMP_Instr(endLabel));
         }
-        
-        CompilerCallback fallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(elseNode, m);
-            }
-        };
-        
-        m.buildSequencedConditional(caseValue, switchType, switchCases, conditionals, bodies, fallback);
-    }
 
-    private int[] getOptimizedCases(WhenNode whenNode) {
-        if (whenNode.getExpressionNodes() instanceof ArrayNode) {
-            ArrayNode expression = (ArrayNode)whenNode.getExpressionNodes();
-            if (expression.get(expression.size() - 1) instanceof WhenNode) {
-                // splatted when, can't do it yet
-                return null;
-            }
+        // close it out
+        m.addInstr(new LABEL_Instr(endLabel));
+        caseInstr.setLabels(labels);
+        caseInstr.setVariables(variables);
 
-            int[] cases = new int[expression.size()];
-            for (int i = 0; i < cases.length; i++) {
-                switch (expression.get(i).getNodeType()) {
-                case FIXNUMNODE:
-                    cases[i] = (int)((FixnumNode)expression.get(i)).getValue();
-                    break;
-                default:
-                    // can't do it
-                    return null;
-                }
-            }
-            return cases;
-        } else if (whenNode.getExpressionNodes() instanceof FixnumNode) {
-            FixnumNode fixnumNode = (FixnumNode)whenNode.getExpressionNodes();
-            return new int[] {(int)fixnumNode.getValue()};
-        } else if (whenNode.getExpressionNodes() instanceof StrNode) {
-            StrNode strNode = (StrNode)whenNode.getExpressionNodes();
-            if (strNode.getValue().length() == 1) {
-                return new int[] {strNode.getValue().get(0)};
-            } else {
-                return new int[] {strNode.getValue().hashCode()};
-            }
-        } else if (whenNode.getExpressionNodes() instanceof SymbolNode) {
-            SymbolNode symbolNode = (SymbolNode)whenNode.getExpressionNodes();
-            if (symbolNode.getName().length() == 1) {
-                return new int[] {symbolNode.getName().charAt(0)};
-            } else {
-                return new int[] {symbolNode.getName().hashCode()};
-            }
-        }
-        return null;
-    }
+        // CON FIXME: I don't know how to make case be an expression...does that
+        // logic need to go here?
 
-    private void addConditionalForWhen(final WhenNode whenNode, List<ArgumentsCallback> conditionals, List<CompilerCallback> bodies, CompilerCallback body) {
-        bodies.add(body);
-
-        // If it's a single-arg when but contains an array, we know it's a real literal array
-        // FIXME: This is a gross way to figure it out; parser help similar to yield argument passing (expandArguments) would be better
-        if (whenNode.getExpressionNodes() instanceof ArrayNode) {
-            if (whenNode instanceof WhenOneArgNode) {
-                // one arg but it's an array, treat it as a proper array
-                conditionals.add(new ArgumentsCallback() {
-                    public int getArity() {
-                        return 1;
-                    }
-
-                    public void call(IR_Scope m) {
-                        build(whenNode.getExpressionNodes(), m, true);
-                    }
-                });
-                return;
-            }
-        }
-        // otherwise, use normal args buildr
-        conditionals.add(setupArgs(whenNode.getExpressionNodes()));
+        return caseInstr;
     }
 
     public Operand buildClass(Node node, IR_Scope s) {

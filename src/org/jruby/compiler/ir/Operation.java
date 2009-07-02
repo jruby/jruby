@@ -47,7 +47,14 @@ public enum Operation
 // jump and branch operations
     LABEL(dont_care), BREAK(dont_care),
     JUMP(branch_op), BEQ(branch_op), BNE(branch_op), BLE(branch_op), BLT(branch_op), BGE(branch_op), BGT(branch_op),
+    BTRUE(branch_op),
 
 // others
-    THREAD_POLL(dont_care)
+    THREAD_POLL(dont_care),
+
+// a === call used only for its conditional results, as in case/when, begin/rescue, ...
+    EQQ(call_op),
+
+// a case/when branch
+    CASE(branch_op)
 }
