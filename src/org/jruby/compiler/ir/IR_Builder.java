@@ -187,9 +187,9 @@ public class IR_Builder
             case CLASSVARNODE: return buildClassVar(node, m); // done
             case CLASSVARASGNNODE: return buildClassVarAsgn(node, m); // done
             case CLASSVARDECLNODE: return buildClassVarDecl(node, m);
-            case COLON2NODE: return buildColon2(node, m);
-            case COLON3NODE: return buildColon3(node, m);
-            case CONSTDECLNODE: return buildConstDecl(node, m);
+            case COLON2NODE: return buildColon2(node, m); // done
+            case COLON3NODE: return buildColon3(node, m); // done
+            case CONSTDECLNODE: return buildConstDecl(node, m); // done
             case CONSTNODE: return buildConst(node, m); // done
             case DASGNNODE: return buildDAsgn(node, m); // done
             case DEFINEDNODE: return buildDefined(node, m);
@@ -852,21 +852,23 @@ public class IR_Builder
     }
 
     public Operand buildConstDecl(Node node, IR_Scope s) {
-        // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
+        Operand       val;
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
-        Node constNode = constDeclNode.getConstNode();
+        Node          constNode     = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            Operand val = build(constDeclNode.getValueNode(), s);
-            s.assignConstantInCurrent(constDeclNode.getName());
+            val = build(constDeclNode.getValueNode(), s);
+            s.setConstantValue(constDeclNode.getName(), val);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
-            Operand val = build(constDeclNode.getValueNode(), s);
-            s.assignConstantInModule(constDeclNode.getName());
-        } else {// colon3, assign in Object
-            Operand val = build(constDeclNode.getValueNode(), s);
-            s.assignConstantInObject(constDeclNode.getName());
+            val = build(constDeclNode.getValueNode(), s);
+            s.addInstr(new PUT_CONST_Instr(module, constDeclNode.getName(), val);
+        } else { // colon3, assign in Object
+            val = build(constDeclNode.getValueNode(), s);
+            s.addInstr(new PUT_CONST_Instr(s.getSelf(), constDeclNode.getName(), val));
         }
+
+        return val;
     }
 
     public Operand buildConstDeclAssignment(Node node, IR_Scope m) {
@@ -888,69 +890,46 @@ public class IR_Builder
     }
 
     public Operand buildConst(Node node, IR_Scope s) {
-        String constName = ((ConstNode) node).getName();
-
-            // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
-            // We might not .. for the following reasons:
-            // 1. The constant is missing,
-            // 2. The reference is a forward-reference,
-            // 3. The constant's value is only known at run-time on first-access (but, this is runtime, isn't it??)
-            // 4. Our compiler isn't able to right away infer that this is a constant.
-            //
-            // SSS FIXME:
-            // 1. The operand can be a literal array, range, or hash -- hence Operand
-            //    because Array, Range, and Hash derive from Operand and not Constant ...
-            //    Is there a way to fix this impedance mismatch?
-            // 2. It should be possible to handle the forward-reference case by creating a new
-            //    ForwardReference operand and then inform the scope of the forward reference
-            //    which the scope can fix up when the reference gets defined.  At code-gen time,
-            //    if the reference is unresolved, when a value is retrieved for the forward-ref
-            //    and we get a null, we can throw a ConstMissing exception!  Not sure!
-        Operand constVal = s.getConstantValue(constName);
-        if (constVal == null) {
-            constVal = s.getNewTmpVariable();
-                // SSS FIXME: Is this the right utility method for loading the constant?
-            s.addInstr(new RUBY_INTERNALS_CALL_Instr(constVal, 
-                                                     MethAddr.RETRIEVE_CONSTANT,
-                                                     new Operand[] { new MetaObject(s), new Reference(constName) }));
-            // XXX: const lookup can trigger const_missing; is that enough to warrant it always being executed?
-        }
-        return constVal;
+        return s.getConstantValue(((ConstNode)node).getName()); 
     }
 
-    public Operand buildColon2(Node node, IR_Scope m) {
+    public Operand buildColon2(Node node, IR_Scope s) {
         final Colon2Node iVisited = (Colon2Node) node;
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
         if (leftNode == null) {
-            m.loadObject();
-            m.retrieveConstantFromModule(name);
-        } else {
-            if (node instanceof Colon2ConstNode) {
-                build(iVisited.getLeftNode(), m, true);
-                m.retrieveConstantFromModule(name);
-            } else if (node instanceof Colon2MethodNode) {
-                final CompilerCallback receiverCallback = new CompilerCallback() {
-                    public void call(IR_Scope m) {
-                        build(iVisited.getLeftNode(), m,true);
-                    }
-                };
-                
-                m.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
+            return s.getConstantValue(name);
+        } 
+        else if (node instanceof Colon2ConstNode) {
+            // 1. Load the module first (lhs of node)
+            // 2. Then load the constant from the module
+            Operand module = build(iVisited.getLeftNode(), s);
+            if (module instanceof MetaObject) {
+                return ((MetaObject)module)._scope.getConstantValue(name);
             }
+            else {
+                constVal = s.getNewTmpVariable();
+                s.addInstr(new GET_CONST_Instr(constVal, module, name));
+                return constVal;
+            }
+        } 
+        else if (node instanceof Colon2MethodNode) {
+            // SSS FIXME: What is this??
+            final CompilerCallback receiverCallback = new CompilerCallback() {
+                public void call(IR_Scope m) {
+                    build(iVisited.getLeftNode(), m,true);
+                }
+            };
+            
+            m.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
         }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildColon3(Node node, IR_Scope m) {
-        Colon3Node iVisited = (Colon3Node) node;
-        String name = iVisited.getName();
-
-        m.retrieveConstantFromObject(name);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+    public Operand buildColon3(Node node, IR_Scope s) {
+        Operand cv = getNewTmpVariable();
+        addInstr(new GET_CONST_Instr(cv, s.getSelf(), node.getName()));
+        return cv;
     }
 
     public Operand buildGetDefinitionBase(final Node node, IR_Scope m) {

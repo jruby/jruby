@@ -16,9 +16,12 @@ public enum Operation
 // ------ Define the operations below ----
     NOP(dont_care),
 
-// value copy and type conversation operations
+// value copy and type conversion operations
     COPY(dont_care), TYPE_CVT(dont_care), BOX_VAL(dont_care), UNBOX_OBJ(dont_care),
     GET_GLOBAL_VAR(dont_care), PUT_GLOBAL_VAR(dont_care),
+
+// Constant get & set
+	 GET_CONST(dont_care), PUT_CONST(dont_care),
 
 // alu operations
     ADD(alu_op), SUB(alu_op), MUL(alu_op), DIV(alu_op),

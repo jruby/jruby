@@ -72,15 +72,42 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addInstr(IR_Instr i) { _instrs.append(i); }
 
-        // SSS FIXME: This may not work all that well -- see note below
-    public Operand getConstantValue(String constRef) { _constMap.get(constRef); }
+        // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
+        // We might not .. for the following reasons:
+        // 1. The constant is missing,
+        // 2. The reference is a forward-reference,
+        // 3. The constant's value is only known at run-time on first-access (but, this is runtime, isn't it??)
+        // 4. Our compiler isn't able to right away infer that this is a constant.
+        //
+        // SSS FIXME:
+        // 1. The operand can be a literal array, range, or hash -- hence Operand
+        //    because Array, Range, and Hash derive from Operand and not Constant ...
+        //    Is there a way to fix this impedance mismatch?
+        // 2. It should be possible to handle the forward-reference case by creating a new
+        //    ForwardReference operand and then inform the scope of the forward reference
+        //    which the scope can fix up when the reference gets defined.  At code-gen time,
+        //    if the reference is unresolved, when a value is retrieved for the forward-ref
+        //    and we get a null, we can throw a ConstMissing exception!  Not sure!
+        //
+        // SSS FIXME: Is this just a premature optimization?  Should we instead introduce 
+        // PUT_CONST_Instr and GET_CONST_Instr instructions always?
+        //
+    public Operand getConstantValue(String constRef) 
+    { 
+        Operand cv = _constMap.get(constRef); 
+        if (cv == null) {
+            cv = getNewTmpVariable();
+            addInstr(new GET_CONST_Instr(cv, this, constRef));
+        }
+        return cv;
+    }
 
-        // SSS FIXME: This may not work all that well if this is not really a constant but
-        // a placeholder -- can happen because of temporary variable issues
     public void setConstantValue(String constRef, Operand val) 
     {
         if (val.isConstant())
             _constMap.put(constRef, val); 
+
+        addInstr(new PUT_CONST_Instr(this, constRef, val);
     }
 
     public startLoop(IR_Loop l) { _loopStack.push(l); }

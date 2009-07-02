@@ -33,7 +33,7 @@ public interface IR_Scope
         // Tries to load at compile-time the constant referred to by 'constRef'.
         // This might be possible if the constant is defined and is not a forward reference
         // to a value that will be defined later in the class.
-    public Operand setConstantValue(String constRef);
+    public Operand setConstantValue(String constRef, Operand value);
 
         // While processing loops, this returns the loop that we are processing.
     public IR_Loop getCurrentLoop();
