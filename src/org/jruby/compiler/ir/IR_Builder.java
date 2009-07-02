@@ -537,7 +537,8 @@ public class IR_Builder
 
         // the CASE instruction
         Label endLabel = m.getNewLabel();
-        CASE_Instr caseInstr = new CASE_Instr(null, value, endLabel);
+        Variable result = m.getNewVariable();
+        CASE_Instr caseInstr = new CASE_Instr(result, value, endLabel);
         m.addInstr(caseInstr);
 
         // lists to aggregate variables and bodies for whens
@@ -587,7 +588,8 @@ public class IR_Builder
         // now emit bodies
         for (Map.Entry<Label, Node> entry : bodies.entrySet()) {
             m.addInstr(new LABEL_Instr(entry.getKey()));
-            build(entry.getValue(), m);
+            Operand bodyValue = build(entry.getValue(), m);
+            m.addInstr(new COPY_Instr(result, bodyValue));
             m.addInstr(new JUMP_Instr(endLabel));
         }
 
@@ -599,7 +601,7 @@ public class IR_Builder
         // CON FIXME: I don't know how to make case be an expression...does that
         // logic need to go here?
 
-        return caseInstr;
+        return result;
     }
 
     public Operand buildClass(Node node, IR_Scope s) {

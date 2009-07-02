@@ -8,8 +8,8 @@ public class CASE_Instr extends OneOperandInstr {
     Label endLabel;
     Label elseLbl;
 
-    public CASE_Instr(Operand arg, Label endLabel) {
-        super(Operation.CASE, null, arg);
+    public CASE_Instr(Variable result, Operand arg, Label endLabel) {
+        super(Operation.CASE, result, arg);
         this.endLabel = endLabel;
     }
 
