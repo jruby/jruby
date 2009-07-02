@@ -55,7 +55,7 @@ public abstract class Factory {
             }
             final String prefix = Factory.class.getPackage().getName();
             providerNames.add(prefix + ".jffi.Factory");
-            providerNames.add(prefix + ".jna.Factory");
+            // providerNames.add(prefix + ".jna.Factory");
             for (String className : providerNames) {
                 try {
                     factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
