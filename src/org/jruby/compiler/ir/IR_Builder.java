@@ -1855,31 +1855,22 @@ public class IR_Builder
 
         Node actualCondition = skipOverNewlines(ifNode.getCondition());
 
-        // optimizations if we know ahead of time it will always be true or false
-        if (actualCondition.getNodeType().alwaysTrue()) {
-            build(actualCondition, s);
-            return build(ifNode.getThenBody(), s);
-        } else if (actualCondition.getNodeType().alwaysFalse()) {
-            // always false or nil
-            return build(ifNode.getElseBody(), s);
-        } else {
-            Variable result     = s.getNewTmpVariable();
-            Label    falseLabel = s.getNewLabel();
-            Label    doneLabel  = s.getNewLabel();
-            s.addInstr(new BEQ_Instr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
-            if (ifNode.getThenBody() != null)
-                s.addInstr(new COPY_Instr(result, build(ifNode.getThenBody(), s)));
-            else
-                s.addInstr(new COPY_Instr(result, Nil.NIL));
-            s.addInstr(new JUMP_Instr(doneLabel));
-            s.addInstr(new LABEL_Instr(falseLabel));
-            if (ifNode.getElseBody() != null)
-                s.addInstr(new COPY_Instr(result, build(ifNode.getElseBody(), s)));
-            else
-                s.addInstr(new COPY_Instr(result, Nil.NIL));
-            s.addInstr(new LABEL_Instr(doneLabel));
-            return result;
-        }
+        Variable result     = s.getNewTmpVariable();
+        Label    falseLabel = s.getNewLabel();
+        Label    doneLabel  = s.getNewLabel();
+        s.addInstr(new BEQ_Instr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
+        if (ifNode.getThenBody() != null)
+            s.addInstr(new COPY_Instr(result, build(ifNode.getThenBody(), s)));
+        else
+            s.addInstr(new COPY_Instr(result, Nil.NIL));
+        s.addInstr(new JUMP_Instr(doneLabel));
+        s.addInstr(new LABEL_Instr(falseLabel));
+        if (ifNode.getElseBody() != null)
+            s.addInstr(new COPY_Instr(result, build(ifNode.getElseBody(), s)));
+        else
+            s.addInstr(new COPY_Instr(result, Nil.NIL));
+        s.addInstr(new LABEL_Instr(doneLabel));
+        return result;
     }
 
     public Operand buildInstAsgn(Node node, IR_Scope s) {
@@ -1892,8 +1883,6 @@ public class IR_Builder
     public Operand buildInstAsgnAssignment(Node node, IR_Scope m) {
         InstAsgnNode instAsgnNode = (InstAsgnNode) node;
         m.assignInstanceVariable(instAsgnNode.getName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildInstVar(Node node, IR_Scope m) {
@@ -1924,13 +1913,6 @@ public class IR_Builder
 
     public Operand buildLocalAsgn(Node node, IR_Scope s) {
         s.addIntsr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s)));
-/**
- * SSS FIXME: How does this PRAGMA business affect the IR? 
- *
-        if (ASTInspector.PRAGMAS.contains(localAsgnNode.getName())) {
-            if (expr) m.loadNil();
-        }
-**/
     }
 
     public Operand buildLocalAsgnAssignment(Node node, IR_Scope m) {
