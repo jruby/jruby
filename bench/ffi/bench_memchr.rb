@@ -4,6 +4,7 @@ iter = 10000
 str = "test" * 1000
 module LibC
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   attach_function :memchr, [ :string, :char, :int ], :pointer
 end
 
