@@ -479,15 +479,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_0 = dropNameAndArgs(TEST, 4, 0, false);
     private static final MethodHandle TARGET_0;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class),
-//                new int[] {0,2,3,1,4});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class),
+                new int[] {0,2,3,1,4});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
@@ -507,15 +505,15 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_1 = dropNameAndArgs(TEST, 4, 1, false);
     private static final MethodHandle TARGET_1;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class),
-//                new int[] {0,2,3,1,4,5});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+        // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyModule, String, IRubyObject
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
+        // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyClass, String, IRubyObject
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class),
+                new int[] {0,2,3,1,4,5});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, IRubyObject
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, IRubyObject
@@ -535,15 +533,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_2 = dropNameAndArgs(TEST, 4, 2, false);
     private static final MethodHandle TARGET_2;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class),
-//                new int[] {0,2,3,1,4,5,6});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class),
+                new int[] {0,2,3,1,4,5,6});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -563,15 +559,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_3 = dropNameAndArgs(TEST, 4, 3, false);
     private static final MethodHandle TARGET_3;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class),
-//                new int[] {0,2,3,1,4,5,6,7});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class),
+                new int[] {0,2,3,1,4,5,6,7});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -591,15 +585,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_N = dropNameAndArgs(TEST, 4, -1, false);
     private static final MethodHandle TARGET_N;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class),
-//                new int[] {0,2,3,1,4,5});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class),
+                new int[] {0,2,3,1,4,5});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -619,15 +611,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_0_B = dropNameAndArgs(TEST, 4, 0, true);
     private static final MethodHandle TARGET_0_B;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, Block.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, Block.class),
-//                new int[] {0,2,3,1,4,5});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, Block.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, Block.class),
+                new int[] {0,2,3,1,4,5});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -647,15 +637,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_1_B = dropNameAndArgs(TEST, 4, 1, true);
     private static final MethodHandle TARGET_1_B;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, Block.class),
-//                new int[] {0,2,3,1,4,5,6});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, Block.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, Block.class),
+                new int[] {0,2,3,1,4,5,6});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -675,15 +663,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_2_B = dropNameAndArgs(TEST, 4, 2, true);
     private static final MethodHandle TARGET_2_B;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class),
-//                new int[] {0,2,3,1,4,5,6,7});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class),
+                new int[] {0,2,3,1,4,5,6,7});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -703,15 +689,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_3_B = dropNameAndArgs(TEST, 4, 3, true);
     private static final MethodHandle TARGET_3_B;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class),
-//                new int[] {0,2,3,1,4,5,6,7,8});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class),
+                new int[] {0,2,3,1,4,5,6,7,8});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
@@ -731,15 +715,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TEST_N_B = dropNameAndArgs(TEST, 4, -1, true);
     private static final MethodHandle TARGET_N_B;
     static {
-//        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
-//                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-        MethodHandle target = MethodHandles.lookup().findStatic(InvokeDynamicSupport.class, "call",
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyModule.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
-//        target = MethodHandles.permuteArguments(
-//                target,
-//                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class),
-//                new int[] {0,2,3,1,4,5,6});
+        MethodHandle target = MethodHandles.lookup().findVirtual(DynamicMethod.class, "call",
+                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class, Block.class));
+        target = MethodHandles.permuteArguments(
+                target,
+                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class),
+                new int[] {0,2,3,1,4,5,6});
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, String, args
         target = MethodHandles.dropArguments(target, 3, IRubyObject.class);
         // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String, args
