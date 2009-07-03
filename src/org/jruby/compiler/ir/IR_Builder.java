@@ -180,7 +180,7 @@ public class IR_Builder
             case BLOCKNODE: return buildBlock(node, m); // done
             case BREAKNODE: return buildBreak(node, m); // done?
             case CALLNODE: return buildCall(node, m); // done
-            case CASENODE: return buildCase(node, m);
+            case CASENODE: return buildCase(node, m); // done
             case CLASSNODE: return buildClass(node, m); // done
             case CLASSVARNODE: return buildClassVar(node, m); // done
             case CLASSVARASGNNODE: return buildClassVarAsgn(node, m); // done
@@ -405,19 +405,6 @@ public class IR_Builder
     //    ret = v2
     // L:
     //
-    private Operand buildAnd_2(Node node, IR_Scope m)
-    {
-        Variable ret = m.getNewTmpVariable();
-        Label    l   = m.getNewLabel();
-        Operand  v1  = build(andNode.getFirstNode(), m);
-        m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
-        m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
-        Operand  v2  = build(andNode.getSecondNode(), m);
-        m.addInstr(new COPY_Instr(ret, v2);
-        m.addInstr(new LABEL_Instr(l));
-        return ret;
-    }
-
     public Operand buildAnd(Node node, IR_Scope m) {
         final AndNode andNode = (AndNode) node;
 
@@ -430,7 +417,15 @@ public class IR_Builder
             build(andNode.getFirstNode(), m);
             return BooleanLiteral.FALSE;
         } else {
-            return buildAnd_2(andNode, m);
+            Variable ret = m.getNewTmpVariable();
+            Label    l   = m.getNewLabel();
+            Operand  v1  = build(andNode.getFirstNode(), m);
+            m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
+            m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
+            Operand  v2  = build(andNode.getSecondNode(), m);
+            m.addInstr(new COPY_Instr(ret, v2);
+            m.addInstr(new LABEL_Instr(l));
+            return ret;
         }
     }
 
@@ -561,7 +556,7 @@ public class IR_Builder
                     labels.add(bodyLabel);
                     
                     m.addInstr(new EQQ_Instr(eqqResult, build(expression, m), value));
-                    m.addInstr(new BTRUE_Instr(eqqResult, bodyLabel));
+                    m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
                 }
             } else {
                 Variable eqqResult = m.getNewVariable();
@@ -570,7 +565,7 @@ public class IR_Builder
                 labels.add(bodyLabel);
 
                 m.addInstr(new EQQ_Instr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
-                m.addInstr(new BTRUE_Instr(eqqResult, bodyLabel));
+                m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
             // add body to map for emitting later
@@ -622,7 +617,7 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, m);
         } else if (cpathNode instanceof Colon3Node) {
-            container = ___  // m.loadObject(); We need a constant reference to the Object class meta-object!
+            container = IR_Class.OBJECT;
         }
 
             // Build a new class and add it to the current scope (could be a script / module / class)
@@ -677,38 +672,29 @@ public class IR_Builder
 
     public Operand buildClassVar(Node node, IR_Scope s) {
         Variable ret = s.getNewTmpVariable();
-            // SSS FIXME: Is this right?  What if 's' is not a class??  Can that happen?
-        s.addInstr(new GET_FIELD_Instr(ret, new MetaObject(s), ((ClassVarNode)node).getName()));
+        s.addInstr(new GET_CVAR_Instr(ret, (IR_Class)s, ((ClassVarNode)node).getName()));
         return ret;
     }
 
+    // SSS FIXME: Where is this set up?  How is this diff from ClassVarDeclNode??
     public Operand buildClassVarAsgn(Node node, IR_Scope s) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PUT_FIELD_Instr(new MetaObject(s), ((ClassVarNode)node).getName(), val));
+        s.addInstr(new PUT_CVAR_Instr((IR_Class)s, ((ClassVarNode)node).getName(), val));
         return val;
     }
 
+    // SSS FIXME: Incomplete
     public Operand buildClassVarAsgnAssignment(Node node, IR_Scope m) {
         ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
-
         m.assignClassVariable(classVarAsgnNode.getName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildClassVarDecl(Node node, IR_Scope m) {
+    public Operand buildClassVarDecl(Node node, IR_Scope s) {
         final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
-
-        CompilerCallback value = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(classVarDeclNode.getValueNode(), m, true);
-            }
-        };
-        
-        m.declareClassVariable(classVarDeclNode.getName(), value);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand val = build(classVarDeclNode.getValueNode(), s);
+        s.addInstr(new PUT_CVAR_Instr((IR_Class)s, classVarDeclNode.getName(), val));
+        return val;
     }
 
     public Operand buildClassVarDeclAssignment(Node node, IR_Scope m) {
@@ -1764,10 +1750,12 @@ public class IR_Builder
     public Operand buildInstAsgn(Node node, IR_Scope s) {
         final InstAsgnNode instAsgnNode = (InstAsgnNode) node;
         Operand val = build(instAsgnNode.getValueNode(), s);
+        // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
         s.addInstr(new PUT_FIELD_Instr(s.getSelf(), instAsgnNode.getName(), val));
         return val;
     }
 
+    // SSS FIXME: Incomplete!
     public Operand buildInstAsgnAssignment(Node node, IR_Scope m) {
         InstAsgnNode instAsgnNode = (InstAsgnNode) node;
         m.assignInstanceVariable(instAsgnNode.getName());
@@ -2027,11 +2015,22 @@ public class IR_Builder
         return ret;
     }
 
-    // SSS FIXME: What is the diff between this and the AndNode?  Is this translation correct?
+    // Translate "a &&= b" --> "a = (a ? b : false)" -->
+    // 
+    //    a = -- build(a) --
+    //    beq(a, false, L)
+    //    a = -- build(b) --
+    // L:
+    //
     public Operand buildOpAsgnAnd(Node node, IR_Scope m) {
-        Operand retVal = buildAnd_2((BinaryOperatorNode) node, m);
+        Label    l  = m.getNewLabel();
+        Variable v1 = (Variable)build(andNode.getFirstNode(), m);
+        m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
+        Operand  v2  = build(andNode.getSecondNode(), m);
+        m.addInstr(new COPY_Instr(v1, v2);
+        m.addInstr(new LABEL_Instr(l));
         m.addInstr(new THREAD_POLL_Instr());
-        return retVal;
+        return v1;
     }
 
     public Operand buildOpAsgnOr(Node node, IR_Scope m) {

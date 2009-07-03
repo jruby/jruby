@@ -3,6 +3,9 @@ import org.jruby.util.JavaNameMangler;
 
 public class IR_Class implements IR_ScopeImpl
 {
+    // Object class meta-object
+    final public static IR_Class OBJECT = new IR_Class(null, null, "Object", false);
+
     final public String  _className;
     final public Operand _superClass;
     final public boolean _isSingleton;
