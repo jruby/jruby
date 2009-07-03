@@ -7,6 +7,9 @@ public interface IR_Scope
         // scripts
     public void addClass(IR_Class c);
 
+        // scripts, and modules
+    public void addModule(IR_Module m);
+
         // scripts, classes, and modules
     public void addMethod(IR_Method m);
 
@@ -19,11 +22,21 @@ public interface IR_Scope
         // create a new variable using the prefix
     public Variable getNewVariable(String prefix);
 
+        // SSS FIXME: Is this a leaked implementation detail??
+    public int getAndIncrementMethodIndex();
+
         // get "self"
     public Variable getSelf();
 
-        // scripts
-    public String getFileName();
+        // SSS FIXME: BUGGY IMPLEMENTATION!  Remove or fix!  
+        //
+        // Right now, this is not being used anywhere since filenames are always constants strings
+        // So, and can be removed unless it is required for some unforeseen dynamic case!
+        //
+        // Delegation-to-parent based lookup of filenames will not work!  For example, a method might
+        // be defined in file F1 and its parent class might be defined in file F2.  File name lookup
+        // on the method should always return F1.  But, delegation-to-parent based lookup will return F2!
+    public Operand getFileName();
 
         // Tries to load at compile-time the constant referred to by 'constRef'.
         // This might be possible if the constant is defined and is not a forward reference

@@ -153,8 +153,6 @@ import org.jruby.runtime.BlockBody;
 
 public class IR_Builder
 {
-    private boolean isAtRoot = false;
-
     public static Node skipOverNewlines(Node n)
     {
         //Equivalent check ..
@@ -183,7 +181,7 @@ public class IR_Builder
             case BREAKNODE: return buildBreak(node, m); // done?
             case CALLNODE: return buildCall(node, m); // done
             case CASENODE: return buildCase(node, m);
-            case CLASSNODE: return buildClass(node, m);
+            case CLASSNODE: return buildClass(node, m); // done
             case CLASSVARNODE: return buildClassVar(node, m); // done
             case CLASSVARASGNNODE: return buildClassVarAsgn(node, m); // done
             case CLASSVARDECLNODE: return buildClassVarDecl(node, m);
@@ -718,61 +716,48 @@ public class IR_Builder
         conditionals.add(setupArgs(whenNode.getExpressionNodes()));
     }
 
-    public Operand buildClass(Node node, IR_Scope m) {
+    public Operand buildClass(Node node, IR_Scope s) {
         final ClassNode classNode = (ClassNode) node;
-
         final Node superNode = classNode.getSuperNode();
-
         final Node cpathNode = classNode.getCPath();
 
-        CompilerCallback superCallback = new CompilerCallback() {
+        Operand superClass;
+        if (superNode != null)
+            superClass = build(superNode, s);
 
-                    public void call(IR_Scope m) {
-                        build(superNode, m, true);
-                    }
-                };
-        if (superNode == null) {
-            superCallback = null;
+            // By default, the container for this class is 's'
+        Operand container = null;
+
+            // Do we have a dynamic container?
+        if (cpathNode instanceof Colon2Node) {
+            Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
+            if (leftNode != null)
+                container = build(leftNode, m);
+        } else if (cpathNode instanceof Colon3Node) {
+            container = ___  // m.loadObject(); We need a constant reference to the Object class meta-object!
         }
 
-        CompilerCallback bodyCallback = new CompilerCallback() {
+            // Build a new class and add it to the current scope (could be a script / module / class)
+        String   className = cpathNode.getName();
+        IR_Class c;
+        Operand  cMetaObj;
+        if (container == null) {
+            c = new IR_Class(s, superClass, className);
+            cMetaObj = new MetaObject(c);
+            s.addClass(c);
+        }
+        else {
+            c = new IR_Class(container, superClass, className);
+            cMetaObj = new MetaObject(c);
+            s.addInstr(new PUT_CONST_Instr(container, className, cMetaObj));
+        }
 
-                    public void call(IR_Scope m) {
-                        boolean oldIsAtRoot = isAtRoot;
-                        isAtRoot = false;
-                        if (classNode.getBodyNode() != null) {
-                            build(classNode.getBodyNode(), m, true);
-                        } else {
-                            m.loadNil();
-                        }
-                        isAtRoot = oldIsAtRoot;
-                    }
-                };
+            // Build the class body!
+        if (classNode.getBodyNode() != null)
+            build(classNode.getBodyNode(), c);
 
-        CompilerCallback pathCallback = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (cpathNode instanceof Colon2Node) {
-                            Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
-                            if (leftNode != null) {
-                                build(leftNode, m, true);
-                            } else {
-                                m.loadNil();
-                            }
-                        } else if (cpathNode instanceof Colon3Node) {
-                            m.loadObject();
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(classNode.getBodyNode());
-
-        m.defineClass(classNode.getCPath().getName(), classNode.getScope(), superCallback, pathCallback, bodyCallback, null, inspector);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+            // Return a meta object corresponding to the class
+        return cMetaObj;
     }
 
     public Operand buildSClass(Node node, IR_Scope m) {
@@ -788,19 +773,14 @@ public class IR_Builder
         CompilerCallback bodyCallback = new CompilerCallback() {
 
                     public void call(IR_Scope m) {
-                        boolean oldIsAtRoot = isAtRoot;
-                        isAtRoot = false;
                         if (sclassNode.getBodyNode() != null) {
                             build(sclassNode.getBodyNode(), m, true);
                         } else {
                             m.loadNil();
                         }
-                        isAtRoot = oldIsAtRoot;
                     }
                 };
 
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(sclassNode.getBodyNode());
 
         m.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector);
         // TODO: don't require pop
@@ -1932,11 +1912,6 @@ public class IR_Builder
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             buildAssignment(iterNode.getVarNode(), closure);
 
-            // SSS FIXME: Needed?
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(iterNode.getBodyNode());
-        inspector.inspect(iterNode.getVarNode());
-
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
         closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
@@ -2024,9 +1999,6 @@ public class IR_Builder
                         }
                     }
                 };
-
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(moduleNode.getBodyNode());
 
         m.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback, inspector);
         // TODO: don't require pop
@@ -2719,8 +2691,9 @@ public class IR_Builder
 
     public Operand buildStr(Node node, IR_Scope s) {
         StrNode strNode = (StrNode) node;
-            // SSS FIXME: Should filename operand be something different than a string literal?
-        return new StringLiteral((strNode instanceof FileNode) ? s.getFileName() : strNode.getValue());
+        // SSS FIXME: Looks like this will always be a constant string!  Hurray!
+        // return (strNode instanceof FileNode) ? s.getFileName() : new StringLiteral(strNode.getValue());
+        return new StringLiteral(strNode.getValue());
     }
 
     public Operand buildSuper(Node node, IR_Scope m) {

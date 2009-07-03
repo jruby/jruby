@@ -8,7 +8,8 @@ import java.util.Stack;
 
 public abstract class IR_ScopeImpl implements IR_Scope
 {
-    IR_Scope       _parent;   // Parent container for this context
+    Operand        _parent;   // Parent container for this context (can be dynamic!!)
+                              // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
     List<IR_Instr> _instrs;   // List of IR instructions for this method
 
         // Map of constants defined in this scope (not valid for methods!)
@@ -24,13 +25,26 @@ public abstract class IR_ScopeImpl implements IR_Scope
         // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IR_Loop> _loopStack;
 
-    public IR_ScopeImpl(IR_Scope parent)
+    private int _nextMethodIndex;
+
+    private void init(Operand parent)
     {
         _parent = parent;
         _instrs = new ArrayList<IR_Instr>();
         _nextVarIndex = new HashMap<String, Integer>();
         _constMap = new HashMap<String, Operand>();
         _loopStack = new Stack<IR_Loop>();
+        _nextMethodIndex = 0;
+    }
+
+    public IR_ScopeImpl(IR_Scope parent)
+    {
+       init(new MetaObject(parent));
+    }
+
+    public IR_ScopeImpl(Operand parent)
+    {
+       init(parent);
     }
 
     public Variable getNewVariable(prefix)
@@ -59,18 +73,42 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return new Label(lblPrefix + idx);
     }
 
-    public Label getNewLabel()
-    {
-       return new Label("LBL_");
-    }
+    public Label getNewLabel() { return new Label("LBL_"); }
+
+    public int getAndIncrementMethodIndex() { _nextMethodIndex++; return _nextMethodIndex; }
 
         // get "self"
     public Variable getSelf() { return new Variable("self"); }
 
         // Delegate method to the containing script/module/class
-    public String getFileName() { return _parent.getFileName(); }
+    public Operand getFileName() 
+    {
+            // Static scope
+        if (_parent instanceof MetaObject) {
+            return ((MetaObject)_parent)._scope.getFileName();
+        }
+            // Dynamic scope!
+        else {
+            Variable fn = getNewTmpVariable();
+                // At runtime, the parent operand will be the meta-object (runtime object) representing a script/module/class/method
+            addInstr(new JRUBY_IMPL_CALL_Instr(fn, MethAddr.GET_FILE_NAME, new Operand[]{_parent}));
+            return fn;
+        }
+    }
 
-    public void addInstr(IR_Instr i) { _instrs.append(i); }
+    public void addModule(IR_Module m) 
+    {
+        setConstantValue(m._moduleName, new MetaObject(m)) 
+    }
+
+    public void addClass(IR_Class c)
+    { 
+        setConstantValue(c._className, new MetaObject(c)) 
+    }
+
+    public void addMethod(IR_Method m) { /* Nothing to do; SSS FIXME: throw an exception? */ }
+
+    public void addInstr(IR_Instr i)   { _instrs.append(i); }
 
         // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
         // We might not .. for the following reasons:

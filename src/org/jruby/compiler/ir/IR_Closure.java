@@ -16,9 +16,16 @@ public class IR_Closure implements IR_ScopeImpl
 
     public Operand getConstantValue(String constRef)
     {
-           // Constants are defined in classes & modules, not in closures
-           // So, this reference is actually defined in the containing class/module
-        return _parent.getConstantValue(constRef);  
+            // Constants are defined in classes & modules, not in closures!
+            // So, this reference is actually defined in the containing class/module
+        if (_parent instanceof MetaObject) {
+            return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
+        }
+        else {
+            cv = getNewTmpVariable();
+            addInstr(new GET_CONST_Instr(cv, _parent, constRef));
+            return cv;
+        }
     }
 
     public void setConstantValue(String constRef, Operand val) 

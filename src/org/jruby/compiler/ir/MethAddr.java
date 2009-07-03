@@ -14,6 +14,7 @@ public class MethAddr extends Reference
     public final MethAddr MATCH2            = new MethAddr("op_match");
     public final MethAddr MATCH3            = new MethAddr("match3");
     public final MethAddr TO_ARY            = new MethAddr("aryToAry");
+    public final MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
 
     public MethAddr(String name) { super(name); }
 }
