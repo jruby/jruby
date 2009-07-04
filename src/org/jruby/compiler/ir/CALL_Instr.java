@@ -7,9 +7,9 @@ public class CALL_Instr extends MultiOperandInstr
    
     public CALL_Instr(Variable result, Operand methAddr, Operand[] args, Operand closure)
     {
-        _methAddr = addr;
-        _closure = closure;
         super(Operation.CALL, result, args);
+        _methAddr = methAddr;
+        _closure = closure;
     }
    
     public boolean isRubyInternalsCall() { return false; }

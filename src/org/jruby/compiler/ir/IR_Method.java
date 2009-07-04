@@ -5,7 +5,6 @@ import org.jruby.util.JavaNameMangler;
 public class IR_Method extends IR_ScopeImpl
 {
     String  _name;        // Ruby name 
-    String  _irName;      // Generated name
     boolean _isInstanceMethod;
 
     public final Label _startLabel;   // Label for the start of the method
@@ -15,7 +14,6 @@ public class IR_Method extends IR_ScopeImpl
     {
         super(parent);
         _name = name;
-        _irName = javaName;
        _isInstanceMethod = isInstanceMethod;
         _startLabel = getNewLabel("_METH_START_");
         _endLabel   = getNewLabel("_METH_END_");
@@ -25,17 +23,7 @@ public class IR_Method extends IR_ScopeImpl
     {
         super(parent);
         _name = name;
-        if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
-            _irName = name;
-        } else {
-            // SSS FIXME: Copied this code verbatim from BaseBodyCompiler .. needs fixing
-            String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
-            _irName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
-        }
-
         _isInstanceMethod = isInstanceMethod;
-
-        // SSS: FIXME: More stuff needs to happen here with the parent scope?
     }
 
     public Operand getConstantValue(String constRef)
@@ -46,7 +34,7 @@ public class IR_Method extends IR_ScopeImpl
             return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
         }
         else {
-            cv = getNewTmpVariable();
+            Variable cv = getNewTmpVariable();
             addInstr(new GET_CONST_Instr(cv, _parent, constRef));
             return cv;
         }

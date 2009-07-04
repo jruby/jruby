@@ -29,6 +29,7 @@ public abstract class IR_Instr
     public IR_Instr(Operation op)
     {
        _op = op;
+		 _result = null;
     }
 
     public IR_Instr(Operation op, Variable res)
@@ -45,5 +46,5 @@ public abstract class IR_Instr
         // Does this instruction have side effects as a result of its operation
         // This information is used in optimization phases to impact dead code elimination
         // and other optimization passes
-    public abstract boolean hasSideEffects();
+//    public abstract boolean hasSideEffects();
 }

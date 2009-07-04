@@ -2,7 +2,7 @@ package org.jruby.compiler.ir;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accummulate instructions
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
-public class IR_Closure implements IR_ScopeImpl
+public class IR_Closure extends IR_ScopeImpl
 {
     public final Label _startLabel; // Label for the start of the closure (used to implement redo)
     public final Label _endLabel;   // Label for the end of the closure (used to implement retry)
@@ -22,7 +22,7 @@ public class IR_Closure implements IR_ScopeImpl
             return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
         }
         else {
-            cv = getNewTmpVariable();
+            Operand cv = getNewTmpVariable();
             addInstr(new GET_CONST_Instr(cv, _parent, constRef));
             return cv;
         }

@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir;
 
+import java.util.List;
+
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -11,7 +13,7 @@ public class Hash extends Operand
 
     public Hash(List<KeyValuePair> pairs) { _pairs = pairs; }
 
-    public boolean isBlank() { return _pairs == null || _pairs.length() == 0; }
+    public boolean isBlank() { return _pairs == null || _pairs.size() == 0; }
 
     public boolean isConstant() 
     {

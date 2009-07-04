@@ -16,14 +16,17 @@ public interface IR_Scope
         // scripts, classes, modules, methods, and closures
     public void addInstr(IR_Instr i);
 
-        // create a new variable
-    public Variable getNewVariable();
-
         // create a new variable using the prefix
     public Variable getNewVariable(String prefix);
 
-        // SSS FIXME: Is this a leaked implementation detail??
-    public int getAndIncrementMethodIndex();
+        // create a new temporary variable
+    public Variable getNewTmpVariable();
+
+        // Get a new label using the provided label prefix
+    public Label getNewLabel(String lblPrefix);
+
+        // Get a new label using a generic prefix
+    public Label getNewLabel();
 
         // get "self"
     public Variable getSelf();
@@ -46,7 +49,7 @@ public interface IR_Scope
         // Tries to load at compile-time the constant referred to by 'constRef'.
         // This might be possible if the constant is defined and is not a forward reference
         // to a value that will be defined later in the class.
-    public Operand setConstantValue(String constRef, Operand value);
+    public void setConstantValue(String constRef, Operand value);
 
         // While processing loops, this returns the loop that we are processing.
     public IR_Loop getCurrentLoop();

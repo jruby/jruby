@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir;
 import org.jruby.util.JavaNameMangler;
 
-public class IR_Class implements IR_ScopeImpl
+public class IR_Class extends IR_ScopeImpl
 {
     // Object class meta-object
     final public static IR_Class OBJECT = new IR_Class(null, null, "Object", false);
@@ -10,22 +10,19 @@ public class IR_Class implements IR_ScopeImpl
     final public Operand _superClass;
     final public boolean _isSingleton;
 
-    private void init(String name, Operand superClass, boolean isSingleton)
-    {
-        _className = name;
-        _isSingleton = isSingleton;
-        _superClass = superClass;
-    }
-
     public IR_Class(IR_Scope parent, Operand superClass, String className, boolean isSingleton)
     {
        super(parent); 
-       init(className, superClass, isSingleton);
+        _className = className;
+        _superClass = superClass;
+        _isSingleton = isSingleton;
     }
 
     public IR_Class(IR_Scope parent, Operand superClass, String className) 
     {
        super(parent); 
-       init(className, superClass, false);
+        _className = className;
+        _superClass = superClass;
+        _isSingleton = false;
     }
 }

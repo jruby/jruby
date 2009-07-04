@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir;
 
+import java.util.List;
+
 // Represents an array [_, _, .., _] in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -13,7 +15,7 @@ public class Array extends Operand
 
 	 public Array(Operand[] elts) { _elts = elts; }
 
-    public Array(List<Operand> elts) { _elts = elts.toArray(); }
+    public Array(List<Operand> elts) { _elts = (Operand[])elts.toArray(); }
 
     public boolean isConstant() 
     {
@@ -26,5 +28,5 @@ public class Array extends Operand
        return true;
     }
 
-    public boolean isBlank() { return _elts == null || _elts.length() == 0; }
+    public boolean isBlank() { return _elts == null || _elts.length == 0; }
 }

@@ -47,7 +47,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
        init(parent);
     }
 
-    public Variable getNewVariable(prefix)
+    public Variable getNewVariable(String prefix)
     {
         if (prefix == null)
             prefix = "tmp";
@@ -59,7 +59,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return new Variable(prefix + idx);
     }
 
-    public Variable getNewVariable()
+    public Variable getNewTmpVariable()
     {
        return getNewVariable("tmp");
     }
@@ -98,17 +98,17 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addModule(IR_Module m) 
     {
-        setConstantValue(m._moduleName, new MetaObject(m)) 
+        setConstantValue(m._moduleName, new MetaObject(m)) ;
     }
 
     public void addClass(IR_Class c)
     { 
-        setConstantValue(c._className, new MetaObject(c)) 
+        setConstantValue(c._className, new MetaObject(c));
     }
 
     public void addMethod(IR_Method m) { /* Nothing to do; SSS FIXME: throw an exception? */ }
 
-    public void addInstr(IR_Instr i)   { _instrs.append(i); }
+    public void addInstr(IR_Instr i)   { _instrs.add(i); }
 
         // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
         // We might not .. for the following reasons:
@@ -134,8 +134,9 @@ public abstract class IR_ScopeImpl implements IR_Scope
     { 
         Operand cv = _constMap.get(constRef); 
         if (cv == null) {
-            cv = getNewTmpVariable();
-            addInstr(new GET_CONST_Instr(cv, this, constRef));
+            Variable v = getNewTmpVariable();
+            addInstr(new GET_CONST_Instr(v, this, constRef));
+				cv = v;
         }
         return cv;
     }
@@ -145,12 +146,12 @@ public abstract class IR_ScopeImpl implements IR_Scope
         if (val.isConstant())
             _constMap.put(constRef, val); 
 
-        addInstr(new PUT_CONST_Instr(this, constRef, val);
+        addInstr(new PUT_CONST_Instr(this, constRef, val));
     }
 
-    public startLoop(IR_Loop l) { _loopStack.push(l); }
+    public void startLoop(IR_Loop l) { _loopStack.push(l); }
 
-    public endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
+    public void endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
 
-    public IR_Loop getCurrentLoop() { _loopStack.peek(); }
+    public IR_Loop getCurrentLoop() { return _loopStack.peek(); }
 }

@@ -7,9 +7,9 @@ public class MultiOperandInstr extends IR_Instr
 {
     public Operand[] _args;
 
-    public class MultiOperandInstr(Operation opType, Variable result, Operand[] args)
+    public MultiOperandInstr(Operation opType, Variable result, Operand[] args)
     {
-       _args = args;
        super(opType, result);
+       _args = args;
     }
 }

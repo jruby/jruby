@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.jruby.compiler.ScriptCompiler;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
@@ -227,9 +229,9 @@ public class IR_Builder
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot(node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd(node, m); // done
-            case OPASGNNODE: return buildOpAsgn(node, m); // done
+//            case OPASGNNODE: return buildOpAsgn(node, m); // DEFERRED
 //            case OPASGNORNODE: return buildOpAsgnOr(node, m); // DEFERRED
-            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // SSS FIXME: What code generates this AST?
+//            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // DEFERRED SSS FIXME: What code generates this AST?
             case ORNODE: return buildOr(node, m); // done
 //            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
 //            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
@@ -268,14 +270,15 @@ public class IR_Builder
     public void buildArguments(List<Operand> args, Node node, IR_Scope s) {
         switch (node.getNodeType()) {
 //            case ARGSCATNODE: buildArgsCatArguments(args, node, s, true); // DEFERRED
-            case ARGSPUSHNODE: buildArgsPushArguments(args, node, s, true);
-            case ARRAYNODE: buildArrayArguments(args, node, s, true);
-            case SPLATNODE: buildSplatArguments(args, node, s, true);
+            case ARGSPUSHNODE: buildArgsPushArguments(args, node, s);
+            case ARRAYNODE: buildArrayArguments(args, node, s);
+            case SPLATNODE: buildSplatArguments(args, node, s);
             default: 
                 Operand retVal = build(node, s);
-					 //SSS FIXME: Why this?
+                //SSS FIXME: Why this?
                 //s.convertToJavaArray(); 
-                return (retVal == null) ? null : new ArrayList<Operand>(retVal);
+                if (retVal != null) 
+                   args.add(retVal);
         }
     }
     
@@ -289,13 +292,13 @@ public class IR_Builder
             if (arrayNode.isLightweight()) {
                 // explode array, it's an internal "args" array
                 for (Node n : arrayNode.childNodes())
-                    args.add(build(n, s, true));
+                    args.add(build(n, s));
             } else {
                 // use array as-is, it's a literal array
-                args.add(build(arrayNode, s, true));
+                args.add(build(arrayNode, s));
             }
         } else {
-            args.add(build(node, s, true));
+            args.add(build(node, s));
         }
     }
 
@@ -307,7 +310,7 @@ public class IR_Builder
         args = skipOverNewlines(args);
 
         List<Operand> argsList = new ArrayList<Operand>();
-        argList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
+        argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
         buildArgs(argsList, args, s);
 
         return argsList;
@@ -320,11 +323,11 @@ public class IR_Builder
         // unwrap newline nodes to get their actual type
         args = skipOverNewlines(args);
 
-        List<Operand> argList = new ArrayList<Operand>();
-        argList.add(s.getSelf());
-        buildArgs(argList, args, s);
+        List<Operand> argsList = new ArrayList<Operand>();
+        argsList.add(s.getSelf());
+        buildArgs(argsList, args, s);
 
-        return argList;
+        return argsList;
     }
 
     public void buildArgs(List<Operand> argsList, Node args, IR_Scope s) {
@@ -347,10 +350,13 @@ public class IR_Builder
         }
     }
 
-    public Operand buildAssignment(Node node, IR_Scope m) {
+    // This method is called to build arguments for a block!
+    public Operand buildAssignment(Node node, IR_Scope s, int argIndex) {
+        Operand v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
-                return buildAttrAssignAssignment(node, m);
+                // INCOMPLETE
+                return buildAttrAssignAssignment(node, s);
 // SSS FIXME:
 //
 // There are also differences in variable scoping between 1.8 and 1.9 
@@ -359,26 +365,44 @@ public class IR_Builder
 // The semantics of how this shadows other variables outside the block needs
 // to be figured out during live var analysis.
             case DASGNNODE:
-                DAsgnNode dasgnNode = (DAsgnNode)node;
-                Operand arg = new Variable(node.getName());
-                s.addInstr(new RECV_BLOCK_ARG_Instr(arg, new Constant(dasgnNode.getIndex())));
-                return arg;
+                v = new Variable(((DAsgnNode)node).getName());
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                return v;
+            // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                return buildClassVarAsgnAssignment(node, m);
+                v = s.getNewTmpVariable();
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new PUT_CVAR_Instr((IR_Class)s, ((ClassVarAsgnNode)node).getName(), v));
+                return v;
             case CLASSVARDECLNODE:
-                return buildClassVarDeclAssignment(node, m);
+                v = s.getNewTmpVariable();
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new PUT_CVAR_Instr((IR_Class)s, ((ClassVarDeclNode)node).getName(), v));
+                return v;
             case CONSTDECLNODE:
-                return buildConstDeclAssignment(node, m);
+                v = s.getNewTmpVariable();
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                return buildConstDeclAssignment(node, s, v);
             case GLOBALASGNNODE:
-                return buildGlobalAsgnAssignment(node, m);
+                v = s.getNewTmpVariable();
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                m.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
+                return v;
             case INSTASGNNODE:
-                return buildInstAsgnAssignment(node, m);
+                v = s.getNewTmpVariable();
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
+                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                return v;
             case LOCALASGNNODE:
-                LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
-                m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
-                break;
+                v = new Variable(node.getName());
+                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                return v;
+/**
             case MULTIPLEASGNNODE:
+                // INCOMPLETE
                 return buildMultipleAsgnAssignment(node, m);
+**/
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
@@ -424,7 +448,7 @@ public class IR_Builder
             m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
             m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
             Operand  v2  = build(andNode.getSecondNode(), m);
-            m.addInstr(new COPY_Instr(ret, v2);
+            m.addInstr(new COPY_Instr(ret, v2));
             m.addInstr(new LABEL_Instr(l));
             return ret;
         }
@@ -464,6 +488,7 @@ public class IR_Builder
             // SSS FIXME: What is this?
         m.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
     }
+**/
 
     public Operand buildAttrAssignAssignment(Node node, IR_Scope m) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
@@ -482,7 +507,6 @@ public class IR_Builder
         BackRefNode iVisited = (BackRefNode) node;
         m.performBackref(iVisited.getType());
     }
-**/
 
     public Operand buildBegin(Node node, IR_Scope m) {
         return build(((BeginNode)node).getBodyNode(), m);
@@ -684,12 +708,6 @@ public class IR_Builder
         return val;
     }
 
-    // SSS FIXME: Incomplete
-    public Operand buildClassVarAsgnAssignment(Node node, IR_Scope m) {
-        ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
-        m.assignClassVariable(classVarAsgnNode.getName());
-    }
-
     public Operand buildClassVarDecl(Node node, IR_Scope s) {
         final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
         Operand val = build(classVarDeclNode.getValueNode(), s);
@@ -703,39 +721,25 @@ public class IR_Builder
     }
 
     public Operand buildConstDecl(Node node, IR_Scope s) {
+        Operand val = build(constDeclNode.getValueNode(), s);
+        return buildConstDeclAssignment(node, s, val);
+    }
+
+    public Operand buildConstDeclAssignment(Node node, IR_Scope s, Operand val) {
         Operand       val;
         ConstDeclNode constDeclNode = (ConstDeclNode) node;
         Node          constNode     = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            val = build(constDeclNode.getValueNode(), s);
             s.setConstantValue(constDeclNode.getName(), val);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
-            val = build(constDeclNode.getValueNode(), s);
-            s.addInstr(new PUT_CONST_Instr(module, constDeclNode.getName(), val);
+            s.addInstr(new PUT_CONST_Instr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            val = build(constDeclNode.getValueNode(), s);
             s.addInstr(new PUT_CONST_Instr(s.getSelf(), constDeclNode.getName(), val));
         }
 
         return val;
-    }
-
-    public Operand buildConstDeclAssignment(Node node, IR_Scope m) {
-        // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
-        ConstDeclNode constDeclNode = (ConstDeclNode) node;
-        Node constNode = constDeclNode.getConstNode();
-
-        if (constNode == null) {
-            m.assignConstantInCurrent(constDeclNode.getName());
-        } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            build(((Colon2Node) constNode).getLeftNode(), m,true);
-            m.swapValues();
-            m.assignConstantInModule(constDeclNode.getName());
-        } else {// colon3, assign in Object
-            m.assignConstantInObject(constDeclNode.getName());
-        }
     }
 
     public Operand buildConst(Node node, IR_Scope s) {
@@ -763,16 +767,18 @@ public class IR_Builder
                 return constVal;
             }
         } 
-        else if (node instanceof Colon2MethodNode) {
+/** 
             // SSS FIXME: What is this??
+        else if (node instanceof Colon2MethodNode) {
             final CompilerCallback receiverCallback = new CompilerCallback() {
                 public void call(IR_Scope m) {
-                    build(iVisited.getLeftNode(), m,true);
+                    build(iVisited.getLeftNode(), m);
                 }
             };
             
             m.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
         }
+**/
     }
 
     public Operand buildColon3(Node node, IR_Scope s) {
@@ -781,6 +787,7 @@ public class IR_Builder
         return cv;
     }
 
+/**
     public Operand buildGetDefinitionBase(final Node node, IR_Scope m) {
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
@@ -826,7 +833,6 @@ public class IR_Builder
         }
     }
 
-/**
     public Operand buildDefined(final Node node, IR_Scope m) {
         buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
         m.stringOrNil();
@@ -1346,7 +1352,7 @@ public class IR_Builder
 
             // self = args[0]
             // SSS FIXME: Verify that this is correct
-        s.addInstr(new RECV_ARG_Instr(s.getSelf(), new Constant(0)));
+        s.addInstr(new RECV_ARG_Instr(s.getSelf(), 0));
 
             // Other args begin at index 1
         int argIndex = 1;
@@ -1355,7 +1361,7 @@ public class IR_Builder
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < s.numRequiredArgs(); i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), new Constant(argIndex)));
+            s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), argIndex));
         }
 
         if (opt > 0 || rest > -1) {
@@ -1364,13 +1370,13 @@ public class IR_Builder
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 LoclAsgnNode n = optArgs.get(j);
-                s.addInstr(new RECV_OPT_ARG_Instr(new Variable(n.getName()), new Constant(argIndex), l));
+                s.addInstr(new RECV_OPT_ARG_Instr(new Variable(n.getName()), argIndex, l));
                 build(n, s);
                 s.addInstr(new LABEL_Instr(l));
             }
 
             if (rest > -1) {
-                s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), new Constant(argIndex)));
+                s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), argIndex));
                 argIndex++;
             }
         }
@@ -1378,7 +1384,7 @@ public class IR_Builder
         // FIXME: Ruby 1.9 post args code needs to come here
 
         if (argsNode.getBlock() != null)
-            s.addInstr(new RECV_ARG_Instr(argsNode.getBlockNode().getName(), new Constant(argIndex)));
+            s.addInstr(new RECV_ARG_Instr(argsNode.getBlockNode().getName(), argIndex));
 
             // This is not an expression that computes anything
         return null;
@@ -1392,7 +1398,7 @@ public class IR_Builder
     public Operand buildDRegexp(Node node, IR_Scope s) {
         final DRegexpNode dregexpNode = (DRegexpNode) node;
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node n : dregexpNode.childNodes()) {
+        for (Node n : dregexpNode.childNodes())
             strPieces.add(build(n, s));
 
         return new Regexp(new CompoundString(strPieces), dregexpNode.getOptions());
@@ -1401,7 +1407,7 @@ public class IR_Builder
     public Operand buildDStr(Node node, IR_Scope s) {
         final DStrNode dstrNode = (DStrNode) node;
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node n : dstrNode.childNodes()) {
+        for (Node n : dstrNode.childNodes())
             strPieces.add(build(n, s));
 
         return new CompoundString(strPieces);
@@ -1409,7 +1415,7 @@ public class IR_Builder
 
     public Operand buildDSymbol(Node node, IR_Scope s) {
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node n : node.childNodes()) {
+        for (Node n : node.childNodes())
             strPieces.add(build(n, s));
 
         return new DynamicSymbol(new CompoundString(strPieces));
@@ -1422,7 +1428,7 @@ public class IR_Builder
     public Operand buildDXStr(Node node, IR_Scope m) {
         final DXStrNode dstrNode = (DXStrNode) node;
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node nextNode : dstrNode.childNodes()) {
+        for (Node nextNode : dstrNode.childNodes())
             strPieces.add(build(nextNode, m));
 
         return new BacktickString(strPieces);
@@ -1463,7 +1469,7 @@ public class IR_Builder
 
     public Operand buildEvStr(Node node, IR_Scope m) {
             // SSS: FIXME: Somewhere here, we need to record information the type of this operand as String
-        return build(((EvStrNode) node).getBody(), s)
+        return build(((EvStrNode) node).getBody(), s);
     }
 
     public Operand buildFalse(Node node, IR_Scope m) {
@@ -1488,13 +1494,11 @@ public class IR_Builder
 
         switch (node.getNodeType()) {
             case ITERNODE:
-                build((IterNode)node, s, true);
-                return new Operand(); //FIXME
+                return build((IterNode)node, s);
             case BLOCKPASSNODE:
-                build(((BlockPassNode)node).getBodyNode(), s, true);
+                return build(((BlockPassNode)node).getBodyNode(), s);
                 // FIXME: Translate this call below!
-                s.unwrapPassedBlock();
-                return new Operand(); //FIXME
+                // s.unwrapPassedBlock();
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
@@ -1638,7 +1642,7 @@ public class IR_Builder
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildAssignment(forNode.getVarNode(), closure);
+                buildAssignment(forNode.getVarNode(), closure, 0);
         }
 
             // Build closure body and return the result of the closure
@@ -1652,32 +1656,9 @@ public class IR_Builder
     }
 
     public Operand buildGlobalAsgn(Node node, IR_Scope m) {
-        final GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
         Operand value = build(globalAsgnNode.getValueNode(), m);
-        m.addInstr(new PUT_GLOBAL_VAR_Instr(globalAsgnNode.getName(), value));
+        m.addInstr(new PUT_GLOBAL_VAR_Instr(node.getName(), value));
         return value;
-    }
-
-    public Operand buildGlobalAsgnAssignment(Node node, IR_Scope m) {
-        GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode) node;
-
-        if (globalAsgnNode.getName().length() == 2) {
-            switch (globalAsgnNode.getName().charAt(1)) {
-            case '_':
-                m.getVariableCompiler().assignLastLine();
-                break;
-            case '~':
-                m.getVariableCompiler().assignBackRef();
-                break;
-            default:
-                m.assignGlobalVariable(globalAsgnNode.getName());
-            }
-        } else {
-            m.assignGlobalVariable(globalAsgnNode.getName());
-        }
-        
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildGlobalVar(Node node, IR_Scope m) {
@@ -1752,12 +1733,6 @@ public class IR_Builder
         return val;
     }
 
-    // SSS FIXME: Incomplete!
-    public Operand buildInstAsgnAssignment(Node node, IR_Scope m) {
-        InstAsgnNode instAsgnNode = (InstAsgnNode) node;
-        m.assignInstanceVariable(instAsgnNode.getName());
-    }
-
     public Operand buildInstVar(Node node, IR_Scope m) {
         Variable ret = m.getNewTmpVariable();
         m.addInstr(new GET_FIELD_Instr(ret, m.getSelf(), ((InstrVarNode)node).getName()));
@@ -1772,7 +1747,7 @@ public class IR_Builder
         final IterNode iterNode = (IterNode) node;
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildAssignment(iterNode.getVarNode(), closure);
+            buildAssignment(iterNode.getVarNode(), closure, 0);
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
@@ -1786,13 +1761,6 @@ public class IR_Builder
 
     public Operand buildLocalAsgn(Node node, IR_Scope s) {
         s.addIntsr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s)));
-    }
-
-    public Operand buildLocalAsgnAssignment(Node node, IR_Scope m) {
-        // "assignment" means the value is already on the stack
-        LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
-
-        m.getVariableCompiler().assignLocalVariable(localAsgnNode.getIndex(), localAsgnNode.getDepth());
     }
 
     public Operand buildLocalVar(Node node, IR_Scope s) {
@@ -2009,7 +1977,7 @@ public class IR_Builder
 
     public Operand buildNot(Node node, IR_Scope m) {
         Variable ret = m.getNewTmpVariable();
-        m.addInstr(new ALU_Instr(NOT, dst, build(((NotNode)node).getConditionNode(), m, true)));
+        m.addInstr(new ALU_Instr(NOT, dst, build(((NotNode)node).getConditionNode(), m)));
         return ret;
     }
 
@@ -2025,7 +1993,7 @@ public class IR_Builder
         Variable v1 = (Variable)build(andNode.getFirstNode(), m);
         m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
         Operand  v2  = build(andNode.getSecondNode(), m);
-        m.addInstr(new COPY_Instr(v1, v2);
+        m.addInstr(new COPY_Instr(v1, v2));
         m.addInstr(new LABEL_Instr(l));
         m.addInstr(new THREAD_POLL_Instr());
         return v1;
@@ -2119,6 +2087,7 @@ public class IR_Builder
         }
     }
 
+/**
     // SSS FIXME: What code generates this AST?
     public Operand buildOpAsgn(Node node, IR_Scope m) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
@@ -2206,7 +2175,9 @@ public class IR_Builder
             return buildOpElementAsgnWithMethod(node, m);
         }
     }
+**/
     
+    /**
     private class OpElementAsgnArgumentsCallback implements ArgumentsCallback  {
         private Node node;
 
@@ -2250,7 +2221,7 @@ public class IR_Builder
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(IR_Scope m) {
-                build(opElementAsgnNode.getReceiverNode(), m, true);
+                build(opElementAsgnNode.getReceiverNode(), m);
             }
         };
 
@@ -2306,6 +2277,7 @@ public class IR_Builder
 
         m.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
     }
+**/
 
     // Translate ret = (a || b) to ret = (a ? true : b) as follows
     // 
@@ -2336,7 +2308,7 @@ public class IR_Builder
             m.addInstr(new COPY_Instr(ret, BooleanLiteral.TRUE));
             m.addInstr(new BEQ_Instr(v1, BooleanLiteral.TRUE, l));
             Operand  v2  = build(orNode.getSecondNode(), m);
-            m.addInstr(new COPY_Instr(ret, v2);
+            m.addInstr(new COPY_Instr(ret, v2));
             m.addInstr(new LABEL_Instr(l));
             return ret;
         }
@@ -2674,7 +2646,7 @@ public class IR_Builder
     }
 
     public Operand buildZArray(Node node, IR_Scope m) {
-		 return new Array();
+       return new Array();
     }
 
 /**
@@ -2703,10 +2675,10 @@ public class IR_Builder
 
     public void buildArgsPushArguments(List<Operand> args, Node node, IR_Scope m) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
-		  Operand a = new Array(new Operand[]{ build(argsPushNode.getFirstNode(), m), build(argsPushNode.getSecondNode(), m) });
+        Operand a = new Array(new Operand[]{ build(argsPushNode.getFirstNode(), m), build(argsPushNode.getSecondNode(), m) });
         // SSS FIXME: Why convert to java array?  And, where does this go?
         // m.convertToJavaArray();
-		  args.add(a);
+        args.add(a);
     }
 
     public void buildArrayArguments(List<Operand> args, Node node, IR_Scope s) {

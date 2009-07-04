@@ -8,7 +8,7 @@ public class TwoOperandInstr extends IR_Instr
     public final Operand _arg1;
     public final Operand _arg2;
 
-    public TwoOperandInstr(Operation op, Operand dest, Operand a1, Operand a2)
+    public TwoOperandInstr(Operation op, Variable dest, Operand a1, Operand a2)
     {
         super(op, dest);
         _arg1 = a1;

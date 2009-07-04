@@ -12,14 +12,14 @@ public abstract class Operand
     /* Lattice TOP, BOTTOM, ANY values */
     private static class LatticeBottom extends Operand
     {
-        LatticeBottom() { _type = (short)(NONE); }
+        LatticeBottom() { }
        
         public String toString() { return "bottom"; }
     }
   
     private static class LatticeTop extends Operand
     {
-        LatticeTop() { _type = (short)(NONE); }
+        LatticeTop() { }
        
         public String toString() { return "top"; }
         public Operand Compute_CP_Meet(Operand op) { return op; }
@@ -27,7 +27,7 @@ public abstract class Operand
   
     private static class Anything extends Operand
     {
-        Anything() { _type = (short)(NONE); }
+        Anything() { }
        
         public String toString() { return "anything"; }
         public Operand Compute_CP_Meet(Operand op) { return op; }

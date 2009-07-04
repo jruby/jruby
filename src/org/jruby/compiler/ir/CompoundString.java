@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir;
 
+import java.util.List;
+
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
 //     - "Hi #{name}"
@@ -12,4 +14,15 @@ public class CompoundString extends Operand
     final public List<Operand> _pieces;
 
     public CompoundString(List<Operand> pieces) { _pieces = pieces; }
+
+	 public boolean isConstant() 
+    {
+		 if (_pieces != null) {
+			 for (Operand o: _pieces)
+				 if (!o.isConstant())
+					 return false;
+		 }
+
+       return true;
+    }
 }
