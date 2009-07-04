@@ -170,11 +170,11 @@ public class IR_Builder
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias(node, m); // done
             case ANDNODE: return buildAnd(node, m); // done
-            case ARGSCATNODE: return buildArgsCat(node, m); // SSS FIXME: What code generates this AST?
+//            case ARGSCATNODE: return buildArgsCat(node, m); // DEFERRED .. SSS FIXME: What code generates this AST?
             case ARGSPUSHNODE: return buildArgsPush(node, m); // Nothing to do for 1.8
             case ARRAYNODE: return buildArray(node, m); // done
-            case ATTRASSIGNNODE: return buildAttrAssign(node, m); // Incomplete
-            case BACKREFNODE: return buildBackref(node, m); // done
+//            case ATTRASSIGNNODE: return buildAttrAssign(node, m); // Incomplete
+//            case BACKREFNODE: return buildBackref(node, m); // DEFERRED
             case BEGINNODE: return buildBegin(node, m); // done
             case BIGNUMNODE: return buildBignum(node, m); // done
             case BLOCKNODE: return buildBlock(node, m); // done
@@ -184,13 +184,13 @@ public class IR_Builder
             case CLASSNODE: return buildClass(node, m); // done
             case CLASSVARNODE: return buildClassVar(node, m); // done
             case CLASSVARASGNNODE: return buildClassVarAsgn(node, m); // done
-            case CLASSVARDECLNODE: return buildClassVarDecl(node, m);
+            case CLASSVARDECLNODE: return buildClassVarDecl(node, m); // done
             case COLON2NODE: return buildColon2(node, m); // done
             case COLON3NODE: return buildColon3(node, m); // done
             case CONSTDECLNODE: return buildConstDecl(node, m); // done
             case CONSTNODE: return buildConst(node, m); // done
             case DASGNNODE: return buildDAsgn(node, m); // done
-            case DEFINEDNODE: return buildDefined(node, m);
+//            case DEFINEDNODE: return buildDefined(node, m); // Incomplete
             case DEFNNODE: return buildDefn(node, m); // done
             case DEFSNODE: return buildDefs(node, m); // done
             case DOTNODE: return buildDot(node, m); // done
@@ -199,12 +199,12 @@ public class IR_Builder
             case DSYMBOLNODE: return buildDSymbol(node, m); // done
             case DVARNODE: return buildDVar(node, m); // done
             case DXSTRNODE: return buildDXStr(node, m); // done
-            case ENSURENODE: return buildEnsureNode(node, m);
+//            case ENSURENODE: return buildEnsureNode(node, m); // DEFERRED
             case EVSTRNODE: return buildEvStr(node, m); // done
             case FALSENODE: return buildFalse(node, m); // done
             case FCALLNODE: return buildFCall(node, m); // done
             case FIXNUMNODE: return buildFixnum(node, m); // done
-            case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
+//            case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
             case FLOATNODE: return buildFloat(node, m); // done
             case FORNODE: return buildFor(node, m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn(node, m); // done
@@ -219,61 +219,62 @@ public class IR_Builder
             case MATCH2NODE: return buildMatch2(node, m); // done
             case MATCH3NODE: return buildMatch3(node, m); // done
             case MATCHNODE: return buildMatch(node, m); // done
-            case MODULENODE: return buildModule(node, m);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m);
+            case MODULENODE: return buildModule(node, m); // done
+//            case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m); // DEFERRED
             case NEWLINENODE: return buildNewline(node, m); // done
             case NEXTNODE: return buildNext(node, m); // done?
-            case NTHREFNODE: return buildNthRef(node, m);
+//            case NTHREFNODE: return buildNthRef(node, m); // DEFERRED
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot(node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd(node, m); // done
-            case OPASGNNODE: return buildOpAsgn(node, m); // SSS FIXME: What code generates this AST?
-            case OPASGNORNODE: return buildOpAsgnOr(node, m); // SSS FIXME: What code generates this AST?
+            case OPASGNNODE: return buildOpAsgn(node, m); // done
+//            case OPASGNORNODE: return buildOpAsgnOr(node, m); // DEFERRED
             case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // SSS FIXME: What code generates this AST?
             case ORNODE: return buildOr(node, m); // done
-            case POSTEXENODE: return buildPostExe(node, m);
-            case PREEXENODE: return buildPreExe(node, m);
+//            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
+//            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
             case REDONODE: return buildRedo(node, m); // done??
             case REGEXPNODE: return buildRegexp(node, m); // done
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
-            case RESCUENODE: return buildRescue(node, m);
+//            case RESCUENODE: return buildRescue(node, m); // DEFERRED
             case RETRYNODE: return buildRetry(node, m); // done??
             case RETURNNODE: return buildReturn(node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
-            case SCLASSNODE: return buildSClass(node, m);
+//            case SCLASSNODE: return buildSClass(node, m); // DEFERRED
             case SELFNODE: return buildSelf(node, m); // done
             case SPLATNODE: return buildSplat(node, m); // done
             case STRNODE: return buildStr(node, m); // done
-            case SUPERNODE: return buildSuper(node, m);
-            case SVALUENODE: return buildSValue(node, m);
+//            case SUPERNODE: return buildSuper(node, m); // DEFERRED
+//            case SVALUENODE: return buildSValue(node, m); // DEFERRED
             case SYMBOLNODE: return buildSymbol(node, m); // done
             case TOARYNODE: return buildToAry(node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
-            case UNDEFNODE: return buildUndef(node, m);
+//            case UNDEFNODE: return buildUndef(node, m); // DEFERRED
             case UNTILNODE: return buildUntil(node, m); // done
-            case VALIASNODE: return buildVAlias(node, m);
+//            case VALIASNODE: return buildVAlias(node, m); // DEFERRED
             case VCALLNODE: return buildVCall(node, m); // done
             case WHILENODE: return buildWhile(node, m); // done
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
             case XSTRNODE: return buildXStr(node, m); // done
             case YIELDNODE: return buildYield(node, m); // done
-            case ZARRAYNODE: return buildZArray(node, m);
-            case ZSUPERNODE: return buildZSuper(node, m);
+            case ZARRAYNODE: return buildZArray(node, m); // done
+//            case ZSUPERNODE: return buildZSuper(node, m); // DEFERRED
             default: throw new NotCompilableException("Unknown node encountered in buildr: " + node);
         }
     }
 
     public void buildArguments(List<Operand> args, Node node, IR_Scope s) {
         switch (node.getNodeType()) {
-            case ARGSCATNODE: buildArgsCatArguments(args, node, s, true);
+//            case ARGSCATNODE: buildArgsCatArguments(args, node, s, true); // DEFERRED
             case ARGSPUSHNODE: buildArgsPushArguments(args, node, s, true);
             case ARRAYNODE: buildArrayArguments(args, node, s, true);
             case SPLATNODE: buildSplatArguments(args, node, s, true);
             default: 
-                Operand retVal = build(node, s, true);
-                s.convertToJavaArray(); 
+                Operand retVal = build(node, s);
+					 //SSS FIXME: Why this?
+                //s.convertToJavaArray(); 
                 return (retVal == null) ? null : new ArrayList<Operand>(retVal);
         }
     }
@@ -320,7 +321,7 @@ public class IR_Builder
         args = skipOverNewlines(args);
 
         List<Operand> argList = new ArrayList<Operand>();
-        argList.add(m.getSelf());
+        argList.add(s.getSelf());
         buildArgs(argList, args, s);
 
         return argList;
@@ -437,6 +438,7 @@ public class IR_Builder
         return new Array(elts);
     }
 
+/**
     public Operand buildArgsCat(Node node, IR_Scope m) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
@@ -448,11 +450,13 @@ public class IR_Builder
         m.splatCurrentValue();
         m.concatArrays();
     }
+**/
 
     public Operand buildArgsPush(Node node, IR_Scope m) {
         throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
     }
 
+/**
     private void buildAttrAssign(Node node, IR_Scope m) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         List<Operand> args = setupArgs(attrAssignNode.getArgsNode());
@@ -472,17 +476,13 @@ public class IR_Builder
         ArgumentsCallback argsCallback = setupArgs(attrAssignNode.getArgsNode());
 
         m.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildBackref(Node node, IR_Scope m) {
         BackRefNode iVisited = (BackRefNode) node;
-
         m.performBackref(iVisited.getType());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
     public Operand buildBegin(Node node, IR_Scope m) {
         return build(((BeginNode)node).getBodyNode(), m);
@@ -643,6 +643,7 @@ public class IR_Builder
         return cMetaObj;
     }
 
+/**
     public Operand buildSClass(Node node, IR_Scope m) {
         final SClassNode sclassNode = (SClassNode) node;
 
@@ -666,9 +667,8 @@ public class IR_Builder
 
 
         m.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
     public Operand buildClassVar(Node node, IR_Scope s) {
         Variable ret = s.getNewTmpVariable();
@@ -699,10 +699,7 @@ public class IR_Builder
 
     public Operand buildClassVarDeclAssignment(Node node, IR_Scope m) {
         ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
-
         m.declareClassVariable(classVarDeclNode.getName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildConstDecl(Node node, IR_Scope s) {
@@ -739,8 +736,6 @@ public class IR_Builder
         } else {// colon3, assign in Object
             m.assignConstantInObject(constDeclNode.getName());
         }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildConst(Node node, IR_Scope s) {
@@ -831,6 +826,7 @@ public class IR_Builder
         }
     }
 
+/**
     public Operand buildDefined(final Node node, IR_Scope m) {
         buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
         m.stringOrNil();
@@ -1280,6 +1276,7 @@ public class IR_Builder
                 //MPS_FIXME: new StringLiteral("expression");
         }
     }
+**/
 
     public Operand buildDAsgn(Node node, IR_Scope s) {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
@@ -1330,7 +1327,7 @@ public class IR_Builder
         return defineNewMethod(n, s, true);
     }
 
-    public Operand buildDefs(Node node, IR_Scope m) {
+    public Operand buildDefs(Node node, IR_Scope s) {
             // Class method
         return defineNewMethod(n, s, false);
 
@@ -1339,42 +1336,41 @@ public class IR_Builder
     }
 
     public Operand buildArgs(Node node, IR_Scope s) {
-        final IR_Method m = (IR_Method)s;
         final ArgsNode argsNode = (ArgsNode)node;
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
 
           // TODO: Add IR instructions for checking method arity!
-        // m.getVariableCompiler().checkMethodArity(required, opt, rest);
+        // s.getVariableCompiler().checkMethodArity(required, opt, rest);
 
             // self = args[0]
             // SSS FIXME: Verify that this is correct
-        m.addInstr(new RECV_ARG_Instr(m.getSelf(), new Constant(0)));
+        s.addInstr(new RECV_ARG_Instr(s.getSelf(), new Constant(0)));
 
             // Other args begin at index 1
         int argIndex = 1;
 
             // Both for fixed arity and variable arity methods
         ListNode preArgs  = argsNode.getPre();
-        for (int i = 0; i < m.numRequiredArgs(); i++, argIndex++) {
+        for (int i = 0; i < s.numRequiredArgs(); i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            m.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), new Constant(argIndex)));
+            s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), new Constant(argIndex)));
         }
 
         if (opt > 0 || rest > -1) {
             ListNode optArgs = argsNode.getOptArgs();
             for (j = 0; j < opt; j++, argIndex++) {
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
-                Label l = m.getNewLabel();
+                Label l = s.getNewLabel();
                 LoclAsgnNode n = optArgs.get(j);
-                m.addInstr(new RECV_OPT_ARG_Instr(new Variable(n.getName()), new Constant(argIndex), l));
-                build(n, m, true);
-                m.addInstr(new LABEL_Instr(l));
+                s.addInstr(new RECV_OPT_ARG_Instr(new Variable(n.getName()), new Constant(argIndex), l));
+                build(n, s);
+                s.addInstr(new LABEL_Instr(l));
             }
 
             if (rest > -1) {
-                m.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), new Constant(argIndex)));
+                s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), new Constant(argIndex)));
                 argIndex++;
             }
         }
@@ -1382,10 +1378,7 @@ public class IR_Builder
         // FIXME: Ruby 1.9 post args code needs to come here
 
         if (argsNode.getBlock() != null)
-            m.addInstr(new RECV_ARG_Instr(argsNode.getBlockNode().getName(), new Constant(argIndex)));
-
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+            s.addInstr(new RECV_ARG_Instr(argsNode.getBlockNode().getName(), new Constant(argIndex)));
 
             // This is not an expression that computes anything
         return null;
@@ -1435,6 +1428,7 @@ public class IR_Builder
         return new BacktickString(strPieces);
     }
 
+/**
     public Operand buildEnsureNode(Node node, IR_Scope m) {
         final EnsureNode ensureNode = (EnsureNode) node;
 
@@ -1465,6 +1459,7 @@ public class IR_Builder
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
+**/
 
     public Operand buildEvStr(Node node, IR_Scope m) {
             // SSS: FIXME: Somewhere here, we need to record information the type of this operand as String
@@ -1509,6 +1504,7 @@ public class IR_Builder
         return new Fixnum(((FixnumNode)node).getValue());
     }
 
+/**
     public Operand buildFlip(Node node, IR_Scope m) {
         final FlipNode flipNode = (FlipNode) node;
 
@@ -1610,6 +1606,7 @@ public class IR_Builder
                     }
                 });
     }
+**/
 
     public Operand buildFloat(Node node, IR_Scope m) {
         return new Float(((FloatNode)node).getValue());
@@ -1825,44 +1822,42 @@ public class IR_Builder
         return ret;
     }
 
-    public Operand buildModule(Node node, IR_Scope m) {
+    public Operand buildModule(Node node, IR_Scope s) {
         final ModuleNode moduleNode = (ModuleNode) node;
-
         final Node cpathNode = moduleNode.getCPath();
 
-        CompilerCallback bodyCallback = new CompilerCallback() {
+        // Get the container for this new module
+        if (cpathNode instanceof Colon2Node) {
+            Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
+            if (leftNode != null)
+                container = build(leftNode, s);
+        } else if (cpathNode instanceof Colon3Node) {
+            container = IR_Class.OBJECT; // SSS FIXME: Is this correct?
+        }
 
-                    public void call(IR_Scope m) {
-                        if (moduleNode.getBodyNode() != null) {
-                            build(moduleNode.getBodyNode(), m,true);
-                        }
-                        m.loadNil();
-                    }
-                };
+        // Build the new module
+        String    moduleName = moduleNode.getCPath().getName();
+        IR_Module m;
+        Operand   mMetaObj;
+        if (container == null) {
+            m = new IR_Module(s, moduleName);
+            mMetaObj = new MetaObject(m);
+            s.addModule(m);
+        }
+        else {
+            m = new IR_Module(container, moduleName);
+            mMetaObj = new MetaObject(m);
+            s.addInstr(new PUT_CONST_Instr(container, moduleName, mMetaObj));
+        }
 
-        CompilerCallback pathCallback = new CompilerCallback() {
+        // Build the module body
+        if (moduleNode.getBodyNode() != null)
+            build(moduleNode.getBodyNode(), m);
 
-                    public void call(IR_Scope m) {
-                        if (cpathNode instanceof Colon2Node) {
-                            Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
-                            if (leftNode != null) {
-                                build(leftNode, m,true);
-                            } else {
-                                m.loadNil();
-                            }
-                        } else if (cpathNode instanceof Colon3Node) {
-                            m.loadObject();
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-        m.defineModule(moduleNode.getCPath().getName(), moduleNode.getScope(), pathCallback, bodyCallback, inspector);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        return mMetaObj;
     }
 
+/**
     public Operand buildMultipleAsgn(Node node, IR_Scope m) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
@@ -1972,6 +1967,7 @@ public class IR_Builder
             }
         }
     }
+**/
 
     public Operand buildNewline(Node node, IR_Scope s) {
         // SSS FIXME: We need to build debug information tracking into the IR in some fashion
@@ -1993,6 +1989,7 @@ public class IR_Builder
         return rv;
     }
 
+/**
     public Operand buildNthRef(Node node, IR_Scope m) {
         NthRefNode nthRefNode = (NthRefNode) node;
 
@@ -2003,6 +2000,7 @@ public class IR_Builder
             if (!expr) m.consumeCurrentValue();
         }
     }
+**/
 
     public Operand buildNil(Node node, IR_Scope m) {
         m.addInstr(new THREAD_POLL_Instr());
@@ -2033,6 +2031,7 @@ public class IR_Builder
         return v1;
     }
 
+/**
     public Operand buildOpAsgnOr(Node node, IR_Scope m) {
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
 
@@ -2085,6 +2084,7 @@ public class IR_Builder
         // TODO: don't require pop
         if (!expr) m.consumeCurrentValue();
     }
+**/
 
     /**
      * Check whether the given node is considered always "defined" or whether it
@@ -2199,11 +2199,11 @@ public class IR_Builder
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
         if (opElementAsgnNode.getOperatorName() == "||") {
-            buildOpElementAsgnWithOr(node, m);
+            return buildOpElementAsgnWithOr(node, m);
         } else if (opElementAsgnNode.getOperatorName() == "&&") {
-            buildOpElementAsgnWithAnd(node, m);
+            return buildOpElementAsgnWithAnd(node, m);
         } else {
-            buildOpElementAsgnWithMethod(node, m);
+            return buildOpElementAsgnWithMethod(node, m);
         }
     }
     
@@ -2272,7 +2272,7 @@ public class IR_Builder
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(IR_Scope m) {
-                build(opElementAsgnNode.getReceiverNode(), m, true);
+                build(opElementAsgnNode.getReceiverNode(), m);
             }
         };
 
@@ -2280,13 +2280,11 @@ public class IR_Builder
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(IR_Scope m) {
-                build(opElementAsgnNode.getValueNode(), m, true);
+                build(opElementAsgnNode.getValueNode(), m);
             }
         };
 
         m.getInvocationCompiler().opElementAsgnWithAnd(receiverCallback, argsCallback, valueCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildOpElementAsgnWithMethod(Node node, IR_Scope m) {
@@ -2294,7 +2292,7 @@ public class IR_Builder
 
         CompilerCallback receiverCallback = new CompilerCallback() {
             public void call(IR_Scope m) {
-                build(opElementAsgnNode.getReceiverNode(), m,true);
+                build(opElementAsgnNode.getReceiverNode(), m);
             }
         };
 
@@ -2302,13 +2300,11 @@ public class IR_Builder
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(IR_Scope m) {
-                build(opElementAsgnNode.getValueNode(), m,true);
+                build(opElementAsgnNode.getValueNode(), m);
             }
         };
 
         m.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     // Translate ret = (a || b) to ret = (a ? true : b) as follows
@@ -2346,6 +2342,7 @@ public class IR_Builder
         }
     }
 
+/**
     public Operand buildPostExe(Node node, IR_Scope m) {
         final PostExeNode postExeNode = (PostExeNode) node;
 
@@ -2361,8 +2358,6 @@ public class IR_Builder
                     }
                 };
         m.createNewEndBlock(closureBody);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildPreExe(Node node, IR_Scope m) {
@@ -2380,9 +2375,8 @@ public class IR_Builder
                     }
                 };
         m.runBeginBlock(preExeNode.getScope(), closureBody);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
     public Operand buildRedo(Node node, IR_Scope s) {
         // For closures, a redo is a jump to the beginning of the closure
@@ -2396,11 +2390,9 @@ public class IR_Builder
         return new Regexp(reNode.getValue(), reNode.getOptions());
     }
 
+/**
     public Operand buildRescue(Node node, IR_Scope m) {
         buildRescueInternal(node, m, false);
-        
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     private void buildRescueInternal(Node node, IR_Scope m, final boolean light) {
@@ -2495,6 +2487,7 @@ public class IR_Builder
 
         m.performBooleanBranch(trueBranch, falseBranch);
     }
+**/
 
     public Operand buildRetry(Node node, IR_Scope s) {
         // JRuby only supports retry when present in rescue blocks!
@@ -2565,6 +2558,7 @@ public class IR_Builder
         return new StringLiteral(strNode.getValue());
     }
 
+/**
     public Operand buildSuper(Node node, IR_Scope m) {
         final SuperNode superNode = (SuperNode) node;
 
@@ -2573,8 +2567,6 @@ public class IR_Builder
         CompilerCallback closureArg = setupCallClosure(superNode.getIterNode());
 
         m.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
     public Operand buildSValue(Node node, IR_Scope m) {
@@ -2583,9 +2575,8 @@ public class IR_Builder
         build(svalueNode.getValue(), m,true);
 
         m.singlifySplattedValue();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
     public Operand buildSymbol(Node node, IR_Scope m) {
         return new Symbol(((SymbolNode) node).getName());
@@ -2603,11 +2594,11 @@ public class IR_Builder
         return BooleanLiteral.TRUE; 
     }
 
+/**
     public Operand buildUndef(Node node, IR_Scope m) {
         m.undefMethod(((UndefNode) node).getName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
     private Operand buildConditionalLoop(IR_Scope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
     {
@@ -2651,13 +2642,12 @@ public class IR_Builder
         return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, !untilNode.evaluateAtStart());
     }
 
+/**
     public Operand buildVAlias(Node node, IR_Scope m) {
         VAliasNode valiasNode = (VAliasNode) node;
-
         m.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
     public Operand buildVCall(Node node, IR_Scope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
@@ -2684,49 +2674,39 @@ public class IR_Builder
     }
 
     public Operand buildZArray(Node node, IR_Scope m) {
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
-            m.createEmptyArray();
-        }
-
-        if (popit) m.consumeCurrentValue();
+		 return new Array();
     }
 
+/**
     public Operand buildZSuper(Node node, IR_Scope m) {
         ZSuperNode zsuperNode = (ZSuperNode) node;
 
         CompilerCallback closure = setupCallClosure(zsuperNode.getIterNode());
 
         m.callZSuper(closure);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
+/**
     public void buildArgsCatArguments(List<Operand> args, Node node, IR_Scope m) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
         buildArguments(args, argsCatNode.getFirstNode(), m);
-        // arguments buildrs always create IRubyObject[], but we want to use RubyArray.concat here;
-        // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an array
         m.createNewArray(true);
-        build(argsCatNode.getSecondNode(), m,true);
+        build(argsCatNode.getSecondNode(), m);
         m.splatCurrentValue();
         m.concatArrays();
-        m.convertToJavaArray();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        // SSS FIXME: Why convert to java array?  And, where does this go?
+        // m.convertToJavaArray();
     }
+**/
 
     public void buildArgsPushArguments(List<Operand> args, Node node, IR_Scope m) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
-        build(argsPushNode.getFirstNode(), m,true);
-        build(argsPushNode.getSecondNode(), m,true);
-        m.appendToArray();
-        m.convertToJavaArray();
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+		  Operand a = new Array(new Operand[]{ build(argsPushNode.getFirstNode(), m), build(argsPushNode.getSecondNode(), m) });
+        // SSS FIXME: Why convert to java array?  And, where does this go?
+        // m.convertToJavaArray();
+		  args.add(a);
     }
 
     public void buildArrayArguments(List<Operand> args, Node node, IR_Scope s) {

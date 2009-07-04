@@ -7,15 +7,21 @@ package org.jruby.compiler.ir;
 // that actually build a Ruby object
 public class Array extends Operand
 {
-    final public List<Operand> _elts;
+    final public Operand[] _elts;
 
-    public Array(List<Operand> elts) { _elts = elts; }
+	 public Array() { _elts = null; }
+
+	 public Array(Operand[] elts) { _elts = elts; }
+
+    public Array(List<Operand> elts) { _elts = elts.toArray(); }
 
     public boolean isConstant() 
     {
-       for (Operand o: _elts)
-          if (!o.isConstant())
-             return false;
+		 if (_elts != null) {
+			 for (Operand o: _elts)
+				 if (!o.isConstant())
+					 return false;
+		 }
 
        return true;
     }
