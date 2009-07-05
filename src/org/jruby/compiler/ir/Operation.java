@@ -24,13 +24,13 @@ public enum Operation
     CALL(OpType.call_op), OCALL(OpType.call_op),
 
 // closure instructions
-    BEG_CLOSURE(OpType.dont_care), END_CLOSURE(OpType.dont_care), 
+    YIELD(OpType.dont_care),
 
 // eval instructions
     EVAL_OP(OpType.eval_op), CLASS_EVAL(OpType.eval_op),
 
 // exception instructions
-    THROW(OpType.dont_care), RESCUE(OpType.dont_care),
+    THROW(OpType.dont_care), RESCUE(OpType.dont_care), RETRY(OpType.dont_care),
 
 // allocate, and instance variable get/set operations
     NEW_OBJ(OpType.obj_op), GET_FIELD(OpType.obj_op), PUT_FIELD(OpType.obj_op), 

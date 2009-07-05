@@ -22,7 +22,7 @@ public class IR_Closure extends IR_ScopeImpl
             return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
         }
         else {
-            Operand cv = getNewTmpVariable();
+            Operand cv = getNewVariable();
             addInstr(new GET_CONST_Instr(cv, _parent, constRef));
             return cv;
         }

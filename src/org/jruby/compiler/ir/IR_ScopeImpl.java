@@ -59,7 +59,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return new Variable(prefix + idx);
     }
 
-    public Variable getNewTmpVariable()
+    public Variable getNewVariable()
     {
        return getNewVariable("tmp");
     }
@@ -89,7 +89,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         }
             // Dynamic scope!
         else {
-            Variable fn = getNewTmpVariable();
+            Variable fn = getNewVariable();
                 // At runtime, the parent operand will be the meta-object (runtime object) representing a script/module/class/method
             addInstr(new JRUBY_IMPL_CALL_Instr(fn, MethAddr.GET_FILE_NAME, new Operand[]{_parent}));
             return fn;
@@ -134,7 +134,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
     { 
         Operand cv = _constMap.get(constRef); 
         if (cv == null) {
-            Variable v = getNewTmpVariable();
+            Variable v = getNewVariable();
             addInstr(new GET_CONST_Instr(v, this, constRef));
 				cv = v;
         }

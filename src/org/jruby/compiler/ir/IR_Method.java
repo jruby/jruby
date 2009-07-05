@@ -34,7 +34,7 @@ public class IR_Method extends IR_ScopeImpl
             return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
         }
         else {
-            Variable cv = getNewTmpVariable();
+            Variable cv = getNewVariable();
             addInstr(new GET_CONST_Instr(cv, _parent, constRef));
             return cv;
         }

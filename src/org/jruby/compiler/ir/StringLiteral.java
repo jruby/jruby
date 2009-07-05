@@ -9,5 +9,5 @@ public class StringLiteral extends Constant
     final public String   _str_value;
 
     public StringLiteral(ByteList val) { _bl_value = val; }
-    public StringLiteral(String s) { _str_value = val; }
+    public StringLiteral(String s) { _str_value = s; }
 }

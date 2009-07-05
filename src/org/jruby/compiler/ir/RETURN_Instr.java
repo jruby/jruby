@@ -6,6 +6,7 @@ public class RETURN_Instr extends OneOperandInstr
 
     public RETURN_Instr(Operand rv)
     {
-        super(Operation.RETURN, null, _retval);
+        super(Operation.RETURN, null, rv);
+		  _retval = rv;
     }
 }

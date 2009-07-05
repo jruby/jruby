@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public class LABEL_Instr
+public class LABEL_Instr extends IR_Instr
 {
     public final Operation _op;
     public final Operand   _result; 

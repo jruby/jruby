@@ -20,7 +20,7 @@ public interface IR_Scope
     public Variable getNewVariable(String prefix);
 
         // create a new temporary variable
-    public Variable getNewTmpVariable();
+    public Variable getNewVariable();
 
         // Get a new label using the provided label prefix
     public Label getNewLabel(String lblPrefix);

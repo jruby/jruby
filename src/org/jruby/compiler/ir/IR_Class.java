@@ -18,11 +18,11 @@ public class IR_Class extends IR_ScopeImpl
         _isSingleton = isSingleton;
     }
 
-    public IR_Class(IR_Scope parent, Operand superClass, String className) 
+    public IR_Class(Operand parent, Operand superClass, String className, boolean isSingleton)
     {
        super(parent); 
         _className = className;
         _superClass = superClass;
-        _isSingleton = false;
+        _isSingleton = isSingleton;
     }
 }
