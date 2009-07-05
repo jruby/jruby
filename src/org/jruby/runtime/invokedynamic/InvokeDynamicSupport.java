@@ -611,8 +611,8 @@ public class InvokeDynamicSupport {
 
         MethodHandle breakJump = dropNameAndArgs(BREAKJUMP, 5, 3, true);
         MethodHandle retryJump = dropNameAndArgs(RETRYJUMP, 5, 3, true);
-//        target = MethodHandles.catchException(target, JumpException.BreakJump.class, breakJump);
-//        target = MethodHandles.catchException(target, JumpException.RetryJump.class, retryJump);
+        target = MethodHandles.catchException(target, JumpException.BreakJump.class, breakJump);
+        target = MethodHandles.catchException(target, JumpException.RetryJump.class, retryJump);
         
         TARGET_3_B = target;
     }
