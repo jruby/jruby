@@ -1,7 +1,5 @@
 package org.jruby.compiler.ir;
 
-import org.jruby.util.JavaNameMangler;
-
 public class IR_Method extends IR_ScopeImpl
 {
     String  _name;        // Ruby name 
@@ -12,11 +10,7 @@ public class IR_Method extends IR_ScopeImpl
 
     public IR_Method(IR_Scope parent, String name, String javaName, boolean isInstanceMethod)
     {
-        super(parent);
-        _name = name;
-       _isInstanceMethod = isInstanceMethod;
-        _startLabel = getNewLabel("_METH_START_");
-        _endLabel   = getNewLabel("_METH_END_");
+        this(parent, name, isInstanceMethod);
     }
 
     public IR_Method(IR_Scope parent, String name, boolean isInstanceMethod)
@@ -24,6 +18,8 @@ public class IR_Method extends IR_ScopeImpl
         super(parent);
         _name = name;
         _isInstanceMethod = isInstanceMethod;
+        _startLabel = getNewLabel("_METH_START_");
+        _endLabel   = getNewLabel("_METH_END_");
     }
 
     public Operand getConstantValue(String constRef)

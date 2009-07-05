@@ -259,7 +259,7 @@ public class IR_Builder
 //            case VALIASNODE: return buildVAlias(node, m); // DEFERRED
             case VCALLNODE: return buildVCall(node, m); // done
             case WHILENODE: return buildWhile(node, m); // done
-            case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
+//            case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
             case XSTRNODE: return buildXStr(node, m); // done
             case YIELDNODE: return buildYield(node, m); // done
             case ZARRAYNODE: return buildZArray(node, m); // done
@@ -346,7 +346,7 @@ public class IR_Builder
                     buildSpecificArityArguments(argsList, arrayNode, s);
                 break;
             default:
-                buildSpecificArityArguments(argsList, arrayNode, s);
+                buildSpecificArityArguments(argsList, args, s);
                 break;
         }
     }
@@ -629,7 +629,7 @@ public class IR_Builder
         final Node       superNode = classNode.getSuperNode();
         final Colon3Node cpathNode = classNode.getCPath();
 
-        Operand superClass;
+        Operand superClass = null;
         if (superNode != null)
             superClass = build(superNode, s);
 
@@ -761,19 +761,17 @@ public class IR_Builder
                 s.addInstr(new GET_CONST_Instr(constVal, module, name));
                 return constVal;
             }
-        } 
-/** 
-            // SSS FIXME: What is this??
-        else if (node instanceof Colon2MethodNode) {
-            final CompilerCallback receiverCallback = new CompilerCallback() {
-                public void call(IR_Scope m) {
-                    build(iVisited.getLeftNode(), m);
-                }
-            };
-            
-            m.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
         }
-**/
+        else if (node instanceof Colon2MethodNode) {
+            Colon2MethodNode     c2mNode    = (Colon2MethodNode)node;
+            List<Operand> args         = setupArgs(null, s);
+            Operand       block        = setupCallClosure(null, s);
+            Variable      callResult   = s.getNewVariable();
+            IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
+            s.addInstr(callInstr);
+            return callResult;
+        }
+        else { throw new NotCompilableException("Not compilable: " + node); }
     }
 
     public Operand buildColon3(Node node, IR_Scope s) {
@@ -1358,7 +1356,7 @@ public class IR_Builder
 
             // Both for fixed arity and variable arity methods
         ListNode preArgs  = argsNode.getPre();
-        for (int i = 0; i < argsNode.numRequiredArgs; i++, argIndex++) {
+        for (int i = 0; i < argsNode.getRequiredArgsCount(); i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
             s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), argIndex));
         }
@@ -1383,7 +1381,7 @@ public class IR_Builder
         // FIXME: Ruby 1.9 post args code needs to come here
 
         if (argsNode.getBlock() != null)
-            s.addInstr(new RECV_ARG_Instr(argsNode.getBlockNode().getName(), argIndex));
+            s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getBlock().getName()), argIndex));
 
             // This is not an expression that computes anything
         return null;
@@ -1761,7 +1759,10 @@ public class IR_Builder
 
     public Operand buildLocalAsgn(Node node, IR_Scope s) {
         LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
-        s.addInstr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s)));
+        Operand value = build(localAsgnNode.getValueNode(), s);
+        s.addInstr(new COPY_Instr(new Variable(localAsgnNode.getName()), value));
+
+        return value;
     }
 
     public Operand buildLocalVar(Node node, IR_Scope s) {
@@ -2487,20 +2488,12 @@ public class IR_Builder
         return null;
     }
 
-    public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector) {
-        buildRoot(node, m, inspector, true, true);
-    }
-
-    public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector, boolean load, boolean main) {
+    public Operand buildRoot(Node node) {
         // Top-level script!
-        IR_Script script = new IR_Script(m.getClassName(), m.getSourceName());
+        IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Method rootMethod = script.getRootMethod();
 
         RootNode rootNode = (RootNode) node;
-            // SSS FIXME: How does this impact IR generation?
-            // If it does, does it need to go somewhere ... in script or rootMethod?
-        StaticScope staticScope = rootNode.getStaticScope();
-        staticScope.setRestArg(-2); // force static scope to claim restarg at 0, so it only implements the [] version of __file__
 
         Node nextNode = rootNode.getBodyNode();
         if (nextNode == null) {
@@ -2508,12 +2501,8 @@ public class IR_Builder
         }
         else {
             if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
-                // it's a multiple-statement body, iterate over all elements in turn and chain if it get too long
                 BlockNode blockNode = (BlockNode) nextNode;
                 for (int i = 0; i < blockNode.size(); i++) {
-                    if ((i + 1) % RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT == 0) {
-                        rootMethod = rootMethod.chainToMethod("__file__from_line_" + (i + 1));
-                    }
                     build(blockNode.get(i), rootMethod);
                 }
             } else {

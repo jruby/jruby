@@ -8,6 +8,6 @@ public class StringLiteral extends Constant
     final public ByteList _bl_value;
     final public String   _str_value;
 
-    public StringLiteral(ByteList val) { _bl_value = val; }
-    public StringLiteral(String s) { _str_value = s; }
+    public StringLiteral(ByteList val) { _bl_value = val; _str_value = _bl_value.toString(); }
+    public StringLiteral(String s) { _bl_value = ByteList.create(s); _str_value = s; }
 }
