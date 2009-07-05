@@ -241,7 +241,7 @@ public class IR_Builder
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
 //            case RESCUENODE: return buildRescue(node, m); // DEFERRED
-            case RETRYNODE: return buildRetry(node, m); // done??
+//            case RETRYNODE: return buildRetry(node, m); // DEFERRED
             case RETURNNODE: return buildReturn(node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
@@ -1288,7 +1288,7 @@ public class IR_Builder
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         Variable arg = new Variable(dasgnNode.getName());
-        s.addIntsr(new COPY_Instr(arg, build(dasgnNode.getValueNode(), s)));
+        s.addInstr(new COPY_Instr(arg, build(dasgnNode.getValueNode(), s)));
         return arg;
     }
 
@@ -1663,7 +1663,7 @@ public class IR_Builder
 
     public Operand buildGlobalVar(Node node, IR_Scope m) {
         Variable rv  = m.getNewVariable();
-        m.addInstr(new GET_GLOBAL_VAR_Instr(rv, node.getName()));
+        m.addInstr(new GET_GLOBAL_VAR_Instr(rv, ((GlobalVarNode)node).getName()));
         return rv;
     }
 
@@ -1678,7 +1678,7 @@ public class IR_Builder
             Operand value = null;
             List<KeyValuePair> args = new ArrayList<KeyValuePair>();
             for (Node nextNode : hashNode.getListNode().childNodes()) {
-                Operand v = build(nextNode, m, false);
+                Operand v = build(nextNode, m);
                 if (key == null) {
                     key = v;
                 }
@@ -1735,7 +1735,7 @@ public class IR_Builder
 
     public Operand buildInstVar(Node node, IR_Scope m) {
         Variable ret = m.getNewVariable();
-        m.addInstr(new GET_FIELD_Instr(ret, m.getSelf(), ((InstrVarNode)node).getName()));
+        m.addInstr(new GET_FIELD_Instr(ret, m.getSelf(), ((InstVarNode)node).getName()));
         return ret;
     }
 
@@ -1754,13 +1754,14 @@ public class IR_Builder
         closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
             // Assign the closure to the block variable in the parent scope and return it
-        Operand blockVar = s.getNewVariable();
+        Variable blockVar = s.getNewVariable();
         s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
         return blockVar;
     }
 
     public Operand buildLocalAsgn(Node node, IR_Scope s) {
-        s.addIntsr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s)));
+        LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
+        s.addInstr(new COPY_Instr(new Variable(localAsgnNode.getName()), build(localAsgnNode.getValueNode(), s)));
     }
 
     public Operand buildLocalVar(Node node, IR_Scope s) {
@@ -1776,7 +1777,7 @@ public class IR_Builder
 
     public Operand buildMatch2(Node node, IR_Scope m) {
         Variable  ret       = m.getNewVariable();
-        MatchNode matchNode = (MatchNode)node;
+        Match2Node matchNode = (Match2Node)node;
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
         m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH2, new Operand[]{receiver, value}));
@@ -1785,7 +1786,7 @@ public class IR_Builder
 
     public Operand buildMatch3(Node node, IR_Scope m) {
         Variable  ret       = m.getNewVariable();
-        MatchNode matchNode = (MatchNode)node;
+        Match2Node matchNode = (Match2Node)node;
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
         m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH3, new Operand[]{receiver, value}));
@@ -1945,8 +1946,10 @@ public class IR_Builder
     public Operand buildNewline(Node node, IR_Scope s) {
         // SSS FIXME: We need to build debug information tracking into the IR in some fashion
         // So, these methods below would have to have equivalents in IR_Scope implementations.
+/**
         s.lineNumber(node.getPosition());
         s.setLinePosition(node.getPosition());
+**/
 
         return build(((NewlineNode)node).getNextNode(), s);
     }
@@ -1955,10 +1958,10 @@ public class IR_Builder
         final NextNode nextNode = (NextNode) node;
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
         // SSS FIXME: 1. Is the ordering correct? (poll before next)
-        m.addInstr(new THREAD_POLL_Instr());
+        s.addInstr(new THREAD_POLL_Instr());
         // If a closure, the next is simply a return from the closure!
         // If a regular loop, the next is simply a jump to the end of the iteration
-        m.addInstr((s instanceof IR_Closure) ? new CLOSURE_RETURN_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._iterEndLabel));
+        s.addInstr((s instanceof IR_Closure) ? new CLOSURE_RETURN_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._iterEndLabel));
         return rv;
     }
 
@@ -1982,7 +1985,7 @@ public class IR_Builder
 
     public Operand buildNot(Node node, IR_Scope m) {
         Variable ret = m.getNewVariable();
-        m.addInstr(new ALU_Instr(NOT, dst, build(((NotNode)node).getConditionNode(), m)));
+        m.addInstr(new ALU_Instr(Operation.NOT, ret, build(((NotNode)node).getConditionNode(), m)));
         return ret;
     }
 
@@ -1994,6 +1997,7 @@ public class IR_Builder
     // L:
     //
     public Operand buildOpAsgnAnd(Node node, IR_Scope m) {
+        AndNode andNode = (AndNode)node;
         Label    l  = m.getNewLabel();
         Variable v1 = (Variable)build(andNode.getFirstNode(), m);
         m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
@@ -2358,13 +2362,13 @@ public class IR_Builder
     public Operand buildRedo(Node node, IR_Scope s) {
         // For closures, a redo is a jump to the beginning of the closure
         // For non-closures, a redo is a jump to the beginning of the loop
-        m.addInstr(new JUMP_Instr((s instanceof IR_Closure) ? ((IR_Closure)s)._startLabel : s.getCurrentLoop()._iterBeginLabel));
+        s.addInstr(new JUMP_Instr((s instanceof IR_Closure) ? ((IR_Closure)s)._startLabel : s.getCurrentLoop()._iterStartLabel));
         return Nil.NIL;
     }
 
     public Operand buildRegexp(Node node, IR_Scope m) {
         RegexpNode reNode = (RegexpNode) node;
-        return new Regexp(reNode.getValue(), reNode.getOptions());
+        return new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions());
     }
 
 /**
@@ -2466,13 +2470,15 @@ public class IR_Builder
     }
 **/
 
+/**
     public Operand buildRetry(Node node, IR_Scope s) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
         s.addInstr(new THREAD_POLL_Instr());
-        s.addInstr(new RETRY_Instr(l));
+        s.addInstr(new RETRY_Instr());
         return Nil.NIL;
     }
+**/
 
     public Operand buildReturn(Node node, IR_Scope m) {
         ReturnNode returnNode = (ReturnNode) node;
@@ -2487,7 +2493,7 @@ public class IR_Builder
 
     public Operand buildRoot(Node node, ScriptCompiler m, ASTInspector inspector, boolean load, boolean main) {
         // Top-level script!
-        IR_Script script = new IR_Script(m.getClassname(), m.getSourceName());
+        IR_Script script = new IR_Script(m.getClassName(), m.getSourceName());
         IR_Method rootMethod = script.getRootMethod();
 
         RootNode rootNode = (RootNode) node;
@@ -2583,7 +2589,7 @@ public class IR_Builder
                                     || (!isWhile && conditionNode.getNodeType().alwaysTrue())))
         {
             // we won't enter the loop -- just build the condition node
-            build(conditionNode, m);
+            build(conditionNode, s);
         } 
         else {
             IR_Loop loop = new IR_Loop(s);
@@ -2600,7 +2606,7 @@ public class IR_Builder
                 build(bodyNode, s);
 
                 // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
-            m.addInstr(new THREAD_POLL_Instr());
+            s.addInstr(new THREAD_POLL_Instr());
 
             s.addInstr(new LABEL_Instr(loop._iterEndLabel));
             if (!isLoopHeadCondition) {
@@ -2614,7 +2620,7 @@ public class IR_Builder
         return Nil.NIL;
     }
 
-    public Operand buildUntil(Node node, IR_Scope m) {
+    public Operand buildUntil(Node node, IR_Scope s) {
         final UntilNode untilNode = (UntilNode) node;
         return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, !untilNode.evaluateAtStart());
     }
@@ -2629,7 +2635,7 @@ public class IR_Builder
     public Operand buildVCall(Node node, IR_Scope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
         Variable      callResult = s.getNewVariable();
-        IR_Instr      callInstr  = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
+        IR_Instr      callInstr  = new CALL_Instr(callResult, new MethAddr(((VCallNode)node).getName()), args.toArray(new Operand[args.size()]), null);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -2640,13 +2646,13 @@ public class IR_Builder
     }
 
     public Operand buildXStr(Node node, IR_Scope m) {
-        return new BacktickString(((XStrNode)node).getValue());
+        return new BacktickString(new StringLiteral(((XStrNode)node).getValue()));
     }
 
     public Operand buildYield(Node node, IR_Scope s) {
-        List<Operand> args = setupArgs(((YieldNode)node).getArgsNode());
+        List<Operand> args = setupArgs(((YieldNode)node).getArgsNode(), s);
         Variable      ret  = s.getNewVariable();
-        s.addInstr(new YIELD_Instr(ret, args));
+        s.addInstr(new YIELD_Instr(ret, (Operand[])args.toArray()));
         return ret;
     }
 

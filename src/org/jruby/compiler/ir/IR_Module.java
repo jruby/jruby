@@ -9,4 +9,10 @@ public class IR_Module extends IR_ScopeImpl
         super(parent); 
         _moduleName = name;
     }
+
+    public IR_Module(Operand parent, String name) 
+    { 
+        super(parent); 
+        _moduleName = name;
+    }
 }

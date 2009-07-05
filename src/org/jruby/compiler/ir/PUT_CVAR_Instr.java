@@ -6,7 +6,7 @@ public class PUT_CVAR_Instr extends IR_Instr
     final public String   _varName;
     final public Operand  _val;
 
-    public PUT_CVAR_Instr(IR_Class c, String varName, Object value)
+    public PUT_CVAR_Instr(IR_Class c, String varName, Operand value)
     {
         super(Operation.PUT_CVAR);
 		  _class = c;

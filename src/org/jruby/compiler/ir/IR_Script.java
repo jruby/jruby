@@ -8,11 +8,11 @@ public class IR_Script extends IR_ScopeImpl
 
     public IR_Script(String className, String sourceName)
     { 
-        super(nil); 
+        super((IR_Scope)null); 
         _fileName = sourceName;
 
-            // Build a dummy class
-        _dummyClass = new IR_Class(this);
+            // Build a dummy class: SSS FIXME: What name for the class?
+        _dummyClass = new IR_Class(this, null, "_DUMMY_", false);
 
         // SSS FIXME: Set other appropriate JVM flags on the class ... see line below from StandardASMCompiler.java
         // classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);

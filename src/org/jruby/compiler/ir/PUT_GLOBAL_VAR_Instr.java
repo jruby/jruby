@@ -1,9 +1,14 @@
 package org.jruby.compiler.ir;
 
-public class PUT_GLOBAL_VAR_Instr extends TwoOperandInstr
+public class PUT_GLOBAL_VAR_Instr extends IR_Instr
 {
-    public PUT_GLOBAL_VAR_Instr(String varName, Object value)
+    final public Operand _value;
+    final public GlobalVariable _gvar;
+
+    public PUT_GLOBAL_VAR_Instr(String varName, Operand value)
     {
-        super(Operation.PUT_GLOBAL_VAR, null, new GlobalVariable(varName), value);
+        super(Operation.PUT_GLOBAL_VAR);
+        _gvar = new GlobalVariable(varName);
+        _value = value;
     }
 }

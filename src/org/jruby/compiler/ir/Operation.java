@@ -16,7 +16,7 @@ public enum Operation
 
 // alu operations
     ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
-    OR(OpType.alu_op), AND(OpType.alu_op), XOR(OpType.alu_op),
+    OR(OpType.alu_op), AND(OpType.alu_op), XOR(OpType.alu_op), NOT(OpType.alu_op),
     LSHIFT(OpType.alu_op), RSHIFT(OpType.alu_op),
 
 // method handle, arg receive, return value, and  call instructions
