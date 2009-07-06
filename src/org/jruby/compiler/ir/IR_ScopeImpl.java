@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
     private Stack<IR_Loop> _loopStack;
 
     private int _nextMethodIndex;
+    
+    final public List<IR_Method> _methods = new ArrayList<IR_Method>();
 
     private void init(Operand parent)
     {
@@ -73,7 +76,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return new Label(lblPrefix + idx);
     }
 
-    public Label getNewLabel() { return new Label("LBL_"); }
+    public Label getNewLabel() { return getNewLabel("LBL_"); }
 
     public int getAndIncrementMethodIndex() { _nextMethodIndex++; return _nextMethodIndex; }
 
@@ -106,9 +109,15 @@ public abstract class IR_ScopeImpl implements IR_Scope
         setConstantValue(c._className, new MetaObject(c));
     }
 
-    public void addMethod(IR_Method m) { /* Nothing to do; SSS FIXME: throw an exception? */ }
+    public void addMethod(IR_Method m) {
+        _methods.add(m);
+    }
 
     public void addInstr(IR_Instr i)   { _instrs.add(i); }
+
+    public List getInstrs() {
+        return Collections.unmodifiableList(_instrs);
+    }
 
         // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
         // We might not .. for the following reasons:
@@ -149,9 +158,33 @@ public abstract class IR_ScopeImpl implements IR_Scope
         addInstr(new PUT_CONST_Instr(this, constRef, val));
     }
 
+    public Map getConstants() {
+        return Collections.unmodifiableMap(_constMap);
+    }
+
     public void startLoop(IR_Loop l) { _loopStack.push(l); }
 
     public void endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
 
     public IR_Loop getCurrentLoop() { return _loopStack.peek(); }
+
+    public String toString() {
+        return
+                (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap) +
+                (_instrs.isEmpty() ? "" : "\n  instrs:\n" + toStringInstrs()) +
+                (_methods.isEmpty() ? "" : "\n  methods:\n" + _methods);
+    }
+
+    public String toStringInstrs() {
+        StringBuilder b = new StringBuilder();
+
+        int i = 0;
+        for (IR_Instr instr : _instrs) {
+            b.append("  " + i++ + "\t");
+            b.append(instr);
+            b.append("\n");
+        }
+
+        return b.toString();
+    }
 }

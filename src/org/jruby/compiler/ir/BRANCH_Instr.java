@@ -11,4 +11,9 @@ public abstract class BRANCH_Instr extends TwoOperandInstr
     }
 
     public Label getJumpTarget() { return _target; }
+
+    public String toString() {
+        return super.toString() +
+                " target = " + _target;
+    }
 }

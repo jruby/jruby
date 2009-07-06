@@ -40,4 +40,10 @@ public class IR_Method extends IR_ScopeImpl
     { 
         // SSS FIXME: Throw an exception here?
     }
+
+    public String toString() {
+        return "Method: " +
+                "\n  name: " + _name +
+                super.toString();
+    }
 }

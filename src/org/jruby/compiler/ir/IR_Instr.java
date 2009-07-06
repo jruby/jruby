@@ -1,6 +1,9 @@
 package org.jruby.compiler.ir;
 
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
+
+import java.util.Arrays;
+
 //
 // Specialized forms:
 //   v = OP(arg1, arg2, attribute_array); Ex: v = ADD(v1, v2)
@@ -47,4 +50,10 @@ public abstract class IR_Instr
         // This information is used in optimization phases to impact dead code elimination
         // and other optimization passes
 //    public abstract boolean hasSideEffects();
+
+    public String toString() {
+        return
+                _op +
+                (_result == null ? "" : " result = " + _result);
+    }
 }

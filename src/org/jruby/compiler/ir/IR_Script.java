@@ -25,4 +25,11 @@ public class IR_Script extends IR_ScopeImpl
     public Operand getFileName() { return new StringLiteral(_fileName); }
 
     public IR_Method getRootMethod() { return _dummyMethod; }
+
+    public String toString() {
+        return "Script: " +
+                "\n  file: " + getFileName() +
+                "\n  class:\n" + _dummyClass +
+                super.toString();
+    }
 }

@@ -17,4 +17,8 @@ public class MethAddr extends Reference
     public final static MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
 
     public MethAddr(String name) { super(name); }
+
+    public String toString() {
+        return "(methAddr: " + _refName + ")";
+    }
 }

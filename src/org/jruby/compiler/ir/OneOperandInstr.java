@@ -12,4 +12,9 @@ public class OneOperandInstr extends IR_Instr
         super(op, dest);
         _arg = arg;
     }
+
+    public String toString() {
+        return super.toString() +
+                " arg1 = " + _arg;
+    }
 }

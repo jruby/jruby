@@ -10,4 +10,8 @@ public class StringLiteral extends Constant
 
     public StringLiteral(ByteList val) { _bl_value = val; _str_value = _bl_value.toString(); }
     public StringLiteral(String s) { _bl_value = ByteList.create(s); _str_value = s; }
+
+    public String toString() {
+        return "(string: \"" + _str_value + "\")";
+    }
 }

@@ -14,4 +14,10 @@ public class TwoOperandInstr extends IR_Instr
         _arg1 = a1;
         _arg2 = a2;
     }
+
+    public String toString() {
+        return super.toString() +
+                " arg1 = " + _arg1 +
+                " arg2 = " + _arg2;
+    }
 }

@@ -9,4 +9,9 @@ public class JUMP_Instr extends IR_Instr
         super(Operation.JUMP);
         _target = l;
     }
+
+    public String toString() {
+        return super.toString() +
+                " target = " + _target;
+    }
 }

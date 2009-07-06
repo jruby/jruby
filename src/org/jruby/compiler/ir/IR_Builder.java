@@ -1,11 +1,15 @@
 package org.jruby.compiler.ir;
 
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.Ruby;
 import org.jruby.compiler.ScriptCompiler;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.AliasNode;
@@ -111,6 +115,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
+import org.jruby.util.ByteList;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -164,6 +169,27 @@ public class IR_Builder
             n = ((NewlineNode)n).getNextNode();
 
         return n;
+    }
+
+    public static void main(String[] args) {
+        Ruby ruby = Ruby.getGlobalRuntime();
+        Node node = null;
+        if (args[0].equals("-e")) {
+            // inline script
+            node = ruby.parse(ByteList.create(args[1]), "-e", null, 0, false);
+        } else {
+            // inline script
+            try {
+                String content = new DataInputStream(new FileInputStream(args[0])).readUTF();
+                node = ruby.parse(ByteList.create(content), "-e", null, 0, false);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
+
+        IR_Scope scope = new IR_Builder().buildRoot(node);
+
+        System.out.println(scope);
     }
 
     public Operand build(Node node, IR_Scope m) {
@@ -1320,9 +1346,9 @@ public class IR_Builder
            m.addInstr(new RETURN_Instr(Nil.NIL));
         }
 
-            // No value returned for a method definition 
-            // SSS FIXME: Verify from the ruby spec that this is true
-        return null;
+        s.addMethod(m);
+
+        return Nil.NIL;
     }
 
     public Operand buildDefn(Node node, IR_Scope s) {
@@ -2488,7 +2514,7 @@ public class IR_Builder
         return null;
     }
 
-    public Operand buildRoot(Node node) {
+    public IR_Scope buildRoot(Node node) {
         // Top-level script!
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Method rootMethod = script.getRootMethod();
@@ -2511,7 +2537,7 @@ public class IR_Builder
             }
         }
 
-        return null;
+        return script;
     }
 
     public Operand buildSelf(Node node, IR_Scope s) {

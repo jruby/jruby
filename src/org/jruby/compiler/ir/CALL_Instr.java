@@ -14,4 +14,10 @@ public class CALL_Instr extends MultiOperandInstr
    
     public boolean isRubyInternalsCall() { return false; }
     public boolean isStaticCallTarget()   { return false; }
+
+    public String toString() {
+        return super.toString() +
+                ", methAddr: " + _methAddr +
+                (_closure == null ? "" : ", closure: " + _closure);
+    }
 }
