@@ -10,6 +10,6 @@ public class Fixnum extends Constant
     public Fixnum(BigInteger val) { _value = val.longValue(); }
 
     public String toString() {
-        return "(fixnum: " + _value + ")";
+        return _value + ":fixnum";
     }
 }

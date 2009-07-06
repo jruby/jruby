@@ -19,6 +19,6 @@ public class MethAddr extends Reference
     public MethAddr(String name) { super(name); }
 
     public String toString() {
-        return "(methAddr: " + _refName + ")";
+        return _refName;
     }
 }

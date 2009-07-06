@@ -11,7 +11,6 @@ public class JUMP_Instr extends IR_Instr
     }
 
     public String toString() {
-        return super.toString() +
-                " target = " + _target;
+        return super.toString() + " " + _target;
     }
 }

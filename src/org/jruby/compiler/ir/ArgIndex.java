@@ -6,7 +6,5 @@ public class ArgIndex extends Operand
 
     public ArgIndex(int n) { _index = n; }
 
-    public String toString() {
-        return "(argIndex: " + _index + ")";
-    }
+    public String toString() { return Integer.toString(_index); }
 }

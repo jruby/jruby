@@ -52,8 +52,6 @@ public abstract class IR_Instr
 //    public abstract boolean hasSideEffects();
 
     public String toString() {
-        return
-                _op +
-                (_result == null ? "" : " result = " + _result);
+        return "\t" + (_result == null ? "" : _result + " = ") + _op;
     }
 }

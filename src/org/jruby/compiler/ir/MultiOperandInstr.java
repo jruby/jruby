@@ -1,9 +1,8 @@
 package org.jruby.compiler.ir;
 
-// This is of the form:
-
 import java.util.Arrays;
 
+// This is of the form:
 //   v = OP(args, attribute_array); Ex: v = CALL(args, v2)
 
 public class MultiOperandInstr extends IR_Instr
@@ -17,7 +16,6 @@ public class MultiOperandInstr extends IR_Instr
     }
 
     public String toString() {
-        return super.toString() +
-                ", args: " + Arrays.toString(_args);
+        return super.toString() + Arrays.toString(_args);
     }
 }

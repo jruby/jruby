@@ -6,7 +6,5 @@ public class Variable extends Operand
 
     public Variable(String n) { _name = n; }
 
-    public String toString() {
-        return "(variable: " + _name + ")";
-    }
+    public String toString() { return _name; }
 }

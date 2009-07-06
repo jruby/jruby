@@ -16,8 +16,9 @@ public class CALL_Instr extends MultiOperandInstr
     public boolean isStaticCallTarget()   { return false; }
 
     public String toString() {
-        return super.toString() +
-                ", methAddr: " + _methAddr +
-                (_closure == null ? "" : ", closure: " + _closure);
+        return   "\t" 
+		         + (_result == null ? "" : _result + " = ") 
+		         + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(_args) + ")"
+					+ (_closure == null ? "" : ", closure: " + _closure);
     }
 }

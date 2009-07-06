@@ -53,7 +53,12 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public Variable getNewVariable(String prefix)
     {
         if (prefix == null)
-            prefix = "tmp";
+            prefix = "%v_";
+
+        // We need to ensure that the variable names generated here cannot conflict with ruby variable names!
+        // Hence the "%" tthat is appended to the beginning!
+        if (!prefix.startsWith("%"))
+            prefix += "%";
 
         Integer idx = _nextVarIndex.get(prefix);
         if (idx == null)
@@ -64,7 +69,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public Variable getNewVariable()
     {
-       return getNewVariable("tmp");
+       return getNewVariable("%v_");
     }
 
     public Label getNewLabel(String lblPrefix)

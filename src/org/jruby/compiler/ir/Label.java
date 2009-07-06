@@ -9,6 +9,6 @@ public class Label extends Operand
     public Label(String l) { _label = l; }
 
     public String toString() {
-        return "(label: " + _label + ")";
+        return _label;
     }
 }
