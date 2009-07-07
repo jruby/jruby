@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir;
 
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -180,8 +181,12 @@ public class IR_Builder
         } else {
             // inline script
             try {
-                String content = new DataInputStream(new FileInputStream(args[0])).readUTF();
-                node = ruby.parse(ByteList.create(content), "-e", null, 0, false);
+                File file = new File(args[0]);
+                FileInputStream fis = new FileInputStream(file);
+                long size = file.length();
+                byte[] bytes = new byte[(int)size];
+                fis.read(bytes);
+                node = ruby.parse(new ByteList(bytes), args[0], null, 0, false);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
