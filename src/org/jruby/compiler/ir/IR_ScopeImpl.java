@@ -28,6 +28,9 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     private int _nextMethodIndex;
     
+        // List of modules, classes, and methods defined in this scope!
+    final public List<IR_Module> _modules = new ArrayList<IR_Module>();
+    final public List<IR_Class>  _classes = new ArrayList<IR_Class>();
     final public List<IR_Method> _methods = new ArrayList<IR_Method>();
 
     private void init(Operand parent)
@@ -107,15 +110,21 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public void addModule(IR_Module m) 
     {
         setConstantValue(m._moduleName, new MetaObject(m)) ;
+        _modules.add(m);
     }
 
     public void addClass(IR_Class c)
     { 
         setConstantValue(c._className, new MetaObject(c));
+        _classes.add(c);
     }
 
     public void addMethod(IR_Method m) {
         _methods.add(m);
+        if (this instanceof IR_Class)
+            addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr((IR_Class)this, m) : new DEFINE_CLASS_METHOD_Instr((IR_Class)this, m));
+        else
+            throw new RuntimeException("Encountered method add in a non-class scope!");
     }
 
     public void addInstr(IR_Instr i)   { _instrs.add(i); }
@@ -150,7 +159,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         if (cv == null) {
             Variable v = getNewVariable();
             addInstr(new GET_CONST_Instr(v, this, constRef));
-				cv = v;
+            cv = v;
         }
         return cv;
     }
@@ -177,6 +186,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return
                 (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap) +
                 (_instrs.isEmpty() ? "" : "\n  instrs:\n" + toStringInstrs()) +
+                (_modules.isEmpty() ? "" : "\n  modules:\n" + _modules) +
+                (_classes.isEmpty() ? "" : "\n  classes:\n" + _classes) +
                 (_methods.isEmpty() ? "" : "\n  methods:\n" + _methods);
     }
 

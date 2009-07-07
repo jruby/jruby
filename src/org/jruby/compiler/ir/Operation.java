@@ -27,7 +27,9 @@ public enum Operation
     YIELD(OpType.dont_care),
 
 // eval instructions
-    EVAL_OP(OpType.eval_op), CLASS_EVAL(OpType.eval_op),
+    EVAL_OP(OpType.eval_op), CLASS_EVAL(OpType.eval_op), 
+    
+    DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
 
 // exception instructions
     THROW(OpType.dont_care), RESCUE(OpType.dont_care), RETRY(OpType.dont_care),

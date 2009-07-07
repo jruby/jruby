@@ -12,6 +12,6 @@ public class StringLiteral extends Constant
     public StringLiteral(String s) { _bl_value = ByteList.create(s); _str_value = s; }
 
     public String toString() {
-        return "(string: \"" + _str_value + "\")";
+        return "\"" + _str_value + "\"";
     }
 }

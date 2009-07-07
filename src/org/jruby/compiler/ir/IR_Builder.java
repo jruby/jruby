@@ -680,10 +680,17 @@ public class IR_Builder
             cMetaObj = new MetaObject(c);
             s.addClass(c);
         }
+        else if (container instanceof MetaObject) {
+            IR_Scope containerScope = ((MetaObject)container)._scope;
+            c = new IR_Class(containerScope, superClass, className, false);
+            cMetaObj = container;
+            containerScope.addClass(c);
+        }
         else {
             c = new IR_Class(container, superClass, className, false);
             cMetaObj = new MetaObject(c);
             s.addInstr(new PUT_CONST_Instr(container, className, cMetaObj));
+            // SSS FIXME: What happens to the add class in this case??
         }
 
             // Build the class body!
@@ -1341,9 +1348,11 @@ public class IR_Builder
                 buildRescueInternal(defnNode.getBodyNode(), m, true);
             else
 **/
-                build(defnNode.getBodyNode(), m);
+            Operand rv = build(defnNode.getBodyNode(), m);
+            if (rv != null)
+               m.addInstr(new RETURN_Instr(rv));
         } else {
-           m.addInstr(new RETURN_Instr(Nil.NIL));
+            m.addInstr(new RETURN_Instr(Nil.NIL));
         }
 
         s.addMethod(m);
@@ -2517,23 +2526,22 @@ public class IR_Builder
     public IR_Scope buildRoot(Node node) {
         // Top-level script!
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
-        IR_Method rootMethod = script.getRootMethod();
+        IR_Class  rootClass = script._dummyClass;
 
         RootNode rootNode = (RootNode) node;
-
         Node nextNode = rootNode.getBodyNode();
         if (nextNode == null) {
-            rootMethod.addInstr(new RETURN_Instr(Nil.NIL));
+            script._dummyMethod.addInstr(new RETURN_Instr(Nil.NIL));
         }
         else {
             if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
                 BlockNode blockNode = (BlockNode) nextNode;
                 for (int i = 0; i < blockNode.size(); i++) {
-                    build(blockNode.get(i), rootMethod);
+                    build(blockNode.get(i), rootClass);
                 }
             } else {
                 // single-statement body, just build it
-                build(nextNode, rootMethod);
+                build(nextNode, rootClass);
             }
         }
 

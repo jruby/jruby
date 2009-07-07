@@ -15,14 +15,18 @@ public class CompoundString extends Operand
 
     public CompoundString(List<Operand> pieces) { _pieces = pieces; }
 
-	 public boolean isConstant() 
+    public boolean isConstant() 
     {
-		 if (_pieces != null) {
-			 for (Operand o: _pieces)
-				 if (!o.isConstant())
-					 return false;
-		 }
+       if (_pieces != null) {
+          for (Operand o: _pieces)
+             if (!o.isConstant())
+                return false;
+       }
 
        return true;
+    }
+
+    public String toString() { 
+       return "COMPOUND_STRING" + (_pieces == null ? "" : java.util.Arrays.toString(_pieces.toArray()));
     }
 }
