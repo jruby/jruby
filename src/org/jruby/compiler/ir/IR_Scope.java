@@ -4,6 +4,9 @@ package org.jruby.compiler.ir;
 // Easier to understand and it is in any case a scope, not just a IR builder context!
 public interface IR_Scope
 {
+        // Returns the containing parent scope -- can be a dynamic value (hence Operand)!
+    public Operand getParent();
+
         // scripts
     public void addClass(IR_Class c);
 

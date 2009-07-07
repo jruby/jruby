@@ -56,6 +56,7 @@ import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
+import org.jruby.ast.MethodDefNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
@@ -294,7 +295,7 @@ public class IR_Builder
             case XSTRNODE: return buildXStr(node, m); // done
             case YIELDNODE: return buildYield(node, m); // done
             case ZARRAYNODE: return buildZArray(node, m); // done
-//            case ZSUPERNODE: return buildZSuper(node, m); // DEFERRED
+            case ZSUPERNODE: return buildZSuper(node, m); // done
             default: throw new NotCompilableException("Unknown node encountered in buildr: " + node);
         }
     }
@@ -302,9 +303,9 @@ public class IR_Builder
     public void buildArguments(List<Operand> args, Node node, IR_Scope s) {
         switch (node.getNodeType()) {
 //            case ARGSCATNODE: buildArgsCatArguments(args, node, s, true); // DEFERRED
-            case ARGSPUSHNODE: buildArgsPushArguments(args, node, s);
-            case ARRAYNODE: buildArrayArguments(args, node, s);
-            case SPLATNODE: buildSplatArguments(args, node, s);
+            case ARGSPUSHNODE: buildArgsPushArguments(args, node, s); break;
+            case ARRAYNODE: buildArrayArguments(args, node, s); break;
+            case SPLATNODE: buildSplatArguments(args, node, s); break;
             default: 
                 Operand retVal = build(node, s);
                 //SSS FIXME: Why this?
@@ -404,12 +405,12 @@ public class IR_Builder
             case CLASSVARASGNNODE:
                 v = s.getNewVariable();
                 s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
-                s.addInstr(new PUT_CVAR_Instr((IR_Class)s, ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
                 return v;
             case CLASSVARDECLNODE:
                 v = s.getNewVariable();
                 s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
-                s.addInstr(new PUT_CVAR_Instr((IR_Class)s, ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
                 return v;
             case CONSTDECLNODE:
                 v = s.getNewVariable();
@@ -735,7 +736,7 @@ public class IR_Builder
 
     public Operand buildClassVar(Node node, IR_Scope s) {
         Variable ret = s.getNewVariable();
-        s.addInstr(new GET_CVAR_Instr(ret, (IR_Class)s, ((ClassVarNode)node).getName()));
+        s.addInstr(new GET_CVAR_Instr(ret, new MetaObject(s), ((ClassVarNode)node).getName()));
         return ret;
     }
 
@@ -743,14 +744,14 @@ public class IR_Builder
     public Operand buildClassVarAsgn(Node node, IR_Scope s) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr((IR_Class)s, ((ClassVarNode)node).getName(), val));
+        s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarNode)node).getName(), val));
         return val;
     }
 
     public Operand buildClassVarDecl(Node node, IR_Scope s) {
         final ClassVarDeclNode classVarDeclNode = (ClassVarDeclNode) node;
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr((IR_Class)s, classVarDeclNode.getName(), val));
+        s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), classVarDeclNode.getName(), val));
         return val;
     }
 
@@ -1338,7 +1339,7 @@ public class IR_Builder
 
     private Operand defineNewMethod(Node node, IR_Scope s, boolean isInstanceMethod)
     {
-        final DefnNode defnNode = (DefnNode) node;
+        final MethodDefNode defnNode = (MethodDefNode) node;
         IR_Method m = new IR_Method(s, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
@@ -1827,7 +1828,7 @@ public class IR_Builder
 
     public Operand buildMatch3(Node node, IR_Scope m) {
         Variable  ret       = m.getNewVariable();
-        Match2Node matchNode = (Match2Node)node;
+        Match3Node matchNode = (Match3Node)node;
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
         m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH3, new Operand[]{receiver, value}));
@@ -2688,15 +2689,13 @@ public class IR_Builder
        return new Array();
     }
 
-/**
-    public Operand buildZSuper(Node node, IR_Scope m) {
+    public Operand buildZSuper(Node node, IR_Scope s) {
         ZSuperNode zsuperNode = (ZSuperNode) node;
-
-        CompilerCallback closure = setupCallClosure(zsuperNode.getIterNode());
-
-        m.callZSuper(closure);
+        Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
+		  Variable   ret   = s.getNewVariable();
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, null, block));
+		  return ret;
     }
-**/
 
 /**
     public void buildArgsCatArguments(List<Operand> args, Node node, IR_Scope m) {

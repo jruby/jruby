@@ -9,13 +9,13 @@ import java.util.List;
 // that actually build a Ruby object
 public class Array extends Operand
 {
-    final public Operand[] _elts;
+    final public List<Operand> _elts;
 
 	 public Array() { _elts = null; }
 
-	 public Array(Operand[] elts) { _elts = elts; }
+	 public Array(Operand[] elts) { _elts = (List<Operand>)java.util.Arrays.asList(elts); }
 
-    public Array(List<Operand> elts) { _elts = (Operand[])elts.toArray(); }
+    public Array(List<Operand> elts) { _elts = elts; }
 
     public boolean isConstant() 
     {
@@ -28,5 +28,5 @@ public class Array extends Operand
        return true;
     }
 
-    public boolean isBlank() { return _elts == null || _elts.length == 0; }
+    public boolean isBlank() { return _elts == null || _elts.size() == 0; }
 }

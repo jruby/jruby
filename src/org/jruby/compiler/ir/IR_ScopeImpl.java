@@ -53,6 +53,12 @@ public abstract class IR_ScopeImpl implements IR_Scope
        init(parent);
     }
 
+        // Returns the containing parent scope!
+    public Operand getParent()
+    {
+        return _parent;
+    }
+
     public Variable getNewVariable(String prefix)
     {
         if (prefix == null)
