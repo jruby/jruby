@@ -40,7 +40,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     
     public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Invoker",
-                runtime.getObject(),
+                module.fastGetClass("AbstractInvoker"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(AbstractInvoker.class);
         result.defineAnnotatedMethods(JFFIInvoker.class);
@@ -57,7 +57,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
 
     JFFIInvoker(Ruby runtime, RubyClass klass, Object handle, long address,
             Type returnType, Type[] parameterTypes, String convention, IRubyObject enums) {
-        super(runtime, klass, parameterTypes.length);
+        super(runtime, klass, parameterTypes.length, new CodeMemoryIO(runtime, address));
 
         final com.kenai.jffi.Type jffiReturnType = FFIUtil.getFFIType(returnType);
         if (jffiReturnType == null) {
@@ -161,4 +161,5 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         libraryRefMap.put(dm, handle);
         return dm;
     }
+    
 }

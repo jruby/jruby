@@ -31,7 +31,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Manages Callback instances for the low level FFI backend.
  */
 public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
-    private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     private static final int LONG_SIZE = Platform.getPlatform().longSize();
 
     /** Holder for the single instance of CallbackManager */
@@ -107,11 +106,11 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         if (info == null) {
             CallingConvention convention = "stdcall".equals(null)
                     ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
-            info = new ClosureInfo(cbInfo, convention);
+            info = new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(), convention);
             infoMap.put(cbInfo, info);
         }
         
-        final CallbackProxy cbProxy = new CallbackProxy(runtime, info, proc);
+        final WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
         final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
                 info.ffiReturnType, info.ffiParameterTypes, info.convention);
         Callback cb = new Callback(runtime, handle, cbInfo, proc);
@@ -121,36 +120,46 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     }
 
     /**
+     */
+    final CallbackMemoryIO newClosure(Ruby runtime, Type returnType, Type[] parameterTypes, 
+            Object proc, CallingConvention convention) {
+        ClosureInfo info = new ClosureInfo(runtime, returnType, parameterTypes, convention);
+
+        final CallbackProxy cbProxy = new CallbackProxy(runtime, info, proc);
+        final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
+                info.ffiReturnType, info.ffiParameterTypes, info.convention);
+        
+        return new CallbackMemoryIO(runtime, handle);
+    }
+    
+    /**
      * Holds the JFFI return type and parameter types to avoid
      */
     private static class ClosureInfo {
-        final CallbackInfo cbInfo;
         final CallingConvention convention;
         final Type returnType;
         final Type[] parameterTypes;
         final com.kenai.jffi.Type[] ffiParameterTypes;
         final com.kenai.jffi.Type ffiReturnType;
         
-        public ClosureInfo(CallbackInfo cbInfo, CallingConvention convention) {
-            this.cbInfo = cbInfo;
+        public ClosureInfo(Ruby runtime, Type returnType, Type[] paramTypes, CallingConvention convention) {
             this.convention = convention;
 
-            Type[] paramTypes = cbInfo.getParameterTypes();
             ffiParameterTypes = new com.kenai.jffi.Type[paramTypes.length];
 
             for (int i = 0; i < paramTypes.length; ++i) {
                 if (!isParameterTypeValid(paramTypes[i])) {
-                    throw cbInfo.getRuntime().newArgumentError("Invalid callback parameter type: " + paramTypes[i]);
+                    throw runtime.newArgumentError("Invalid callback parameter type: " + paramTypes[i]);
                 }
                 ffiParameterTypes[i] = FFIUtil.getFFIType(paramTypes[i].getNativeType());
             }
 
-            if (!isReturnTypeValid(cbInfo.getReturnType())) {
-                throw cbInfo.getRuntime().newArgumentError("Invalid callback return type: " + cbInfo.getReturnType());
+            if (!isReturnTypeValid(returnType)) {
+                runtime.newArgumentError("Invalid callback return type: " + returnType);
             }
 
-            this.returnType = cbInfo.getReturnType();
-            this.parameterTypes = (Type[]) cbInfo.getParameterTypes().clone();
+            this.returnType = returnType;
+            this.parameterTypes = (Type[]) paramTypes.clone();
             this.ffiReturnType = FFIUtil.getFFIType(returnType.getNativeType());
             
         }
@@ -175,24 +184,16 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     /**
      * Wraps a ruby proc in a JFFI Closure
      */
-    private static final class CallbackProxy implements Closure {
-        private final Ruby runtime;
-        private final ClosureInfo closureInfo;
-        private final CallbackInfo cbInfo;
-        private final WeakReference<Object> proc;
+    private static abstract class AbstractCallbackProxy implements Closure {
+        protected final Ruby runtime;
+        protected final ClosureInfo closureInfo;
         
-        CallbackProxy(Ruby runtime, ClosureInfo closureInfo, Object proc) {
+        AbstractCallbackProxy(Ruby runtime, ClosureInfo closureInfo) {
             this.runtime = runtime;
             this.closureInfo = closureInfo;
-            this.cbInfo = closureInfo.cbInfo;
-            this.proc = new WeakReference<Object>(proc);
         }
-        public void invoke(Closure.Buffer buffer) {
-            Object recv = proc.get();
-            if (recv == null) {
-                buffer.setIntReturn(0);
-                return;
-            }
+
+        protected final void invoke(Closure.Buffer buffer, Object recv) {
             IRubyObject[] params = new IRubyObject[closureInfo.parameterTypes.length];
             for (int i = 0; i < params.length; ++i) {
                 params[i] = fromNative(runtime, closureInfo.parameterTypes[i], buffer, i);
@@ -205,7 +206,44 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             } else {
                 retVal = ((IRubyObject) recv).callMethod(runtime.getCurrentContext(), "call", params);
             }
-            setReturnValue(runtime, cbInfo.getReturnType(), buffer, retVal);
+
+            setReturnValue(runtime, closureInfo.returnType, buffer, retVal);
+        }
+    }
+
+    /**
+     * Wraps a ruby proc in a JFFI Closure
+     */
+    private static final class WeakRefCallbackProxy extends AbstractCallbackProxy implements Closure {
+        private final WeakReference<Object> proc;
+
+        WeakRefCallbackProxy(Ruby runtime, ClosureInfo closureInfo, Object proc) {
+            super(runtime, closureInfo);
+            this.proc = new WeakReference<Object>(proc);
+        }
+        public void invoke(Closure.Buffer buffer) {
+            Object recv = proc.get();
+            if (recv == null) {
+                buffer.setIntReturn(0);
+                return;
+            }
+            invoke(buffer, recv);
+        }
+    }
+
+    /**
+     * Wraps a ruby proc in a JFFI Closure
+     */
+    private static final class CallbackProxy extends AbstractCallbackProxy implements Closure {
+        private final Object proc;
+
+        CallbackProxy(Ruby runtime, ClosureInfo closureInfo, Object proc) {
+            super(runtime, closureInfo);
+            this.proc = proc;
+        }
+
+        public void invoke(Closure.Buffer buffer) {
+            invoke(buffer, proc);
         }
     }
 

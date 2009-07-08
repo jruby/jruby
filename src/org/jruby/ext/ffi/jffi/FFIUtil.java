@@ -5,11 +5,14 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -141,5 +144,25 @@ public final class FFIUtil {
     static final void putZeroTerminatedByteArray(long address, byte[] bytes, int off, int len) {
         IO.putByteArray(address, bytes, off, len);
         IO.putByte(address + len, (byte) 0);
+    }
+
+    static final Type resolveType(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof Type) {
+            return (Type) obj;
+        }
+
+        final RubyModule ffi = context.getRuntime().fastGetModule("FFI");
+        final IRubyObject typeDefs = ffi.fastFetchConstant("TypeDefs");
+
+        IRubyObject type = ((RubyHash) typeDefs).fastARef(obj);
+        if (type.isNil()) {
+            type = ffi.callMethod(context, "find_type", obj);
+        }
+
+        if (!(type instanceof Type)) {
+            throw context.getRuntime().newTypeError("Could not resolve type: " + obj);
+        }
+
+        return (Type) type;
     }
 }

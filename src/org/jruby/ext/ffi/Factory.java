@@ -111,9 +111,6 @@ public abstract class Factory {
             if (ffi.fastGetClass("Type") == null) {
                 Type.createTypeClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(AbstractInvoker.CLASS_NAME) == null) {
-                AbstractInvoker.createAbstractInvokerClass(runtime, ffi);
-            }
             if (ffi.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
                 AbstractMemory.createAbstractMemoryClass(runtime, ffi);
             }
@@ -140,6 +137,9 @@ public abstract class Factory {
             }
             if (ffi.fastGetClass("StructByValue") == null) {
                 StructByValue.createStructByValueClass(runtime, ffi);
+            }
+            if (ffi.fastGetClass(AbstractInvoker.CLASS_NAME) == null) {
+                AbstractInvoker.createAbstractInvokerClass(runtime, ffi);
             }
             if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);

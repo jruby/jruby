@@ -29,11 +29,8 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -46,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A native function invoker
  */
 @JRubyClass(name = "FFI::" + AbstractInvoker.CLASS_NAME, parent = "Object")
-public abstract class AbstractInvoker extends RubyObject {
+public abstract class AbstractInvoker extends Pointer {
     static final String CLASS_NAME = "AbstractInvoker";
     
     /**
@@ -56,28 +53,20 @@ public abstract class AbstractInvoker extends RubyObject {
     
     public static RubyClass createAbstractInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
-                runtime.getObject(), 
+                module.fastGetClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(AbstractInvoker.class);
         result.defineAnnotatedConstants(AbstractInvoker.class);
 
         return result;
     }
-
+    
     /**
-     * Creates a new <tt>Invoker</tt> instance.
+     * Creates a new <tt>AbstractInvoker</tt> instance.
      * @param arity
      */
-    protected AbstractInvoker(Ruby runtime, int arity) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), arity);
-    }
-
-    /**
-     * Creates a new <tt>Invoker</tt> instance.
-     * @param arity
-     */
-    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity) {
-        super(runtime, klass);
+    protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, DirectMemoryIO io) {
+        super(runtime, klass, io, 0);
         this.arity = Arity.fixed(arity);
     }
 
@@ -105,20 +94,5 @@ public abstract class AbstractInvoker extends RubyObject {
      */
     public final Arity getArity() {
         return arity;
-    }
-    protected static final NativeParam[] getNativeParameterTypes(Ruby runtime, RubyArray paramTypes) {
-        NativeParam[] nativeParamTypes = new NativeParam[paramTypes.size()];
-        for (int i = 0; i < paramTypes.size(); ++i) {
-            IRubyObject obj = (IRubyObject) paramTypes.entry(i);
-            if (obj instanceof NativeParam) {
-                nativeParamTypes[i] = (NativeParam) obj;
-            } else {
-                nativeParamTypes[i] = NativeType.valueOf(obj);
-            }
-            if (nativeParamTypes[i] == null) {
-                throw runtime.newArgumentError("Invalid parameter type");
-            }
-        }
-        return nativeParamTypes;
     }
 }

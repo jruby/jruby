@@ -17,7 +17,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class FastIntMethodFactory {
+public class FastIntMethodFactory extends MethodFactory {
     private static final class SingletonHolder {
         private static final FastIntMethodFactory INSTANCE = new FastIntMethodFactory();
     }

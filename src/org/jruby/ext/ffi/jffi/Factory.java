@@ -37,6 +37,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
             if (ffi.fastGetClass("Callback") == null) {
                 CallbackManager.createCallbackClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("Function") == null) {
+                Function.createFunctionClass(runtime, ffi);
+            }
             if (ffi.fastGetClass("LastError") == null) {
                 ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
             }
