@@ -219,6 +219,9 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
     public static boolean nativeEnabled = true;
 
+    public static final boolean REIFY_RUBY_CLASSES
+            = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 

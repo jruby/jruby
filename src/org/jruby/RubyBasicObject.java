@@ -323,6 +323,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RuntimeHelpers.invoke(context, this, name, args);
     }
 
+    public final IRubyObject callMethod(String name, IRubyObject[] args) {
+        return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, name, args);
+    }
+
     /**
      * Will invoke a named method with the supplied arguments and
      * supplied block with functional invocation.

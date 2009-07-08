@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -131,11 +132,20 @@ public class ClassNode extends Node implements IScopingNode {
             superClass = (RubyClass)superObj;
         }
 
-
+        boolean definedAlready = enclosingClass.isConstantDefined(cpath.getName());
+        
         RubyClass clazz = enclosingClass.defineOrGetClassUnder(cpath.getName(), superClass);
 
         scope.setModule(clazz);
 
-        return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, clazz, self, aBlock);    
+        IRubyObject classBodyResult = ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, clazz, self, aBlock);
+
+        // Experimental class reification support, to create real Java classes
+        // for Ruby classes after the first opening
+        if (!definedAlready && RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+            clazz.reify();
+        }
+
+        return classBodyResult;
     }
 }

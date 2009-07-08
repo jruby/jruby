@@ -31,6 +31,8 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +43,7 @@ import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -56,7 +59,20 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.CodegenUtils;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodAdapter;
+import org.objectweb.asm.MethodVisitor;
+
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  *
@@ -115,12 +131,34 @@ public class RubyClass extends RubyModule {
                 try {
                     return (IRubyObject)cls.newInstance();
                 } catch (InstantiationException ie) {
-                    throw runtime.newTypeError("could not allocate " + cls + " with default constructor");
+                    throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
                 } catch (IllegalAccessException iae) {
-                    throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor");
+                    throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
                 }
             }
         };
+    }
+
+    public void setRubyClassAllocator(final Class cls) {
+        try {
+            final Constructor constructor = cls.getConstructor(Ruby.class, RubyClass.class);
+            
+            this.allocator = new ObjectAllocator() {
+                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+                    try {
+                        return (IRubyObject)constructor.newInstance(runtime, klazz);
+                    } catch (InvocationTargetException ite) {
+                        throw runtime.newTypeError("could not allocate " + cls + " with (Ruby, RubyClass) constructor:\n" + ite);
+                    } catch (InstantiationException ie) {
+                        throw runtime.newTypeError("could not allocate " + cls + " with (Ruby, RubyClass) constructor:\n" + ie);
+                    } catch (IllegalAccessException iae) {
+                        throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
+                    }
+                }
+            };
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
     }
 
     @JRubyMethod(name = "allocate")
@@ -938,6 +976,53 @@ public class RubyClass extends RubyModule {
         }
     };
 
+    /**
+     * Stand up a real Java class for the backing store of this object
+     */
+    public synchronized void reify() {
+        Class parent = RubyObject.class;
+        ClassLoader parentCL = runtime.getJRubyClassLoader();
+
+        if (superClass.reifiedClass != null) {
+            parent = superClass.reifiedClass;
+            parentCL = parent.getClassLoader();
+        }
+        OneShotClassLoader oscl = new OneShotClassLoader(parentCL);
+
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, getBaseName(), null, CodegenUtils.p(parent), null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class, Ruby.class, RubyClass.class), null, null);
+        GeneratorAdapter m = new GeneratorAdapter(mv, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class, Ruby.class, RubyClass.class));
+
+        m.loadThis();
+        m.loadArgs();
+        m.invokeConstructor(Type.getType(parent), Method.getMethod("void <init> (org.jruby.Ruby, org.jruby.RubyClass)"));
+        m.returnValue();
+        m.endMethod();
+
+        cw.visitEnd();
+
+        for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
+            String methodName = methodEntry.getKey();
+            String javaName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaName, Method.getMethod("org.jruby.runtime.builtin.IRubyObject " + javaName + " (org.jruby.runtime.builtin.IRubyObject[])").getDescriptor(), null, null);
+            m = new GeneratorAdapter(ACC_PUBLIC | ACC_VARARGS, Method.getMethod("org.jruby.runtime.builtin.IRubyObject " + javaName + " (org.jruby.runtime.builtin.IRubyObject[])"), mv);
+
+            m.loadThis();
+            m.push(methodName);
+            m.loadArgs();
+            m.invokeVirtual(Type.getType(RubyObject.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(String, org.jruby.runtime.builtin.IRubyObject)"));
+            m.returnValue();
+            m.endMethod();
+        }
+
+        Class result = oscl.defineClass(getBaseName(), cw.toByteArray());
+
+        setRubyClassAllocator(result);
+        reifiedClass = result;
+    }
+
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
@@ -954,4 +1039,6 @@ public class RubyClass extends RubyModule {
     }
 
     private CallSite[] extraCallSites;
+
+    private Class reifiedClass;
 }
