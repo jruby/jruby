@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.ext.ffi.DirectMemoryIO;
@@ -255,6 +256,9 @@ public class FastIntMethodFactory {
     static final class BooleanParameterConverter extends BaseParameterConverter {
         public static final IntParameterConverter INSTANCE = new BooleanParameterConverter();
         public final int intValue(ThreadContext context, IRubyObject obj) {
+            if (!(obj instanceof RubyBoolean)) {
+                throw context.getRuntime().newTypeError("wrong argument type.  Expected true or false");
+            }
             return obj.isTrue() ? 1 : 0;
         }
     }

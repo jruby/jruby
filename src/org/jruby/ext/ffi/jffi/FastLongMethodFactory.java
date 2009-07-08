@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.ext.ffi.Platform;
@@ -255,6 +256,9 @@ public class FastLongMethodFactory {
     static final class BooleanParameterConverter extends BaseParameterConverter {
         public static final LongParameterConverter INSTANCE = new BooleanParameterConverter();
         public final long longValue(ThreadContext context, IRubyObject obj) {
+            if (!(obj instanceof RubyBoolean)) {
+                throw context.getRuntime().newTypeError("wrong argument type.  Expected true or false");
+            }
             return obj.isTrue() ? 1 : 0;
         }
     }

@@ -8,6 +8,7 @@ import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -547,6 +548,9 @@ public final class DefaultMethodFactory {
             buffer.putInt(parameter.isTrue() ? 1 : 0);
         }
         public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            if (!(parameter instanceof RubyBoolean)) {
+                throw invocation.getThreadContext().getRuntime().newTypeError("wrong argument type.  Expected true or false");
+            }
             buffer.putInt(parameter.isTrue() ? 1 : 0);
         }
         public static final ParameterMarshaller INSTANCE = new BooleanMarshaller();
