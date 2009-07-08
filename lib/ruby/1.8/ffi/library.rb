@@ -1,8 +1,9 @@
 module FFI::Library
-  DEFAULT = FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY)
+  DEFAULT = FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
 
   def ffi_lib(*names)
     ffi_libs = []
+    errors = {}
     names.each do |name|
       [ name, FFI.map_library_name(name) ].each do |libname|
         begin
@@ -11,13 +12,21 @@ module FFI::Library
             ffi_libs << lib
             break
           end
-        rescue LoadError => ex
+        rescue Exception => ex
+          errors[name] = ex
         end
       end
     end
-    raise LoadError, "Could not open any of [#{names.join(", ")}]" if ffi_libs.empty?
+
+    if ffi_libs.empty?
+      msgs = []
+      errors.each {|name, ex| msgs << "Failed to load library '#{name}': #{ex.message}" }
+      raise LoadError.new(msgs.join('\n'))
+    end
+
     @ffi_libs = ffi_libs
   end
+
   def ffi_convention(convention)
     @ffi_convention = convention
   end
