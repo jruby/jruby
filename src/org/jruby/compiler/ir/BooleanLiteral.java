@@ -9,8 +9,5 @@ public class BooleanLiteral extends Constant
    
     public boolean isTrue()  { return this == TRUE; }
     public boolean isFalse() { return this == FALSE; }
-
-    public String toString() {
-        return isTrue() ? "TRUE" : "FALSE";
-    }
+    public String toString() { return isTrue() ? "true" : "false"; }
 }

@@ -8,4 +8,6 @@ public class COPY_Instr extends OneOperandInstr
     {
         super(Operation.COPY, d, s);
     }
+
+    public String toString() { return "\t" + _result + " = " + _arg; }
 }
