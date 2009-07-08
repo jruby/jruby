@@ -28,6 +28,9 @@
 
 package org.jruby.ext.ffi;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -45,6 +48,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "FFI::" + AbstractInvoker.CLASS_NAME, parent = "Object")
 public abstract class AbstractInvoker extends Pointer {
     static final String CLASS_NAME = "AbstractInvoker";
+
+    /**
+     * Reference map to keep libraries open for as long as there is a method mapped
+     * to that library.
+     */
+    private static final Map<DynamicMethod, AbstractInvoker> refmap
+            = Collections.synchronizedMap(new WeakHashMap<DynamicMethod, AbstractInvoker>());
     
     /**
      * The arity of this function.
@@ -82,6 +92,7 @@ public abstract class AbstractInvoker extends Pointer {
             throw context.getRuntime().newTypeError(module, context.getRuntime().getModule());
         }
         DynamicMethod m = createDynamicMethod((RubyModule) module);
+        refmap.put(m, this);
         ((RubyModule) module).addModuleFunction(methodName.asJavaString(), m);
         return this;
     }
