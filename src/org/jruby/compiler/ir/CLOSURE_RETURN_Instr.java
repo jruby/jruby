@@ -6,7 +6,7 @@ public class CLOSURE_RETURN_Instr extends OneOperandInstr
 
     public CLOSURE_RETURN_Instr(Operand rv)
     {
-        super(Operation.RETURN, null, rv);
+        super(Operation.CLOSURE_RETURN, null, rv);
 		  _retval = rv;
     }
 }

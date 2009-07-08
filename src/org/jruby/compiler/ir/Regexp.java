@@ -13,4 +13,6 @@ public class Regexp extends Operand
     public Regexp(Operand re, int opts) { _re = re; _opts = opts; }
 
     public boolean isConstant() { return _re.isConstant(); }
+
+    public String toString() { return "RE:|" + _re + "|" + _opts; }
 }

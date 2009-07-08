@@ -16,4 +16,6 @@ public class Range extends Operand
     {
        return _begin.isConstant() && _end.isConstant();
     }
+
+    public String toString() { return "(" + _begin + ".." + _end + "):Range"; }
 }

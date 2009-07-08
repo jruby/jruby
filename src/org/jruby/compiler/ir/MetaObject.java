@@ -14,6 +14,6 @@ public class MetaObject extends Operand
       else if (_scope instanceof IR_Script)
          return "Script " + ((IR_Script)_scope)._fileName;
       else
-         return "Closure!";
+         return ((IR_Closure)_scope).toString().replace("\t", "\t\t");
    }
 }

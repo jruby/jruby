@@ -32,4 +32,6 @@ public class IR_Closure extends IR_ScopeImpl
     { 
         // SSS FIXME: Throw an exception here?
     }
+
+    public String toString() { return "Closure: {" + super.toString() + "}"; }
 }

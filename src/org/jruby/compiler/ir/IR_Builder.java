@@ -337,29 +337,26 @@ public class IR_Builder
     }
 
     public List<Operand> setupArgs(Node receiver, Node args, IR_Scope s) {
-        if (args == null)
-            return Collections.EMPTY_LIST;
-
-        // unwrap newline nodes to get their actual type
-        args = skipOverNewlines(args);
 
         List<Operand> argsList = new ArrayList<Operand>();
         argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
-        buildArgs(argsList, args, s);
+		  if (args != null) {
+			  // unwrap newline nodes to get their actual type
+			  args = skipOverNewlines(args);
+			  buildArgs(argsList, args, s);
+		  }
 
         return argsList;
     }
 
     public List<Operand> setupArgs(Node args, IR_Scope s) {
-        if (args == null)
-            return Collections.EMPTY_LIST;
-
-        // unwrap newline nodes to get their actual type
-        args = skipOverNewlines(args);
-
         List<Operand> argsList = new ArrayList<Operand>();
         argsList.add(s.getSelf());
-        buildArgs(argsList, args, s);
+		  if (args != null) {
+			  // unwrap newline nodes to get their actual type
+			  args = skipOverNewlines(args);
+			  buildArgs(argsList, args, s);
+		  }
 
         return argsList;
     }

@@ -20,7 +20,8 @@ public enum Operation
     LSHIFT(OpType.alu_op), RSHIFT(OpType.alu_op),
 
 // method handle, arg receive, return value, and  call instructions
-    GET_METHOD(OpType.dont_care), RETURN(OpType.dont_care), RECV_ARG(OpType.dont_care), RECV_OPT_ARG(OpType.dont_care), RECV_BLOCK_ARG(OpType.dont_care),
+    GET_METHOD(OpType.dont_care), RETURN(OpType.dont_care), CLOSURE_RETURN(OpType.dont_care),
+	 RECV_ARG(OpType.dont_care), RECV_OPT_ARG(OpType.dont_care), RECV_BLOCK_ARG(OpType.dont_care),
     CALL(OpType.call_op), OCALL(OpType.call_op),
 
 // closure instructions
