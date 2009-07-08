@@ -55,7 +55,6 @@ public abstract class Factory {
             }
             final String prefix = Factory.class.getPackage().getName();
             providerNames.add(prefix + ".jffi.Factory");
-            // providerNames.add(prefix + ".jna.Factory");
             for (String className : providerNames) {
                 try {
                     factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
@@ -85,11 +84,11 @@ public abstract class Factory {
             }
 
             RubyModule ffi = runtime.defineModule("FFI");
-            Factory factory = Factory.getInstance();
-            if (factory.getClass().getName().contains("org.jruby.ext.ffi.jna")) {
-                runtime.getWarnings().warn("Deprecated JNA backend used for FFI");
+            try {
+                Factory.getInstance().init(runtime, ffi);
+            } catch (Exception e) {
+                throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage());
             }
-            factory.init(runtime, ffi);
         }
     }
 
