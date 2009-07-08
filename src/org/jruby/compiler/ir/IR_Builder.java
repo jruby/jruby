@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -337,7 +338,7 @@ public class IR_Builder
 
     public List<Operand> setupArgs(Node receiver, Node args, IR_Scope s) {
         if (args == null)
-            return null;
+            return Collections.EMPTY_LIST;
 
         // unwrap newline nodes to get their actual type
         args = skipOverNewlines(args);
@@ -351,7 +352,7 @@ public class IR_Builder
 
     public List<Operand> setupArgs(Node args, IR_Scope s) {
         if (args == null)
-            return null;
+            return Collections.EMPTY_LIST;
 
         // unwrap newline nodes to get their actual type
         args = skipOverNewlines(args);
