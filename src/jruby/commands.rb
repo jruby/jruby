@@ -15,18 +15,19 @@ module JRuby
 
       def maybe_install_gems
         require 'rubygems'
+        # Want the kernel gem method here; expose a backdoor b/c RubyGems 1.3.1 made it private
+        Object.class_eval { def __gem(g); gem(g); end }
+        gem_loader = Object.new
         ARGV.delete_if do |g|
           begin
-            # Want the kernel gem method here
-            # Hack to make it public; RubyGems 1.3.1 made it private. TODO: less grossness.
-            Object.class_eval { public :gem }
-            Object.new.gem g
+            gem_loader.__gem(g)
             puts "#{g} already installed"
             true
           rescue Gem::LoadError
             false
           end
         end
+        Object.class_eval { remove_method :__gem }
         unless ARGV.reject{|a| a =~ /^-/}.empty?
           ARGV.unshift "install"
           load Config::CONFIG['bindir'] + "/gem"
@@ -45,7 +46,7 @@ module JRuby
             f << "@echo off\n"
             f << "call \"%~dp0jruby\" -S #{File.basename(fn)} %*\n"
           end
-        end
+        end if File.writable?(File.join(Config::CONFIG['bindir'], 'foo.bat'))
       end
 
       def method_missing(name, *)
