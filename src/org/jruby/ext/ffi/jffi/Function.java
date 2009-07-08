@@ -87,7 +87,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         }
 
         if (args.length > 2 && args[2] instanceof Pointer) {
-            fptr = (DirectMemoryIO) ((Pointer) args[2]).getMemoryIO();
+            fptr = new CodeMemoryIO(context.getRuntime(), (Pointer) args[2]);
             optionsIndex = 3;
         } else if (args.length > 2 && (args[2] instanceof RubyProc || args[2].respondsTo("call"))) {
             proc = args[2];
