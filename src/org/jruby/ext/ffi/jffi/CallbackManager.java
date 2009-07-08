@@ -9,12 +9,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
@@ -254,21 +256,44 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * This also keeps the callback alive via the handle member, as long as this
      * CallbackMemoryIO instance is contained in a valid Callback pointer.
      */
-    static final class CallbackMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
+    static final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectMemoryIO {
+        /**
+         * Reference map to keep code alive if autorelease=(true) is set
+         */
+        private static final Map<CallbackMemoryIO, Boolean> refmap
+            = new ConcurrentHashMap<CallbackMemoryIO, Boolean>();
+
         private final Closure.Handle handle;
+
         public CallbackMemoryIO(Ruby runtime,  Closure.Handle handle) {
             super(runtime);
             this.handle = handle;
         }
+
         public final long getAddress() {
             return handle.getAddress();
         }
+
         public final boolean isNull() {
             return false;
         }
+
         public final boolean isDirect() {
             return true;
         }
+
+        public void free() {
+            refmap.remove(this);
+        }
+
+        public void setAutoRelease(boolean autorelease) {
+            if (autorelease) {
+                refmap.remove(this);
+            } else {
+                refmap.put(this, true);
+            }
+        }
+
     }
 
     /**
