@@ -20,5 +20,5 @@ public class PUT_CVAR_Instr extends IR_Instr
 		  _scope = scope;
     }
 
-    public String toString() { return "\t(" + _scope + "." + _varName + ") = " + _value; }
+    public String toString() { return "\tPUT_CVAR(" + _scope + "." + _varName + ") = " + _value; }
 }

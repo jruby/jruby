@@ -20,8 +20,9 @@ public enum Operation
     LSHIFT(OpType.alu_op), RSHIFT(OpType.alu_op),
 
 // method handle, arg receive, return value, and  call instructions
-    GET_METHOD(OpType.dont_care), RETURN(OpType.dont_care), CLOSURE_RETURN(OpType.dont_care),
-	 RECV_ARG(OpType.dont_care), RECV_OPT_ARG(OpType.dont_care), RECV_BLOCK_ARG(OpType.dont_care),
+    GET_METHOD(OpType.dont_care),
+    RETURN(OpType.dont_care), CLOSURE_RETURN(OpType.dont_care),
+	 RECV_ARG(OpType.dont_care), RECV_OPT_ARG(OpType.dont_care), RECV_CLOSURE_ARG(OpType.dont_care),
     CALL(OpType.call_op), OCALL(OpType.call_op),
 
 // closure instructions
@@ -30,6 +31,7 @@ public enum Operation
 // eval instructions
     EVAL_OP(OpType.eval_op), CLASS_EVAL(OpType.eval_op), 
     
+// def instructions
     DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
 
 // exception instructions
@@ -46,8 +48,10 @@ public enum Operation
 // others
     THREAD_POLL(OpType.dont_care),
 
-// a === call used only for its conditional results, as in case/when, begin/rescue, ...
-    EQQ(OpType.call_op),
+// comparisons & checks
+    IS_DEFINED(OpType.dont_care), // implements the defined? keyword
+    IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false
+    EQQ(OpType.call_op), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
 
 // a case/when branch
     CASE(OpType.branch_op);

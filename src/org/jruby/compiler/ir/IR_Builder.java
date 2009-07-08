@@ -64,6 +64,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OrNode;
@@ -263,8 +264,8 @@ public class IR_Builder
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot(node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd(node, m); // done
-//            case OPASGNNODE: return buildOpAsgn(node, m); // DEFERRED
-//            case OPASGNORNODE: return buildOpAsgnOr(node, m); // DEFERRED
+//            case OPASGNNODE: return buildOpAsgn(node, m); // done
+            case OPASGNORNODE: return buildOpAsgnOr(node, m); // done -- partially
 //            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // DEFERRED SSS FIXME: What code generates this AST?
             case ORNODE: return buildOr(node, m); // done
 //            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
@@ -340,11 +341,11 @@ public class IR_Builder
 
         List<Operand> argsList = new ArrayList<Operand>();
         argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
-		  if (args != null) {
-			  // unwrap newline nodes to get their actual type
-			  args = skipOverNewlines(args);
-			  buildArgs(argsList, args, s);
-		  }
+        if (args != null) {
+           // unwrap newline nodes to get their actual type
+           args = skipOverNewlines(args);
+           buildArgs(argsList, args, s);
+        }
 
         return argsList;
     }
@@ -352,11 +353,11 @@ public class IR_Builder
     public List<Operand> setupArgs(Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
         argsList.add(s.getSelf());
-		  if (args != null) {
-			  // unwrap newline nodes to get their actual type
-			  args = skipOverNewlines(args);
-			  buildArgs(argsList, args, s);
-		  }
+        if (args != null) {
+           // unwrap newline nodes to get their actual type
+           args = skipOverNewlines(args);
+           buildArgs(argsList, args, s);
+        }
 
         return argsList;
     }
@@ -397,37 +398,37 @@ public class IR_Builder
 // to be figured out during live var analysis.
             case DASGNNODE:
                 v = new Variable(((DAsgnNode)node).getName());
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 return v;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
                 return v;
             case CLASSVARDECLNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
                 return v;
             case CONSTDECLNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 return buildConstDeclAssignment(node, s, v);
             case GLOBALASGNNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
                 return v;
             case INSTASGNNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 return v;
             case LOCALASGNNODE:
                 v = new Variable(((LocalAsgnNode)node).getName());
-                s.addInstr(new RECV_BLOCK_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
                 return v;
 /**
             case MULTIPLEASGNNODE:
@@ -2029,79 +2030,56 @@ public class IR_Builder
         return ret;
     }
 
-    // Translate "a &&= b" --> "a = (a ? b : false)" -->
+    // Translate "x &&= y" --> "x = (is_true(x) ? y : false)" -->
     // 
-    //    a = -- build(a) --
-    //    beq(a, false, L)
-    //    a = -- build(b) --
+    //    x = -- build(x) should return a variable! --
+    //    f = is_true(x)
+    //    beq(f, false, L)
+    //    x = -- build(y) --
     // L:
     //
-    public Operand buildOpAsgnAnd(Node node, IR_Scope m) {
-        AndNode andNode = (AndNode)node;
-        Label    l  = m.getNewLabel();
-        Variable v1 = (Variable)build(andNode.getFirstNode(), m);
-        m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
-        Operand  v2  = build(andNode.getSecondNode(), m);
-        m.addInstr(new COPY_Instr(v1, v2));
-        m.addInstr(new LABEL_Instr(l));
-        m.addInstr(new THREAD_POLL_Instr());
+    public Operand buildOpAsgnAnd(Node node, IR_Scope s) {
+        OpAsgnAndNode andNode = (OpAsgnAndNode)node;
+        Label    l  = s.getNewLabel();
+        Operand  v1 = build(andNode.getFirstNode(), s);
+        Variable f  = s.getNewVariable();
+        s.addInstr(new IS_TRUE_Instr(f, v1));
+        s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l));
+        build(andNode.getSecondNode(), s);  // This does the assignment!
+        s.addInstr(new LABEL_Instr(l));
+        s.addInstr(new THREAD_POLL_Instr());
         return v1;
     }
 
-/**
-    public Operand buildOpAsgnOr(Node node, IR_Scope m) {
+    // Translate "x || y" --> "x = (is_true(x) ? x : y)" -->
+    // 
+    //    x = -- build(x) should return a variable! --
+    //    f = is_true(x)
+    //    beq(f, true, L)
+    //    x = -- build(y) --
+    // L:
+    //
+    public Operand buildOpAsgnOr(Node node, IR_Scope s) {
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
-
+        Label    l1 = s.getNewLabel();
+        Variable f  = s.getNewVariable();
+        Operand  v1 = build(orNode.getFirstNode(), s);  // v1 need not be a variable here!
         if (needsDefinitionCheck(orNode.getFirstNode())) {
-            buildGetDefinitionBase(orNode.getFirstNode(), m);
-
-            m.isNull(new BranchCallback() {
-
-                        public void branch(IR_Scope m) {
-                            build(orNode.getSecondNode(), m,true);
-                        }
-                    }, new BranchCallback() {
-
-                        public void branch(IR_Scope m) {
-                            build(orNode.getFirstNode(), m,true);
-                            m.duplicateCurrentValue();
-                            m.performBooleanBranch(new BranchCallback() {
-
-                                        public void branch(IR_Scope m) {
-                                        //Do nothing
-                                        }
-                                    },
-                                    new BranchCallback() {
-
-                                        public void branch(IR_Scope m) {
-                                            m.consumeCurrentValue();
-                                            build(orNode.getSecondNode(), m,true);
-                                        }
-                                    });
-                        }
-                    });
+            Label    l2 = s.getNewLabel();
+            s.addInstr(new IS_DEFINED_Instr(f, v1));
+            s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l2)); // if v1 is undefined, go to v2's computation
+            s.addInstr(new IS_TRUE_Instr(f, v1));
+            s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+            s.addInstr(new LABEL_Instr(l2));
         } else {
-            build(orNode.getFirstNode(), m,true);
-            m.duplicateCurrentValue();
-            m.performBooleanBranch(new BranchCallback() {
-                public void branch(IR_Scope m) {
-                //Do nothing
-                }
-            },
-            new BranchCallback() {
-                public void branch(IR_Scope m) {
-                    m.consumeCurrentValue();
-                    build(orNode.getSecondNode(), m,true);
-                }
-            });
-
+            s.addInstr(new IS_TRUE_Instr(f, v1));
+            s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         }
-
-        m.addInstr(new THREAD_POLL_Instr());
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        build(orNode.getSecondNode(), s); // This does the assignment!
+        s.addInstr(new LABEL_Instr(l1));
+        s.addInstr(new THREAD_POLL_Instr());
+        return v1;
     }
-**/
 
     /**
      * Check whether the given node is considered always "defined" or whether it
@@ -2137,7 +2115,6 @@ public class IR_Builder
     }
 
 /**
-    // SSS FIXME: What code generates this AST?
     public Operand buildOpAsgn(Node node, IR_Scope m) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
@@ -2154,65 +2131,30 @@ public class IR_Builder
         return ret;
     }
 
-    public Operand buildOpAsgnWithOr(Node node, IR_Scope m) {
+    public Operand buildOpAsgnWithOr(Node node, IR_Scope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-
-        final CompilerCallback receiverCallback = new CompilerCallback() {
-
-            public void call(IR_Scope m) {
-                build(opAsgnNode.getReceiverNode(), m, true); // [recv]
-            }
-        };
-
-        List<Operand> args = setupArgs(opAsgnNode.getValueNode());
-        
+        Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
+        List<Operand> args = setupArgs(opAsgnNode.getValueNode(), s);
         m.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildOpAsgnWithAnd(Node node, IR_Scope m) {
+    public Operand buildOpAsgnWithAnd(Node node, IR_Scope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-
-        final CompilerCallback receiverCallback = new CompilerCallback() {
-
-            public void call(IR_Scope m) {
-                build(opAsgnNode.getReceiverNode(), m, true); // [recv]
-            }
-        };
-        
-        ArgumentsCallback argsCallback = setupArgs(opAsgnNode.getValueNode());
-        
+        Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
+        List<Operand> args = setupArgs(opAsgnNode.getValueNode(), s);
         m.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
 
-    public Operand buildOpAsgnWithMethod(Node node, IR_Scope m) {
+    public Operand buildOpAsgnWithMethod(Node node, IR_Scope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-
-        final CompilerCallback receiverCallback = new CompilerCallback() {
-                    public void call(IR_Scope m) {
-                        build(opAsgnNode.getReceiverNode(), m, true); // [recv]
-                    }
-                };
-
+        Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
         // eval new value, call operator on old value, and assign
-        ArgumentsCallback argsCallback = new ArgumentsCallback() {
-            public int getArity() {
-                return 1;
-            }
-
-            public void call(IR_Scope m) {
-                build(opAsgnNode.getValueNode(), m, true);
-            }
-        };
-        
+        Operand val = build(opAsgnNode.getValueNode(), m, true);
         m.getInvocationCompiler().invokeOpAsgnWithMethod(opAsgnNode.getOperatorName(), opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
     }
+**/
 
+/**
     public Operand buildOpElementAsgn(Node node, IR_Scope m) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
@@ -2690,9 +2632,9 @@ public class IR_Builder
     public Operand buildZSuper(Node node, IR_Scope s) {
         ZSuperNode zsuperNode = (ZSuperNode) node;
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
-		  Variable   ret   = s.getNewVariable();
+        Variable   ret   = s.getNewVariable();
         s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, null, block));
-		  return ret;
+        return ret;
     }
 
 /**
