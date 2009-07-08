@@ -2,6 +2,10 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -11,6 +15,7 @@ import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
+import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
@@ -22,6 +27,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="FFI::Function", parent="FFI::Pointer")
 public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
+    /**
+     * Reference map to keep libraries open for as long as there is a method mapped
+     * to that library.
+     */
+    private static final Map<AbstractInvoker, Boolean> refmap
+            = new ConcurrentHashMap<AbstractInvoker, Boolean>();
+
     private final com.kenai.jffi.Function function;
     private final Type returnType;
     private final Type[] parameterTypes;
@@ -132,7 +144,26 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
         return callMethod.call(context, callModule, callModule.getSingletonClass(), "call", args, Block.NULL_BLOCK);
     }
-    
+
+    @JRubyMethod(name = "free")
+    public final IRubyObject free(ThreadContext context) {
+        refmap.remove(this);
+        // Replace memory object with one that throws an exception on any access
+        // setMemoryIO(new FreedMemoryIO(context.getRuntime()));
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "autorelease=", required = 1)
+    public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
+        if (release.isTrue()) {
+            refmap.remove(this);
+        } else {
+            refmap.put(this, true);
+        }
+
+        return context.getRuntime().getNil();
+    }
+
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         if (enums == null || enums.isNil()) {
