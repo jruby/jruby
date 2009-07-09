@@ -29,7 +29,7 @@ bench_list = %w[
   bench_globals
   bench_ivar_access
   bench_literal_hash
-  bench_local_vars
+  bench_lvar
   bench_method_dispatch
   bench_method_return
   bench_op_asgn_or
@@ -45,23 +45,33 @@ bench_list.each do |bench_name|
   load File.join(File.dirname(__FILE__), bench_name + '.rb')
 end
 
-if (ARGV[0] && ARGV[0].to_i > 1)
-  ARGV[0].to_i.times do |i|
-    puts unless i == 0
-    puts "Iteration: #{i + 1}"
-    puts "------------------------"
-    Benchmark.bm(50) do |bm|
-      bench_list.each do |bench_name|
-        bm.report(" #{bench_name.upcase}") {}
-        send bench_name.intern, bm
-      end
-    end
-  end
-else
-  Benchmark.bmbm(50) do |bm|
-    bench_list.each do |bench_name|
-      bm.report(" #{bench_name.upcase}") {}
+Benchmark.bm(50) do |bm|
+  bench_list.each do |bench_name|
+    bm.report(" #{bench_name.upcase}") {}
+    ARGV[0].to_i.times do |i|
       send bench_name.intern, bm
+      bm.report(" ----------------") {}
     end
   end
 end
+
+# if (ARGV[0] && ARGV[0].to_i > 0)
+#   ARGV[0].to_i.times do |i|
+#     puts unless i == 0
+#     puts "Iteration: #{i + 1}"
+#     puts "------------------------"
+#     Benchmark.bm(50) do |bm|
+#       bench_list.each do |bench_name|
+#         bm.report(" #{bench_name.upcase}") {}
+#         send bench_name.intern, bm
+#       end
+#     end
+#   end
+# else
+#   Benchmark.bmbm(50) do |bm|
+#     bench_list.each do |bench_name|
+#       bm.report(" #{bench_name.upcase}") {}
+#       send bench_name.intern, bm
+#     end
+#   end
+# end
