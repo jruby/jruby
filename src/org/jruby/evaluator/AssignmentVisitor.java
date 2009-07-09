@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2003-2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2003-2009 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -41,10 +41,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class AssignmentVisitor {
     @Deprecated
     public static IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, Node node, IRubyObject value, Block block, boolean checkArity) {
@@ -115,101 +111,6 @@ public class AssignmentVisitor {
         }
         
         return value;
-    }
-
-    public static void multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgnNode node, IRubyObject arg0, IRubyObject arg1, boolean checkArity) {
-        // Assign the values.
-        ListNode head = node.getHeadNode();
-        int valueLen = 2;
-        int varLen = head == null ? 0 : head.size();
-
-        if (checkArity && valueLen < varLen) {
-            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        }
-
-        // this is not in L2R order for assignment...does it matter?
-        switch (varLen) {
-        case 2:
-            head.get(1).assign(runtime, context, self, arg1, Block.NULL_BLOCK, checkArity);
-        case 1:
-            head.get(0).assign(runtime, context, self, arg0, Block.NULL_BLOCK, checkArity);
-        case 0:
-            break;
-        }
-
-        Node argsNode = node.getArgsNode();
-        if (argsNode != null) {
-            if (argsNode.getNodeType() == NodeType.STARNODE) {
-                // no check for '*'
-            } else {
-                switch (varLen) {
-                case 0:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(arg0, arg1), Block.NULL_BLOCK, checkArity);
-                    break;
-                case 1:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(arg1), Block.NULL_BLOCK, checkArity);
-                    break;
-                case 2:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), Block.NULL_BLOCK, checkArity);
-                    break;
-                }
-            }
-        }
-
-        int j = valueLen;
-        while (j < varLen) {
-            node.getHeadNode().get(j++).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, checkArity);
-        }
-    }
-
-    public static void multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgnNode node, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, boolean checkArity) {
-        // Assign the values.
-        ListNode head = node.getHeadNode();
-        int valueLen = 3;
-        int varLen = head == null ? 0 : head.size();
-
-        if (checkArity && valueLen < varLen) {
-            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        }
-
-        // this is not in L2R order for assignment...does it matter?
-        switch (varLen) {
-        case 3:
-            head.get(2).assign(runtime, context, self, arg2, Block.NULL_BLOCK, checkArity);
-        case 2:
-            head.get(1).assign(runtime, context, self, arg1, Block.NULL_BLOCK, checkArity);
-        case 1:
-            head.get(0).assign(runtime, context, self, arg0, Block.NULL_BLOCK, checkArity);
-        case 0:
-            break;
-        }
-
-        Node argsNode = node.getArgsNode();
-        if (argsNode != null) {
-            if (argsNode.getNodeType() == NodeType.STARNODE) {
-                // no check for '*'
-            } else {
-                switch (varLen) {
-                case 0:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(arg0, arg1, arg2), Block.NULL_BLOCK, checkArity);
-                    break;
-                case 1:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(arg1, arg2), Block.NULL_BLOCK, checkArity);
-                    break;
-                case 2:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(arg2), Block.NULL_BLOCK, checkArity);
-                    break;
-                case 3:
-                    argsNode.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), Block.NULL_BLOCK, checkArity);
-                    break;
-                }
-            }
-        }
-
-        int j = valueLen;
-        while (j < varLen) {
-            node.getHeadNode().get(j++).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, checkArity);
-        }
     }
 
     public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgn19Node node, RubyArray value) {

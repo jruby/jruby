@@ -151,6 +151,10 @@ import org.jruby.ast.TrueNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhenOneArgNode;
 import org.jruby.ast.YieldNode;
+import org.jruby.ast.YieldOneNode;
+import org.jruby.ast.YieldThreeNode;
+import org.jruby.ast.YieldTwoNode;
+import org.jruby.ast.ZYieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
@@ -1258,9 +1262,26 @@ public class ParserSupport {
                 state = true;
             }
         } else {
-            state = false;
+            return new ZYieldNode(position);
         }
-        
+
+        if (state && node instanceof ArrayNode) {
+            ArrayNode args = (ArrayNode) node;
+
+            switch (args.size()) {
+                case 1:
+                    return new YieldOneNode(position, args);
+                case 2:
+                    return new YieldTwoNode(position, args);
+                case 3:
+                    return new YieldThreeNode(position, args);
+            }
+        }
+
+        if (node instanceof FixnumNode) {
+            return new YieldOneNode(position, (FixnumNode) node);
+        }
+
         return new YieldNode(position, node, state);
     }
     

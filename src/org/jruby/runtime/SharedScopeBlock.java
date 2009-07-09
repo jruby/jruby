@@ -45,7 +45,7 @@ public class SharedScopeBlock extends InterpretedBlock {
     
     public static Block newInterpretedSharedScopeClosure(ThreadContext context, IterNode iterNode, DynamicScope dynamicScope, IRubyObject self) {
         Binding binding = context.currentBinding(self, dynamicScope);
-        BlockBody body = new SharedScopeBlock(iterNode);
+        InterpretedBlock body = new SharedScopeBlock(iterNode);
 
         return new Block(body, binding);
     }

@@ -12,12 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ * Copyright (C) 2009 Thomas E Enebo <enebo@acm.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,47 +26,44 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
 
-import java.util.List;
+package org.jruby.runtime.assigner;
 
 import org.jruby.Ruby;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** 
- * Represents the unassignable star in a multiple assignent (e.g. a,b,* = arr).
- * 
- * AssignmentVisitor.multiAssign checks for this (this is never visited directly)
+/**
+ * Assign to no arguments.
  */
-public class StarNode extends Node {
-    /**
-     * Constructor for StarNode.
-     */
-    public StarNode(ISourcePosition position) {
-        super(position);
-    }
-
-    public NodeType getNodeType() {
-        return NodeType.STARNODE;
-    }
-
-    /**
-     * @see Node#accept(NodeVisitor)
-     */
-    public Object accept(NodeVisitor visitor) {
-    	return null; // never visited, should be fine
-    }
-    
-    public List<Node> childNodes() {
-        return EMPTY_LIST;
-    }
+public class Pre0Rest0Post0Assigner extends Assigner {
+    @Override
+    public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {}
 
     @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        return null;
+    public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
+            Block block) {}
+
+    @Override
+    public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
+            IRubyObject value2, Block block) {}
+
+    @Override
+    public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value1,
+            IRubyObject value2, IRubyObject value3, Block block) {}
+
+    @Override
+    public void assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject values[],
+            Block block) {}
+
+    @Override
+    public void assignArray(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject values,
+            Block block) {}
+
+    @Override
+    public IRubyObject convertToArray(Ruby runtime, IRubyObject value) {
+        return ArgsUtil.convertToRubyArray(runtime, value, false);
     }
 }

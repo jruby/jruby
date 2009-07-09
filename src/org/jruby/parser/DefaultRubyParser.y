@@ -114,6 +114,7 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
+import org.jruby.ast.ZYieldNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
@@ -1073,10 +1074,10 @@ primary       : literal
                   $$ = support.new_yield(getPosition($1), $3);
               }
               | kYIELD tLPAREN2 tRPAREN {
-                  $$ = new YieldNode(getPosition($1), null, false);
+                  $$ = new ZYieldNode(getPosition($1));
               }
               | kYIELD {
-                  $$ = new YieldNode(getPosition($1), null, false);
+                  $$ = new ZYieldNode(getPosition($1));
               }
               | kDEFINED opt_nl tLPAREN2 expr tRPAREN {
                   $$ = new DefinedNode(getPosition($1), $4);

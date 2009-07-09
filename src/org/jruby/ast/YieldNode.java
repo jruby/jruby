@@ -105,43 +105,11 @@ public class YieldNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = null;
-        Block block = context.getCurrentFrame().getBlock();
-
         if (expandedArguments) {
-            // try arity-specific
-            if (argsNode != null) {
-                if (argsNode instanceof ArrayNode) {
-                    ArrayNode args = (ArrayNode)argsNode;
-                    switch (args.size()) {
-                    case 0:
-                        return block.yieldSpecific(context);
-                    case 1:
-                        return block.yieldSpecific(context,
-                                args.get(0).interpret(runtime, context, self, aBlock)
-                                );
-                    case 2:
-                        return block.yieldSpecific(context,
-                                args.get(0).interpret(runtime, context, self, aBlock),
-                                args.get(1).interpret(runtime, context, self, aBlock)
-                                );
-                    case 3:
-                        return block.yieldSpecific(context,
-                                args.get(0).interpret(runtime, context, self, aBlock),
-                                args.get(1).interpret(runtime, context, self, aBlock),
-                                args.get(2).interpret(runtime, context, self, aBlock)
-                                );
-                    }
-                }
-            }
+            return context.getCurrentFrame().getBlock().yield(context, argsNode.interpret(runtime, context, self, aBlock), null, null, true);
+        } 
 
-            // otherwise...
-            if (argsNode != null) result = argsNode.interpret(runtime, context, self, aBlock);
-            return context.getCurrentFrame().getBlock().yield(context, result, null, null, true);
-        } else {
-            if (argsNode != null) result = argsNode.interpret(runtime, context, self, aBlock);
-            return context.getCurrentFrame().getBlock().yield(context, result);
-        }
+        return context.getCurrentFrame().getBlock().yield(context, argsNode.interpret(runtime, context, self, aBlock));
     }
     
     @Override
