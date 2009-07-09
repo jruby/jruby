@@ -68,6 +68,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
@@ -968,6 +969,10 @@ public class RubyModule extends RubyObject {
         Object token = getCacheToken();
         DynamicMethod method = searchMethodInner(name);
 
+        if (method instanceof DefaultMethod) {
+            method = ((DefaultMethod)method).getMethodForCaching();
+        }
+
         return method != null ? addToCache(name, method, token) : addToCache(name, UndefinedMethod.getInstance(), token);
     }
     
@@ -1002,7 +1007,7 @@ public class RubyModule extends RubyObject {
         return superClass == null ? null : superClass.searchMethodInner(name);
     }
 
-    protected void invalidateCacheDescendants() {
+    public void invalidateCacheDescendants() {
         generation.update();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {

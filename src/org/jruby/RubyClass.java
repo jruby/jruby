@@ -849,7 +849,7 @@ public class RubyClass extends RubyModule {
      * global lock, which we would like to avoid.
      */
     @Override
-    protected void invalidateCacheDescendants() {
+    public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
         // update all subclasses
         synchronized (runtime.getHierarchyLock()) {

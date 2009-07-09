@@ -105,9 +105,18 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
         return staticScope;
     }
 
+    public DynamicMethod getMethodForCaching() {
+        DynamicMethod method = box.actualMethod;
+        if (method instanceof JittedMethod) {
+            return method;
+        }
+        return this;
+    }
+
     public void switchToJitted(Script jitCompiledScript, CallConfiguration jitCallConfig) {
         this.box.actualMethod = new JittedMethod(getImplementationClass(), staticScope, jitCompiledScript, jitCallConfig, getVisibility(), argsNode.getArity(), position);
         this.box.callCount = -1;
+        getImplementationClass().invalidateCacheDescendants();
     }
 
     private DynamicMethod tryJitReturnMethod(ThreadContext context, String name) {
