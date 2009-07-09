@@ -53,18 +53,26 @@ public class JittedMethod extends DynamicMethod implements JumpTarget {
     private final Script jitCompiledScript;
     private final ISourcePosition position;
     private final Arity arity;
+    private final DefaultMethod realMethod;
     
     public JittedMethod(RubyModule implementationClass, StaticScope staticScope, Script jitCompiledScript,
-            CallConfiguration jitCallConfig, Visibility visibility, Arity arity, ISourcePosition position) {
+            CallConfiguration jitCallConfig, Visibility visibility, Arity arity, ISourcePosition position,
+            DefaultMethod realMethod) {
         super(implementationClass, visibility, jitCallConfig);
         this.position = position;
         this.jitCompiledScript = jitCompiledScript;
         this.staticScope = staticScope;
         this.arity = arity;
+        this.realMethod = realMethod;
     }
 
     public StaticScope getStaticScope() {
         return staticScope;
+    }
+
+    @Override
+    public DynamicMethod getRealMethod() {
+        return realMethod;
     }
 
     @Override
@@ -257,7 +265,7 @@ public class JittedMethod extends DynamicMethod implements JumpTarget {
     }
 
     public DynamicMethod dup() {
-        return new JittedMethod(getImplementationClass(), staticScope, jitCompiledScript, callConfig, getVisibility(), arity, position);
+        return new JittedMethod(getImplementationClass(), staticScope, jitCompiledScript, callConfig, getVisibility(), arity, position, realMethod);
     }
 
 
