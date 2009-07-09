@@ -205,6 +205,23 @@
   </target>
 
   <target name="_update_scm_revision_">
+      <condition property="ruby.available">
+          <available file="/usr/bin/ruby"/>
+      </condition>
+      <antcall target="_update_scm_revision_with_ruby_"/>
+      <antcall target="_update_scm_revision_with_jruby_"/>
+  </target>
+
+  <target name="_update_scm_revision_with_ruby_" if="ruby.available">
+      <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" executable="/usr/bin/ruby">
+          <arg line="tool/snapshot.rb ${jruby.classes.dir}/org/jruby/jruby.properties"/>
+      </exec>
+      <condition property="ruby.failed">
+          <istrue value="${ruby.command.failed}"/>
+      </condition>
+  </target>
+
+  <target name="_update_scm_revision_with_jruby_" unless="ruby.available">
       <java classname="org.jruby.Main" resultproperty="snapshot.result" errorproperty="snapshot.error" failonerror="false">
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
