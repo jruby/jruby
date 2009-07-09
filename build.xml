@@ -1426,4 +1426,63 @@
   <target name="test-prawn" depends="jar,install-build-gems,fetch-prawn">
       <run-rake dir="test/prawn" rake.targets="test examples"/>
   </target>
+
+  <target name="bench-language">
+      <java fork="true" classname="org.jruby.Main" output="bench.language.client.interpreted.txt" errorproperty="bench.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="-client"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <arg value="-X-C"/>
+        <arg value="bench/language/bench_all.rb"/>
+        <arg value="0"/>
+      </java>
+      <java fork="true" classname="org.jruby.Main" output="bench.language.client.jitted.txt" errorproperty="bench.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="-client"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <sysproperty key="jruby.jit.threshold" value="0"/>
+        <arg value="bench/language/bench_all.rb"/>
+        <arg value="0"/>
+      </java>
+      <java fork="true" classname="org.jruby.Main" output="bench.language.client.precompiled.txt" errorproperty="bench.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="-client"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <arg value="-X+C"/>
+        <arg value="bench/language/bench_all.rb"/>
+        <arg value="0"/>
+      </java>
+
+      <java fork="true" classname="org.jruby.Main" output="bench.language.server.interpreted.txt" errorproperty="bench.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="-server"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <arg value="-X-C"/>
+        <arg value="bench/language/bench_all.rb"/>
+        <arg value="0"/>
+      </java>
+      <java fork="true" classname="org.jruby.Main" output="bench.language.server.jitted.txt" errorproperty="bench.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="-server"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <sysproperty key="jruby.jit.threshold" value="0"/>
+        <arg value="bench/language/bench_all.rb"/>
+        <arg value="0"/>
+      </java>
+      <java fork="true" classname="org.jruby.Main" output="bench.language.server.precompiled.txt" errorproperty="bench.error" failonerror="false">
+        <classpath refid="build.classpath"/>
+        <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="-server"/>
+        <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <arg value="-X+C"/>
+        <arg value="bench/language/bench_all.rb"/>
+        <arg value="0"/>
+      </java>
+
+  </target>
 </project>
