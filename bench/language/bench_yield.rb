@@ -1,151 +1,109 @@
 require 'benchmark'
 
 class BenchYield
-  def foocall(arg)
+  def single_arg_method(arg)
     arg
   end
-  def foo
-    yield 1
-    yield 1
-    yield 1
-    yield 1
-    yield 1
-    yield 1
-    yield 1
-    yield 1
-    yield 1
-    yield 1
+
+  def yield_one_arg
+    yield 1; yield 1; yield 1; yield 1; yield 1 
+    yield 1; yield 1; yield 1; yield 1; yield 1
   end
-  def foo2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
-    yield 1,2
+
+  def yield_two_args
+    yield 1,2; yield 1,2; yield 1,2; yield 1,2; yield 1,2
+    yield 1,2; yield 1,2; yield 1,2; yield 1,2; yield 1,2
   end
-  def foo2_5
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
-    yield 1,2,3
+
+  def yield_three_args
+    yield 1,2,3; yield 1,2,3; yield 1,2,3; yield 1,2,3; yield 1,2,3
+    yield 1,2,3; yield 1,2,3; yield 1,2,3; yield 1,2,3; yield 1,2,3
   end
-  def foo3
-    yield
-    yield
-    yield
-    yield
-    yield
-    yield
-    yield
-    yield
-    yield
-    yield
+
+  def yield_no_args
+    yield; yield; yield; yield; yield
+    yield; yield; yield; yield; yield
   end
-  def foo4
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
-    foocall(1)
+
+  def method_dispatch
+    single_arg_method(1); single_arg_method(1); single_arg_method(1)
+    single_arg_method(1); single_arg_method(1); single_arg_method(1)
+    single_arg_method(1); single_arg_method(1); single_arg_method(1)
+    single_arg_method(1)
   end
 end
 
 def bench_yield(bm)
   bbi = BenchYield.new
   bm.report "1m x10 yield 1 to { }" do
-    a = 5; 
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo {}
-      i += 1;
+      bbi.yield_one_arg {}
+      i += 1
     end
   end
   
   bm.report "1m x10 yield to { }" do
-    a = 5;
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo3 {}
-      i += 1;
+      bbi.yield_no_args {}
+      i += 1
     end
   end
 
   bm.report "1m x10 yield 1 to {|j| j}" do
-    a = 5;
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo {|j| j}
-      i += 1;
+      bbi.yield_one_arg {|j| j}
+      i += 1
     end
   end
 
   bm.report "1m x10 yield 1,2 to {|j,k| k}" do
-    a = 5; 
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo2 {|j,k| k}
-      i += 1;
+      bbi.yield_two_args {|j,k| k}
+      i += 1
     end
   end
 
   bm.report "1m x10 yield 1,2,3 to {|j,k,l| k}" do
-    a = 5; 
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo2_5 {|j,k,l| k}
-      i += 1;
+      bbi.yield_three_args {|j,k,l| k}
+      i += 1
     end
   end
 
   bm.report "1m x10 yield to {|j,k,l| k}" do
-    a = 5;
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo3 {|j,k,l| k}
-      i += 1;
+      bbi.yield_no_args {|j,k,l| k}
+      i += 1
     end
   end
 
   bm.report "1m x10 yield 1,2,3 to {|*j| j}" do
-    a = 5; 
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo2_5 {|*j| j}
-      i += 1;
+      bbi.yield_three_args {|*j| j}
+      i += 1
     end
   end
 
   bm.report "1m x10 yield to {1}" do
-    a = 5; 
-    i = 0;
+    i = 0
     while i < 1000000
-      bbi.foo3 {1}
-      i += 1;
+      bbi.yield_no_args {1}
+      i += 1
     end
   end
 
-  bm.report "1m x10 call(1) to def foo(a); a; end " do
-    a = 5; 
-    i = 0;
+  bm.report "1m x10 call() to a_method(p); p; end " do
+    i = 0
     while i < 1000000
-      bbi.foo4
-      i += 1;
+      bbi.method_dispatch
+      i += 1
     end
   end
 end
