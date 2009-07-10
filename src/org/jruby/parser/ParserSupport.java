@@ -1269,6 +1269,8 @@ public class ParserSupport {
             ArrayNode args = (ArrayNode) node;
 
             switch (args.size()) {
+                case 0:
+                    return new ZYieldNode(position);
                 case 1:
                     return new YieldOneNode(position, args);
                 case 2:
