@@ -193,15 +193,18 @@ public class ManyVarsDynamicScope extends DynamicScope {
         System.arraycopy(values, 0, variableValues, 0, size);
     }
 
+    @Override
     public void setArgValues(IRubyObject arg0) {
         variableValues[0] = arg0;
     }
     
+    @Override
     public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
         variableValues[0] = arg0;
         variableValues[1] = arg1;
     }
     
+    @Override
     public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         variableValues[0] = arg0;
         variableValues[1] = arg1;
@@ -209,8 +212,6 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
     
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        // FIXME: Some asserts
-        System.out.println("VALUEL: " + values.length + ", SIZE: " + size + ", INDEX: " + index);
         System.arraycopy(values, values.length - size, variableValues, index, size);
     }
 
