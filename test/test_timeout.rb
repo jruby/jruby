@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'timeout'
+require 'socket'
 
 class TestTimeout < Test::Unit::TestCase
   def test_timeout_for_loop
@@ -37,5 +38,20 @@ class TestTimeout < Test::Unit::TestCase
 
   def test_subsecond_timeout_long_sleep
     do_timeout(0.1, 1, 0, 1) { sleep 1 }
+  end
+
+  def test_timeout_sysread_socket
+    port = rand(10000) + 5000
+    server = TCPServer.new(port)
+    client = TCPSocket.new('localhost', port)
+    server.accept
+    begin
+      timeout(0.1) { client.sysread(1024) }
+    rescue Timeout::Error
+      ok = true
+    end
+  ensure
+    begin; server.close; rescue Exception; end
+    begin; client.close; rescue Exception; end
   end
 end

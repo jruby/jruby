@@ -292,6 +292,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public synchronized void beDead() {
         status = status.DEAD;
+        try {
+            if (selector != null) selector.close();
+        } catch (IOException ioe) {
+        }
     }
 
     public void pollThreadEvents() {
@@ -836,6 +840,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public boolean selectForAccept(RubyIO io) {
         return select(io, SelectionKey.OP_ACCEPT);
     }
+
+    private volatile Selector selector;
+
+    private synchronized Selector getSelector(SelectableChannel channel) throws IOException {
+        if (selector == null) selector = Selector.open();
+        return selector;
+    }
     
     public boolean select(RubyIO io, int ops) {
         Channel channel = io.getChannel();
@@ -846,13 +857,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             synchronized (selectable.blockingLock()) {
                 boolean oldBlocking = selectable.isBlocking();
 
+                SelectionKey key = null;
                 try {
                     selectable.configureBlocking(false);
                     
                     io.addBlockingThread(this);
-                    currentSelector = selectable.provider().openSelector();
+                    currentSelector = getSelector(selectable);
 
-                    SelectionKey key = selectable.register(currentSelector, ops);
+                    key = selectable.register(currentSelector, ops);
 
                     beforeBlockingCall();
                     int result = currentSelector.select();
@@ -872,17 +884,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 } catch (IOException ioe) {
                     throw io.getRuntime().newRuntimeError("Error with selector: " + ioe);
                 } finally {
-                    afterBlockingCall();
-                    if (currentSelector != null) {
-                        try {
-                            currentSelector.close();
-                        } catch (IOException ioe) {
-                            throw io.getRuntime().newRuntimeError("Could not close selector");
-                        }
-                    }
-                    currentSelector = null;
-                    io.removeBlockingThread(this);
                     try {
+                        if (key != null) {
+                            key.cancel();
+                            currentSelector.selectNow();
+                        }
+                        afterBlockingCall();
+                        currentSelector = null;
+                        io.removeBlockingThread(this);
                         selectable.configureBlocking(oldBlocking);
                     } catch (IOException ioe) {
                         // ignore; I don't like doing it, but it seems like we

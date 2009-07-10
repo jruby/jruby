@@ -2350,11 +2350,14 @@ public class RubyIO extends RubyObject {
             
             // TODO: Ruby locks the string here
             
-            context.getThread().beforeBlockingCall();
             myOpenFile.checkClosed(getRuntime());
             
             // TODO: Ruby re-checks that the buffer string hasn't been modified
-            
+
+            // select until read is ready
+            context.getThread().beforeBlockingCall();
+            context.getThread().select(this, SelectionKey.OP_READ);
+
             int bytesRead = myOpenFile.getMainStream().getDescriptor().read(len, str.getByteList());
             
             // TODO: Ruby unlocks the string here
