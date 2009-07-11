@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -19,6 +20,10 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
         super(host, Visibility.PUBLIC);
         // we set all Java methods to optional, since many/most have overloads
         setArity(Arity.OPTIONAL);
+    }
+
+    static Object convertArg(ThreadContext context, IRubyObject arg, JavaMethod method, int index) {
+        return JavaUtil.convertArgumentToType(context, arg, method.getParameterTypes()[index]);
     }
 
     void raiseNoMatchingCallableError(String name, IRubyObject proxy, Object... args) {

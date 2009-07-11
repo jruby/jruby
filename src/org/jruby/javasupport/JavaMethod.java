@@ -50,6 +50,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
@@ -191,10 +192,7 @@ public class JavaMethod extends JavaCallable {
 
     @JRubyMethod(rest = true)
     public IRubyObject invoke(IRubyObject[] args) {
-        if (args.length != 1 + getArity()) {
-            throw getRuntime().newArgumentError(args.length, 1 + getArity());
-        }
-
+        checkArity(args.length - 1);
         Object[] arguments = new Object[args.length - 1];
         convertArguments(getRuntime(), arguments, args, 1);
 
@@ -229,57 +227,13 @@ public class JavaMethod extends JavaCallable {
         return invokeWithExceptionHandling(method, javaInvokee, arguments);
     }
 
-    public IRubyObject invoke(IRubyObject self, Object[] args) {
-        if (args.length != getArity()) {
-            throw getRuntime().newArgumentError(args.length, getArity());
-        }
-
-        if (! (self instanceof JavaObject)) {
-            throw getRuntime().newTypeError("invokee not a java object");
-        }
-        Object javaInvokee = ((JavaObject) self).getValue();
-
-        if (! method.getDeclaringClass().isInstance(javaInvokee)) {
-            throw getRuntime().newTypeError("invokee not instance of method's class (" +
-                                              "got" + javaInvokee.getClass().getName() + " wanted " +
-                                              method.getDeclaringClass().getName() + ")");
-        }
-        
-        //
-        // this test really means, that this is a ruby-defined subclass of a java class
-        //
-        if (javaInvokee instanceof InternalJavaProxy &&
-                // don't bother to check if final method, it won't
-                // be there (not generated, can't be!)
-                !Modifier.isFinal(method.getModifiers())) {
-            JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee)
-                    .___getProxyClass();
-            JavaProxyMethod jpm;
-            if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null &&
-                    jpm.hasSuperImplementation()) {
-                return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, args);
-            }
-        }
-        return invokeWithExceptionHandling(method, javaInvokee, args);
-    }
-
     @JRubyMethod(rest = true)
     public IRubyObject invoke_static(IRubyObject[] args) {
-        if (args.length != getArity()) {
-            throw getRuntime().newArgumentError(args.length, getArity());
-        }
+        checkArity(args.length);
         Object[] arguments = new Object[args.length];
         System.arraycopy(args, 0, arguments, 0, arguments.length);
         convertArguments(getRuntime(), arguments, args, 0);
         return invokeWithExceptionHandling(method, null, arguments);
-    }
-
-    public IRubyObject invoke_static(Object[] args) {
-        if (args.length != getArity()) {
-            throw getRuntime().newArgumentError(args.length, getArity());
-        }
-
-        return invokeWithExceptionHandling(method, null, args);
     }
 
     @JRubyMethod
@@ -297,25 +251,222 @@ public class JavaMethod extends JavaCallable {
         return Java.getInstance(getRuntime(), method.getTypeParameters());
     }
 
+    public IRubyObject invokeDirect(Object javaInvokee, Object[] args) {
+        checkArity(args.length);
+        checkInstanceof(javaInvokee);
+
+        if (mightBeProxy(javaInvokee)) {
+            return tryProxyInvocation(javaInvokee, args);
+        }
+
+        return invokeWithExceptionHandling(method, javaInvokee, args);
+    }
+
+    public IRubyObject invokeDirect(Object javaInvokee) {
+        checkArity(0);
+        checkInstanceof(javaInvokee);
+
+        if (mightBeProxy(javaInvokee)) {
+            return tryProxyInvocation(javaInvokee);
+        }
+
+        return invokeWithExceptionHandling(method, javaInvokee);
+    }
+
+    public IRubyObject invokeDirect(Object javaInvokee, Object arg0) {
+        checkArity(1);
+        checkInstanceof(javaInvokee);
+
+        if (mightBeProxy(javaInvokee)) {
+            return tryProxyInvocation(javaInvokee, arg0);
+        }
+
+        return invokeWithExceptionHandling(method, javaInvokee, arg0);
+    }
+
+    public IRubyObject invokeDirect(Object javaInvokee, Object arg0, Object arg1) {
+        checkArity(2);
+        checkInstanceof(javaInvokee);
+
+        if (mightBeProxy(javaInvokee)) {
+            return tryProxyInvocation(javaInvokee, arg0, arg1);
+        }
+
+        return invokeWithExceptionHandling(method, javaInvokee, arg0, arg1);
+    }
+
+    public IRubyObject invokeDirect(Object javaInvokee, Object arg0, Object arg1, Object arg2) {
+        checkArity(3);
+        checkInstanceof(javaInvokee);
+
+        if (mightBeProxy(javaInvokee)) {
+            return tryProxyInvocation(javaInvokee, arg0, arg1, arg2);
+        }
+
+        return invokeWithExceptionHandling(method, javaInvokee, arg0, arg1, arg2);
+    }
+
+    public IRubyObject invokeDirect(Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
+        checkArity(4);
+        checkInstanceof(javaInvokee);
+
+        if (mightBeProxy(javaInvokee)) {
+            return tryProxyInvocation(javaInvokee, arg0, arg1, arg2, arg3);
+        }
+
+        return invokeWithExceptionHandling(method, javaInvokee, arg0, arg1, arg2, arg3);
+    }
+
+    public IRubyObject invokeStaticDirect(Object[] args) {
+        checkArity(args.length);
+        return invokeWithExceptionHandling(method, null, args);
+    }
+
+    public IRubyObject invokeStaticDirect() {
+        checkArity(0);
+        return invokeWithExceptionHandling(method, null);
+    }
+
+    public IRubyObject invokeStaticDirect(Object arg0) {
+        checkArity(1);
+        return invokeWithExceptionHandling(method, null, arg0);
+    }
+
+    public IRubyObject invokeStaticDirect(Object arg0, Object arg1) {
+        checkArity(2);
+        return invokeWithExceptionHandling(method, null, arg0, arg1);
+    }
+
+    public IRubyObject invokeStaticDirect(Object arg0, Object arg1, Object arg2) {
+        checkArity(3);
+        return invokeWithExceptionHandling(method, null, arg0, arg1, arg2);
+    }
+
+    public IRubyObject invokeStaticDirect(Object arg0, Object arg1, Object arg2, Object arg3) {
+        checkArity(4);
+        return invokeWithExceptionHandling(method, null, arg0, arg1, arg2, arg3);
+    }
+
+    private void checkArity(int length) throws RaiseException {
+        if (length != getArity()) {
+            throw getRuntime().newArgumentError(length, getArity());
+        }
+    }
+
+    private void checkInstanceof(Object javaInvokee) throws RaiseException {
+        if (!method.getDeclaringClass().isInstance(javaInvokee)) {
+            throw getRuntime().newTypeError("invokee not instance of method's class (" + "got" + javaInvokee.getClass().getName() + " wanted " + method.getDeclaringClass().getName() + ")");
+        }
+    }
+
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError("for method " + method.getName() + " expected " + argument_types().inspect() + "; got: "
-                        + dumpArgTypes(arguments)
-                        + "; error: " + iae.getMessage());
+            return handlelIllegalArgumentEx(method, iae, arguments);
         } catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError("illegal access on '" + method.getName() + "': " + iae.getMessage());
+            return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
-            // This point is only reached if there was an exception handler installed.
-            return getRuntime().getNil();
+            return handleInvocationTargetEx(ite);
         } catch (Throwable t) {
-            getRuntime().getJavaSupport().handleNativeException(t);
-            // This point is only reached if there was an exception handler installed.
-            return getRuntime().getNil();
+            return handleThrowable(t);
         }
+    }
+
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee) {
+        try {
+            Object result = method.invoke(javaInvokee);
+            return returnConverter.convert(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            return handlelIllegalArgumentEx(method, iae);
+        } catch (IllegalAccessException iae) {
+            return handleIllegalAccessEx(method, iae);
+        } catch (InvocationTargetException ite) {
+            return handleInvocationTargetEx(ite);
+        } catch (Throwable t) {
+            return handleThrowable(t);
+        }
+    }
+
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0) {
+        try {
+            Object result = method.invoke(javaInvokee, arg0);
+            return returnConverter.convert(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            return handlelIllegalArgumentEx(method, iae, arg0);
+        } catch (IllegalAccessException iae) {
+            return handleIllegalAccessEx(method, iae);
+        } catch (InvocationTargetException ite) {
+            return handleInvocationTargetEx(ite);
+        } catch (Throwable t) {
+            return handleThrowable(t);
+        }
+    }
+
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1) {
+        try {
+            Object result = method.invoke(javaInvokee, arg0, arg1);
+            return returnConverter.convert(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            return handlelIllegalArgumentEx(method, iae, arg0, arg1);
+        } catch (IllegalAccessException iae) {
+            return handleIllegalAccessEx(method, iae);
+        } catch (InvocationTargetException ite) {
+            return handleInvocationTargetEx(ite);
+        } catch (Throwable t) {
+            return handleThrowable(t);
+        }
+    }
+
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
+        try {
+            Object result = method.invoke(javaInvokee, arg0, arg1, arg2);
+            return returnConverter.convert(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2);
+        } catch (IllegalAccessException iae) {
+            return handleIllegalAccessEx(method, iae);
+        } catch (InvocationTargetException ite) {
+            return handleInvocationTargetEx(ite);
+        } catch (Throwable t) {
+            return handleThrowable(t);
+        }
+    }
+
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
+        try {
+            Object result = method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
+            return returnConverter.convert(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2, arg3);
+        } catch (IllegalAccessException iae) {
+            return handleIllegalAccessEx(method, iae);
+        } catch (InvocationTargetException ite) {
+            return handleInvocationTargetEx(ite);
+        } catch (Throwable t) {
+            return handleThrowable(t);
+        }
+    }
+
+    private IRubyObject handleIllegalAccessEx(Method method, IllegalAccessException iae) throws RaiseException {
+        throw getRuntime().newTypeError("illegal access on '" + method.getName() + "': " + iae.getMessage());
+    }
+
+    private IRubyObject handleInvocationTargetEx(InvocationTargetException ite) {
+        getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+        // This point is only reached if there was an exception handler installed.
+        return getRuntime().getNil();
+    }
+
+    private IRubyObject handleThrowable(Throwable t) {
+        getRuntime().getJavaSupport().handleNativeException(t);
+        // This point is only reached if there was an exception handler installed.
+        return getRuntime().getNil();
+    }
+
+    private IRubyObject handlelIllegalArgumentEx(Method method, IllegalArgumentException iae, Object... arguments) throws RaiseException {
+        throw getRuntime().newTypeError("for method " + method.getName() + " expected " + argument_types().inspect() + "; got: " + dumpArgTypes(arguments) + "; error: " + iae.getMessage());
     }
 
     private String dumpArgTypes(Object[] arguments) {
@@ -391,5 +542,20 @@ public class JavaMethod extends JavaCallable {
 
     protected AccessibleObject accessibleObject() {
         return method;
+    }
+
+    private boolean mightBeProxy(Object javaInvokee) {
+        // this test really means, that this is a ruby-defined subclass of a java class
+        return javaInvokee instanceof InternalJavaProxy && !Modifier.isFinal(method.getModifiers());
+    }
+
+    private IRubyObject tryProxyInvocation(Object javaInvokee, Object... args) {
+        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyMethod jpm;
+        if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
+            return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, args);
+        } else {
+            return invokeWithExceptionHandling(method, javaInvokee, args);
+        }
     }
 }

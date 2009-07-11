@@ -9,7 +9,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class FieldMethodZero extends JavaMethodZero {
-
     Field field;
     String name;
 

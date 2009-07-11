@@ -25,6 +25,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaProxy extends RubyObject {
     protected final RubyClass.VariableAccessor objectAccessor;
+    private Object object;
+    
     public JavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
         objectAccessor = klazz.getVariableAccessorForWrite("__wrap_struct__");
@@ -36,6 +38,14 @@ public class JavaProxy extends RubyObject {
 
     public void dataWrapStruct(Object object) {
         objectAccessor.set(this, object);
+        this.object = ((JavaObject)object).getValue();
+    }
+
+    public Object getObject() {
+        // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
+        // this resulted in object being null after unmarshalling...
+        if (object == null) object = ((JavaObject)dataGetStruct()).getValue();
+        return object;
     }
     
     public static RubyClass createJavaProxy(ThreadContext context) {
