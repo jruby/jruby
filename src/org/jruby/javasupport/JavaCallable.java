@@ -45,9 +45,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
+    protected final Class<?>[] parameterTypes;
 
-    public JavaCallable(Ruby runtime, RubyClass rubyClass) {
+    public JavaCallable(Ruby runtime, RubyClass rubyClass, Class<?>[] parameterTypes) {
         super(runtime, rubyClass);
+        this.parameterTypes = parameterTypes;
     }
 
     public static void registerRubyMethods(Ruby runtime, RubyClass result) {

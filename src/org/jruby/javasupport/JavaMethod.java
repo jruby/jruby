@@ -65,7 +65,6 @@ public class JavaMethod extends JavaCallable {
     private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
     private final Method method;
     private final Handle handle;
-    private final Class<?>[] parameterTypes;
     private final JavaUtil.JavaConverter returnConverter;
 
     public Object getValue() {
@@ -87,7 +86,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public JavaMethod(Ruby runtime, Method method) {
-        super(runtime, runtime.getJavaSupport().getJavaMethodClass());
+        super(runtime, runtime.getJavaSupport().getJavaMethodClass(), method.getParameterTypes());
         this.method = method;
 
         boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
@@ -111,8 +110,6 @@ public class JavaMethod extends JavaCallable {
             tmpHandle = null;
         }
         handle = tmpHandle;
-
-        this.parameterTypes = method.getParameterTypes();
 
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
         // implement public interfaces.  Their methods are all public methods for the public 

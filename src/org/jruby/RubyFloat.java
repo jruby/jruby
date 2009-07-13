@@ -37,6 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.math.BigInteger;
 import static org.jruby.util.Numeric.f_expt;
 import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.frexp;
@@ -148,6 +149,10 @@ public class RubyFloat extends RubyNumeric {
 
     public long getLongValue() {
         return (long) value;
+    }
+
+    public BigInteger getBigIntegerValue() {
+        return BigInteger.valueOf((long)value);
     }
     
     public RubyFloat convertToFloat() {

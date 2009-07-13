@@ -99,12 +99,19 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(runtime, new BigInteger(value));
     }
 
+    @Override
     public double getDoubleValue() {
         return big2dbl(this);
     }
 
+    @Override
     public long getLongValue() {
         return big2long(this);
+    }
+
+    @Override
+    public BigInteger getBigIntegerValue() {
+        return value;
     }
 
     /** Getter for property value.

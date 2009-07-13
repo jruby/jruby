@@ -122,6 +122,10 @@ public class RubyNumeric extends RubyObject {
     public long getLongValue() {
         return 0;
     }
+
+    public BigInteger getBigIntegerValue() {
+        return BigInteger.ZERO;
+    }
     
     public static RubyNumeric newNumeric(Ruby runtime) {
     	return new RubyNumeric(runtime, runtime.getNumeric());

@@ -51,7 +51,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="Java::JavaConstructor")
 public class JavaConstructor extends JavaCallable {
     private final Constructor<?> constructor;
-    private final Class<?>[] parameterTypes;
     private final JavaUtil.JavaConverter objectConverter;
 
     public Object getValue() {
@@ -73,9 +72,8 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
-        super(runtime, runtime.getJavaSupport().getJavaConstructorClass());
+        super(runtime, runtime.getJavaSupport().getJavaConstructorClass(), constructor.getParameterTypes());
         this.constructor = constructor;
-        this.parameterTypes = constructor.getParameterTypes();
         
         this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
     }

@@ -25,9 +25,8 @@ public class StaticMethodInvoker extends MethodInvoker {
         int len = args.length;
         Object[] convertedArgs = new Object[len];
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
-        Class[] targetTypes = method.getParameterTypes();
         for (int i = len; --i >= 0;) {
-            convertedArgs[i] = JavaUtil.convertArgumentToType(context, args[i], targetTypes[i]);
+            convertedArgs[i] = convertArg(context, args[i], method, i);
         }
         return method.invokeStaticDirect(convertedArgs);
     }

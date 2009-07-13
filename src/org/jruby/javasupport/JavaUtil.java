@@ -1040,6 +1040,10 @@ public class JavaUtil {
     public static Object convertArgumentToType(ThreadContext context, IRubyObject arg, Class target) {
         if (arg instanceof JavaObject) {
             return coerceJavaObjectToType(context, ((JavaObject)arg).getValue(), target);
+        } else if (arg instanceof JavaProxy) {
+            JavaProxy proxy = (JavaProxy)arg;
+            context.getRuntime().getJavaSupport().getObjectProxyCache().put(proxy.getObject(), arg);
+            return proxy.getObject();
         } else if (arg.dataGetStruct() instanceof JavaObject) {
             JavaObject innerWrapper = (JavaObject)arg.dataGetStruct();
             
@@ -1053,11 +1057,9 @@ public class JavaUtil {
             case ClassIndex.NIL:
                 return coerceNilToType((RubyNil)arg, target);
             case ClassIndex.FIXNUM:
-                return coerceFixnumToType((RubyFixnum)arg, target);
             case ClassIndex.BIGNUM:
-                return coerceBignumToType((RubyBignum)arg, target);
             case ClassIndex.FLOAT:
-                return coerceFloatToType((RubyFloat)arg, target);
+                return getNumericConverter(target).coerce((RubyNumeric)arg, target);
             case ClassIndex.STRING:
                 return coerceStringToType((RubyString)arg, target);
             case ClassIndex.TRUE:
@@ -1093,55 +1095,53 @@ public class JavaUtil {
             return null;
         }
     }
-    
-    public static Object coerceFixnumToType(RubyFixnum fixnum, Class target) {
-        return coerceNumericToType(fixnum, target);
-    }
-        
-    public static Object coerceBignumToType(RubyBignum bignum, Class target) {
-        if (target == BigInteger.class) {
-            return bignum.getValue();
-        }
-        return coerceNumericToType(bignum, target);
-    }
-    
-    public static Object coerceFloatToType(RubyFloat flote, Class target) {
-        return coerceNumericToType(flote, target);
+
+    public interface NumericConverter {
+        public Object coerce(RubyNumeric numeric, Class target);
     }
 
-    public static Object coerceNumericToType(RubyNumeric numeric, Class target) {
-        // TODO: this could be faster
-        if (target.isPrimitive()) {
-            if (target == Byte.TYPE) {
-                return Byte.valueOf((byte)numeric.getLongValue());
-            } else if (target == Short.TYPE) {
-                return Short.valueOf((short)numeric.getLongValue());
-            } else if (target == Character.TYPE) {
-                return Character.valueOf((char)numeric.getLongValue());
-            } else if (target == Integer.TYPE) {
-                return Integer.valueOf((int)numeric.getLongValue());
-            } else if (target == Long.TYPE) {
-                return Long.valueOf(numeric.getLongValue());
-            } else if (target == Double.TYPE) {
-                return Double.valueOf(numeric.getDoubleValue());
-            } else if (target == Float.TYPE) {
-                return Float.valueOf((float)numeric.getDoubleValue());
-            }
-        } else if (target == Byte.class) {
+    public static NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
             return Byte.valueOf((byte)numeric.getLongValue());
-        } else if (target == Short.class) {
+        }
+    };
+    public static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
             return Short.valueOf((short)numeric.getLongValue());
-        } else if (target == Character.class) {
+        }
+    };
+    public static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
             return Character.valueOf((char)numeric.getLongValue());
-        } else if (target == Integer.class) {
+        }
+    };
+    public static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
             return Integer.valueOf((int)numeric.getLongValue());
-        } else if (target == Long.class) {
-            return Long.valueOf((long)numeric.getLongValue());
-        } else if (target == Float.class) {
+        }
+    };
+    public static NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
+            return Long.valueOf(numeric.getLongValue());
+        }
+    };
+    public static NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
             return Float.valueOf((float)numeric.getDoubleValue());
-        } else if (target == Double.class) {
-            return Double.valueOf((double)numeric.getDoubleValue());
-        } else if (target == Object.class) {
+        }
+    };
+    public static NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
+            return Double.valueOf(numeric.getDoubleValue());
+        }
+    };
+    public static NumericConverter NUMERIC_TO_BIGINTEGER = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
+            return numeric.getBigIntegerValue();
+        }
+    };
+    public static NumericConverter NUMERIC_TO_OBJECT = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
             // for Object, default to natural wrapper type
             if (numeric instanceof RubyFixnum) {
                 long value = numeric.getLongValue();
@@ -1151,23 +1151,58 @@ public class JavaUtil {
                     return Short.valueOf((short)value);
                 } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
                     return Integer.valueOf((int)value);
-                } 
+                }
 
                 return Long.valueOf(value);
             } else if (numeric instanceof RubyFloat) {
                 double value = numeric.getDoubleValue();
-                if (value == 0.0 || value >= Float.MIN_VALUE && value <= Float.MAX_VALUE || 
+                if (value == 0.0 || value >= Float.MIN_VALUE && value <= Float.MAX_VALUE ||
                         value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE ||
                         Double.isNaN(value) || value == Double.POSITIVE_INFINITY || value == Double.NEGATIVE_INFINITY) {
                     return Float.valueOf((float)value);
-                } 
+                }
 
                 return Double.valueOf(value);
             } else if (numeric instanceof RubyBignum) {
                 return ((RubyBignum)numeric).getValue();
+            } else {
+                return NUMERIC_TO_OTHER.coerce(numeric, target);
             }
         }
-        throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
+    };
+    public static NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
+            throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
+        }
+    };
+    
+    public static Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
+
+    static {
+        NUMERIC_CONVERTERS.put(Byte.TYPE, NUMERIC_TO_BYTE);
+        NUMERIC_CONVERTERS.put(Byte.class, NUMERIC_TO_BYTE);
+        NUMERIC_CONVERTERS.put(Short.TYPE, NUMERIC_TO_SHORT);
+        NUMERIC_CONVERTERS.put(Short.class, NUMERIC_TO_SHORT);
+        NUMERIC_CONVERTERS.put(Character.TYPE, NUMERIC_TO_CHARACTER);
+        NUMERIC_CONVERTERS.put(Character.class, NUMERIC_TO_CHARACTER);
+        NUMERIC_CONVERTERS.put(Integer.TYPE, NUMERIC_TO_INTEGER);
+        NUMERIC_CONVERTERS.put(Integer.class, NUMERIC_TO_INTEGER);
+        NUMERIC_CONVERTERS.put(Long.TYPE, NUMERIC_TO_LONG);
+        NUMERIC_CONVERTERS.put(Long.class, NUMERIC_TO_LONG);
+        NUMERIC_CONVERTERS.put(Float.TYPE, NUMERIC_TO_FLOAT);
+        NUMERIC_CONVERTERS.put(Float.class, NUMERIC_TO_FLOAT);
+        NUMERIC_CONVERTERS.put(Double.TYPE, NUMERIC_TO_DOUBLE);
+        NUMERIC_CONVERTERS.put(Double.class, NUMERIC_TO_DOUBLE);
+        NUMERIC_CONVERTERS.put(BigInteger.class, NUMERIC_TO_BIGINTEGER);
+        NUMERIC_CONVERTERS.put(Object.class, NUMERIC_TO_OBJECT);
+    }
+
+    public static NumericConverter getNumericConverter(Class target) {
+        NumericConverter converter = NUMERIC_CONVERTERS.get(target);
+        if (converter == null) {
+            return NUMERIC_TO_OTHER;
+        }
+        return converter;
     }
 
     // FIXME: This doesn't actually support anything but String

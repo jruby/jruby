@@ -870,6 +870,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "coerce", required = 1)
+    @Override
     public IRubyObject coerce(IRubyObject other) {
         IRubyObject obj;
         if(other instanceof RubyFloat) {
@@ -880,8 +881,16 @@ public class RubyBigDecimal extends RubyNumeric {
         return obj;
     }
 
+    @Override
     public double getDoubleValue() { return value.doubleValue(); }
+    
+    @Override
     public long getLongValue() { return value.longValue(); }
+
+    @Override
+    public BigInteger getBigIntegerValue() {
+        return value.toBigInteger();
+    }
 
     public RubyNumeric multiplyWith(ThreadContext context, RubyInteger value) { 
         return (RubyNumeric)op_mul(context, value);

@@ -165,6 +165,11 @@ public class RubyFixnum extends RubyInteger {
         return value;
     }
 
+    @Override
+    public BigInteger getBigIntegerValue() {
+        return BigInteger.valueOf(value);
+    }
+
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
         if (isInCacheRange(value)) {
             return runtime.fixnumCache[(int) value + CACHE_OFFSET];
