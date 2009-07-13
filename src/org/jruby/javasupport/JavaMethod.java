@@ -46,10 +46,13 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.util.HandleFactory;
+import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -59,7 +62,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
+    private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
     private final Method method;
+    private final Handle handle;
     private final Class<?>[] parameterTypes;
     private final JavaUtil.JavaConverter returnConverter;
 
@@ -84,13 +89,35 @@ public class JavaMethod extends JavaCallable {
     public JavaMethod(Ruby runtime, Method method) {
         super(runtime, runtime.getJavaSupport().getJavaMethodClass());
         this.method = method;
+
+        boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
+        boolean classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
+
+        // prepare a faster handle if handles are enabled and the method and class are public
+        Handle tmpHandle = null;
+        try {
+            if (USE_HANDLES &&
+                    // must be a public method
+                    methodIsPublic &&
+                    // must be a public class
+                    classIsPublic &&
+                    // must have been loaded from our known classloader hierarchy
+                    runtime.getJRubyClassLoader().loadClass(method.getDeclaringClass().getCanonicalName()) == method.getDeclaringClass()) {
+                tmpHandle = HandleFactory.createHandle(runtime.getJRubyClassLoader(), method);
+            } else {
+                tmpHandle = null;
+            }
+        } catch (ClassNotFoundException cnfe) {
+            tmpHandle = null;
+        }
+        handle = tmpHandle;
+
         this.parameterTypes = method.getParameterTypes();
 
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
         // implement public interfaces.  Their methods are all public methods for the public 
         // interface.  Let these public methods execute via setAccessible(true). 
-        if (Modifier.isPublic(method.getModifiers()) &&
-            Modifier.isPublic(method.getClass().getModifiers()) &&
+        if (methodIsPublic &&
             !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
             accessibleObject().setAccessible(true);
         }
@@ -359,7 +386,9 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
+    private IRubyObject invokeSuperWithExceptionHandling(Method method, Object javaInvokee, Object... arguments) {
+        // super calls from proxies must use reflected method
+        // FIXME: possible to make handles do the superclass call?
         try {
             Object result = method.invoke(javaInvokee, arguments);
             return returnConverter.convert(getRuntime(), result);
@@ -374,9 +403,28 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
+    private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
+        try {
+            Object result = handle != null
+                    ? handle.invoke(javaInvokee, arguments)
+                    : method.invoke(javaInvokee, arguments);
+            return returnConverter.convert(getRuntime(), result);
+        } catch (IllegalArgumentException iae) {
+            return handlelIllegalArgumentEx(method, iae, arguments);
+        } catch (IllegalAccessException iae) {
+            return handleIllegalAccessEx(method, iae);
+        } catch (InvocationTargetException ite) {
+            return handleInvocationTargetEx(ite);
+        } catch (Throwable t) {
+            return handleThrowable(t);
+        }
+    }
+
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee) {
         try {
-            Object result = method.invoke(javaInvokee);
+            Object result = handle != null
+                    ? handle.invoke(javaInvokee)
+                    : method.invoke(javaInvokee);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae);
@@ -391,7 +439,9 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0) {
         try {
-            Object result = method.invoke(javaInvokee, arg0);
+            Object result = handle != null
+                    ? handle.invoke(javaInvokee, arg0)
+                    : method.invoke(javaInvokee, arg0);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0);
@@ -406,7 +456,9 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1) {
         try {
-            Object result = method.invoke(javaInvokee, arg0, arg1);
+            Object result = handle != null
+                    ? handle.invoke(javaInvokee, arg0, arg1)
+                    : method.invoke(javaInvokee, arg0, arg1);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1);
@@ -421,7 +473,9 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
         try {
-            Object result = method.invoke(javaInvokee, arg0, arg1, arg2);
+            Object result = handle != null
+                    ? handle.invoke(javaInvokee, arg0, arg1, arg2)
+                    : method.invoke(javaInvokee, arg0, arg1, arg2);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2);
@@ -436,7 +490,9 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
         try {
-            Object result = method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
+            Object result = handle != null
+                    ? handle.invoke(javaInvokee, arg0, arg1, arg2, arg3)
+                    : method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2, arg3);
@@ -553,9 +609,59 @@ public class JavaMethod extends JavaCallable {
         JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
         JavaProxyMethod jpm;
         if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
-            return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, args);
+            return invokeSuperWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, args);
         } else {
             return invokeWithExceptionHandling(method, javaInvokee, args);
+        }
+    }
+
+    private IRubyObject tryProxyInvocation(Object javaInvokee) {
+        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyMethod jpm;
+        if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
+            return invokeSuperWithExceptionHandling(jpm.getSuperMethod(), javaInvokee);
+        } else {
+            return invokeWithExceptionHandling(method, javaInvokee);
+        }
+    }
+
+    private IRubyObject tryProxyInvocation(Object javaInvokee, Object arg0) {
+        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyMethod jpm;
+        if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
+            return invokeSuperWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arg0);
+        } else {
+            return invokeWithExceptionHandling(method, javaInvokee, arg0);
+        }
+    }
+
+    private IRubyObject tryProxyInvocation(Object javaInvokee, Object arg0, Object arg1) {
+        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyMethod jpm;
+        if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
+            return invokeSuperWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arg0, arg1);
+        } else {
+            return invokeWithExceptionHandling(method, javaInvokee, arg0, arg1);
+        }
+    }
+
+    private IRubyObject tryProxyInvocation(Object javaInvokee, Object arg0, Object arg1, Object arg2) {
+        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyMethod jpm;
+        if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
+            return invokeSuperWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arg0, arg1, arg2);
+        } else {
+            return invokeWithExceptionHandling(method, javaInvokee, arg0, arg1, arg2);
+        }
+    }
+
+    private IRubyObject tryProxyInvocation(Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
+        JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+        JavaProxyMethod jpm;
+        if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null && jpm.hasSuperImplementation()) {
+            return invokeSuperWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arg0, arg1, arg2, arg3);
+        } else {
+            return invokeWithExceptionHandling(method, javaInvokee, arg0, arg1, arg2, arg3);
         }
     }
 }

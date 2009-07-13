@@ -222,6 +222,9 @@ public class RubyInstanceConfig {
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
 
+    public static final boolean USE_GENERATED_HANDLES
+            = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 

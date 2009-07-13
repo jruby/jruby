@@ -43,7 +43,7 @@ public class HandleFactory {
     private static final boolean DEBUG = false;
     
     public static class Handle {
-        private Error fail() { return new AbstractMethodError("invalid call signature for target method"); }
+        private Error fail() { return new AbstractMethodError("invalid call signature for target method: " + getClass()); }
         public Object invoke(Object receiver) { throw fail(); }
         public Object invoke(Object receiver, Object arg0) { throw fail(); }
         public Object invoke(Object receiver, Object arg0, Object arg1) { throw fail(); }
@@ -63,8 +63,16 @@ public class HandleFactory {
 
         Class returnType = method.getReturnType();
         Class[] paramTypes = method.getParameterTypes();
+        ClassLoader loader = method.getDeclaringClass().getClassLoader();
+        if (loader == null) {
+            loader = ClassLoader.getSystemClassLoader();
+        }
         
-        String name = "H" + (method.getName() + pretty(returnType, paramTypes)).hashCode();
+        String name = 
+                method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") +
+                "#" + Math.abs(loader.hashCode()) +
+                "#" + method.getName() +
+                "#" + Math.abs(pretty(returnType, paramTypes).hashCode());
         
         try {
             Class existing = classLoader.loadClass(name);
@@ -75,6 +83,7 @@ public class HandleFactory {
         
         SkinnyMethodAdapter m;
         String signature;
+        boolean needsArgsVersion = true;
         switch (paramTypes.length) {
         case 0:
             signature = sig(Object.class, Object.class);
@@ -95,6 +104,7 @@ public class HandleFactory {
 //            signature = sig(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class);
 //            break;
         default:
+            needsArgsVersion = false;
             signature = sig(Object.class, Object.class, Object[].class);
             break;
         }
@@ -148,13 +158,39 @@ public class HandleFactory {
         }
         
         if (returnType == void.class) {
-            m.aload(1);
+            m.aconst_null();
         } else if (returnType.isPrimitive()) {
             Class boxType = getBoxType(returnType);
             m.invokestatic(p(boxType), "valueOf", sig(boxType, returnType));
         }
         m.areturn();
         m.end();
+
+        if (needsArgsVersion) {
+            m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", sig(Object.class, Object.class, Object[].class), null, null));
+
+            m.start();
+
+            // load handle
+            m.aload(0);
+
+            // load receiver
+            m.aload(1);
+
+            // load arguments
+            for (int i = 0; i < paramTypes.length; i++) {
+                m.aload(2); // args array
+                m.ldc(i);
+                m.aaload(); // i'th argument
+            }
+
+            // invoke specific arity version
+            m.invokevirtual(name, "invoke", sig(Object.class, params(Object.class, Object.class, paramTypes.length)));
+
+            // return result
+            m.areturn();
+            m.end();
+        }
         
         // constructor
         m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<init>", sig(void.class), null, null));
