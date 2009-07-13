@@ -98,3 +98,12 @@ puts "Measure ArrayList<Object>.get, non-coercible type entering Ruby"
   }
 }
     
+puts "Measure java.lang.Object.new"
+5.times {
+  puts Benchmark.measure {
+    1000000.times {
+      Object.new
+    }
+  }
+}
+    

@@ -4,6 +4,7 @@ import org.jruby.javasupport.*;
 import java.util.Arrays;
 import java.util.Map;
 import org.jruby.RubyModule;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -22,8 +23,16 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
         setArity(Arity.OPTIONAL);
     }
 
-    static Object convertArg(ThreadContext context, IRubyObject arg, JavaMethod method, int index) {
+    static Object convertArg(ThreadContext context, IRubyObject arg, JavaCallable method, int index) {
         return JavaUtil.convertArgumentToType(context, arg, method.getParameterTypes()[index]);
+    }
+
+    static JavaProxy castJavaProxy(IRubyObject self) {
+        if (!(self instanceof JavaProxy)) {
+            throw self.getRuntime().newTypeError("Java methods can only be invoked on Java objects");
+        }
+        JavaProxy proxy = (JavaProxy)self;
+        return proxy;
     }
 
     void raiseNoMatchingCallableError(String name, IRubyObject proxy, Object... args) {

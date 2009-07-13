@@ -374,12 +374,6 @@ public class JavaMethod extends JavaCallable {
         return invokeDirectWithExceptionHandling(method, null, arg0, arg1, arg2, arg3);
     }
 
-    private void checkArity(int length) throws RaiseException {
-        if (length != getArity()) {
-            throw getRuntime().newArgumentError(length, getArity());
-        }
-    }
-
     private void checkInstanceof(Object javaInvokee) throws RaiseException {
         if (!method.getDeclaringClass().isInstance(javaInvokee)) {
             throw getRuntime().newTypeError("invokee not instance of method's class (" + "got" + javaInvokee.getClass().getName() + " wanted " + method.getDeclaringClass().getName() + ")");
@@ -535,36 +529,18 @@ public class JavaMethod extends JavaCallable {
         throw getRuntime().newTypeError("illegal access on '" + method.getName() + "': " + iae.getMessage());
     }
 
-    private IRubyObject handleInvocationTargetEx(InvocationTargetException ite) {
-        getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
-        // This point is only reached if there was an exception handler installed.
-        return getRuntime().getNil();
-    }
-
-    private IRubyObject handleThrowable(Throwable t) {
-        getRuntime().getJavaSupport().handleNativeException(t);
-        // This point is only reached if there was an exception handler installed.
-        return getRuntime().getNil();
-    }
-
     private IRubyObject handlelIllegalArgumentEx(Method method, IllegalArgumentException iae, Object... arguments) throws RaiseException {
-        throw getRuntime().newTypeError("for method " + method.getName() + " expected " + argument_types().inspect() + "; got: " + dumpArgTypes(arguments) + "; error: " + iae.getMessage());
-    }
-
-    private String dumpArgTypes(Object[] arguments) {
-        StringBuilder str = new StringBuilder("[");
-        for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) {
-                str.append(",");
-            }
-            if (arguments[i] == null) {
-                str.append("null");
-            } else {
-                str.append(arguments[i].getClass().getName());
-            }
-        }
-        str.append("]");
-        return str.toString();
+        throw getRuntime().newTypeError(
+                "for method " +
+                method.getDeclaringClass().getSimpleName() +
+                "." +
+                method.getName() +
+                " expected " +
+                argument_types().inspect() +
+                "; got: " +
+                dumpArgTypes(arguments) +
+                "; error: " +
+                iae.getMessage());
     }
 
     private void convertArguments(Ruby runtime, Object[] arguments, Object[] args, int from) {

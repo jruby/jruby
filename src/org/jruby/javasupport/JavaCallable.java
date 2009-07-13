@@ -31,6 +31,7 @@
 package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
@@ -134,5 +135,37 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
     }
 
+    protected void checkArity(int length) {
+        if (length != getArity()) {
+            throw getRuntime().newArgumentError(length, getArity());
+        }
+    }
 
+    protected static String dumpArgTypes(Object[] arguments) {
+        StringBuilder str = new StringBuilder("[");
+        for (int i = 0; i < arguments.length; i++) {
+            if (i > 0) {
+                str.append(",");
+            }
+            if (arguments[i] == null) {
+                str.append("null");
+            } else {
+                str.append(arguments[i].getClass().getName());
+            }
+        }
+        str.append("]");
+        return str.toString();
+    }
+
+    protected IRubyObject handleThrowable(Throwable t) {
+        getRuntime().getJavaSupport().handleNativeException(t);
+        // This point is only reached if there was an exception handler installed.
+        return getRuntime().getNil();
+    }
+
+    protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite) {
+        getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+        // This point is only reached if there was an exception handler installed.
+        return getRuntime().getNil();
+    }
 }

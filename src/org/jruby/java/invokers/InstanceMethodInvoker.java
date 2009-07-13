@@ -4,9 +4,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.JavaProxy;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -150,13 +148,5 @@ public class InstanceMethodInvoker extends MethodInvoker {
         } else {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }
-    }
-
-    static JavaProxy castJavaProxy(IRubyObject self) throws RaiseException {
-        if (!(self instanceof JavaProxy)) {
-            throw self.getRuntime().newTypeError("Java methods can only be invoked on Java objects");
-        }
-        JavaProxy proxy = (JavaProxy)self;
-        return proxy;
     }
 }
