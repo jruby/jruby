@@ -29,7 +29,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         for (int i = len; --i >= 0;) {
             convertedArgs[i] = JavaUtil.convertArgumentToType(context, args[i], targetTypes[i]);
         }
-        return Java.java_to_ruby(self, method.invokeStaticDirect(convertedArgs), Block.NULL_BLOCK);
+        return method.invokeStaticDirect(convertedArgs);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         createJavaMethods(self.getRuntime());
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
 
-        return Java.java_to_ruby(self, method.invokeStaticDirect(), Block.NULL_BLOCK);
+        return method.invokeStaticDirect();
     }
 
     @Override
@@ -46,7 +46,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(context, arg0, method, 0);
 
-        return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0), Block.NULL_BLOCK);
+        return method.invokeStaticDirect(cArg0);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         Object cArg0 = convertArg(context, arg0, method, 0);
         Object cArg1 = convertArg(context, arg1, method, 1);
 
-        return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0, cArg1), Block.NULL_BLOCK);
+        return method.invokeStaticDirect(cArg0, cArg1);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         Object cArg1 = convertArg(context, arg1, method, 1);
         Object cArg2 = convertArg(context, arg2, method, 2);
 
-        return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0, cArg1, cArg2), Block.NULL_BLOCK);
+        return method.invokeStaticDirect(cArg0, cArg1, cArg2);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -84,7 +84,7 @@ public class StaticMethodInvoker extends MethodInvoker {
                 convertedArgs[i] = convertArg(context, intermediate[i], method, i);
             }
 
-            return Java.java_to_ruby(self, method.invokeStaticDirect(convertedArgs), Block.NULL_BLOCK);
+            return method.invokeStaticDirect(convertedArgs);
         } else {
             return call(context, self, clazz, name, args);
         }
@@ -98,7 +98,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(context, proc, method, 0);
 
-            return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0), Block.NULL_BLOCK);
+            return method.invokeStaticDirect(cArg0);
         } else {
             return call(context, self, clazz, name);
         }
@@ -113,7 +113,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             Object cArg0 = convertArg(context, arg0, method, 0);
             Object cArg1 = convertArg(context, proc, method, 1);
 
-            return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0, cArg1), Block.NULL_BLOCK);
+            return method.invokeStaticDirect(cArg0, cArg1);
         } else {
             return call(context, self, clazz, name, arg0);
         }
@@ -129,7 +129,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             Object cArg1 = convertArg(context, arg1, method, 1);
             Object cArg2 = convertArg(context, proc, method, 2);
 
-            return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0, cArg1, cArg2), Block.NULL_BLOCK);
+            return method.invokeStaticDirect(cArg0, cArg1, cArg2);
         } else {
             return call(context, self, clazz, name, arg0, arg1);
         }
@@ -146,7 +146,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             Object cArg2 = convertArg(context, arg2, method, 2);
             Object cArg3 = convertArg(context, proc, method, 3);
 
-            return Java.java_to_ruby(self, method.invokeStaticDirect(cArg0, cArg1, cArg2, cArg3), Block.NULL_BLOCK);
+            return method.invokeStaticDirect(cArg0, cArg1, cArg2, cArg3);
         } else {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }

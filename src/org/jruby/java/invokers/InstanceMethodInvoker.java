@@ -29,7 +29,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         for (int i = 0; i < len; i++) {
             convertedArgs[i] = convertArg(context, args[i], method, i);
         }
-        return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), convertedArgs), Block.NULL_BLOCK);
+        return method.invokeDirect(proxy.getObject(), convertedArgs);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         createJavaMethods(self.getRuntime());
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
-        return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject()), Block.NULL_BLOCK);
+        return method.invokeDirect(proxy.getObject());
     }
 
     @Override
@@ -46,7 +46,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(context, arg0, method, 0);
-        return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0), Block.NULL_BLOCK);
+        return method.invokeDirect(proxy.getObject(), cArg0);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, arg1);
         Object cArg0 = convertArg(context, arg0, method, 0);
         Object cArg1 = convertArg(context, arg1, method, 1);
-        return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0, cArg1), Block.NULL_BLOCK);
+        return method.invokeDirect(proxy.getObject(), cArg0, cArg1);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         Object cArg0 = convertArg(context, arg0, method, 0);
         Object cArg1 = convertArg(context, arg1, method, 1);
         Object cArg2 = convertArg(context, arg2, method, 2);
-        return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2), Block.NULL_BLOCK);
+        return method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -84,7 +84,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             for (int i = 0; i < len + 1; i++) {
                 convertedArgs[i] = convertArg(context, intermediate[i], method, i);
             }
-            return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), convertedArgs), Block.NULL_BLOCK);
+            return method.invokeDirect(proxy.getObject(), convertedArgs);
         } else {
             return call(context, self, clazz, name, args);
         }
@@ -98,7 +98,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(context, proc, method, 0);
-            return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0), Block.NULL_BLOCK);
+            return method.invokeDirect(proxy.getObject(), cArg0);
         } else {
             return call(context, self, clazz, name);
         }
@@ -113,7 +113,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, proc);
             Object cArg0 = convertArg(context, arg0, method, 0);
             Object cArg1 = convertArg(context, proc, method, 1);
-            return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0, cArg1), Block.NULL_BLOCK);
+            return method.invokeDirect(proxy.getObject(), cArg0, cArg1);
         } else {
             return call(context, self, clazz, name, arg0);
         }
@@ -129,7 +129,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object cArg0 = convertArg(context, arg0, method, 0);
             Object cArg1 = convertArg(context, arg1, method, 1);
             Object cArg2 = convertArg(context, proc, method, 2);
-            return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2), Block.NULL_BLOCK);
+            return method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2);
         } else {
             return call(context, self, clazz, name, arg0, arg1);
         }
@@ -146,7 +146,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object cArg1 = convertArg(context, arg1, method, 1);
             Object cArg2 = convertArg(context, arg2, method, 2);
             Object cArg3 = convertArg(context, proc, method, 3);
-            return Java.java_to_ruby(self, method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2, cArg3), Block.NULL_BLOCK);
+            return method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2, cArg3);
         } else {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }

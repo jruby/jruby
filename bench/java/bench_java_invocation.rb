@@ -76,7 +76,6 @@ puts "Measure Fixnum#to_s, String being constructed"
   }
 }
 
-
 puts "Measure Integer.valueOf, overloaded call with a primitive"
 5.times {
   puts Benchmark.measure {
@@ -84,6 +83,17 @@ puts "Measure Integer.valueOf, overloaded call with a primitive"
     x = 1
     1000000.times {
       integer.valueOf(x)
+    }
+  }
+}
+    
+puts "Measure ArrayList<Object>.get, non-coercible type entering Ruby"
+5.times {
+  puts Benchmark.measure {
+    list = java.util.ArrayList.new
+    list.add(java.lang.Object.new)
+    1000000.times {
+      list.get(0)
     }
   }
 }
