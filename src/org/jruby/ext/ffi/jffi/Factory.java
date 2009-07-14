@@ -46,11 +46,6 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         }
     }
 
-    @Override
-    public <T> T loadLibrary(String libraryName, Class<T> libraryClass) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
      *

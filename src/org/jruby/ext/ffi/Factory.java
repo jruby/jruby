@@ -50,6 +50,8 @@ public abstract class Factory {
             final String providerName = System.getProperty("ffi.factory");
             Factory factory = null;
             List<String> providerNames = new ArrayList<String>();
+            List<Throwable> errors = new ArrayList<Throwable>();
+
             if (providerName != null) {
                 providerNames.add(providerName);
             }
@@ -60,11 +62,17 @@ public abstract class Factory {
                     factory = (Factory) Class.forName(className, true, Ruby.getClassLoader()).newInstance();
                     break;
                 } catch (Throwable ex) {
+                    errors.add(ex);
                 }
             }
 
             if (factory == null) {
-                throw new RuntimeException("Could not load FFI provider");
+                StringBuilder sb = new StringBuilder();
+                for (Throwable t : errors) {
+                    sb.append(t.getLocalizedMessage()).append('\n');
+                }
+
+                factory = new NoImplFactory(sb.toString());
             }
             return factory;
         }
@@ -155,16 +163,6 @@ public abstract class Factory {
             IOModule.createIOModule(runtime, ffi);
         }
     }
-    
-    /**
-     * Loads a native library.
-     *
-     * @param <T>
-     * @param libraryName The name of the library to load.
-     * @param libraryClass The interface class to map to the library functions.
-     * @return A new instance of <tt>libraryClass</tt> that an access the library.
-     */
-    public abstract <T> T loadLibrary(String libraryName, Class<T> libraryClass);
     
     /**
      * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
