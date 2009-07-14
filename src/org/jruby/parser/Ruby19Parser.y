@@ -2029,9 +2029,20 @@ none_block_pass : /* none */ {
         lexer.setSource(source);
         lexer.setEncoding(configuration.getKCode().getEncoding());
         try {
-            Object debugger = configuration.isDebug() ? new jay.yydebug.yyDebugAdapter() : null;
-   //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-    //yyparse(lexer, new jay.yydebug.yyDebugAdapter());
+            Object debugger = null;
+            if (configuration.isDebug()) {
+                try {
+                    Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
+                    debugger = yyDebugAdapterClass.newInstance();
+                } catch (IllegalAccessException iae) {
+                    // ignore, no debugger present
+                } catch (InstantiationException ie) {
+                    // ignore, no debugger present
+                } catch (ClassNotFoundException cnfe) {
+                    // ignore, no debugger present
+                }
+            }
+	    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
             yyparse(lexer, debugger);
         } catch (IOException e) {
             e.printStackTrace();
