@@ -47,7 +47,8 @@ class Win32API < Module
     attached = false
     SUFFIXES.each { |suffix|
       begin
-        attach_function(:call, func.to_s + suffix, self.class.map_types(params), self.class.find_type(ret))
+        attach_function(:call, func.to_s + suffix, Win32API.map_types(params), Win32API.find_type(ret))
+        self.instance_eval("alias :Call :call")
         attached = true
         break
       rescue FFI::NotFoundError => ex
