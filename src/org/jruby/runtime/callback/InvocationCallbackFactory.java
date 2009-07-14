@@ -151,6 +151,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return cw;
     }
 
+    @Deprecated
     private ClassWriter createBlockCtor(String namePath, Class fieldClass) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(CompiledBlockCallback.class), null);
@@ -169,6 +170,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return cw;
     }
 
+    @Deprecated
     private ClassWriter createBlockCtor19(String namePath, Class fieldClass) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {p(CompiledBlockCallback19.class)});
@@ -187,6 +189,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return cw;
     }
 
+    @Deprecated
     private Class tryClass(String name) {
         try {
             return classLoader.loadClass(name);
@@ -256,6 +259,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG, null, null));
         
@@ -265,6 +269,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     private SkinnyMethodAdapter startBlockCall19(ClassWriter cw) {
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_SYNTHETIC | ACC_FINAL, "call", BLOCK_CALL_SIG19, null, null));
 
@@ -274,6 +279,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         return mv;
     }
 
+    @Deprecated
     protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitEnd();
         cw.visitEnd();
@@ -562,6 +568,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                 RubyKernel.IRUBY_OBJECT }, false, true, Arity.fixed(2), false);
     }
 
+    @Deprecated
     public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
@@ -597,6 +604,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
         }
     }
 
+    @Deprecated
     public CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);

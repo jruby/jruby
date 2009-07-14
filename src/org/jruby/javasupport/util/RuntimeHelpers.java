@@ -38,7 +38,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlock19;
 import org.jruby.runtime.CompiledBlockCallback;
@@ -142,7 +141,7 @@ public class RuntimeHelpers {
     public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();
-        CallbackFactory factory = CallbackFactory.createFactory(runtime, scriptClass, scriptClassLoader);
+        MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
         
         return factory.getBlockCallback(closureMethod, scriptObject);
     }
@@ -150,7 +149,7 @@ public class RuntimeHelpers {
     public static CompiledBlockCallback19 createBlockCallback19(Ruby runtime, Object scriptObject, String closureMethod) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();
-        CallbackFactory factory = CallbackFactory.createFactory(runtime, scriptClass, scriptClassLoader);
+        MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
 
         return factory.getBlockCallback19(closureMethod, scriptObject);
     }

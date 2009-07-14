@@ -148,6 +148,24 @@ public abstract class MethodFactory {
      * @return A method handle for the target object.
      */
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
+    
+    /**
+     * Get a CompiledBlockCallback for the specified block
+     *
+     * @param method The name of the method
+     * @param scriptObject The object in which the method can be found
+     * @return A new CompiledBlockCallback for the method
+     */
+    public abstract CompiledBlockCallback getBlockCallback(String method, Object scriptObject);
+
+    /**
+     * Get a CompiledBlockCallback for the specified block
+     *
+     * @param method The name of the method
+     * @param scriptObject The object in which the method can be found
+     * @return A new CompiledBlockCallback for the method
+     */
+    public abstract CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject);
 
     /**
      * Use the reflection-based factory.

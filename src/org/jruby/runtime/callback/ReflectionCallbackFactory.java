@@ -155,7 +155,8 @@ public class ReflectionCallbackFactory extends CallbackFactory {
             true,
             Arity.fixed(2), false);
     }
-    
+
+    @Deprecated
     public CompiledBlockCallback getBlockCallback(String method, final Object scriptObject) {
         try {
             final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class});
@@ -184,6 +185,7 @@ public class ReflectionCallbackFactory extends CallbackFactory {
         }
     }
 
+    @Deprecated
     public CompiledBlockCallback19 getBlockCallback19(String method, final Object scriptObject) {
         try {
             final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});

@@ -37,6 +37,7 @@ public class DumpingInvocationCallbackFactory extends InvocationCallbackFactory 
     }
 
     @Override
+    @Deprecated
     protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
         mv.visitEnd();
         cw.visitEnd();
