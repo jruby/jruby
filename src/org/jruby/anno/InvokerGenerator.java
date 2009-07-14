@@ -33,7 +33,7 @@ public class InvokerGenerator {
             
             try {
                 if (DEBUG) System.out.println("generating for class " + name);
-                Class cls = Class.forName(name);
+                Class cls = Class.forName(name, false, InvokerGenerator.class.getClassLoader());
 
                 clumper.clump(cls);
 
