@@ -29,4 +29,6 @@ public class Array extends Operand
     }
 
     public boolean isBlank() { return _elts == null || _elts.size() == 0; }
+
+    public String toString() { return "Array:[" + (isBlank() ? "" : java.util.Arrays.toString(_elts.toArray())) + "]"; }
 }

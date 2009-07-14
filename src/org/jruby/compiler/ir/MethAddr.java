@@ -14,6 +14,9 @@ public class MethAddr extends Reference
     public final static MethAddr MATCH             = new MethAddr("op_match2");
     public final static MethAddr MATCH2            = new MethAddr("op_match");
     public final static MethAddr MATCH3            = new MethAddr("match3");
+    // SSS FIXME: This method (at least in the context of multiple assignment) is a little weird.
+    // It calls regular to_ary on the object.  But, if it encounters a method_missing, the value
+    // is inserted into an 1-element array!
     public final static MethAddr TO_ARY            = new MethAddr("aryToAry");
     public final static MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
 

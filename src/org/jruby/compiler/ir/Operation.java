@@ -39,6 +39,7 @@ public enum Operation
 
 // allocate, and instance variable get/set operations
     NEW_OBJ(OpType.obj_op), GET_FIELD(OpType.obj_op), PUT_FIELD(OpType.obj_op), 
+	 GET_ARRAY(OpType.dont_care), PUT_ARRAY(OpType.dont_care),
 	 GET_CVAR(OpType.dont_care), PUT_CVAR(OpType.dont_care),
 
 // jump and branch operations

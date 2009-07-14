@@ -257,7 +257,7 @@ public class IR_Builder
             case MATCH3NODE: return buildMatch3(node, m); // done
             case MATCHNODE: return buildMatch(node, m); // done
             case MODULENODE: return buildModule(node, m); // done
-//            case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m); // DEFERRED
+            case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m); // done
             case NEWLINENODE: return buildNewline(node, m); // done
             case NEXTNODE: return buildNext(node, m); // done?
 //            case NTHREFNODE: return buildNthRef(node, m); // DEFERRED
@@ -304,7 +304,7 @@ public class IR_Builder
 
     public void buildArguments(List<Operand> args, Node node, IR_Scope s) {
         switch (node.getNodeType()) {
-//            case ARGSCATNODE: buildArgsCatArguments(args, node, s, true); // DEFERRED
+//            case ARGSCATNODE: buildArgsCatArguments(args, node, s); break;
             case ARGSPUSHNODE: buildArgsPushArguments(args, node, s); break;
             case ARRAYNODE: buildArrayArguments(args, node, s); break;
             case SPLATNODE: buildSplatArguments(args, node, s); break;
@@ -382,8 +382,59 @@ public class IR_Builder
         }
     }
 
+    // This method is called to build assignments for a multiple-assignment instruction
+    public void buildAssignment(Node node, IR_Scope s, Operand values, int argIndex) {
+        Variable v;
+        switch (node.getNodeType()) {
+/*
+            case ATTRASSIGNNODE: 
+                return buildAttrAssignAssignment(node, s);
+*/
+            // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
+            case CLASSVARASGNNODE:
+                v = s.getNewVariable();
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
+                break;
+            case CLASSVARDECLNODE:
+                v = s.getNewVariable();
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
+                break;
+            case CONSTDECLNODE:
+                v = s.getNewVariable();
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                buildConstDeclAssignment(node, s, v);
+                break;
+            case GLOBALASGNNODE:
+                v = s.getNewVariable();
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
+                break;
+            case INSTASGNNODE:
+                v = s.getNewVariable();
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
+                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                break;
+            case LOCALASGNNODE:
+                v = new Variable(((LocalAsgnNode)node).getName());
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                break;
+            case MULTIPLEASGNNODE:
+                v = s.getNewVariable();
+                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                buildMultipleAsgnAssignment(node, s, v);
+                break;
+            case ZEROARGNODE:
+                throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+            default:
+                throw new NotCompilableException("Can't build assignment node: " + node);
+        }
+    }
+
     // This method is called to build arguments for a block!
-    public Operand buildAssignment(Node node, IR_Scope s, int argIndex) {
+    public Operand buildBlockArgsAssignment(Node node, IR_Scope s, int argIndex) {
         Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
@@ -433,7 +484,7 @@ public class IR_Builder
 /**
             case MULTIPLEASGNNODE:
                 // INCOMPLETE
-                return buildMultipleAsgnAssignment(node, m);
+                return buildMultipleAsgnAssignment(node, m, null);
 **/
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
@@ -1319,7 +1370,7 @@ public class IR_Builder
     public Operand buildDAsgn(Node node, IR_Scope s) {
         final DAsgnNode dasgnNode = (DAsgnNode) node;
 
-        // SSS: Looks like we receive the arg in buildAssignment via the IterNode
+        // SSS: Looks like we receive the arg in buildBlockArgsAssignment via the IterNode
         // We won't get here for argument receives!  So, buildDasgn is called for
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
@@ -1679,7 +1730,7 @@ public class IR_Builder
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildAssignment(forNode.getVarNode(), closure, 0);
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0);
         }
 
             // Build closure body and return the result of the closure
@@ -1785,7 +1836,7 @@ public class IR_Builder
         final IterNode iterNode = (IterNode) node;
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildAssignment(iterNode.getVarNode(), closure, 0);
+            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0);
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
@@ -1872,117 +1923,45 @@ public class IR_Builder
         return mMetaObj;
     }
 
-/**
-    public Operand buildMultipleAsgn(Node node, IR_Scope m) {
+    public Operand buildMultipleAsgn(Node node, IR_Scope s) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
-
-        if (expr) {
-            // need the array, use unoptz version
-            buildUnoptimizedMultipleAsgn(multipleAsgnNode, m);
-        } else {
-            // try optz version
-            buildOptimizedMultipleAsgn(multipleAsgnNode, m);
-        }
+        Operand values = build(multipleAsgnNode.getValueNode(), s);
+        return buildMultipleAsgnAssignment(multipleAsgnNode, s, values);
     }
 
-    private void buildOptimizedMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IR_Scope m) {
-        // expect value to be an array of nodes
-        if (multipleAsgnNode.getValueNode() instanceof ArrayNode) {
-            // head must not be null and there must be no "args" (like *arg)
-            if (multipleAsgnNode.getHeadNode() != null && multipleAsgnNode.getArgsNode() == null) {
-                // sizes must match
-                if (multipleAsgnNode.getHeadNode().size() == ((ArrayNode)multipleAsgnNode.getValueNode()).size()) {
-                    // "head" must have no non-trivial assigns (array groupings, basically)
-                    boolean normalAssigns = true;
-                    for (Node asgn : multipleAsgnNode.getHeadNode().childNodes()) {
-                        if (asgn instanceof ListNode) {
-                            normalAssigns = false;
-                            break;
-                        }
-                    }
-                    
-                    if (normalAssigns) {
-                        // only supports simple parallel assignment of up to 10 values to the same number of assignees
-                        int size = multipleAsgnNode.getHeadNode().size();
-                        if (size >= 2 && size <= 10) {
-                            ArrayNode values = (ArrayNode)multipleAsgnNode.getValueNode();
-                            for (Node value : values.childNodes()) {
-                                build(value, m, true);
-                            }
-                            m.reverseValues(size);
-                            for (Node asgn : multipleAsgnNode.getHeadNode().childNodes()) {
-                                buildAssignment(asgn, m, false);
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        // if we get here, no optz cases work; fall back on unoptz.
-        buildUnoptimizedMultipleAsgn(multipleAsgnNode, m);
-    }
-
-    private void buildUnoptimizedMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IR_Scope m) {
-        build(multipleAsgnNode.getValueNode(), m, true);
-
-        buildMultipleAsgnAssignment(multipleAsgnNode, m);
-    }
-
-    public Operand buildMultipleAsgnAssignment(Node node, IR_Scope m) {
+    public Operand buildMultipleAsgnAssignment(Node node, IR_Scope s, Operand values) {
         final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
-
-        // normal items at the "head" of the masgn
-        ArrayCallback headAssignCallback = new ArrayCallback() {
-
-                    public void nextValue(IR_Scope m, Object sourceArray,
-                            int index) {
-                        ListNode headNode = (ListNode) sourceArray;
-                        Node assignNode = headNode.get(index);
-
-                        // perform assignment for the next node
-                        buildAssignment(assignNode, m, false);
-                    }
-                };
-
-        CompilerCallback argsCallback = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        Node argsNode = multipleAsgnNode.getArgsNode();
-                        if (argsNode instanceof StarNode) {
-                            // done processing args
-                            m.consumeCurrentValue();
-                        } else {
-                            // assign to appropriate variable
-                            buildAssignment(argsNode, m, false);
-                        }
-                    }
-                };
-
-        if (multipleAsgnNode.getHeadNode() == null) {
+        final ListNode sourceArray = multipleAsgnNode.getHeadNode();
+        if (sourceArray == null) {
             if (multipleAsgnNode.getArgsNode() == null) {
                 throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
             } else {
                 if (multipleAsgnNode.getArgsNode() instanceof StarNode) {
                     // do nothing
                 } else {
-                    m.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
-
-                    m.forEachInValueArray(0, 0, null, null, argsCallback);
+                    // SSS FIXME what happens here?
+                    throw new NotCompilableException("Unimplemented code path in multiple assignment node");
                 }
             }
+            return null;
         } else {
-            m.ensureMultipleAssignableRubyArray(multipleAsgnNode.getHeadNode() != null);
-            
-            if (multipleAsgnNode.getArgsNode() == null) {
-                m.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, null);
-            } else {
-                m.forEachInValueArray(0, multipleAsgnNode.getHeadNode().size(), multipleAsgnNode.getHeadNode(), headAssignCallback, argsCallback);
+            int i = 0;
+            ListNode headNode = (ListNode) sourceArray;
+            if (values != null) {
+                for (Node an: headNode.childNodes()) {
+                   buildAssignment(an, s, values, i);
+                   i++;
+                }
             }
+            else {
+                for (Node an: headNode.childNodes()) {
+                   buildBlockArgsAssignment(an, s, i);
+                   i++;
+                }
+            }
+            return values;
         }
     }
-**/
 
     public Operand buildNewline(Node node, IR_Scope s) {
         // SSS FIXME: We need to build debug information tracking into the IR in some fashion
@@ -2063,15 +2042,20 @@ public class IR_Builder
         final OpAsgnOrNode orNode = (OpAsgnOrNode) node;
         Label    l1 = s.getNewLabel();
         Variable f  = s.getNewVariable();
-        Operand  v1 = build(orNode.getFirstNode(), s);  // v1 need not be a variable here!
+        Operand  v1;
         if (needsDefinitionCheck(orNode.getFirstNode())) {
+            throw new NotCompilableException(orNode + "is not yet compilable since the first node of the OR requires 'defined?' to be implemented");
+/**
             Label    l2 = s.getNewLabel();
             s.addInstr(new IS_DEFINED_Instr(f, v1));
             s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l2)); // if v1 is undefined, go to v2's computation
+            Operand v1 = build(orNode.getFirstNode(), s);
             s.addInstr(new IS_TRUE_Instr(f, v1));
             s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
             s.addInstr(new LABEL_Instr(l2));
+**/
         } else {
+            v1 = build(orNode.getFirstNode(), s);
             s.addInstr(new IS_TRUE_Instr(f, v1));
             s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         }
@@ -2511,22 +2495,17 @@ public class IR_Builder
     }
 
 /**
-    public Operand buildSuper(Node node, IR_Scope m) {
+    public Operand buildSuper(Node node, IR_Scope s) {
         final SuperNode superNode = (SuperNode) node;
-
-        ArgumentsCallback argsCallback = setupArgs(superNode.getArgsNode());
-
-        CompilerCallback closureArg = setupCallClosure(superNode.getIterNode());
-
+        List<Operand> args  = setupArgs(superNode.getArgsNode(), s);
+        Operand       block = setupCallClosure(superNode.getIterNode(), s);
         m.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
     }
 
-    public Operand buildSValue(Node node, IR_Scope m) {
+    public Operand buildSValue(Node node, IR_Scope s) {
         SValueNode svalueNode = (SValueNode) node;
-
-        build(svalueNode.getValue(), m,true);
-
-        m.singlifySplattedValue();
+        Operand v = build(svalueNode.getValue(), s);
+        s.singlifySplattedValue(v);
     }
 **/
 
@@ -2638,14 +2617,13 @@ public class IR_Builder
     }
 
 /**
-    public void buildArgsCatArguments(List<Operand> args, Node node, IR_Scope m) {
+    public void buildArgsCatArguments(List<Operand> args, Node node, IR_Scope s) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
-
-        buildArguments(args, argsCatNode.getFirstNode(), m);
+        buildArguments(args, argsCatNode.getFirstNode(), s);
         m.createNewArray(true);
-        build(argsCatNode.getSecondNode(), m);
-        m.splatCurrentValue();
-        m.concatArrays();
+        build(argsCatNode.getSecondNode(), s);
+        s.splatCurrentValue();
+        s.concatArrays();
         // SSS FIXME: Why convert to java array?  And, where does this go?
         // m.convertToJavaArray();
     }
