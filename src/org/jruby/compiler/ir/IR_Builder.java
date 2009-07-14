@@ -207,7 +207,7 @@ public class IR_Builder
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias(node, m); // done
             case ANDNODE: return buildAnd(node, m); // done
-//            case ARGSCATNODE: return buildArgsCat(node, m); // DEFERRED .. SSS FIXME: What code generates this AST?
+            case ARGSCATNODE: return buildArgsCat(node, m); // done
             case ARGSPUSHNODE: return buildArgsPush(node, m); // Nothing to do for 1.8
             case ARRAYNODE: return buildArray(node, m); // done
 //            case ATTRASSIGNNODE: return buildAttrAssign(node, m); // Incomplete
@@ -283,8 +283,8 @@ public class IR_Builder
             case SELFNODE: return buildSelf(node, m); // done
             case SPLATNODE: return buildSplat(node, m); // done
             case STRNODE: return buildStr(node, m); // done
-//            case SUPERNODE: return buildSuper(node, m); // DEFERRED
-//            case SVALUENODE: return buildSValue(node, m); // DEFERRED
+            case SUPERNODE: return buildSuper(node, m); // done
+            case SVALUENODE: return buildSValue(node, m); // done
             case SYMBOLNODE: return buildSymbol(node, m); // done
             case TOARYNODE: return buildToAry(node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
@@ -293,7 +293,7 @@ public class IR_Builder
 //            case VALIASNODE: return buildVAlias(node, m); // DEFERRED
             case VCALLNODE: return buildVCall(node, m); // done
             case WHILENODE: return buildWhile(node, m); // done
-//            case WHENNODE: assert false : "When nodes are handled by case node compilation."; break;
+            case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
             case XSTRNODE: return buildXStr(node, m); // done
             case YIELDNODE: return buildYield(node, m); // done
             case ZARRAYNODE: return buildZArray(node, m); // done
@@ -304,15 +304,13 @@ public class IR_Builder
 
     public void buildArguments(List<Operand> args, Node node, IR_Scope s) {
         switch (node.getNodeType()) {
-//            case ARGSCATNODE: buildArgsCatArguments(args, node, s); break;
+            case ARGSCATNODE: buildArgsCatArguments(args, node, s); break;
             case ARGSPUSHNODE: buildArgsPushArguments(args, node, s); break;
             case ARRAYNODE: buildArrayArguments(args, node, s); break;
             case SPLATNODE: buildSplatArguments(args, node, s); break;
             default: 
                 Operand retVal = build(node, s);
-                //SSS FIXME: Why this?
-                //s.convertToJavaArray(); 
-                if (retVal != null) 
+                if (retVal != null) 	// SSS FIXME: Can this ever be null?
                    args.add(retVal);
         }
     }
@@ -337,8 +335,7 @@ public class IR_Builder
         }
     }
 
-    public List<Operand> setupArgs(Node receiver, Node args, IR_Scope s) {
-
+    public List<Operand> setupCallArgs(Node receiver, Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
         argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
         if (args != null) {
@@ -350,7 +347,7 @@ public class IR_Builder
         return argsList;
     }
 
-    public List<Operand> setupArgs(Node args, IR_Scope s) {
+    public List<Operand> setupCallArgs(Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
         argsList.add(s.getSelf());
         if (args != null) {
@@ -545,19 +542,13 @@ public class IR_Builder
         return new Array(elts);
     }
 
-/**
-    public Operand buildArgsCat(Node node, IR_Scope m) {
+    public Operand buildArgsCat(Node node, IR_Scope s) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
-
-            // SSS FIXME: Is this going to be a custom instr/operand (like range, hash, etc.)?
-            // Need to understand what generates this AST
-        Operand v1 = build(argsCatNode.getFirstNode(), m);
-        m.ensureRubyArray();
-        Operand v2 = build(argsCatNode.getSecondNode(), m);
-        m.splatCurrentValue();
-        m.concatArrays();
+        Operand v1 = build(argsCatNode.getFirstNode(), s);
+//        s.ensureRubyArray();
+        Operand v2 = build(argsCatNode.getSecondNode(), s);
+		  return new Array(new Operand[] {v1, new Splat(v2)});
     }
-**/
 
     public Operand buildArgsPush(Node node, IR_Scope m) {
         throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
@@ -566,7 +557,7 @@ public class IR_Builder
 /**
     private void buildAttrAssign(Node node, IR_Scope m) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
-        List<Operand> args = setupArgs(attrAssignNode.getArgsNode());
+        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode());
         Operand receiver   = build(attrAssignNode.getReceiverNode(), m);
             // SSS FIXME: What is this?
         m.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
@@ -577,7 +568,7 @@ public class IR_Builder
     public Operand buildAttrAssignAssignment(Node node, IR_Scope s) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         Operand receiver = build(attrAssignNode.getReceiverNode(), s);
-        List<Operand> args = setupArgs(attrAssignNode.getArgsNode(), s);
+        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         // m.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
         return null;
     }
@@ -623,7 +614,7 @@ public class IR_Builder
 
         Node          callArgsNode = callNode.getArgsNode();
         Node          receiverNode = callNode.getReceiverNode();
-        List<Operand> args         = setupArgs(receiverNode, callArgsNode, s);
+        List<Operand> args         = setupCallArgs(receiverNode, callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewVariable();
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
@@ -853,7 +844,7 @@ public class IR_Builder
         }
         else if (node instanceof Colon2MethodNode) {
             Colon2MethodNode     c2mNode    = (Colon2MethodNode)node;
-            List<Operand> args         = setupArgs(null, s);
+            List<Operand> args         = setupCallArgs(null, s);
             Operand       block        = setupCallClosure(null, s);
             Variable      callResult   = s.getNewVariable();
             IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
@@ -1393,7 +1384,7 @@ public class IR_Builder
         IR_Method m = new IR_Method(s, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
-        buildArgs(defnNode.getArgsNode(), m);
+        receiveArgs(defnNode.getArgsNode(), m);
 
             // Build IR for body
         if (defnNode.getBodyNode() != null) {
@@ -1429,7 +1420,7 @@ public class IR_Builder
         // Operand receiver = build(defsNode.getReceiverNode(), s);
     }
 
-    public Operand buildArgs(Node node, IR_Scope s) {
+    public Operand receiveArgs(Node node, IR_Scope s) {
         final ArgsNode argsNode = (ArgsNode)node;
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
@@ -1568,7 +1559,7 @@ public class IR_Builder
     public Operand buildFCall(Node node, IR_Scope s) {
         FCallNode     fcallNode    = (FCallNode)node;
         Node          callArgsNode = fcallNode.getArgsNode();
-        List<Operand> args         = setupArgs(callArgsNode, s);
+        List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewVariable();
         IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
@@ -2118,14 +2109,14 @@ public class IR_Builder
     public Operand buildOpAsgnWithOr(Node node, IR_Scope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
         Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
-        List<Operand> args = setupArgs(opAsgnNode.getValueNode(), s);
+        List<Operand> args = setupCallArgs(opAsgnNode.getValueNode(), s);
         m.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
     public Operand buildOpAsgnWithAnd(Node node, IR_Scope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
         Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
-        List<Operand> args = setupArgs(opAsgnNode.getValueNode(), s);
+        List<Operand> args = setupCallArgs(opAsgnNode.getValueNode(), s);
         m.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
@@ -2242,7 +2233,7 @@ public class IR_Builder
             }
         };
 
-        ArgumentsCallback argsCallback = setupArgs(opElementAsgnNode.getArgsNode());
+        ArgumentsCallback argsCallback = setupCallArgs(opElementAsgnNode.getArgsNode());
 
         CompilerCallback valueCallback = new CompilerCallback() {
             public void call(IR_Scope m) {
@@ -2381,7 +2372,7 @@ public class IR_Builder
         m.loadException();
 
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
-        ArgumentsCallback rescueArgs = setupArgs(exceptionList);
+        ArgumentsCallback rescueArgs = setupCallArgs(exceptionList);
         if (rescueArgs == null) rescueArgs = new ArgumentsCallback() {
             public int getArity() {
                 return 1;
@@ -2494,29 +2485,27 @@ public class IR_Builder
         return new StringLiteral(strNode.getValue());
     }
 
-/**
     public Operand buildSuper(Node node, IR_Scope s) {
         final SuperNode superNode = (SuperNode) node;
-        List<Operand> args  = setupArgs(superNode.getArgsNode(), s);
+        List<Operand> args  = setupCallArgs(superNode.getArgsNode(), s);
         Operand       block = setupCallClosure(superNode.getIterNode(), s);
-        m.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
+        Variable      ret   = s.getNewVariable();
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, args.toArray(new Operand[args.size()]), block));
+		  return ret;
     }
 
     public Operand buildSValue(Node node, IR_Scope s) {
-        SValueNode svalueNode = (SValueNode) node;
-        Operand v = build(svalueNode.getValue(), s);
-        s.singlifySplattedValue(v);
+        return new SValue(build(((SValueNode)node).getValue(), s));
     }
-**/
 
-    public Operand buildSymbol(Node node, IR_Scope m) {
+    public Operand buildSymbol(Node node, IR_Scope s) {
         return new Symbol(((SymbolNode) node).getName());
     }    
     
-    public Operand buildToAry(Node node, IR_Scope m) {
-        Operand  array = build(((ToAryNode) node).getValue(), m);
-        Variable ret   = m.getNewVariable();
-        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.TO_ARY, new Operand[]{array}));
+    public Operand buildToAry(Node node, IR_Scope s) {
+        Operand  array = build(((ToAryNode) node).getValue(), s);
+        Variable ret   = s.getNewVariable();
+        s.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.TO_ARY, new Operand[]{array}));
         return  ret;
     }
 
@@ -2598,7 +2587,7 @@ public class IR_Builder
     }
 
     public Operand buildYield(Node node, IR_Scope s) {
-        List<Operand> args = setupArgs(((YieldNode)node).getArgsNode(), s);
+        List<Operand> args = setupCallArgs(((YieldNode)node).getArgsNode(), s);
         Variable      ret  = s.getNewVariable();
         s.addInstr(new YIELD_Instr(ret, (Operand[])args.toArray()));
         return ret;
@@ -2612,28 +2601,20 @@ public class IR_Builder
         ZSuperNode zsuperNode = (ZSuperNode) node;
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, null, block));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, ((IR_Method)s).getCallArgs(), block));
         return ret;
     }
 
-/**
     public void buildArgsCatArguments(List<Operand> args, Node node, IR_Scope s) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
-        buildArguments(args, argsCatNode.getFirstNode(), s);
-        m.createNewArray(true);
-        build(argsCatNode.getSecondNode(), s);
-        s.splatCurrentValue();
-        s.concatArrays();
-        // SSS FIXME: Why convert to java array?  And, where does this go?
-        // m.convertToJavaArray();
+        Operand v1 = build(argsCatNode.getFirstNode(), s);
+        Operand v2 = build(argsCatNode.getSecondNode(), s);
+		  args.add(new Array(new Operand[] { v1, new Splat(v2) }));
     }
-**/
 
     public void buildArgsPushArguments(List<Operand> args, Node node, IR_Scope m) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
         Operand a = new Array(new Operand[]{ build(argsPushNode.getFirstNode(), m), build(argsPushNode.getSecondNode(), m) });
-        // SSS FIXME: Why convert to java array?  And, where does this go?
-        // m.convertToJavaArray();
         args.add(a);
     }
 
@@ -2644,8 +2625,6 @@ public class IR_Builder
     }
 
     public void buildSplatArguments(List<Operand> args, Node node, IR_Scope s) {
-        // SSS FIXME: Why convert to java array?  And, where does this go?
-        // s.convertToJavaArray();
         args.add(buildSplat(node, s));
     }
 }
