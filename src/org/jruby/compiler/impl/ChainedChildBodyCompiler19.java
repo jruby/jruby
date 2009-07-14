@@ -12,7 +12,7 @@ public class ChainedChildBodyCompiler19 extends ChainedChildBodyCompiler {
 
     @Override
     protected String getSignature() {
-        return StandardASMCompiler.CLOSURE_SIGNATURE19;
+        return StandardASMCompiler.getStaticClosure19Signature(script.getClassname());
     }
 
     @Override
@@ -26,7 +26,7 @@ public class ChainedChildBodyCompiler19 extends ChainedChildBodyCompiler {
         }
         // we append an index to ensure two identical method names will not conflict
         methodName = methodName + "_" + script.getAndIncrementMethodIndex();
-        method.invokevirtual(script.getClassname(), methodName, getSignature());
+        method.invokestatic(script.getClassname(), methodName, getSignature());
 
         ChainedChildBodyCompiler19 methodCompiler = new ChainedChildBodyCompiler19(script, methodName, inspector, scope, this);
 

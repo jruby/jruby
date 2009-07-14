@@ -62,10 +62,14 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     private final String typePath;
     protected final Ruby runtime;
 
+    @Deprecated
     private final static String SUPER_CLASS = p(InvocationCallback.class);
+    @Deprecated
     private final static String FAST_SUPER_CLASS = p(FastInvocationCallback.class);
+    @Deprecated
     private final static String CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(Object.class,
             Object[].class, Block.class));
+    @Deprecated
     private final static String FAST_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
             Object.class, Object[].class));
     private final static String BLOCK_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
@@ -574,9 +578,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.aload(1);
                     mv.aload(2);
                     mv.aload(3);
-                    mv.invokevirtual(typePathString, method, sig(
-                            RubyKernel.IRUBY_OBJECT, params(ThreadContext.class,
-                                    RubyKernel.IRUBY_OBJECT, IRubyObject.class)));
+                    mv.invokestatic(typePathString, method, sig(
+                            RubyKernel.IRUBY_OBJECT, "L" + typePathString + ";", ThreadContext.class,
+                                    RubyKernel.IRUBY_OBJECT, IRubyObject.class));
                     mv.areturn();
                     
                     mv.visitMaxs(2, 3);
@@ -610,9 +614,9 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
                     mv.aload(2);
                     mv.aload(3);
                     mv.aload(4);
-                    mv.invokevirtual(typePathString, method, sig(
-                            IRubyObject.class, params(ThreadContext.class,
-                                    IRubyObject.class, IRubyObject[].class, Block.class)));
+                    mv.invokestatic(typePathString, method, sig(
+                            IRubyObject.class, "L" + typePathString + ";", ThreadContext.class,
+                                    IRubyObject.class, IRubyObject[].class, Block.class));
                     mv.areturn();
 
                     mv.visitMaxs(2, 3);

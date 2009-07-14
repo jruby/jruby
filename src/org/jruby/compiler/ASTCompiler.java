@@ -3395,7 +3395,7 @@ public class ASTCompiler {
         staticScope.setRestArg(-2);
 
         // create method for toplevel of script
-        BodyCompiler methodCompiler = context.startRoot("__file__", "__file__", staticScope, inspector);
+        BodyCompiler methodCompiler = context.startFileMethod(null, staticScope, inspector);
 
         Node nextNode = rootNode.getBodyNode();
         if (nextNode != null) {

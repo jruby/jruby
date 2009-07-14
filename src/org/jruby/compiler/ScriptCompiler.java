@@ -76,4 +76,14 @@ public interface ScriptCompiler {
      * endMethod once compilation for this method is completed.
      */
     public BodyCompiler startRoot(String rubyName, String javaName, StaticScope scope, ASTInspector inspector);
+    
+    /**
+     * Begin compilation for the root of a script named __file__.
+     * 
+     * @param args Arguments to the script, as passed via jitted wrappers
+     * @param scope The StaticScope for the script
+     * @param inspector The ASTInspector for the nodes for the script
+     * @return A new BodyCompiler for the body of the script
+     */
+    public BodyCompiler startFileMethod(CompilerCallback args, StaticScope scope, ASTInspector inspector);
 }

@@ -101,7 +101,11 @@ public class CodegenUtils {
     public static String sig(Class retval, Class... params) {
         return sigParams(params) + ci(retval);
     }
-    
+
+    public static String sig(Class retval, String descriptor, Class... params) {
+        return sigParams(descriptor, params) + ci(retval);
+    }
+
     public static String sigParams(Class... params) {
         StringBuilder signature = new StringBuilder("(");
         
@@ -111,6 +115,20 @@ public class CodegenUtils {
         
         signature.append(")");
         
+        return signature.toString();
+    }
+
+    public static String sigParams(String descriptor, Class... params) {
+        StringBuilder signature = new StringBuilder("(");
+
+        signature.append(descriptor);
+        
+        for (int i = 0; i < params.length; i++) {
+            signature.append(ci(params[i]));
+        }
+
+        signature.append(")");
+
         return signature.toString();
     }
     

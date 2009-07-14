@@ -18,6 +18,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.CheckMethodAdapter;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
 /**
@@ -30,11 +31,7 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     /** Creates a new instance of SkinnyMethodAdapter */
     public SkinnyMethodAdapter(MethodVisitor method) {
-        if (DEBUG) {
-            this.method = new TraceMethodVisitor(method);
-        } else {
-            this.method = method;
-        }
+        setMethodVisitor(method);
     }
     
     public SkinnyMethodAdapter() {

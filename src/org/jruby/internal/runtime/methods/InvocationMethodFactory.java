@@ -357,11 +357,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                                 mv.aload(ARGS_INDEX + i);
                             }
                             mv.aload(ARGS_INDEX + scope.getRequiredArgs());
-                            mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[scope.getRequiredArgs()]);
+                            mv.invokestatic(typePath, method, StandardASMCompiler.getStaticMethodSignature(typePath, scope.getRequiredArgs()));
                         } else {
                             mv.aload(ARGS_INDEX);
                             mv.aload(BLOCK_INDEX);
-                            mv.invokevirtual(typePath, method, StandardASMCompiler.METHOD_SIGNATURES[4]);
+                            mv.invokestatic(typePath, method, StandardASMCompiler.getStaticMethodSignature(typePath, 4));
                         }
                     }
                     if (framed || heapScoped) {

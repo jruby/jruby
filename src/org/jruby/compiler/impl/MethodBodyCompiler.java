@@ -1,7 +1,6 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
@@ -26,14 +25,18 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         this.rubyName = rubyName;
     }
 
+    public boolean isSpecificArity() {
+        return specificArity;
+    }
+
     @Override
-    protected String getSignature() {
+    public String getSignature() {
         if (shouldUseBoxedArgs(scope)) {
             specificArity = false;
-            return StandardASMCompiler.METHOD_SIGNATURES[4];
+            return StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4);
         } else {
             specificArity = true;
-            return StandardASMCompiler.METHOD_SIGNATURES[scope.getRequiredArgs()];
+            return StandardASMCompiler.getStaticMethodSignature(script.getClassname(), scope.getRequiredArgs());
         }
     }
 
@@ -55,10 +58,10 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         // set up a local IRuby variable
         method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
         invokeThreadContext("getRuntime", sig(Ruby.class));
-        method.dup();
         method.astore(getRuntimeIndex());
 
         // grab nil for local variables
+        method.aload(getRuntimeIndex());
         invokeRuby("getNil", sig(IRubyObject.class));
         method.astore(getNilIndex());
 
@@ -93,7 +96,13 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         method.end();
         if (specificArity) {
             
-            method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC, methodName, StandardASMCompiler.METHOD_SIGNATURES[4], null, null));
+            method = new SkinnyMethodAdapter(
+                    script.getClassVisitor().visitMethod(
+                        ACC_PUBLIC | ACC_STATIC,
+                        methodName,
+                        StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4),
+                        null,
+                        null));
             method.start();
 
             // check arity in the variable-arity version
@@ -116,7 +125,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
             }
             method.aload(StandardASMCompiler.ARGS_INDEX + 1);
             // load block from [] version of method
-            method.invokevirtual(script.getClassname(), methodName, getSignature());
+            method.invokestatic(script.getClassname(), methodName, getSignature());
             method.areturn();
             method.end();
         }

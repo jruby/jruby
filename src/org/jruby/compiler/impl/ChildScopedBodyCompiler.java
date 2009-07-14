@@ -19,7 +19,7 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
     }
 
     protected String getSignature() {
-        return StandardASMCompiler.CLOSURE_SIGNATURE;
+        return StandardASMCompiler.getStaticClosureSignature(script.getClassname());
     }
 
     protected void createVariableCompiler() {
@@ -70,7 +70,7 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         }
         // we append an index to ensure two identical method names will not conflict
         methodName = methodName + "_" + script.getAndIncrementMethodIndex();
-        method.invokevirtual(script.getClassname(), methodName, getSignature());
+        method.invokestatic(script.getClassname(), methodName, getSignature());
 
         ChainedChildBodyCompiler methodCompiler = new ChainedChildBodyCompiler(script, methodName, inspector, scope, this);
 

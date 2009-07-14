@@ -72,15 +72,55 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final String RUBY = p(Ruby.class);
     public static final String IRUBYOBJECT = p(IRubyObject.class);
 
-    public static final String[] METHOD_SIGNATURES = {
-        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}),
-        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class}),
-        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class}),
-        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class}),
-        sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class}),
-    };
-    public static final String CLOSURE_SIGNATURE = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class});
-    public static final String CLOSURE_SIGNATURE19 = sig(IRubyObject.class, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+    public static String getStaticMethodSignature(String classname, int args) {
+        switch (args) {
+        case 0:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, Block.class);
+        case 1:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 2:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 3:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 4:
+            return sig(IRubyObject.class, "L" + classname + ";", ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+        default:
+            throw new RuntimeException("unsupported arity: " + args);
+        }
+    }
+
+    public static String getMethodSignature(int args) {
+        switch (args) {
+        case 0:
+            return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Block.class);
+        case 1:
+            return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 2:
+            return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 3:
+            return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+        case 4:
+            return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+        default:
+            throw new RuntimeException("unsupported arity: " + args);
+        }
+    }
+
+    public static String getStaticClosureSignature(String classdesc) {
+        return sig(IRubyObject.class, "L" + classdesc + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class);
+    }
+
+    public static String getStaticClosure19Signature(String classdesc) {
+        return sig(IRubyObject.class, "L" + classdesc + ";", ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+    }
+
+    public static String getClosureSignature() {
+        return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+    }
+
+    public static String getClosure19Signature() {
+        return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+    }
 
     public static final int THIS = 0;
     public static final int THREADCONTEXT_INDEX = 1;
@@ -250,7 +290,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         if (generateLoad || generateMain) {
             // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
-            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", METHOD_SIGNATURES[4], null, null));
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", getMethodSignature(4), null, null));
             method.start();
 
             // invoke __file__ with threadcontext, self, args (null), and block (null)
@@ -269,7 +309,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             // load always uses IRubyObject[], so simple closure offset calculation here
             method.aload(ARGS_INDEX + 1 + CLOSURE_OFFSET);
 
-            method.invokevirtual(getClassname(),methodName, METHOD_SIGNATURES[4]);
+            method.invokestatic(getClassname(),methodName, getStaticMethodSignature(getClassname(), 4));
             method.aload(THREADCONTEXT_INDEX);
             method.invokestatic(p(RuntimeHelpers.class), "postLoad", sig(void.class, ThreadContext.class));
             method.areturn();
@@ -315,7 +355,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-            method.invokevirtual(getClassname(), "load", METHOD_SIGNATURES[4]);
+            method.invokevirtual(getClassname(), "load", getMethodSignature(4));
             method.voidreturn();
             method.end();
         }
@@ -435,6 +475,48 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         methodCompiler.beginMethod(args, scope);
         
+        return methodCompiler;
+    }
+
+    public BodyCompiler startFileMethod(CompilerCallback args, StaticScope scope, ASTInspector inspector) {
+        MethodBodyCompiler methodCompiler = new MethodBodyCompiler(this, "__file__", "__file__", inspector, scope);
+        
+        methodCompiler.beginMethod(args, scope);
+        
+        // boxed arg list __file__
+        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "__file__", getMethodSignature(4), null, null));
+        method.start();
+
+        // invoke static __file__
+        method.aload(THIS);
+        method.aload(THREADCONTEXT_INDEX);
+        method.aload(SELF_INDEX);
+        method.aload(ARGS_INDEX);
+        method.aload(ARGS_INDEX + 1); // block
+        method.invokestatic(getClassname(), "__file__", getStaticMethodSignature(getClassname(), 4));
+
+        method.areturn();
+        method.end();
+        
+        if (methodCompiler.isSpecificArity()) {
+            // exact arg list __file__
+            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "__file__", getMethodSignature(scope.getRequiredArgs()), null, null));
+            method.start();
+
+            // invoke static __file__
+            method.aload(THIS);
+            method.aload(THREADCONTEXT_INDEX);
+            method.aload(SELF_INDEX);
+            for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                method.aload(ARGS_INDEX + i);
+            }
+            method.aload(ARGS_INDEX + scope.getRequiredArgs()); // block
+            method.invokestatic(getClassname(), "__file__", getStaticMethodSignature(getClassname(), scope.getRequiredArgs()));
+
+            method.areturn();
+            method.end();
+        }
+
         return methodCompiler;
     }
 

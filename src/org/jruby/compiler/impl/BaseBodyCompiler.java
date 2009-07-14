@@ -103,7 +103,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             argParamCount = scope.getRequiredArgs(); // specific arity
         }
 
-        method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC, methodName, getSignature(), null, null));
+        method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, methodName, getSignature(), null, null));
 
         createVariableCompiler();
         if (StandardASMCompiler.invDynInvCompilerConstructor != null) {
@@ -1272,7 +1272,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
         String mname = getNewEnsureName();
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}), null, null));
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
+                script.getClassVisitor().visitMethod(
+                ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
+                mname,
+                sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
+                null,
+                null));
         SkinnyMethodAdapter old_method = null;
         SkinnyMethodAdapter var_old_method = null;
         SkinnyMethodAdapter inv_old_method = null;
@@ -1349,7 +1355,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         } else {
             loadBlock();
         }
-        method.invokevirtual(script.getClassname(), mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
+        method.invokestatic(
+                script.getClassname(),
+                mname,
+                sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
     }
 
     public void performEnsure(BranchCallback regularCode, BranchCallback protectedCode) {
@@ -1405,7 +1414,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
         String mname = getNewRescueName();
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}), null, null));
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
+                script.getClassVisitor().visitMethod(
+                    ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
+                    mname,
+                    sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
+                    null,
+                    null));
         SkinnyMethodAdapter old_method = null;
         SkinnyMethodAdapter var_old_method = null;
         SkinnyMethodAdapter inv_old_method = null;
@@ -1521,7 +1536,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         } else {
             loadBlock();
         }
-        method.invokevirtual(script.getClassname(), mname, sig(ret, new Class[]{ThreadContext.class, IRubyObject.class, Block.class}));
+        method.invokestatic(
+                script.getClassname(),
+                mname,
+                sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
     }
 
     public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
@@ -2096,7 +2114,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-        method.invokevirtual(script.getClassname(), classMethodName, StandardASMCompiler.METHOD_SIGNATURES[0]);
+        method.invokestatic(script.getClassname(), classMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 0));
     }
 
     public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback, final ASTInspector inspector) {
@@ -2170,7 +2188,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-        method.invokevirtual(script.getClassname(), moduleMethodName, StandardASMCompiler.METHOD_SIGNATURES[4]);
+        method.invokestatic(script.getClassname(), moduleMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4));
     }
 
     public void unwrapPassedBlock() {

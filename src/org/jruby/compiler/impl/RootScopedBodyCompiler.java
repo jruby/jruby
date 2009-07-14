@@ -23,13 +23,13 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
         super(scriptCompiler, friendlyName, inspector, scope);
     }
 
-    protected String getSignature() {
+    public String getSignature() {
         if (shouldUseBoxedArgs(scope)) {
             specificArity = false;
-            return StandardASMCompiler.METHOD_SIGNATURES[4];
+            return StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4);
         } else {
             specificArity = true;
-            return StandardASMCompiler.METHOD_SIGNATURES[scope.getRequiredArgs()];
+            return StandardASMCompiler.getStaticMethodSignature(script.getClassname(), scope.getRequiredArgs());
         }
     }
 
@@ -72,7 +72,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
         }
         // we append an index to ensure two identical method names will not conflict
         methodName = methodName + "_" + script.getAndIncrementMethodIndex();
-        method.invokevirtual(script.getClassname(), methodName, getSignature());
+        method.invokestatic(script.getClassname(), methodName, getSignature());
 
         ChainedRootBodyCompiler methodCompiler = new ChainedRootBodyCompiler(script, methodName, inspector, scope, this);
 
@@ -93,7 +93,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
 
         method.end();
         if (specificArity) {
-            method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC, methodName, StandardASMCompiler.METHOD_SIGNATURES[4], null, null));
+            method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, methodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4), null, null));
             method.start();
 
             // check arity in the variable-arity version
@@ -116,7 +116,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
             }
             method.aload(StandardASMCompiler.ARGS_INDEX + 1);
             // load block from [] version of method
-            method.invokevirtual(script.getClassname(), methodName, getSignature());
+            method.invokestatic(script.getClassname(), methodName, getSignature());
             method.areturn();
             method.end();
         }
