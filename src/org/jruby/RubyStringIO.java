@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.anno.FrameField;
@@ -775,7 +776,11 @@ public class RubyStringIO extends RubyObject {
         }
 
         internal.modify();
-        internal.getByteList().length(len);
+        ByteList buf = internal.getByteList();
+        if (len < buf.length()) {
+            Arrays.fill(buf.unsafeBytes(), len, buf.length(), (byte) 0);
+        }
+        buf.length(len);
         return arg;
     }
 
