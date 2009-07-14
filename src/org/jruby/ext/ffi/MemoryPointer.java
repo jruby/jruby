@@ -17,7 +17,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
 public final class MemoryPointer extends Pointer {
-    private static final Factory factory = Factory.getInstance();
     
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("MemoryPointer",
@@ -41,7 +40,7 @@ public final class MemoryPointer extends Pointer {
         if (total < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
         }
-        AllocatedDirectMemoryIO io = factory.allocateDirectMemory(context.getRuntime(),
+        AllocatedDirectMemoryIO io = Factory.getInstance().allocateDirectMemory(context.getRuntime(),
                 total > 0 ? total : 1, align, clear);
         if (io == null) {
             Ruby runtime = context.getRuntime();
@@ -62,7 +61,7 @@ public final class MemoryPointer extends Pointer {
 
     static final MemoryPointer allocate(Ruby runtime, int typeSize, int count, boolean clear) {
         final int total = typeSize * count;
-        AllocatedDirectMemoryIO io = factory.allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
+        AllocatedDirectMemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
         if (io == null) {
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", typeSize, count), true);

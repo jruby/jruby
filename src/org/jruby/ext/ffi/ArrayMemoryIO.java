@@ -6,7 +6,7 @@ import java.util.Arrays;
 import org.jruby.Ruby;
 
 public final class ArrayMemoryIO implements MemoryIO {
-    private static final Factory factory = Factory.getInstance();
+
     protected static final ArrayIO IO = getArrayIO();
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
     protected static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();
@@ -81,7 +81,7 @@ public final class ArrayMemoryIO implements MemoryIO {
 
     public final DirectMemoryIO getMemoryIO(long offset) {
         checkBounds(offset, ADDRESS_SIZE >> 3);
-        return factory.wrapDirectMemory(runtime, getAddress(offset));
+        return Factory.getInstance().wrapDirectMemory(runtime, getAddress(offset));
     }
 
     public final void putMemoryIO(long offset, MemoryIO value) {
