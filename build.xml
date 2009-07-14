@@ -271,6 +271,34 @@
       </jar>
   </target>
 
+  <target name="jar-jruby-light" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
+      <antcall target="_update_scm_revision_"/>
+
+      <jar destfile="${lib.dir}/jruby-light.jar" compress="true" index="true">
+        <fileset dir="${jruby.classes.dir}">
+            <exclude name="**/*$Populator.class"/>
+            <exclude name="**/*INVOKER*.class"/>
+            <exclude name="**/AnnotationBinder*.class"/>
+            <exclude name="**/InvokerGenerator.class"/>
+            <exclude name="org/jruby/ext/ffi/**/*"/>
+        </fileset>
+        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
+        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
+        <zipfileset src="${build.lib.dir}/constantine.jar"/>
+        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
+        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
+        <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jna.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="org.jruby.Main"/>
+        </manifest>
+      </jar>
+  </target>
+
   <target name="jar-jruby-dist" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
       <antcall target="_update_scm_revision_"/>
 
@@ -420,6 +448,9 @@
 
   <target name="jar" depends="init" description="Create the jruby.jar file">
     <antcall target="jar-jruby" inheritall="true"/>
+  </target>
+  <target name="jar-light" depends="init" description="Create the jruby-light.jar file">
+    <antcall target="jar-jruby-light" inheritall="true"/>
   </target>
   <target name="jar-dist" depends="init" description="Create the jruby.jar file for distribution. This version uses JarJar Links to rewrite some packages.">
     <antcall target="jar-jruby-dist" inheritall="true"/>
