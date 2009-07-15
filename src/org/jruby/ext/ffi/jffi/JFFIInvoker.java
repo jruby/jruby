@@ -25,8 +25,6 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final Type[] parameterTypes;
     private final CallingConvention convention;
     private final IRubyObject enums;
-    private final RubyModule callModule;
-    private final DynamicMethod callMethod;
     
     public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Invoker",
@@ -69,8 +67,8 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         this.convention = "stdcall".equals(convention)
                 ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
         this.enums = enums;
-        this.callModule = RubyModule.newModule(runtime);
-        this.callModule.addModuleFunction("call", callMethod = createDynamicMethod(callModule));
+        // Wire up Function#call(*args) to use the super-fast native invokers
+        getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
     
     @JRubyMethod(name = { "new" }, meta = true, required = 4)
@@ -122,16 +120,6 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
                 (Type) returnType, parameterTypes, convention, enums);
     }
 
-    /**
-     * Invokes the native function with the supplied ruby arguments.
-     * @param rubyArgs The ruby arguments to pass to the native function.
-     * @return The return value from the native function, as a ruby object.
-     */
-    @JRubyMethod(name= { "invoke", "call", "call0", "call1", "call2", "call3" }, rest = true)
-    public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
-        return callMethod.call(context, callModule, callModule.getSingletonClass(), "call", args, Block.NULL_BLOCK);
-    }
-    
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         return (enums == null || enums.isNil())
