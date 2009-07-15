@@ -5,7 +5,7 @@ warn "Win32API: This is only a partial implementation, and is likely broken"
 
 require 'ffi'
 
-class Win32API < Module
+class Win32API
   CONVENTION = FFI::Platform.windows? ? :stdcall : :default
   SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
   TypeDefs = {
