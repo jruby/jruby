@@ -537,9 +537,8 @@ public class IR_Builder
     public Operand buildArgsCat(Node node, IR_Scope s) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
         Operand v1 = build(argsCatNode.getFirstNode(), s);
-//        s.ensureRubyArray();
         Operand v2 = build(argsCatNode.getSecondNode(), s);
-        return new Array(new Operand[] {v1, new Splat(v2)});
+        return new CompoundArray(v1, v2);
     }
 
     public Operand buildArgsPush(Node node, IR_Scope m) {
@@ -2601,7 +2600,7 @@ public class IR_Builder
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
         Operand v1 = build(argsCatNode.getFirstNode(), s);
         Operand v2 = build(argsCatNode.getSecondNode(), s);
-        args.add(new Array(new Operand[] { v1, new Splat(v2) }));
+        args.add(new CompoundArray(v1, v2));
     }
 
     public void buildArgsPushArguments(List<Operand> args, Node node, IR_Scope m) {

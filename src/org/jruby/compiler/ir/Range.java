@@ -20,8 +20,6 @@ public class Range extends Operand
         return _begin.isConstant() && _end.isConstant();
     }
 
-    public boolean isCompoundValue() { return true; }
-
 /**
  * SSS FIXME: Do not instantiate eagerly!  You will be in trouble!
     public Operand toArray()

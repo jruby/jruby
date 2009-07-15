@@ -5,8 +5,9 @@ public abstract class Operand
 // ---------- These methods below are used during compile-time optimizations ------- 
     public boolean isConstant() { return false; }
 
-    public boolean isCompoundValue() { return false; }
+    public Operand getSimplifiedValue() { return this; }
 
+    // SSS FIXME: Premature optimization of GET_ARRAY ... make this part of a pass of peephole optimization!
     public Operand fetchCompileTimeArrayElement(int index) { return null; }
 
 //    public abstract Operand toArray();

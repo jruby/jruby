@@ -13,12 +13,35 @@ package org.jruby.compiler.ir;
 public class SValue extends Operand
 {
     final public Operand _array;
+    private Operand _simplifiedValue;
 
     public SValue(Operand a) { _array = a; }
 
     public boolean isConstant() { return _array.isConstant(); }
 
-    public boolean isCompoundValue() { return true; }
-
     public String toString() { return "SValue(" + _array + ")"; }
+
+    public Operand getSimplifiedValue()
+    {
+        if (!isConstant())
+            return this;
+
+        Operand so = _array.getSimplifiedValue();
+        if (so instanceof Array) {
+            Array a = (Array)so;
+            return (a._elts.length == 1) ? a._elts[0] : a;
+        }
+        else {
+            return this;
+        }
+    }
+
+    public Operand fetchCompileTimeArrayElement(int argIndex)
+    {
+        // SSS FIXME: This is not the right approach -- we'll need to reset this value on each opt. pass.
+        if (_simplifiedValue == null)
+            _simplifiedValue = getSimplifiedValue();
+
+        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex);
+    }
 }
