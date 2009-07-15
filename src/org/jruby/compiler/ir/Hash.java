@@ -23,4 +23,6 @@ public class Hash extends Operand
 
        return true;
     }
+
+    public boolean isCompoundValue() { return true; }
 }

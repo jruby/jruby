@@ -17,4 +17,8 @@ public class SValue extends Operand
     public SValue(Operand a) { _array = a; }
 
     public boolean isConstant() { return _array.isConstant(); }
+
+    public boolean isCompoundValue() { return true; }
+
+    public String toString() { return "SValue(" + _array + ")"; }
 }

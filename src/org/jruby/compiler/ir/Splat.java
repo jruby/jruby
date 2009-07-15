@@ -11,4 +11,8 @@ public class Splat extends Operand
     public Splat(Operand a) { _array = a; }
 
     public boolean isConstant() { return _array.isConstant(); }
+
+    public boolean isCompoundValue() { return true; }
+
+    public String toString() { return "*" + _array; }
 }

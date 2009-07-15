@@ -2,7 +2,14 @@ package org.jruby.compiler.ir;
 
 public abstract class Operand
 {
+// ---------- These methods below are used during compile-time optimizations ------- 
     public boolean isConstant() { return false; }
+
+    public boolean isCompoundValue() { return false; }
+
+    public Operand fetchCompileTimeArrayElement(int index) { return null; }
+
+//    public abstract Operand toArray();
 
 // ---------- Only static definitions further below ---------
     public static final Operand TOP    = new LatticeTop();

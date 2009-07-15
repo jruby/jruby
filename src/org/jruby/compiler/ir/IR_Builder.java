@@ -310,7 +310,7 @@ public class IR_Builder
             case SPLATNODE: buildSplatArguments(args, node, s); break;
             default: 
                 Operand retVal = build(node, s);
-                if (retVal != null) 	// SSS FIXME: Can this ever be null?
+                if (retVal != null)    // SSS FIXME: Can this ever be null?
                    args.add(retVal);
         }
     }
@@ -381,7 +381,12 @@ public class IR_Builder
 
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, IR_Scope s, Operand values, int argIndex) {
-        Variable v;
+        Operand  elt = values.fetchCompileTimeArrayElement(argIndex);
+        if (elt == null) {
+            Variable v = s.getNewVariable();
+            s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+            elt = v;
+        }
         switch (node.getNodeType()) {
 /*
             case ATTRASSIGNNODE: 
@@ -389,39 +394,26 @@ public class IR_Builder
 */
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                v = s.getNewVariable();
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), elt));
                 break;
             case CLASSVARDECLNODE:
-                v = s.getNewVariable();
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), elt));
                 break;
             case CONSTDECLNODE:
-                v = s.getNewVariable();
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
-                buildConstDeclAssignment(node, s, v);
+                buildConstDeclAssignment(node, s, elt);
                 break;
             case GLOBALASGNNODE:
-                v = s.getNewVariable();
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
-                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
+                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), elt));
                 break;
             case INSTASGNNODE:
-                v = s.getNewVariable();
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), elt));
                 break;
             case LOCALASGNNODE:
-                v = new Variable(((LocalAsgnNode)node).getName());
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+                s.addInstr(new COPY_Instr(new Variable(((LocalAsgnNode)node).getName()), elt));
                 break;
             case MULTIPLEASGNNODE:
-                v = s.getNewVariable();
-                s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
-                buildMultipleAsgnAssignment(node, s, v);
+                buildMultipleAsgnAssignment(node, s, elt);
                 break;
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
@@ -547,7 +539,7 @@ public class IR_Builder
         Operand v1 = build(argsCatNode.getFirstNode(), s);
 //        s.ensureRubyArray();
         Operand v2 = build(argsCatNode.getSecondNode(), s);
-		  return new Array(new Operand[] {v1, new Splat(v2)});
+        return new Array(new Operand[] {v1, new Splat(v2)});
     }
 
     public Operand buildArgsPush(Node node, IR_Scope m) {
@@ -2491,7 +2483,7 @@ public class IR_Builder
         Operand       block = setupCallClosure(superNode.getIterNode(), s);
         Variable      ret   = s.getNewVariable();
         s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, args.toArray(new Operand[args.size()]), block));
-		  return ret;
+        return ret;
     }
 
     public Operand buildSValue(Node node, IR_Scope s) {
@@ -2609,7 +2601,7 @@ public class IR_Builder
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
         Operand v1 = build(argsCatNode.getFirstNode(), s);
         Operand v2 = build(argsCatNode.getSecondNode(), s);
-		  args.add(new Array(new Operand[] { v1, new Splat(v2) }));
+        args.add(new Array(new Operand[] { v1, new Splat(v2) }));
     }
 
     public void buildArgsPushArguments(List<Operand> args, Node node, IR_Scope m) {
