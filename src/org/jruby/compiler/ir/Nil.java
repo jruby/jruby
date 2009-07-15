@@ -8,4 +8,6 @@ public class Nil extends Constant
     private Nil() { }
 
     public String toString() { return "nil"; }
+
+    public Operand fetchCompileTimeArrayElement(int argIndex) { return Nil.NIL; }
 }
