@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'timeout'
 require 'socket'
+require 'net/http'
 
 class TestTimeout < Test::Unit::TestCase
   def test_timeout_for_loop
@@ -50,8 +51,39 @@ class TestTimeout < Test::Unit::TestCase
     rescue Timeout::Error
       ok = true
     end
+
+    assert ok, "IO#sysread was not interrupted by timeout"
   ensure
     begin; server.close; rescue Exception; end
     begin; client.close; rescue Exception; end
+  end
+
+  def foo
+    sleep 5
+  rescue Exception => e
+    @in_foo = e
+    raise e
+  end
+
+  # JRUBY-3817
+  def test_net_http_timeout
+    assert_raises Timeout::Error do
+      http = Net::HTTP.new('www.google.de')
+      http.open_timeout = 0.01
+      response = http.start do |h|
+        h.request_get '/index.html'
+      end
+    end
+  end
+
+  def test_timeout_raises_anon_class_to_unroll
+    begin
+      timeout(0.1) { foo }
+    rescue Timeout::Error
+      ok = true
+    end
+
+    assert ok, "Timeout::Error was not eventually delivered to caller"
+    assert @in_foo.class.name == "", "Non-anonymous exception type raised in intervening stack"
   end
 end
