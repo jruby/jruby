@@ -86,6 +86,7 @@ import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
@@ -1550,7 +1551,7 @@ public class Java implements Library {
 
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
-        if (!Boolean.getBoolean("jruby.interfaces.useProxy")) {
+        if (!SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy")) {
             int interfacesHashCode = argsHashCode(interfaces);
             // if it's a singleton class and the real class is proc, we're doing closure conversion
             // so just use Proc's hashcode
