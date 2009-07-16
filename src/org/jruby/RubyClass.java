@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -61,12 +62,11 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
+import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
-import org.objectweb.asm.ClassAdapter;
-import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 
 import org.objectweb.asm.Type;
@@ -981,6 +981,8 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void reify() {
         Class parent = RubyObject.class;
+        String javaName = "ruby." + getBaseName();
+        String javaPath = "ruby/" + getBaseName();
         ClassLoader parentCL = runtime.getJRubyClassLoader();
 
         if (superClass.reifiedClass != null) {
@@ -990,37 +992,152 @@ public class RubyClass extends RubyModule {
         OneShotClassLoader oscl = new OneShotClassLoader(parentCL);
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, getBaseName(), null, CodegenUtils.p(parent), null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class, Ruby.class, RubyClass.class), null, null);
-        GeneratorAdapter m = new GeneratorAdapter(mv, ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class, Ruby.class, RubyClass.class));
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(parent), null);
 
-        m.loadThis();
-        m.loadArgs();
-        m.invokeConstructor(Type.getType(parent), Method.getMethod("void <init> (org.jruby.Ruby, org.jruby.RubyClass)"));
-        m.returnValue();
-        m.endMethod();
+        if (classAnnotations != null && classAnnotations.size() != 0) {
+            for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
+                Class annoType = entry.getKey();
+                Map<String,Object> fields = entry.getValue();
 
-        cw.visitEnd();
+                AnnotationVisitor av = cw.visitAnnotation(ci(annoType), true);
+
+                for (Map.Entry<String,Object> fieldEntry : fields.entrySet()) {
+                    av.visit(fieldEntry.getKey(), fieldEntry.getValue());
+                }
+
+                av.visitEnd();
+            }
+        }
+
+        // fields to hold Ruby and RubyClass references
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "ruby", ci(Ruby.class), null, null);
+        cw.visitField(ACC_STATIC | ACC_PRIVATE, "rubyClass", ci(RubyClass.class), null, null);
+
+        // static initializing method
+        SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "clinit", sig(void.class, Ruby.class, RubyClass.class), null, null));
+        m.start();
+        m.aload(0);
+        m.putstatic(javaPath, "ruby", ci(Ruby.class));
+        m.aload(1);
+        m.putstatic(javaPath, "rubyClass", ci(RubyClass.class));
+        m.voidreturn();
+        m.end();
+
+        // standard constructor that accepts Ruby, RubyClass
+//        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
+//        m = new SkinnyMethodAdapter(mv);
+//        m.aload(0);
+//        m.aload(1);
+//        m.aload(2);
+//        m.invokespecial(p(parent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+//        m.voidreturn();
+//        m.end();
+
+        // no-arg constructor using static references to Ruby and RubyClass
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
+        m = new SkinnyMethodAdapter(mv);
+        m.aload(0);
+        m.getstatic(javaPath, "ruby", ci(Ruby.class));
+        m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+        m.invokespecial(p(parent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        m.voidreturn();
+        m.end();
 
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
-            String javaName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
+            String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
+            Map<Class,Map<String,Object>> methodAnnotations = getMethodAnnotations().get(methodName);
 
-            mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaName, Method.getMethod("org.jruby.runtime.builtin.IRubyObject " + javaName + " (org.jruby.runtime.builtin.IRubyObject[])").getDescriptor(), null, null);
-            m = new GeneratorAdapter(ACC_PUBLIC | ACC_VARARGS, Method.getMethod("org.jruby.runtime.builtin.IRubyObject " + javaName + " (org.jruby.runtime.builtin.IRubyObject[])"), mv);
+            switch (methodEntry.getValue().getArity().getValue()) {
+            case 0:
+                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class), null, null);
+                m = new SkinnyMethodAdapter(mv);
 
-            m.loadThis();
-            m.push(methodName);
-            m.loadArgs();
-            m.invokeVirtual(Type.getType(RubyObject.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(String, org.jruby.runtime.builtin.IRubyObject)"));
-            m.returnValue();
-            m.endMethod();
+                m.aload(0);
+                m.ldc(methodName);
+                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
+                break;
+            default:
+                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class, IRubyObject[].class), null, null);
+                m = new SkinnyMethodAdapter(mv);
+
+                m.aload(0);
+                m.ldc(methodName);
+                m.aload(1);
+                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+            }
+            
+            m.voidreturn();
+
+            if (methodAnnotations != null && methodAnnotations.size() != 0) {
+                for (Map.Entry<Class,Map<String,Object>> entry : methodAnnotations.entrySet()) {
+                    Class annoType = entry.getKey();
+                    Map<String,Object> fields = entry.getValue();
+
+                    AnnotationVisitor av = m.visitAnnotation(ci(annoType), true);
+
+                    for (Map.Entry<String,Object> fieldEntry : fields.entrySet()) {
+                        av.visit(fieldEntry.getKey(), fieldEntry.getValue());
+                    }
+
+                    av.visitEnd();
+                }
+            }
+
+            m.end();
         }
 
-        Class result = oscl.defineClass(getBaseName(), cw.toByteArray());
+        cw.visitEnd();
 
-        setRubyClassAllocator(result);
+        Class result = oscl.defineClass(javaName, cw.toByteArray());
+
+        try {
+            java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);
+            clinit.invoke(null, runtime, this);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        setClassAllocator(result);
         reifiedClass = result;
+    }
+
+    public Class getReifiedClass() {
+        return reifiedClass;
+    }
+    
+    private Map<String, Map<Class, Map<String,Object>>> annotations;
+
+    public Map<String,Map<Class,Map<String,Object>>> getMethodAnnotations() {
+        if (annotations == null) return Collections.EMPTY_MAP;
+
+        return annotations;
+    }
+
+    public void addMethodAnnotation(String methodName, Class annotation, Map fields) {
+        if (annotations == null) annotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
+
+        Map<Class,Map<String,Object>> methodAnnotations = annotations.get(methodName);
+        if (methodAnnotations == null) {
+            methodAnnotations = new Hashtable<Class,Map<String,Object>>();
+            annotations.put(methodName, methodAnnotations);
+        }
+
+        methodAnnotations.put(annotation, fields);
+    }
+
+    private Map<Class, Map<String,Object>> classAnnotations;
+
+    public Map<Class,Map<String,Object>> getClassAnnotations() {
+        if (classAnnotations == null) return Collections.EMPTY_MAP;
+
+        return classAnnotations;
+    }
+
+    public void addClassAnnotation(Class annotation, Map fields) {
+        if (classAnnotations == null) classAnnotations = new Hashtable<Class,Map<String,Object>>();
+
+        classAnnotations.put(annotation, fields);
     }
 
     protected final Ruby runtime;
