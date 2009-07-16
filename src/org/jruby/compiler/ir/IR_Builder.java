@@ -380,11 +380,11 @@ public class IR_Builder
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
-    public void buildAssignment(Node node, IR_Scope s, Operand values, int argIndex) {
-        Operand  elt = values.fetchCompileTimeArrayElement(argIndex);
+    public void buildAssignment(Node node, IR_Scope s, Operand values, int argIndex, boolean isSplat) {
+        Operand elt = values.fetchCompileTimeArrayElement(argIndex, isSplat);
         if (elt == null) {
             Variable v = s.getNewVariable();
-            s.addInstr(new GET_ARRAY_Instr(v, values, argIndex));
+            s.addInstr(new GET_ARRAY_Instr(v, values, argIndex, isSplat));
             elt = v;
         }
         switch (node.getNodeType()) {
@@ -423,12 +423,13 @@ public class IR_Builder
     }
 
     // This method is called to build arguments for a block!
-    public Operand buildBlockArgsAssignment(Node node, IR_Scope s, int argIndex) {
+    public void buildBlockArgsAssignment(Node node, IR_Scope s, int argIndex, boolean isSplat) {
         Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
                 // INCOMPLETE
-                return buildAttrAssignAssignment(node, s);
+                buildAttrAssignAssignment(node, s);
+                break;
 // SSS FIXME:
 //
 // There are also differences in variable scoping between 1.8 and 1.9 
@@ -438,43 +439,43 @@ public class IR_Builder
 // to be figured out during live var analysis.
             case DASGNNODE:
                 v = new Variable(((DAsgnNode)node).getName());
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
-                return v;
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
-                return v;
+                break;
             case CLASSVARDECLNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
-                return v;
+                break;
             case CONSTDECLNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
-                return buildConstDeclAssignment(node, s, v);
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                buildConstDeclAssignment(node, s, v);
+                break;
             case GLOBALASGNNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
-                return v;
+                break;
             case INSTASGNNODE:
                 v = s.getNewVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
-                return v;
+                break;
             case LOCALASGNNODE:
                 v = new Variable(((LocalAsgnNode)node).getName());
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex));
-                return v;
-/**
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                break;
             case MULTIPLEASGNNODE:
-                // INCOMPLETE
-                return buildMultipleAsgnAssignment(node, m, null);
-**/
+                // SSS FIXME: Are we guaranteed that we splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
+                buildMultipleAsgnAssignment(node, s, null);
+                break;
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
@@ -1434,6 +1435,13 @@ public class IR_Builder
             s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), argIndex));
         }
 
+            // IMPORTANT: Receive the block argument before the opt and splat args
+            // This is so that the *arg can be encoded as 'rest of the array'.  This
+            // won't work if the block argument hasn't been received yet!
+        if (argsNode.getBlock() != null)
+            s.addInstr(new RECV_BLOCK_ARG_Instr(new Variable(argsNode.getBlock().getName())));
+
+            // Now for the rest
         if (opt > 0 || rest > -1) {
             ListNode optArgs = argsNode.getOptArgs();
             for (int j = 0; j < opt; j++, argIndex++) {
@@ -1446,15 +1454,12 @@ public class IR_Builder
             }
 
             if (rest > -1) {
-                s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), argIndex));
+                s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), argIndex, true));
                 argIndex++;
             }
         }
 
         // FIXME: Ruby 1.9 post args code needs to come here
-
-        if (argsNode.getBlock() != null)
-            s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getBlock().getName()), argIndex));
 
             // This is not an expression that computes anything
         return null;
@@ -1712,7 +1717,7 @@ public class IR_Builder
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0);
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false);
         }
 
             // Build closure body and return the result of the closure
@@ -1818,7 +1823,7 @@ public class IR_Builder
         final IterNode iterNode = (IterNode) node;
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0);
+            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false);
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
@@ -1907,42 +1912,46 @@ public class IR_Builder
 
     public Operand buildMultipleAsgn(Node node, IR_Scope s) {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
-        Operand values = build(multipleAsgnNode.getValueNode(), s);
-        return buildMultipleAsgnAssignment(multipleAsgnNode, s, values);
+        Operand  values = build(multipleAsgnNode.getValueNode(), s);
+        Variable ret = s.getNewVariable();
+        s.addInstr(new COPY_Instr(ret, values));
+        buildMultipleAsgnAssignment(multipleAsgnNode, s, values);
+        return ret;
     }
 
-    public Operand buildMultipleAsgnAssignment(Node node, IR_Scope s, Operand values) {
+    public void buildMultipleAsgnAssignment(Node node, IR_Scope s, Operand values) {
         final MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
-        if (sourceArray == null) {
-            if (multipleAsgnNode.getArgsNode() == null) {
-                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
-            } else {
-                if (multipleAsgnNode.getArgsNode() instanceof StarNode) {
-                    // do nothing
-                } else {
-                    // SSS FIXME what happens here?
-                    throw new NotCompilableException("Unimplemented code path in multiple assignment node");
-                }
-            }
-            return null;
-        } else {
-            int i = 0;
+
+        // First, build assignments for specific named arguments
+        int i = 0;
+        if (sourceArray != null) {
             ListNode headNode = (ListNode) sourceArray;
-            if (values != null) {
-                for (Node an: headNode.childNodes()) {
-                   buildAssignment(an, s, values, i);
-                   i++;
-                }
+            for (Node an: headNode.childNodes()) {
+                if (values == null)
+                    buildBlockArgsAssignment(an, s, i, false);
+                else
+                    buildAssignment(an, s, values, i, false);
+                i++;
             }
-            else {
-                for (Node an: headNode.childNodes()) {
-                   buildBlockArgsAssignment(an, s, i);
-                   i++;
-                }
-            }
-            return values;
         }
+
+        // First, build an assignment for a splat, if any, with the rest of the args!
+        Node an = multipleAsgnNode.getArgsNode();
+        if (an == null) {
+            if (sourceArray == null)
+                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
+        } 
+        else if (an instanceof StarNode) {
+            // do nothing
+        } 
+        else if (values != null) {
+            buildAssignment(an, s, values, i, true); // rest of the argument array!
+        }
+        else {
+            buildBlockArgsAssignment(an, s, i, true); // rest of the argument array!
+        }
+
     }
 
     public Operand buildNewline(Node node, IR_Scope s) {

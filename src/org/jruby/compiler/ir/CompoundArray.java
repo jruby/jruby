@@ -38,12 +38,12 @@ public class CompoundArray extends Operand
     }
 
     // SSS FIXME: Premature optimization of GET_ARRAY ... make this part of a pass of peephole optimization!
-    public Operand fetchCompileTimeArrayElement(int argIndex)
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
         // SSS FIXME: This is not the right approach -- we'll need to reset this value on each opt. pass.
         if (_simplifiedValue == null)
             _simplifiedValue = getSimplifiedValue();
 
-        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex);
+        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex, getSubArray);
     }
 }

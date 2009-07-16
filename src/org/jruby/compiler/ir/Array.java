@@ -31,9 +31,21 @@ public class Array extends Operand
        return true;
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex)
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
-        return (argIndex < _elts.length) ? _elts[argIndex] : Nil.NIL;
+        if (!getSubArray) {
+            return (argIndex < _elts.length) ? _elts[argIndex] : Nil.NIL;
+        }
+        else {
+            if (argIndex < _elts.length) {
+                Operand[] newElts = new Operand[_elts.length-argIndex]; 
+                System.arraycopy(_elts, argIndex, newElts, 0, newElts.length);
+                return new Array(newElts);
+            }
+            else {
+                return new Array();
+            }
+        }
     }
 
     public Operand toArray() { return this; }

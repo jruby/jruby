@@ -6,10 +6,7 @@ public class Float extends Constant
 
     public Float(Double val) { _value = val; }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex)
-    {
-        return (argIndex == 0) ? this : Nil.NIL;
-    }
-
     public String toString() { return _value + ":float"; }
+
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return (argIndex == 0) ? this : Nil.NIL; }
 }

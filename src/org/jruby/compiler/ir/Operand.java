@@ -8,7 +8,8 @@ public abstract class Operand
     public Operand getSimplifiedValue() { return this; }
 
     // SSS FIXME: Premature optimization of GET_ARRAY ... make this part of a pass of peephole optimization!
-    public Operand fetchCompileTimeArrayElement(int index) { return null; }
+    // if (getSubArray) is false, returns the 'index' element of the array, else returns the subarray starting at that element
+    public Operand fetchCompileTimeArrayElement(int index, boolean getSubArray) { return null; }
 
 //    public abstract Operand toArray();
 

@@ -14,8 +14,13 @@ public class Splat extends Operand
 
     public String toString() { return "*" + _array; }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex)
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
-        return (_array instanceof Array) ? ((Array)_array).fetchCompileTimeArrayElement(argIndex) : null;
+        if (_array instanceof Array) 
+            return ((Array)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
+        else if (_array instanceof Range)
+            return ((Range)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
+        else
+            return null;
     }
 }

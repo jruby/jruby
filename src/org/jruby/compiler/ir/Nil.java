@@ -9,5 +9,5 @@ public class Nil extends Constant
 
     public String toString() { return "nil"; }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex) { return Nil.NIL; }
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return Nil.NIL; }
 }

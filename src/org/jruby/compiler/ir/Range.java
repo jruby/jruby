@@ -20,16 +20,13 @@ public class Range extends Operand
         return _begin.isConstant() && _end.isConstant();
     }
 
-/**
- * SSS FIXME: Do not instantiate eagerly!  You will be in trouble!
-    public Operand toArray()
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
-        if (isConstant() && (_begin instanceof Fixnum) && (_end instanceof Fixnum))
-        }
-        else {
-            // SSS FIXME: Is this the accepted semantics?  If used for compile-time optimizations only, this should perhaps return null?
-            return this;
-        }
+        if (!isConstant())
+            return null;
+
+        // SSS FIXME: Cannot optimize this without assuming that Range.to_ary method has not redefined.
+        // So for now, return null!
+        return null;
     }
-**/
 }
