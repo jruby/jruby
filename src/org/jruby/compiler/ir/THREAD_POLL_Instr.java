@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public class THREAD_POLL_Instr extends IR_Instr
+public class THREAD_POLL_Instr extends NoOperandInstr
 {
     public THREAD_POLL_Instr()
     {

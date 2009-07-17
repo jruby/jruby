@@ -16,4 +16,8 @@ public class TwoOperandInstr extends IR_Instr
     }
 
     public String toString() { return super.toString() + "(" + _arg1 + ", " + _arg2 + ")"; }
+
+    public Operand[] getOperands() {
+        return new Operand[] {_arg1, _arg2};
+    }
 }

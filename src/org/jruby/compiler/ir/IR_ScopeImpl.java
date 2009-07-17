@@ -5,7 +5,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.Stack;
+import java.util.TreeSet;
 
 public abstract class IR_ScopeImpl implements IR_Scope
 {
@@ -194,7 +196,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
                 (_instrs.isEmpty() ? "" : "\n  instrs:\n" + toStringInstrs()) +
                 (_modules.isEmpty() ? "" : "\n  modules:\n" + _modules) +
                 (_classes.isEmpty() ? "" : "\n  classes:\n" + _classes) +
-                (_methods.isEmpty() ? "" : "\n  methods:\n" + _methods);
+                (_methods.isEmpty() ? "" : "\n  methods:\n" + _methods) +
+                (_instrs.isEmpty() ? "" : "\n  live variables:\n" + toStringVariables());
     }
 
     public String toStringInstrs() {
@@ -202,11 +205,49 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
         int i = 0;
         for (IR_Instr instr : _instrs) {
+            if (i > 0) b.append("\n");
             b.append("  " + i++ + "\t");
             b.append(instr);
-            b.append("\n");
         }
 
         return b.toString();
+    }
+
+    public String toStringVariables() {
+        StringBuilder sb = new StringBuilder();
+        Map<Variable, Integer> ends = new HashMap<Variable, Integer>();
+        Map<Variable, Integer> starts = new HashMap<Variable, Integer>();
+        SortedSet<Variable> variables = new TreeSet<Variable>();
+        
+        for (int i = _instrs.size() - 1; i >= 0; i--) {
+            IR_Instr instr = _instrs.get(i);
+            Variable var = instr._result;
+
+            if (var != null) {
+                variables.add(var);
+                starts.put(var, i);
+            }
+
+            for (Operand operand : instr.getOperands()) {
+                if (operand != null && operand instanceof Variable && ends.get((Variable)operand) == null) {
+                    ends.put((Variable)operand, i);
+                    variables.add((Variable)operand);
+                }
+            }
+        }
+
+        int i = 0;
+        for (Variable var : variables) {
+            Integer end = ends.get(var);
+            if (end == null) {
+                // variable is never read, variable is never live
+            } else {
+                if (i > 0) sb.append("\n");
+                i++;
+                sb.append("    " + var + ": " + starts.get(var) + "-" + end);
+            }
+        }
+
+        return sb.toString();
     }
 }

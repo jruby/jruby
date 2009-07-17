@@ -11,4 +11,8 @@ public class PUT_GLOBAL_VAR_Instr extends IR_Instr
         _gvar = new GlobalVariable(varName);
         _value = value;
     }
+
+    public Operand[] getOperands() {
+        return new Operand[] {_value};
+    }
 }

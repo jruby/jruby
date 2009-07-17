@@ -46,6 +46,8 @@ public abstract class IR_Instr
     public void markDead() { _isDead = true; }
     public boolean isDead() { return _isDead; }
 
+    public abstract Operand[] getOperands();
+
 /**
 	 public Variable getResult() { return _result; }
 	 public abstract List<Operand> getOperands();

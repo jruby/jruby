@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public class DEFINE_INSTANCE_METHOD_Instr extends IR_Instr
+public class DEFINE_INSTANCE_METHOD_Instr extends NoOperandInstr
 {
     public final IR_Class  _class;
     public final IR_Method _method;

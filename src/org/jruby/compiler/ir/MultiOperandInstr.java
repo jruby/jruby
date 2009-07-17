@@ -18,4 +18,8 @@ public class MultiOperandInstr extends IR_Instr
     public String toString() {
         return super.toString() + Arrays.toString(_args);
     }
+
+    public Operand[] getOperands() {
+        return _args;
+    }
 }

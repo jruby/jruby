@@ -14,4 +14,8 @@ public class OneOperandInstr extends IR_Instr
     }
 
     public String toString() { return super.toString() + "(" + _arg + ")"; }
+
+    public Operand[] getOperands() {
+        return new Operand[] {_arg};
+    }
 }

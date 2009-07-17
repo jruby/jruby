@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public class JUMP_Instr extends IR_Instr
+public class JUMP_Instr extends NoOperandInstr
 {
     public final Label _target; 
 

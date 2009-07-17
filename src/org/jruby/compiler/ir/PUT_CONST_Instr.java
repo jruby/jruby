@@ -23,4 +23,8 @@ public class PUT_CONST_Instr extends IR_Instr
     }
 
     public String toString() { return "\tCONST(" + _scopeOrObj + ", " + _constName + ") = " + _value; }
+
+    public Operand[] getOperands() {
+        return new Operand[] {_value, _scopeOrObj};
+    }
 }

@@ -2,6 +2,8 @@ package org.jruby.compiler.ir;
 
 public abstract class Operand
 {
+    public static final Operand[] EMPTY_ARRAY = new Operand[0];
+
 // ---------- These methods below are used during compile-time optimizations ------- 
     public boolean isConstant() { return false; }
 
