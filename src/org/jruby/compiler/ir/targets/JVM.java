@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.compiler.ir.BEQ_Instr;
 import org.jruby.compiler.ir.CALL_Instr;
 import org.jruby.compiler.ir.COPY_Instr;
 import org.jruby.compiler.ir.CompilerTarget;
@@ -18,6 +19,9 @@ import org.jruby.compiler.ir.IR_Instr;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Script;
+import org.jruby.compiler.ir.JUMP_Instr;
+import org.jruby.compiler.ir.LABEL_Instr;
+import org.jruby.compiler.ir.Label;
 import org.jruby.compiler.ir.Operand;
 import org.jruby.compiler.ir.RECV_ARG_Instr;
 import org.jruby.compiler.ir.RETURN_Instr;
@@ -30,6 +34,7 @@ import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.TraceClassVisitor;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
+import static org.objectweb.asm.commons.GeneratorAdapter.*;
 
 // This class represents JVM as the target of compilation
 // and outputs bytecode
@@ -40,6 +45,7 @@ public class JVM implements CompilerTarget {
     List<ClassVisitor> cwAccum = new ArrayList<ClassVisitor>();
     Stack<GeneratorAdapter> mvStack = new Stack();
     Map<Variable, Integer> varMap;
+    Map<Label, org.objectweb.asm.Label> labelMap;
     IR_Script script;
 
     public static void main(String[] args) {
@@ -63,7 +69,7 @@ public class JVM implements CompilerTarget {
     public void pushclass() {
         if (DEBUG) {
             PrintWriter pw = new PrintWriter(System.out);
-            cvStack.push(new TraceClassVisitor(pw));
+            cvStack.push(new TraceClassVisitor(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS), pw));
             pw.flush();
         } else {
             cvStack.push(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
@@ -81,6 +87,7 @@ public class JVM implements CompilerTarget {
     public void pushmethod(String name) {
         mvStack.push(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls()));
         varMap = new HashMap<Variable, Integer>();
+        labelMap = new HashMap<Label, org.objectweb.asm.Label>();
     }
 
     public void popmethod() {
@@ -135,16 +142,28 @@ public class JVM implements CompilerTarget {
 
     public void emit(IR_Instr instr) {
         switch (instr._op) {
+        case BEQ:
+            emitBEQ((BEQ_Instr)instr); break;
         case CALL:
             emitCALL((CALL_Instr)instr); break;
         case COPY:
             emitCOPY((COPY_Instr)instr); break;
+        case JUMP:
+            emitJUMP((JUMP_Instr)instr); break;
+        case LABEL:
+            emitLABEL((LABEL_Instr)instr); break;
         case RECV_ARG:
             emitRECV_ARG((RECV_ARG_Instr)instr); break;
         case RETURN:
             emitRETURN((RETURN_Instr) instr); break;
         default:
             System.err.println("unsupported: " + instr._op);
+        }
+    }
+
+    public void emit(Constant constant) {
+        if (constant instanceof Fixnum) {
+            method().push(((Fixnum)constant)._value);
         }
     }
 
@@ -156,15 +175,15 @@ public class JVM implements CompilerTarget {
         }
     }
 
-    public void emit(Constant constant) {
-        if (constant instanceof Fixnum) {
-            method().push(((Fixnum)constant)._value);
-        }
-    }
-
     public void emit(Variable variable) {
         int index = getVariableIndex(variable);
         method().loadLocal(index);
+    }
+
+    public void emitBEQ(BEQ_Instr beq) {
+        emit(beq._arg1);
+        emit(beq._arg2);
+        method().ifCmp(Type.getType(Object.class), EQ, getLabel(beq.getJumpTarget()));
     }
 
     public void emitCOPY(COPY_Instr copy) {
@@ -178,6 +197,14 @@ public class JVM implements CompilerTarget {
             emit(operand);
         }
         method().invokeVirtual(Type.getType(Object.class), Method.getMethod("Object " + call._methAddr + " ()"));
+    }
+
+    public void emitJUMP(JUMP_Instr jump) {
+        method().goTo(getLabel(jump._target));
+    }
+
+    public void emitLABEL(LABEL_Instr lbl) {
+        method().mark(getLabel(lbl._lbl));
     }
 
     public void emitRETURN(RETURN_Instr ret) {
@@ -197,5 +224,14 @@ public class JVM implements CompilerTarget {
             varMap.put(variable, index);
         }
         return index;
+    }
+
+    private org.objectweb.asm.Label getLabel(Label label) {
+        org.objectweb.asm.Label asmLabel = labelMap.get(label);
+        if (asmLabel == null) {
+            asmLabel = method().newLabel();
+            labelMap.put(label, asmLabel);
+        }
+        return asmLabel;
     }
 }
