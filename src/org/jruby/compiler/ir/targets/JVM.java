@@ -3,8 +3,10 @@ package org.jruby.compiler.ir.targets;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ir.BEQ_Instr;
@@ -12,7 +14,9 @@ import org.jruby.compiler.ir.CALL_Instr;
 import org.jruby.compiler.ir.COPY_Instr;
 import org.jruby.compiler.ir.CompilerTarget;
 import org.jruby.compiler.ir.Constant;
+import org.jruby.compiler.ir.FieldRef;
 import org.jruby.compiler.ir.Fixnum;
+import org.jruby.compiler.ir.GET_FIELD_Instr;
 import org.jruby.compiler.ir.IR_Builder;
 import org.jruby.compiler.ir.IR_Class;
 import org.jruby.compiler.ir.IR_Instr;
@@ -23,6 +27,7 @@ import org.jruby.compiler.ir.JUMP_Instr;
 import org.jruby.compiler.ir.LABEL_Instr;
 import org.jruby.compiler.ir.Label;
 import org.jruby.compiler.ir.Operand;
+import org.jruby.compiler.ir.PUT_FIELD_Instr;
 import org.jruby.compiler.ir.RECV_ARG_Instr;
 import org.jruby.compiler.ir.RETURN_Instr;
 import org.jruby.compiler.ir.Variable;
@@ -51,6 +56,7 @@ public class JVM implements CompilerTarget {
         }
         public ClassVisitor cls;
         Stack<MethodData> methodStack = new Stack();
+        public Set<String> fieldSet = new HashSet<String>();
     }
 
     private static class MethodData {
@@ -164,6 +170,10 @@ public class JVM implements CompilerTarget {
             emitJUMP((JUMP_Instr)instr); break;
         case LABEL:
             emitLABEL((LABEL_Instr)instr); break;
+        case PUT_FIELD:
+            emitPUT_FIELD((PUT_FIELD_Instr)instr); break;
+        case GET_FIELD:
+            emitGET_FIELD((GET_FIELD_Instr)instr); break;
         case RECV_ARG:
             emitRECV_ARG((RECV_ARG_Instr)instr); break;
         case RETURN:
@@ -219,6 +229,21 @@ public class JVM implements CompilerTarget {
         method().mark(getLabel(lbl._lbl));
     }
 
+    public void emitPUT_FIELD(PUT_FIELD_Instr putField) {
+        String field = ((FieldRef)putField.getOperands()[1])._refName;
+        declareField(field);
+        emit(putField.getOperands()[0]);
+        emit(putField.getOperands()[2]);
+        method().putField(Type.getType(Object.class), field, Type.getType(Object.class));
+    }
+
+    public void emitGET_FIELD(GET_FIELD_Instr putField) {
+        String field = ((FieldRef)putField.getOperands()[1])._refName;
+        declareField(field);
+        emit(putField.getOperands()[0]);
+        method().getField(Type.getType(Object.class), field, Type.getType(Object.class));
+    }
+
     public void emitRETURN(RETURN_Instr ret) {
         emit(ret._arg);
         method().returnValue();
@@ -245,5 +270,12 @@ public class JVM implements CompilerTarget {
             clsStack.peek().methodStack.peek().labelMap.put(label, asmLabel);
         }
         return asmLabel;
+    }
+
+    private void declareField(String field) {
+        if (!clsStack.peek().fieldSet.contains(field)) {
+            clsStack.peek().cls.visitField(ACC_PROTECTED, field, ci(Object.class), null, null);
+            clsStack.peek().fieldSet.add(field);
+        }
     }
 }
