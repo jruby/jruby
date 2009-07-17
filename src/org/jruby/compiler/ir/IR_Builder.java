@@ -2453,6 +2453,10 @@ public class IR_Builder
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Class  rootClass = script._dummyClass;
 
+        // add a "self" recv here
+        // TODO: is this right?
+        rootClass.addInstr(new RECV_ARG_Instr(rootClass.getSelf(), 0));
+
         RootNode rootNode = (RootNode) node;
         Node nextNode = rootNode.getBodyNode();
         if (nextNode == null) {

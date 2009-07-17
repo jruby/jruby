@@ -2,7 +2,9 @@ package org.jruby.compiler.ir.targets;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ir.CALL_Instr;
@@ -17,7 +19,9 @@ import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Script;
 import org.jruby.compiler.ir.Operand;
+import org.jruby.compiler.ir.RECV_ARG_Instr;
 import org.jruby.compiler.ir.RETURN_Instr;
+import org.jruby.compiler.ir.Variable;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -35,6 +39,7 @@ public class JVM implements CompilerTarget {
     Stack<ClassVisitor> cvStack = new Stack();
     List<ClassVisitor> cwAccum = new ArrayList<ClassVisitor>();
     Stack<GeneratorAdapter> mvStack = new Stack();
+    Map<Variable, Integer> varMap;
     IR_Script script;
 
     public static void main(String[] args) {
@@ -75,6 +80,7 @@ public class JVM implements CompilerTarget {
 
     public void pushmethod(String name) {
         mvStack.push(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls()));
+        varMap = new HashMap<Variable, Integer>();
     }
 
     public void popmethod() {
@@ -133,6 +139,8 @@ public class JVM implements CompilerTarget {
             emitCALL((CALL_Instr)instr); break;
         case COPY:
             emitCOPY((COPY_Instr)instr); break;
+        case RECV_ARG:
+            emitRECV_ARG((RECV_ARG_Instr)instr); break;
         case RETURN:
             emitRETURN((RETURN_Instr) instr); break;
         default:
@@ -143,8 +151,9 @@ public class JVM implements CompilerTarget {
     public void emit(Operand operand) {
         if (operand.isConstant()) {
             emit((Constant)operand);
+        } else if (operand instanceof Variable) {
+            emit((Variable)operand);
         }
-        // TODO: what's the best way to emit operands?
     }
 
     public void emit(Constant constant) {
@@ -153,11 +162,15 @@ public class JVM implements CompilerTarget {
         }
     }
 
+    public void emit(Variable variable) {
+        int index = getVariableIndex(variable);
+        method().loadLocal(index);
+    }
+
     public void emitCOPY(COPY_Instr copy) {
-        // TODO: maintain a map of variables to JVM locals
-        int local = method().newLocal(Type.getType(Object.class));
+        int index = getVariableIndex(copy._result);
         emit(copy._arg);
-        method().storeLocal(local);
+        method().storeLocal(index);
     }
 
     public void emitCALL(CALL_Instr call) {
@@ -170,5 +183,19 @@ public class JVM implements CompilerTarget {
     public void emitRETURN(RETURN_Instr ret) {
         emit(ret._arg);
         method().returnValue();
+    }
+
+    public void emitRECV_ARG(RECV_ARG_Instr recvArg) {
+        int index = getVariableIndex(recvArg._result);
+        // TODO: need to get this back into the method signature...now is too late...
+    }
+
+    private int getVariableIndex(Variable variable) {
+        Integer index = varMap.get(variable);
+        if (index == null) {
+            index = method().newLocal(Type.getType(Object.class));
+            varMap.put(variable, index);
+        }
+        return index;
     }
 }
