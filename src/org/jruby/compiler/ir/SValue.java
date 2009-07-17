@@ -36,12 +36,12 @@ public class SValue extends Operand
         }
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex)
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
         // SSS FIXME: This is not the right approach -- we'll need to reset this value on each opt. pass.
         if (_simplifiedValue == null)
             _simplifiedValue = getSimplifiedValue();
 
-        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex);
+        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex, getSubArray);
     }
 }

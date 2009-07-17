@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-public class RECV_CLOSURE_ARG_Instr extends IR_Instr
+public class RECV_CLOSURE_ARG_Instr extends NoOperandInstr
 {
     int     _argIndex;
     boolean _restOfArgArray;

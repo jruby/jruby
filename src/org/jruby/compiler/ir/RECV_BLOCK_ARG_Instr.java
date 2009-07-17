@@ -5,7 +5,7 @@ package org.jruby.compiler.ir;
 // minus the block itself.
 //
 // (Most likely, this will be implemented by decrementing the length counter of the argument array.)
-public class RECV_BLOCK_ARG_Instr extends IR_Instr
+public class RECV_BLOCK_ARG_Instr extends NoOperandInstr
 {
     public RECV_BLOCK_ARG_Instr(Variable dest)
     {
