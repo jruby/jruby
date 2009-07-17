@@ -43,10 +43,19 @@ public class JVM implements CompilerTarget {
     
     Stack<ClassVisitor> cvStack = new Stack();
     List<ClassVisitor> cwAccum = new ArrayList<ClassVisitor>();
-    Stack<GeneratorAdapter> mvStack = new Stack();
-    Map<Variable, Integer> varMap;
-    Map<Label, org.objectweb.asm.Label> labelMap;
+    Stack<MethodData> methodStack = new Stack();
     IR_Script script;
+
+    private static class MethodData {
+        public MethodData(GeneratorAdapter method) {
+            this.method = method;
+            varMap = new HashMap<Variable, Integer>();
+            labelMap = new HashMap<Label, org.objectweb.asm.Label>();
+        }
+        public GeneratorAdapter method;
+        public Map<Variable, Integer> varMap;
+        public Map<Label, org.objectweb.asm.Label> labelMap;
+    }
 
     public static void main(String[] args) {
         IR_Scope scope = IR_Builder.buildFromMain(args);
@@ -81,18 +90,16 @@ public class JVM implements CompilerTarget {
     }
 
     public GeneratorAdapter method() {
-        return mvStack.peek();
+        return methodStack.peek().method;
     }
 
     public void pushmethod(String name) {
-        mvStack.push(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls()));
-        varMap = new HashMap<Variable, Integer>();
-        labelMap = new HashMap<Label, org.objectweb.asm.Label>();
+        methodStack.push(new MethodData(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls())));
     }
 
     public void popmethod() {
         method().endMethod();
-        mvStack.pop();
+        methodStack.pop();
     }
 
     public void codegen(IR_Scope scope) {
@@ -218,19 +225,19 @@ public class JVM implements CompilerTarget {
     }
 
     private int getVariableIndex(Variable variable) {
-        Integer index = varMap.get(variable);
+        Integer index = methodStack.peek().varMap.get(variable);
         if (index == null) {
             index = method().newLocal(Type.getType(Object.class));
-            varMap.put(variable, index);
+            methodStack.peek().varMap.put(variable, index);
         }
         return index;
     }
 
     private org.objectweb.asm.Label getLabel(Label label) {
-        org.objectweb.asm.Label asmLabel = labelMap.get(label);
+        org.objectweb.asm.Label asmLabel = methodStack.peek().labelMap.get(label);
         if (asmLabel == null) {
             asmLabel = method().newLabel();
-            labelMap.put(label, asmLabel);
+            methodStack.peek().labelMap.put(label, asmLabel);
         }
         return asmLabel;
     }
