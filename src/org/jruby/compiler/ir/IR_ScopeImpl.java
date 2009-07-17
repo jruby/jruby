@@ -137,7 +137,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addInstr(IR_Instr i)   { _instrs.add(i); }
 
-    public List getInstrs() {
+    public List<IR_Instr> getInstrs() {
         return Collections.unmodifiableList(_instrs);
     }
 

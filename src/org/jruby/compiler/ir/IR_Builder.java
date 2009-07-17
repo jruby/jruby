@@ -176,6 +176,12 @@ public class IR_Builder
     }
 
     public static void main(String[] args) {
+        IR_Scope scope = buildFromMain(args);
+
+        System.out.println(scope);
+    }
+
+    public static IR_Scope buildFromMain(String[] args) {
         Ruby ruby = Ruby.getGlobalRuntime();
         Node node = null;
         if (args[0].equals("-e")) {
@@ -195,9 +201,7 @@ public class IR_Builder
             }
         }
 
-        IR_Scope scope = new IR_Builder().buildRoot(node);
-
-        System.out.println(scope);
+        return new IR_Builder().buildRoot(node);
     }
 
     public Operand build(Node node, IR_Scope m) {

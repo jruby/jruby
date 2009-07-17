@@ -2,8 +2,8 @@ package org.jruby.compiler.ir;
 
 public class CALL_Instr extends MultiOperandInstr
 {
-    Operand _methAddr;
-    Operand _closure;
+    public Operand _methAddr;
+    public Operand _closure;
    
     public CALL_Instr(Variable result, Operand methAddr, Operand[] args, Operand closure)
     {

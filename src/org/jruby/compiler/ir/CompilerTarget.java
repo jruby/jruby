@@ -4,5 +4,5 @@ package org.jruby.compiler.ir;
 // Example JDK6, JDK7
 public interface CompilerTarget
 {
-    public void codegen();
+    public void codegen(IR_Scope scope);
 }
