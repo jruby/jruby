@@ -41,20 +41,25 @@ import static org.objectweb.asm.commons.GeneratorAdapter.*;
 public class JVM implements CompilerTarget {
     private static final boolean DEBUG = true;
     
-    Stack<ClassVisitor> cvStack = new Stack();
-    List<ClassVisitor> cwAccum = new ArrayList<ClassVisitor>();
-    Stack<MethodData> methodStack = new Stack();
+    Stack<ClassData> clsStack = new Stack();
+    List<ClassData> clsAccum = new ArrayList();
     IR_Script script;
+
+    private static class ClassData {
+        public ClassData(ClassVisitor cls) {
+            this.cls = cls;
+        }
+        public ClassVisitor cls;
+        Stack<MethodData> methodStack = new Stack();
+    }
 
     private static class MethodData {
         public MethodData(GeneratorAdapter method) {
             this.method = method;
-            varMap = new HashMap<Variable, Integer>();
-            labelMap = new HashMap<Label, org.objectweb.asm.Label>();
         }
         public GeneratorAdapter method;
-        public Map<Variable, Integer> varMap;
-        public Map<Label, org.objectweb.asm.Label> labelMap;
+        public Map<Variable, Integer> varMap = new HashMap<Variable, Integer>();
+        public Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
     }
 
     public static void main(String[] args) {
@@ -72,34 +77,34 @@ public class JVM implements CompilerTarget {
     }
 
     public ClassVisitor cls() {
-        return cvStack.peek();
+        return clsStack.peek().cls;
     }
 
     public void pushclass() {
         if (DEBUG) {
             PrintWriter pw = new PrintWriter(System.out);
-            cvStack.push(new TraceClassVisitor(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS), pw));
+            clsStack.push(new ClassData(new TraceClassVisitor(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS), pw)));
             pw.flush();
         } else {
-            cvStack.push(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
+            clsStack.push(new ClassData(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS)));
         }
     }
 
     public void popclass() {
-        cvStack.pop();
+        clsStack.pop();
     }
 
     public GeneratorAdapter method() {
-        return methodStack.peek().method;
+        return clsStack.peek().methodStack.peek().method;
     }
 
     public void pushmethod(String name) {
-        methodStack.push(new MethodData(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls())));
+        clsStack.peek().methodStack.push(new MethodData(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls())));
     }
 
     public void popmethod() {
         method().endMethod();
-        methodStack.pop();
+        clsStack.peek().methodStack.pop();
     }
 
     public void codegen(IR_Scope scope) {
@@ -225,19 +230,19 @@ public class JVM implements CompilerTarget {
     }
 
     private int getVariableIndex(Variable variable) {
-        Integer index = methodStack.peek().varMap.get(variable);
+        Integer index = clsStack.peek().methodStack.peek().varMap.get(variable);
         if (index == null) {
             index = method().newLocal(Type.getType(Object.class));
-            methodStack.peek().varMap.put(variable, index);
+            clsStack.peek().methodStack.peek().varMap.put(variable, index);
         }
         return index;
     }
 
     private org.objectweb.asm.Label getLabel(Label label) {
-        org.objectweb.asm.Label asmLabel = methodStack.peek().labelMap.get(label);
+        org.objectweb.asm.Label asmLabel = clsStack.peek().methodStack.peek().labelMap.get(label);
         if (asmLabel == null) {
             asmLabel = method().newLabel();
-            methodStack.peek().labelMap.put(label, asmLabel);
+            clsStack.peek().methodStack.peek().labelMap.put(label, asmLabel);
         }
         return asmLabel;
     }
