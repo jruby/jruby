@@ -214,8 +214,8 @@ public class IR_Builder
             case ARGSCATNODE: return buildArgsCat(node, m); // done
             case ARGSPUSHNODE: return buildArgsPush(node, m); // Nothing to do for 1.8
             case ARRAYNODE: return buildArray(node, m); // done
-//            case ATTRASSIGNNODE: return buildAttrAssign(node, m); // Incomplete
-//            case BACKREFNODE: return buildBackref(node, m); // DEFERRED
+            case ATTRASSIGNNODE: return buildAttrAssign(node, m); // done
+            case BACKREFNODE: return buildBackref(node, m); // done
             case BEGINNODE: return buildBegin(node, m); // done
             case BIGNUMNODE: return buildBignum(node, m); // done
             case BLOCKNODE: return buildBlock(node, m); // done
@@ -392,10 +392,9 @@ public class IR_Builder
             elt = v;
         }
         switch (node.getNodeType()) {
-/*
             case ATTRASSIGNNODE: 
-                return buildAttrAssignAssignment(node, s);
-*/
+                buildAttrAssignAssignment(node, s, elt);
+					 break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), elt));
@@ -431,8 +430,9 @@ public class IR_Builder
         Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
-                // INCOMPLETE
-                buildAttrAssignAssignment(node, s);
+                v = s.getNewVariable();
+                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                buildAttrAssignAssignment(node, s, v);
                 break;
 // SSS FIXME:
 //
@@ -550,33 +550,26 @@ public class IR_Builder
         throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
     }
 
-/**
-    private void buildAttrAssign(Node node, IR_Scope m) {
+    private Operand buildAttrAssign(Node node, IR_Scope s) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
-        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode());
-        Operand receiver   = build(attrAssignNode.getReceiverNode(), m);
-            // SSS FIXME: What is this?
-        m.getInvocationCompiler().invokeAttrAssign(attrAssignNode.getName(), receiverCallback, argsCallback);
-    }
-**/
-
-    // INCOMPLETE
-    public Operand buildAttrAssignAssignment(Node node, IR_Scope s) {
-        final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
-        Operand receiver = build(attrAssignNode.getReceiverNode(), s);
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
-        // m.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
-        return null;
+        Operand obj = build(attrAssignNode.getReceiverNode(), s);
+		  s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), args.get(1)));
+		  return args.get(0);
     }
 
-/**
-    // INCOMPLETE
+    public Operand buildAttrAssignAssignment(Node node, IR_Scope s, Operand value) {
+        final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
+        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
+        Operand obj = build(attrAssignNode.getReceiverNode(), s);
+		  s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), value));
+		  return value;
+    }
+
     public Operand buildBackref(Node node, IR_Scope m) {
         BackRefNode iVisited = (BackRefNode) node;
-        //m.performBackref(iVisited.getType());
-        return null;
+		  return new Backref(iVisited.getType());
     }
-**/
 
     public Operand buildBegin(Node node, IR_Scope s) {
         return build(((BeginNode)node).getBodyNode(), s);
@@ -1983,13 +1976,7 @@ public class IR_Builder
 /**
     public Operand buildNthRef(Node node, IR_Scope m) {
         NthRefNode nthRefNode = (NthRefNode) node;
-
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) m.nthRef(nthRefNode.getMatchNumber());
-        } else {
-            m.nthRef(nthRefNode.getMatchNumber());
-            if (!expr) m.consumeCurrentValue();
-        }
+		  m.nthRef(nthRefNode.getMatchNumber());
     }
 **/
 

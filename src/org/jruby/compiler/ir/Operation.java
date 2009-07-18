@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, obj_op, alu_op, call_op, eval_op, branch_op, load_op, store_op };
+enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, load_op, store_op };
 
 public enum Operation
 {
@@ -17,9 +17,9 @@ public enum Operation
 
 // method handle, arg receive, return value, and  call instructions
     GET_METHOD(OpType.dont_care),
-    RETURN(OpType.dont_care), CLOSURE_RETURN(OpType.dont_care),
-	 RECV_ARG(OpType.dont_care), RECV_BLOCK(OpType.dont_care), RECV_OPT_ARG(OpType.dont_care), RECV_CLOSURE_ARG(OpType.dont_care),
-    CALL(OpType.call_op),
+    RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
+	 RECV_ARG(OpType.recv_arg_op), RECV_BLOCK(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
+    CALL(OpType.call_op), ATTR_ASSIGN(OpType.call_op),
 
 // closure instructions
     YIELD(OpType.dont_care),
@@ -34,7 +34,7 @@ public enum Operation
     THROW(OpType.dont_care), RESCUE(OpType.dont_care), RETRY(OpType.dont_care),
 
 // Loads
-	 GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.dont_care), GET_ARRAY(OpType.load_op), 
+	 GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op), 
 
 // Stores
 	 PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
