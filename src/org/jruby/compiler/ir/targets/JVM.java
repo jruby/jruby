@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyObject;
 import org.jruby.compiler.ir.BEQ_Instr;
 import org.jruby.compiler.ir.CALL_Instr;
 import org.jruby.compiler.ir.COPY_Instr;
 import org.jruby.compiler.ir.CompilerTarget;
 import org.jruby.compiler.ir.Constant;
+import org.jruby.compiler.ir.DEFINE_CLASS_METHOD_Instr;
+import org.jruby.compiler.ir.DEFINE_INSTANCE_METHOD_Instr;
 import org.jruby.compiler.ir.FieldRef;
 import org.jruby.compiler.ir.Fixnum;
 import org.jruby.compiler.ir.GET_FIELD_Instr;
@@ -54,6 +57,29 @@ public class JVM implements CompilerTarget {
         public ClassData(ClassVisitor cls) {
             this.cls = cls;
         }
+
+        public GeneratorAdapter method() {
+            return methodData().method;
+        }
+
+        public MethodData methodData() {
+            return methodStack.peek();
+        }
+
+        public void pushmethod(String name) {
+            methodStack.push(new MethodData(new GeneratorAdapter(
+                    ACC_PUBLIC | ACC_STATIC,
+                    Method.getMethod("org.jruby.runtime.builtin.IRubyObject " + name + " (org.jruby.runtime.ThreadContext, org.jruby.runtime.builtin.IRubyObject)"),
+                    null,
+                    null,
+                    cls)));
+        }
+
+        public void popmethod() {
+            method().endMethod();
+            methodStack.pop();
+        }
+        
         public ClassVisitor cls;
         Stack<MethodData> methodStack = new Stack();
         public Set<String> fieldSet = new HashSet<String>();
@@ -83,7 +109,11 @@ public class JVM implements CompilerTarget {
     }
 
     public ClassVisitor cls() {
-        return clsStack.peek().cls;
+        return clsData().cls;
+    }
+
+    public ClassData clsData() {
+        return clsStack.peek();
     }
 
     public void pushclass() {
@@ -101,16 +131,15 @@ public class JVM implements CompilerTarget {
     }
 
     public GeneratorAdapter method() {
-        return clsStack.peek().methodStack.peek().method;
+        return clsData().method();
     }
 
     public void pushmethod(String name) {
-        clsStack.peek().methodStack.push(new MethodData(new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + name + " ()"), null, null, cls())));
+        clsData().pushmethod(name);
     }
 
     public void popmethod() {
-        method().endMethod();
-        clsStack.peek().methodStack.pop();
+        clsData().popmethod();
     }
 
     public void codegen(IR_Scope scope) {
@@ -126,7 +155,7 @@ public class JVM implements CompilerTarget {
 
     public void emit(IR_Class cls) {
         pushclass();
-        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls._className, null, p(Object.class), null);
+        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls._className, null, p(RubyObject.class), null);
         cls().visitSource(script.getFileName().toString(), null);
 
         // root-level logic
@@ -166,6 +195,8 @@ public class JVM implements CompilerTarget {
             emitCALL((CALL_Instr)instr); break;
         case COPY:
             emitCOPY((COPY_Instr)instr); break;
+        case DEF_INST_METH:
+            emitDEF_INST_METH((DEFINE_INSTANCE_METHOD_Instr)instr); break;
         case JUMP:
             emitJUMP((JUMP_Instr)instr); break;
         case LABEL:
@@ -221,6 +252,20 @@ public class JVM implements CompilerTarget {
         method().invokeVirtual(Type.getType(Object.class), Method.getMethod("Object " + call._methAddr + " ()"));
     }
 
+    public void emitDEF_INST_METH(DEFINE_INSTANCE_METHOD_Instr instr) {
+        IR_Method irMethod = instr._method;
+        GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, Method.getMethod("void " + irMethod._name + " ()"), null, null, cls());
+        adapter.returnValue();
+        adapter.endMethod();
+    }
+
+    public void emitDEF_CLS_METH(DEFINE_CLASS_METHOD_Instr instr) {
+        IR_Method irMethod = instr._method;
+        GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + irMethod._name + " ()"), null, null, cls());
+        adapter.returnValue();
+        adapter.endMethod();
+    }
+
     public void emitJUMP(JUMP_Instr jump) {
         method().goTo(getLabel(jump._target));
     }
@@ -264,18 +309,18 @@ public class JVM implements CompilerTarget {
     }
 
     private org.objectweb.asm.Label getLabel(Label label) {
-        org.objectweb.asm.Label asmLabel = clsStack.peek().methodStack.peek().labelMap.get(label);
+        org.objectweb.asm.Label asmLabel = clsData().methodData().labelMap.get(label);
         if (asmLabel == null) {
             asmLabel = method().newLabel();
-            clsStack.peek().methodStack.peek().labelMap.put(label, asmLabel);
+            clsData().methodData().labelMap.put(label, asmLabel);
         }
         return asmLabel;
     }
 
     private void declareField(String field) {
-        if (!clsStack.peek().fieldSet.contains(field)) {
-            clsStack.peek().cls.visitField(ACC_PROTECTED, field, ci(Object.class), null, null);
-            clsStack.peek().fieldSet.add(field);
+        if (!clsData().fieldSet.contains(field)) {
+            cls().visitField(ACC_PROTECTED, field, ci(Object.class), null, null);
+            clsData().fieldSet.add(field);
         }
     }
 }
