@@ -1973,12 +1973,10 @@ public class IR_Builder
         return rv;
     }
 
-/**
     public Operand buildNthRef(Node node, IR_Scope m) {
         NthRefNode nthRefNode = (NthRefNode) node;
-		  m.nthRef(nthRefNode.getMatchNumber());
+		  return new NthRef(nthRefNode.getMatchNumber());
     }
-**/
 
     public Operand buildNil(Node node, IR_Scope m) {
         m.addInstr(new THREAD_POLL_Instr());
