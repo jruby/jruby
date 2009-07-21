@@ -108,6 +108,7 @@
     <copy todir="${jruby.classes.dir}/builtin">
         <fileset dir="${lib.dir}/ruby/site_ruby/1.8/builtin">
             <include name="**/*.rb"/>
+            <include name="**/*.jar"/>
         </fileset>
     </copy>
 
@@ -243,7 +244,6 @@
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
@@ -286,7 +286,6 @@
         <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
@@ -312,7 +311,6 @@
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
@@ -405,7 +403,6 @@
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jvyamlb-0.2.5.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>

@@ -849,6 +849,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return fastGetInternalVariable("__wrap_struct__");
     }
 
+    // Equivalent of Data_Get_Struct
+    // This will first check that the object in question is actually a T_DATA equivalent.
+    public synchronized Object dataGetStructChecked() {
+        TypeConverter.checkData(this);
+        return this.fastGetInternalVariable("__wrap_struct__");
+    }
+
     /** rb_obj_id
      *
      * Return the internal id of an object.

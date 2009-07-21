@@ -280,6 +280,7 @@ public interface IRubyObject {
      * @return the object wrapped.
      */
     Object dataGetStruct();
+    Object dataGetStructChecked();
     
     /**
      *

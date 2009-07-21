@@ -1,493 +1,437 @@
-require 'java' #needed for the module JavaUtilities, which JavaEmbedUtils have a dependency on
-require 'date'
-require 'yaml_internal'
+# -*- mode: ruby; ruby-indent-level: 4; tab-width: 4 -*- vim: sw=4 ts=4
+# $Id$
+#
+# = yaml.rb: top-level module with methods for loading and parsing YAML documents
+#
+# Author:: why the lucky stiff
+# 
 
-class Java::OrgJrubyYaml::JRubyRepresenter
-  def kind_of?(other)
-    if other == YAML::Emitter
-      return true
-    else
-      super
-    end
-  end
-end
+require 'stringio'
+require 'yaml/compat'
+require 'yaml/error'
+require 'yaml/yecht'
+require 'yaml/tag'
+require 'yaml/stream'
+require 'yaml/constants'
 
+# == YAML
+#
+# YAML(tm) (rhymes with 'camel') is a
+# straightforward machine parsable data serialization format designed for
+# human readability and interaction with scripting languages such as Perl
+# and Python. YAML is optimized for data serialization, formatted
+# dumping, configuration files, log files, Internet messaging and
+# filtering. This specification describes the YAML information model and
+# serialization format. Together with the Unicode standard for characters, it
+# provides all the information necessary to understand YAML Version 1.0
+# and construct computer programs to process it.
+#                         
+# See http://yaml.org/ for more information.  For a quick tutorial, please
+# visit YAML In Five Minutes (http://yaml.kwiki.org/?YamlInFiveMinutes).
+#                              
+# == About This Library
+#                         
+# The YAML 1.0 specification outlines four stages of YAML loading and dumping.
+# This library honors all four of those stages, although data is really only
+# available to you in three stages.
+#     
+# The four stages are: native, representation, serialization, and presentation.
+#     
+# The native stage refers to data which has been loaded completely into Ruby's
+# own types. (See +YAML::load+.)
+#
+# The representation stage means data which has been composed into
+# +YAML::BaseNode+ objects.  In this stage, the document is available as a
+# tree of node objects.  You can perform YPath queries and transformations
+# at this level.  (See +YAML::parse+.)
+#   
+# The serialization stage happens inside the parser.  The YAML parser used in
+# Ruby is called Yecht.  Serialized nodes are available in the extension as
+# Node structs.
+#       
+# The presentation stage is the YAML document itself.  This is accessible
+# to you as a string.  (See +YAML::dump+.)
+#   
+# For more information about the various information models, see Chapter
+# 3 of the YAML 1.0 Specification (http://yaml.org/spec/#id2491269).
+#
+# The YAML module provides quick access to the most common loading (YAML::load)
+# and dumping (YAML::dump) tasks.  This module also provides an API for registering
+# global types (YAML::add_domain_type).
+#
+# == Example
+#
+# A simple round-trip (load and dump) of an object.
+#
+#     require "yaml"
+#
+#     test_obj = ["dogs", "cats", "badgers"]
+#
+#     yaml_obj = YAML::dump( test_obj )
+#                         # -> ---
+#                              - dogs
+#                              - cats
+#                              - badgers
+#     ruby_obj = YAML::load( yaml_obj )
+#                         # => ["dogs", "cats", "badgers"]
+#     ruby_obj == test_obj
+#                         # => true
+#
+# To register your custom types with the global resolver, use +add_domain_type+.
+#
+#     YAML::add_domain_type( "your-site.com,2004", "widget" ) do |type, val|
+#         Widget.new( val )
+#     end
+#
 module YAML
-  #
-  # Default settings
-  #
-  DEFAULTS = {
-    :Indent => 2, :UseHeader => false, :UseVersion => false, :Version => '1.0',
-    :SortKeys => false, :AnchorFormat => 'id%03d', :ExplicitTypes => false,
-    :WidthType => 'absolute', :BestWidth => 80,
-    :UseBlock => false, :UseFold => false, :Encoding => :None
-  }
 
-  class Error < StandardError; end
+    Resolver = YAML::Yecht::Resolver
+    DefaultResolver = YAML::Yecht::DefaultResolver
+    DefaultResolver.use_types_at( @@tagged_classes )
+    GenericResolver = YAML::Yecht::GenericResolver
+    Parser = YAML::Yecht::Parser
+    Emitter = YAML::Yecht::Emitter
 
-  def self.parse(obj)
-#    Proxy.new(YAML::load(obj))
-        YAML::JvYAML::Node::from_internal(YAML::_parse_internal(obj)) || false
-  end
+    # Returns a new default parser
+    def YAML.parser; Parser.new.set_resolver( YAML.resolver ); end
+    # Returns a new generic parser
+    def YAML.generic_parser; Parser.new.set_resolver( GenericResolver ); end
+    # Returns the default resolver
+    def YAML.resolver; DefaultResolver; end
+    # Returns a new default emitter
+    def YAML.emitter; Emitter.new.set_resolver( YAML.resolver ); end
 
-  def YAML.parse_file( filepath )
-    File.open( filepath ) do |f|
-      parse( f )
-    end
-  end
+	#
+	# Converts _obj_ to YAML and writes the YAML result to _io_.
+    #     
+    #   File.open( 'animals.yaml', 'w' ) do |out|
+    #     YAML.dump( ['badger', 'elephant', 'tiger'], out )
+    #   end
+    #
+    # If no _io_ is provided, a string containing the dumped YAML
+    # is returned.
+	#
+    #   YAML.dump( :locked )
+    #      #=> "--- :locked"
+    #
+	def YAML.dump( obj, io = nil )
+        obj.to_yaml( io || io2 = StringIO.new )
+        io || ( io2.rewind; io2.read )
+	end
 
-  def self.add_domain_type(*args)
-      warn "YAML::add_domain_type isn't supported on JRuby"
-  end
-
-  def self.parse_documents(*args)
-      warn "YAML::parse_documents isn't supported on JRuby"
-  end
-  
-  class Proxy
-    def initialize(v)
-      @value = v
-    end
-    
-    def transform
-      @value
-    end
-  end
-
-  class YPath
-    def self.each_path(*args)
-      warn "YAML::YPath.each_path isn't supported on JRuby"
-    end
-  end
-
-  class Emitter
-    def initialize
-      @out = YAML::JvYAML::Out.new self
-    end
-
-    def reset(opts)
-      @opts = opts
-      self
-    end
-
-    def emit(oid, &proc)
-      proc.call(@out)
-    end
-    
-    def has_key?(key)
-    end
-  end
-
-  class Object
-    attr_accessor :class, :ivars
-    def initialize(cl, iv)
-      @class, @ivars = cl, iv
-    end
-
-    def to_yaml( opts = {} )
-      YAML::quick_emit( object_id, opts ) do |out|
-        out.map( "tag:ruby.yaml.org,2002:object:#{ @class }", to_yaml_style ) do |map|
-          @ivars.each do |k,v|
-            map.add( k, v )
-          end
-        end
-      end
-    end
-  end
-  
-  def YAML.emitter; Emitter.new; end
-
-  #
-  # Allocate an Emitter if needed
-  #
-  def YAML.quick_emit( oid, opts = {}, &e )
-    out = 
-      if opts.is_a? YAML::Emitter
-        opts
-      else
-        emitter.reset( opts )
-      end
-    out.emit( oid, &e )
-  end
-  
-  module JvYAML
-    class Out
-      attr_accessor :emitter
-      
-      def initialize(emitter)
-        @emitter = emitter
-      end
-      
-      def map(type_id, style = nil)
-        map = Map.new(type_id, {}, style)
-        yield map
-        map.to_s
-      end
-
-      def seq(type_id, style = nil)
-        seq = Seq.new(type_id, [], style)
-        yield seq
-        seq
-      end
-
-      def scalar(type_id, str, style = nil)
-        Scalar.new(type_id, str, style)
-      end
-    end
-    
-    class Node
-      attr_accessor :value
-      attr_accessor :style
-      attr_accessor :type_id
-
-      def transform
-        org.jruby.yaml.JRubyConstructor.new(self, nil).construct_document(to_internal)
-      end
-      
-      def to_str
-        YAML.dump(self)
-      end
-
-      def to_s
-        YAML.dump(self)
-      end
-      
-      def self.from_internal(internal) 
-        case internal
-        when org.jvyamlb.nodes.ScalarNode
-          Scalar.new(internal.tag, internal.value, internal.style.chr)
-        when org.jvyamlb.nodes.MappingNode
-          Map.new(internal.tag, internal.value.inject({}) {|h, obj| h[from_internal(obj[0])] = from_internal(obj[1]); h}, internal.flow_style)
-        when org.jvyamlb.nodes.SequenceNode
-          Seq.new(internal.tag, internal.value.map {|obj| from_internal(obj)}, internal.flow_style)
-        end
-      end
-    end
-
-    class Scalar < Node
-      def initialize(type_id, val, style)
-        @kind = :scalar
-        self.type_id = type_id
-        self.value = val
-        self.style = style
-      end
-      
-      def to_internal
-        org.jvyamlb.nodes.ScalarNode.new(self.type_id, org.jruby.util.ByteList.new(self.value.to_java_bytes, false), self.style[0])
-      end
-      
-      def to_yaml_node(repr)
-        repr.scalar(self.type_id,self.value,self.style)
-      end
-    end
-
-    class Seq < Node
-      def initialize(type_id, val, style)
-        @kind = :seq
-        self.type_id = type_id
-        self.value = val
-        self.style = style
-      end
-      def add(v)
-        @value << v
-      end
-      
-      def to_internal
-        org.jvyamlb.nodes.SequenceNode.new(self.type_id, self.value.map {|v| v.to_internal }, self.style)
-      end
-      
-      def to_yaml_node(repr)
-        repr.seq(self.type_id,self.value,self.style)
-      end
-    end
-
-    class Map < Node
-      def initialize(type_id, val, style)
-        @kind = :map
-        self.type_id = type_id
-        self.value = val
-        self.style = style
-      end
-      def add(k, v)
-        @value[k] = v
-      end
-
-      def to_internal
-        org.jvyamlb.nodes.MappingNode.new(self.type_id, self.value.inject({}) {|h, v| h[v[0].to_internal] = v[1].to_internal ;h }, self.style)
-      end
-      
-      def to_yaml_node(repr)
-        repr.map(self.type_id,self.value,self.style)
-      end
-    end
-  end
-  
-  #
-  # YAML::Stream -- for emitting many documents
-  #
-  class Stream
-    include Enumerable
-    attr_accessor :documents, :options
-    def initialize(opts = {})
-      @options = opts
-      @documents = []
-    end
-    
-    def [](i)
-      @documents[ i ]
-    end
-    
-    def add(doc)
-      @documents << doc
-    end
-
-    def edit(doc_num,doc)
-      @documents[ doc_num ] = doc
-    end
-
-    def each(&block)
-      @documents.each(&block)
-    end
-    
-    def emit
-      YAML::dump_all(@documents)
-    end
-  end
+	#
+	# Load a document from the current _io_ stream.
+	#
+    #   File.open( 'animals.yaml' ) { |yf| YAML::load( yf ) }
+    #      #=> ['badger', 'elephant', 'tiger']
+    #
+    # Can also load from a string.
+    #
+    #   YAML.load( "--- :locked" )
+    #      #=> :locked
+    #
+	def YAML.load( io )
+		yp = parser.load( io )
+	end
 
     #
-    # Default private type
+    # Load a document from the file located at _filepath_.
     #
-    class PrivateType
-        def self.tag_subclasses?; false; end
-        attr_accessor :type_id, :value
-        verbose, $VERBOSE = $VERBOSE, nil
-        def initialize( type, val )
-            @type_id = type; @value = val
+    #   YAML.load_file( 'animals.yaml' )
+    #      #=> ['badger', 'elephant', 'tiger']
+    #
+    def YAML.load_file( filepath )
+        File.open( filepath ) do |f|
+            load( f )
         end
-        def to_yaml_node(repr)
-          @value.to_yaml_node(repr)
+    end
+
+	#
+	# Parse the first document from the current _io_ stream
+	#
+    #   File.open( 'animals.yaml' ) { |yf| YAML::load( yf ) }
+    #      #=> #<YAML::Yecht::Node:0x82ccce0
+    #           @kind=:seq,
+    #           @value=
+    #            [#<YAML::Yecht::Node:0x82ccd94
+    #              @kind=:scalar,
+    #              @type_id="str",
+    #              @value="badger">,
+    #             #<YAML::Yecht::Node:0x82ccd58
+    #              @kind=:scalar,
+    #              @type_id="str",
+    #              @value="elephant">,
+    #             #<YAML::Yecht::Node:0x82ccd1c
+    #              @kind=:scalar,
+    #              @type_id="str",
+    #              @value="tiger">]>
+    #
+    # Can also load from a string.
+    #
+    #   YAML.parse( "--- :locked" )
+    #      #=> #<YAML::Yecht::Node:0x82edddc 
+    #            @type_id="tag:ruby.yaml.org,2002:sym", 
+    #            @value=":locked", @kind=:scalar>
+    #
+	def YAML.parse( io )
+		yp = generic_parser.load( io )
+	end
+
+    #
+    # Parse a document from the file located at _filepath_.
+    #
+    #   YAML.parse_file( 'animals.yaml' )
+    #      #=> #<YAML::Yecht::Node:0x82ccce0
+    #           @kind=:seq,
+    #           @value=
+    #            [#<YAML::Yecht::Node:0x82ccd94
+    #              @kind=:scalar,
+    #              @type_id="str",
+    #              @value="badger">,
+    #             #<YAML::Yecht::Node:0x82ccd58
+    #              @kind=:scalar,
+    #              @type_id="str",
+    #              @value="elephant">,
+    #             #<YAML::Yecht::Node:0x82ccd1c
+    #              @kind=:scalar,
+    #              @type_id="str",
+    #              @value="tiger">]>
+    #
+    def YAML.parse_file( filepath )
+        File.open( filepath ) do |f|
+            parse( f )
         end
-    ensure
-        $VERBOSE = verbose
+    end
+
+	#
+	# Calls _block_ with each consecutive document in the YAML
+    # stream contained in _io_.
+    #
+    #   File.open( 'many-docs.yaml' ) do |yf|
+    #     YAML.each_document( yf ) do |ydoc|
+    #       ## ydoc contains the single object
+    #       ## from the YAML document
+    #     end
+    #   end
+	#
+	def YAML.each_document( io, &block )
+		yp = parser.load_documents( io, &block )
+    end
+
+	#
+	# Calls _block_ with each consecutive document in the YAML
+    # stream contained in _io_.
+    #
+    #   File.open( 'many-docs.yaml' ) do |yf|
+    #     YAML.load_documents( yf ) do |ydoc|
+    #       ## ydoc contains the single object
+    #       ## from the YAML document
+    #     end
+    #   end
+	#
+	def YAML.load_documents( io, &doc_proc )
+		YAML.each_document( io, &doc_proc )
+    end
+
+	#
+	# Calls _block_ with a tree of +YAML::BaseNodes+, one tree for
+    # each consecutive document in the YAML stream contained in _io_.
+    #
+    #   File.open( 'many-docs.yaml' ) do |yf|
+    #     YAML.each_node( yf ) do |ydoc|
+    #       ## ydoc contains a tree of nodes
+    #       ## from the YAML document
+    #     end
+    #   end
+	#
+	def YAML.each_node( io, &doc_proc )
+		yp = generic_parser.load_documents( io, &doc_proc )
+    end
+
+	#
+	# Calls _block_ with a tree of +YAML::BaseNodes+, one tree for
+    # each consecutive document in the YAML stream contained in _io_.
+    #
+    #   File.open( 'many-docs.yaml' ) do |yf|
+    #     YAML.parse_documents( yf ) do |ydoc|
+    #       ## ydoc contains a tree of nodes
+    #       ## from the YAML document
+    #     end
+    #   end
+	#
+	def YAML.parse_documents( io, &doc_proc )
+		YAML.each_node( io, &doc_proc )
+    end
+
+	#
+	# Loads all documents from the current _io_ stream, 
+    # returning a +YAML::Stream+ object containing all
+    # loaded documents.
+	#
+	def YAML.load_stream( io )
+		d = nil
+		parser.load_documents( io ) do |doc|
+			d = YAML::Stream.new if not d
+			d.add( doc ) 
+        end
+		return d
+	end
+
+	#
+    # Returns a YAML stream containing each of the items in +objs+,
+    # each having their own document.
+    #
+    #   YAML.dump_stream( 0, [], {} )
+    #     #=> --- 0
+    #         --- []
+    #         --- {}
+    #
+	def YAML.dump_stream( *objs )
+		d = YAML::Stream.new
+        objs.each do |doc|
+			d.add( doc ) 
+        end
+        d.emit
+	end
+
+	#
+	# Add a global handler for a YAML domain type.
+	#
+	def YAML.add_domain_type( domain, type_tag, &transfer_proc )
+        resolver.add_type( "tag:#{ domain }:#{ type_tag }", transfer_proc )
+	end
+
+	#
+	# Add a transfer method for a builtin type
+	#
+	def YAML.add_builtin_type( type_tag, &transfer_proc )
+	    resolver.add_type( "tag:yaml.org,2002:#{ type_tag }", transfer_proc )
+	end
+
+	#
+	# Add a transfer method for a builtin type
+	#
+	def YAML.add_ruby_type( type_tag, &transfer_proc )
+	    resolver.add_type( "tag:ruby.yaml.org,2002:#{ type_tag }", transfer_proc )
+	end
+
+	#
+	# Add a private document type
+	#
+	def YAML.add_private_type( type_re, &transfer_proc )
+	    resolver.add_type( "x-private:" + type_re, transfer_proc )
+	end
+
+    #
+    # Detect typing of a string
+    #
+    def YAML.detect_implicit( val )
+        resolver.detect_implicit( val )
     end
 
     #
     # Convert a type_id to a taguri
     #
     def YAML.tagurize( val )
-      if /^tag:.*?:.*$/ =~ val.to_s
-        val
-      elsif /^(.*?)\/(.*)$/ =~ val.to_s
-        "tag:#$1.yaml.org,2002:#$2"
-      elsif val.kind_of?(Integer)
-        val
-      else
-        "tag:yaml.org,2002:#{val}"
-      end
-    end
-      
-# From yaml/tag.rb
-    # A dictionary of taguris which map to
-    # Ruby classes.
-    @@tagged_classes = {}
-    
-    # 
-    # Associates a taguri _tag_ with a Ruby class _cls_.  The taguri is used to give types
-    # to classes when loading YAML.  Taguris are of the form:
-    #
-    #   tag:authorityName,date:specific
-    #
-    # The +authorityName+ is a domain name or email address.  The +date+ is the date the type
-    # was issued in YYYY or YYYY-MM or YYYY-MM-DD format.  The +specific+ is a name for
-    # the type being added.
-    # 
-    # For example, built-in YAML types have 'yaml.org' as the +authorityName+ and '2002' as the
-    # +date+.  The +specific+ is simply the name of the type:
-    #
-    #  tag:yaml.org,2002:int
-    #  tag:yaml.org,2002:float
-    #  tag:yaml.org,2002:timestamp
-    #
-    # The domain must be owned by you on the +date+ declared.  If you don't own any domains on the
-    # date you declare the type, you can simply use an e-mail address.
-    #
-    #  tag:why@ruby-lang.org,2004:notes/personal
-    #
-    def YAML.tag_class( tag, cls )
-        if @@tagged_classes.has_key? tag
-            warn "class #{ @@tagged_classes[tag] } held ownership of the #{ tag } tag"
-        end
-        @@tagged_classes[tag] = cls
+        resolver.tagurize( val )
     end
 
-    # Returns the complete dictionary of taguris, paired with classes.  The key for
-    # the dictionary is the full taguri.  The value for each key is the class constant
-    # associated to that taguri.
     #
-    #  YAML.tagged_classes["tag:yaml.org,2002:int"] => Integer
+    # Apply a transfer method to a Ruby object
     #
-    def YAML.tagged_classes
-        @@tagged_classes
-    end
-end
-
-# From yaml/tag.rb
-class Module
-    # :stopdoc:
-
-    # Adds a taguri _tag_ to a class, used when dumping or loading the class
-    # in YAML.  See YAML::tag_class for detailed information on typing and
-    # taguris.
-    def yaml_as( tag, sc = true )
-        verbose, $VERBOSE = $VERBOSE, nil
-        class_eval <<-"end;", __FILE__, __LINE__+1
-            attr_writer :taguri
-            def taguri
-                if respond_to? :to_yaml_type
-                    YAML::tagurize( to_yaml_type[1..-1] )
-                else
-                    return @taguri if defined?(@taguri) and @taguri
-                    tag = #{ tag.dump }
-                    if self.class.yaml_tag_subclasses? and self.class != YAML::tagged_classes[tag]
-                        tag = "\#{ tag }:\#{ self.class.yaml_tag_class_name }"
-                    end
-                    tag
-                end
-            end
-            def self.yaml_tag_subclasses?; #{ sc ? 'true' : 'false' }; end
-        end;
-        YAML::tag_class tag, self
-    ensure
-        $VERBOSE = verbose
-    end
-    # Transforms the subclass name into a name suitable for display
-    # in a subclassed tag.
-    def yaml_tag_class_name
-        self.name
-    end
-    # Transforms the subclass name found in the tag into a Ruby
-    # constant name.
-    def yaml_tag_read_class( name )
-        name
-    end
-end
-
-  Hash::yaml_as "tag:ruby.yaml.org,2002:hash"
-  Hash::yaml_as "tag:yaml.org,2002:map"
-
-  Array::yaml_as "tag:ruby.yaml.org,2002:array"
-  Array::yaml_as "tag:yaml.org,2002:seq"
-
-  String::yaml_as "tag:ruby.yaml.org,2002:string"
-  String::yaml_as "tag:yaml.org,2002:binary"
-  String::yaml_as "tag:yaml.org,2002:str"
-
-  Range::yaml_as "tag:ruby.yaml.org,2002:range"
-  
-  Regexp::yaml_as "tag:ruby.yaml.org,2002:regexp"
-
-  Integer::yaml_as "tag:yaml.org,2002:int", false
-
-  Time::yaml_as "tag:ruby.yaml.org,2002:time"
-  Time::yaml_as "tag:yaml.org,2002:timestamp"
-
-  Date::yaml_as "tag:yaml.org,2002:timestamp#ymd"
-
-  Float::yaml_as "tag:yaml.org,2002:float"
-
-  NilClass::yaml_as "tag:yaml.org,2002:null"
-
-  YAML::tag_class "tag:yaml.org,2002:bool#yes", TrueClass
-  YAML::tag_class "tag:yaml.org,2002:bool#no", FalseClass
-  YAML::tag_class "tag:ruby.yaml.org,2002:object", Object
-  YAML::tag_class "tag:ruby.yaml.org,2002:exception", Exception
-  YAML::tag_class "tag:ruby.yaml.org,2002:struct", Struct
-  YAML::tag_class "tag:ruby.yaml.org,2002:symbol", Symbol
-  YAML::tag_class "tag:ruby.yaml.org,2002:sym", Symbol
-
-# From yaml/types.rb
-module YAML
-    #
-    # Builtin collection: !omap
-    #
-    class Omap < ::Array
-        yaml_as "tag:yaml.org,2002:omap"
-        def self.[]( *vals )
-            o = Omap.new
-            0.step( vals.length - 1, 2 ) do |i|
-                o[vals[i]] = vals[i+1]
-            end
-            o
-        end
-        def []( k )
-            self.assoc( k ).to_a[1]
-        end
-        def []=( k, *rest )
-            val, set = rest.reverse
-            if ( tmp = self.assoc( k ) ) and not set
-                tmp[1] = val
-            else
-                self << [ k, val ] 
-            end
-            val
-        end
-        def has_key?( k )
-            self.assoc( k ) ? true : false
-        end
-        def is_complex_yaml?
-            true
-        end
-        def to_yaml_node(repr)
-          sequ = []
-          self.each do |v|
-            sequ << Hash[ *v ]
-          end
-          
-          repr.seq(taguri,sequ,to_yaml_style)
-        end
+    def YAML.transfer( type_id, obj )
+        resolver.transfer( YAML.tagurize( type_id ), obj )
     end
 
-    
-        #
-    # Builtin collection: !pairs
+	#
+	# Apply any implicit a node may qualify for
+	#
+	def YAML.try_implicit( obj )
+		YAML.transfer( YAML.detect_implicit( obj ), obj )
+	end
+
     #
-    class Pairs < ::Array
-        yaml_as "tag:yaml.org,2002:pairs"
-        def self.[]( *vals )
-            p = Pairs.new
-            0.step( vals.length - 1, 2 ) { |i|
-                p[vals[i]] = vals[i+1]
+    # Method to extract colon-seperated type and class, returning
+    # the type and the constant of the class
+    #
+    def YAML.read_type_class( type, obj_class )
+        scheme, domain, type, tclass = type.split( ':', 4 )
+        tclass.split( "::" ).each { |c| obj_class = obj_class.const_get( c ) } if tclass
+        return [ type, obj_class ]
+    end
+
+    #
+    # Allocate blank object
+    #
+    def YAML.object_maker( obj_class, val )
+        if Hash === val
+            o = obj_class.allocate
+            val.each_pair { |k,v|
+                o.instance_variable_set("@#{k}", v)
             }
-            p
-        end
-        def []( k )
-            self.assoc( k ).to_a
-        end
-        def []=( k, val )
-            self << [ k, val ] 
-            val
-        end
-        def has_key?( k )
-            self.assoc( k ) ? true : false
-        end
-        def is_complex_yaml?
-            true
-        end
-        def to_yaml_node(repr)
-          sequ = []
-          self.each do |v|
-            sequ << Hash[ *v ]
-          end
-          repr.seq(taguri,sequ,to_yaml_style)
+            o
+        else
+            raise YAML::Error, "Invalid object explicitly tagged !ruby/Object: " + val.inspect
         end
     end
 
-    #
-    # Builtin collection: !set
-    #
-    class Set < ::Hash
-        yaml_as "tag:yaml.org,2002:set"
-    end
+	#
+	# Allocate an Emitter if needed
+	#
+	def YAML.quick_emit( oid, opts = {}, &e )
+        out = 
+            if opts.is_a? YAML::Emitter
+                opts
+            else
+                emitter.reset( opts )
+            end
+        out.emit( oid, &e )
+	end
+	
 end
-  
-require 'yaml/syck'
+
+require 'yaml/rubytypes'
+require 'yaml/types'
+
+module Kernel
+    #
+    # ryan:: You know how Kernel.p is a really convenient way to dump ruby
+    #        structures?  The only downside is that it's not as legible as
+    #        YAML.
+    #
+    # _why:: (listening)
+    #
+    # ryan:: I know you don't want to urinate all over your users' namespaces.
+    #        But, on the other hand, convenience of dumping for debugging is,
+    #        IMO, a big YAML use case.
+    #
+    # _why:: Go nuts!  Have a pony parade!
+    #
+    # ryan:: Either way, I certainly will have a pony parade.
+    #
+
+    # Prints any supplied _objects_ out in YAML.  Intended as
+    # a variation on +Kernel::p+.
+    #
+    #   S = Struct.new(:name, :state)
+    #   s = S['dave', 'TX']
+    #   y s
+    #
+    # _produces:_
+    #
+    #   --- !ruby/struct:S 
+    #   name: dave
+    #   state: TX
+    #
+    def y( object, *objects )
+        objects.unshift object
+        puts( if objects.length == 1
+                  YAML::dump( *objects )
+              else
+                  YAML::dump_stream( *objects )
+              end )
+    end
+    private :y
+end
+
+

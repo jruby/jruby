@@ -1305,7 +1305,6 @@ public final class Ruby {
         addLazyBuiltin("stringio.so", "stringio", "org.jruby.libraries.StringIOLibrary");
         addLazyBuiltin("strscan.so", "strscan", "org.jruby.libraries.StringScannerLibrary");
         addLazyBuiltin("zlib.so", "zlib", "org.jruby.libraries.ZlibLibrary");
-        addLazyBuiltin("yaml_internal.rb", "yaml_internal", "org.jruby.libraries.YamlLibrary");
         addLazyBuiltin("enumerator.so", "enumerator", "org.jruby.libraries.EnumeratorLibrary");
         addLazyBuiltin("generator_internal.rb", "generator_internal", "org.jruby.ext.Generator$Service");
         addLazyBuiltin("readline.so", "readline", "org.jruby.ext.Readline$Service");
@@ -1342,11 +1341,18 @@ public final class Ruby {
             }
         });
         
-        String[] builtins = {"yaml", "yaml/syck", "jsignal" };
+        String[] builtins = {"yaml", 
+                             "yaml/yecht", "yaml/baseemitter", "yaml/basenode", 
+                             "yaml/compat", "yaml/constants", "yaml/dbm", 
+                             "yaml/emitter", "yaml/encoding", "yaml/error", 
+                             "yaml/rubytypes", "yaml/store", "yaml/stream", 
+                             "yaml/stringio", "yaml/tag", "yaml/types", 
+                             "yaml/yamlnode", "yaml/ypath", 
+                             "jsignal" };
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }
-
+        
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
         if (is1_9()) {
@@ -1372,14 +1378,6 @@ public final class Ruby {
 
     public void setRespondToMethod(Object rtm) {
         this.respondToMethod = rtm;
-    }
-
-    public Object getObjectToYamlMethod() {
-        return objectToYamlMethod;
-    }
-
-    void setObjectToYamlMethod(Object otym) {
-        this.objectToYamlMethod = otym;
     }
 
     /** Getter for property rubyTopSelf.
@@ -3034,6 +3032,10 @@ public final class Ruby {
         return re;
     }
 
+    // Equivalent of Data_Wrap_Struct
+    public RubyObject.Data newData(RubyClass objectClass, Object sval) {
+        return new RubyObject.Data(this, objectClass, sval);
+    }
 
     public RubySymbol.SymbolTable getSymbolTable() {
         return symbolTable;
@@ -3438,7 +3440,6 @@ public final class Ruby {
     private AtomicInteger moduleLastId = new AtomicInteger(0);
 
     private Object respondToMethod;
-    private Object objectToYamlMethod;
 
     private Map<String, DateTimeZone> timeZoneCache = new HashMap<String,DateTimeZone>();
     /**

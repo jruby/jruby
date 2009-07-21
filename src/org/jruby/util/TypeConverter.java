@@ -101,6 +101,27 @@ public class TypeConverter {
     }
 
     /**
+     * Checks that this object is of type DATA and then returns it, otherwise raises failure (MRI: Check_Type(obj, T_DATA))
+     *
+     * @param obj the object to check
+     * @return the converted value
+     */
+    public static final IRubyObject checkData(IRubyObject obj) {
+        if(obj instanceof org.jruby.runtime.marshal.DataType) {
+            return obj;
+        }
+        String type;
+        if (obj.isNil()) {
+            type = "nil";
+        } else if (obj instanceof RubyBoolean) {
+            type = obj.isTrue() ? "true" : "false";
+        } else {
+            type = obj.getMetaClass().getRealClass().getName();
+        }
+        throw obj.getRuntime().newTypeError("wrong argument type " + type + " (expected Data)");
+    }
+
+    /**
      * Higher level conversion utility similar to convertToType but it can throw an
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *

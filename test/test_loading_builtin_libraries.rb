@@ -10,7 +10,6 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
       require 'stringio.so'
       require 'strscan.so'
       require 'zlib.so'
-      require 'yaml_internal.rb'
       require 'enumerator.so'
       require 'generator_internal.rb'
       require 'readline.so'

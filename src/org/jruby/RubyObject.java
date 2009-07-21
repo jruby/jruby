@@ -59,6 +59,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
+import org.jruby.runtime.marshal.DataType;
 
 /**
  * RubyObject is the only implementation of the
@@ -87,6 +88,18 @@ import org.jruby.util.IdUtil;
  */
 @JRubyClass(name="Object", include="Kernel")
 public class RubyObject extends RubyBasicObject {
+    // Equivalent of T_DATA
+    public static class Data extends RubyObject implements DataType {
+        public Data(Ruby runtime, RubyClass metaClass, Object data) {
+            super(runtime, metaClass);
+            dataWrapStruct(data);
+        }
+
+        public Data(RubyClass metaClass, Object data) {
+            super(metaClass);
+            dataWrapStruct(data);
+        }
+    }
 
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
