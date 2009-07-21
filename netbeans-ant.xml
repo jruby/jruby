@@ -68,7 +68,7 @@
         <pathelement path="${jruby.classes.dir}"/>
         <path refid="build.classpath"/>
       </classpath> 
-      <sysproperty key="jruby.home" value="${jruby.home}"/>            
+      <sysproperty key="jruby.home" value="${basedir}"/>
       <jvmarg value="${profiler.info.jvmargs.agent}"/>     
       <jvmarg value="-Djruby.home=${basedir}"/>
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
@@ -93,7 +93,7 @@
         <pathelement path="${jruby.classes.dir}"/>
         <path refid="build.classpath"/>
       </classpath> 
-      <sysproperty key="jruby.home" value="${jruby.home}"/>      
+      <sysproperty key="jruby.home" value="${basedir}"/>
       <jvmarg value="-Xdebug"/>
       <jvmarg value="-Xnoagent"/>
       <jvmarg value="-Djava.compiler=none"/>
