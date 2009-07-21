@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir;
 
-// NOTE: A negative index signifies "rest" of the array starting at the index value
 public class GET_ARRAY_Instr extends OneOperandInstr
 {
     public final int     _index;

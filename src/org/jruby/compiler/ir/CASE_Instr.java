@@ -8,7 +8,7 @@ public class CASE_Instr extends OneOperandInstr {
     List<Label> labels;
     List<Variable> variables;
     Label endLabel;
-    Label elseLbl;
+    Label elseLabel;
 
     public CASE_Instr(Variable result, Operand arg, Label endLabel) {
         super(Operation.CASE, result, arg);
@@ -23,7 +23,12 @@ public class CASE_Instr extends OneOperandInstr {
         this.variables = variables;
     }
 
-    public void setElse(Label elseLbl) {
-        this.elseLbl = elseLbl;
+    public void setElse(Label elseLabel) {
+        this.elseLabel = elseLabel;
     }
+
+	 public String toString()
+	 {
+		 return "\t" + _result + " = CASE(" + _arg + ", ELSE: " + elseLabel + ")";
+	 }
 }

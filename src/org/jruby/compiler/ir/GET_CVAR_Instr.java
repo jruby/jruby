@@ -1,13 +1,10 @@
 package org.jruby.compiler.ir;
 
-public class GET_CVAR_Instr extends OneOperandInstr
+public class GET_CVAR_Instr extends GET_Instr
 {
-    final public String   _varName;
-
     public GET_CVAR_Instr(Variable dest, Operand scope, String varName)
     {
-        super(Operation.GET_CVAR, dest, getParentmostScope(scope));
-        _varName = varName;
+        super(Operation.GET_CVAR, dest, getParentmostScope(scope), varName);
     }
 
     public static Operand getParentmostScope(Operand scope) {
@@ -16,6 +13,4 @@ public class GET_CVAR_Instr extends OneOperandInstr
 
         return scope;
     }
-
-    public String toString() { return super.toString() + "(" + _arg + "." + _varName + ")"; }
 }

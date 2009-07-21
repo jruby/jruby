@@ -7,15 +7,15 @@ package org.jruby.compiler.ir;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 //
-public class GET_CONST_Instr extends TwoOperandInstr
+public class GET_CONST_Instr extends GET_Instr
 {
     public GET_CONST_Instr(Variable dest, IR_Scope scope, String constName)
     {
-        super(Operation.GET_CONST, dest, new MetaObject(scope), new Reference(constName));
+        super(Operation.GET_CONST, dest, new MetaObject(scope), constName);
     }
 
     public GET_CONST_Instr(Variable dest, Operand scopeOrObj, String constName)
     {
-        super(Operation.GET_CONST, dest, scopeOrObj, new Reference(constName));
+        super(Operation.GET_CONST, dest, scopeOrObj, constName);
     }
 }

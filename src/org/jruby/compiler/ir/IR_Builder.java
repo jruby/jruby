@@ -264,7 +264,7 @@ public class IR_Builder
             case MULTIPLEASGNNODE: return buildMultipleAsgn(node, m); // done
             case NEWLINENODE: return buildNewline(node, m); // done
             case NEXTNODE: return buildNext(node, m); // done?
-//            case NTHREFNODE: return buildNthRef(node, m); // DEFERRED
+            case NTHREFNODE: return buildNthRef(node, m); // done
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot(node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd(node, m); // done
@@ -655,6 +655,10 @@ public class IR_Builder
                 m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
+				// SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
+				// preserving the order (or maybe not, since we would have to sort the constants first
+				// in any case) for outputing jump tables in certain situations.
+				//
             // add body to map for emitting later
             bodies.put(bodyLabel, whenNode.getBodyNode());
         }
@@ -774,7 +778,7 @@ public class IR_Builder
     public Operand buildClassVarAsgn(Node node, IR_Scope s) {
         final ClassVarAsgnNode classVarAsgnNode = (ClassVarAsgnNode) node;
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarNode)node).getName(), val));
+        s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), classVarAsgnNode.getName(), val));
         return val;
     }
 
