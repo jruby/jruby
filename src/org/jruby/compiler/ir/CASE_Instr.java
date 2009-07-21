@@ -27,8 +27,8 @@ public class CASE_Instr extends OneOperandInstr {
         this.elseLabel = elseLabel;
     }
 
-	 public String toString()
-	 {
-		 return "\t" + _result + " = CASE(" + _arg + ", ELSE: " + elseLabel + ")";
-	 }
+    public String toString()
+    {
+       return "\t" + _result + " = CASE(" + _arg + ", ELSE: " + elseLabel + ")";
+    }
 }

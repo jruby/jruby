@@ -3,9 +3,9 @@ package org.jruby.compiler.ir;
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PUT_Instr extends IR_Instr
 {
-    Operand _target;
-    String  _ref;
-    Operand _value;
+    public final Operand _target;
+    public final String  _ref;
+    public final Operand _value;
 
     public PUT_Instr(Operation op, Operand target, String ref, Operand value)
     {

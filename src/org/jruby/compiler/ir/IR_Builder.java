@@ -394,7 +394,7 @@ public class IR_Builder
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
                 buildAttrAssignAssignment(node, s, elt);
-					 break;
+                break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), elt));
@@ -554,21 +554,21 @@ public class IR_Builder
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-		  s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), args.get(1)));
-		  return args.get(0);
+        s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), args.get(1)));
+        return args.get(0);
     }
 
     public Operand buildAttrAssignAssignment(Node node, IR_Scope s, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-		  s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), value));
-		  return value;
+        s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), value));
+        return value;
     }
 
     public Operand buildBackref(Node node, IR_Scope m) {
         BackRefNode iVisited = (BackRefNode) node;
-		  return new Backref(iVisited.getType());
+        return new Backref(iVisited.getType());
     }
 
     public Operand buildBegin(Node node, IR_Scope s) {
@@ -655,10 +655,10 @@ public class IR_Builder
                 m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
-				// SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
-				// preserving the order (or maybe not, since we would have to sort the constants first
-				// in any case) for outputing jump tables in certain situations.
-				//
+            // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
+            // preserving the order (or maybe not, since we would have to sort the constants first
+            // in any case) for outputing jump tables in certain situations.
+            //
             // add body to map for emitting later
             bodies.put(bodyLabel, whenNode.getBodyNode());
         }
@@ -1979,7 +1979,7 @@ public class IR_Builder
 
     public Operand buildNthRef(Node node, IR_Scope m) {
         NthRefNode nthRefNode = (NthRefNode) node;
-		  return new NthRef(nthRefNode.getMatchNumber());
+        return new NthRef(nthRefNode.getMatchNumber());
     }
 
     public Operand buildNil(Node node, IR_Scope m) {
