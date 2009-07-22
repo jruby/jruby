@@ -5,10 +5,10 @@ package org.jruby.compiler.ir;
 // minus the block itself.
 //
 // (Most likely, this will be implemented by decrementing the length counter of the argument array.)
-public class RECV_BLOCK_ARG_Instr extends NoOperandInstr
+public class RECV_CLOSURE_Instr extends NoOperandInstr
 {
-    public RECV_BLOCK_ARG_Instr(Variable dest)
+    public RECV_CLOSURE_Instr(Variable dest)
     {
-        super(Operation.RECV_BLOCK, dest);
+        super(Operation.RECV_CLOSURE, dest);
     }
 }

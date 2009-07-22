@@ -1440,7 +1440,7 @@ public class IR_Builder
             // This is so that the *arg can be encoded as 'rest of the array'.  This
             // won't work if the block argument hasn't been received yet!
         if (argsNode.getBlock() != null)
-            s.addInstr(new RECV_BLOCK_ARG_Instr(new Variable(argsNode.getBlock().getName())));
+            s.addInstr(new RECV_CLOSURE_Instr(new Variable(argsNode.getBlock().getName())));
 
             // Now for the rest
         if (opt > 0 || rest > -1) {
