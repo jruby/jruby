@@ -47,6 +47,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.java.MiniJava;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1047,27 +1048,60 @@ public class RubyClass extends RubyModule {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
             Map<Class,Map<String,Object>> methodAnnotations = getMethodAnnotations().get(methodName);
+            Class[] methodSignature = getMethodSignatures().get(methodName);
 
-            switch (methodEntry.getValue().getArity().getValue()) {
-            case 0:
-                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class), null, null);
+            if (methodSignature == null) {
+                // non-signature signature with just IRubyObject
+                switch (methodEntry.getValue().getArity().getValue()) {
+                case 0:
+                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class), null, null);
+                    m = new SkinnyMethodAdapter(mv);
+
+                    m.aload(0);
+                    m.ldc(methodName);
+                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
+                    break;
+                default:
+                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class, IRubyObject[].class), null, null);
+                    m = new SkinnyMethodAdapter(mv);
+
+                    m.aload(0);
+                    m.ldc(methodName);
+                    m.aload(1);
+                    m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+                }
+                m.areturn();
+            } else {
+                // generate a real method signature for the method, with to/from coercions
+
+                // indices for temp values
+                Class[] params = new Class[methodSignature.length - 1];
+                System.arraycopy(methodSignature, 1, params, 0, params.length);
+                int baseIndex = 1;
+                for (Class paramType : params) {
+                    if (paramType == double.class || paramType == long.class) {
+                        baseIndex += 2;
+                    } else {
+                        baseIndex += 1;
+                    }
+                }
+                int rubyIndex = baseIndex;
+
+                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(methodSignature[0], params), null, null);
                 m = new SkinnyMethodAdapter(mv);
 
-                m.aload(0);
-                m.ldc(methodName);
-                m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
-                break;
-            default:
-                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class, IRubyObject[].class), null, null);
-                m = new SkinnyMethodAdapter(mv);
 
-                m.aload(0);
-                m.ldc(methodName);
-                m.aload(1);
+                m.getstatic(javaPath, "ruby", ci(Ruby.class));
+                m.astore(rubyIndex);
+
+                m.aload(0); // self
+                m.ldc(methodName); // method name
+                MiniJava.coerceArgumentsToRuby(m, params, rubyIndex);
                 m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+
+                MiniJava.coerceResultAndReturn(m, methodSignature[0]);
             }
             
-            m.voidreturn();
 
             if (methodAnnotations != null && methodAnnotations.size() != 0) {
                 for (Map.Entry<Class,Map<String,Object>> entry : methodAnnotations.entrySet()) {
@@ -1106,24 +1140,38 @@ public class RubyClass extends RubyModule {
         return reifiedClass;
     }
     
-    private Map<String, Map<Class, Map<String,Object>>> annotations;
+    private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
 
     public Map<String,Map<Class,Map<String,Object>>> getMethodAnnotations() {
-        if (annotations == null) return Collections.EMPTY_MAP;
+        if (methodAnnotations == null) return Collections.EMPTY_MAP;
 
-        return annotations;
+        return methodAnnotations;
     }
 
     public void addMethodAnnotation(String methodName, Class annotation, Map fields) {
-        if (annotations == null) annotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
+        if (methodAnnotations == null) methodAnnotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
 
-        Map<Class,Map<String,Object>> methodAnnotations = annotations.get(methodName);
-        if (methodAnnotations == null) {
-            methodAnnotations = new Hashtable<Class,Map<String,Object>>();
-            annotations.put(methodName, methodAnnotations);
+        Map<Class,Map<String,Object>> annos = methodAnnotations.get(methodName);
+        if (annos == null) {
+            annos = new Hashtable<Class,Map<String,Object>>();
+            methodAnnotations.put(methodName, annos);
         }
 
-        methodAnnotations.put(annotation, fields);
+        annos.put(annotation, fields);
+    }
+
+    private Map<String, Class[]> methodSignatures;
+
+    public Map<String,Class[]> getMethodSignatures() {
+        if (methodSignatures == null) return Collections.EMPTY_MAP;
+
+        return methodSignatures;
+    }
+
+    public void addMethodSignature(String methodName, Class[] types) {
+        if (methodSignatures == null) methodSignatures = new Hashtable<String,Class[]>();
+
+        methodSignatures.put(methodName, types);
     }
 
     private Map<Class, Map<String,Object>> classAnnotations;

@@ -523,7 +523,7 @@ public class MiniJava implements Library {
                     // FIXME: this not being in a finally is a little worrisome
                     mv.aload(selfIndex);
                     mv.ldc(simpleName);
-                    coerceArgumentsToRuby(mv, paramTypes, pathName, rubyIndex);
+                    coerceArgumentsToRuby(mv, paramTypes, rubyIndex);
                     mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
                     mv.go_to(end);
                 
@@ -542,7 +542,7 @@ public class MiniJava implements Library {
                     mv.ldc(simpleName);
                 
                     // coerce arguments
-                    coerceArgumentsToRuby(mv, paramTypes, pathName, rubyIndex);
+                    coerceArgumentsToRuby(mv, paramTypes, rubyIndex);
                 
                     // load null block
                     mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
@@ -552,7 +552,7 @@ public class MiniJava implements Library {
                     mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
                 
                     mv.label(end);
-                    coerceResultAndReturn(method, mv, returnType);
+                    coerceResultAndReturn(mv, returnType);
                 }                
                 mv.end();
             }
@@ -592,7 +592,7 @@ public class MiniJava implements Library {
         return newClass;
     }
 
-    private static void coerceArgumentsToRuby(SkinnyMethodAdapter mv, Class[] paramTypes, String name, int rubyIndex) {
+    public static void coerceArgumentsToRuby(SkinnyMethodAdapter mv, Class[] paramTypes, int rubyIndex) {
         // load arguments into IRubyObject[] for dispatch
         if (paramTypes.length != 0) {
             mv.pushInt(paramTypes.length);
@@ -635,37 +635,37 @@ public class MiniJava implements Library {
         }
     }
 
-    private static void coerceResultAndReturn(Method method, SkinnyMethodAdapter mv, Class returnType) {
+    public static void coerceResultAndReturn(SkinnyMethodAdapter mv, Class returnType) {
         // if we expect a return value, unwrap it
-        if (method.getReturnType() != void.class) {
-            if (method.getReturnType().isPrimitive()) {
-                if (method.getReturnType() == byte.class) {
+        if (returnType != void.class) {
+            if (returnType.isPrimitive()) {
+                if (returnType == byte.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaByte", sig(byte.class, IRubyObject.class));
                     mv.ireturn();
-                } else if (method.getReturnType() == short.class) {
+                } else if (returnType == short.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaShort", sig(short.class, IRubyObject.class));
                     mv.ireturn();
-                } else if (method.getReturnType() == char.class) {
+                } else if (returnType == char.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaChar", sig(char.class, IRubyObject.class));
                     mv.ireturn();
-                } else if (method.getReturnType() == int.class) {
+                } else if (returnType == int.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaInt", sig(int.class, IRubyObject.class));
                     mv.ireturn();
-                } else if (method.getReturnType() == long.class) {
+                } else if (returnType == long.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaLong", sig(long.class, IRubyObject.class));
                     mv.lreturn();
-                } else if (method.getReturnType() == float.class) {
+                } else if (returnType == float.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaFloat", sig(float.class, IRubyObject.class));
                     mv.freturn();
-                } else if (method.getReturnType() == double.class) {
+                } else if (returnType == double.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaDouble", sig(double.class, IRubyObject.class));
                     mv.dreturn();
-                } else if (method.getReturnType() == boolean.class) {
+                } else if (returnType == boolean.class) {
                     mv.invokestatic(p(JavaUtil.class), "convertRubyToJavaBoolean", sig(boolean.class, IRubyObject.class));
                     mv.ireturn();
                 }
             } else {
-                mv.ldc(Type.getType(method.getReturnType()));
+                mv.ldc(Type.getType(returnType));
                 mv.invokestatic(p(JavaUtil.class), "convertRubyToJava", sig(Object.class, IRubyObject.class, Class.class));
                 mv.checkcast(p(returnType));
 
