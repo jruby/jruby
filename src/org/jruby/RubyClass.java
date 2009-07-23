@@ -63,6 +63,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.JRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
@@ -984,13 +985,11 @@ public class RubyClass extends RubyModule {
         Class parent = RubyObject.class;
         String javaName = "ruby." + getBaseName();
         String javaPath = "ruby/" + getBaseName();
-        ClassLoader parentCL = runtime.getJRubyClassLoader();
+        JRubyClassLoader parentCL = runtime.getJRubyClassLoader();
 
         if (superClass.reifiedClass != null) {
             parent = superClass.reifiedClass;
-            parentCL = parent.getClassLoader();
         }
-        OneShotClassLoader oscl = new OneShotClassLoader(parentCL);
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(parent), null);
@@ -1054,7 +1053,7 @@ public class RubyClass extends RubyModule {
                 // non-signature signature with just IRubyObject
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
-                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class), null, null);
+                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class), null, null);
                     m = new SkinnyMethodAdapter(mv);
 
                     m.aload(0);
@@ -1062,7 +1061,7 @@ public class RubyClass extends RubyModule {
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
                     break;
                 default:
-                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(void.class, IRubyObject[].class), null, null);
+                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
                     m = new SkinnyMethodAdapter(mv);
 
                     m.aload(0);
@@ -1123,7 +1122,7 @@ public class RubyClass extends RubyModule {
 
         cw.visitEnd();
 
-        Class result = oscl.defineClass(javaName, cw.toByteArray());
+        Class result = parentCL.defineClass(javaName, cw.toByteArray());
 
         try {
             java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);
