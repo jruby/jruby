@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir;
 
+import org.jruby.compiler.ir.operands.Operand;
+
 public class IR_Module extends IR_ScopeImpl
 {
     public final String _moduleName;

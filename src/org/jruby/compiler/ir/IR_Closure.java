@@ -1,6 +1,13 @@
 package org.jruby.compiler.ir;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accummulate instructions
+
+import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
+
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
 public class IR_Closure extends IR_ScopeImpl
 {

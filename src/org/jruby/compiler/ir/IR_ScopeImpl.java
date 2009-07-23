@@ -8,6 +8,17 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
+import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
+import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
+import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
+import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
+import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 
 public abstract class IR_ScopeImpl implements IR_Scope
 {
@@ -199,6 +210,27 @@ public abstract class IR_ScopeImpl implements IR_Scope
                 (_methods.isEmpty() ? "" : "\n  methods:\n" + _methods) +
                 (_instrs.isEmpty() ? "" : "\n  live variables:\n" + toStringVariables());
     }
+
+/**
+ * SSS: Not ready yet
+
+    public void runPeepHoleOptimization()
+    {
+        Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
+        for (IR_Instr i : _instrs) {
+            // Reset value map if this instruction is the start/end of a basic block
+            Operation iop = i._op;
+            if (iop.startsBasicBlock() || iop.endsBasicBlock())
+                valueMap = new HashMap<Operand,Operand>();
+
+            // Simplify instruction and record mapping between target variable and simplified value
+            Operand val = i.simplifyAndGetResult(valueMap);
+            Operand res = i.getResult();
+            if (val != null && res != null && res != val)
+                valueMap.add(res, val);
+        }
+    }
+**/
 
     public String toStringInstrs() {
         StringBuilder b = new StringBuilder();

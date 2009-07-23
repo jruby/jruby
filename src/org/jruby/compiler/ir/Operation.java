@@ -40,10 +40,10 @@ public enum Operation
 	 PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
 
 // jump and branch operations
-    JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
+    BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
 
 // others
-    LABEL(OpType.dont_care), BREAK(OpType.dont_care), THREAD_POLL(OpType.dont_care),
+    LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks
     IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false
@@ -63,4 +63,6 @@ public enum Operation
     public boolean isCall()   { return _type == OpType.call_op; }
     public boolean isEval()   { return _type == OpType.eval_op; }
 
+    public boolean startsBasicBlock() { return this == LABEL; }
+    public boolean endsBasicBlock() { return isBranch(); }
 }

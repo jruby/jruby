@@ -2,6 +2,13 @@ package org.jruby.compiler.ir;
 
 import java.util.List;
 import java.util.ArrayList;
+import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
+import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.RECV_ARG_Instr;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 
 public class IR_Method extends IR_ScopeImpl
 {

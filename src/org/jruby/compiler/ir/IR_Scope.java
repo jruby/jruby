@@ -1,6 +1,12 @@
 package org.jruby.compiler.ir;
 
 // SSS FIXME: Probably should rename this to IR_Scope?
+
+import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
+
 // Easier to understand and it is in any case a scope, not just a IR builder context!
 public interface IR_Scope
 {

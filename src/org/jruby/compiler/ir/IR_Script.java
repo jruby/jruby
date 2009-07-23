@@ -1,10 +1,13 @@
 package org.jruby.compiler.ir;
 
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.StringLiteral;
+
 public class IR_Script extends IR_ScopeImpl
 {
-    String    _fileName;    // SSS FIXME: Should this be a string literal or a string?
-    IR_Class  _dummyClass;  // Dummy class for the script
-    IR_Method _dummyMethod; // Dummy top-level method for the script -- added to the dummy class
+    public final String    _fileName;    // SSS FIXME: Should this be a string literal or a string?
+    public final IR_Class  _dummyClass;  // Dummy class for the script
+    public final IR_Method _dummyMethod; // Dummy top-level method for the script -- added to the dummy class
 
     public IR_Script(String className, String sourceName)
     { 
