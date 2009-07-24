@@ -464,13 +464,22 @@ public class JavaUtil {
         }
         
         ThreadContext context = rubyObject.getRuntime().getCurrentContext();
-        
+        IRubyObject origObject = rubyObject;
         if (rubyObject.dataGetStruct() instanceof JavaObject) {
             rubyObject = (JavaObject) rubyObject.dataGetStruct();
+            if(rubyObject == null) {
+                throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName());
+            }
         } else if (rubyObject.respondsTo("java_object")) {
             rubyObject = rubyObject.callMethod(context, "java_object");
+            if(rubyObject == null) {
+                throw new RuntimeException("java_object returned null for " + origObject.getType().getName());
+            }
         } else if (rubyObject.respondsTo("to_java_object")) {
             rubyObject = rubyObject.callMethod(context, "to_java_object");
+            if(rubyObject == null) {
+                throw new RuntimeException("to_java_object returned null for " + origObject.getType().getName());
+            }
         }
 
         if (rubyObject instanceof JavaObject) {
