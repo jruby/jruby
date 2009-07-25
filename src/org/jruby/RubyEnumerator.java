@@ -111,36 +111,32 @@ public class RubyEnumerator extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
-        object = arg;
-        method = context.getRuntime().fastNewSymbol("each");
-        methodArgs = NULL_ARRAY;
+    public IRubyObject initialize(ThreadContext context, IRubyObject object) {
+        return initialize(object, context.getRuntime().fastNewSymbol("each"), NULL_ARRAY);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
+        return initialize(object, method, NULL_ARRAY);
+    }
+
+    private IRubyObject initialize(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
+        this.object = object;
+        this.method = method;
+        this.methodArgs = methodArgs;
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        object = arg0;
-        method = arg1;
-        methodArgs = NULL_ARRAY;
-        return this;
-    }
-
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        object = arg0;
-        method = arg1;
-        methodArgs = new IRubyObject[]{arg2};
-        return this;
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
+        return initialize(object, method, new IRubyObject[] { methodArg });
     }
 
     @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        object = args[0];
-        method = args[1];
-        methodArgs = new IRubyObject[args.length - 2];
-        System.arraycopy(args, 2, methodArgs, 0, methodArgs.length);
-        return this;
+        IRubyObject[] methArgs = new IRubyObject[args.length - 2];
+        System.arraycopy(args, 2, methArgs, 0, methArgs.length);
+        return initialize(args[0], args[1], methArgs);
     }
 
     /**
@@ -200,21 +196,33 @@ public class RubyEnumerator extends RubyObject {
         }
     }
 
+    protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg) {
+        return context.getRuntime().getEnumerator().callMethod(context, "new", arg);
+    }
+
+    protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getEnumerator(), "new", arg1, arg2);
+    }
+
+    protected static IRubyObject newEnumerator(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return RuntimeHelpers.invoke(context, context.getRuntime().getEnumerator(), "new", arg1, arg2, arg3);
+    }
+
     public static final class RubyEnumeratorKernel {
 
         @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, Block block) {
-            return self.getRuntime().getEnumerator().callMethod(context, "new", self);
+            return newEnumerator(context, self);
         }
 
         @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
-            return RuntimeHelpers.invoke(context, self.getRuntime().getEnumerator(), "new", self, arg);
+            return newEnumerator(context, self, arg);
         }
 
         @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
-            return RuntimeHelpers.invoke(context, self.getRuntime().getEnumerator(), "new", self, arg0, arg1);
+            return newEnumerator(context, self, arg0, arg1);
         }
 
         @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, frame = true)
@@ -223,7 +231,7 @@ public class RubyEnumerator extends RubyObject {
             newArgs[0] = self;
             System.arraycopy(args, 0, newArgs, 1, args.length);
 
-            return self.getRuntime().getEnumerator().callMethod(context, "new", newArgs);
+            return context.getRuntime().getEnumerator().callMethod(context, "new", newArgs);
         }
     }
 
@@ -232,7 +240,7 @@ public class RubyEnumerator extends RubyObject {
         @JRubyMethod(name = "each_slice", frame = true, compat = CompatVersion.RUBY1_8)
         public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = RubyNumeric.num2int(arg);
-            final Ruby runtime = self.getRuntime();
+            final Ruby runtime = context.getRuntime();
             if (size <= 0) throw runtime.newArgumentError("invalid slice size");
 
             final RubyArray result[] = new RubyArray[]{runtime.newArray(size)};
@@ -249,7 +257,7 @@ public class RubyEnumerator extends RubyObject {
             });
 
             if (result[0].size() > 0) block.yield(context, result[0]);
-            return self.getRuntime().getNil();
+            return context.getRuntime().getNil();
         }
 
         @JRubyMethod(name = "each_slice", compat = CompatVersion.RUBY1_9)
@@ -260,7 +268,7 @@ public class RubyEnumerator extends RubyObject {
         @JRubyMethod(name = "each_cons", frame = true, compat = CompatVersion.RUBY1_8)
         public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = (int)RubyNumeric.num2long(arg);
-            final Ruby runtime = self.getRuntime();
+            final Ruby runtime = context.getRuntime();
             if (size <= 0) throw runtime.newArgumentError("invalid size");
 
             final RubyArray result = runtime.newArray(size);
@@ -298,21 +306,17 @@ public class RubyEnumerator extends RubyObject {
 
         @JRubyMethod(name = "enum_slice", required = 1, compat = CompatVersion.RUBY1_8)
         public static IRubyObject enum_slice(ThreadContext context, IRubyObject self, IRubyObject arg) {
-            IRubyObject enumerator = self.getRuntime().getEnumerator();
-            return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_slice"), arg);
+            return newEnumerator(context, self, context.getRuntime().fastNewSymbol("each_slice"), arg);
         }
 
         @JRubyMethod(name = "enum_cons", required = 1, compat = CompatVersion.RUBY1_8)
         public static IRubyObject enum_cons(ThreadContext context, IRubyObject self, IRubyObject arg) {
-            IRubyObject enumerator = self.getRuntime().getEnumerator();
-            return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_cons"), arg);
+            return newEnumerator(context, self, context.getRuntime().fastNewSymbol("each_cons"), arg);
         }
 
         @JRubyMethod(name = "enum_with_index")
         public static IRubyObject each_with_index(ThreadContext context, IRubyObject self) {
-            IRubyObject enumerator = self.getRuntime().getEnumerator();
-            return RuntimeHelpers.invoke(context, enumerator, "new", self, self.getRuntime().fastNewSymbol("each_with_index"));
+            return newEnumerator(context, self, context.getRuntime().fastNewSymbol("each_with_index"));
         }
-
     }
 }
