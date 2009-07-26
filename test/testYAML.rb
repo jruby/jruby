@@ -471,3 +471,53 @@ orderRequest: !ruby/object:MySoap::InterfaceOne::OrderType
 Y
 
 test_no_exception { YAML.load(jruby3639) }
+
+# JRUBY-3773
+class Badger
+  attr_accessor :name, :age
+
+  def initialize(name, age)
+    @name = name
+    @age = age
+  end
+
+  def to_s
+    "#{name}:#{age}"
+  end
+
+  def self.from_s (s)
+    ss = s.split(":")
+    Badger.new ss[0], ss[1]
+  end
+end
+
+#
+# opening Badger to add custom YAML serialization
+#
+class Badger
+  yaml_as "tag:ruby.yaml.org,2002:#{self}"
+
+  def to_yaml (opts={})
+    YAML::quick_emit(self.object_id, opts) do |out|
+      out.map(taguri) do |map|
+        map.add("s", to_s)
+      end
+    end
+  end
+
+  def Badger.yaml_new (klass, tag, val)
+    s = val["s"]
+    begin
+      Badger.from_s s
+    rescue => e
+      raise "failed to decode Badger from '#{s}'"
+    end
+  end
+end
+
+b = Badger.new("Axel", 35)
+
+test_equal YAML::dump(b), <<OUT
+--- !ruby/Badger 
+s: Axel:35
+OUT
