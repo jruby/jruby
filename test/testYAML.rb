@@ -586,3 +586,8 @@ test_equal 'yaml initialize', s.key
 
 s = YAML.load(YAML.dump(SampleArray.new))
 test_equal 'yaml initialize', s.key
+
+
+# JRUBY-3327
+
+test_equal YAML.load("- foo\n  bar: bazz"), [{"foo bar" => "bazz"}]
