@@ -77,12 +77,6 @@
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
-      <artifactId>jvyamlb</artifactId>
-      <version>0.2.5</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
       <version>1.0.3</version>
       <scope>provided</scope>
