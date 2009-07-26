@@ -554,3 +554,35 @@ struct_obj2 = BadStruct.new('struct_value')
 test_equal YAML.load(class_obj1.to_yaml), class_obj1
 test_equal YAML.load(struct_obj1.to_yaml), struct_obj1
 test_equal YAML.load(struct_obj2.to_yaml), struct_obj2
+
+
+# JRUBY-3518
+class Sample
+  attr_reader :key
+  def yaml_initialize( tag, val )
+    @key = 'yaml initialize'
+  end
+end
+
+class SampleHash < Hash
+  attr_reader :key
+  def yaml_initialize( tag, val )
+    @key = 'yaml initialize'
+  end
+end
+
+class SampleArray < Array
+  attr_reader :key
+  def yaml_initialize( tag, val )
+    @key = 'yaml initialize'
+  end
+end
+
+s = YAML.load(YAML.dump(Sample.new))
+test_equal 'yaml initialize', s.key 
+
+s = YAML.load(YAML.dump(SampleHash.new))
+test_equal 'yaml initialize', s.key 
+
+s = YAML.load(YAML.dump(SampleArray.new))
+test_equal 'yaml initialize', s.key
