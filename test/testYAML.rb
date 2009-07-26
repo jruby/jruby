@@ -600,3 +600,8 @@ production:
 YAML
 
 test_equal YAML.load(y)['production'], {"ABQIAAAAinq15RDnRyoOaQwM_PoC4RTJQa0g3IQ9GZqIMmInSLzwtGDKaBTPoBdSu0WQaPTIv1sXhVRK0Kolfg example.com" => "ABQIAAAAzMUFFnT9uH0Sfg98Y4kbhGFJQa0g3IQ9GZqIMmInSLrthJKGDmlRT98f4j135zat56yjRKQlWnkmod3TB"}
+
+
+# JRUBY-3412
+y = "--- 2009-02-16 22::40:26.574754 -05:00\n"
+test_equal YAML.load(y).to_yaml, y
