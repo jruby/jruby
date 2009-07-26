@@ -521,3 +521,36 @@ test_equal YAML::dump(b), <<OUT
 --- !ruby/Badger 
 s: Axel:35
 OUT
+
+
+# JRUBY-3751
+
+class ControlStruct < Struct.new(:arg1)
+end
+
+class BadStruct < Struct.new(:arg1)
+  def initialize(a1)
+    self.arg1 = a1
+  end
+end
+
+class ControlObject
+  attr_accessor :arg1
+    
+  def initialize(a1)
+    self.arg1 = a1
+  end
+  
+  def ==(o)
+    self.arg1 == o.arg1
+  end
+end
+
+class_obj1  = ControlObject.new('class_value')
+struct_obj1 = ControlStruct.new
+struct_obj1.arg1 = 'control_value'
+struct_obj2 = BadStruct.new('struct_value')
+
+test_equal YAML.load(class_obj1.to_yaml), class_obj1
+test_equal YAML.load(struct_obj1.to_yaml), struct_obj1
+test_equal YAML.load(struct_obj2.to_yaml), struct_obj2
