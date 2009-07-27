@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import org.jruby.Ruby;
@@ -44,7 +43,7 @@ public class ExternalScript implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
         try {
-            InputStream in = new BufferedInputStream(resource.getURL().openStream(), 8192);
+            InputStream in = resource.getInputStream();
 
             String name = resource.getName();
             try {

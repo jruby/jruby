@@ -717,13 +717,9 @@ public class LoadService {
             try {
                 JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 if (file.isFile() && file.isAbsolute()) {
-                    try {
-                        foundResource = new LoadServiceResource(file.toURI().toURL(), namePlusSuffix);
-                        state.loadName = namePlusSuffix;
-                        break;
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
+                    foundResource = new LoadServiceResource(file, namePlusSuffix);
+                    state.loadName = namePlusSuffix;
+                    break;
                 }
             } catch (IllegalArgumentException illArgEx) {
             } catch (SecurityException secEx) {
@@ -911,11 +907,7 @@ public class LoadService {
                     actualPath = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(), loadPathEntry).getAbsolutePath(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
                 if (actualPath.isFile()) {
-                    try {
-                        foundResource = new LoadServiceResource(actualPath.toURI().toURL(), reportedPath);
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
+                    foundResource = new LoadServiceResource(actualPath, reportedPath);
                 }
             }
         } catch (SecurityException secEx) {
@@ -943,11 +935,7 @@ public class LoadService {
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), reportedPath));
                 }
                 if (actualPath.isFile()) {
-                    try {
-                        foundResource = new LoadServiceResource(actualPath.toURI().toURL(), reportedPath);
-                    } catch (MalformedURLException e) {
-                        throw runtime.newIOErrorFromException(e);
-                    }
+                    foundResource = new LoadServiceResource(actualPath, reportedPath);
                 }
             }
         } catch (SecurityException secEx) {

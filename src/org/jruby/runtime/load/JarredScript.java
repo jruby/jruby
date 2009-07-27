@@ -59,13 +59,13 @@ public class JarredScript implements Library {
     }
 
     public void load(Ruby runtime, boolean wrap) {
-        URL jarFile = resource.getURL();
-
-        // Make Java class files in the jar reachable from Ruby
-        runtime.getJRubyClassLoader().addURL(jarFile);
-
         try {
-            JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream(), 8192));
+            URL jarFile = resource.getURL();
+
+            // Make Java class files in the jar reachable from Ruby
+            runtime.getJRubyClassLoader().addURL(jarFile);
+
+            JarInputStream in = new JarInputStream(resource.getInputStream());
 
             Manifest mf = in.getManifest();
             if (mf != null) {
