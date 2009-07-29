@@ -91,6 +91,16 @@ public final class MemoryUtil {
         return arr;
     }
 
+    public static final void putArrayOfUnsigned16(Ruby runtime, MemoryIO io, long offset, RubyArray ary) {
+
+        short[] array = new short[ary.size()];
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = (short) Util.uint16Value(ary.entry(i));
+        }
+
+        io.put(offset, array, 0, array.length);
+    }
+
     public static final IRubyObject getArrayOfSigned32(Ruby runtime, MemoryIO io, long offset, int count) {
 
         int[] array = new int[count];
@@ -171,6 +181,16 @@ public final class MemoryUtil {
         }
 
         return arr;
+    }
+
+    public static final void putArrayOfUnsigned64(Ruby runtime, MemoryIO io, long offset, RubyArray ary) {
+
+        long[] array = new long[ary.size()];
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = Util.uint64Value(ary.entry(i));
+        }
+
+        io.put(offset, array, 0, array.length);
     }
 
     public static final IRubyObject getArrayOfFloat32(Ruby runtime, MemoryIO io, long offset, int count) {
