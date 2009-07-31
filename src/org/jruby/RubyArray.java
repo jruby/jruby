@@ -1140,7 +1140,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_pop
      *
      */
-    @JRubyMethod(name = "pop", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "pop")
     public IRubyObject pop(ThreadContext context) {
         modifyCheck();
 
@@ -1161,12 +1161,7 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    @JRubyMethod(name = "pop", compat = CompatVersion.RUBY1_9)
-    public IRubyObject pop19(ThreadContext context) {
-        return pop(context);
-    }
-
-    @JRubyMethod(name = "pop", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "pop")
     public IRubyObject pop19(ThreadContext context, IRubyObject num) {
         modifyCheck();
         RubyArray result = makeSharedFirst(context, num, true);
@@ -2561,9 +2556,9 @@ public class RubyArray extends RubyObject implements List {
             }
             if (stack.realLength == 0) break;
             memo.remove(ary);
-            tmp = stack.pop19(context);
+            tmp = stack.pop(context);
             i = (int)((RubyFixnum)tmp).getLongValue();
-            ary = (RubyArray)stack.pop19(context);
+            ary = (RubyArray)stack.pop(context);
         }
         return modified;
     }
