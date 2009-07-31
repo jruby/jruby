@@ -1177,7 +1177,6 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_shift
      *
      */
-    @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_8)
     public IRubyObject shift(ThreadContext context) {
         modifyCheck();
         Ruby runtime = context.getRuntime();
@@ -1197,12 +1196,12 @@ public class RubyArray extends RubyObject implements List {
         
     }    
 
-    @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "shift")
     public IRubyObject shift19(ThreadContext context) {
         return shift(context);
     }
 
-    @JRubyMethod(name = "shift", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "shift")
     public IRubyObject shift19(ThreadContext context, IRubyObject num) {
         modify();
 
@@ -3200,7 +3199,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    @JRubyMethod(name = "shuffle!", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "shuffle!")
     public IRubyObject shuffle_bang(ThreadContext context) {
         modify();
         Random random = context.getRuntime().getRandom();
@@ -3221,7 +3220,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    @JRubyMethod(name = "shuffle", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "shuffle")
     public IRubyObject shuffle(ThreadContext context) {
         RubyArray ary = aryDup();
         ary.shuffle_bang(context);
