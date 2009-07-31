@@ -1889,8 +1889,8 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    private long fillBegin(IRubyObject arg) {
-        long beg = arg.isNil() ? 0 : RubyNumeric.num2long(arg);
+    private int fillBegin(IRubyObject arg) {
+        int beg = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
         if (beg < 0) {
             beg = realLength + beg;
             if (beg < 0) beg = 0;
@@ -1920,7 +1920,7 @@ public class RubyArray extends RubyObject implements List {
 
         if (len > Integer.MAX_VALUE - beg) throw context.getRuntime().newArgumentError("argument too big");
 
-        int end = beg + len;
+        int end = (int)(beg + len);
         if (end > realLength) {
             int valuesLength = values.length - begin;
             if (end >= valuesLength) realloc(end, valuesLength);
@@ -1946,7 +1946,7 @@ public class RubyArray extends RubyObject implements List {
 
         if (len > Integer.MAX_VALUE - beg) throw getRuntime().newArgumentError("argument too big");
 
-        int end = beg + len;
+        int end = (int)(beg + len);
         if (end > realLength) {
             int valuesLength = values.length - begin;
             if (end >= valuesLength) realloc(end, valuesLength);
