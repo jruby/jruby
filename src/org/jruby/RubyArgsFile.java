@@ -316,7 +316,6 @@ public class RubyArgsFile {
         return ary;
     }
     
-    @JRubyMethod(name = "each_byte", frame = true)
     public static IRubyObject each_byte(ThreadContext context, IRubyObject recv, Block block) {
         IRubyObject bt;
 
@@ -327,10 +326,63 @@ public class RubyArgsFile {
         return recv;
     }
 
-    @JRubyMethod(name = "each_byte", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject each_byte19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+    @JRubyMethod(name = "each_byte", optional = 1, frame = true)
+    public static IRubyObject each_byte(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.getRuntime(), recv, "each_byte");
     }
+
+    @JRubyMethod(name = "bytes", optional = 1, frame = true)
+    public static IRubyObject bytes(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.getRuntime(), recv, "bytes");
+    }
+
+//     @JRubyMethod(name = "each_char", frame = true)
+//     public static IRubyObject each_char(final ThreadContext context, IRubyObject recv, Block block) {
+//         return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+//     }
+
+//     @JRubyMethod(name = "chars", frame = true)
+//     public static IRubyObject chars(final ThreadContext context, IRubyObject recv, Block block) {
+//         return block.isGiven() ? each_charCommon(context, recv, block) : enumeratorize(context.getRuntime(), this, "chars");
+//     }
+
+//     private static IRubyObject each_charCommon(ThreadContext context, IRubyObject recv, Block block) {
+//         IRubyObject ch;
+//         while(!(ch = getc(context, recv)).isNil()) {
+//             byte c = (byte)RubyNumeric.fix2int(ch);
+
+            
+
+//             unsigned char c;
+//             int n;
+//             VALUE str, file;
+
+//             first_char:
+//             c = FIX2INT(ch);
+//             n = mbclen(c);
+//             str = rb_tainted_str_new((const char *)&c, 1);
+//             file = current_file;
+
+//             while (--n > 0) {
+//                 if (NIL_P(ch = argf_getc())) {
+//                     rb_yield(str);
+//                     return argf;
+//                 }
+//                 if (current_file != file) {
+//                     rb_yield(str);
+//                     goto first_char;
+//                 }
+//                 c = FIX2INT(ch);
+//                 rb_str_cat(str, (const char *)&c, 1);
+//             }
+//             rb_yield(str);
+
+
+
+
+//         }
+//         return recv;
+//     }
 
     /** Invoke a block for each line.
      *

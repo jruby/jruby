@@ -6528,7 +6528,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_char
      * 
      */
-    @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_char", frame = true)
     public IRubyObject each_char(ThreadContext context, Block block) {
         return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
     }

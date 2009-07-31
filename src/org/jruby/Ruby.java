@@ -1355,11 +1355,9 @@ public final class Ruby {
         
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
-        if (is1_9()) {
-            getLoadService().require("builtin/prelude.rb");
-            getLoadService().require("builtin/core_ext/symbol");
-            getLoadService().require("enumerator");
-        }
+        getLoadService().require("builtin/prelude.rb");
+        getLoadService().require("builtin/core_ext/symbol");
+        getLoadService().require("enumerator");
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
