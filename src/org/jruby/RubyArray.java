@@ -1889,8 +1889,8 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    private int fillBegin(IRubyObject arg) {
-        int beg = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
+    private long fillBegin(IRubyObject arg) {
+        long beg = arg.isNil() ? 0 : RubyNumeric.num2long(arg);
         if (beg < 0) {
             beg = realLength + beg;
             if (beg < 0) beg = 0;
@@ -1898,11 +1898,11 @@ public class RubyArray extends RubyObject implements List {
         return beg;
     }
 
-    private int fillLen(int beg, IRubyObject arg) {
+    private long fillLen(long beg, IRubyObject arg) {
         if (arg == null || arg.isNil()) {
             return realLength - beg;
         } else {
-            return RubyNumeric.num2int(arg);
+            return RubyNumeric.num2long(arg);
         }
         // TODO: In MRI 1.9, an explicit check for negative length is
         // added here. IndexError is raised when length is negative.
@@ -1912,7 +1912,7 @@ public class RubyArray extends RubyObject implements List {
         // see [ruby-core:17483].
     }
 
-    private IRubyObject fillCommon(ThreadContext context, int beg, int len, IRubyObject item) {
+    private IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
         modify();
 
         // See [ruby-core:17483]
@@ -1938,7 +1938,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    private IRubyObject fillCommon(ThreadContext context, int beg, int len, Block block) {
+    private IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
         modify();
 
         // See [ruby-core:17483]
