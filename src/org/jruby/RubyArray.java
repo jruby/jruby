@@ -1547,7 +1547,6 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each
      *
      */
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each(ThreadContext context, Block block) {
         if (!block.isGiven()) {
             throw context.getRuntime().newLocalJumpErrorNoBlock();
@@ -1558,7 +1557,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each19(ThreadContext context, Block block) {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
@@ -1566,7 +1565,6 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each_index
      *
      */
-    @JRubyMethod(name = "each_index", frame = true)
     public IRubyObject each_index(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) {
@@ -1578,7 +1576,7 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
     
-    @JRubyMethod(name = "each_index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_index", frame = true)
     public IRubyObject each_index19(ThreadContext context, Block block) {
         return block.isGiven() ? each_index(context, block) : enumeratorize(context.getRuntime(), this, "each_index");
     }
@@ -3013,7 +3011,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_cycle
      * 
      */
-    @JRubyMethod(name = "cycle", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "cycle")
     public IRubyObject cycle(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "cycle");
         return cycleCommon(context, -1, block);
@@ -3022,7 +3020,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_cycle
      * 
      */
-    @JRubyMethod(name = "cycle", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "cycle")
     public IRubyObject cycle(ThreadContext context, IRubyObject arg, Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "cycle", arg);
         long n = RubyNumeric.num2long(arg);
@@ -3099,7 +3097,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_combination
      * 
      */
-    @JRubyMethod(name = "combination", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "combination")
     public IRubyObject combination(ThreadContext context, IRubyObject num, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "combination", num);
