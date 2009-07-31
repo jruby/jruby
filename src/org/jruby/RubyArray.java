@@ -1656,7 +1656,7 @@ public class RubyArray extends RubyObject implements List {
             }
             if (!(tmp instanceof RubyString)) {
                 if (tmp instanceof RubyArray) {
-                    if (runtime.isInspecting(tmp)) {
+                    if (tmp == this || runtime.isInspecting(tmp)) {
                         tmp = runtime.newString("[...]");
                     } else {
                         tmp = inspectJoin(context, (RubyArray)tmp, sep);
