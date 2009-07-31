@@ -2579,6 +2579,7 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten19(context, -1, result)) {
+            modify();
             begin = 0;
             realLength = result.realLength;
             values = result.values;
