@@ -3167,7 +3167,7 @@ public class RubyArray extends RubyObject implements List {
 
     private IRubyObject permutationCommon(ThreadContext context, int r, Block block) {
         if (r == 0) {
-            return newEmptyArray(context.getRuntime());
+            block.yield(context, newEmptyArray(context.getRuntime()));
         } else if (r == 1) {
             for (int i = 0; i < realLength; i++) {
                 block.yield(context, newArray(context.getRuntime(), values[begin + i]));
