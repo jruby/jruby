@@ -3183,6 +3183,20 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    /** rb_ary_choice
+     * 
+     */
+    @JRubyMethod(name = "choice")
+    public IRubyObject choice(ThreadContext context) {
+        Random random = context.getRuntime().getRandom();
+        int i = realLength;
+        if(i == 0) {
+            return context.getRuntime().getNil();
+        }
+        int r = random.nextInt(i);
+        return values[begin + r];
+    }
+
     @JRubyMethod(name = "shuffle!")
     public IRubyObject shuffle_bang(ThreadContext context) {
         modify();
