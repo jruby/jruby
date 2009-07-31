@@ -2406,21 +2406,43 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
+    private IRubyObject slice_internal(long pos, long len, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = getRuntime();
+
+        if(len < 0) return runtime.getNil();
+        int orig_len = realLength;
+        if(pos < 0) {
+            pos += orig_len;
+            if(pos < 0) {
+                return runtime.getNil();
+            }
+        } else if(orig_len < pos) {
+            return runtime.getNil();
+        }
+        if(orig_len < pos + len) {
+            len = orig_len - pos;
+        }
+        if(len == 0) {
+            return runtime.newEmptyArray();
+        }
+
+        arg1 = makeShared((int)pos, (int)len, getMetaClass());
+        splice(pos, len, null);
+
+        return arg1;
+    }
+
     /** rb_ary_slice_bang
      *
      */
     @JRubyMethod(name = "slice!")
     public IRubyObject slice_bang(IRubyObject arg0) {
+        modifyCheck();
         if (arg0 instanceof RubyRange) {
             long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
             long pos = beglen[0];
             long len = beglen[1];
-
-            if (pos < 0) pos = realLength + pos;
-
-            arg0 = subseq(pos, len);
-            splice(pos, len, null);
-            return arg0;
+            return slice_internal(pos, len, arg0, null);
         }
         return delete_at((int) RubyNumeric.num2long(arg0));
     }
@@ -2430,15 +2452,10 @@ public class RubyArray extends RubyObject implements List {
     */
     @JRubyMethod(name = "slice!")
     public IRubyObject slice_bang(IRubyObject arg0, IRubyObject arg1) {
+        modifyCheck();
         long pos = RubyNumeric.num2long(arg0);
         long len = RubyNumeric.num2long(arg1);
-
-        if (pos < 0) pos = realLength + pos;
-
-        arg1 = subseq(pos, len);
-        splice(pos, len, null);
-
-        return arg1;
+        return slice_internal(pos, len, arg0, arg1);
     }    
 
     /** rb_ary_assoc
