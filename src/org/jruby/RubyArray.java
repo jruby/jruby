@@ -3160,12 +3160,12 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_permutation
      * 
      */
-    @JRubyMethod(name = "permutation", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, IRubyObject num, Block block) {
         return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), block) : enumeratorize(context.getRuntime(), this, "permutation", num);
     }
 
-    @JRubyMethod(name = "permutation", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, Block block) {
         return block.isGiven() ? permutationCommon(context, realLength, block) : enumeratorize(context.getRuntime(), this, "permutation");
     }
