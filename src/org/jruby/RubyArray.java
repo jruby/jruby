@@ -454,6 +454,21 @@ public class RubyArray extends RubyObject implements List {
         return makeShared(last ? realLength - n : 0, n, getMetaClass());
     }
 
+    /** ary_shared_first
+     * 
+     */
+    private RubyArray makeSharedFirst(ThreadContext context, IRubyObject num, boolean last, RubyClass klass) {
+        int n = RubyNumeric.num2int(num);
+        
+        if (n > realLength) {
+            n = realLength;
+        } else if (n < 0) {
+            throw context.getRuntime().newArgumentError("negative array size");
+        }
+        
+        return makeShared(last ? realLength - n : 0, n, klass);
+    }
+
     /** rb_ary_modify_check
      *
      */
@@ -1200,7 +1215,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject shift19(ThreadContext context, IRubyObject num) {
         modify();
 
-        RubyArray result = makeSharedFirst(context, num, false);
+        RubyArray result = makeSharedFirst(context, num, false, context.getRuntime().getArray());
 
         int n = result.realLength;
         begin += n;
