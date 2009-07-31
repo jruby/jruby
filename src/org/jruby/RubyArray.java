@@ -2562,7 +2562,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject flatten_bang19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
-        RubyArray result = new RubyArray(runtime, realLength);
+        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten19(context, -1, result)) {
             begin = 0;
             realLength = result.realLength;
@@ -2578,7 +2578,7 @@ public class RubyArray extends RubyObject implements List {
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return this;
 
-        RubyArray result = new RubyArray(runtime, realLength);
+        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten19(context, level, result)) {
             begin = 0;
             realLength = result.realLength;
@@ -2592,7 +2592,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject flatten19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
-        RubyArray result = new RubyArray(runtime, realLength);
+        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         flatten19(context, -1, result);
         result.infectBy(this);
         return result;
@@ -2604,7 +2604,7 @@ public class RubyArray extends RubyObject implements List {
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return this;
 
-        RubyArray result = new RubyArray(runtime, realLength);
+        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         flatten19(context, level, result);
         result.infectBy(this);
         return result;
