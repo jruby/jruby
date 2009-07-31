@@ -2495,7 +2495,6 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_flatten_bang
      *
      */
-    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_8)
     public IRubyObject flatten_bang(ThreadContext context) {
         int i = 0;
         RubyArray memo = null;
@@ -2520,7 +2519,6 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_flatten
     *
     */
-    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_8)
     public IRubyObject flatten(ThreadContext context) {
         RubyArray ary = aryDup();
         ary.flatten_bang(context);
@@ -2563,7 +2561,7 @@ public class RubyArray extends RubyObject implements List {
         return modified;
     }
 
-    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "flatten!")
     public IRubyObject flatten_bang19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
@@ -2577,7 +2575,7 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "flatten!")
     public IRubyObject flatten_bang19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         int level = RubyNumeric.num2int(arg);
@@ -2593,7 +2591,7 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "flatten")
     public IRubyObject flatten19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
@@ -2603,7 +2601,7 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
-    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "flatten")
     public IRubyObject flatten19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         int level = RubyNumeric.num2int(arg);
