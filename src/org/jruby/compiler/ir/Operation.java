@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, load_op, store_op };
+enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, load_op, store_op, declare_type_op };
 
 public enum Operation
 {
@@ -20,6 +20,7 @@ public enum Operation
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
 	 RECV_ARG(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
     CALL(OpType.call_op), ATTR_ASSIGN(OpType.call_op),
+    DECLARE_TYPE(OpType.declare_type_op),
 
 // closure instructions
     YIELD(OpType.dont_care),

@@ -255,6 +255,9 @@ public class JVM implements CompilerTarget {
     public void emitDEF_INST_METH(DEFINE_INSTANCE_METHOD_Instr instr) {
         IR_Method irMethod = instr._method;
         GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, Method.getMethod("void " + irMethod._name + " ()"), null, null, cls());
+        adapter.loadThis();
+        adapter.loadArgs();
+        adapter.invokeStatic(Type.getType(Object.class), Method.getMethod("Object __ruby__" + irMethod._name + " (Object)"));
         adapter.returnValue();
         adapter.endMethod();
     }

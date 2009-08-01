@@ -85,6 +85,7 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
+import org.jruby.ast.TypedArgumentNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
@@ -98,6 +99,7 @@ import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
+import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
 import org.jruby.compiler.ir.instructions.GET_ARRAY_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
@@ -1458,8 +1460,12 @@ public class IR_Builder
 
             // Both for fixed arity and variable arity methods
         ListNode preArgs  = argsNode.getPre();
-        for (int i = 0; i < argsNode.getRequiredArgsCount(); i++, argIndex++) {
+        for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
+            if (a instanceof TypedArgumentNode) {
+                TypedArgumentNode t = (TypedArgumentNode)a;
+                s.addInstr(new DECLARE_LOCAL_TYPE_Instr(null, argIndex, buildType(t.getTypeNode())));
+            }
             s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), argIndex));
         }
 
@@ -1491,6 +1497,17 @@ public class IR_Builder
 
             // This is not an expression that computes anything
         return null;
+    }
+
+    public String buildType(Node typeNode) {
+        switch (typeNode.getNodeType()) {
+        case CONSTNODE:
+            return ((ConstNode)typeNode).getName();
+        case SYMBOLNODE:
+            return ((SymbolNode)typeNode).getName();
+        default:
+            return "unknown_type";
+        }
     }
 
     public Operand buildDot(Node node, IR_Scope s) {
