@@ -310,7 +310,6 @@ public class RubyDir extends RubyObject {
      * Executes the block once for each file in the directory specified by
      * <code>path</code>.
      */
-    @JRubyMethod(name = "foreach", required = 1, frame = true, meta = true)
     public static IRubyObject foreach(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
         RubyString path = _path.convertToString();
         recv.getRuntime().checkSafeString(path);
@@ -322,7 +321,7 @@ public class RubyDir extends RubyObject {
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "foreach", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "foreach", frame = true, meta = true)
     public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
         return block.isGiven() ? foreach(context, recv, _path, block) : enumeratorize(context.getRuntime(), recv, "foreach", _path);
     }
@@ -400,7 +399,6 @@ public class RubyDir extends RubyObject {
     /**
      * Executes the block once for each entry in the directory.
      */
-    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each(ThreadContext context, Block block) {
         checkDir();
         
@@ -411,7 +409,7 @@ public class RubyDir extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each19(ThreadContext context, Block block) {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
