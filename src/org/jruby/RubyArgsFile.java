@@ -336,53 +336,49 @@ public class RubyArgsFile {
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.getRuntime(), recv, "bytes");
     }
 
-//     @JRubyMethod(name = "each_char", frame = true)
-//     public static IRubyObject each_char(final ThreadContext context, IRubyObject recv, Block block) {
-//         return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
-//     }
+    @JRubyMethod(name = "each_char", frame = true)
+    public static IRubyObject each_char(final ThreadContext context, IRubyObject recv, Block block) {
+        return block.isGiven() ? each_charCommon(context, recv, block) : enumeratorize(context.getRuntime(), recv, "each_char");
+    }
 
-//     @JRubyMethod(name = "chars", frame = true)
-//     public static IRubyObject chars(final ThreadContext context, IRubyObject recv, Block block) {
-//         return block.isGiven() ? each_charCommon(context, recv, block) : enumeratorize(context.getRuntime(), this, "chars");
-//     }
+    @JRubyMethod(name = "chars", frame = true)
+    public static IRubyObject chars(final ThreadContext context, IRubyObject recv, Block block) {
+        return block.isGiven() ? each_charCommon(context, recv, block) : enumeratorize(context.getRuntime(), recv, "chars");
+    }
 
-//     private static IRubyObject each_charCommon(ThreadContext context, IRubyObject recv, Block block) {
-//         IRubyObject ch;
-//         while(!(ch = getc(context, recv)).isNil()) {
-//             byte c = (byte)RubyNumeric.fix2int(ch);
+    public static IRubyObject each_charCommon(ThreadContext context, IRubyObject recv, Block block) {
+        ArgsFileData data = ArgsFileData.getDataFrom(recv);
+        Ruby runtime = context.getRuntime();
+        IRubyObject ch;
+        while(!(ch = getc(context, recv)).isNil()) {
+            boolean cont = true;
+            while(cont) {
+                cont = false;
+                byte c = (byte)RubyNumeric.fix2int(ch);
+                int n = runtime.getKCode().getEncoding().length(c);
+                IRubyObject file = data.currentFile;
+                RubyString str = runtime.newString();
+                str.setTaint(true);
+                str.cat(c);
 
-            
-
-//             unsigned char c;
-//             int n;
-//             VALUE str, file;
-
-//             first_char:
-//             c = FIX2INT(ch);
-//             n = mbclen(c);
-//             str = rb_tainted_str_new((const char *)&c, 1);
-//             file = current_file;
-
-//             while (--n > 0) {
-//                 if (NIL_P(ch = argf_getc())) {
-//                     rb_yield(str);
-//                     return argf;
-//                 }
-//                 if (current_file != file) {
-//                     rb_yield(str);
-//                     goto first_char;
-//                 }
-//                 c = FIX2INT(ch);
-//                 rb_str_cat(str, (const char *)&c, 1);
-//             }
-//             rb_yield(str);
-
-
-
-
-//         }
-//         return recv;
-//     }
+                while(--n > 0) {
+                    if((ch = getc(context, recv)).isNil()) {
+                        block.yield(context, str);
+                        return recv;
+                    }
+                    if(data.currentFile != file) {
+                        block.yield(context, str);
+                        cont = true;
+                        continue;
+                    }
+                    c = (byte)RubyNumeric.fix2int(ch);
+                    str.cat(c);
+                }
+                block.yield(context, str);
+            }
+        }
+        return recv;
+    }
 
     /** Invoke a block for each line.
      *
