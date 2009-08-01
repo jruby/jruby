@@ -1,2 +1,0 @@
-fails(JRUBY-3148):Array#fill with (filler, index, length) raises an ArgumentError or RangeError for too-large sizes
-fails:Array#fill with (filler, index, length) raises an ArgumentError or RangeError for too-large sizes

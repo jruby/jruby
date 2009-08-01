@@ -1,1 +1,0 @@
-fails(JRUBY-3612):Array#to_s returns '[...]' for the embedded array in a recursive array
