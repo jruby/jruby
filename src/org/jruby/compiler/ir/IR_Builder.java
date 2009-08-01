@@ -1464,7 +1464,7 @@ public class IR_Builder
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
             if (a instanceof TypedArgumentNode) {
                 TypedArgumentNode t = (TypedArgumentNode)a;
-                s.addInstr(new DECLARE_LOCAL_TYPE_Instr(null, argIndex, buildType(t.getTypeNode())));
+                s.addInstr(new DECLARE_LOCAL_TYPE_Instr(argIndex, buildType(t.getTypeNode())));
             }
             s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), argIndex));
         }
