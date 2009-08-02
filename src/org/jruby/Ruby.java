@@ -250,10 +250,30 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
         DynamicScope currentScope = context.getCurrentScope();
         ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(new EvalStaticScope(currentScope.getStaticScope()), currentScope);
-        Node node = parseEval(script, "<script>", newScope, 0);
-        
+
+        return evalScriptlet(script, newScope);
+    }
+
+    /**
+     * Evaluates a script under the current scope (perhaps the top-level
+     * scope) and returns the result (generally the last value calculated).
+     * This version goes straight into the interpreter, bypassing compilation
+     * and runtime preparation typical to normal script runs.
+     *
+     * This version accepts a scope to use, so you can eval many times against
+     * the same scope.
+     *
+     * @param script The scriptlet to run
+     * @param scope The scope to execute against (ManyVarsDynamicScope is
+     * recommended, so it can grow as needed)
+     * @returns The result of the eval
+     */
+    public IRubyObject evalScriptlet(String script, DynamicScope scope) {
+        ThreadContext context = getCurrentContext();
+        Node node = parseEval(script, "<script>", scope, 0);
+
         try {
-            context.preEvalScriptlet(newScope);
+            context.preEvalScriptlet(scope);
             return node.interpret(this, context, context.getFrameSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
@@ -1269,11 +1289,18 @@ public final class Ruby {
     private void initErrno() {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
-            for (Errno e : Errno.values()) {
-                Constant c = (Constant) e;
-                if (Character.isUpperCase(c.name().charAt(0))) {
-                    createSysErr(c.value(), c.name());
+            try {
+                for (Errno e : Errno.values()) {
+                    Constant c = (Constant) e;
+                    if (Character.isUpperCase(c.name().charAt(0))) {
+                        createSysErr(c.value(), c.name());
+                    }
                 }
+            } catch (Exception e) {
+                // dump the trace and continue
+                // this is currently only here for Android, which seems to have
+                // bugs in its enumeration logic
+                e.printStackTrace();
             }
         }
     }
