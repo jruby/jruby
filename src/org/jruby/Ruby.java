@@ -1300,6 +1300,7 @@ public final class Ruby {
                 // dump the trace and continue
                 // this is currently only here for Android, which seems to have
                 // bugs in its enumeration logic
+                // http://code.google.com/p/android/issues/detail?id=2812
                 e.printStackTrace();
             }
         }
