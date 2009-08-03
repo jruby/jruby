@@ -1,0 +1,2 @@
+fails(Mentalguy should take a look):ConditionVariable#broadcast should return self if something is waiting for a broadcast
+fails(Mentalguy should take a look):ConditionVariable#broadcast should return self if nothing to broadcast to
