@@ -3,7 +3,7 @@
 # 
 # Copyright (C) 2001, 2002, 2003 by Michael Neumann (mneumann@ntecs.de)
 #
-# $Id$
+# $Id: marshal.rb 11708 2007-02-12 23:01:19Z shyouhei $
 #
 
 require "xmlrpc/parser"

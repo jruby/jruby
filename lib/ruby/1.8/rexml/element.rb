@@ -360,7 +360,7 @@ module REXML
     # Iterates through the children, yielding for each Element that
     # has a particular text set.
     # text:: 
-    #   the text to search for.  If nil, or not supplied, will itterate
+    #   the text to search for.  If nil, or not supplied, will iterate
     #   over all +Element+ children that contain at least one +Text+ node.
     # max:: 
     #   (optional) causes this method to return after yielding
@@ -855,15 +855,15 @@ module REXML
     #   Source (see Element.initialize).  If not supplied or nil, a
     #   new, default Element will be constructed
     # Returns:: the added Element
-    #  a = Element.new 'a'
-    #  a.elements.add Element.new 'b'  #-> <a><b/></a>
-    #  a.elements.add 'c'              #-> <a><b/><c/></a>
+    #  a = Element.new('a')
+    #  a.elements.add(Element.new('b'))  #-> <a><b/></a>
+    #  a.elements.add('c')               #-> <a><b/><c/></a>
     def add element=nil
       rv = nil
       if element.nil?
-        Element.new "", self, @element.context
+        Element.new("", self, @element.context)
       elsif not element.kind_of?(Element)
-        Element.new element, self, @element.context
+        Element.new(element, self, @element.context)
       else
         @element << element
         element.context = @element.context
@@ -989,7 +989,7 @@ module REXML
     end
     alias :size :length
 
-    # Itterates over the attributes of an Element.  Yields actual Attribute
+    # Iterates over the attributes of an Element.  Yields actual Attribute
     # nodes, not String values.
     # 
     #  doc = Document.new '<a x="1" y="2"/>'
@@ -1006,7 +1006,7 @@ module REXML
       end
     end
 
-    # Itterates over each attribute of an Element, yielding the expanded name
+    # Iterates over each attribute of an Element, yielding the expanded name
     # and value as a pair of Strings.
     #
     #  doc = Document.new '<a x="1" y="2"/>'

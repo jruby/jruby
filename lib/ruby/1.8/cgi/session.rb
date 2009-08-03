@@ -174,16 +174,21 @@ class CGI
     # is used internally for automatically generated
     # session ids. 
     def create_new_id
-      require 'digest/md5'
-      md5 = Digest::MD5::new
-      now = Time::now
-      md5.update(now.to_s)
-      md5.update(String(now.usec))
-      md5.update(String(rand(0)))
-      md5.update(String($$))
-      md5.update('foobar')
-      @new_session = true
-      md5.hexdigest
+      require 'securerandom'
+      begin
+        session_id = SecureRandom.hex(16)
+      rescue NotImplementedError
+        require 'digest/md5'
+        md5 = Digest::MD5::new
+        now = Time::now
+        md5.update(now.to_s)
+        md5.update(String(now.usec))
+        md5.update(String(rand(0)))
+        md5.update(String($$))
+        md5.update('foobar')
+        session_id = md5.hexdigest
+      end
+      session_id
     end
     private :create_new_id
 
@@ -224,7 +229,7 @@ class CGI
     # session_path:: the path for which this session applies.  Defaults
     #                to the directory of the CGI script.
     #
-    # +option+ is also passed on to the session storage class initialiser; see
+    # +option+ is also passed on to the session storage class initializer; see
     # the documentation for each session storage class for the options
     # they support.
     #                  
@@ -250,6 +255,7 @@ class CGI
       unless session_id
 	if option['new_session']
 	  session_id = create_new_id
+      @new_session = true
 	end
       end
       unless session_id
@@ -265,6 +271,7 @@ class CGI
 	    raise ArgumentError, "session_key `%s' should be supplied"%session_key
 	  end
 	  session_id = create_new_id
+      @new_session = true
 	end
       end
       @session_id = session_id
@@ -275,7 +282,8 @@ class CGI
         unless option.fetch('new_session', true)
           raise ArgumentError, "invalid session_id `%s'"%session_id
         end
-        session_id = @session_id = create_new_id
+        session_id = @session_id = create_new_id unless session_id
+      @new_session = true
         retry
       end
       request.instance_eval do
@@ -351,7 +359,7 @@ class CGI
       # characters; automatically generated session ids observe
       # this requirement.
       # 
-      # +option+ is a hash of options for the initialiser.  The
+      # +option+ is a hash of options for the initializer.  The
       # following options are recognised:
       #
       # tmpdir:: the directory to use for storing the FileStore
@@ -391,8 +399,9 @@ class CGI
 	unless @hash
 	  @hash = {}
           begin
+            lockf = File.open(@path+".lock", "r")
+            lockf.flock File::LOCK_SH
 	    f = File.open(@path, 'r')
-	    f.flock File::LOCK_SH
 	    for line in f
 	      line.chomp!
 	      k, v = line.split('=',2)
@@ -400,6 +409,7 @@ class CGI
 	    end
           ensure
 	    f.close unless f.nil?
+            lockf.close if lockf
           end
 	end
 	@hash
@@ -409,13 +419,17 @@ class CGI
       def update
 	return unless @hash
         begin
-	  f = File.open(@path, File::CREAT|File::TRUNC|File::RDWR, 0600)
-	  f.flock File::LOCK_EX
+          lockf = File.open(@path+".lock", File::CREAT|File::RDWR, 0600)
+	  lockf.flock File::LOCK_EX
+          f = File.open(@path+".new", File::CREAT|File::TRUNC|File::WRONLY, 0600)
    	  for k,v in @hash
 	    f.printf "%s=%s\n", CGI::escape(k), CGI::escape(String(v))
 	  end
+          f.close
+          File.rename @path+".new", @path
         ensure
-          f.close unless f.nil?
+          f.close if f and !f.closed?
+          lockf.close if lockf
         end
       end
 
@@ -426,6 +440,8 @@ class CGI
 
       # Close and delete the session's FileStore file.
       def delete
+        File::unlink @path+".lock" rescue nil
+        File::unlink @path+".new" rescue nil
         File::unlink @path
       rescue Errno::ENOENT
       end

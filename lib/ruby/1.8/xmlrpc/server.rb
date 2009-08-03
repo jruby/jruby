@@ -267,7 +267,9 @@ class BasicServer
         if obj.kind_of? Proc
           methods << name
         else
-          obj.methods.each {|meth| methods << name + meth}
+          obj.class.public_instance_methods(false).each do |meth|
+            methods << "#{name}#{meth}"
+          end
         end
       end
       methods
@@ -639,11 +641,11 @@ class Server < WEBrickServlet
   
   def serve
     if RUBY_PLATFORM =~ /mingw|mswin32/
-      signal = 1
+      signals = [1]
     else
-      signal = "HUP"
+      signals = %w[INT TERM HUP]
     end
-    trap(signal) { @server.shutdown }
+    signals.each { |signal| trap(signal) { @server.shutdown } }
 
     @server.start
   end
@@ -775,6 +777,6 @@ end # module XMLRPC
 
 =begin
 = History
-    $Id$    
+    $Id: server.rb 22461 2009-02-20 09:06:53Z shyouhei $    
 =end
 

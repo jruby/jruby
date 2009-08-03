@@ -189,7 +189,7 @@ module REXML
     end
  
      def wrap(string, width, addnewline=false)
-       # Recursivly wrap string at width.
+       # Recursively wrap string at width.
        return string if string.length <= width
        place = string.rindex(' ', width) # Position in string with last ' ' before cutoff
        if addnewline then
@@ -286,7 +286,7 @@ module REXML
     EREFERENCE = /&(?!#{Entity::NAME};)/
     # Escapes all possible entities
     def Text::normalize( input, doctype=nil, entity_filter=nil )
-      copy = input.to_s
+      copy = input
       # Doing it like this rather than in a loop improves the speed
       #copy = copy.gsub( EREFERENCE, '&amp;' )
       copy = copy.gsub( "&", "&amp;" )

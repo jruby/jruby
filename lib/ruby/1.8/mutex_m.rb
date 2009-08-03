@@ -1,13 +1,12 @@
 #--
 #   mutex_m.rb - 
 #   	$Release Version: 3.0$
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 1.7 $
+#   	$Date: 1998/02/27 04:28:57 $
 #       Original from mutex.rb
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #       modified by matz
 #       patched by akira yamada
-#       gutted by MenTaLguY
 #++
 #
 # == Usage
@@ -28,8 +27,6 @@
 #   end
 #   
 #   obj = Foo.new
-
-require 'thread'
 
 module Mutex_m
   def Mutex_m.define_aliases(cl)
@@ -65,31 +62,57 @@ module Mutex_m
   
   # locking 
   def mu_synchronize
-    @mu_mutex.synchronize { yield }
+    begin
+      mu_lock
+      yield
+    ensure
+      mu_unlock
+    end
   end
   
   def mu_locked?
-    @mu_mutex.locked?
+    @mu_locked
   end
   
   def mu_try_lock
-    @mu_mutex.try_lock
+    result = false
+    Thread.critical = true
+    unless @mu_locked
+      @mu_locked = true
+      result = true
+    end
+    Thread.critical = false
+    result
   end
   
   def mu_lock
-    @mu_mutex.lock
+    while (Thread.critical = true; @mu_locked)
+      @mu_waiting.push Thread.current
+      Thread.stop
+    end
+    @mu_locked = true
+    Thread.critical = false
     self
   end
   
   def mu_unlock
-    @mu_mutex.unlock
+    return unless @mu_locked
+    Thread.critical = true
+    wait = @mu_waiting
+    @mu_waiting = []
+    @mu_locked = false
+    Thread.critical = false
+    for w in wait
+      w.run
+    end
     self
   end
   
   private
   
   def mu_initialize
-    @mu_mutex = ::Mutex.new
+    @mu_waiting = []
+    @mu_locked = false;
   end
 
   def initialize(*args)

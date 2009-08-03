@@ -152,9 +152,9 @@ module Net
     end
 
     def open_socket(host, port)
-      if defined? SOCKSsocket and ENV["SOCKS_SERVER"]
+      if defined? SOCKSSocket and ENV["SOCKS_SERVER"]
 	@passive = true
-	return SOCKSsocket.open(host, port)
+	return SOCKSSocket.open(host, port)
       else
 	return TCPSocket.open(host, port)
       end
@@ -319,6 +319,8 @@ module Net
 	  end
 	end
 	resp = sendcmd(cmd)
+        # skip 2XX for some ftp servers
+        resp = getresp if resp[0] == ?2
 	if resp[0] != ?1
 	  raise FTPReplyError, resp
 	end
@@ -331,6 +333,8 @@ module Net
 	  end
 	end
 	resp = sendcmd(cmd)
+        # skip 2XX for some ftp servers
+        resp = getresp if resp[0] == ?2
 	if resp[0] != ?1
 	  raise FTPReplyError, resp
 	end
@@ -374,9 +378,11 @@ module Net
       synchronize do
 	resp = sendcmd('USER ' + user)
 	if resp[0] == ?3
+          raise FTPReplyError, resp if passwd.nil?
 	  resp = sendcmd('PASS ' + passwd)
 	end
 	if resp[0] == ?3
+          raise FTPReplyError, resp if acct.nil?
 	  resp = sendcmd('ACCT ' + acct)
 	end
       end
@@ -664,9 +670,9 @@ module Net
 	begin
 	  voidcmd("CDUP")
 	  return
-	rescue FTPPermError
-	  if $![0, 3] != "500"
-	    raise FTPPermError, $!
+	rescue FTPPermError => e
+	  if e.message[0, 3] != "500"
+	    raise e
 	  end
 	end
       end

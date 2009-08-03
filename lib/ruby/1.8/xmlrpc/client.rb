@@ -268,7 +268,7 @@ Note: Inherited methods from class (({Object})) cannot be used as XML-RPC names,
 
 
 = History
-    $Id$
+    $Id: client.rb 18091 2008-07-16 17:07:44Z shyouhei $
 
 =end
 
@@ -530,6 +530,9 @@ module XMLRPC
         }
       else
         # reuse the HTTP object for each call => connection alive is possible
+        # we must start connection explicitely first time so that http.request
+        # does not assume that we don't want keepalive
+        @http.start if not @http.started?
         
         # post request
         resp = @http.post2(@path, request, header) 
@@ -549,9 +552,9 @@ module XMLRPC
       ct = parse_content_type(resp["Content-Type"]).first
       if ct != "text/xml"
         if ct == "text/html"
-          raise "Wrong content-type: \n#{data}"
+          raise "Wrong content-type (received '#{ct}' but expected 'text/xml'): \n#{data}"
         else
-          raise "Wrong content-type"
+          raise "Wrong content-type (received '#{ct}' but expected 'text/xml')"
         end
       end
 
@@ -562,8 +565,14 @@ module XMLRPC
         raise "Wrong size. Was #{data.size}, should be #{expected}"
       end
 
-      c = resp["Set-Cookie"]
-      @cookie = c if c
+      set_cookies = resp.get_fields("Set-Cookie")
+      if set_cookies and !set_cookies.empty?
+        require 'webrick/cookie'
+        @cookie = set_cookies.collect do |set_cookie|
+          cookie = WEBrick::Cookie.parse_set_cookie(set_cookie)
+          WEBrick::Cookie.new(cookie.name, cookie.value).to_s
+        end.join("; ")
+      end
 
       return data
     end

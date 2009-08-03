@@ -22,7 +22,7 @@
 # http://www.ruby-lang.org/ja/man/?cmd=view;name=net%2Fhttp.rb
 # 
 #--
-# $Id$
+# $Id: http.rb 13657 2007-10-08 11:16:54Z gotoyuzo $
 #++ 
 
 require 'net/protocol'
@@ -278,7 +278,7 @@ module Net   #:nodoc:
   class HTTP < Protocol
 
     # :stopdoc:
-    Revision = %q$Revision$.split[1]
+    Revision = %q$Revision: 13657 $.split[1]
     HTTPVersion = '1.1'
     @newimpl = true
     # :startdoc:
@@ -470,7 +470,6 @@ module Net   #:nodoc:
       @debug_output = nil
       @use_ssl = false
       @ssl_context = nil
-      @enable_post_connection_check = false
     end
 
     def inspect
@@ -526,9 +525,6 @@ module Net   #:nodoc:
     def use_ssl?
       false   # redefined in net/https
     end
-
-    # specify enabling SSL server certificate and hostname checking.
-    attr_accessor :enable_post_connection_check
 
     # Opens TCP connection and HTTP session.
     # 
@@ -589,12 +585,7 @@ module Net   #:nodoc:
         end
         s.connect
         if @ssl_context.verify_mode != OpenSSL::SSL::VERIFY_NONE
-          begin
-            s.post_connection_check(@address)
-          rescue OpenSSL::SSL::SSLError => ex
-            raise ex if @enable_post_connection_check
-            warn ex.message
-          end
+          s.post_connection_check(@address)
         end
       end
       on_connect
@@ -1480,8 +1471,6 @@ module Net   #:nodoc:
       @path = path
       initialize_http_header initheader
       self['Accept'] ||= '*/*'
-      # http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/12107
-      self['User-Agent'] ||= 'Ruby'
       @body = nil
       @body_stream = nil
     end

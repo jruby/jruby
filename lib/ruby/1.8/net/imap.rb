@@ -284,9 +284,11 @@ module Net
 
     # Disconnects from the server.
     def disconnect
-      if SSL::SSLSocket === @sock
+      begin
+        # try to call SSL::SSLSocket#io.
         @sock.io.shutdown
-      else
+      rescue NoMethodError
+        # @sock is not an SSL::SSLSocket.
         @sock.shutdown
       end
       @receiver_thread.join
@@ -900,6 +902,7 @@ module Net
         end
         @sock = SSLSocket.new(@sock, context)
         @sock.connect   # start ssl session.
+        @sock.post_connection_check(@host) if verify
       else
         @usessl = false
       end

@@ -236,11 +236,11 @@
 # Rails, the web application framework, uses ERB to create views.
 #
 class ERB
-  Revision = '$Date$' 	#'
+  Revision = '$Date: 2009-02-24 02:44:50 +0900 (Tue, 24 Feb 2009) $' 	#'
 
   # Returns revision information for the erb.rb module.
   def self.version
-    "erb.rb [2.0.4 #{ERB::Revision.split[1]}]"
+    "erb.rb [2.1.0 #{ERB::Revision.split[1]}]"
   end
 end
 
@@ -254,11 +254,13 @@ class ERB
       end
       attr_reader :value
       alias :to_s :value
+
+      def empty?
+        @value.empty?
+      end
     end
 
     class Scanner # :nodoc:
-      SplitRegexp = /(<%%)|(%%>)|(<%=)|(<%#)|(<%)|(%>)|(\n)/
-
       @scanner_map = {}
       def self.regist_scanner(klass, trim_mode, percent)
 	@scanner_map[[trim_mode, percent]] = klass
@@ -283,8 +285,6 @@ class ERB
     end
 
     class TrimScanner < Scanner # :nodoc:
-      TrimSplitRegexp = /(<%%)|(%%>)|(<%=)|(<%#)|(<%)|(%>\n)|(%>)|(\n)/
-
       def initialize(src, trim_mode, percent)
 	super
 	@trim_mode = trim_mode
@@ -308,9 +308,7 @@ class ERB
 	    percent_line(line, &block)
 	  end
 	else
-	  @src.each do |line|
-	    @scan_line.call(line, &block)
-	  end
+          @scan_line.call(@src, &block)
 	end
 	nil
       end
@@ -329,39 +327,47 @@ class ERB
       end
 
       def scan_line(line)
-	line.split(SplitRegexp).each do |token|
-	  next if token.empty?
-	  yield(token)
+        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>|\n|\z)/m) do |tokens|
+          tokens.each do |token|
+            next if token.empty?
+            yield(token)
+          end
 	end
       end
 
       def trim_line1(line)
-	line.split(TrimSplitRegexp).each do |token|
-	  next if token.empty?
-	  if token == "%>\n"
-	    yield('%>')
-	    yield(:cr)
-	    break
-	  end
-	  yield(token)
+        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\n|%>|\n|\z)/m) do |tokens|
+          tokens.each do |token|
+            next if token.empty?
+            if token == "%>\n"
+              yield('%>')
+              yield(:cr)
+            else
+              yield(token)
+            end
+          end
 	end
       end
 
       def trim_line2(line)
 	head = nil
-	line.split(TrimSplitRegexp).each do |token|
-	  next if token.empty?
-	  head = token unless head
-	  if token == "%>\n"
-	    yield('%>')
-	    if  is_erb_stag?(head)
-	      yield(:cr)
-	    else
-	      yield("\n")
-	    end
-	    break
-	  end
-	  yield(token)
+        line.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>\n|%>|\n|\z)/m) do |tokens|
+          tokens.each do |token|
+            next if token.empty?
+            head = token unless head
+            if token == "%>\n"
+              yield('%>')
+              if is_erb_stag?(head)
+                yield(:cr)
+              else
+                yield("\n")
+              end
+              head = nil
+            else
+              yield(token)
+              head = nil if token == "\n"
+            end
+          end
 	end
       end
 
@@ -393,11 +399,11 @@ class ERB
 
     class SimpleScanner < Scanner # :nodoc:
       def scan
-	@src.each do |line|
-	  line.split(SplitRegexp).each do |token|
-	    next if token.empty?
-	    yield(token)
-	  end
+        @src.scan(/(.*?)(<%%|%%>|<%=|<%#|<%|%>|\n|\z)/m) do |tokens|
+          tokens.each do |token|
+            next if token.empty?
+            yield(token)
+          end
 	end
       end
     end
@@ -408,75 +414,35 @@ class ERB
       require 'strscan'
       class SimpleScanner2 < Scanner # :nodoc:
         def scan
-          stag_reg = /(.*?)(<%%|<%=|<%#|<%|\n|\z)/
-          etag_reg = /(.*?)(%%>|%>|\n|\z)/
+          stag_reg = /(.*?)(<%%|<%=|<%#|<%|\z)/m
+          etag_reg = /(.*?)(%%>|%>|\z)/m
           scanner = StringScanner.new(@src)
           while ! scanner.eos?
             scanner.scan(@stag ? etag_reg : stag_reg)
-            text = scanner[1]
-            elem = scanner[2]
-            yield(text) unless text.empty?
-            yield(elem) unless elem.empty?
+            yield(scanner[1])
+            yield(scanner[2])
           end
         end
       end
       Scanner.regist_scanner(SimpleScanner2, nil, false)
 
-      class PercentScanner < Scanner # :nodoc:
-	def scan
-	  new_line = true
-          stag_reg = /(.*?)(<%%|<%=|<%#|<%|\n|\z)/
-          etag_reg = /(.*?)(%%>|%>|\n|\z)/
-          scanner = StringScanner.new(@src)
-          while ! scanner.eos?
-	    if new_line && @stag.nil?
-	      if scanner.scan(/%%/)
-		yield('%')
-		new_line = false
-		next
-	      elsif scanner.scan(/%/)
-		yield(PercentLine.new(scanner.scan(/.*?(\n|\z)/).chomp))
-		next
-	      end
-	    end
-	    scanner.scan(@stag ? etag_reg : stag_reg)
-            text = scanner[1]
-            elem = scanner[2]
-            yield(text) unless text.empty?
-            yield(elem) unless elem.empty?
-	    new_line = (elem == "\n")
-          end
-        end
-      end
-      Scanner.regist_scanner(PercentScanner, nil, true)
-
       class ExplicitScanner < Scanner # :nodoc:
 	def scan
-	  new_line = true
-          stag_reg = /(.*?)(<%%|<%=|<%#|<%-|<%|\n|\z)/
-          etag_reg = /(.*?)(%%>|-%>|%>|\n|\z)/
+          stag_reg = /(.*?)(^[ \t]*<%-|<%%|<%=|<%#|<%-|<%|\z)/m
+          etag_reg = /(.*?)(%%>|-%>|%>|\z)/m
           scanner = StringScanner.new(@src)
           while ! scanner.eos?
-	    if new_line && @stag.nil? && scanner.scan(/[ \t]*<%-/)
-	      yield('<%')
-	      new_line = false
-	      next
-	    end
 	    scanner.scan(@stag ? etag_reg : stag_reg)
-            text = scanner[1]
+            yield(scanner[1])
+
             elem = scanner[2]
-	    new_line = (elem == "\n")
-            yield(text) unless text.empty?
-	    if elem == '-%>'
+            if /[ \t]*<%-/ =~ elem
+              yield('<%')
+            elsif elem == '-%>'
 	      yield('%>')
-	      if scanner.scan(/(\n|\z)/)
-		yield(:cr)
-		new_line = true
-	      end
-	    elsif elem == '<%-'
-	      yield('<%')
+	      yield(:cr) if scanner.scan(/(\n|\z)/)
 	    else
-	      yield(elem) unless elem.empty?
+	      yield(elem)
 	    end
           end
         end
@@ -517,16 +483,27 @@ class ERB
       end
     end
 
+    def content_dump(s)
+      n = s.count("\n")
+      if n > 0
+        s.dump + "\n" * n
+      else
+        s.dump
+      end
+    end
+
     def compile(s)
       out = Buffer.new(self)
 
       content = ''
       scanner = make_scanner(s)
       scanner.scan do |token|
+        next if token.nil? 
+        next if token == ''
 	if scanner.stag.nil?
 	  case token
           when PercentLine
-	    out.push("#{@put_cmd} #{content.dump}") if content.size > 0
+	    out.push("#{@put_cmd} #{content_dump(content)}") if content.size > 0
 	    content = ''
             out.push(token.to_s)
             out.cr
@@ -534,12 +511,11 @@ class ERB
 	    out.cr
 	  when '<%', '<%=', '<%#'
 	    scanner.stag = token
-	    out.push("#{@put_cmd} #{content.dump}") if content.size > 0
+	    out.push("#{@put_cmd} #{content_dump(content)}") if content.size > 0
 	    content = ''
 	  when "\n"
 	    content << "\n"
-	    out.push("#{@put_cmd} #{content.dump}")
-	    out.cr
+	    out.push("#{@put_cmd} #{content_dump(content)}")
 	    content = ''
 	  when '<%%'
 	    content << '<%'
@@ -561,7 +537,7 @@ class ERB
 	    when '<%='
 	      out.push("#{@insert_cmd}((#{content}).to_s)")
 	    when '<%#'
-	      # out.push("# #{content.dump}")
+	      # out.push("# #{content_dump(content)}")
 	    end
 	    scanner.stag = nil
 	    content = ''
@@ -572,7 +548,7 @@ class ERB
 	  end
 	end
       end
-      out.push("#{@put_cmd} #{content.dump}") if content.size > 0
+      out.push("#{@put_cmd} #{content_dump(content)}") if content.size > 0
       out.close
       out.script
     end
@@ -659,7 +635,7 @@ class ERB
   #    
   #    def build
   #      b = binding
-  #      # create and run templates, filling member data variebles
+  #      # create and run templates, filling member data variables
   #      ERB.new(<<-'END_PRODUCT'.gsub(/^\s+/, ""), 0, "", "@product").result b
   #        <%= PRODUCT[:name] %>
   #        <%= PRODUCT[:desc] %>
@@ -735,29 +711,58 @@ class ERB
   #
   def result(b=TOPLEVEL_BINDING)
     if @safe_level
-      th = Thread.start { 
+      proc { 
 	$SAFE = @safe_level
 	eval(@src, b, (@filename || '(erb)'), 1)
-      }
-      return th.value
+      }.call
     else
-      return eval(@src, b, (@filename || '(erb)'), 1)
+      eval(@src, b, (@filename || '(erb)'), 1)
     end
   end
 
-  def def_method(mod, methodname, fname='(ERB)')  # :nodoc:
+  # Define _methodname_ as instance method of _mod_ from compiled ruby source.
+  #
+  # example:
+  #   filename = 'example.rhtml'   # 'arg1' and 'arg2' are used in example.rhtml
+  #   erb = ERB.new(File.read(filename))
+  #   erb.def_method(MyClass, 'render(arg1, arg2)', filename)
+  #   print MyClass.new.render('foo', 123)
+  def def_method(mod, methodname, fname='(ERB)')
     mod.module_eval("def #{methodname}\n" + self.src + "\nend\n", fname, 0)
   end
 
-  def def_module(methodname='erb')  # :nodoc:
+  # Create unnamed module, define _methodname_ as instance method of it, and return it.
+  #
+  # example:
+  #   filename = 'example.rhtml'   # 'arg1' and 'arg2' are used in example.rhtml
+  #   erb = ERB.new(File.read(filename))
+  #   erb.filename = filename
+  #   MyModule = erb.def_module('render(arg1, arg2)')
+  #   class MyClass
+  #     include MyModule
+  #   end
+  def def_module(methodname='erb')
     mod = Module.new
-    def_method(mod, methodname)
+    def_method(mod, methodname, @filename || '(ERB)')
     mod
   end
 
-  def def_class(superklass=Object, methodname='result')  # :nodoc:
+  # Define unnamed class which has _methodname_ as instance method, and return it.
+  #
+  # example:
+  #   class MyClass_
+  #     def initialize(arg1, arg2)
+  #       @arg1 = arg1;  @arg2 = arg2
+  #     end
+  #   end
+  #   filename = 'example.rhtml'  # @arg1 and @arg2 are used in example.rhtml
+  #   erb = ERB.new(File.read(filename))
+  #   erb.filename = filename
+  #   MyClass = erb.def_class(MyClass_, 'render()')
+  #   print MyClass.new('foo', 123).render()
+  def def_class(superklass=Object, methodname='result')
     cls = Class.new(superklass)
-    def_method(cls, methodname)
+    def_method(cls, methodname, @filename || '(ERB)')
     cls
   end
 end
@@ -811,15 +816,45 @@ end
 #--
 # ERB::DefMethod
 class ERB
-  module DefMethod  # :nodoc:
+  # Utility module to define eRuby script as instance method.
+  #
+  # === Example
+  #
+  # example.rhtml:
+  #   <% for item in @items %>
+  #   <b><%= item %></b>
+  #   <% end %>
+  #
+  # example.rb:
+  #   require 'erb'
+  #   class MyClass
+  #     extend ERB::DefMethod
+  #     def_erb_method('render()', 'example.rhtml')
+  #     def initialize(items)
+  #       @items = items
+  #     end
+  #   end
+  #   print MyClass.new([10,20,30]).render()
+  #
+  # result:
+  #
+  #   <b>10</b>
+  #
+  #   <b>20</b>
+  #
+  #   <b>30</b>
+  #
+  module DefMethod
     public
-    def def_erb_method(methodname, erb)
-      if erb.kind_of? String
-	fname = erb
-	File.open(fname) {|f| erb = ERB.new(f.read) }
-	erb.def_method(self, methodname, fname)
+  # define _methodname_ as instance method of current module, using ERB object or eRuby file
+    def def_erb_method(methodname, erb_or_fname)
+      if erb_or_fname.kind_of? String
+        fname = erb_or_fname
+        erb = ERB.new(File.read(fname))
+        erb.def_method(self, methodname, fname)
       else
-	erb.def_method(self, methodname)
+        erb = erb_or_fname
+        erb.def_method(self, methodname, erb.filename || '(ERB)')
       end
     end
     module_function :def_erb_method

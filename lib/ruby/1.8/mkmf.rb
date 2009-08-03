@@ -82,6 +82,9 @@ $archdir = CONFIG["archdir"]
 $sitedir = CONFIG["sitedir"]
 $sitelibdir = CONFIG["sitelibdir"]
 $sitearchdir = CONFIG["sitearchdir"]
+$vendordir = CONFIG["vendordir"]
+$vendorlibdir = CONFIG["vendorlibdir"]
+$vendorarchdir = CONFIG["vendorarchdir"]
 
 $mswin = /mswin/ =~ RUBY_PLATFORM
 $bccwin = /bccwin/ =~ RUBY_PLATFORM
@@ -94,6 +97,8 @@ $beos = /beos/ =~ RUBY_PLATFORM
 $solaris = /solaris/ =~ RUBY_PLATFORM
 $dest_prefix_pattern = (File::PATH_SEPARATOR == ';' ? /\A([[:alpha:]]:)?/ : /\A/)
 
+# :stopdoc:
+
 def config_string(key, config = CONFIG)
   s = config[key] and !s.empty? and block_given? ? yield(s) : s
 end
@@ -104,16 +109,21 @@ end
 
 INSTALL_DIRS = [
   [dir_re('commondir'), "$(RUBYCOMMONDIR)"],
-  [dir_re("sitedir"), "$(RUBYCOMMONDIR)"],
+  [dir_re('sitedir'), "$(RUBYCOMMONDIR)"],
+  [dir_re('vendordir'), "$(RUBYCOMMONDIR)"],
   [dir_re('rubylibdir'), "$(RUBYLIBDIR)"],
   [dir_re('archdir'), "$(RUBYARCHDIR)"],
   [dir_re('sitelibdir'), "$(RUBYLIBDIR)"],
-  [dir_re('sitearchdir'), "$(RUBYARCHDIR)"]
+  [dir_re('vendorlibdir'), "$(RUBYLIBDIR)"],
+  [dir_re('sitearchdir'), "$(RUBYARCHDIR)"],
+  [dir_re('bindir'), "$(BINDIR)"],
+  [dir_re('vendorarchdir'), "$(RUBYARCHDIR)"],
 ]
 
 def install_dirs(target_prefix = nil)
   if $extout
     dirs = [
+      ['BINDIR',        '$(extout)/bin'],
       ['RUBYCOMMONDIR', '$(extout)/common'],
       ['RUBYLIBDIR',    '$(RUBYCOMMONDIR)$(target_prefix)'],
       ['RUBYARCHDIR',   '$(extout)/$(arch)$(target_prefix)'],
@@ -122,12 +132,21 @@ def install_dirs(target_prefix = nil)
     ]
   elsif $extmk
     dirs = [
+      ['BINDIR',        '$(bindir)'],
       ['RUBYCOMMONDIR', '$(rubylibdir)'],
       ['RUBYLIBDIR',    '$(rubylibdir)$(target_prefix)'],
       ['RUBYARCHDIR',   '$(archdir)$(target_prefix)'],
     ]
+  elsif $configure_args.has_key?('--vendor')
+    dirs = [
+      ['BINDIR',        '$(bindir)'],
+      ['RUBYCOMMONDIR', '$(vendordir)$(target_prefix)'],
+      ['RUBYLIBDIR',    '$(vendorlibdir)$(target_prefix)'],
+      ['RUBYARCHDIR',   '$(vendorarchdir)$(target_prefix)'],
+    ]
   else
     dirs = [
+      ['BINDIR',        '$(bindir)'],
       ['RUBYCOMMONDIR', '$(sitedir)$(target_prefix)'],
       ['RUBYLIBDIR',    '$(sitelibdir)$(target_prefix)'],
       ['RUBYARCHDIR',   '$(sitearchdir)$(target_prefix)'],
@@ -145,13 +164,12 @@ end
 topdir = File.dirname(libdir = File.dirname(__FILE__))
 extdir = File.expand_path("ext", topdir)
 $extmk = File.expand_path($0)[0, extdir.size+1] == extdir+"/"
-if not $extmk and File.exist?(Config::CONFIG["archdir"] + "/ruby.h")
-  $hdrdir = $topdir = Config::CONFIG["archdir"]
-elsif File.exist?(($top_srcdir ||= topdir)  + "/ruby.h") and
+if not $extmk and File.exist?(($hdrdir = Config::CONFIG["archdir"]) + "/ruby.h")
+  $topdir = $hdrdir
+elsif File.exist?(($hdrdir = ($top_srcdir ||= topdir))  + "/ruby.h") and
     File.exist?(($topdir ||= Config::CONFIG["topdir"]) + "/config.h")
-  $hdrdir = $top_srcdir
 else
-  abort "can't find header files for ruby."
+  abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
 end
 
 OUTFLAG = CONFIG['OUTFLAG']
@@ -160,11 +178,18 @@ CPPOUTFILE = CONFIG['CPPOUTFILE']
 CONFTEST_C = "conftest.c"
 
 class String
+  # Wraps a string in escaped quotes if it contains whitespace.
   def quote
-    /\s/ =~ self ? "\"#{self}\"" : self
+    /\s/ =~ self ? "\"#{self}\"" : "#{self}"
+  end
+
+  # Generates a string used as cpp macro name.
+  def tr_cpp
+    strip.upcase.tr_s("^A-Z0-9_", "_")
   end
 end
 class Array
+  # Wraps all strings in escaped quotes if they contain whitespace.
   def quote
     map {|s| s.quote}
   end
@@ -174,6 +199,8 @@ def rm_f(*files)
   FileUtils.rm_f(Dir[files.join("\0")])
 end
 
+# Returns time stamp of the +target+ file if it exists and is newer
+# than or equal to all of +times+.
 def modified?(target, times)
   (t = File.mtime(target)) rescue return nil
   Array === times or times = [times]
@@ -196,12 +223,19 @@ def merge_libs(*libs)
   end
 end
 
+# This is a custom logging module. It generates an mkmf.log file when you
+# run your extconf.rb script. This can be useful for debugging unexpected
+# failures.
+#
+# This module and its associated methods are meant for internal use only.
+#
 module Logging
   @log = nil
   @logfile = 'mkmf.log'
   @orgerr = $stderr.dup
   @orgout = $stdout.dup
   @postpone = 0
+  @quiet = $extmk
 
   def self::open
     @log ||= File::open(@logfile, 'w')
@@ -245,9 +279,19 @@ module Logging
       end
     end
   end
+
+  class << self
+    attr_accessor :quiet
+  end
 end
 
 def xsystem command
+  varpat = /\$\((\w+)\)|\$\{(\w+)\}/
+  if varpat =~ command
+    vars = Hash.new {|h, k| h[k] = ''; ENV[k]}
+    command = command.dup
+    nil while command.gsub!(varpat) {vars[$1||$2]}
+  end
   Logging::open do
     puts command.quote
     system(command)
@@ -318,7 +362,7 @@ end
 
 def cpp_command(outfile, opt="")
   conf = Config::CONFIG.merge('hdrdir' => $hdrdir.quote, 'srcdir' => $srcdir.quote)
-  Config::expand("$(CPP) #$INCFLAGS #$CPPFLAGS #$CFLAGS #{opt} #{CONFTEST_C} #{outfile}".gsub(/-arch \w+/, ""),
+  Config::expand("$(CPP) #$INCFLAGS #$CPPFLAGS #$CFLAGS #{opt} #{CONFTEST_C} #{outfile}",
 		 conf)
 end
 
@@ -469,7 +513,7 @@ def try_var(var, headers = nil, &b)
 #{headers}
 /*top*/
 int main() { return 0; }
-int t() { const volatile void *volatile p; p = (void *)&#{var}; return 0; }
+int t() { const volatile void *volatile p; p = &(&#{var})[0]; return 0; }
 SRC
 end
 
@@ -499,6 +543,7 @@ ensure
   log_src(src)
 end
 
+# This is used internally by the have_macro? method.
 def macro_defined?(macro, src, opt = "", &b)
   src = src.sub(/[^\n]\z/, "\\&\n")
   try_compile(src + <<"SRC", opt, &b)
@@ -522,13 +567,14 @@ end
 
 def install_files(mfile, ifiles, map = nil, srcprefix = nil)
   ifiles or return
+  ifiles.empty? and return
   srcprefix ||= '$(srcdir)'
   Config::expand(srcdir = srcprefix.dup)
   dirs = []
   path = Hash.new {|h, i| h[i] = dirs.push([i])[-1]}
   ifiles.each do |files, dir, prefix|
     dir = map_dir(dir, map)
-    prefix = %r|\A#{Regexp.quote(prefix)}/?| if prefix
+    prefix &&= %r|\A#{Regexp.quote(prefix)}/?|
     if /\A\.\// =~ files
       # install files which are in current working directory.
       files = files[2..-1]
@@ -541,6 +587,10 @@ def install_files(mfile, ifiles, map = nil, srcprefix = nil)
     f = nil
     Dir.glob(files) do |f|
       f[0..len] = "" if len
+      case File.basename(f)
+      when *$NONINSTALLFILES
+        next
+      end
       d = File.dirname(f)
       d.sub!(prefix, "") if prefix
       d = (d.empty? || d == ".") ? dir : File.join(dir, d)
@@ -561,17 +611,22 @@ def install_rb(mfile, dest, srcdir = nil)
   install_files(mfile, [["lib/**/*.rb", dest, "lib"]], nil, srcdir)
 end
 
-def append_library(libs, lib)
+def append_library(libs, lib) # :no-doc:
   format(LIBARG, lib) + " " + libs
 end
 
 def message(*s)
-  unless $extmk and not $VERBOSE
+  unless Logging.quiet and not $VERBOSE
     printf(*s)
     $stdout.flush
   end
 end
 
+# This emits a string to stdout that allows users to see the results of the
+# various have* and find* methods as they are tested.
+#
+# Internal use only.
+#
 def checking_for(m, fmt = nil)
   f = caller[0][/in `(.*)'$/, 1] and f << ": " #` for vim
   m = "checking #{/\Acheck/ =~ f ? '' : 'for '}#{m}... "
@@ -601,6 +656,8 @@ def checking_message(target, place = nil, opt = nil)
   end
 end
 
+# :startdoc:
+
 # Returns whether or not +macro+ is defined either in the common header
 # files or within any +headers+ you provide.
 #
@@ -620,7 +677,7 @@ end
 # If +headers+ are provided, it will include those header files as the
 # header files it looks in when searching for +func+.
 #
-# Real name of the library to be linked can be altered by
+# The real name of the library to be linked can be altered by
 # '--with-FOOlib' configuration option.
 #
 def have_library(lib, func = nil, headers = nil, &b)
@@ -681,7 +738,7 @@ end
 def have_func(func, headers = nil, &b)
   checking_for checking_message("#{func}()", headers) do
     if try_func(func, $libs, headers, &b)
-      $defs.push(format("-DHAVE_%s", func.upcase))
+      $defs.push(format("-DHAVE_%s", func.tr_cpp))
       true
     else
       false
@@ -700,7 +757,7 @@ end
 def have_var(var, headers = nil, &b)
   checking_for checking_message(var, headers) do
     if try_var(var, headers, &b)
-      $defs.push(format("-DHAVE_%s", var.upcase))
+      $defs.push(format("-DHAVE_%s", var.tr_cpp))
       true
     else
       false
@@ -733,8 +790,9 @@ end
 # of included directories that are sent to the compiler (via the -I switch).
 #
 def find_header(header, *paths)
+  message = checking_message(header, paths)
   header = cpp_include(header)
-  checking_for header do
+  checking_for message do
     if try_cpp(header)
       true
     else
@@ -760,7 +818,7 @@ end
 # If found, a macro is passed as a preprocessor constant to the compiler using
 # the member name, in uppercase, prepended with 'HAVE_ST_'.
 #
-# For example, if have_struct_member('foo', 'bar') returned true, then the
+# For example, if have_struct_member('struct foo', 'bar') returned true, then the
 # HAVE_ST_BAR preprocessor macro would be passed to the compiler.
 # 
 def have_struct_member(type, member, headers = nil, &b)
@@ -772,11 +830,26 @@ def have_struct_member(type, member, headers = nil, &b)
 int main() { return 0; }
 int s = (char *)&((#{type}*)0)->#{member} - (char *)0;
 SRC
-      $defs.push(format("-DHAVE_ST_%s", member.upcase))
+      $defs.push(format("-DHAVE_ST_%s", member.tr_cpp))
       true
     else
       false
     end
+  end
+end
+
+def try_type(type, headers = nil, opt = "", &b)
+  if try_compile(<<"SRC", opt, &b)
+#{COMMON_HEADERS}
+#{cpp_include(headers)}
+/*top*/
+typedef #{type} conftest_type;
+int conftestval[sizeof(conftest_type)?1:-1];
+SRC
+    $defs.push(format("-DHAVE_TYPE_%s", type.tr_cpp))
+    true
+  else
+    false
   end
 end
 
@@ -795,19 +868,65 @@ end
 #
 def have_type(type, headers = nil, opt = "", &b)
   checking_for checking_message(type, headers, opt) do
-    headers = cpp_include(headers)
-    if try_compile(<<"SRC", opt, &b)
-#{COMMON_HEADERS}
-#{headers}
-/*top*/
-typedef #{type} conftest_type;
-static conftest_type conftestval[sizeof(conftest_type)?1:-1];
-SRC
-      $defs.push(format("-DHAVE_TYPE_%s", type.strip.upcase.tr_s("^A-Z0-9_", "_")))
-      true
-    else
-      false
+    try_type(type, headers, opt, &b)
+  end
+end
+
+# Returns where the static type +type+ is defined.
+#
+# You may also pass additional flags to +opt+ which are then passed along to
+# the compiler.
+#
+# See also +have_type+.
+#
+def find_type(type, opt, *headers, &b)
+  opt ||= ""
+  fmt = "not found"
+  def fmt.%(x)
+    x ? x.respond_to?(:join) ? x.join(",") : x : self
+  end
+  checking_for checking_message(type, nil, opt), fmt do
+    headers.find do |h|
+      try_type(type, h, opt, &b)
     end
+  end
+end
+
+def try_const(const, headers = nil, opt = "", &b)
+  const, type = *const
+  if try_compile(<<"SRC", opt, &b)
+#{COMMON_HEADERS}
+#{cpp_include(headers)}
+/*top*/
+typedef #{type || 'int'} conftest_type;
+conftest_type conftestval = #{type ? '' : '(int)'}#{const};
+SRC
+    $defs.push(format("-DHAVE_CONST_%s", const.tr_cpp))
+    true
+  else
+    false
+  end
+end
+
+# Returns whether or not the constant +const+ is defined.  You may
+# optionally pass the +type+ of +const+ as <code>[const, type]</code>,
+# like as:
+#
+#   have_const(%w[PTHREAD_MUTEX_INITIALIZER pthread_mutex_t], "pthread.h")
+#
+# You may also pass additional +headers+ to check against in addition
+# to the common header files, and additional flags to +opt+ which are
+# then passed along to the compiler.
+#
+# If found, a macro is passed as a preprocessor constant to the compiler using
+# the type name, in uppercase, prepended with 'HAVE_CONST_'.
+#
+# For example, if have_const('foo') returned true, then the HAVE_CONST_FOO
+# preprocessor macro would be passed to the compiler.
+#
+def have_const(const, headers = nil, opt = "", &b)
+  checking_for checking_message([*const].compact.join(' '), headers, opt) do
+    try_const(const, headers, opt, &b)
   end
 end
 
@@ -829,12 +948,16 @@ def check_sizeof(type, headers = nil, &b)
   end
   checking_for checking_message("size of #{type}", headers), fmt do
     if size = try_constant(expr, headers, &b)
-      $defs.push(format("-DSIZEOF_%s=%d", type.upcase.tr_s("^A-Z0-9_", "_"), size))
+      $defs.push(format("-DSIZEOF_%s=%d", type.tr_cpp, size))
       size
     end
   end
 end
 
+# :stopdoc:
+
+# Used internally by the what_type? method to determine if +type+ is a scalar
+# pointer.
 def scalar_ptr_type?(type, member = nil, headers = nil, &b)
   try_compile(<<"SRC", &b)   # pointer
 #{COMMON_HEADERS}
@@ -846,6 +969,8 @@ int t() {return (int)(1-*(conftestval#{member ? ".#{member}" : ""}));}
 SRC
 end
 
+# Used internally by the what_type? method to determine if +type+ is a scalar
+# pointer.
 def scalar_type?(type, member = nil, headers = nil, &b)
   try_compile(<<"SRC", &b)   # pointer
 #{COMMON_HEADERS}
@@ -889,6 +1014,10 @@ def what_type?(type, member = nil, headers = nil, &b)
   end
 end
 
+# This method is used internally by the find_executable method.
+#
+# Internal use only.
+#
 def find_executable0(bin, path = nil)
   ext = config_string('EXEEXT')
   if File.expand_path(bin) == bin
@@ -909,11 +1038,24 @@ def find_executable0(bin, path = nil)
   nil
 end
 
+# :startdoc:
+
+# Searches for the executable +bin+ on +path+. The default path is your
+# PATH environment variable. If that isn't defined, it will resort to
+# searching /usr/local/bin, /usr/ucb, /usr/bin and /bin.
+#
+# If found, it will return the full path, including the executable name,
+# of where it was found.
+#
+# Note that this method does not actually affect the generated Makefile.
+#
 def find_executable(bin, path = nil)
   checking_for checking_message(bin, path) do
     find_executable0(bin, path)
   end
 end
+
+# :stopdoc:
 
 def arg_config(config, *defaults, &block)
   $arg_config << [config, *defaults]
@@ -921,6 +1063,20 @@ def arg_config(config, *defaults, &block)
   $configure_args.fetch(config.tr('_', '-'), *defaults, &block)
 end
 
+# :startdoc:
+
+# Tests for the presence of a --with-<tt>config</tt> or --without-<tt>config</tt>
+# option. Returns true if the with option is given, false if the without
+# option is given, and the default value otherwise.
+#
+# This can be useful for adding custom definitions, such as debug information.
+#
+# Example:
+#
+#    if with_config("debug")
+#       $defs.push("-DOSSL_DEBUG") unless $defs.include? "-DOSSL_DEBUG"
+#    end
+#
 def with_config(config, *defaults)
   config = config.sub(/^--with[-_]/, '')
   val = arg_config("--with-"+config) do
@@ -942,6 +1098,18 @@ def with_config(config, *defaults)
   end
 end
 
+# Tests for the presence of an --enable-<tt>config</tt> or
+# --disable-<tt>config</tt> option. Returns true if the enable option is given,
+# false if the disable option is given, and the default value otherwise.
+#
+# This can be useful for adding custom definitions, such as debug information.
+#
+# Example:
+#
+#    if enable_config("debug")
+#       $defs.push("-DOSSL_DEBUG") unless $defs.include? "-DOSSL_DEBUG"
+#    end
+#
 def enable_config(config, *defaults)
   if arg_config("--enable-"+config)
     true
@@ -954,6 +1122,32 @@ def enable_config(config, *defaults)
   end
 end
 
+# Generates a header file consisting of the various macro definitions generated
+# by other methods such as have_func and have_header. These are then wrapped in
+# a custom #ifndef based on the +header+ file name, which defaults to
+# 'extconf.h'.
+#
+# For example:
+# 
+#    # extconf.rb
+#    require 'mkmf'
+#    have_func('realpath')
+#    have_header('sys/utime.h')
+#    create_header
+#    create_makefile('foo')
+#
+# The above script would generate the following extconf.h file:
+#
+#    #ifndef EXTCONF_H
+#    #define EXTCONF_H
+#    #define HAVE_REALPATH 1
+#    #define HAVE_SYS_UTIME_H 1
+#    #endif
+#
+# Given that the create_header method generates a file based on definitions
+# set earlier in your extconf.rb file, you will probably want to make this
+# one of the last methods you call in your script.
+#
 def create_header(header = "extconf.h")
   message "creating %s\n", header
   sym = header.tr("a-z./\055", "A-Z___")
@@ -1021,6 +1215,10 @@ def dir_config(target, idefault=nil, ldefault=nil)
   [idir, ldir]
 end
 
+# :stopdoc:
+
+# Handles meta information about installed libraries. Uses your platform's
+# pkg-config program if it has one.
 def pkg_config(pkg)
   if pkgconfig = with_config("#{pkg}-config") and find_executable0(pkgconfig)
     # iff package specific config command is given
@@ -1058,8 +1256,35 @@ def with_destdir(dir)
   /\A\$[\(\{]/ =~ dir ? dir : "$(DESTDIR)"+dir
 end
 
+# Converts forward slashes to backslashes. Aimed at MS Windows.
+#
+# Internal use only.
+#
 def winsep(s)
   s.tr('/', '\\')
+end
+
+# Converts native path to format acceptable in Makefile
+#
+# Internal use only.
+#
+if !CROSS_COMPILING
+  case CONFIG['build_os']
+  when 'mingw32'
+    def mkintpath(path)
+      # mingw uses make from msys and it needs special care
+      # converts from C:\some\path to /C/some/path
+      path = path.dup
+      path.tr!('\\', '/')
+      path.sub!(/\A([A-Za-z]):(?=\/)/, '/\1')
+      path
+    end
+  end
+end
+unless defined?(mkintpath)
+  def mkintpath(path)
+    path
+  end
 end
 
 def configuration(srcdir)
@@ -1071,7 +1296,7 @@ def configuration(srcdir)
       if CONFIG['target_os'] != 'cygwin'
         vpath.each {|p| p.sub!(/.*/, '$(shell cygpath -u \&)')}
       end
-    when 'msdosdjgpp', 'mingw32'
+    when 'msdosdjgpp'
       CONFIG['PATH_SEPARATOR'] = ';'
     end
   end
@@ -1079,10 +1304,14 @@ def configuration(srcdir)
 SHELL = /bin/sh
 
 #### Start of system configuration section. ####
-
-srcdir = #{srcdir.gsub(/\$\((srcdir)\)|\$\{(srcdir)\}/) {CONFIG[$1||$2]}.quote}
-topdir = #{($extmk ? CONFIG["topdir"] : $topdir).quote}
-hdrdir = #{$extmk ? CONFIG["hdrdir"].quote : '$(topdir)'}
+#{
+if $extmk
+  "top_srcdir = " + $top_srcdir.sub(%r"\A#{Regexp.quote($topdir)}/", "$(topdir)/")
+end
+}
+srcdir = #{srcdir.gsub(/\$\((srcdir)\)|\$\{(srcdir)\}/) {mkintpath(CONFIG[$1||$2])}.quote}
+topdir = #{mkintpath($extmk ? CONFIG["topdir"] : $topdir).quote}
+hdrdir = #{$extmk ? mkintpath(CONFIG["hdrdir"]).quote : '$(topdir)'}
 VPATH = #{vpath.join(CONFIG['PATH_SEPARATOR'])}
 }
   if $extmk
@@ -1117,9 +1346,13 @@ LIBRUBYARG_STATIC = #$LIBRUBYARG_STATIC
 RUBY_EXTCONF_H = #{$extconf_h}
 CFLAGS   = #{$static ? '' : CONFIG['CCDLFLAGS']} #$CFLAGS #$ARCH_FLAG
 INCFLAGS = -I. #$INCFLAGS
+DEFS     = #{CONFIG['DEFS']}
 CPPFLAGS = #{extconf_h}#{$CPPFLAGS}
 CXXFLAGS = $(CFLAGS) #{CONFIG['CXXFLAGS']}
-DLDFLAGS = #$LDFLAGS #$DLDFLAGS #$ARCH_FLAG
+ldflags  = #{$LDFLAGS}
+dldflags = #{$DLDFLAGS}
+archflag = #{$ARCH_FLAG}
+DLDFLAGS = $(ldflags) $(dldflags) $(archflag)
 LDSHARED = #{CONFIG['LDSHARED']}
 AR = #{CONFIG['AR']}
 EXEEXT = #{CONFIG['EXEEXT']}
@@ -1163,6 +1396,7 @@ all install static install-so install-rb: Makefile
 
 RULES
 end
+# :startdoc:
 
 # Generates the Makefile for your extension, passing along any options and
 # preprocessor constants that you may have generated through other methods.
@@ -1180,6 +1414,41 @@ end
 # be installed under the 'test' directory.  This means that in order to
 # load the file within a Ruby program later, that directory structure will
 # have to be followed, e.g. "require 'test/foo'".
+#
+# The +srcprefix+ should be used when your source files are not in the same
+# directory as your build script. This will not only eliminate the need for
+# you to manually copy the source files into the same directory as your build
+# script, but it also sets the proper +target_prefix+ in the generated
+# Makefile.
+#
+# Setting the +target_prefix+ will, in turn, install the generated binary in
+# a directory under your Config::CONFIG['sitearchdir'] that mimics your local
+# filesystem when you run 'make install'.
+#
+# For example, given the following file tree:
+#
+#    ext/
+#       extconf.rb
+#       test/
+#          foo.c
+#
+# And given the following code:
+#
+#    create_makefile('test/foo', 'test')
+#
+# That will set the +target_prefix+ in the generated Makefile to 'test'. That,
+# in turn, will create the following file tree when installed via the
+# 'make install' command:
+#
+#    /path/to/ruby/sitearchdir/test/foo.so
+#
+# It is recommended that you use this approach to generate your makefiles,
+# instead of copying files around manually, because some third party
+# libraries may depend on the +target_prefix+ being set properly.
+#
+# The +srcprefix+ argument can be used to override the default source
+# directory, i.e. the current directory . It is included as part of the VPATH
+# and added to the list of INCFLAGS.
 #
 def create_makefile(target, srcprefix = nil)
   $target = target
@@ -1202,7 +1471,7 @@ def create_makefile(target, srcprefix = nil)
 
   srcprefix ||= '$(srcdir)'
   Config::expand(srcdir = srcprefix.dup)
-  
+
   if not $objs
     $objs = []
     srcs = Dir[File.join(srcdir, "*.{#{SRC_EXT.join(%q{,})}}")]
@@ -1279,11 +1548,11 @@ static:		$(STATIC_LIB)#{$extout ? " install-rb" : ""}
   dirs = []
   mfile.print "install: install-so install-rb\n\n"
   sodir = (dir = "$(RUBYARCHDIR)").dup
-  mfile.print("install-so: #{dir}\n")
+  mfile.print("install-so: ")
   if target
     f = "$(DLLIB)"
     dest = "#{dir}/#{f}"
-    mfile.print "install-so: #{dest}\n"
+    mfile.puts dir, "install-so: #{dest}"
     unless $extout
       mfile.print "#{dest}: #{f}\n"
       if (sep = config_string('BUILD_FILE_SEPARATOR'))
@@ -1300,6 +1569,8 @@ static:		$(STATIC_LIB)#{$extout ? " install-rb" : ""}
 	mfile.print "\t@echo #{dir}/#{File.basename(f)}>>$(INSTALLED_LIST)\n"
       end
     end
+  else
+    mfile.puts "Makefile"
   end
   mfile.print("install-rb: pre-install-rb install-rb-default\n")
   mfile.print("install-rb-default: pre-install-rb-default\n")
@@ -1315,7 +1586,7 @@ static:		$(STATIC_LIB)#{$extout ? " install-rb" : ""}
       files.each do |f|
 	dest = "#{dir}/#{File.basename(f)}"
 	mfile.print("install-rb#{sfx}: #{dest}\n")
-	mfile.print("#{dest}: #{f}\n\t$(#{$extout ? 'COPY' : 'INSTALL_DATA'}) ")
+	mfile.print("#{dest}: #{f} #{dir}\n\t$(#{$extout ? 'COPY' : 'INSTALL_DATA'}) ")
 	sep = config_string('BUILD_FILE_SEPARATOR')
 	if sep
 	  f = f.gsub("/", sep)
@@ -1363,7 +1634,9 @@ site-install-rb: install-rb
   end
 
   mfile.print "$(RUBYARCHDIR)/" if $extout
-  mfile.print "$(DLLIB): ", (makedef ? "$(DEFFILE) " : ""), "$(OBJS)\n"
+  mfile.print "$(DLLIB): "
+  mfile.print "$(DEFFILE) " if makedef
+  mfile.print "$(OBJS) Makefile\n"
   mfile.print "\t@-$(RM) $@\n"
   mfile.print "\t@-$(MAKEDIRS) $(@D)\n" if $extout
   link_so = LINK_SO.gsub(/^/, "\t")
@@ -1412,7 +1685,7 @@ site-install-rb: install-rb
       end
       while line = dfile.gets()
 	line.gsub!(/\.o\b/, ".#{$OBJEXT}")
-	line.gsub!(/\$\(hdrdir\)\/config.h/, $config_h) if $config_h
+	line.gsub!(/\$\((?:hdr|top)dir\)\/config.h/, $config_h) if $config_h
 	if /(?:^|[^\\])(?:\\\\)*\\$/ =~ line
 	  (cont ||= []) << line
 	  next
@@ -1448,6 +1721,8 @@ ensure
   mfile.close if mfile
 end
 
+# :stopdoc:
+
 def init_mkmf(config = CONFIG)
   $makefile_created = false
   $arg_config = []
@@ -1469,7 +1744,8 @@ def init_mkmf(config = CONFIG)
   $DEFLIBPATH = $extmk ? ["$(topdir)"] : CROSS_COMPILING ? [] : ["$(libdir)"]
   $DEFLIBPATH.unshift(".")
   $LIBPATH = []
-  $INSTALLFILES = nil
+  $INSTALLFILES = []
+  $NONINSTALLFILES = [/~\z/, /\A#.*#\z/, /\A\.#/, /\.bak\z/i, /\.orig\z/, /\.rej\z/, /\.l[ao]\z/, /\.o\z/]
 
   $objs = nil
   $srcs = nil
@@ -1499,12 +1775,19 @@ details.  You may need configuration options.
 Provided configuration options:
 MESSAGE
 
+# Returns whether or not the Makefile was successfully generated. If not,
+# the script will abort with an error message.
+#
+# Internal use only.
+#
 def mkmf_failed(path)
   unless $makefile_created or File.exist?("Makefile")
     opts = $arg_config.collect {|t, n| "\t#{t}#{n ? "=#{n}" : ""}\n"}
     abort "*** #{path} failed ***\n" + FailedMessage + opts.join
   end
 end
+
+# :startdoc:
 
 init_mkmf
 

@@ -11,7 +11,7 @@
 # modify this program under the same terms as Ruby itself,
 # Ruby Distribute License or GNU General Public License.
 #
-# $Id$
+# $Id: protocol.rb 12092 2007-03-19 02:39:22Z aamine $
 #++
 #
 # WARNING: This file is going to remove.
@@ -128,9 +128,11 @@ module Net # :nodoc:
 
     private
 
+    BUFSIZE = 1024 * 16
+
     def rbuf_fill
       timeout(@read_timeout) {
-        @rbuf << @io.sysread(1024*16)
+        @rbuf << @io.sysread(BUFSIZE)
       }
     end
 
