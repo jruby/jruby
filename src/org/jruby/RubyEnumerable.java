@@ -569,7 +569,6 @@ public class RubyEnumerable {
         return block.isGiven() ? select(context, self, block) : enumeratorize(context.getRuntime(), self, "find_all");
     }
 
-    @JRubyMethod(name = "reject", frame = true)
     public static IRubyObject reject(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
@@ -589,7 +588,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "reject", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "reject", frame = true)
     public static IRubyObject reject19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? reject(context, self, block) : enumeratorize(context.getRuntime(), self, "reject");
     }
@@ -664,7 +663,6 @@ public class RubyEnumerable {
         return result[0] == null ? runtime.getNil() : result[0];
     }
 
-    @JRubyMethod(name = "partition", frame = true)
     public static IRubyObject partition(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final RubyArray arr_true = runtime.newArray();
@@ -690,7 +688,7 @@ public class RubyEnumerable {
         return runtime.newArray(arr_true, arr_false);
     }
 
-    @JRubyMethod(name = "partition", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "partition", frame = true)
     public static IRubyObject partition19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? partition(context, self, block) : enumeratorize(context.getRuntime(), self, "partition");
     }
@@ -721,13 +719,13 @@ public class RubyEnumerable {
         return block.isGiven() ? each_with_index(context, self, block) : enumeratorize(context.getRuntime(), self, "each_with_index");
     }
 
-    @JRubyMethod(name = "reverse_each", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "reverse_each", frame = true)
     public static IRubyObject reverse_each19(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? reverse_eachInternal(context, self, to_a19(context, self), block) :
             enumeratorize(context.getRuntime(), self, "reverse_each");
     }
 
-    @JRubyMethod(name = "reverse_each", frame = true, rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "reverse_each", frame = true, rest = true)
     public static IRubyObject reverse_each19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return block.isGiven() ? reverse_eachInternal(context, self, to_a19(context, self, args), block) :
             enumeratorize(context.getRuntime(), self, "reverse_each", args);
