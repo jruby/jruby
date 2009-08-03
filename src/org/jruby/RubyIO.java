@@ -2773,6 +2773,16 @@ public class RubyIO extends RubyObject {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
     }
 
+    @JRubyMethod(name = "bytes")
+    public IRubyObject bytes(final ThreadContext context) {
+        return enumeratorize(context.getRuntime(), this, "each_byte");
+    }
+
+    @JRubyMethod(name = "lines")
+    public IRubyObject lines(final ThreadContext context) {
+        return enumeratorize(context.getRuntime(), this, "each_line");
+    }
+
     /** 
      * <p>Invoke a block for each line.</p>
      */
@@ -2827,7 +2837,6 @@ public class RubyIO extends RubyObject {
     /** rb_io_s_foreach
     *
     */
-    @JRubyMethod(name = "foreach", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject foreach(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         int count = args.length;
@@ -2853,7 +2862,7 @@ public class RubyIO extends RubyObject {
         return runtime.getNil();
     }
     
-    @JRubyMethod(name = "foreach", required = 1, optional = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "foreach", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? foreach(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "foreach", args);
     }
