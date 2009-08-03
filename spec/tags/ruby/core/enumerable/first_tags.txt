@@ -1,0 +1,1 @@
+fails:Enumerable#first when passed an argument consumes only what is needed

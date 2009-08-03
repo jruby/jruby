@@ -1,2 +1,0 @@
-fails(JRUBY-2525):Dir.[] orders directory-based entries before files when a glob matches both
-fails(JRUBY-2556):Dir.[] matches multiple recursives

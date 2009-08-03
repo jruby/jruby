@@ -1,2 +1,8 @@
 fails(JRUBY-3653):Hash#eql? computes equality for complex recursive hashes
 fails(JRUBY-3653):Hash#eql? computes equality for recursive hashes & arrays
+fails:Hash#eql? compares values when keys match
+fails:Hash#eql? compares keys with eql? semantics
+fails:Hash#eql? returns true iff other Hash has the same number of keys and each key-value pair matches
+fails:Hash#eql? does not call to_hash on hash subclasses
+fails:Hash#eql? ignores hash class differences
+fails:Hash#eql? compares keys with matching hash codes via eql?
