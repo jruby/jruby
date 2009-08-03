@@ -139,8 +139,12 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "cycle", frame = true)
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "cycle");
-        long nv = RubyNumeric.num2long(arg);
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "cycle", arg);
+        long nv = -1;
+        if(!arg.isNil()) {
+            nv = RubyNumeric.num2long(arg);
+        }
+
         return nv <= 0 ? context.getRuntime().getNil(): cycleCommon(context, self, nv, block);
     }
 
@@ -149,15 +153,15 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         callEach(runtime, context, self, new BlockCallback() {
-            public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                IRubyObject larg = checkArgs(runtime, largs);
-                synchronized (result) {
-                    result.append(larg);
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(runtime, largs);
+                    synchronized (result) {
+                        result.append(larg);
+                    }
+                    block.yield(ctx, larg);
+                    return runtime.getNil();
                 }
-                block.yield(ctx, larg);
-                return runtime.getNil();
-            }
-        });
+            });
 
         int len = result.size();
         if (len == 0) return runtime.getNil();
@@ -167,6 +171,7 @@ public class RubyEnumerable {
                 block.yield(context, result.eltInternal(i));
             }
         }
+
         return runtime.getNil();
     }
 
@@ -346,7 +351,6 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "sort_by", frame = true)
     public static IRubyObject sort_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context; // MUST NOT be used across threads
@@ -404,7 +408,7 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod(name = "sort_by", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "sort_by", frame = true)
     public static IRubyObject sort_by19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? sort_by(context, self, block) : enumeratorize(context.getRuntime(), self, "sort_by");
     }
