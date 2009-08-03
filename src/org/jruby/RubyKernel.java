@@ -967,7 +967,6 @@ public class RubyKernel {
         return continuation.enter(context, block);
     }
 
-    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
@@ -978,7 +977,7 @@ public class RubyKernel {
         return context.createCallerBacktrace(context.getRuntime(), level);
     }
 
-    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "caller", optional = 1, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject caller1_9(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
@@ -1145,17 +1144,7 @@ public class RubyKernel {
         return context.getRuntime().newProc(Block.Type.PROC, block);
     }
 
-    @JRubyMethod(name = {"loop"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
-    public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
-        IRubyObject nil = context.getRuntime().getNil();
-        while (true) {
-            block.yield(context, nil);
-
-            context.pollThreadEvents();
-        }
-    }
-    
-    @JRubyMethod(name = {"loop"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"loop"}, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject loop_1_9(ThreadContext context, IRubyObject recv, Block block) {
         IRubyObject nil = context.getRuntime().getNil();
         RubyClass stopIteration = context.getRuntime().getStopIteration();
@@ -1431,7 +1420,7 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(frame = true, module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(frame = true, module = true)
     public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
         block.yield(context, recv);
         return recv;
@@ -1451,7 +1440,7 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(name = { "__method__", "__callee__" }, module = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = { "__method__", "__callee__" }, module = true)
     public static IRubyObject __method__(ThreadContext context, IRubyObject recv) {
         Frame f = context.getCurrentFrame();
         String name = f != null ? f.getName() : null;
