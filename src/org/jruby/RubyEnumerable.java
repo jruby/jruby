@@ -857,7 +857,7 @@ public class RubyEnumerable {
         return result[0] == null ? runtime.getNil() : result[0];
     }
 
-    @JRubyMethod(name = "min_by", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "min_by", frame = true)
     public static IRubyObject min_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
 
@@ -883,7 +883,7 @@ public class RubyEnumerable {
         return result[0];
     }
 
-    @JRubyMethod(name = "minmax", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "minmax", frame = true)
     public static IRubyObject minmax(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null, null };
@@ -938,7 +938,7 @@ public class RubyEnumerable {
         return runtime.newArrayNoCopy(result);
     }
 
-    @JRubyMethod(name = "minmax_by", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "minmax_by", frame = true)
     public static IRubyObject minmax_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
 
