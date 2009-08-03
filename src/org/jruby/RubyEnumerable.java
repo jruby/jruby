@@ -616,12 +616,6 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "inject", frame = true)
-    public static IRubyObject inject(ThreadContext context, IRubyObject self, final Block block) {
-        return inject(context, self, null, block);
-    }
-
-    @JRubyMethod(name = "inject", frame = true)
     public static IRubyObject inject(ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { init };
@@ -641,17 +635,17 @@ public class RubyEnumerable {
         return result[0] == null ? runtime.getNil() : result[0];
     }
 
-    @JRubyMethod(name = {"inject", "reduce"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"inject", "reduce"}, frame = true)
     public static IRubyObject inject19(ThreadContext context, IRubyObject self, final Block block) {
-        return inject(context, self, block);
+        return inject(context, self, null, block);
     }
     
-    @JRubyMethod(name = {"inject", "reduce"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"inject", "reduce"}, frame = true)
     public static IRubyObject inject19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         return block.isGiven() ? inject(context, self, arg, block) : inject19(context, self, null, arg, block);
     }
 
-    @JRubyMethod(name = {"inject", "reduce"}, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"inject", "reduce"}, frame = true)
     public static IRubyObject inject19(ThreadContext context, IRubyObject self, IRubyObject init, IRubyObject method, final Block block) {
         final Ruby runtime = context.getRuntime();
 
@@ -802,7 +796,7 @@ public class RubyEnumerable {
         return result[0] == null ? runtime.getNil() : result[0];
     }
 
-    @JRubyMethod(name = "max_by", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "max_by", frame = true)
     public static IRubyObject max_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
 
