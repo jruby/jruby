@@ -1155,7 +1155,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_pop
      *
      */
-    @JRubyMethod(name = "pop")
+    @JRubyMethod
     public IRubyObject pop(ThreadContext context) {
         modifyCheck();
 
@@ -1176,8 +1176,8 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    @JRubyMethod(name = "pop")
-    public IRubyObject pop19(ThreadContext context, IRubyObject num) {
+    @JRubyMethod
+    public IRubyObject pop(ThreadContext context, IRubyObject num) {
         modifyCheck();
         RubyArray result = makeSharedFirst(context, num, true, context.getRuntime().getArray());
         realLength -= result.realLength;
