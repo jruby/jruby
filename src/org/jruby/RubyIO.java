@@ -2783,6 +2783,40 @@ public class RubyIO extends RubyObject {
         return enumeratorize(context.getRuntime(), this, "each_line");
     }
 
+    public IRubyObject each_char(final ThreadContext context, final Block block) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject ch;
+
+        while(!(ch = getc()).isNil()) {
+            byte c = (byte)RubyNumeric.fix2int(ch);
+            int n = runtime.getKCode().getEncoding().length(c);
+            RubyString str = runtime.newString();
+            str.setTaint(true);
+            str.cat(c);
+
+            while(--n > 0) {
+                if((ch = getc()).isNil()) {
+                    block.yield(context, str);
+                    return this;
+                }
+                c = (byte)RubyNumeric.fix2int(ch);
+                str.cat(c);
+            }
+            block.yield(context, str);
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = "each_char", frame = true)
+    public IRubyObject each_char19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+    }
+
+    @JRubyMethod(name = "chars", frame = true)
+    public IRubyObject chars19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+    }
+
     /** 
      * <p>Invoke a block for each line.</p>
      */
