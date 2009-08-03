@@ -375,8 +375,10 @@ public class RubyRange extends RubyObject {
         }
     }
 
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each(ThreadContext context, final Block block) {
         final Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "each");
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, runtime, block);
@@ -411,7 +413,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "each", frame = true)
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each19(final ThreadContext context, final Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "each");
@@ -433,12 +435,14 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject step, Block block) {
-        return stepCommon(context, step, block);
+        return block.isGiven() ? stepCommon(context, step, block) : enumeratorize(context.getRuntime(), this, "step", step);
     }
 
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, Block block) {
-        return stepCommon(context, RubyFixnum.one(context.getRuntime()), block);
+        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.getRuntime()), block)  : enumeratorize(context.getRuntime(), this, "step");
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
@@ -487,12 +491,12 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "step", frame = true)
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject step19(final ThreadContext context, final Block block) {
         return block.isGiven() ? stepCommon19(context, RubyFixnum.zero(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step");
     }
 
-    @JRubyMethod(name = "step", frame = true)
+    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject step19(final ThreadContext context, IRubyObject step, final Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "step", step);

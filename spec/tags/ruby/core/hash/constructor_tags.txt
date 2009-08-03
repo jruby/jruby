@@ -1,0 +1,1 @@
+fails(Matching 1.8.7 MRI bug):Hash.[] creates a Hash; values can be provided as a list of value-pairs in an array

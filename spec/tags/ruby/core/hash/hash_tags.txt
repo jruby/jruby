@@ -1,0 +1,1 @@
+fails:Hash#hash returns a value which doesn't depend on the hash order

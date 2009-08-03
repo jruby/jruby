@@ -1,0 +1,1 @@
+fails:ENV.select returns the Hash for which block return true
