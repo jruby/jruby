@@ -170,7 +170,7 @@ public class RubyEnumerable {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "take", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "take")
     public static IRubyObject take(ThreadContext context, IRubyObject self, IRubyObject n, final Block block) {
         final Ruby runtime = context.getRuntime();
 
@@ -196,7 +196,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "take_while", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "take_while", frame = true)
     public static IRubyObject take_while(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "take_while");
 
