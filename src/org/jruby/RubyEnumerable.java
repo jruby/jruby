@@ -130,14 +130,14 @@ public class RubyEnumerable {
         return RubyFixnum.newFixnum(runtime, result[0]);
     }
     
-    @JRubyMethod(name = "cycle", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "cycle", frame = true)
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "cycle");
         
         return cycleCommon(context, self, -1, block);
     }
 
-    @JRubyMethod(name = "cycle", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "cycle", frame = true)
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "cycle");
         long nv = RubyNumeric.num2long(arg);
@@ -451,12 +451,10 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"detect", "find"}, frame = true)
     public static IRubyObject detect(ThreadContext context, IRubyObject self, final Block block) {
         return detect(context, self, null, block);
     }
 
-    @JRubyMethod(name = {"detect", "find"}, frame = true)
     public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
         final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
@@ -481,22 +479,22 @@ public class RubyEnumerable {
         return ifnone != null ? ifnone.callMethod(context, "call") : runtime.getNil();
     }
 
-    @JRubyMethod(name = "detect", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "detect", frame = true)
     public static IRubyObject detect19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? detect(context, self, block) : enumeratorize(context.getRuntime(), self, "detect");
     }
 
-    @JRubyMethod(name = "detect", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "detect", frame = true)
     public static IRubyObject detect19(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
         return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
     }
 
-    @JRubyMethod(name = "find", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "find", frame = true)
     public static IRubyObject find19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? detect(context, self, block) : enumeratorize(context.getRuntime(), self, "find");
     }
 
-    @JRubyMethod(name = "find", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "find", frame = true)
     public static IRubyObject find19(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
         return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find", ifnone);
     }
