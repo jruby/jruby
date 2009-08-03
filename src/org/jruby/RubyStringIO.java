@@ -355,7 +355,7 @@ public class RubyStringIO extends RubyObject {
         return RubyFixnum.zero(getRuntime());
     }
 
-    @JRubyMethod(name = "getc")
+    @JRubyMethod(name = {"getc", "getbyte"})
     public IRubyObject getc() {
         checkReadable();
         if (pos >= internal.getByteList().length()) {
@@ -693,7 +693,7 @@ public class RubyStringIO extends RubyObject {
         return originalString != null ? originalString : getRuntime().newString(buf);
     }
 
-    @JRubyMethod(name = "readchar")
+    @JRubyMethod(name = {"readchar", "readbyte"})
     public IRubyObject readchar() {
         IRubyObject c = getc();
         
@@ -754,8 +754,7 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "seek", required = 1, optional = 1, frame=true)
     public IRubyObject seek(IRubyObject[] args) {
-        // MRI 1.8.7 behavior:
-        // checkOpen();
+        checkOpen();
         checkFinalized();
         long amount = RubyNumeric.num2long(args[0]);
         int whence = Stream.SEEK_SET;
