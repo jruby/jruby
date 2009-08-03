@@ -494,7 +494,7 @@ public class RubyEnumerable {
         return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find", ifnone);
     }
     
-    @JRubyMethod(name = "find_index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "find_index", frame = true)
     public static IRubyObject find_index(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
 
@@ -517,7 +517,7 @@ public class RubyEnumerable {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "find_index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "find_index", frame = true)
     public static IRubyObject find_index(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
         final Ruby runtime = context.getRuntime();
 
@@ -540,7 +540,6 @@ public class RubyEnumerable {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = {"select", "find_all"}, frame = true)
     public static IRubyObject select(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
@@ -560,12 +559,12 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "select", frame = true)
     public static IRubyObject select19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? select(context, self, block) : enumeratorize(context.getRuntime(), self, "select");
     }
 
-    @JRubyMethod(name = "find_all", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "find_all", frame = true)
     public static IRubyObject find_all19(ThreadContext context, IRubyObject self, final Block block) {
         return block.isGiven() ? select(context, self, block) : enumeratorize(context.getRuntime(), self, "find_all");
     }
