@@ -124,12 +124,12 @@ public class RubyUnboundMethod extends RubyMethod {
         return super.to_proc(context, unusedBlock);
     }
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
         return context.getRuntime().newSymbol(methodName);
     }
 
-    @JRubyMethod(name = "owner", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
         return implementationModule;
     }
