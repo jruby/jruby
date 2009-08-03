@@ -120,7 +120,6 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_upto
      * 
      */
-    @JRubyMethod(name = "upto", frame = true)
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
             fixnumUpto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
@@ -157,7 +156,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "upto", frame = true)
     public IRubyObject upto19(final ThreadContext context, IRubyObject to, final Block block) {
         return block.isGiven() ? upto(context, to, block) : enumeratorize(context.getRuntime(), this, "upto", to);
     }
@@ -166,7 +165,6 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
-    @JRubyMethod(name = "downto", frame = true)
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
             fixnumDownto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
@@ -203,12 +201,11 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "downto", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "downto", frame = true)
     public IRubyObject downto19(final ThreadContext context, IRubyObject to, final Block block) {
         return block.isGiven() ? downto(context, to, block) : enumeratorize(context.getRuntime(), this, "downto", to);
     }
 
-    @JRubyMethod(name = "times", frame = true)
     public IRubyObject times(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject i = RubyFixnum.zero(runtime);
@@ -223,7 +220,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "times", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "times", frame = true)
     public IRubyObject times19(final ThreadContext context, final Block block) {
         return block.isGiven() ? times(context, block) : enumeratorize(context.getRuntime(), this, "times");
     }
@@ -289,7 +286,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_ord
      * 
      */
-    @JRubyMethod(name = "ord", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "ord")
     public IRubyObject ord(ThreadContext context) {
         return this;
     }
@@ -348,7 +345,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
     
 
-    @JRubyMethod(name = "odd?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (callMethod(context, "%", RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
@@ -357,7 +354,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(name = "even?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "even?")
     public RubyBoolean even_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (callMethod(context, "%", RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
@@ -366,7 +363,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(name = "pred", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "pred")
     public IRubyObject pred(ThreadContext context) {
         return callMethod(context, "-", RubyFixnum.one(context.getRuntime()));
     }
