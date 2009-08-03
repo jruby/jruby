@@ -447,7 +447,6 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newFixnum(values.length);
     }
 
-    @JRubyMethod(name = "each", backtrace = true)
     public IRubyObject each(ThreadContext context, Block block) {
         for (int i = 0; i < values.length; i++) {
             block.yield(context, values[i]);
@@ -456,12 +455,11 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
-    @JRubyMethod(name = "each_pair", frame = true)
     public IRubyObject each_pair(ThreadContext context, Block block) {
         RubyArray member = (RubyArray) getInternalVariable(classOf(), "__member__");
 
@@ -474,7 +472,7 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each_pair", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_pair", frame = true)
     public IRubyObject each_pair19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_pair(context, block) : enumeratorize(context.getRuntime(), this, "each_pair");
     }

@@ -741,12 +741,10 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
         return step(context, arg0, RubyFixnum.one(context.getRuntime()), block);
     }
 
-    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.getRuntime();
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
@@ -762,12 +760,12 @@ public class RubyNumeric extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "step", frame = true)
     public IRubyObject step19(ThreadContext context, IRubyObject arg0, Block block) {
         return block.isGiven() ? stepCommon19(context, arg0, RubyFixnum.one(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step", arg0);
     }
 
-    @JRubyMethod(name = "step", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "step", frame = true)
     public IRubyObject step19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         return block.isGiven() ? stepCommon19(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
     }
