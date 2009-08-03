@@ -330,7 +330,6 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = {"getwd", "pwd"}, meta = true)
     public static RubyString getwd(IRubyObject recv) {
         Ruby ruby = recv.getRuntime();
-        
         return RubyString.newUnicodeString(ruby, ruby.getCurrentDirectory());
     }
 
@@ -403,9 +402,10 @@ public class RubyDir extends RubyObject {
         checkDir();
         
         String[] contents = snapshot;
-        for (int i=0; i<contents.length; i++) {
-            block.yield(context, getRuntime().newString(contents[i]));
+        for (pos=0; pos<contents.length; pos++) {
+            block.yield(context, getRuntime().newString(contents[pos]));
         }
+        
         return this;
     }
 
@@ -443,8 +443,6 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "path")
     public IRubyObject path(ThreadContext context) {
-        checkDir();
-        
         return path.strDup(context.getRuntime());
     }
 
