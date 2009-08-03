@@ -1004,7 +1004,6 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_each
      *
      */
-    @JRubyMethod(name = "each", frame = true)
     public RubyHash each(final ThreadContext context, final Block block) {
         if (block.arity() == Arity.TWO_ARGUMENTS) {
             visitAll(new Visitor() {
@@ -1025,7 +1024,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each", frame = true)
     public IRubyObject each19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
@@ -1033,7 +1032,6 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_each_pair
      *
      */
-    @JRubyMethod(name = "each_pair", frame = true)
     public RubyHash each_pair(final ThreadContext context, final Block block) {
         final Ruby runtime = getRuntime();
 
@@ -1047,7 +1045,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;	
     }
 
-    @JRubyMethod(name = "each_pair", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_pair", frame = true)
     public IRubyObject each_pair19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_pair(context, block) : enumeratorize(context.getRuntime(), this, "each_pair");
     }
@@ -1055,7 +1053,6 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_each_value
      *
      */
-    @JRubyMethod(name = "each_value", frame = true)
     public RubyHash each_value(final ThreadContext context, final Block block) {
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
@@ -1066,7 +1063,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod(name = "each_value", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_value", frame = true)
     public IRubyObject each_value19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_value(context, block) : enumeratorize(context.getRuntime(), this, "each_value");
     }
@@ -1074,7 +1071,6 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_each_key
      *
      */
-    @JRubyMethod(name = "each_key", frame = true)
     public RubyHash each_key(final ThreadContext context, final Block block) {
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
@@ -1085,7 +1081,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod(name = "each_key", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_key", frame = true)
     public IRubyObject each_key19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_key(context, block) : enumeratorize(context.getRuntime(), this, "each_key");
     }
@@ -1257,7 +1253,6 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_select
      *
      */
-    @JRubyMethod(name = "select", frame = true)
     public IRubyObject select(final ThreadContext context, final Block block) {
         final Ruby runtime = getRuntime();
         final RubyArray result = runtime.newArray();
@@ -1273,7 +1268,7 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "select", frame = true)
     public IRubyObject select19(final ThreadContext context, final Block block) {
         final Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "select");
@@ -1294,7 +1289,6 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_delete_if
      *
      */
-    @JRubyMethod(name = "delete_if", frame = true)
     public RubyHash delete_if(final ThreadContext context, final Block block) {
         modify();
 
@@ -1311,7 +1305,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod(name = "delete_if", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "delete_if", frame = true)
     public IRubyObject delete_if19(final ThreadContext context, final Block block) {
         return block.isGiven() ? delete_if(context, block) : enumeratorize(context.getRuntime(), this, "delete_if");
     }
@@ -1319,12 +1313,11 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_reject
      *
      */
-    @JRubyMethod(name = "reject", frame = true)
     public RubyHash reject(ThreadContext context, Block block) {
         return ((RubyHash)dup()).delete_if(context, block);
     }
 
-    @JRubyMethod(name = "reject", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "reject", frame = true)
     public IRubyObject reject19(final ThreadContext context, final Block block) {
         return block.isGiven() ? reject(context, block) : enumeratorize(context.getRuntime(), this, "reject");
     }
@@ -1332,12 +1325,16 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_reject_bang
      *
      */
-    @JRubyMethod(name = "reject!", frame = true)
     public IRubyObject reject_bang(ThreadContext context, Block block) {
         int n = size;
         delete_if(context, block);
         if (n == size) return getRuntime().getNil();
         return this;
+    }
+
+    @JRubyMethod(name = "reject!", frame = true)
+    public IRubyObject reject_bang19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? reject_bang(context, block) : enumeratorize(context.getRuntime(), this, "reject!");
     }
 
     /** rb_hash_clear
