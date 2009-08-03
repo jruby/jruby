@@ -218,7 +218,7 @@ public class RubyEnumerable {
         return result;
     }    
 
-    @JRubyMethod(name = "drop", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "drop")
     public static IRubyObject drop(ThreadContext context, IRubyObject self, IRubyObject n, final Block block) {
         final Ruby runtime = context.getRuntime();
 
@@ -246,7 +246,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "drop_while", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "drop_while", frame = true)
     public static IRubyObject drop_while(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "drop_while");
 
