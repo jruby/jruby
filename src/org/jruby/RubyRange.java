@@ -382,7 +382,7 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, runtime, block);
         } else if (begin instanceof RubyString) {
-            ((RubyString) begin).uptoCommon(context, end, isExclusive, block);
+            ((RubyString) begin).uptoCommon18(context, end, isExclusive, block);
         } else {
             if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
                     "can't iterate from " + begin.getMetaClass().getName());
@@ -459,7 +459,7 @@ public class RubyRange extends RubyObject {
                 // rb_iterate((VALUE(*)_((VALUE)))str_step, (VALUE)args, step_i, (VALUE)iter);
                 StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
                 Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
-                ((RubyString)tmp).uptoCommon(context, end, isExclusive, blockCallback);
+                ((RubyString)tmp).uptoCommon18(context, end, isExclusive, blockCallback);
             } else if (begin instanceof RubyNumeric) {
                 if (equalInternal(context, step, RubyFixnum.zero(runtime))) throw runtime.newArgumentError("step can't be 0");
                 numericStep(context, runtime, step, block);

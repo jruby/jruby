@@ -2213,7 +2213,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return getRuntime().newFixnum(strLength());
     }
 
-    @JRubyMethod(name = "bytesize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "bytesize")
     public RubyFixnum bytesize() {
         return length(); // use 1.8 impl
     }
@@ -3741,26 +3741,32 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_upto_m
      *
      */
+
     @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_8)
-    public IRubyObject upto(ThreadContext context, IRubyObject str, Block block) {
-        return uptoCommon(context, str, false, block);
+    public IRubyObject upto18(ThreadContext context, IRubyObject end, Block block) {
+        return uptoCommon18(context, end, false, block);
     }
 
-    /* rb_str_upto */
-    final IRubyObject uptoCommon(ThreadContext context, IRubyObject str, boolean excl, Block block) {
-        RubyString end = str.convertToString();
+    @JRubyMethod(name = "upto", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject upto18(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
+        return uptoCommon18(context, end, excl.isTrue(), block);
+    }
 
-        int n = value.cmp(end.value);
+    final IRubyObject uptoCommon18(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
+        Ruby runtime = context.getRuntime();
+        RubyString end = arg.convertToString();
+        Encoding enc = checkEncoding(end);
+
+        int n = op_cmp19(end);
         if (n > 0 || (excl && n == 0)) return this;
 
         IRubyObject afterEnd = end.callMethod(context, "succ");
         RubyString current = this;
-
-        while (!current.op_equal(context, afterEnd).isTrue()) {
-            block.yield(context, current);            
-            if (!excl && current.op_equal(context, end).isTrue()) break;
+        while (!current.op_equal19(context, afterEnd).isTrue()) {
+            block.yield(context, current);
+            if (!excl && current.op_equal19(context, end).isTrue()) break;
             current = current.callMethod(context, "succ").convertToString();
-            if (excl && current.op_equal(context, end).isTrue()) break;
+            if (excl && current.op_equal19(context, end).isTrue()) break;
             if (current.value.realSize > end.value.realSize || current.value.realSize == 0) break;
         }
 
@@ -4550,17 +4556,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return ary;
     }
 
-    @JRubyMethod(name = "start_with?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context) {
         return context.getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "start_with?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
         return start_with_pCommon(arg) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "start_with?", rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
             if (start_with_pCommon(args[i])) return context.getRuntime().getTrue();
@@ -4577,17 +4583,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.startsWith(otherString.value);
     }
 
-    @JRubyMethod(name = "end_with?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context) {
         return context.getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "end_with?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context, IRubyObject arg) {
         return end_with_pCommon(arg) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "end_with?", rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "end_with?", rest = true)
     public IRubyObject end_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
             if (end_with_pCommon(args[i])) return context.getRuntime().getTrue();
@@ -4838,8 +4844,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify19(arg0, arg1, 'c');
     }
 
-    @JRubyMethod(name = "partition", compat = CompatVersion.RUBY1_9)
-    public IRubyObject partition(ThreadContext context, IRubyObject arg) {
+    @JRubyMethod(name = "partition", frame = true)
+    public IRubyObject partition(ThreadContext context, Block block) {
+        return RubyEnumerable.partition19(context, this, block);
+    }
+
+    @JRubyMethod(name = "partition", frame = true)
+    public IRubyObject partition(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = context.getRuntime();
         final int pos;
         final RubyString sep;
@@ -4867,7 +4878,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return RubyArray.newArray(runtime, new IRubyObject[]{this, newEmptyString(runtime), newEmptyString(runtime)});
     }
     
-    @JRubyMethod(name = "rpartition", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "rpartition")
     public IRubyObject rpartition(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         final int pos;
@@ -6349,12 +6360,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_line
      *
      */
-    @JRubyMethod(name = {"each_line", "each"}, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each_line(ThreadContext context, Block block) {
         return each_lineCommon(context, context.getRuntime().getGlobalVariables().get("$/"), block);
     }
 
-    @JRubyMethod(name = {"each_line", "each"}, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject each_line(ThreadContext context, IRubyObject arg, Block block) {
         return each_lineCommon(context, arg, block);
     }
@@ -6407,22 +6416,70 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject each18(ThreadContext context, Block block) {
+        return block.isGiven() ? each_line(context, block) : 
+            enumeratorize(context.getRuntime(), this, "each");
+    }
+
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject each18(ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_lineCommon(context, arg, block) : 
+            enumeratorize(context.getRuntime(), this, "each", arg);
+    }
+
+    @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject each_line18(ThreadContext context, Block block) {
+        return block.isGiven() ? each_line(context, block) : 
+            enumeratorize(context.getRuntime(), this, "each_line");
+    }
+
+    @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject each_line18(ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_lineCommon(context, arg, block) : 
+            enumeratorize(context.getRuntime(), this, "each_line", arg);
+    }
+
+    @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject lines18(ThreadContext context, Block block) {
+        return block.isGiven() ? each_line(context, block) : 
+            enumeratorize(context.getRuntime(), this, "lines");
+    }
+
+    @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject lines18(ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_lineCommon(context, arg, block) : 
+            enumeratorize(context.getRuntime(), this, "lines", arg);
+    }
+
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(ThreadContext context, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, block) : 
+            enumeratorize(context.getRuntime(), this, "each");
+    }
+
+    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(ThreadContext context, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, arg, block) : 
+            enumeratorize(context.getRuntime(), this, "each", arg);
+    }
+
     @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, Block block) {
         return block.isGiven() ? each_lineCommon19(context, block) : 
             enumeratorize(context.getRuntime(), this, "each_line");
     }
 
-    @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject lines(ThreadContext context, Block block) {
-        return block.isGiven() ? each_lineCommon19(context, block) : 
-            enumeratorize(context.getRuntime(), this, "lines");
-    }
-
     @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon19(context, arg, block) : 
             enumeratorize(context.getRuntime(), this, "each_line", arg);
+    }
+
+    @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject lines(ThreadContext context, Block block) {
+        return block.isGiven() ? each_lineCommon19(context, block) : 
+            enumeratorize(context.getRuntime(), this, "lines");
     }
 
     @JRubyMethod(name = "lines", frame = true, compat = CompatVersion.RUBY1_9)
@@ -6504,7 +6561,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /**
      * rb_str_each_byte
      */
-    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_8)
     public RubyString each_byte(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         // Check the length every iteration, since
@@ -6515,12 +6571,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_byte", frame = true)
     public IRubyObject each_byte19(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
     }
 
-    @JRubyMethod(name = "bytes", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "bytes", frame = true)
     public IRubyObject bytes(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "bytes");
     }
@@ -6528,17 +6584,43 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_each_char
      * 
      */
-    @JRubyMethod(name = "each_char", frame = true)
-    public IRubyObject each_char(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+    @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject each_char18(ThreadContext context, Block block) {
+        return block.isGiven() ? each_charCommon18(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+    }
+
+    @JRubyMethod(name = "chars", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject chars18(ThreadContext context, Block block) {
+        return block.isGiven() ? each_charCommon18(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+    }
+
+    private IRubyObject each_charCommon18(ThreadContext context, Block block) {
+        byte bytes[] = value.bytes;
+        int p = value.begin;
+        int end = p + value.realSize;
+
+        Ruby runtime = context.getRuntime();
+        Encoding enc = runtime.getKCode().getEncoding();
+        ByteList val = value.shallowDup();
+        while (p < end) {
+            int n = StringSupport.length(enc, bytes, p, end);
+            block.yield(context, makeShared19(runtime, val, p, n));
+            p += n;
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = "each_char", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject each_char19(ThreadContext context, Block block) {
+        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
     }
 
     @JRubyMethod(name = "chars", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject chars(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+    public IRubyObject chars19(ThreadContext context, Block block) {
+        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.getRuntime(), this, "chars");
     }
 
-    private IRubyObject each_charCommon(ThreadContext context, Block block) {
+    private IRubyObject each_charCommon19(ThreadContext context, Block block) {
         byte bytes[] = value.bytes;
         int p = value.begin;
         int end = p + value.realSize;
