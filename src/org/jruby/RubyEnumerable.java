@@ -78,7 +78,7 @@ public class RubyEnumerable {
         return largs.length == 0 ? runtime.getNil() : largs[0];
     }
 
-    @JRubyMethod(name = "count", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "count", frame = true)
     public static IRubyObject count(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
@@ -111,7 +111,7 @@ public class RubyEnumerable {
         return RubyFixnum.newFixnum(runtime, result[0]);
     }
     
-    @JRubyMethod(name = "count", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "count", frame = true)
     public static IRubyObject count(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
