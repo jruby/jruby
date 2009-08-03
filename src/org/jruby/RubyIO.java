@@ -2723,7 +2723,6 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each byte.</p>
      */
-    @JRubyMethod(name = "each_byte", frame = true)
     public IRubyObject each_byte(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         
@@ -2769,7 +2768,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "each_byte", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_byte", frame = true)
     public IRubyObject each_byte19(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
     }
@@ -2777,7 +2776,6 @@ public class RubyIO extends RubyObject {
     /** 
      * <p>Invoke a block for each line.</p>
      */
-    @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
     public RubyIO each_line(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         ByteList separator = getSeparatorForGets(runtime, args);
@@ -2790,12 +2788,12 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each", optional = 1, frame = true)
     public IRubyObject each19(final ThreadContext context, IRubyObject[]args, final Block block) {
         return block.isGiven() ? each_line(context, args, block) : enumeratorize(context.getRuntime(), this, "each", args);
     }
 
-    @JRubyMethod(name = "each_line", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_line", optional = 1, frame = true)
     public IRubyObject each_line19(final ThreadContext context, IRubyObject[]args, final Block block) {
         return block.isGiven() ? each_line(context, args, block) : enumeratorize(context.getRuntime(), this, "each_line", args);
     }
