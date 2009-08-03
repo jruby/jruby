@@ -318,20 +318,15 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_8)
-    public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
+    @JRubyMethod(name = {"to_a", "entries"})
+    public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
         callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
-        return to_a(context, self);
-    }
-
-    @JRubyMethod(name = {"to_a", "entries"}, required = 1, rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"to_a", "entries"}, required = 1, rest = true)
     public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[]args) {
         Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
@@ -723,13 +718,12 @@ public class RubyEnumerable {
         }
     }
 
-    @JRubyMethod(name = "each_with_index", frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, Block block) {
         callEach(context.getRuntime(), context, self, new EachWithIndex(context, block));
         return self;
     }
 
-    @JRubyMethod(name = "each_with_index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index19(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? each_with_index(context, self, block) : enumeratorize(context.getRuntime(), self, "each_with_index");
     }
