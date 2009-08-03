@@ -2174,7 +2174,7 @@ public class RubyIO extends RubyObject {
     /** Read a byte. On EOF returns nil.
      * 
      */
-    @JRubyMethod(name = "getc")
+    @JRubyMethod(name = {"getc", "getbyte"})
     public IRubyObject getc() {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
