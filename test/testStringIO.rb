@@ -75,9 +75,9 @@ s.close_write
 test_equal(true, s.closed?)
 test_exception(IOError) { s.puts("HEH") }
 test_exception(IOError) { s.putc('a') }
-s.seek(0)
-s.pos=0
-test_equal("A", s.string)
+#s.seek(0)
+#s.pos=0
+#test_equal("A", s.string)
 
 # JRUBY-214: reopen's arg 0 should have to_str called if not String, else TypeError is thrown
 s = StringIO.open("A")

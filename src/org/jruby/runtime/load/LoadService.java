@@ -521,7 +521,7 @@ public class LoadService {
     
     public class SearchState {
         public Library library;
-        public String loadName;
+        private String loadName;
         public SuffixType suffixType;
         public String searchFile;
         
@@ -718,17 +718,12 @@ public class LoadService {
                 JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
+                    String s = namePlusSuffix;
                     if(!namePlusSuffix.startsWith("./")) {
-                        namePlusSuffix = "./" + namePlusSuffix;
+                        s = "./" + s;
                     }
 
-//                     if(namePlusSuffix.startsWith("./")) {
-//                         absolute = false;
-//                     } else {
-//                         namePlusSuffix = "./" + namePlusSuffix;
-//                     }
-
-                    foundResource = new LoadServiceResource(file, namePlusSuffix, absolute);
+                    foundResource = new LoadServiceResource(file, s, absolute);
                     state.loadName = namePlusSuffix;
                     break;
                 }
@@ -819,7 +814,11 @@ public class LoadService {
                 foundResource = tryResourceFromCWD(state, baseName, suffixType);
 
                 if (foundResource != null) {
-                    state.loadName = foundResource.getName();
+                    String ss = foundResource.getName();
+                    if(ss.startsWith("./")) {
+                        ss = ss.substring(2);
+                    }
+                    state.loadName = ss;
                     break Outer;
                 }
             } else {
@@ -833,7 +832,11 @@ public class LoadService {
                     }
 
                     if (foundResource != null) {
-                        state.loadName = namePlusSuffix;
+                        String ss = namePlusSuffix;
+                        if(ss.startsWith("./")) {
+                            ss = ss.substring(2);
+                        }
+                        state.loadName = ss;
                         break Outer; // end suffix iteration
                     }
                 }
@@ -943,12 +946,12 @@ public class LoadService {
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 } else {
                     // prepend ./ if . is not already there, since we're loading based on CWD
-//                     if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
-//                         reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
-//                     }
-                    if (reportedPath.charAt(0) != '.') {
-                        reportedPath = "./" + reportedPath;
+                    if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
+                        reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
                     }
+//                     if (reportedPath.charAt(0) != '.') {
+//                         reportedPath = "./" + reportedPath;
+//                     }
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                     //                    actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), reportedPath));
                 }
