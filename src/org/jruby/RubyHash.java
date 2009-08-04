@@ -151,6 +151,28 @@ public class RubyHash extends RubyObject implements Map {
                 RubyHash otherHash = (RubyHash) tmp;
                 return new RubyHash(runtime, klass, otherHash);
             }
+
+            tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
+            if (!tmp.isNil()) {
+                hash = (RubyHash)klass.allocate();
+                RubyArray arr = (RubyArray)tmp;
+                for(int i = 0, j = arr.getLength(); i<j; i++) {
+                    IRubyObject v = TypeConverter.convertToTypeWithCheck(arr.entry(i), runtime.getArray(), "to_ary");
+                    IRubyObject key = runtime.getNil();
+                    IRubyObject val = runtime.getNil();
+                    if(v.isNil()) {
+                        continue;
+                    }
+                    switch(((RubyArray)v).getLength()) {
+                    case 2:
+                        val = ((RubyArray)v).entry(1);
+                    case 1:
+                        key = ((RubyArray)v).entry(0);
+                        hash.fastASet(key, val);
+                    }
+                }
+                return hash;
+            }
         }
 
         if ((args.length & 1) != 0) {
