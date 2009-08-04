@@ -56,6 +56,7 @@ import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Locale;
 
 import org.jcodings.Encoding;
@@ -2082,7 +2083,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject inspect() {
-        return inspectCommon(false);
+        int start = value.begin;
+        int len = value.realSize;
+        byte[] bytes = value.bytes;
+        try {
+            return inspectCommon(false);
+        } catch (ArrayIndexOutOfBoundsException x) {
+            System.out.println("" + start + ", " + len + ", " + Arrays.toString(bytes));
+            throw x;
+        }
     }
 
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
@@ -2137,8 +2146,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 n = enc.length((byte)c);
             }
 
-            if (!is1_9 && n > 1 && p < end) {
-                result.cat(bytes, p - 1, n);
+            if (!is1_9 && n > 1 && p - 1 <= end - n) {
+                try {
+                    result.cat(bytes, p - 1, n);
+                } catch (ArrayIndexOutOfBoundsException x) {
+                    System.out.println("begin = " + (p - 1));
+                    System.out.println("len = " + n);
+                    System.out.println("bytes = " + Arrays.toString(bytes));
+                    throw x;
+                }
                 p += n - 1;
                 continue;
             } else if (c == '"'|| c == '\\') {
