@@ -1008,15 +1008,15 @@ public class RubyHash extends RubyObject implements Map {
 
     private AtomicInteger iteratorCount = new AtomicInteger(0);
 
-    public void iteratorEntry() {
+    private void iteratorEntry() {
         iteratorCount.incrementAndGet();
     }
 
-    public void iteratorExit() {
+    private void iteratorExit() {
         iteratorCount.decrementAndGet();
     }
 
-    public void iteratorVisitAll(Visitor visitor) {
+    private void iteratorVisitAll(Visitor visitor) {
         try {
             iteratorEntry();
             visitAll(visitor);
