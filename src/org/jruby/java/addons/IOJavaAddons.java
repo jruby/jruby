@@ -60,6 +60,13 @@ public class IOJavaAddons {
         return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getOutStream());
     }
 
+    @JRubyMethod(frame = true)
+    public static IRubyObject to_channel(ThreadContext context, IRubyObject self) {
+        RubyIO io = (RubyIO)self;
+
+        return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getChannel());
+    }
+
     public static class AnyIO {
         @JRubyMethod(name = "to_inputstream", frame = true)
         public static IRubyObject any_to_inputstream(ThreadContext context, IRubyObject self) {

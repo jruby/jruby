@@ -27,10 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.ArrayList;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.util.Comparator;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -389,27 +392,31 @@ public class RubyEnumerable {
 
             return runtime.newArrayNoCopy(dstArray);
         } else {
-            final RubyArray result = runtime.newArray();
-            callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
+            final List<IRubyObject[]> valuesAndCriteria = new ArrayList<IRubyObject[]>();
+
+            callEach(runtime, context, self, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(runtime, largs);
+                    IRubyObject[] myVandC = new IRubyObject[2];
+                    myVandC[0] = larg;
+                    myVandC[1] = block.yield(ctx, larg);
+                    valuesAndCriteria.add(myVandC);
+                    return runtime.getNil();
+                }
+            });
             
-            final IRubyObject[][] valuesAndCriteria = new IRubyObject[result.size()][2];
-            for (int i = 0; i < valuesAndCriteria.length; i++) {
-                IRubyObject val = result.eltInternal(i);
-                valuesAndCriteria[i][0] = val;
-                valuesAndCriteria[i][1] = block.yield(context, val);
-            }
-            
-            Arrays.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
+            Collections.sort(valuesAndCriteria, new Comparator<IRubyObject[]>() {
                 public int compare(IRubyObject[] o1, IRubyObject[] o2) {
                     return RubyFixnum.fix2int(o1[1].callMethod(localContext, "<=>", o2[1]));
                 }
             });
-            
-            for (int i = 0; i < valuesAndCriteria.length; i++) {
-                result.eltInternalSet(i, valuesAndCriteria[i][0]);
+
+            IRubyObject dstArray[] = new IRubyObject[valuesAndCriteria.size()];
+            for (int i = 0; i < dstArray.length; i++) {
+                dstArray[i] = valuesAndCriteria.get(i)[0];
             }
 
-            return result;
+            return runtime.newArrayNoCopy(dstArray);
         }
     }
 

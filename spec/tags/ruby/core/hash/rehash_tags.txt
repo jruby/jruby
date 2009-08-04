@@ -1,2 +1,0 @@
-fails(JRUBY-3745):Hash#rehash causes a RuntimeError to be raised if called inside an iterator block
-fails:Hash#hash returns a value which doesn't depend on the hash order

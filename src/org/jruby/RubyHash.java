@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -731,6 +732,10 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "rehash")
     public RubyHash rehash() {
+        if (iteratorCount.get() > 0) {
+            throw getRuntime().newRuntimeError("rehash during iteration");
+        }
+
         modify();
         final RubyHashEntry[] oldTable = table;
         final RubyHashEntry[] newTable = new RubyHashEntry[oldTable.length];
@@ -1001,12 +1006,31 @@ public class RubyHash extends RubyObject implements Map {
         return getRuntime().newBoolean(hasValue(context, expected));
     }
 
+    private AtomicInteger iteratorCount = new AtomicInteger(0);
+
+    private void iteratorEntry() {
+        iteratorCount.incrementAndGet();
+    }
+
+    private void iteratorExit() {
+        iteratorCount.decrementAndGet();
+    }
+
+    private void iteratorVisitAll(Visitor visitor) {
+        try {
+            iteratorEntry();
+            visitAll(visitor);
+        } finally {
+            iteratorExit();
+        }
+    }
+
     /** rb_hash_each
      *
      */
     public RubyHash each(final ThreadContext context, final Block block) {
         if (block.arity() == Arity.TWO_ARGUMENTS) {
-            visitAll(new Visitor() {
+            iteratorVisitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
                     block.yieldSpecific(context, key, value);
                 }
@@ -1014,7 +1038,7 @@ public class RubyHash extends RubyObject implements Map {
         } else {
             final Ruby runtime = context.getRuntime();
             
-            visitAll(new Visitor() {
+            iteratorVisitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
                     block.yield(context, RubyArray.newArray(runtime, key, value));
                 }
@@ -1035,7 +1059,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash each_pair(final ThreadContext context, final Block block) {
         final Ruby runtime = getRuntime();
 
-        visitAll(new Visitor() {
+        iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 // rb_yield_values(2,...) equivalent
                 block.yield(context, RubyArray.newArray(runtime, key, value), null, null, true);
@@ -1054,7 +1078,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public RubyHash each_value(final ThreadContext context, final Block block) {
-        visitAll(new Visitor() {
+        iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 block.yield(context, value);
             }
@@ -1072,7 +1096,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public RubyHash each_key(final ThreadContext context, final Block block) {
-        visitAll(new Visitor() {
+        iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 block.yield(context, key);
             }
@@ -1260,7 +1284,7 @@ public class RubyHash extends RubyObject implements Map {
 
         final RubyArray result = runtime.newArray();
 
-        visitAll(new Visitor() {
+        iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (block.yield(context, runtime.newArray(key, value), null, null, true).isTrue()) {
                     result.append(runtime.newArray(key, value));
@@ -1278,7 +1302,7 @@ public class RubyHash extends RubyObject implements Map {
 
         final RubyHash result = newHash(runtime);
 
-        visitAll(new Visitor() {
+        iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (block.yield(context, runtime.newArray(key, value), null, null, true).isTrue()) {
                     result.fastASet(key, value);
@@ -1297,7 +1321,7 @@ public class RubyHash extends RubyObject implements Map {
 
         final Ruby runtime = getRuntime();
         final RubyHash self = this;
-        visitAll(new Visitor() {
+        iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (block.yield(context, RubyArray.newArray(runtime, key, value), null, null, true).isTrue()) {
                     self.delete(context, key, Block.NULL_BLOCK);
