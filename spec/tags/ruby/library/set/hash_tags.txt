@@ -1,1 +1,0 @@
-fails(Based on Hash failures - shouldn't be fixed here):Set#hash is static

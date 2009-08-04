@@ -1,2 +1,0 @@
-fails(JRUBY-2626):SortedSet#flatten_merge flattens the passed SortedSet and merges it into self
-fails(JRUBY-2626):SortedSet#flatten_merge raises an ArgumentError when trying to flatten a recursive SortedSet

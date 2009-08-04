@@ -1,1 +1,0 @@
-fails(Based on Hash failures - shouldn't be fixed here):Set#eql? returns true when the passed argument is a Set and contains the same elements
