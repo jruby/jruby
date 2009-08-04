@@ -1,1 +1,0 @@
-fails(JRUBY-3389):Hash#update raises a TypeError if called on a non-empty, frozen instance

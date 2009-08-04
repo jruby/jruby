@@ -1376,10 +1376,14 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"merge!", "update"}, required = 1, frame = true)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
+        final RubyHash otherHash = other.convertToHash();
+        if (otherHash.empty_p().isTrue()) {
+            return this;
+        }
+
         modify();
 
         final Ruby runtime = getRuntime();
-        final RubyHash otherHash = other.convertToHash();
         final RubyHash self = this;
         otherHash.visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
