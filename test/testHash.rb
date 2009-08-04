@@ -144,3 +144,7 @@ class Foo
 end
 
 test_equal({1=>2, 3=>4}, Hash[Foo.new])
+
+
+# JRUBY-3682
+test_equal({}.hash, {}.hash)

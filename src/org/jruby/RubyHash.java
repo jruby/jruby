@@ -934,9 +934,10 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_hash
      * 
      */
-    @JRubyMethod(name = "hash", compat = CompatVersion.RUBY1_9)
-    public IRubyObject hash19(final ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+    @JRubyMethod(name = "hash")
+    public RubyFixnum hash() {
+        final Ruby runtime = getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
         if (size == 0 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
         final long hash[] = new long[]{size};
         
