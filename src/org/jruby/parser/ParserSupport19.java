@@ -151,7 +151,7 @@ public class ParserSupport19 extends ParserSupport {
     }
 
     public int arg_var(Token identifier) {
-        return getCurrentScope().addVariable((String) identifier.getValue());
+        return getCurrentScope().addVariableThisScope((String) identifier.getValue());
     }
     
     public void shadowing_lvar(Token identifier) {

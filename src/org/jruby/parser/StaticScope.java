@@ -118,7 +118,33 @@ public abstract class StaticScope implements Serializable {
         }
         return true;
     }
-    
+
+    /**
+     * Add a new variable to this (current) scope unless it is already defined in the
+     * current scope.
+     *
+     * @param name of new variable
+     * @return index+depth merged location of scope
+     */
+    public int addVariableThisScope(String name) {
+        int slot = exists(name);
+
+        if (slot >= 0) return slot;
+
+        // This is perhaps innefficient timewise?  Optimal spacewise
+        growVariableNames(name);
+
+        // Returns slot of variable
+        return variableNames.length - 1;
+    }
+
+    /**
+     * Add a new variable to this (current) scope unless it is already defined in any
+     * reachable scope.
+     *
+     * @param name of new variable
+     * @return index+depth merged location of scope
+     */
     public int addVariable(String name) {
         int slot = isDefined(name); 
 
