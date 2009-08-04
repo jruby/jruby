@@ -1,2 +1,1 @@
-fails:Kernel#load does not expand/resolve qualified files against $LOAD_PATH
-fails:Kernel#load produces __FILE__ as the given filename and __LINE__ as the source line number
+fails(Bug compatible with 1.8.7):Kernel#load returns __FILE__ as an absolute path

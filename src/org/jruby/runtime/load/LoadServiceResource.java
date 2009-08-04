@@ -44,17 +44,34 @@ public class LoadServiceResource {
     private final URL resource;
     private final File path;
     private final String name;
+    private final boolean absolute;
 
     public LoadServiceResource(URL resource, String name) {
         this.resource = resource;
         this.path = null;
         this.name = name;
+        this.absolute = false;
+    }
+
+    public LoadServiceResource(URL resource, String name, boolean absolute) {
+        this.resource = resource;
+        this.path = null;
+        this.name = name;
+        this.absolute = absolute;
     }
     
     public LoadServiceResource(File path, String name) {
         this.resource = null;
         this.path = path;
         this.name = name;
+        this.absolute = false;
+    }
+
+    public LoadServiceResource(File path, String name, boolean absolute) {
+        this.resource = null;
+        this.path = path;
+        this.name = name;
+        this.absolute = absolute;
     }
 
     public InputStream getInputStream() throws IOException {
@@ -73,6 +90,10 @@ public class LoadServiceResource {
     public String getName() {
         return name;
     }
+
+    public File getPath() {
+        return path;
+    }
     
     public URL getURL() throws IOException {
         if (resource != null) {
@@ -80,5 +101,9 @@ public class LoadServiceResource {
         } else {
             return path.toURI().toURL();
         }
+    }
+
+    public boolean isAbsolute() {
+        return absolute;
     }
 }

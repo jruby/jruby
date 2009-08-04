@@ -1,1 +1,1 @@
-fails(JRUBY-3143):IO#reopen reassociates self with new a new stream after some reads
+fails(JRUBY-3143):IO#reopen reassociates self with a new stream after some reads

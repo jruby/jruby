@@ -716,8 +716,19 @@ public class LoadService {
             // check current directory; if file exists, retrieve URL and return resource
             try {
                 JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                if (file.isFile() && file.isAbsolute()) {
-                    foundResource = new LoadServiceResource(file, namePlusSuffix);
+                if (file.isFile() && file.isAbsolute() && file.canRead()) {
+                    boolean absolute = true;
+                    if(!namePlusSuffix.startsWith("./")) {
+                        namePlusSuffix = "./" + namePlusSuffix;
+                    }
+
+//                     if(namePlusSuffix.startsWith("./")) {
+//                         absolute = false;
+//                     } else {
+//                         namePlusSuffix = "./" + namePlusSuffix;
+//                     }
+
+                    foundResource = new LoadServiceResource(file, namePlusSuffix, absolute);
                     state.loadName = namePlusSuffix;
                     break;
                 }
@@ -785,7 +796,7 @@ public class LoadService {
         }
 
         // if given path is absolute, just try it as-is (with extensions) and no load path
-        if (new File(baseName).isAbsolute()) {
+        if (new File(baseName).isAbsolute() || baseName.startsWith("../")) {
             for (String suffix : suffixType.getSuffixes()) {
                 String namePlusSuffix = baseName + suffix;
                 foundResource = tryResourceAsIs(namePlusSuffix);
@@ -895,19 +906,22 @@ public class LoadService {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = loadPathEntry + "/" + namePlusSuffix;
                 JRubyFile actualPath;
+                boolean absolute = false;
                 // we check length == 0 for 'load', which does not use load path
                 if (new File(reportedPath).isAbsolute()) {
+                    absolute = true;
                     // it's an absolute path, use it as-is
                     actualPath = JRubyFile.create(loadPathEntry, RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 } else {
+                    absolute = false;
                     // prepend ./ if . is not already there, since we're loading based on CWD
                     if (reportedPath.charAt(0) != '.') {
                         reportedPath = "./" + reportedPath;
                     }
                     actualPath = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(), loadPathEntry).getAbsolutePath(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
-                if (actualPath.isFile()) {
-                    foundResource = new LoadServiceResource(actualPath, reportedPath);
+                if (actualPath.isFile() && actualPath.canRead()) {
+                    foundResource = new LoadServiceResource(actualPath, reportedPath, absolute);
                 }
             }
         } catch (SecurityException secEx) {
@@ -929,12 +943,16 @@ public class LoadService {
                     actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 } else {
                     // prepend ./ if . is not already there, since we're loading based on CWD
-                    if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
-                        reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
+//                     if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
+//                         reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
+//                     }
+                    if (reportedPath.charAt(0) != '.') {
+                        reportedPath = "./" + reportedPath;
                     }
-                    actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), reportedPath));
+                    actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
+                    //                    actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), reportedPath));
                 }
-                if (actualPath.isFile()) {
+                if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath);
                 }
             }

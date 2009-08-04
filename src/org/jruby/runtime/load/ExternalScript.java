@@ -54,6 +54,12 @@ public class ExternalScript implements Library {
             if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
                 runtime.compileAndLoadFile(name, in, wrap);
             } else {
+                java.io.File path = resource.getPath();
+
+                if(path != null && !resource.isAbsolute()) {
+                    name = path.getCanonicalPath();
+                }
+
                 runtime.loadFile(name, in, wrap);
             }
             // FIXME: This should be in finally
