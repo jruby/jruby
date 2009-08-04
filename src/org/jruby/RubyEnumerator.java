@@ -309,56 +309,57 @@ public class RubyEnumerator extends RubyObject {
             });
             return arg;
         }
+    }
+    private static class EachWithIndex implements BlockCallback {
+        private int index = 0;
+        private final Block block;
+        private final Ruby runtime;
 
-        private static class EachWithIndex implements BlockCallback {
-            private int index = 0;
-            private final Block block;
-            private final Ruby runtime;
-
-            public EachWithIndex(ThreadContext ctx, Block block) {
-                this.block = block;
-                this.runtime = ctx.getRuntime();
-            }
-
-            public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-                return this.block.call(context, new IRubyObject[] { runtime.newArray(RubyEnumerable.checkArgs(runtime, iargs), runtime.newFixnum(index++)) });
-            }
+        public EachWithIndex(ThreadContext ctx, Block block) {
+            this.block = block;
+            this.runtime = ctx.getRuntime();
         }
 
-        public static IRubyObject with_index_common(ThreadContext context, IRubyObject self, final Block block) {
-            final Ruby runtime = context.getRuntime();
-            IRubyObject[] args = new IRubyObject[0];
-            RubyEnumerator e = (RubyEnumerator)self;
-            if(e.methodArgs != null) {
-                args = e.methodArgs;
-            }
-            return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block));
+        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
+            return this.block.call(context, new IRubyObject[] { runtime.newArray(RubyEnumerable.checkArgs(runtime, iargs), runtime.newFixnum(index++)) });
+        }
+    }
+
+    public static IRubyObject with_index_common(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.getRuntime();
+        IRubyObject[] args = new IRubyObject[0];
+
+        RubyEnumerator e = (RubyEnumerator)self;
+        if(e.methodArgs != null) {
+            args = e.methodArgs;
         }
 
-        @JRubyMethod(name = "each_with_index", frame = true)
-        public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, final Block block) {
-            final Ruby runtime = context.getRuntime();
-            if (!block.isGiven()) return enumeratorize(runtime, self , "each_with_index");
-            return with_index_common(context, self, block);
-        }
+        return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block));
+    }
 
-        @JRubyMethod(name = "with_index", frame = true)
-        public static IRubyObject with_index(ThreadContext context, IRubyObject self, final Block block) {
-            final Ruby runtime = context.getRuntime();
-            if (!block.isGiven()) return enumeratorize(runtime, self , "with_index");
-            return with_index_common(context, self, block);
-        }
+    @JRubyMethod(name = "each_with_index", frame = true)
+    public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, self , "each_with_index");
+        return with_index_common(context, self, block);
+    }
 
-        @JRubyMethod(name = "next", frame = true)
-        public static IRubyObject next(ThreadContext context, IRubyObject self, Block block) {
-            context.getRuntime().getLoadService().lockAndRequire("generator");
-            return self.callMethod(context, "next", new IRubyObject[0], block);
-        }
+    @JRubyMethod(name = "with_index", frame = true)
+    public static IRubyObject with_index(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, self , "with_index");
+        return with_index_common(context, self, block);
+    }
 
-        @JRubyMethod(name = "rewind", frame = true)
-        public static IRubyObject rewind(ThreadContext context, IRubyObject self, Block block) {
-            context.getRuntime().getLoadService().lockAndRequire("generator");
-            return self.callMethod(context, "rewind", new IRubyObject[0], block);
-        }
+    @JRubyMethod(name = "next", frame = true)
+    public static IRubyObject next(ThreadContext context, IRubyObject self, Block block) {
+        context.getRuntime().getLoadService().lockAndRequire("generator");
+        return self.callMethod(context, "next", new IRubyObject[0], block);
+    }
+
+    @JRubyMethod(name = "rewind", frame = true)
+    public static IRubyObject rewind(ThreadContext context, IRubyObject self, Block block) {
+        context.getRuntime().getLoadService().lockAndRequire("generator");
+        return self.callMethod(context, "rewind", new IRubyObject[0], block);
     }
 }
