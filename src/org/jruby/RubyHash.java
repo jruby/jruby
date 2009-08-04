@@ -890,7 +890,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_eql
      * 
      */
-    @JRubyMethod(name = "eql?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
         return equal(context, other, true);
     }
