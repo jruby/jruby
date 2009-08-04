@@ -1,6 +1,6 @@
 # These are the pointers to the 'stable/frozen' versions of
 # mspec and rubyspecs, used to for our CI runs.
 
-mspec.revision=d47b8987fd1f9114b36a4bc45bf683fe121f0397
+mspec.revision=ef4487f3cab0f9ce30c37e43cf9641c6ff791162
 
 rubyspecs.revision=eaf51e890846eebcb4e1bd735126d2c844ab406e
