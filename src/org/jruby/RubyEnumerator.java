@@ -209,7 +209,6 @@ public class RubyEnumerator extends RubyObject {
     }
 
     public static final class RubyEnumeratorKernel {
-
         @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, Block block) {
             return newEnumerator(context, self);
@@ -236,7 +235,6 @@ public class RubyEnumerator extends RubyObject {
     }
 
     public static final class RubyEnumeratorEnumerable {
-
         public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = RubyNumeric.num2int(arg);
             final Ruby runtime = context.getRuntime();
@@ -264,6 +262,11 @@ public class RubyEnumerator extends RubyObject {
             return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "each_slice", arg);
         }
 
+        @JRubyMethod(name = "enum_slice")
+        public static IRubyObject enum_slice19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+            return block.isGiven() ? each_slice(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "enum_slice", arg);
+        }
+
         public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
             final int size = (int)RubyNumeric.num2long(arg);
             final Ruby runtime = context.getRuntime();
@@ -288,6 +291,11 @@ public class RubyEnumerator extends RubyObject {
             return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "each_cons", arg);
         }
 
+        @JRubyMethod(name = "enum_cons")
+        public static IRubyObject enum_cons19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+            return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "enum_cons", arg);
+        }
+
         @JRubyMethod(name = "each_with_object", frame = true, compat = CompatVersion.RUBY1_9)
         public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
             final Ruby runtime = context.getRuntime();
@@ -302,19 +310,55 @@ public class RubyEnumerator extends RubyObject {
             return arg;
         }
 
-        @JRubyMethod(name = "enum_slice", required = 1, compat = CompatVersion.RUBY1_8)
-        public static IRubyObject enum_slice(ThreadContext context, IRubyObject self, IRubyObject arg) {
-            return newEnumerator(context, self, context.getRuntime().fastNewSymbol("each_slice"), arg);
+        private static class EachWithIndex implements BlockCallback {
+            private int index = 0;
+            private final Block block;
+            private final Ruby runtime;
+
+            public EachWithIndex(ThreadContext ctx, Block block) {
+                this.block = block;
+                this.runtime = ctx.getRuntime();
+            }
+
+            public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
+                return this.block.call(context, new IRubyObject[] { runtime.newArray(RubyEnumerable.checkArgs(runtime, iargs), runtime.newFixnum(index++)) });
+            }
         }
 
-        @JRubyMethod(name = "enum_cons", required = 1, compat = CompatVersion.RUBY1_8)
-        public static IRubyObject enum_cons(ThreadContext context, IRubyObject self, IRubyObject arg) {
-            return newEnumerator(context, self, context.getRuntime().fastNewSymbol("each_cons"), arg);
+        public static IRubyObject with_index_common(ThreadContext context, IRubyObject self, final Block block) {
+            final Ruby runtime = context.getRuntime();
+            IRubyObject[] args = new IRubyObject[0];
+            RubyEnumerator e = (RubyEnumerator)self;
+            if(e.methodArgs != null) {
+                args = e.methodArgs;
+            }
+            return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block));
         }
 
-        @JRubyMethod(name = "enum_with_index")
-        public static IRubyObject each_with_index(ThreadContext context, IRubyObject self) {
-            return newEnumerator(context, self, context.getRuntime().fastNewSymbol("each_with_index"));
+        @JRubyMethod(name = "each_with_index", frame = true)
+        public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, final Block block) {
+            final Ruby runtime = context.getRuntime();
+            if (!block.isGiven()) return enumeratorize(runtime, self , "each_with_index");
+            return with_index_common(context, self, block);
+        }
+
+        @JRubyMethod(name = "with_index", frame = true)
+        public static IRubyObject with_index(ThreadContext context, IRubyObject self, final Block block) {
+            final Ruby runtime = context.getRuntime();
+            if (!block.isGiven()) return enumeratorize(runtime, self , "with_index");
+            return with_index_common(context, self, block);
+        }
+
+        @JRubyMethod(name = "next", frame = true)
+        public static IRubyObject next(ThreadContext context, IRubyObject self, Block block) {
+            context.getRuntime().getLoadService().lockAndRequire("generator");
+            return self.callMethod(context, "next", new IRubyObject[0], block);
+        }
+
+        @JRubyMethod(name = "rewind", frame = true)
+        public static IRubyObject rewind(ThreadContext context, IRubyObject self, Block block) {
+            context.getRuntime().getLoadService().lockAndRequire("generator");
+            return self.callMethod(context, "rewind", new IRubyObject[0], block);
         }
     }
 }

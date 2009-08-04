@@ -68,13 +68,18 @@ public class RubyEnumerable {
                 Arity.noArguments(), callback, context));
     }
 
+    public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
+            BlockCallback callback) {
+        return RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), Arity.noArguments(), callback, context));
+    }
+
     private static void checkContext(ThreadContext firstContext, ThreadContext secondContext, String name) {
         if (firstContext != secondContext) {
             throw secondContext.getRuntime().newThreadError("Enumerable#" + name + " cannot be parallelized");
         }
     }
 
-    private static IRubyObject checkArgs(Ruby runtime, IRubyObject[]largs) { 
+    public static IRubyObject checkArgs(Ruby runtime, IRubyObject[]largs) { 
         return largs.length == 0 ? runtime.getNil() : largs[0];
     }
 
@@ -721,6 +726,11 @@ public class RubyEnumerable {
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index19(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? each_with_index(context, self, block) : enumeratorize(context.getRuntime(), self, "each_with_index");
+    }
+
+    @JRubyMethod(name = "enum_with_index", frame = true)
+    public static IRubyObject enum_with_index19(ThreadContext context, IRubyObject self, Block block) {
+        return block.isGiven() ? each_with_index(context, self, block) : enumeratorize(context.getRuntime(), self, "enum_with_index");
     }
 
     @JRubyMethod(name = "reverse_each", frame = true)
