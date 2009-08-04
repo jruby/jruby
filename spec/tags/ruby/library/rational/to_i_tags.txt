@@ -1,1 +1,0 @@
-fails(JRUBY-3323):Rational#to_i converts self to an Integer by truncation

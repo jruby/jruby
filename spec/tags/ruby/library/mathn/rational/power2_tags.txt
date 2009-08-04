@@ -1,2 +1,0 @@
-fails(http://redmine.ruby-lang.org/issues/show/141):Rational#power2 when passed [Rational] returns Rational.new!(1, 1) when the passed argument is 0
-fails(http://redmine.ruby-lang.org/issues/show/141):Rational#power2 when passed [Rational] returns the Rational value of self raised to the passed argument

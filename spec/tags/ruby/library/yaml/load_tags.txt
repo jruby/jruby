@@ -1,1 +1,0 @@
-fails(JRUBY-2553):YAML.load returns false on empty strings or all comments

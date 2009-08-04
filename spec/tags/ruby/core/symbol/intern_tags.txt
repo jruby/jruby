@@ -1,0 +1,2 @@
+fails(Compatibility with 1.8.7):Symbol#intern returns self
+fails(Compatibility with 1.8.7):Symbol#intern returns a Symbol

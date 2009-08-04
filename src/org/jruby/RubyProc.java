@@ -179,7 +179,7 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
     public IRubyObject op_equal(IRubyObject other) {
         if (!(other instanceof RubyProc)) return getRuntime().getFalse();
         
-        if (this == other || this.block == ((RubyProc)other).block) {
+        if (this == other || this.block.equals(((RubyProc)other).block)) {
             return getRuntime().getTrue();
         }
         

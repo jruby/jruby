@@ -1,1 +1,0 @@
-fails(JRUBY-3323):Rational#divmod when passed [Float] returns the quotient as Integer and the remainder as Float

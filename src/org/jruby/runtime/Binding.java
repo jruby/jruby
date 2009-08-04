@@ -157,4 +157,19 @@ public class Binding {
     public void setLine(int line) {
         this.line = line;
     }
+
+    public boolean equals(Object other) {
+        if(this == other) {
+            return true;
+        }
+
+        if(!(other instanceof Binding)) {
+            return false;
+        }
+
+        Binding bOther = (Binding)other;
+
+        return this.self == bOther.self &&
+            this.dynamicScope == bOther.dynamicScope;
+    }
 }

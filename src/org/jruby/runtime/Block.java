@@ -278,4 +278,19 @@ public final class Block {
     public void escape() {
         this.escaped[0] = true;
     }
+
+    public boolean equals(Object other) {
+        if(this == other) {
+            return true;
+        }
+
+        if(!(other instanceof Block)) {
+            return false;
+        }
+
+        Block bOther = (Block)other;
+
+        return this.binding.equals(bOther.binding) &&
+            this.body == bOther.body;
+    }
 }

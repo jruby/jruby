@@ -1,1 +1,0 @@
-fails(JRUBY-2553):YAML#parse_file returns a YAML::Syck::Map object after parsing a YAML file

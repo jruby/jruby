@@ -1,0 +1,2 @@
+fails(Match 1.8.7 bugs):Numeric#arg returns NaN if self is NaN
+fails(Match 1.8.7 bugs):Numeric#arg returns Pi if -0.0

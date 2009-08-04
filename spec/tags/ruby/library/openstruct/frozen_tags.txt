@@ -1,2 +1,0 @@
-fails(JRUBY-3473):OpenStruct.new when frozen is not writeable
-fails(JRUBY-3473):OpenStruct.new when frozen creates a frozen clone
