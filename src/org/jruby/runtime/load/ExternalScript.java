@@ -68,4 +68,9 @@ public class ExternalScript implements Library {
             throw runtime.newIOErrorFromException(e);
         }
     }
+
+    @Override
+    public String toString() {
+        return "ExternalScript: " + resource.getName();
+    }
 }
