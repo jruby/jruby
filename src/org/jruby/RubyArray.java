@@ -3352,6 +3352,11 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
+    @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject try_convert(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return arg.checkArrayType();
+    }
+
     /**
      * @see org.jruby.util.Pack#pack
      */
