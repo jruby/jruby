@@ -62,7 +62,7 @@ public class IOInputStream extends InputStream {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"read\".");
         }
         this.io = io;
-        this.in = io instanceof RubyIO ? ((RubyIO)io).getInStream() : null;
+        this.in = ((io instanceof RubyIO) && !((RubyIO)io).isClosed()) ? ((RubyIO)io).getInStream() : null;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
     }
 
