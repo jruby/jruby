@@ -1002,8 +1002,10 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else if (argument.equals("--1.9")) {
                         compatVersion = CompatVersion.RUBY1_9;
+                        break FOR;
                     } else if (argument.equals("--1.8")) {
                         compatVersion = CompatVersion.RUBY1_8;
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
