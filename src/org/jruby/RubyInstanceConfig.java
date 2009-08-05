@@ -1000,6 +1000,10 @@ public class RubyInstanceConfig {
                         INLINE_DYNCALL_ENABLED = true;
                         RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
+                    } else if (argument.equals("--1.9")) {
+                        compatVersion = CompatVersion.RUBY1_9;
+                    } else if (argument.equals("--1.8")) {
+                        compatVersion = CompatVersion.RUBY1_8;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
