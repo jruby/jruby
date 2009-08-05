@@ -1139,9 +1139,8 @@
 
   <patternset id="dist.lib.files">
     <include name="lib/ruby/1.8/**"/>
-    <include name="lib/ruby/site_ruby/1.8/**"/>
     <include name="lib/ruby/1.9/**"/>
-    <include name="lib/ruby/site_ruby/1.9/**"/>
+    <include name="lib/ruby/site_ruby/**"/>
     <include name="lib/ruby/gems/1.8/specifications/sources-0.0.1.gemspec"/>
     <include name="lib/ruby/gems/1.8/gems/sources-0.0.1/**"/>
   </patternset>
