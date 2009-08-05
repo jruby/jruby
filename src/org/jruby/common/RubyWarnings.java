@@ -48,6 +48,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(ID.MISCELLANEOUS, message);
     }
 
+    public org.jruby.Ruby getRuntime() {
+        return runtime;
+    }
+
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */

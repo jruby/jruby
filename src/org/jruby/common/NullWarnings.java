@@ -34,9 +34,17 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * A Warnings implementation which silently ignores everything.
  */
 public class NullWarnings implements IRubyWarnings {
+    private org.jruby.Ruby runtime;
+    public NullWarnings(org.jruby.Ruby runtime) {
+        this.runtime = runtime;
+    }
 
     public boolean isVerbose() {
         return false;
+    }
+
+    public org.jruby.Ruby getRuntime() {
+        return runtime;
     }
 
     public void warn(ID id, String message, Object... data) {}

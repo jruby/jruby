@@ -484,7 +484,7 @@ public class Sprintf {
                             arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
                             break;
                         case ClassIndex.STRING:
-                            arg = RubyNumeric.str2inum(arg.getRuntime(),(RubyString)arg,0,true);
+                            arg = ((RubyString)arg).stringToInum(0, true);
                             break;
                         default:
                             if (arg.respondsTo("to_int")) {
@@ -704,7 +704,10 @@ public class Sprintf {
                         incomplete = false;
                         break;
                     }
+
+                    
                     String str = Double.toString(dval);
+                    
                     // grrr, arghh, want to subclass sun.misc.FloatingDecimal, but can't,
                     // so we must do all this (the next 70 lines of code), which has already
                     // been done by FloatingDecimal.

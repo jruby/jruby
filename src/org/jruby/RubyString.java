@@ -92,6 +92,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.Convert2;
 import org.jruby.util.string.JavaCrypt;
 
 /**
@@ -3887,7 +3888,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i() {
-        return RubyNumeric.str2inum(getRuntime(), this, 10);
+        return stringToInum(10, false);
     }
 
     /** rb_str_to_i
@@ -3896,7 +3897,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(IRubyObject arg0) {
         long base = arg0.convertToInteger().getLongValue();
-        return RubyNumeric.str2inum(getRuntime(), this, (int) base);
+
+        if(base < 0) {
+            throw getRuntime().newArgumentError("illegal radix " + base);
+        }
+
+        return stringToInum((int)base, false);
+    }
+
+    /** rb_str_to_inum
+     * 
+     */
+    public IRubyObject stringToInum(int base, boolean badcheck) {
+        ByteList s = this.value;
+        return Convert2.byteListToInum(getRuntime(), s, base, badcheck);
+    }
+
+    /** rb_str_to_dbl
+     * 
+     */
+    public double stringToDouble(boolean badcheck) {
+        ByteList s = this.value;
+        return Convert2.byteListToDouble(getRuntime(), s, badcheck);
     }
 
     /** rb_str_oct
@@ -3904,25 +3926,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "oct", compat = CompatVersion.RUBY1_8)
     public IRubyObject oct(ThreadContext context) {
-        if (isEmpty()) return context.getRuntime().newFixnum(0);
-
-        int base = 8;
-        int ix = value.begin;
-        while (ix < value.begin + value.realSize && ASCII.isSpace(value.bytes[ix] & 0xff)) {
-            ix++;
-        }
-
-        int pos = (value.bytes[ix] == '-' || value.bytes[ix] == '+') ? ix + 1 : ix;
-        if (pos + 1 < value.begin+value.realSize && value.bytes[pos] == '0') {
-            if (value.bytes[pos+1] == 'x' || value.bytes[pos+1] == 'X') {
-                base = 16;
-            } else if (value.bytes[pos+1] == 'b' || value.bytes[pos+1] == 'B') {
-                base = 2;
-            } else if (value.bytes[pos+1] == 'd' || value.bytes[pos+1] == 'D') {
-                base = 10;
-            }
-        }
-        return RubyNumeric.str2inum(context.getRuntime(), this, base);
+        return stringToInum(-8, false);
     }
 
     @JRubyMethod(name = "oct", compat = CompatVersion.RUBY1_9)
@@ -3938,7 +3942,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "hex", compat = CompatVersion.RUBY1_8)
     public IRubyObject hex(ThreadContext context) {
-        return RubyNumeric.str2inum(context.getRuntime(), this, 16);
+        return stringToInum(16, false);
     }
 
     @JRubyMethod(name = "hex", compat = CompatVersion.RUBY1_9)

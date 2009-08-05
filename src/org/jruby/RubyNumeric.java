@@ -53,6 +53,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Convert;
+import org.jruby.util.Convert2;
 
 /**
  * Base class for all numerical types in ruby.
@@ -320,33 +321,8 @@ public class RubyNumeric extends RubyObject {
      *          conversion failed.
      */
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
-        if (base != 0 && (base < 2 || base > 36)) {
-            throw runtime.newArgumentError("illegal radix " + base);
-        }
-        ByteList bytes = str.getByteList();
-        try {
-            return runtime.newFixnum(Convert.byteListToLong(bytes, base, strict));
-        } catch (InvalidIntegerException e) {
-            return str2inumIIE(strict, runtime, str);
-        } catch (NumberTooLargeException e) {
-            return str2inumNTLE(strict, runtime, str, bytes, base);
-        }
-    }
-
-    private static RubyInteger str2inumIIE(boolean strict, Ruby runtime, RubyString str) throws RaiseException {
-        if (strict) {
-            throw runtime.newArgumentError("invalid value for Integer: " + str.callMethod(runtime.getCurrentContext(), "inspect").toString());
-        }
-        return RubyFixnum.zero(runtime);
-    }
-    
-    private static RubyInteger str2inumNTLE(boolean strict, Ruby runtime, RubyString str, ByteList bytes, int base) {
-        try {
-            BigInteger bi = Convert.byteListToBigInteger(bytes, base, strict);
-            return new RubyBignum(runtime, bi);
-        } catch (InvalidIntegerException e2) {
-            return str2inumIIE(strict, runtime, str);
-        }
+        ByteList s = str.getByteList();
+        return Convert2.byteListToInum(runtime, s, base, strict);
     }
 
     public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {

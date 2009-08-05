@@ -1,1 +1,0 @@
-fails(New converter needed):String#hex does not accept a sequence of underscores as part of a number

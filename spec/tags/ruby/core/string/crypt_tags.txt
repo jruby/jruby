@@ -1,1 +1,0 @@
-fails(JRUBY-2794,macos):String#crypt returns a cryptographic hash of self by applying the UNIX crypt algorithm with the specified salt

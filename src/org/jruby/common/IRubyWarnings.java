@@ -99,6 +99,7 @@ public interface IRubyWarnings {
         }
     }
 
+    public abstract org.jruby.Ruby getRuntime();
     public abstract void warn(ID id, ISourcePosition position, String message, Object... data);
     public abstract void warn(ID id, String fileName, int lineNumber, String message, Object... data);
     public abstract boolean isVerbose();
