@@ -49,6 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
+import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -68,6 +69,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Qsort;
+import org.jruby.util.RecursiveComparator;
 
 /**
  * The implementation of the built-in class Array in Ruby.
@@ -1738,29 +1740,29 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        return RecursiveComparator.compare(context, "==", this, obj, null);
+    }
+
+    public RubyBoolean compare(ThreadContext context, String method, IRubyObject other, Set<RecursiveComparator.Pair> seen)
+    {
         Ruby runtime = context.getRuntime();
-        if (this == obj) return runtime.getTrue();
 
-        if (!(obj instanceof RubyArray)) {
-            if (!obj.respondsTo("to_ary")) {
+        if (!(other instanceof RubyArray)) {
+            return runtime.getFalse();
+        }
+
+        RubyArray ary = (RubyArray) other;
+
+        if (realLength != ary.realLength) {
+            return runtime.getFalse();
+        }
+
+        for (int i = 0; i < realLength; i++) {
+            if (!RecursiveComparator.compare(context, method, elt(i), ary.elt(i), seen).isTrue()) {
                 return runtime.getFalse();
-            } else {
-                if (equalInternal(context, obj, this)) return runtime.getTrue();
-                return runtime.getFalse();                
             }
         }
 
-        RubyArray ary = (RubyArray) obj;
-        if (realLength != ary.realLength || runtime.isInspecting(this)) return runtime.getFalse();
-
-        try {
-            runtime.registerInspecting(this);
-            for (long i = 0; i < realLength; i++) {
-                if (!equalInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();            
-            }
-        } finally {
-            runtime.unregisterInspecting(this);
-        }
         return runtime.getTrue();
     }
 
@@ -1768,25 +1770,8 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     @JRubyMethod(name = "eql?", required = 1)
-    public RubyBoolean eql_p(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.getRuntime();
-        if (this == obj) return runtime.getTrue();
-        if (!(obj instanceof RubyArray)) return runtime.getFalse();
-
-        RubyArray ary = (RubyArray) obj;
-
-        if (realLength != ary.realLength || runtime.isInspecting(this)) return runtime.getFalse();
-
-        try {
-            runtime.registerInspecting(this);
-            for (int i = 0; i < realLength; i++) {
-                if (!eqlInternal(context, elt(i), ary.elt(i))) return runtime.getFalse();
-            }
-        } finally {
-            runtime.unregisterInspecting(this);
-        }
-
-        return runtime.getTrue();
+    public IRubyObject eql(ThreadContext context, IRubyObject obj) {
+        return RecursiveComparator.compare(context, "eql?", this, obj, null);
     }
 
     /** rb_ary_compact_bang

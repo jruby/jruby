@@ -1,2 +1,0 @@
-fails(JRUBY-3653):Hash#== computes equality for complex recursive hashes
-fails(JRUBY-3653):Hash#== computes equality for recursive hashes & arrays

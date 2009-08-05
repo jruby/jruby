@@ -44,9 +44,9 @@ import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyClass;
@@ -65,6 +65,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.RecursiveComparator;
 
 // Design overview:
 //
@@ -288,6 +289,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final RubyHashEntry NO_ENTRY = new RubyHashEntry();
     private int generation = 0; // generation count for O(1) clears
     private final RubyHashEntry head = new RubyHashEntry();
+
     { head.prevAdded = head.nextAdded = head; }
 
     static final class RubyHashEntry implements Map.Entry {
@@ -867,51 +869,48 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
-    /** hash_equal
-     * 
-     */
-    private IRubyObject equal(final ThreadContext context, IRubyObject other, final boolean eql) {
+    public RubyBoolean compare(final ThreadContext context, final String method, IRubyObject other, final Set<RecursiveComparator.Pair> seen) {
+
         Ruby runtime = context.getRuntime();
-        if (this == other) return runtime.getTrue();
 
         if (!(other instanceof RubyHash)) {
-            if (!other.respondsTo("to_hash")) return runtime.getFalse();
-            return (eql ?
-                    eqlInternal(context, other, this) :
-                    equalInternal(context, other, this)) ?
-                            runtime.getTrue() : runtime.getFalse();
+            return runtime.getFalse();
         }
 
-        final RubyHash otherHash = (RubyHash)other;
+        final RubyHash otherHash = (RubyHash) other;
 
-        if (size != otherHash.size || runtime.isInspecting(this)) return runtime.getFalse();
-        if ((size | otherHash.size) == 0) runtime.getTrue();
+        if (this.size != otherHash.size) {
+            return runtime.getFalse();
+        }
 
         try {
-            runtime.registerInspecting(this);
             visitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
                     IRubyObject value2 = otherHash.fastARef(key);
-                    if (value2 == null || 
-                       !(eql ? eqlInternal(context, value, value2) : equalInternal(context, value, value2))) {
+
+                    if (value2 == null) {
+                        // other hash does not contain key
+                        throw new Mismatch();
+                    }
+
+                    if (!RecursiveComparator.compare(context, method, value, value2, seen).isTrue()) {
                         throw new Mismatch();
                     }
                 }
             });
         } catch (Mismatch e) {
             return runtime.getFalse();
-        } finally {
-            runtime.unregisterInspecting(this);
         }
+        
         return runtime.getTrue();
     }
 
     /** rb_hash_equal
      * 
      */
-    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal19(final ThreadContext context, IRubyObject other) {
-        return equal(context, other, false);
+        return RecursiveComparator.compare(context, "==", this, other, null);
     }
 
     /** rb_hash_eql
@@ -919,7 +918,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
-        return equal(context, other, true);
+        return RecursiveComparator.compare(context, "eql?", this, other, null);
     }
 
     /** rb_hash_aref
@@ -1222,41 +1221,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
 
-    private static final boolean EQUAL_CHECK_DEFAULT_VALUE = false;
-
     private static class Mismatch extends RuntimeException {}
-
-    @Override
-    @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(final ThreadContext context, final IRubyObject other) {
-        if (this == other) return getRuntime().getTrue();
-        if (!(other instanceof RubyHash)) {
-            if (other.respondsTo("to_hash") && equalInternal(context, other, this)) return getRuntime().getTrue();
-            return getRuntime().getFalse();
-        }
-
-        final RubyHash otherHash = (RubyHash)other;
-        if (size != otherHash.size) return getRuntime().getFalse();
-
-        final Ruby runtime = getRuntime();
-
-        if (EQUAL_CHECK_DEFAULT_VALUE) {
-            if (!equalInternal(context, ifNone, otherHash.ifNone) &&
-               (flags & PROCDEFAULT_HASH_F) != (otherHash.flags & PROCDEFAULT_HASH_F)) return runtime.getFalse();
-        }
-
-        try {
-             visitAll(new Visitor() {
-                 public void visit(IRubyObject key, IRubyObject value) {
-                     IRubyObject otherValue = otherHash.internalGet(key);
-                     if (otherValue == null || !equalInternal(context, value, otherValue)) throw new Mismatch();
-                 }
-             });
-             return runtime.getTrue();
-        } catch (Mismatch e) {
-             return runtime.getFalse();
-        }
-    }
 
     /** rb_hash_shift
      *
