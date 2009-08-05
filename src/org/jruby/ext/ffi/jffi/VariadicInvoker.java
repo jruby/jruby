@@ -123,6 +123,7 @@ public class VariadicInvoker extends RubyObject {
     private static final Type getFFIType(NativeParam type) {
         if (type instanceof NativeType) switch ((NativeType) type) {
             case VOID: return com.kenai.jffi.Type.VOID;
+            case BOOL: return com.kenai.jffi.Type.UINT32;
             case INT8: return com.kenai.jffi.Type.SINT8;
             case UINT8: return com.kenai.jffi.Type.UINT8;
             case INT16: return com.kenai.jffi.Type.SINT16;
