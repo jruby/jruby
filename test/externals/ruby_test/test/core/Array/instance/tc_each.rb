@@ -33,7 +33,10 @@ class TC_Array_Each_Instance < Test::Unit::TestCase
 
    def test_each_expected_errors
       assert_raises(ArgumentError){ @array.each(1){} }
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(LocalJumpError){ @array.each }
+=end
    end
 
    def teardown

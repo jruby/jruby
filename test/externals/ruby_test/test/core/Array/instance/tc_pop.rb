@@ -23,7 +23,10 @@ class TC_Array_Pop_Instance < Test::Unit::TestCase
    end
 
    def test_pop_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(ArgumentError){ @array.pop("foo") }
+=end
    end
 
    def teardown

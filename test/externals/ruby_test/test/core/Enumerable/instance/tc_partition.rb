@@ -32,7 +32,10 @@ class TC_Enumerable_Partition_InstanceMethod < Test::Unit::TestCase
    end
 
    def test_partition_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ @enum.partition }
+=end
       assert_raise(ArgumentError){ @enum.partition(true) }
    end
 

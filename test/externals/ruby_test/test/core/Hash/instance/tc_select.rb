@@ -23,7 +23,10 @@ class TC_Hash_Select_Instance < Test::Unit::TestCase
    end
 
    def test_select_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(LocalJumpError){ @hash.select }
+=end
       assert_raises(ArgumentError){ @hash.select(1) }
    end
 

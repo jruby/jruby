@@ -35,7 +35,10 @@ class TC_Dir_Each_Instance < Test::Unit::TestCase
    end
 
    def test_each_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(LocalJumpError){ @dir.each }
+=end
       assert_raises(ArgumentError){ @dir.each(1){} }
    end
 

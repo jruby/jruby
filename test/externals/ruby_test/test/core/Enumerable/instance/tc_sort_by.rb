@@ -28,7 +28,10 @@ class TC_Enumerable_SortBy_InstanceMethod < Test::Unit::TestCase
    end
 
    def test_sort_by_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ @words.sort_by }
+=end
       assert_raise(ArgumentError){ @words.sort_by(1) }
       assert_raise(NoMethodError){ @words.sort_by{} }
       assert_raise(NoMethodError){ @mixed.sort_by{ |m| m.length } }

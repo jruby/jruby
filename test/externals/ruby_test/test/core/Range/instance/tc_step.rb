@@ -59,6 +59,8 @@ class TC_Range_Step_InstanceMethod < Test::Unit::TestCase
       assert_equal(['a'], array)
    end
 
+   # No longer a valid test in 1.8.7
+=begin
    def test_step_expected_failures
       assert_raises(TypeError){ @range1.step(nil) }
       assert_raises(TypeError){ @range4.step{} }
@@ -66,6 +68,7 @@ class TC_Range_Step_InstanceMethod < Test::Unit::TestCase
       assert_raises(ArgumentError){ @range1.step(-1) }
       assert_raises(LocalJumpError){ @range1.step }
    end
+=end
 
    def teardown
       @range1 = nil

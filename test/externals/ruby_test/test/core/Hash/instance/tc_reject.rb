@@ -32,8 +32,10 @@ class TC_Hash_Reject_Instance < Test::Unit::TestCase
    end
 
    def test_reject_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(LocalJumpError){ @hash.reject }
-      assert_raises(ArgumentError){ @hash.reject(1){} }
+=end      assert_raises(ArgumentError){ @hash.reject(1){} }
    end
 
    def teardown

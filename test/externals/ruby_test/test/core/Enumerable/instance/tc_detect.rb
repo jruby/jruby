@@ -50,14 +50,20 @@ class TC_Enumerable_Detect_InstanceMethod < Test::Unit::TestCase
       assert_equal(nil, @enum.detect{})
    end
 
+   # No longer a valid test in 1.8.7
+=begin
    def test_find_alias
       msg = "=> Known issue in MRI"
       assert_respond_to(@enum, :find)
       assert_equal(true, @enum.method(:find) == @enum.method(:detect), msg)
    end
+=end
 
    def test_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ @enum.detect }
+=end
       assert_raise(ArgumentError){ @enum.detect(5, 7) }
       assert_raise(NoMethodError){ @enum.detect('test'){ |e| e > 7 } }
    end

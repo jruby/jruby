@@ -33,7 +33,10 @@ class TC_Hash_EachKey_Instance < Test::Unit::TestCase
 
    def test_each_expected_errors
       assert_raises(ArgumentError){ @hash.each_key(1){} }
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(LocalJumpError){ @hash.each_key }
+=end
    end
 
    def teardown

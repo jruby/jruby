@@ -22,7 +22,10 @@ class TC_Hash_DeleteIf_Instance < Test::Unit::TestCase
    end
 
    def test_delete_if_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(LocalJumpError){ @hash.delete_if }
+=end
       assert_raises(ArgumentError){ @hash.delete_if(1){} }
    end
 

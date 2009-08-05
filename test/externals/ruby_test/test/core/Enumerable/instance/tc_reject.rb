@@ -51,7 +51,10 @@ class TC_Enumerable_Reject_InstanceMethod < Test::Unit::TestCase
    end
 
    def test_reject_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ @enum.reject }
+=end
       assert_raise(ArgumentError){ @enum.reject(5) }
    end
 

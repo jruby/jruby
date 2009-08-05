@@ -25,8 +25,11 @@ class TC_Array_RIndex_Instance < Test::Unit::TestCase
    end
 
    def test_rindex_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(ArgumentError){ @array.rindex }
       assert_raises(ArgumentError){ @array.rindex(0,1) }
+=end
    end
 
    def teardown

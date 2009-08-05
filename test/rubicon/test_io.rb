@@ -44,7 +44,10 @@ class TestIO < Test::Unit::TestCase
 
   def test_s_foreach
     assert_raise(Errno::ENOENT) { File.foreach("gumby") {} }
+  # No longer a valid test in 1.8.7
+=begin
     assert_raise(LocalJumpError) { File.foreach(@file) }
+=end
     
     count = 0
     IO.foreach(@file) do |line|

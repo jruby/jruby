@@ -30,6 +30,8 @@ class TestStruct < RubiconTestCase
     # TODO: raise NotImplementedError, 'Need to write test_each_pair'
   end
 
+  # No longer a valid test in 1.8.7
+=begin
   def test_each
     assert_raises LocalJumpError do
       @@struct.new.each
@@ -39,6 +41,7 @@ class TestStruct < RubiconTestCase
     @@struct.new('a', 'b').each { |x| a << x }
     assert_equal ['a', 'b'], a
   end
+=end
 
   def test_eql_eh
     # TODO: raise NotImplementedError, 'Need to write test_eql_eh'

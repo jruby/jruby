@@ -32,8 +32,11 @@ class TC_Array_Shift_Instance < Test::Unit::TestCase
    end
 
    def test_shift_expected_errors
-      assert_raises(ArgumentError){ @array.shift("foo") }
+      assert_raises(TypeError){ @array.shift("foo") }
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(ArgumentError){ @array.shift(2) }
+=end
    end
 
    def teardown

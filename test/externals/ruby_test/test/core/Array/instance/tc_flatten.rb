@@ -32,8 +32,11 @@ class TC_Array_Flatten_Instance < Test::Unit::TestCase
    end
 
    def test_flatten_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raises(ArgumentError){ @array.flatten(1) }
       assert_raises(ArgumentError){ @array.flatten!(1) }
+=end
    end
 
    def teardown

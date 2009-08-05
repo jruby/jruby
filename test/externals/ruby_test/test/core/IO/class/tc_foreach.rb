@@ -48,9 +48,12 @@ class TC_IO_Foreach_ClassMethod < Test::Unit::TestCase
    def test_foreach_expected_errors
       assert_raise(ArgumentError){ IO.foreach }
       assert_raise(ArgumentError){ IO.foreach(@file, '', 1) }
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ IO.foreach(@file) }
       assert_raise(TypeError){ IO.foreach(@file, 1) }
       assert_raise(TypeError){ IO.foreach(55) }
+=end
    end
 
    def teardown

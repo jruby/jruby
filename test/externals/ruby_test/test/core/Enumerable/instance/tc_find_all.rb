@@ -51,14 +51,20 @@ class TC_Enumerable_FindAll_InstanceMethod < Test::Unit::TestCase
       assert_equal([], @enum.find_all{})
    end
 
+   # No longer a valid test in 1.8.7
+=begin
    def test_select_alias
       msg = '=> Known issue in MRI'
       assert_respond_to(@enum, :select)
       assert_equal(true, @enum.method(:find_all) == @enum.method(:select), msg)
    end
+=end
 
    def test_find_all_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ @enum.find_all }
+=end
       assert_raise(ArgumentError){ @enum.find_all(5) }
    end
 

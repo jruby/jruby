@@ -43,7 +43,10 @@ class TC_Enumerable_EachWithIndex_InstanceMethod < Test::Unit::TestCase
    end
 
    def test_expected_errors
+   # No longer a valid test in 1.8.7
+=begin
       assert_raise(LocalJumpError){ @enum.each_with_index }
+=end
       assert_raise(ArgumentError){ @enum.each_with_index(true) }
    end
 
