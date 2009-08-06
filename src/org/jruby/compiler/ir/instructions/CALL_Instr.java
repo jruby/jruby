@@ -16,6 +16,13 @@ public class CALL_Instr extends MultiOperandInstr
         _closure = closure;
     }
    
+    public CALL_Instr(Operation op, Variable result, Operand methAddr, Operand[] args, Operand closure)
+    {
+        super(op, result, args);
+        _methAddr = methAddr;
+        _closure = closure;
+    }
+   
     public boolean isRubyInternalsCall() { return false; }
     public boolean isStaticCallTarget()   { return false; }
 

@@ -10,7 +10,7 @@ public class RUBY_INTERNALS_CALL_Instr extends CALL_Instr
 {
     public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand[] args)
     {
-        super(result, methAddr, args, null);
+        super(Operation.RUBY_INTERNALS, result, methAddr, args, null);
     }
    
     public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand[] args, Operand closure)

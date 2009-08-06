@@ -14,9 +14,9 @@ public class IR_Closure extends IR_ScopeImpl
     public final Label _startLabel; // Label for the start of the closure (used to implement redo)
     public final Label _endLabel;   // Label for the end of the closure (used to implement retry)
 
-    public IR_Closure(IR_Scope parent) 
+    public IR_Closure(IR_Scope parent, IR_Scope lexicalParent)
     { 
-        super(parent); 
+        super(parent, lexicalParent);
         _startLabel = getNewLabel("_CLOSURE_START_");
         _endLabel   = getNewLabel("_CLOSURE_END_");
     }

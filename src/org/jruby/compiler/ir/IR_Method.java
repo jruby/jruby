@@ -20,15 +20,15 @@ public class IR_Method extends IR_ScopeImpl
 
 	 private List<Operand> _callArgs;
 
-    public IR_Method(IR_Scope parent, String name, String javaName, boolean isInstanceMethod)
+    public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, String javaName, boolean isInstanceMethod)
     {
-        this(parent, name, isInstanceMethod);
+        this(parent, lexicalParent, name, isInstanceMethod);
 		  _callArgs = new ArrayList<Operand>();
     }
 
-    public IR_Method(IR_Scope parent, String name, boolean isInstanceMethod)
+    public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, boolean isInstanceMethod)
     {
-        super(parent);
+        super(parent, lexicalParent);
         _name = name;
         _isInstanceMethod = isInstanceMethod;
         _startLabel = getNewLabel("_METH_START_");

@@ -26,6 +26,22 @@ public abstract class IR_ScopeImpl implements IR_Scope
                               // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
     List<IR_Instr> _instrs;   // List of IR instructions for this method
 
+// SSS FIXME: Maybe this is not really a concern after all ...
+        // Nesting level of this scope in the lexical nesting of scopes in the current file -- this is not to be confused
+        // with semantic nesting of scopes across files.
+        //
+        // Consider this code in a file f
+        // class M1::M2::M3::C 
+        //   ...
+        // end
+        //
+        // So, C is at lexical nesting level of 1 (the file script is at 0) in the file 'f'
+        // Semantically it is at level 3 (M1, M2, M3 are at 0,1,2).
+        //
+        // This is primarily used to ensure that variable names don't clash!
+        // i.e. definition of %v_1 in a closure shouldn't override the use of %v_1 from the parent scope!
+//    private int _lexicalNestingLevel;
+
         // Map of constants defined in this scope (not valid for methods!)
     private Map<String, Operand> _constMap;
 
@@ -46,7 +62,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
     final public List<IR_Class>  _classes = new ArrayList<IR_Class>();
     final public List<IR_Method> _methods = new ArrayList<IR_Method>();
 
-    private void init(Operand parent)
+    private void init(Operand parent, IR_Scope lexicalParent)
     {
         _parent = parent;
         _instrs = new ArrayList<IR_Instr>();
@@ -54,16 +70,17 @@ public abstract class IR_ScopeImpl implements IR_Scope
         _constMap = new HashMap<String, Operand>();
         _loopStack = new Stack<IR_Loop>();
         _nextMethodIndex = 0;
+//        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
     }
 
-    public IR_ScopeImpl(IR_Scope parent)
+    public IR_ScopeImpl(IR_Scope parent, IR_Scope lexicalParent)
     {
-       init(new MetaObject(parent));
+        init(new MetaObject(parent), lexicalParent);
     }
 
-    public IR_ScopeImpl(Operand parent)
+    public IR_ScopeImpl(Operand parent, IR_Scope lexicalParent)
     {
-       init(parent);
+        init(parent, lexicalParent);
     }
 
         // Returns the containing parent scope!
@@ -86,6 +103,10 @@ public abstract class IR_ScopeImpl implements IR_Scope
         if (idx == null)
             idx = 0;
         _nextVarIndex.put(prefix, idx+1);
+
+        // Insert nesting level to ensure variable names don't conflict across nested scopes!
+        // i.e. definition of %v_1 in a closure shouldn't override the use of %v_1 from the parent scope!
+//        return new Variable(prefix + _lexicalNestingLevel + "_" + idx);
         return new Variable(prefix + idx);
     }
 

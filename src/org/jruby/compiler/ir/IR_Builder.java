@@ -734,18 +734,18 @@ public class IR_Builder
         IR_Class c;
         Operand  cMetaObj;
         if (container == null) {
-            c = new IR_Class(s, superClass, className, false);
+            c = new IR_Class(s, s, superClass, className, false);
             cMetaObj = new MetaObject(c);
             s.addClass(c);
         }
         else if (container instanceof MetaObject) {
             IR_Scope containerScope = ((MetaObject)container)._scope;
-            c = new IR_Class(containerScope, superClass, className, false);
+            c = new IR_Class(containerScope, s, superClass, className, false);
             cMetaObj = container;
             containerScope.addClass(c);
         }
         else {
-            c = new IR_Class(container, superClass, className, false);
+            c = new IR_Class(container, s, superClass, className, false);
             cMetaObj = new MetaObject(c);
             s.addInstr(new PUT_CONST_Instr(container, className, cMetaObj));
             // SSS FIXME: What happens to the add class in this case??
@@ -1385,7 +1385,7 @@ public class IR_Builder
 
     private Operand defineNewMethod(MethodDefNode defnNode, IR_Scope s, boolean isInstanceMethod)
     {
-        IR_Method m = new IR_Method(s, defnNode.getName(), isInstanceMethod);
+        IR_Method m = new IR_Method(s, s, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
         receiveArgs(defnNode.getArgsNode(), m);
@@ -1729,7 +1729,7 @@ public class IR_Builder
     //
     public Operand buildForIter(final ForNode forNode, IR_Scope s) {
             // Create a new closure context
-        IR_Scope closure = new IR_Closure(s);
+        IR_Scope closure = new IR_Closure(s, s);
 
             // Build args
         NodeType argsNodeId = null;
@@ -1831,7 +1831,7 @@ public class IR_Builder
 
     public Operand buildIter(final IterNode iterNode, IR_Scope s) {
             // Create a new closure context
-        IR_Scope closure = new IR_Closure(s);
+        IR_Scope closure = new IR_Closure(s, s);
 
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -1902,12 +1902,12 @@ public class IR_Builder
         IR_Module m;
         Operand   mMetaObj;
         if (container == null) {
-            m = new IR_Module(s, moduleName);
+            m = new IR_Module(s, s, moduleName);
             mMetaObj = new MetaObject(m);
             s.addModule(m);
         }
         else {
-            m = new IR_Module(container, moduleName);
+            m = new IR_Module(container, s, moduleName);
             mMetaObj = new MetaObject(m);
             s.addInstr(new PUT_CONST_Instr(container, moduleName, mMetaObj));
         }
