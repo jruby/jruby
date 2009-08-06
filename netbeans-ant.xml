@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." name="netbeans-ant">
+  <property name="args.default.file" value=".debug.properties"/>
+  <property file="${args.default.file}"/>
   
   <target name="profile-gem-install-rake" depends="jar" description="Profile a local gem installation of Rake">
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
@@ -62,7 +64,9 @@
   <target name="profile-nb" depends="compile" description="Profile Project">
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
 
-    <input message="Enter flags and args for `jruby` command:" addproperty="jruby.args"/>
+    <input message="Enter flags and args for `jruby` command:" addproperty="jruby.args" defaultvalue="${args.default}"/>
+    <echo file="${args.default.file}" append="false">args.default=${jruby.args}
+</echo>
     
     <nbprofiledirect>
       <classpath>        
@@ -89,7 +93,9 @@
   <target name="debug-nb" depends="jar" description="Task for debugging JRuby within NetBeans">          
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
 
-    <input message="Enter flags and args for `jruby` command:" addproperty="jruby.args"/>
+    <input message="Enter flags and args for `jruby` command:" addproperty="jruby.args" defaultvalue="${args.default}"/>
+    <echo file="${args.default.file}" append="false">args.default=${jruby.args}
+</echo>
     
     <nbjpdastart addressproperty="jpda.address" name="JRuby" transport="dt_socket">
       <classpath>        
