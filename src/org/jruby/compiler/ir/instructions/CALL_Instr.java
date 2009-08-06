@@ -1,13 +1,15 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class CALL_Instr extends MultiOperandInstr
 {
-    public Operand _methAddr;
-    public Operand _closure;
+    Operand _methAddr;
+    Operand _closure;
    
     public CALL_Instr(Variable result, Operand methAddr, Operand[] args, Operand closure)
     {
@@ -26,10 +28,26 @@ public class CALL_Instr extends MultiOperandInstr
     public boolean isRubyInternalsCall() { return false; }
     public boolean isStaticCallTarget()   { return false; }
 
+    public Operand[] getCallArgs() { return _args; }
+    public Operand   getMethodAddr() { return _methAddr; }
+    public Operand   getClosureArg() { return _closure; }
+
     public String toString() {
         return   "\t" 
-		         + (_result == null ? "" : _result + " = ") 
-		         + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(_args) + ")"
-					+ (_closure == null ? "" : ", closure: " + _closure);
+               + (_result == null ? "" : _result + " = ") 
+               + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(_args) + ")"
+               + (_closure == null ? "" : ", closure: " + _closure);
+    }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap)
+    {
+        super.simplifyOperands(valueMap);
+        Operand m = valueMap.get(_methAddr);
+        if (m != null)
+            _methAddr = m;
+
+        Operand c = valueMap.get(_closure);
+        if (c != null)
+            _closure = c;
     }
 }

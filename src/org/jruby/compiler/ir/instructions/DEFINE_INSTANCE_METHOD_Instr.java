@@ -16,5 +16,5 @@ public class DEFINE_INSTANCE_METHOD_Instr extends NoOperandInstr
         _method = m;
     }
 
-	 public String toString() { return super.toString() + "(" + _class._className + ", " + _method._name + ")"; }
+    public String toString() { return super.toString() + "(" + _class._className + ", " + _method._name + ")"; }
 }

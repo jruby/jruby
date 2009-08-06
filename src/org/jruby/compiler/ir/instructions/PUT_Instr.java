@@ -1,14 +1,16 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PUT_Instr extends IR_Instr
 {
-    public final Operand _target;
-    public final String  _ref;
-    public final Operand _value;
+    Operand _target;
+    String  _ref;
+    Operand _value;
 
     public PUT_Instr(Operation op, Operand target, String ref, Operand value)
     {
@@ -21,4 +23,14 @@ public abstract class PUT_Instr extends IR_Instr
     public Operand[] getOperands() { return new Operand[] { _value, _target }; }
 
     public String toString() { return super.toString() + "(" + _target + (_ref == null ? "" : ", " + _ref) + ") = " + _value; }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap)
+    {
+        Operand v = valueMap.get(_value);
+        if (v != null)
+            _value = v;
+        Operand t = valueMap.get(_target);
+        if (t != null)
+            _target = t;
+    }
 }

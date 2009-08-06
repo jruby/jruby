@@ -21,11 +21,8 @@ import org.jruby.compiler.ir.operands.Operand;
 //
 public class BREAK_Instr extends OneOperandInstr
 {
-    Operand _retval;
-
     public BREAK_Instr(Operand rv)
     {
         super(Operation.BREAK, null, rv);
-		  _retval = rv;
     }
 }

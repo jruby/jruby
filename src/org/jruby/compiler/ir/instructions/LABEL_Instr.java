@@ -5,13 +5,13 @@ import org.jruby.compiler.ir.operands.Label;
 
 public class LABEL_Instr extends NoOperandInstr
 {
-	 public final Label _lbl;
+    public final Label _lbl;
 
     public LABEL_Instr(Label l)
     {
         super(Operation.LABEL);
-		  _lbl = l;
+        _lbl = l;
     }
 
-	 public String toString() { return _lbl + ":"; }
+    public String toString() { return _lbl + ":"; }
 }

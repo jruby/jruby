@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
@@ -25,5 +26,14 @@ public class MultiOperandInstr extends IR_Instr
 
     public Operand[] getOperands() {
         return _args;
+    }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap)
+    {
+        for (int i = 0; i < _args.length; i++) {
+            Operand a = valueMap.get(_args[i]);
+            if (a != null)
+                _args[i] = a;
+        }
     }
 }

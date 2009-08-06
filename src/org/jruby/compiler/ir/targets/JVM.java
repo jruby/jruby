@@ -234,22 +234,23 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitBEQ(BEQ_Instr beq) {
-        emit(beq._arg1);
-        emit(beq._arg2);
+        Operand[] args = beq.getOperands();
+        emit(args[0]);
+        emit(args[1]);
         method().ifCmp(Type.getType(Object.class), EQ, getLabel(beq.getJumpTarget()));
     }
 
     public void emitCOPY(COPY_Instr copy) {
         int index = getVariableIndex(copy._result);
-        emit(copy._arg);
+        emit(copy.getOperands()[0]);
         method().storeLocal(index);
     }
 
     public void emitCALL(CALL_Instr call) {
-        for (Operand operand : call._args) {
+        for (Operand operand : call.getCallArgs()) {
             emit(operand);
         }
-        method().invokeVirtual(Type.getType(Object.class), Method.getMethod("Object " + call._methAddr + " ()"));
+        method().invokeVirtual(Type.getType(Object.class), Method.getMethod("Object " + call.getMethodAddr() + " ()"));
     }
 
     public void emitDEF_INST_METH(DEFINE_INSTANCE_METHOD_Instr instr) {
@@ -293,7 +294,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitRETURN(RETURN_Instr ret) {
-        emit(ret._arg);
+        emit(ret.getOperands()[0]);
         method().returnValue();
     }
 

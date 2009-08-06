@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 // This is of the form:
+//   d = s
 
 import java.util.Map;
 
@@ -8,7 +9,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
-//   d = s
 public class COPY_Instr extends OneOperandInstr 
 {
     public COPY_Instr(Variable d, Operand s)
@@ -18,9 +18,10 @@ public class COPY_Instr extends OneOperandInstr
 
     public String toString() { return "\t" + _result + " = " + _arg; }
 
-    // Copy propagation
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
     {
-        return valueMap.get(_arg);
+        Operand orig = _arg;
+        simplifyOperands(valueMap);
+        return (_arg == orig) ? null : _arg;
     }
 }

@@ -17,6 +17,8 @@ public class MethAddr extends Reference
     // SSS FIXME: This method (at least in the context of multiple assignment) is a little weird.
     // It calls regular to_ary on the object.  But, if it encounters a method_missing, the value
     // is inserted into an 1-element array!
+	 // try "a,b,c = 1" first; then define Fixnum.to_ary method and try it again.
+	 // Ex: http://gist.github.com/163551
     public final static MethAddr TO_ARY            = new MethAddr("aryToAry");
     public final static MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
 

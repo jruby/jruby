@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -9,7 +11,7 @@ import org.jruby.compiler.ir.operands.Variable;
 
 public class OneOperandInstr extends IR_Instr
 {
-    public final Operand _arg;
+    Operand _arg;
 
     public OneOperandInstr(Operation op, Variable dest, Operand arg)
     {
@@ -21,5 +23,12 @@ public class OneOperandInstr extends IR_Instr
 
     public Operand[] getOperands() {
         return new Operand[] {_arg};
+    }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap)
+    {
+        Operand a = valueMap.get(_arg);
+        if (a != null)
+            _arg = a;
     }
 }

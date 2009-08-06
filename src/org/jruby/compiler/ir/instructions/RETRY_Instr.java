@@ -11,6 +11,6 @@ public class RETRY_Instr extends OneOperandInstr
     public RETRY_Instr(Label loopStart)
     {
         super(Operation.RETRY, null, null);
-		  _jumpLabel = loopStart;
+        _jumpLabel = loopStart;
     }
 }

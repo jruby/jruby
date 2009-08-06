@@ -70,12 +70,27 @@ public abstract class IR_Instr
 
     /* 
      * This method takes as input a map of operands to their values, and outputs
+     *
+     * If the value map provides a value for any of the instruction's operands
+     * this method is expected to replace the original operands with the simplified values
+     */
+    public abstract void simplifyOperands(Map<Operand, Operand> valueMap);
+
+    /* 
+     * This method takes as input a map of operands to their values, and outputs
      * the result of this instruction.
+     *
+     * If the value map provides a value for any of the instruction's operands
+     * the expectation is that the operand will be replaced with the simplified value. 
+     * There is no guarantee that the producer of the original value will be around.
      *
      * @param valueMap Mapping from operands to their simplified values
      * @returns simplified result / output of this instruction
      */
-/*
-    public abstract Operand simplifyAndGetResult(Map<Operand, Operand> valueMap);
-*/
+    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
+    {
+        simplifyOperands(valueMap);
+        // By default, no simplifications!
+        return null;
+    }
 }

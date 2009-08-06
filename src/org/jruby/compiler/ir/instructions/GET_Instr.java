@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -7,8 +9,8 @@ import org.jruby.compiler.ir.operands.Variable;
 // Represents result = source.ref or result = source where source is not a stack variable
 public abstract class GET_Instr extends IR_Instr
 {
-    public final Operand _source;
-    public final String  _ref;
+    Operand _source;
+    String  _ref;
 
     public GET_Instr(Operation op, Variable dest, Operand src, String ref)
     {
@@ -20,4 +22,11 @@ public abstract class GET_Instr extends IR_Instr
     public Operand[] getOperands() { return new Operand[] { _source }; }
 
     public String toString() { return super.toString() + "(" + _source + (_ref == null ? "" : ", " + _ref) + ")"; }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap)
+    {
+        Operand s = valueMap.get(_source);
+        if (s != null)
+            _source = s;
+    }
 }

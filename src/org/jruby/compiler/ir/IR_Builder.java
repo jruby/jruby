@@ -643,7 +643,7 @@ public class IR_Builder
         m.addInstr(caseInstr);
 
         // lists to aggregate variables and bodies for whens
-        List<Variable> variables = new ArrayList<Variable>();
+        List<Operand> variables = new ArrayList<Operand>();
         List<Label> labels = new ArrayList<Label>();
 
         Map<Label, Node> bodies = new HashMap<Label, Node>();
