@@ -91,7 +91,7 @@ public class RubyMarshal {
                 throw recv.getRuntime().newTypeError("Instance of IO needed");
             }
             if (args.length == 3) {
-                depthLimit = (int) ((RubyFixnum) args[2]).getLongValue();
+                depthLimit = (int) args[2].convertToInteger().getLongValue();
             }
         }
 
@@ -100,8 +100,9 @@ public class RubyMarshal {
                 dumpToStream(objectToDump, outputStream(io), depthLimit);
                 return io;
             }
-			ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-			dumpToStream(objectToDump, stringOutput, depthLimit);
+            
+            ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
+            dumpToStream(objectToDump, stringOutput, depthLimit);
 
             return RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
 
