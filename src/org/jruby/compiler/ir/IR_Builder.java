@@ -2492,19 +2492,14 @@ public class IR_Builder
 
         RootNode rootNode = (RootNode) node;
         Node nextNode = rootNode.getBodyNode();
-        if (nextNode == null) {
-            script._dummyMethod.addInstr(new RETURN_Instr(Nil.NIL));
-        }
-        else {
-            if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
-                BlockNode blockNode = (BlockNode) nextNode;
-                for (int i = 0; i < blockNode.size(); i++) {
-                    build(blockNode.get(i), rootClass);
-                }
-            } else {
-                // single-statement body, just build it
-                build(nextNode, rootClass);
+        if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
+            BlockNode blockNode = (BlockNode) nextNode;
+            for (int i = 0; i < blockNode.size(); i++) {
+                build(blockNode.get(i), rootClass);
             }
+        } else {
+            // single-statement body, just build it
+            build(nextNode, rootClass);
         }
 
         return script;
