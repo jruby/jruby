@@ -2491,16 +2491,7 @@ public class IR_Builder
         rootClass.addInstr(new RECV_ARG_Instr(rootClass.getSelf(), 0));
 
         RootNode rootNode = (RootNode) node;
-        Node nextNode = rootNode.getBodyNode();
-        if (nextNode.getNodeType() == NodeType.BLOCKNODE) {
-            BlockNode blockNode = (BlockNode) nextNode;
-            for (int i = 0; i < blockNode.size(); i++) {
-                build(blockNode.get(i), rootClass);
-            }
-        } else {
-            // single-statement body, just build it
-            build(nextNode, rootClass);
-        }
+        build(rootNode.getBodyNode(), rootClass);
 
         return script;
     }
