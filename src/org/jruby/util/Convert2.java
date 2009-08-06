@@ -29,6 +29,147 @@ public class Convert2 {
         this.base = base;
     }
 
+    public static final byte[] intToBinaryBytes(int i) {
+        return ByteList.plain(Integer.toBinaryString(i));
+    }
+
+    public static final byte[] intToOctalBytes(int i) {
+        return ByteList.plain(Integer.toOctalString(i));
+    }
+
+    public static final byte[] intToHexBytes(int i) {
+        return ByteList.plain(Integer.toHexString(i).toLowerCase());
+    }
+
+    public static final byte[] intToHexBytes(int i, boolean upper) {
+        String s = Integer.toHexString(i);
+        s = upper ? s.toUpperCase() : s.toLowerCase();
+        return ByteList.plain(s);
+    }
+
+    public static final ByteList intToBinaryByteList(int i) {
+        return new ByteList(intToBinaryBytes(i));
+    }
+    public static final ByteList intToOctalByteList(int i) {
+        return new ByteList(intToOctalBytes(i));
+    }
+    public static final ByteList intToHexByteList(int i) {
+        return new ByteList(intToHexBytes(i));
+    }
+    public static final ByteList intToHexByteList(int i, boolean upper) {
+        return new ByteList(intToHexBytes(i, upper));
+    }
+
+    public static final byte[] intToByteArray(int i, int radix, boolean upper) {
+        String s = Integer.toString(i, radix);
+        s = upper ? s.toUpperCase() : s.toLowerCase();
+        return ByteList.plain(s);
+    }
+
+    public static final byte[] intToCharBytes(int i) {
+        return ByteList.plain(Integer.toString(i));
+    }
+
+    public static final byte[] longToBinaryBytes(long i) {
+        return ByteList.plain(Long.toBinaryString(i));
+    }
+
+    public static final byte[] longToOctalBytes(long i) {
+        return ByteList.plain(Long.toOctalString(i));
+    }
+
+    public static final byte[] longToHexBytes(long i) {
+        return ByteList.plain(Long.toHexString(i).toLowerCase());
+    }
+
+    public static final byte[] longToHexBytes(long i, boolean upper) {
+        String s = Long.toHexString(i);
+        s = upper ? s.toUpperCase() : s.toLowerCase();
+        return ByteList.plain(s);
+    }
+
+    public static final ByteList longToBinaryByteList(long i) {
+        return new ByteList(longToBinaryBytes(i));
+    }
+    public static final ByteList longToOctalByteList(long i) {
+        return new ByteList(longToOctalBytes(i));
+    }
+    public static final ByteList longToHexByteList(long i) {
+        return new ByteList(longToHexBytes(i));
+    }
+    public static final ByteList longToHexByteList(long i, boolean upper) {
+        return new ByteList(longToHexBytes(i, upper));
+    }
+
+    public static final byte[] longToByteArray(long i, int radix, boolean upper) {
+        String s = Long.toString(i, radix);
+        s = upper ? s.toUpperCase() : s.toLowerCase();
+        return ByteList.plain(s);
+    }
+
+    public static final byte[] longToCharBytes(long i) {
+        return ByteList.plain(Long.toString(i));
+    }
+
+    public static final ByteList longToByteList(long i) {
+        return new ByteList(ByteList.plain(Long.toString(i)), false);
+    }
+
+    public static final ByteList longToByteList(long i, int radix) {
+        return new ByteList(ByteList.plain(Long.toString(i, radix)), false);
+    }
+
+    public static final byte[] twosComplementToBinaryBytes(byte[] in) {
+        return twosComplementToUnsignedBytes(in, 1, false);
+    }
+    public static final byte[] twosComplementToOctalBytes(byte[] in) {
+        return twosComplementToUnsignedBytes(in, 3, false);
+    }
+    public static final byte[] twosComplementToHexBytes(byte[] in, boolean upper) {
+        return twosComplementToUnsignedBytes(in, 4, upper);
+    }
+
+    private static final byte[] LOWER_DIGITS = {
+        '0' , '1' , '2' , '3' , '4' , '5' ,
+        '6' , '7' , '8' , '9' , 'a' , 'b' ,
+        'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
+        'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
+        'o' , 'p' , 'q' , 'r' , 's' , 't' ,
+        'u' , 'v' , 'w' , 'x' , 'y' , 'z'
+        };
+
+    private static final byte[] UPPER_DIGITS = {
+        '0' , '1' , '2' , '3' , '4' , '5' ,
+        '6' , '7' , '8' , '9' , 'A' , 'B' ,
+        'C' , 'D' , 'E' , 'F' , 'G' , 'H' ,
+        'I' , 'J' , 'K' , 'L' , 'M' , 'N' ,
+        'O' , 'P' , 'Q' , 'R' , 'S' , 'T' ,
+        'U' , 'V' , 'W' , 'X' , 'Y' , 'Z'
+        };
+
+    public static final byte[] twosComplementToUnsignedBytes(byte[] in, int shift, boolean upper) {
+        if (shift < 1 || shift > 4) {
+            throw new IllegalArgumentException("shift value must be 1-4");
+        }
+        int ilen = in.length;
+        int olen = (ilen * 8 + shift - 1 ) / shift;
+        byte[] out = new byte[olen];
+        int mask = (1 << shift) - 1;
+        byte[] digits = upper ? UPPER_DIGITS : LOWER_DIGITS;
+        int bitbuf = 0;
+        int bitcnt = 0;
+        for(int i = ilen, o = olen; --o >= 0; ) {
+            if(bitcnt < shift) {
+                bitbuf |= ((int)in[--i] & (int)0xff) << bitcnt;
+                bitcnt += 8;
+            }
+            out[o] = digits[bitbuf & mask];
+            bitbuf >>= shift;
+            bitcnt -= shift;
+        }
+        return out;
+    }
+
     /** rb_cstr_to_inum
      *
      */
@@ -570,10 +711,7 @@ public class Convert2 {
                     ++exponent;
                 } else {
                     int n = data[s] - '0';
-                    num *= 10.0;
-                    if(((num+n)-n) == num) {
-                        num = num + n;
-                    }
+                    num = (10.0*num) + n;
                 }
                 
                 if(got_dot) {
