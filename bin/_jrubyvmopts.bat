@@ -14,6 +14,8 @@ set _VM_OPTS=
 set _RUBY_OPTS=
 set _DFLT_VM_OPTS=%JAVA_OPTS%
 set _JAVA_VM=-client
+set _JAVA_CLASS=org.jruby.Main
+set _JRUBY_BOOTCP_OPTS=-Xbootclasspath/a:"%JRUBY_CP%"
 
 set SAFE_JAVA_HOME=%JAVA_HOME:(=^^(%
 set SAFE_JAVA_HOME=%SAFE_JAVA_HOME:)=^^)%
@@ -88,6 +90,24 @@ if ["%_CMP%"] == ["--1.8"] (
   set _CMP=-J-Djruby.compat.version=RUBY1_8
   goto :jvmarg
 )
+
+if ["%_CMP%"] == ["--ng-server"] (
+  set _JAVA_CLASS=com.martiansoftware.nailgun.NGServer
+  set _JAVA_VM=-server
+  rem Nailgun server fails if -Xbootclasspath is used, so we remove it here.
+  rem In com.martiansoftware.nailgun.AliasManager's constructor, 
+  rem getResourceAsStream("com/martiansoftware/nailgun/builtins/builtins.properties")
+  rem returns null, which is not handled, crashing the server. Removing
+  rem -Xbootclasspath for some reason fixes the getResourceAsStream() call.
+  set _JRUBY_BOOTCP_OPTS=
+  goto :vmoptsNext
+)
+
+if ["%_CMP%"] == ["--ng"] (
+  set _NAILGUN_CLIENT=true
+  goto :vmoptsNext
+)
+
 
 rem now unescape _D, _S and _Q
 set _CMP=%_CMP:_D="%
