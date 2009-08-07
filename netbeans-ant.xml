@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." name="netbeans-ant">
+  <property name="args.default.file" value=".debug.properties"/>
+  <property file="${args.default.file}"/>
   
   <target name="profile-gem-install-rake" depends="jar" description="Profile a local gem installation of Rake">
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
-    
+
     <nbprofiledirect>
-      <classpath> <pathelement location="... specify ..."/> </classpath>
+      <classpath>
+        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="build.classpath"/>
+      </classpath>
     </nbprofiledirect>
     
     <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
@@ -29,9 +34,12 @@
   
   <target name="profile-rails-server" depends="jar" description="Profile the Rails server">
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
-    
+
     <nbprofiledirect>
-      <classpath> <pathelement location="... specify ..."/> </classpath>
+      <classpath>
+        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="build.classpath"/>
+      </classpath>
     </nbprofiledirect>
     
     <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
@@ -55,6 +63,10 @@
   
   <target name="profile-nb" depends="compile" description="Profile Project">
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+
+    <input message="Enter flags and args for `jruby` command:" addproperty="jruby.args" defaultvalue="${args.default}"/>
+    <echo file="${args.default.file}" append="false">args.default=${jruby.args}
+</echo>
     
     <nbprofiledirect>
       <classpath>        
@@ -74,13 +86,17 @@
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
       <jvmarg value="-Djruby.script=jruby"/>
-      <!-- uncomment below and point to your ruby script -->
-      <!-- <arg value="/path/to/your/ruby/script.rb"/> -->
+      <arg line="${jruby.args}"/>
     </java>
   </target>
   
   <target name="debug-nb" depends="jar" description="Task for debugging JRuby within NetBeans">          
     <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+
+    <input message="Enter flags and args for `jruby` command:" addproperty="jruby.args" defaultvalue="${args.default}"/>
+    <echo file="${args.default.file}" append="false">args.default=${jruby.args}
+</echo>
+    
     <nbjpdastart addressproperty="jpda.address" name="JRuby" transport="dt_socket">
       <classpath>        
         <pathelement path="${jruby.classes.dir}"/>
@@ -88,6 +104,7 @@
       </classpath>      
       <sourcepath path="${src.dir}"/>
     </nbjpdastart>
+
     <java classname="org.jruby.Main" maxmemory="${jruby.launch.memory}" fork="true">
       <classpath>        
         <pathelement path="${jruby.classes.dir}"/>
@@ -102,8 +119,7 @@
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
       <jvmarg value="-Djruby.script=jruby"/>
-      <!-- uncomment below and point to your ruby script -->
-      <!-- <arg value="/path/to/your/ruby/script.rb"/> -->
+      <arg line="${jruby.args}"/>
     </java>
   </target>   
 </project>

@@ -27,3 +27,4 @@ gem/pkg
 *.rej
 tool/nailgun/ng
 jruby-findbugs.html
+.debug.properties
