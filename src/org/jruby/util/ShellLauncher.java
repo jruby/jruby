@@ -887,6 +887,10 @@ public class ShellLauncher {
                 case '~': case '&': case '$': case '"':
                 case '`': case '\n': case '\\': case '\'':
                     return false;
+                case '2':
+                    if(c.length() > 1 && c.charAt(1) == '>') {
+                        return false;
+                    }
                 }
             }
         }
