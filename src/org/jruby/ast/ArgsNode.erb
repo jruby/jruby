@@ -283,7 +283,7 @@ public class ArgsNode extends Node {
 
     protected void prepareRestArg(ThreadContext context, Ruby runtime, DynamicScope scope,
             IRubyObject[] args, int givenArgsCount) {
-        if (restArg >= 0) {
+        if (restArg >= 0 && !(restArgNode instanceof UnnamedRestArgNode)) {
             scope.setValue(restArg, RubyArray.newArrayNoCopy(runtime, args, givenArgsCount, args.length - postCount - givenArgsCount), 0);
         }
     }
