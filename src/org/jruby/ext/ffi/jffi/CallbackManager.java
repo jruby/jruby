@@ -18,7 +18,6 @@ import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
@@ -385,6 +384,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
                 case POINTER:
                     buffer.setAddressReturn(addressValue(value)); break;
+
+                case BOOL:
+                    buffer.setIntReturn(value.isTrue() ? 1 : 0);
                 default:
             }
         } else if (type instanceof CallbackInfo) {
@@ -459,6 +461,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             }
             case STRING:
                 return getStringParameter(runtime, buffer, index);
+
+            case BOOL:
+                return runtime.newBoolean(buffer.getInt(index) != 0);
+
             default:
                 throw new IllegalArgumentException("Invalid type " + type);
         }
@@ -499,6 +505,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 case FLOAT64:
                 case POINTER:
                 case VOID:
+                case BOOL:
                     return true;
             }
         } else if (type instanceof CallbackInfo) {
@@ -530,6 +537,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 case FLOAT64:
                 case POINTER:
                 case STRING:
+                case BOOL:
                     return true;
             }
         } else if (type instanceof CallbackInfo) {
