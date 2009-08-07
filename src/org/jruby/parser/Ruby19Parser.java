@@ -2963,8 +2963,8 @@ public Object case388_line1464(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case344_line1301(Object yyVal, Object[] yyVals, int yyTop) {
-    /* FIXME, weird unnamed rest*/
-                    yyVal = support.new_args(((ListNode)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null, null, null, null);
+                    RestArgNode rest = new UnnamedRestArgNode(((ListNode)yyVals[-1+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                    yyVal = support.new_args(((ListNode)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null, rest, null, null);
     return yyVal;
 }
 public Object case211_line854(Object yyVal, Object[] yyVals, int yyTop) {
@@ -4349,4 +4349,4 @@ public Object case203_line826(Object yyVal, Object[] yyVals, int yyTop) {
         return lexer.getPosition();
     }
 }
-					// line 8132 "-"
+					// line 8143 "-"

@@ -1299,8 +1299,8 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_f_block_arg {
                     $$ = support.new_args(getPosition($1), $1, null, $3, null, $4);
                 }
                 | f_arg ',' {
-    // FIXME, weird unnamed rest
-                    $$ = support.new_args($1.getPosition(), $1, null, null, null, null);
+                    RestArgNode rest = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                    $$ = support.new_args($1.getPosition(), $1, null, rest, null, null);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_f_block_arg {
                     $$ = support.new_args(getPosition($1), $1, null, $3, $5, $6);
