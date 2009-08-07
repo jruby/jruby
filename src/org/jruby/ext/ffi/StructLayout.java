@@ -59,10 +59,13 @@ public final class StructLayout extends Type {
     static final String CLASS_NAME = "StructLayout";
 
     /** The name:offset map for this struct */
-    private final Map<IRubyObject, Member> fields;
+    private final Map<IRubyObject, Member> fieldMap;
     
     /** The ordered list of field names (as symbols) */
     private final List<RubySymbol> fieldNames;
+
+    /** The ordered list of field names (as symbols) */
+    private final List<Member> fields;
     
     private final int cacheableFieldCount;
     private final int[] cacheIndexMap;
@@ -95,17 +98,21 @@ public final class StructLayout extends Type {
      * @param size the total size of the struct.
      * @param minAlign The minimum alignment required when allocating memory.
      */
-    StructLayout(Ruby runtime, Map<IRubyObject, Member> fields, int size, int minAlign) {
+    StructLayout(Ruby runtime, Collection<RubySymbol> fieldNames, Map<IRubyObject, Member> fields, int size, int minAlign) {
         super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), NativeType.STRUCT, size, minAlign);
         //
         // fields should really be an immutable map as it is never modified after construction
         //
-        this.fields = immutableMap(fields);
-        this.cacheIndexMap = new int[fields.size()];
-        this.referenceIndexMap = new int[fields.size()];
+        this.fieldMap = immutableMap(fields);
+        this.cacheIndexMap = new int[fieldNames.size()];
+        this.referenceIndexMap = new int[fieldNames.size()];
 
         int cfCount = 0, refCount = 0;
-        for (Member m : fields.values()) {
+        List<Member> fieldList = new ArrayList<Member>(fieldNames.size());
+
+        for (RubySymbol fieldName : fieldNames) {
+            Member m = fields.get(fieldName);
+            fieldList.add(m);
             if (m.isCacheable()) {
                 cacheIndexMap[m.index] = cfCount++;
             } else {
@@ -121,13 +128,8 @@ public final class StructLayout extends Type {
         this.referenceFieldCount = refCount;
 
         // Create the ordered list of field names from the map
-        List<RubySymbol> names = new ArrayList<RubySymbol>(fields.size());
-        for (Map.Entry<IRubyObject, Member> e : fields.entrySet()) {
-            if (e.getKey() instanceof RubySymbol) {
-                names.add((RubySymbol) e.getKey());
-            }
-        }
-        this.fieldNames = Collections.unmodifiableList(names);
+        this.fieldNames = Collections.unmodifiableList(new ArrayList<RubySymbol>(fieldNames));
+        this.fields = Collections.unmodifiableList(fieldList);
     }
     
     /**
@@ -192,15 +194,15 @@ public final class StructLayout extends Type {
     public IRubyObject offsets(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyArray offsets = RubyArray.newArray(runtime);
-        for (Map.Entry<IRubyObject, Member> e : fields.entrySet()) {
-            if (e.getKey() instanceof RubySymbol) {
-                RubyArray offset = RubyArray.newArray(runtime);
-                // Assemble a [ :name, offset ] array
-                offset.append(e.getKey());
-                offset.append(runtime.newFixnum(e.getValue().offset));
-                offsets.append(offset);
-            }
+
+        for (RubySymbol name : fieldNames) {
+            RubyArray offset = RubyArray.newArray(runtime);
+            // Assemble a [ :name, offset ] array
+            offset.append(name);
+            offset.append(runtime.newFixnum(fieldMap.get(name).offset));
+            offsets.append(offset);
         }
+
         return offsets;
     }
     
@@ -242,7 +244,7 @@ public final class StructLayout extends Type {
      * @return A <tt>Member</tt> descriptor.
      */
     final Member getMember(Ruby runtime, IRubyObject name) {
-        Member f = fields.get(name);
+        Member f = fieldMap.get(name);
         if (f != null) {
             return f;
         }
@@ -278,7 +280,7 @@ public final class StructLayout extends Type {
     }
 
     public final java.util.Collection<Member> getFields() {
-        return Collections.unmodifiableCollection(fields.values());
+        return fields;
     }
 
     /**

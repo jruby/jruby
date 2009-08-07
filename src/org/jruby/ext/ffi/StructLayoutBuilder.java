@@ -31,6 +31,8 @@ package org.jruby.ext.ffi;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -54,6 +56,8 @@ import org.jruby.util.ByteList;
 @JRubyClass(name=StructLayoutBuilder.CLASS_NAME, parent="Object")
 public final class StructLayoutBuilder extends RubyObject {
     public static final String CLASS_NAME = "StructLayoutBuilder";
+
+    private final List<RubySymbol> fieldNames = new LinkedList<RubySymbol>();
 
     private final Map<IRubyObject, StructLayout.Member> fields = new LinkedHashMap<IRubyObject, StructLayout.Member>();
     /** The current size of the layout in bytes */
@@ -98,7 +102,7 @@ public final class StructLayoutBuilder extends RubyObject {
 
     @JRubyMethod(name = "build")
     public StructLayout build(ThreadContext context) {
-        return new StructLayout(context.getRuntime(), fields, minAlign + ((size - 1) & ~(minAlign - 1)), minAlign);
+        return new StructLayout(context.getRuntime(), fieldNames, fields, minAlign + ((size - 1) & ~(minAlign - 1)), minAlign);
     }
 
     @JRubyMethod(name = "size")
@@ -119,9 +123,9 @@ public final class StructLayoutBuilder extends RubyObject {
         return align + ((offset - 1) & ~(align - 1));
     }
     
-    private static final IRubyObject createSymbolKey(Ruby runtime, IRubyObject key) {
+    private static final RubySymbol createSymbolKey(Ruby runtime, IRubyObject key) {
         if (key instanceof RubySymbol) {
-            return key;
+            return (RubySymbol) key;
         }
         return runtime.getSymbolTable().getSymbol(key.asJavaString());
     }
@@ -131,8 +135,10 @@ public final class StructLayoutBuilder extends RubyObject {
     }
 
     private final IRubyObject storeField(Ruby runtime, IRubyObject name, StructLayout.Member field, int align, int size) {
+        
         fields.put(createStringKey(runtime, name), field);
         fields.put(createSymbolKey(runtime, name), field);
+        fieldNames.add(createSymbolKey(runtime, name));
         this.size = Math.max(this.size, (int) field.offset + size);
         this.minAlign = Math.max(this.minAlign, align);
         return this;
