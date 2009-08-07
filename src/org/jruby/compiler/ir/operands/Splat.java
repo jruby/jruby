@@ -1,12 +1,14 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 // Represents a splat value in Ruby code: *array
 //
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls that implement splat semantics
 public class Splat extends Operand
 {
-    final public Operand _array;
+    Operand _array;
 
     public Splat(Operand a) { _array = a; }
 
@@ -22,5 +24,13 @@ public class Splat extends Operand
             return ((Range)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
         else
             return null;
+    }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        _array = _array.getSimplifiedValue(valueMap);
+        return this;
     }
 }

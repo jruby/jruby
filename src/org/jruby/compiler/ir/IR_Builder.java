@@ -206,6 +206,7 @@ public class IR_Builder
 
     public static void main(String[] args) {
         IR_Scope scope = buildFromMain(args);
+        scope.peepHoleOptimize();
 
         System.out.println(scope);
     }
@@ -414,38 +415,34 @@ public class IR_Builder
 
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, IR_Scope s, Operand values, int argIndex, boolean isSplat) {
-        Operand elt = values.fetchCompileTimeArrayElement(argIndex, isSplat);
-        if (elt == null) {
-            Variable v = s.getNewVariable();
-            s.addInstr(new GET_ARRAY_Instr(v, values, argIndex, isSplat));
-            elt = v;
-        }
+        Variable v = s.getNewVariable();
+        s.addInstr(new GET_ARRAY_Instr(v, values, argIndex, isSplat));
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
-                buildAttrAssignAssignment(node, s, elt);
+                buildAttrAssignAssignment(node, s, v);
                 break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), elt));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), elt));
+                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
-                buildConstDeclAssignment((ConstDeclNode) node, s, elt);
+                buildConstDeclAssignment((ConstDeclNode) node, s, v);
                 break;
             case GLOBALASGNNODE:
-                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), elt));
+                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), elt));
+                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE:
-                s.addInstr(new COPY_Instr(new Variable(((LocalAsgnNode)node).getName()), elt));
+                s.addInstr(new COPY_Instr(new Variable(((LocalAsgnNode)node).getName()), v));
                 break;
             case MULTIPLEASGNNODE:
-                buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, elt);
+                buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, v);
                 break;
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
@@ -1923,7 +1920,7 @@ public class IR_Builder
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = s.getNewVariable();
         s.addInstr(new COPY_Instr(ret, values));
-        buildMultipleAsgnAssignment(multipleAsgnNode, s, values);
+        buildMultipleAsgnAssignment(multipleAsgnNode, s, ret);
         return ret;
     }
 

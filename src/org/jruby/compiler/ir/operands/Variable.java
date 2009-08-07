@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 public class Variable extends Operand implements Comparable
 {
     final public String _name;
@@ -21,11 +23,7 @@ public class Variable extends Operand implements Comparable
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Variable other = (Variable)obj;
-        if ((this._name == null) ? (other._name != null) : !this._name.equals(other._name)) {
-            return false;
-        }
-        return true;
+        return this._name.equals(((Variable)obj)._name);
     }
 
     public int compareTo(Object arg0) {
@@ -33,5 +31,26 @@ public class Variable extends Operand implements Comparable
             return _name.compareTo(((Variable)arg0)._name);
         }
         return 0;
+    }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        Operand v = valueMap.get(this);
+        return (v == null) ? this : v;
+/**
+        Operand v = valueMap.get(this);
+        if (v == null) {
+            return this;
+        }
+        // SSS FIXME: You can only value-replace non-compound values
+        // Otherwise, you might end up constructing the compound value over and over!
+        else if (v.isCompoundOperand()) { 
+            valueMap.put(this, v);
+            return this;
+        }
+        else {
+            return v;
+        }
+**/
     }
 }

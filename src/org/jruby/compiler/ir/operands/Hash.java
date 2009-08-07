@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import java.util.List;
+import java.util.Map;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
@@ -22,5 +23,19 @@ public class Hash extends Operand
              return false;
 
        return true;
+    }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        int i = 0;
+        for (KeyValuePair kv: _pairs) {
+           kv._key   = kv._key.getSimplifiedValue(valueMap);
+           kv._value = kv._value.getSimplifiedValue(valueMap);
+           i++;
+        }
+
+        return this;
     }
 }

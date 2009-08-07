@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 // Represents a regexp from ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization
@@ -7,12 +9,20 @@ package org.jruby.compiler.ir.operands;
 // that actually build the Regexp object
 public class Regexp extends Operand
 {
-    final public Operand _re;
-    final public int     _opts;
+    final public int _opts;
+    Operand _re;
 
     public Regexp(Operand re, int opts) { _re = re; _opts = opts; }
 
     public boolean isConstant() { return _re.isConstant(); }
 
     public String toString() { return "RE:|" + _re + "|" + _opts; }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        _re = _re.getSimplifiedValue(valueMap);
+        return this;
+    }
 }

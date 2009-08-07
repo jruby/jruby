@@ -54,8 +54,8 @@ public abstract class IR_Instr
         return "\t" + (_result == null ? "" : _result + " = ") + _op;
     }
 
-/**
     public Variable getResult() { return _result; }
+/**
     public abstract List<Operand> getOperands();
 
         // Does this instruction have side effects as a result of its operation
@@ -72,7 +72,9 @@ public abstract class IR_Instr
      * This method takes as input a map of operands to their values, and outputs
      *
      * If the value map provides a value for any of the instruction's operands
-     * this method is expected to replace the original operands with the simplified values
+     * this method is expected to replace the original operands with the simplified values.
+     * It is not required that it do so -- code correctness is not compromised by failure
+     * to simplify
      */
     public abstract void simplifyOperands(Map<Operand, Operand> valueMap);
 
@@ -81,8 +83,9 @@ public abstract class IR_Instr
      * the result of this instruction.
      *
      * If the value map provides a value for any of the instruction's operands
-     * the expectation is that the operand will be replaced with the simplified value. 
-     * There is no guarantee that the producer of the original value will be around.
+     * the expectation is that the operand will be replaced with the simplified value.
+     * It is not required that it do so -- code correctness is not compromised by failure
+     * to simplify.
      *
      * @param valueMap Mapping from operands to their simplified values
      * @returns simplified result / output of this instruction

@@ -29,11 +29,7 @@ public class TwoOperandInstr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
-        Operand a1 = valueMap.get(_arg1);
-        if (a1 != null)
-            _arg1 = a1;
-        Operand a2 = valueMap.get(_arg2);
-        if (a2 != null)
-            _arg2 = a2;
+        _arg1 = _arg1.getSimplifiedValue(valueMap);
+        _arg2 = _arg2.getSimplifiedValue(valueMap);
     }
 }

@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.operands;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 // This represents a backtick string in Ruby
 // Ex: `ls .`; `cp #{src} #{dst}`
@@ -21,5 +22,18 @@ public class BacktickString extends Operand
              return false;
 
        return true;
+    }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        int i = 0;
+        for (Operand p: _pieces) {
+           _pieces.set(i, p.getSimplifiedValue(valueMap));
+           i++;
+        }
+
+        return this;
     }
 }

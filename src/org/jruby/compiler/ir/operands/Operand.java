@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 public abstract class Operand
 {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
@@ -7,7 +9,12 @@ public abstract class Operand
 // ---------- These methods below are used during compile-time optimizations ------- 
     public boolean isConstant() { return false; }
 
-    public Operand getSimplifiedValue() { return this; }
+    // Arrays, Ranges, etc. are compound values
+    // Variables, fixnums, floats, etc. are non-compound ("atomic") values
+    public boolean isCompoundOperand() { return false; }
+
+    // For compound values, individual operands of the compound operand are simplified
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap) { return this; }
 
     // if (getSubArray) is false, returns the 'index' element of the array, else returns the subarray starting at that element
     public Operand fetchCompileTimeArrayElement(int index, boolean getSubArray) { return null; }

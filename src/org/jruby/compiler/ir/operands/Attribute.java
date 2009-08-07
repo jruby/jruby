@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 // Attribute represents some fact discovered during dataflow analysis.
 //
 // The attribute makes explicit the dataflow value which is normally stored and
@@ -17,4 +19,12 @@ public class Attribute extends Operand
     Operand        _target;    // The operand that this attribute targets
 //    DEFERRED
 //    AttributeValue _val;       // Attribute value
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        _target = _target.getSimplifiedValue(valueMap);
+        return _target;
+    }
+
+    public boolean isCompoundOperand() { return true; }
 }

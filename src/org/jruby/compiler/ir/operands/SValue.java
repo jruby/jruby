@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 // Represents a svalue node in Ruby code
 //
 // According to headius, svalue evaluates its value node and returns:
@@ -12,8 +14,7 @@ package org.jruby.compiler.ir.operands;
 //
 public class SValue extends Operand
 {
-    final public Operand _array;
-    private Operand _simplifiedValue;
+    Operand _array;
 
     public SValue(Operand a) { _array = a; }
 
@@ -21,14 +22,11 @@ public class SValue extends Operand
 
     public String toString() { return "SValue(" + _array + ")"; }
 
-    public Operand getSimplifiedValue()
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
     {
-        if (!isConstant())
-            return this;
-
-        Operand so = _array.getSimplifiedValue();
-        if (so instanceof Array) {
-            Array a = (Array)so;
+        _array = _array.getSimplifiedValue(valueMap);
+        if (_array instanceof Array) {
+            Array a = (Array)_array;
             return (a._elts.length == 1) ? a._elts[0] : a;
         }
         else {
@@ -38,10 +36,9 @@ public class SValue extends Operand
 
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
-        // SSS FIXME: This is not the right approach -- we'll need to reset this value on each opt. pass.
-        if (_simplifiedValue == null)
-            _simplifiedValue = getSimplifiedValue();
-
-        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex, getSubArray);
+        // SSS FIXME: This should never get called for constant svalues
+        return null;
     }
+
+    public boolean isCompoundOperand() { return true; }
 }

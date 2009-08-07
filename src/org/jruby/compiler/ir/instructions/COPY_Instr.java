@@ -20,8 +20,13 @@ public class COPY_Instr extends OneOperandInstr
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
     {
-        Operand orig = _arg;
         simplifyOperands(valueMap);
-        return (_arg == orig) ? null : _arg;
+        return _arg;
+/**
+        simplifyOperands(valueMap);
+        // Since compound values get left in place and don't get replaced,
+        // and we want to pass along the simplified value, look it up!
+        return _arg instanceof Variable ? valueMap.get(_arg) : _arg;
+**/
     }
 }

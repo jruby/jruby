@@ -26,11 +26,7 @@ public abstract class PUT_Instr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
-        Operand v = valueMap.get(_value);
-        if (v != null)
-            _value = v;
-        Operand t = valueMap.get(_target);
-        if (t != null)
-            _target = t;
+        _value = _value.getSimplifiedValue(valueMap);
+        _target = _target.getSimplifiedValue(valueMap);
     }
 }

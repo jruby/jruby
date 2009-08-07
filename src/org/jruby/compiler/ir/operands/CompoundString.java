@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import java.util.List;
+import java.util.Map;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -28,5 +29,18 @@ public class CompoundString extends Operand
 
     public String toString() { 
        return "COMPOUND_STRING" + (_pieces == null ? "" : java.util.Arrays.toString(_pieces.toArray()));
+    }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        int i = 0;
+        for (Operand p: _pieces) {
+           _pieces.set(i, p.getSimplifiedValue(valueMap));
+           i++;
+        }
+
+        return this;
     }
 }

@@ -37,4 +37,11 @@ public class IR_Script extends IR_ScopeImpl
                 "\n  class:\n" + getRootClass() +
                 super.toString();
     }
+
+    public void peepHoleOptimize()
+    {
+        super.peepHoleOptimize();
+        // SSS FIXME: Is there a reason why we cannot add dummy class to the list of classes for the script??
+        getRootClass().peepHoleOptimize();
+    }
 }

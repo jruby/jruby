@@ -42,12 +42,7 @@ public class CALL_Instr extends MultiOperandInstr
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
         super.simplifyOperands(valueMap);
-        Operand m = valueMap.get(_methAddr);
-        if (m != null)
-            _methAddr = m;
-
-        Operand c = valueMap.get(_closure);
-        if (c != null)
-            _closure = c;
+        _methAddr = _methAddr.getSimplifiedValue(valueMap);
+        _closure = _closure.getSimplifiedValue(valueMap);
     }
 }

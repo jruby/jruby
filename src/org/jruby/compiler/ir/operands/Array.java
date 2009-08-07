@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import java.util.List;
+import java.util.Map;
 
 // Represents an array [_, _, .., _] in ruby
 //
@@ -29,6 +30,17 @@ public class Array extends Operand
                 return false;
 
        return true;
+    }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        for (int i = 0; i < _elts.length; i++) {
+            _elts[i] = _elts[i].getSimplifiedValue(valueMap);
+        }
+
+        return this;
     }
 
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)

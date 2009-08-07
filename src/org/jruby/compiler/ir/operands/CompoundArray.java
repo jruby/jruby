@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import java.util.List;
+import java.util.Map;
 
 // This represents a concatenation of an array and a splat
 // Ex: a = 1,2,3,*[5,6,7]
@@ -9,8 +10,8 @@ import java.util.List;
 // Further down the line, this will get built into an actual array object
 public class CompoundArray extends Operand
 {
-    final public Operand _a1;
-    final public Operand _a2;
+    Operand _a1;
+    Operand _a2;
 
     private Operand _simplifiedValue;
 
@@ -20,8 +21,10 @@ public class CompoundArray extends Operand
 
     public String toString() { return _a1 + ", *" + _a2; }
 
-    public Operand getSimplifiedValue()
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
     {
+        _a1 = _a1.getSimplifiedValue(valueMap);
+        _a2 = _a2.getSimplifiedValue(valueMap);
         if ((_a1 instanceof Array) && (_a2 instanceof Array)) {
             // SSS FIXME: Move this code to some utils area .. or probably there is already a method for this in some jruby utils class
             // Holy cow!  Just to append two darned arrays!
@@ -37,13 +40,11 @@ public class CompoundArray extends Operand
         }
     }
 
-    // SSS FIXME: Premature optimization of GET_ARRAY ... make this part of a pass of peephole optimization!
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
-        // SSS FIXME: This is not the right approach -- we'll need to reset this value on each opt. pass.
-        if (_simplifiedValue == null)
-            _simplifiedValue = getSimplifiedValue();
-
-        return (_simplifiedValue == this) ? null : _simplifiedValue.fetchCompileTimeArrayElement(argIndex, getSubArray);
+        // SSS FIXME: For constant arrays, we should never get here!
+        return null;
     }
+
+    public boolean isCompoundOperand() { return true; }
 }

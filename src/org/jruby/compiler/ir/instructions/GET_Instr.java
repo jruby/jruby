@@ -25,8 +25,6 @@ public abstract class GET_Instr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
-        Operand s = valueMap.get(_source);
-        if (s != null)
-            _source = s;
+        _source = _source.getSimplifiedValue(valueMap);
     }
 }

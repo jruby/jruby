@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.Map;
+
 // Represents a range (1..5) or (a..b) in ruby code
 //
 // NOTE: This operand is only used in the initial stages of optimization
@@ -7,8 +9,8 @@ package org.jruby.compiler.ir.operands;
 // that actually build the Range object
 public class Range extends Operand
 {
-    final public Operand _begin;
-    final public Operand _end;
+    Operand _begin;
+    Operand _end;
 
     public Range(Operand b, Operand e) { _begin = b; _end = e; }
 
@@ -28,5 +30,14 @@ public class Range extends Operand
         // SSS FIXME: Cannot optimize this without assuming that Range.to_ary method has not redefined.
         // So for now, return null!
         return null;
+    }
+
+    public boolean isCompoundOperand() { return true; }
+
+    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    {
+        _begin = _begin.getSimplifiedValue(valueMap);
+        _end = _end.getSimplifiedValue(valueMap);
+        return this;
     }
 }

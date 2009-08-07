@@ -68,4 +68,7 @@ public interface IR_Scope
 
         // Indicate that we are done processing the loop
     public void endLoop(IR_Loop l);
+	 	
+// --- Methods below this point are optimization specific methods ---
+    public void peepHoleOptimize();
 }
