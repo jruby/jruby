@@ -146,7 +146,7 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The size of the memory area.
      */
-    protected final long getSize() {
+    public final long getSize() {
         return this.size;
     }
 

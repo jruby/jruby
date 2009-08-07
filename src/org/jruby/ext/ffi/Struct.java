@@ -123,8 +123,13 @@ public class Struct extends RubyObject implements StructLayout.Storage {
                     + ptr.getMetaClass().getName() + " (expected Pointer or Buffer)");
         }
 
-        memory = (AbstractMemory) ptr;
+        if (((AbstractMemory) ptr).getSize() < layout.getSize()) {
+            throw context.getRuntime().newArgumentError("memory object has insufficient space for "
+                    + getMetaClass().getName());
+        }
 
+        memory = (AbstractMemory) ptr;
+        
         return this;
     }
 

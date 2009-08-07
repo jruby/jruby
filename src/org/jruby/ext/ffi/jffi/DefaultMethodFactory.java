@@ -26,6 +26,7 @@ import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.StructByValue;
+import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -204,7 +205,7 @@ public final class DefaultMethodFactory {
         } else if (type instanceof org.jruby.ext.ffi.Enum) {
             return getEnumMarshaller(type, type.callMethod(type.getRuntime().getCurrentContext(), "to_hash"));
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
-            return StructByValueMarshaller.INSTANCE;
+            return new StructByValueMarshaller((org.jruby.ext.ffi.StructByValue) type);
         } else {
             return null;
         }
@@ -285,8 +286,6 @@ public final class DefaultMethodFactory {
                 return BufferMarshaller.OUT;
             case BUFFER_INOUT:
                 return BufferMarshaller.INOUT;
-            case STRUCT:
-                return StructByValueMarshaller.INSTANCE;
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);
         }
@@ -791,6 +790,11 @@ public final class DefaultMethodFactory {
      * Converts a ruby String into a native pointer.
      */
     static final class StructByValueMarshaller extends BaseMarshaller {
+        private final StructLayout layout;
+        public StructByValueMarshaller(org.jruby.ext.ffi.StructByValue sbv) {
+            layout = sbv.getStructLayout();
+        }
+
 
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (!(parameter instanceof Struct)) {
@@ -802,6 +806,10 @@ public final class DefaultMethodFactory {
             if (!(memory instanceof AbstractMemory)) {
                 throw context.getRuntime().newTypeError("wrong struct memory type "
                         + memory.getMetaClass().getName());
+            }
+
+            if (((AbstractMemory) memory).getSize() < layout.getSize()) {
+                throw context.getRuntime().newArgumentError("struct memory too small for parameter");
             }
 
             MemoryIO io = ((AbstractMemory) memory).getMemoryIO();
@@ -821,6 +829,5 @@ public final class DefaultMethodFactory {
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             marshal(invocation.getThreadContext(), buffer, parameter);
         }
-        public static final ParameterMarshaller INSTANCE = new StructByValueMarshaller();
     }
 }
