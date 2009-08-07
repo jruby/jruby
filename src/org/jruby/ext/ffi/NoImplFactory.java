@@ -41,6 +41,11 @@ public class NoImplFactory extends Factory {
     }
 
     @Override
+    public AbstractInvoker newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo) {
+        throw new UnsupportedOperationException(msg);
+    }
+
+    @Override
     public int sizeOf(NativeType type) {
         throw new UnsupportedOperationException(msg);
     }

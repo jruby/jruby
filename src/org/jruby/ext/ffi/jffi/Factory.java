@@ -1,12 +1,16 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import com.kenai.jffi.CallingConvention;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
+import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -72,6 +76,15 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
         return NativeMemoryIO.wrap(runtime, address);
     }
+
+    @Override
+    public Function newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo) {
+        CodeMemoryIO mem = new CodeMemoryIO(runtime, address);
+        RubyClass klass = runtime.fastGetModule("FFI").fastGetClass("Function");
+        return new Function(runtime, klass, mem, 
+                cbInfo.getReturnType(), cbInfo.getParameterTypes(), CallingConvention.DEFAULT, null);
+    }
+
 
     @Override
     public CallbackManager getCallbackManager() {

@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -194,6 +195,8 @@ public abstract class Factory {
 
 
     public abstract CallbackManager getCallbackManager();
+
+    public abstract AbstractInvoker newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo);
 
     public abstract int sizeOf(NativeType type);
     public abstract int alignmentOf(NativeType type);

@@ -469,7 +469,7 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            throw runtime.newNotImplementedError("Cannot get callback struct fields");
+            return Factory.getInstance().newFunction(runtime, ((Pointer) ptr).getPointer(runtime, getOffset(ptr)), cbInfo);
         }
     }
 
