@@ -986,6 +986,9 @@ public class LoadService {
         for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
 
+            // if entry is an empty string, skip it
+            if (entry.length() == 0) continue;
+
             // if entry starts with a slash, skip it since classloader resources never start with a /
             if (entry.charAt(0) == '/' || (entry.length() > 1 && entry.charAt(1) == ':')) continue;
             
