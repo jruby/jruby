@@ -662,6 +662,9 @@
 	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
 	<sysproperty key="emma.coverage.out.merge" value="true" />
 
+        <!-- force encoding to UTF-8 because of stupid Macroman on OS X -->
+        <sysproperty key="file.encoding" value="UTF-8"/>
+
 	<jvmarg value="-ea"/>
 
         <!-- force client VM to improve test run times -->
