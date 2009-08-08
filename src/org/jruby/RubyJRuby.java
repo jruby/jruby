@@ -35,6 +35,7 @@ import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Collections;
+import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
@@ -519,6 +520,22 @@ public class RubyJRuby {
                 if (value == null) value = Collections.EMPTY_MAP;
                 clazz.addClassAnnotation(entry.getKey(), value);
             }
+
+            return context.getRuntime().getNil();
+        }
+
+        @JRubyMethod
+        public static IRubyObject add_method_signature(ThreadContext context, IRubyObject maybeClass, IRubyObject methodName, IRubyObject clsList) {
+            RubyClass clazz;
+            if (maybeClass instanceof RubyClass) {
+                clazz = (RubyClass)maybeClass;
+            } else {
+                throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
+            }
+
+            List<Class> types = (List<Class>)clsList;
+
+            clazz.addMethodSignature(methodName.convertToString().asJavaString(), types.toArray(new Class[types.size()]));
 
             return context.getRuntime().getNil();
         }
