@@ -269,12 +269,6 @@ public abstract class IR_ScopeImpl implements IR_Scope
             // Simplify instruction and record mapping between target variable and simplified value
             Operand val = i.simplifyAndGetResult(valueMap);
             Operand res = i.getResult();
-
-            // Because compound values are not propagated through variables, if we got a variable,
-            // do another lookup to fetch any compound value that this variable has simplified to!
-            if (val != null && val instanceof Variable)
-                val = ((Variable)val).getValue(valueMap);
-
             System.out.println("For " + i + "; dst = " + res + "; val = " + val);
             if (val != null && res != null && res != val)
                 valueMap.put(res, val);
