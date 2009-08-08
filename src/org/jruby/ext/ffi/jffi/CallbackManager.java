@@ -386,7 +386,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     buffer.setAddressReturn(addressValue(value)); break;
 
                 case BOOL:
-                    buffer.setIntReturn(value.isTrue() ? 1 : 0);
+                    buffer.setIntReturn(value.isTrue() ? 1 : 0); break;
                 default:
             }
         } else if (type instanceof CallbackInfo) {
