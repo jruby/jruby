@@ -56,6 +56,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.platform.Platform;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -350,8 +351,13 @@ public class RubySocket extends RubyBasicSocket {
 	ByteArrayOutputStream bufS = new ByteArrayOutputStream();
 	try {
 	    DataOutputStream ds = new DataOutputStream(bufS);
-	    ds.write(16);
-	    ds.write(2);
+	    if(Platform.IS_BSD) {
+		ds.write(16);
+		ds.write(2);
+	    } else {
+		ds.write(2);
+		ds.write(0);
+	    }
 
 	    ds.write(iport >> 8);
 	    ds.write(iport);
@@ -384,7 +390,7 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject addr) {
         String val = addr.convertToString().toString();
-        if(val.charAt(0) != 16 || val.charAt(1) != 2) {
+        if((Platform.IS_BSD && val.charAt(0) != 16 && val.charAt(1) != 2) || (!Platform.IS_BSD && val.charAt(0) != 2)) {
             throw context.getRuntime().newArgumentError("can't resolve socket address of wrong type");
         }
         
