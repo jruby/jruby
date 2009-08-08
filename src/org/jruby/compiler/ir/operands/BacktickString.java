@@ -24,13 +24,13 @@ public class BacktickString extends Operand
        return true;
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
         int i = 0;
         for (Operand p: _pieces) {
-           _pieces.set(i, p.getSimplifiedValue(valueMap));
+           _pieces.set(i, p.getSimplifiedOperand(valueMap));
            i++;
         }
 

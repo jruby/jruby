@@ -45,7 +45,7 @@ public class CASE_Instr extends OneOperandInstr {
         // Simplify the variables too -- to keep these variables in sync with what is actually used in the when clauses
         // This is not required for correctness reasons, but only for performance reasons.
         for (int i = 0; i < variables.length; i++) {
-            variables[i] = variables[i].getSimplifiedValue(valueMap);
+            variables[i] = variables[i].getSimplifiedOperand(valueMap);
         }
     }
 }

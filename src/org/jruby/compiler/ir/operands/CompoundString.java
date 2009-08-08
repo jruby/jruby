@@ -31,13 +31,13 @@ public class CompoundString extends Operand
        return "COMPOUND_STRING" + (_pieces == null ? "" : java.util.Arrays.toString(_pieces.toArray()));
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
         int i = 0;
         for (Operand p: _pieces) {
-           _pieces.set(i, p.getSimplifiedValue(valueMap));
+           _pieces.set(i, p.getSimplifiedOperand(valueMap));
            i++;
         }
 

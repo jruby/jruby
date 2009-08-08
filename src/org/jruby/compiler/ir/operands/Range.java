@@ -32,12 +32,12 @@ public class Range extends Operand
         return null;
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
-        _begin = _begin.getSimplifiedValue(valueMap);
-        _end = _end.getSimplifiedValue(valueMap);
+        _begin = _begin.getSimplifiedOperand(valueMap);
+        _end = _end.getSimplifiedOperand(valueMap);
         return this;
     }
 }

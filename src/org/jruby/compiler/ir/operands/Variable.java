@@ -33,24 +33,16 @@ public class Variable extends Operand implements Comparable
         return 0;
     }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
+    {
+        // You can only value-replace atomic values
+        Operand v = valueMap.get(this);
+        return ((v != null) && !v.isNonAtomicValue()) ? v : this;
+    }
+
+    public Operand getValue(Map<Operand, Operand> valueMap)
     {
         Operand v = valueMap.get(this);
         return (v == null) ? this : v;
-/**
-        Operand v = valueMap.get(this);
-        if (v == null) {
-            return this;
-        }
-        // SSS FIXME: You can only value-replace non-compound values
-        // Otherwise, you might end up constructing the compound value over and over!
-        else if (v.isCompoundOperand()) { 
-            valueMap.put(this, v);
-            return this;
-        }
-        else {
-            return v;
-        }
-**/
     }
 }

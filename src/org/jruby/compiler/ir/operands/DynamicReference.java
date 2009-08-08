@@ -11,11 +11,11 @@ public class DynamicReference extends Operand
 
     public DynamicReference(CompoundString n) { _refName = n; }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     { 
-       _refName = (CompoundString)_refName.getSimplifiedValue(valueMap);
+       _refName = (CompoundString)_refName.getSimplifiedOperand(valueMap);
        return this;
     }
 }

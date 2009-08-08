@@ -18,11 +18,11 @@ public class Regexp extends Operand
 
     public String toString() { return "RE:|" + _re + "|" + _opts; }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
-        _re = _re.getSimplifiedValue(valueMap);
+        _re = _re.getSimplifiedOperand(valueMap);
         return this;
     }
 }

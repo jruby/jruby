@@ -16,6 +16,17 @@ public class Splat extends Operand
 
     public String toString() { return "*" + _array; }
 
+    public boolean isNonAtomicValue() { return true; }
+
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
+    {
+        _array = _array.getSimplifiedOperand(valueMap);
+        if (_array instanceof Variable) {
+            _array = ((Variable)_array).getValue(valueMap);
+        }
+        return this;
+    }
+
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
     {
         if (_array instanceof Array) 
@@ -24,13 +35,5 @@ public class Splat extends Operand
             return ((Range)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
         else
             return null;
-    }
-
-    public boolean isCompoundOperand() { return true; }
-
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
-    {
-        _array = _array.getSimplifiedValue(valueMap);
-        return this;
     }
 }

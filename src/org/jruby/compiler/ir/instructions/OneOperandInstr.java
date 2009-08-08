@@ -27,6 +27,6 @@ public class OneOperandInstr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
-        _arg = _arg.getSimplifiedValue(valueMap);
+        _arg = _arg.getSimplifiedOperand(valueMap);
     }
 }

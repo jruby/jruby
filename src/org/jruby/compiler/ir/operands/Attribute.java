@@ -20,11 +20,11 @@ public class Attribute extends Operand
 //    DEFERRED
 //    AttributeValue _val;       // Attribute value
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
-        _target = _target.getSimplifiedValue(valueMap);
+        _target = _target.getSimplifiedOperand(valueMap);
         return _target;
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 }

@@ -22,7 +22,8 @@ public class GET_ARRAY_Instr extends OneOperandInstr
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
     {
-		  simplifyOperands(valueMap);
-        return _arg.fetchCompileTimeArrayElement(_index, _all);
+        simplifyOperands(valueMap);
+        Operand val = _arg.getValue(valueMap);
+        return val.fetchCompileTimeArrayElement(_index, _all);
     }
 }

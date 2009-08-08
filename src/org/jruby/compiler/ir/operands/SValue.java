@@ -22,9 +22,9 @@ public class SValue extends Operand
 
     public String toString() { return "SValue(" + _array + ")"; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
-        _array = _array.getSimplifiedValue(valueMap);
+        _array = _array.getSimplifiedOperand(valueMap);
         if (_array instanceof Array) {
             Array a = (Array)_array;
             return (a._elts.length == 1) ? a._elts[0] : a;
@@ -40,5 +40,5 @@ public class SValue extends Operand
         return null;
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 }

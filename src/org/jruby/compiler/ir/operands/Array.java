@@ -32,12 +32,12 @@ public class Array extends Operand
        return true;
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
         for (int i = 0; i < _elts.length; i++) {
-            _elts[i] = _elts[i].getSimplifiedValue(valueMap);
+            _elts[i] = _elts[i].getSimplifiedOperand(valueMap);
         }
 
         return this;

@@ -25,14 +25,14 @@ public class Hash extends Operand
        return true;
     }
 
-    public boolean isCompoundOperand() { return true; }
+    public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedValue(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
         int i = 0;
         for (KeyValuePair kv: _pairs) {
-           kv._key   = kv._key.getSimplifiedValue(valueMap);
-           kv._value = kv._value.getSimplifiedValue(valueMap);
+           kv._key   = kv._key.getSimplifiedOperand(valueMap);
+           kv._value = kv._value.getSimplifiedOperand(valueMap);
            i++;
         }
 
