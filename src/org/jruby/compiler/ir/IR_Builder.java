@@ -82,6 +82,7 @@ import org.jruby.ast.DXStrNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -298,7 +299,7 @@ public class IR_Builder
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot((NotNode) node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, m); // done
-//            case OPASGNNODE: return buildOpAsgn(node, m); // done
+            case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, m); // done
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done -- partially
 //            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // DEFERRED SSS FIXME: What code generates this AST?
             case ORNODE: return buildOr((OrNode) node, m); // done
@@ -332,7 +333,7 @@ public class IR_Builder
             case YIELDNODE: return buildYield((YieldNode) node, m); // done
             case ZARRAYNODE: return buildZArray(node, m); // done
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, m); // done
-            default: throw new NotCompilableException("Unknown node encountered in buildr: " + node);
+            default: throw new NotCompilableException("Unknown node encountered in builder: " + node);
         }
     }
 
@@ -1992,6 +1993,31 @@ public class IR_Builder
         Variable ret = m.getNewVariable();
         m.addInstr(new ALU_Instr(Operation.NOT, ret, build(node.getConditionNode(), m)));
         return ret;
+    }
+
+    public Operand buildOpAsgn(OpAsgnNode opAsgnNode, IR_Scope s) {
+        if (opAsgnNode.getOperatorName().equals("||") || opAsgnNode.getOperatorName().equals("&&")) {
+            throw new NotCompilableException("Unknown node encountered in builder: " + opAsgnNode);
+        }
+        
+        // get attr
+        Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
+        Variable      getResult   = s.getNewVariable();
+        IR_Instr      callInstr    = new CALL_Instr(getResult, new MethAddr(opAsgnNode.getVariableName()), new Operand[] {v1}, null);
+        s.addInstr(callInstr);
+
+        // call operator
+        Operand  v2 = build(opAsgnNode.getValueNode(), s);
+        Variable      setValue   = s.getNewVariable();
+        callInstr    = new CALL_Instr(setValue, new MethAddr(opAsgnNode.getOperatorName()), new Operand[] {getResult, v2}, null);
+        s.addInstr(callInstr);
+
+        // set attr
+        Variable      setResult   = s.getNewVariable();
+        callInstr    = new CALL_Instr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), new Operand[] {v1, setValue}, null);
+        s.addInstr(callInstr);
+
+        return setResult;
     }
 
     // Translate "x &&= y" --> "x = (is_true(x) ? y : false)" -->
