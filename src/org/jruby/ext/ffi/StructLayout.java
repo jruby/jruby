@@ -64,7 +64,7 @@ public final class StructLayout extends Type {
     /** The ordered list of field names (as symbols) */
     private final List<RubySymbol> fieldNames;
 
-    /** The ordered list of field names (as symbols) */
+    /** The ordered list of fields */
     private final List<Member> fields;
     
     private final int cacheableFieldCount;
@@ -79,15 +79,21 @@ public final class StructLayout extends Type {
      * @return The new class
      */
     public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
-        RubyClass result = runtime.defineClassUnder(CLASS_NAME, module.fastGetClass("Type"),
+        RubyClass layoutClass = runtime.defineClassUnder(CLASS_NAME, module.fastGetClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
-        result.defineAnnotatedMethods(StructLayout.class);
-        result.defineAnnotatedConstants(StructLayout.class);
-        RubyClass array = runtime.defineClassUnder("Array", runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, result);
-        array.includeModule(runtime.getEnumerable());
-        array.defineAnnotatedMethods(Array.class);
-        return result;
+        layoutClass.defineAnnotatedMethods(StructLayout.class);
+        layoutClass.defineAnnotatedConstants(StructLayout.class);
+
+        RubyClass arrayClass = runtime.defineClassUnder("Array", runtime.getObject(),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
+        arrayClass.includeModule(runtime.getEnumerable());
+        arrayClass.defineAnnotatedMethods(Array.class);
+
+        RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
+        fieldClass.defineAnnotatedMethods(Member.class);
+
+        return layoutClass;
     }
     
     /**
@@ -212,6 +218,7 @@ public final class StructLayout extends Type {
      * @return The size of the struct in bytes.
      */
     @JRubyMethod(name = "size")
+    @Override
     public IRubyObject size(ThreadContext context) {
         return RubyFixnum.newFixnum(context.getRuntime(), getNativeSize());
     }
@@ -222,7 +229,8 @@ public final class StructLayout extends Type {
      * @return The minimum alignment of the struct in bytes.
      */
     @JRubyMethod(name = "alignment")
-    public IRubyObject aligment(ThreadContext context) {
+    @Override
+    public IRubyObject alignment(ThreadContext context) {
         return RubyFixnum.newFixnum(context.getRuntime(), getNativeAlignment());
     }
 
@@ -236,7 +244,17 @@ public final class StructLayout extends Type {
         final Member member = getMember(context.getRuntime(), fieldName);
         return RubyFixnum.newFixnum(context.getRuntime(), member.offset);
     }
+    
+    @JRubyMethod(name = "[]")
+    public IRubyObject aref(ThreadContext context, IRubyObject fieldName) {
+        return getMember(context.getRuntime(), fieldName);
+    }
 
+    @JRubyMethod
+    public IRubyObject fields(ThreadContext context) {
+        return RubyArray.newArray(context.getRuntime(), fields);
+    }
+    
     /**
      * Returns a {@link Member} descriptor for a struct field.
      * 
@@ -288,7 +306,11 @@ public final class StructLayout extends Type {
      * when reading/writing the member, as well as how to convert between the 
      * native representation of the member and the JRuby representation.
      */
-    public static abstract class Member {
+    @JRubyClass(name="FFI::StructLayout::Field", parent="Object")
+    public static abstract class Member extends RubyObject {
+        /** The name of this member. */
+        protected final IRubyObject name;
+
         /** The {@link Type} of this member. */
         protected final Type type;
 
@@ -299,7 +321,9 @@ public final class StructLayout extends Type {
         protected final int index;
 
         /** Initializes a new Member instance */
-        protected Member(Type type, int index, long offset) {
+        protected Member(IRubyObject name, Type type, int index, long offset) {
+            super(type.getRuntime(), type.getRuntime().fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Field"));
+            this.name = name;
             this.type = type;
             this.index = index;
             this.offset = offset;
@@ -371,6 +395,26 @@ public final class StructLayout extends Type {
          */
         protected boolean isValueReferenceNeeded() {
             return false;
+        }
+
+        @JRubyMethod
+        public IRubyObject size(ThreadContext context) {
+            return context.getRuntime().newFixnum(type.getNativeSize());
+        }
+
+        @JRubyMethod
+        public IRubyObject alignment(ThreadContext context) {
+            return context.getRuntime().newFixnum(type.getNativeAlignment());
+        }
+
+        @JRubyMethod
+        public IRubyObject offset(ThreadContext context) {
+            return context.getRuntime().newFixnum(offset);
+        }
+
+        @JRubyMethod
+        public IRubyObject ffi_type(ThreadContext context) {
+            return type;
         }
     }
 
