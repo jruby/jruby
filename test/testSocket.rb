@@ -43,6 +43,8 @@ test_exception { serv.close }
 ### UDP ###
 
 test_ok(UDPSocket::open)
+# JRUBY-3849
+test_ok(UDPSocket::new(Socket::AF_INET))
 
 port = 4321
 

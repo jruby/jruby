@@ -100,9 +100,9 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject protocol) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject protocol) {
         // we basically ignore protocol. let someone report it...
-        return initialize();
+        return initialize(context);
     }
     
     @Deprecated
