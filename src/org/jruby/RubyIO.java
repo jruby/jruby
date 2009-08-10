@@ -3080,64 +3080,101 @@ public class RubyIO extends RubyObject {
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
         case 0: throw context.getRuntime().newArgumentError(0, 1);
-        case 1: return read(context, recv, args[0],Block.NULL_BLOCK);
+        case 1: return read(context, recv, args[0], Block.NULL_BLOCK);
         case 2: return read(context, recv, args[0], args[1]);
         case 3: return read(context, recv, args[0], args[1], args[2]);
         default: throw context.getRuntime().newArgumentError(args.length, 3);
         }
    }
+
+    private static RubyIO newFile(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+       return (RubyIO) RubyKernel.open(context, recv, args, Block.NULL_BLOCK);
+    }
    
-    @JRubyMethod(name = "read", meta = true)
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block unusedBlock) {
-       IRubyObject[] fileArguments = new IRubyObject[] {arg0};
-       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
+    @JRubyMethod(name = "read", meta = true, compat = CompatVersion.RUBY1_8)
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, Block unusedBlock) {
+        RubyIO file = newFile(context, recv, path);
 
        try {
            return file.read(context);
        } finally {
            file.close();
        }
-   }
+    }
    
-    @JRubyMethod(name = "read", meta = true)
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-       IRubyObject[] fileArguments = new IRubyObject[] {arg0};
-       RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
+    @JRubyMethod(name = "read", meta = true, compat = CompatVersion.RUBY1_8)
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length) {
+        RubyIO file = newFile(context, recv, path);
        
         try {
-            if (!arg1.isNil()) {
-                if (arg1 instanceof RubyHash) {
-                    // TODO: hash args for encoding, etc, are not yet supported; ignore
-                    return file.read(context);
-                } else {
-                    return file.read(context, arg1);
-                }
-            } else {
-                return file.read(context);
-            }
+            return !length.isNil() ? file.read(context, length) : file.read(context);
         } finally  {
             file.close();
         }
-   }
-   
-    @JRubyMethod(name = "read", meta = true)
-    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject[] fileArguments = new IRubyObject[]{arg0};
-        RubyIO file = (RubyIO) RubyKernel.open(context, recv, fileArguments, Block.NULL_BLOCK);
+    }
 
-        if (!arg2.isNil()) {
-            file.seek(context, arg2);
-        }
+    @JRubyMethod(name = "read", meta = true, compat = CompatVersion.RUBY1_8)
+    public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length, IRubyObject offset) {
+        RubyIO file = newFile(context, recv, path);
+
+        if (!offset.isNil()) file.seek(context, offset);
 
         try {
-            if (!arg1.isNil()) {
-                return file.read(context, arg1);
-            } else {
-                return file.read(context);
-            }
+            return !length.isNil() ? file.read(context, length) : file.read(context);
         } finally  {
             file.close();
         }
+    }
+
+    /**
+     *  options is a hash which can contain:
+     *    encoding: string or encoding
+     *    mode: string
+     *    open_args: array of string
+     */
+    private static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length, IRubyObject offset, RubyHash options) {
+        // FIXME: process options
+
+        RubyIO file = newFile(context, recv, path);
+
+        if (!offset.isNil()) file.seek(context, offset);
+
+        try {
+            return !length.isNil() ? file.read(context, length) : file.read(context);
+        } finally  {
+            file.close();
+        }
+    }
+
+    // Enebo: annotation processing forced me to do pangea method here...
+    @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        IRubyObject nil = context.getRuntime().getNil();
+        IRubyObject path = args[0];
+        IRubyObject length = nil;
+        IRubyObject offset = nil;
+        RubyHash options = null;
+        if (args.length > 3) {
+            if (!(args[3] instanceof RubyHash)) throw context.getRuntime().newTypeError("Must be a hash");
+            options = (RubyHash) args[3];
+            offset = args[2];
+            length = args[1];
+        } else if (args.length > 2) {
+            if (args[2] instanceof RubyHash) {
+                options = (RubyHash) args[2];
+            } else {
+                offset = args[2];
+            }
+            length = args[1];
+        } else if (args.length > 1) {
+            if (args[1] instanceof RubyHash) {
+                options = (RubyHash) args[1];
+            } else {
+                length = args[1];
+            }
+        }
+
+        return read19(context, recv, path, length, offset, (RubyHash) options);
     }
 
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
