@@ -2963,7 +2963,7 @@ public Object case388_line1464(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case344_line1301(Object yyVal, Object[] yyVals, int yyTop) {
-                    RestArgNode rest = new UnnamedRestArgNode(((ListNode)yyVals[-1+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                    RestArgNode rest = new UnnamedRestArgNode(((ListNode)yyVals[-1+yyTop]).getPosition(), support.getCurrentScope().addVariable("*"));
                     yyVal = support.new_args(((ListNode)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null, rest, null, null);
     return yyVal;
 }
@@ -3217,7 +3217,7 @@ public Object case512_line1968(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case500_line1918(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                    yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), support.getCurrentScope().addVariable("*"));
     return yyVal;
 }
 public Object case416_line1603(Object yyVal, Object[] yyVals, int yyTop) {
