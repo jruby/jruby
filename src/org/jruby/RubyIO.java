@@ -3139,7 +3139,7 @@ public class RubyIO extends RubyObject {
             file.close();
         }
     }
-   
+
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
     public static RubyArray readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int count = args.length;
@@ -3278,9 +3278,25 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
-            IRubyObject stream1, IRubyObject stream2) throws IOException {
-        RubyIO io1 = (RubyIO)stream1;
-        RubyIO io2 = (RubyIO)stream2;
+            IRubyObject arg1, IRubyObject arg2) throws IOException {
+        Ruby runtime = context.getRuntime();
+        RubyIO io1;
+        RubyIO io2;
+        if (arg1 instanceof RubyString) {
+            io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
+        } else if (arg1 instanceof RubyIO) {
+            io1 = (RubyIO) arg1;
+        } else {
+            throw runtime.newTypeError("Should be String or IO");
+        }
+
+        if (arg2 instanceof RubyString) {
+            io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
+        } else if (arg1 instanceof RubyIO) {
+            io2 = (RubyIO) arg2;
+        } else {
+            throw runtime.newTypeError("Should be String or IO");
+        }
 
         ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
         if (!d1.isSeekable()) {
