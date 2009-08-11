@@ -93,7 +93,13 @@ public class CompiledBlock19 extends BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        return yieldSpecificInternal(context, new IRubyObject[] {arg0}, binding, type);
+        IRubyObject[] args;
+        if (arg0 instanceof RubyArray) {
+            args = ((RubyArray)arg0).toJavaArray();
+        } else {
+            args = new IRubyObject[] {arg0};
+        }
+        return yieldSpecificInternal(context, args, binding, type);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
@@ -234,6 +240,8 @@ public class CompiledBlock19 extends BlockBody {
         if (value == null) {
 //            return warnMultiReturnNil(ruby);
             return new IRubyObject[] {ruby.getNil()};
+        } else if (value instanceof RubyArray) {
+            return ((RubyArray)value).toJavaArray();
         }
         return new IRubyObject[] {value};
     }
