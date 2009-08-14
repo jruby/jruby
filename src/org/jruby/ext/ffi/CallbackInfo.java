@@ -177,4 +177,14 @@ public class CallbackInfo extends Type implements NativeParam {
         sb.append("] return=" + returnType.toString().toLowerCase() + "]");
         return sb.toString();
     }
+
+    @JRubyMethod
+    public final IRubyObject result_type(ThreadContext context) {
+        return returnType;
+    }
+
+    @JRubyMethod
+    public final IRubyObject param_types(ThreadContext context) {
+        return RubyArray.newArray(context.getRuntime(), parameterTypes);
+    }
 }
