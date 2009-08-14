@@ -66,7 +66,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
     
-    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 1)
+    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         DirectMemoryIO fptr = null;
         RubyHash options = null;
