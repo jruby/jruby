@@ -145,14 +145,14 @@ module DL
 
   def self.find_return_type(type)
     # Restrict types to the known-supported ones
-    raise "Unsupported type '#{type}" unless type =~ /[CHILFDPS]/
+    raise "Unsupported return type '#{type}'" unless type =~ /[0CHILFDPS]/
     DL.find_type(type)
   end
 
   def self.find_param_type(type)
     # Restrict types to the known-supported ones
-    raise "Unsupported type '#{type}" unless type =~ /[CHILFDPS]/
-    DL.find_type(types)
+    raise "Unsupported parameter type '#{type}'" unless type =~ /[CHILFDPS]/
+    DL.find_type(type)
   end
 
   class Symbol
