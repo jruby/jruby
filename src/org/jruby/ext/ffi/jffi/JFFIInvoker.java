@@ -98,7 +98,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             RubyHash options = (RubyHash) args[3];
             convention = options.fastARef(context.getRuntime().newSymbol("convention")).asJavaString();
             enums = options.fastARef(context.getRuntime().newSymbol("enums"));
-            if (!enums.isNil() && !(enums instanceof RubyHash)) {
+            if (enums != null && !enums.isNil() && !(enums instanceof RubyHash)) {
                 throw context.getRuntime().newTypeError("wrong type for options[:enum] "
                         + enums.getMetaClass().getName() + " (expected Hash)");
 
