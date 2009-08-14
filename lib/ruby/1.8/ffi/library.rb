@@ -30,6 +30,22 @@ module FFI::Library
   def ffi_convention(convention)
     @ffi_convention = convention
   end
+
+  def ffi_libraries
+    unless defined?(@ffi_libs) or self.name.nil?
+      libs = []
+      # Try the exact name (e.g. User32) and all lower case (e.g. LibC -> libc)
+      [ self.name, self.name.downcase ].each do |name|
+        begin
+          libs << FFI::DynamicLibrary.open(name, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
+        rescue Exception
+        end
+      end
+      @ffi_libs = libs unless libs.empty?
+    end
+    defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
+  end
+
   ##
   # Attach C function +name+ to this module.
   #
@@ -52,9 +68,8 @@ module FFI::Library
 
     # Try to locate the function in any of the libraries
     invokers = []
-    libraries = defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
     load_error = nil
-    libraries.each do |lib|
+    ffi_libraries.each do |lib|
       begin
         invokers << FFI.create_invoker(lib, cname.to_s, arg_types, find_type(ret_type), options)
       rescue LoadError => ex
@@ -70,71 +85,33 @@ module FFI::Library
 
   def attach_variable(mname, a1, a2 = nil)
     cname, type = a2 ? [ a1, a2 ] : [ mname.to_s, a1 ]
-    libraries = defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
     address = nil
-    libraries.each do |lib|
+    ffi_libraries.each do |lib|
       begin
         address = lib.find_variable(cname.to_s)
         break unless address.nil?
       rescue LoadError
       end
     end
-    raise FFI::NotFoundError.new(cname, libraries) if address.nil?
-    case ffi_type = find_type(type)
-    when :pointer, FFI::NativeType::POINTER
-      op = :pointer
-    when :char, FFI::NativeType::INT8
-      op = :int8
-    when :uchar, FFI::NativeType::UINT8
-      op = :uint8
-    when :short, FFI::NativeType::INT16
-      op = :int16
-    when :ushort, FFI::NativeType::UINT16
-      op = :uint16
-    when :int, FFI::NativeType::INT32
-      op = :int32
-    when :uint, FFI::NativeType::UINT32
-      op = :uint32
-    when :long, FFI::NativeType::LONG
-      op = :long
-    when :ulong, FFI::NativeType::ULONG
-      op = :ulong
-    when :long_long, FFI::NativeType::INT64
-      op = :int64
-    when :ulong_long, FFI::NativeType::UINT64
-      op = :uint64
-    else
-      if ffi_type.is_a?(FFI::CallbackInfo)
-        op = :callback
-      else
-        raise FFI::TypeError, "Cannot access library variable of type #{type}"
-      end
-    end
+
+    raise FFI::NotFoundError.new(cname, ffi_libraries) if address.nil? || address.null?
+    sc = Class.new(FFI::Struct)
+    sc.layout :gvar, find_type(type)
+    s = sc.new(address)
+
     #
     # Attach to this module as mname/mname=
     #
-    if op == :callback
-      self.module_eval <<-code
-        @@ffi_gvar_#{mname} = address
-        @@ffi_gvar_#{mname}_cbinfo = ffi_type
-        def self.#{mname}
-          raise ArgError, "Cannot get callback fields"
-        end
-        def self.#{mname}=(value)
-          @@ffi_gvar_#{mname}.put_callback(0, value, @@ffi_gvar_#{mname}_cbinfo)
-        end
-        code
-    else
-      self.module_eval <<-code
-        @@ffi_gvar_#{mname} = address
-        def self.#{mname}
-          @@ffi_gvar_#{mname}.get_#{op.to_s}(0)
-        end
-        def self.#{mname}=(value)
-          @@ffi_gvar_#{mname}.put_#{op.to_s}(0, value)
-        end
-        code
-    end
+    self.module_eval <<-code
+      @@ffi_gvar_#{mname} = s
+      def self.#{mname}
+        @@ffi_gvar_#{mname}[:gvar]
+      end
+      def self.#{mname}=(value)
+        @@ffi_gvar_#{mname}[:gvar] = value
+      end
+    code
+
     address
   end
 
@@ -199,6 +176,7 @@ module FFI::Library
   def enum_value(symbol)
     @ffi_enums.__map_symbol(symbol)
   end
+
   def find_type(name)
     code = if defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(name)
       @ffi_typedefs[name]

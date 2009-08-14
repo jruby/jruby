@@ -56,9 +56,7 @@ require 'rbconfig'
 module FFI
   #  Specialised error classes - delcare before loading all the other classes
   class NativeError < LoadError; end
-
-  class TypeError < NativeError; end
-
+  
   class SignatureError < NativeError; end
 
   class NotFoundError < NativeError
@@ -95,10 +93,11 @@ module FFI
     end
     lib
   end
-  def self.create_invoker(lib, name, args, ret, options = { :convention => :default })
+  
+  def self.create_invoker(lib, name, args, ret_type, options = { :convention => :default })
+    # Current artificial limitation based on JRuby::FFI limit
+    raise SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
 
-    # Current artificial limitation based on JFFI limit
-    raise FFI::SignatureError, 'FFI functions may take max 32 arguments!' if args.size > 32
     # Open the library if needed
     library = if lib.kind_of?(DynamicLibrary)
       lib
@@ -115,21 +114,13 @@ module FFI
 
     args = args.map {|e| find_type(e) }
     invoker = if args.length > 0 && args[args.length - 1] == FFI::NativeType::VARARGS
-      FFI::VariadicInvoker.new(library, function, args, find_type(ret), options)
+      FFI::VariadicInvoker.new(library, function, args, find_type(ret_type), options)
     else
-      FFI::Invoker.new(function, args, find_type(ret), options)
+      FFI::Function.new(find_type(ret_type), args, function, options)
     end
     raise NotFoundError.new(name, library.name) unless invoker
     
     return invoker
-  end
-
-  def self.create_function(lib, name, args, ret, convention = :default)
-    invoker = create_invoker(lib, name, args, ret, convention)
-    Module.new do
-      invoker.attach(self, "call")
-      extend self
-    end
   end
   
   # Load all the platform dependent types/consts/struct members
