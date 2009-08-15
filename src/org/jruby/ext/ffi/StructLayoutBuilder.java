@@ -182,10 +182,24 @@ public final class StructLayoutBuilder extends RubyObject {
         int offset = calculateOffset(args, 2, type.getNativeAlignment());
         
         StructLayout.Member field = null;
-        if (type instanceof Type.Builtin) {
-            field = createBuiltinMember(fieldName, (Type.Builtin) type, fieldCount, offset);
+        if (type instanceof Type.Array) {
+
+            Type.Array arrayType = (Type.Array) type;
+            field = new ArrayMember(fieldName, arrayType, fieldCount, offset,
+                    MemoryOp.getMemoryOp(arrayType.getComponentType().getNativeType()));
+
+        } else if (type instanceof StructByValue) {
+            StructByValue sbv = (StructByValue) type;
+
+            field = new StructMember(fieldName, sbv.getStructLayout(), sbv.getStructClass(), fieldCount, offset);
+        
         } else if (type instanceof CallbackInfo) {
+
             field = new CallbackMember(fieldName, (CallbackInfo) type, fieldCount, offset);
+
+        } if (type instanceof Type.Builtin) {
+
+            field = createBuiltinMember(fieldName, (Type.Builtin) type, fieldCount, offset);
         }
         if (field == null) {
             throw runtime.newArgumentError("Unknown field type: " + type);
@@ -239,7 +253,7 @@ public final class StructLayoutBuilder extends RubyObject {
         if (io == null) {
             throw context.getRuntime().newNotImplementedError("Unsupported array field type: " + type);
         }
-        StructLayout.Member field = new ArrayMember(fieldName, type, fieldCount++, offset, io, length);
+        StructLayout.Member field = new ArrayMember(fieldName, new Type.Array(runtime, type, length), fieldCount++, offset, io);
 
         return storeField(runtime, fieldName, field, type.getNativeAlignment(), (type.getNativeSize() * length));
     }
@@ -522,12 +536,12 @@ public final class StructLayoutBuilder extends RubyObject {
 
     static final class ArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
         private final MemoryOp op;
-        private final int length;
+        private final Type.Array arrayType;
 
-        ArrayMember(IRubyObject name, Type type, int index, long offset, MemoryOp op, int length) {
-            super(name, type, index, offset);
+        ArrayMember(IRubyObject name, Type.Array arrayType, int index, long offset, MemoryOp op) {
+            super(name, arrayType, index, offset);
             this.op = op;
-            this.length = length;
+            this.arrayType = arrayType;
         }
 
         public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
@@ -537,7 +551,7 @@ public final class StructLayoutBuilder extends RubyObject {
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             IRubyObject s = cache.getCachedValue(this);
             if (s == null) {
-                s = new StructLayout.Array(runtime, ptr, offset, length, type.getNativeSize(), op);
+                s = new StructLayout.Array(runtime, ptr, offset, arrayType, op);
                 cache.putCachedValue(this, s);
             }
 
@@ -551,10 +565,10 @@ public final class StructLayoutBuilder extends RubyObject {
 
         public Collection<StructLayout.Member> getMembers() {
 
-            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(length);
-
-            for (int i = 0; i < length; ++i) {
-                members.add(new PrimitiveMember(type.getRuntime().getNil(), type, i, i * type.getNativeSize()));
+            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(arrayType.length());
+            Type elemType = arrayType.getComponentType();
+            for (int i = 0; i < arrayType.length(); ++i) {
+                members.add(new PrimitiveMember(getRuntime().getNil(), elemType, i, i * elemType.getNativeSize()));
             }
 
             return members;

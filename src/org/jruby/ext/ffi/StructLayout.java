@@ -439,29 +439,21 @@ public final class StructLayout extends Type {
         private final AbstractMemory ptr;
         private final MemoryOp aio;
         private final long offset;
-        private final int length, typeSize;
-        /**
-         * Creates a new <tt>StructLayout</tt> instance.
-         *
-         * @param runtime The runtime for the <tt>StructLayout</tt>
-         * @param klass the ruby class to use for the <tt>StructLayout</tt>
-         */
-        Array(Ruby runtime, RubyClass klass) {
-            this(runtime, null, 0, 0, 0, null);
-        }
-        Array(Ruby runtime, IRubyObject ptr, long offset, int length, int typeSize, MemoryOp aio) {
+        private final Type.Array arrayType;
+
+        Array(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"));
             this.ptr = (AbstractMemory) ptr;
             this.offset = offset;
-            this.length = length;
+            this.arrayType = type;
             this.aio = aio;
-            this.typeSize = typeSize;
         }
+
         private final long getOffset(IRubyObject index) {
-            return offset + (Util.uint32Value(index) * typeSize);
+            return offset + (Util.uint32Value(index) * arrayType.getComponentType().getNativeSize());
         }
         private final long getOffset(int index) {
-            return offset + (index * typeSize);
+            return offset + (index * arrayType.getComponentType().getNativeSize());
         }
         private IRubyObject get(Ruby runtime, int index) {
             return aio.get(runtime, ptr.getMemoryIO(), getOffset(index));
@@ -478,7 +470,7 @@ public final class StructLayout extends Type {
         @JRubyMethod(name = { "to_a", "to_ary" })
         public IRubyObject get(ThreadContext context) {
             Ruby runtime = context.getRuntime();
-            IRubyObject[] elems = new IRubyObject[length];
+            IRubyObject[] elems = new IRubyObject[arrayType.length()];
             for (int i = 0; i < elems.length; ++i) {
                 elems[i] = get(runtime, i);
             }
@@ -490,7 +482,7 @@ public final class StructLayout extends Type {
         }
         @JRubyMethod(name = { "size" })
         public IRubyObject size(ThreadContext context) {
-            return context.getRuntime().newFixnum(length * typeSize);
+            return context.getRuntime().newFixnum(arrayType.getNativeSize());
         }
         /**
          * Needed for Enumerable implementation
@@ -500,7 +492,7 @@ public final class StructLayout extends Type {
             if (!block.isGiven()) {
                 throw context.getRuntime().newLocalJumpErrorNoBlock();
             }
-            for (int i = 0; i < length; ++i) {
+            for (int i = 0; i < arrayType.length(); ++i) {
                 block.yield(context, get(context.getRuntime(), i));
             }
             return this;

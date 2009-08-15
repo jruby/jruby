@@ -169,12 +169,19 @@ public abstract class Type extends RubyObject {
         private final int length;
 
         /**
-         * Initializes a new <tt>BuiltinType</tt> instance.
+         * Initializes a new <tt>Type.Array</tt> instance.
          */
         public Array(Ruby runtime, RubyClass klass, Type componentType, int length) {
             super(runtime, klass, NativeType.ARRAY, componentType.getNativeSize() * length, componentType.getNativeAlignment());
             this.componentType = componentType;
             this.length = length;
+        }
+
+        /**
+         * Initializes a new <tt>Type.Array</tt> instance.
+         */
+        public Array(Ruby runtime, Type componentType, int length) {
+            this(runtime, getTypeClass(runtime).fastGetClass("Array"), componentType, length);
         }
 
 
