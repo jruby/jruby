@@ -24,25 +24,25 @@ abstract class MemoryOp {
         switch (type) {
             case BOOL:
                 return BOOL;
-            case INT8:
+            case CHAR:
                 return INT8;
-            case UINT8:
+            case UCHAR:
                 return UINT8;
-            case INT16:
+            case SHORT:
                 return INT16;
-            case UINT16:
+            case USHORT:
                 return UINT16;
-            case INT32:
+            case INT:
                 return INT32;
-            case UINT32:
+            case UINT:
                 return UINT32;
-            case INT64:
+            case LONG_LONG:
                 return INT64;
-            case UINT64:
+            case ULONG_LONG:
                 return UINT64;
-            case FLOAT32:
+            case FLOAT:
                 return FLOAT32;
-            case FLOAT64:
+            case DOUBLE:
                 return FLOAT64;
             case LONG:
                 return Platform.getPlatform().longSize() == 32

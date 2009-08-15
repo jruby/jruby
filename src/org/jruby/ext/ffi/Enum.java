@@ -33,6 +33,6 @@ public class Enum extends Type {
     }
 
     private Enum(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, NativeType.INT32);
+        super(runtime, klass, NativeType.INT);
     }
 }

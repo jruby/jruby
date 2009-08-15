@@ -13,22 +13,22 @@ final class TypeSizeMapper {
         int[] sz = new int[types.length];
         for (int i = 0; i < sz.length; ++i) {
             switch (types[i]) {
-                case INT8:
-                case UINT8:
+                case CHAR:
+                case UCHAR:
                     sz[types[i].ordinal()] = 1;
                     break;
-                case INT16:
-                case UINT16:
+                case SHORT:
+                case USHORT:
                     sz[types[i].ordinal()] = 2;
                     break;
-                case INT32:
-                case UINT32:
-                case FLOAT32:
+                case INT:
+                case UINT:
+                case FLOAT:
                     sz[types[i].ordinal()] = 4;
                     break;
-                case INT64:
-                case UINT64:
-                case FLOAT64:
+                case LONG_LONG:
+                case ULONG_LONG:
+                case DOUBLE:
                     sz[types[i].ordinal()] = 8;
                     break;
                 case LONG:

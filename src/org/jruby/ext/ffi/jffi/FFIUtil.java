@@ -28,15 +28,15 @@ public final class FFIUtil {
         Map<NativeType, com.kenai.jffi.Type> m = new EnumMap<NativeType, com.kenai.jffi.Type>(NativeType.class);
         m.put(NativeType.VOID, com.kenai.jffi.Type.VOID);
         m.put(NativeType.BOOL, com.kenai.jffi.Type.UINT32);
-        m.put(NativeType.INT8, com.kenai.jffi.Type.SINT8);
-        m.put(NativeType.INT16, com.kenai.jffi.Type.SINT16);
-        m.put(NativeType.INT32, com.kenai.jffi.Type.SINT32);
-        m.put(NativeType.INT64, com.kenai.jffi.Type.SINT64);
+        m.put(NativeType.CHAR, com.kenai.jffi.Type.SINT8);
+        m.put(NativeType.SHORT, com.kenai.jffi.Type.SINT16);
+        m.put(NativeType.INT, com.kenai.jffi.Type.SINT32);
+        m.put(NativeType.LONG_LONG, com.kenai.jffi.Type.SINT64);
 
-        m.put(NativeType.UINT8, com.kenai.jffi.Type.UINT8);
-        m.put(NativeType.UINT16, com.kenai.jffi.Type.UINT16);
-        m.put(NativeType.UINT32, com.kenai.jffi.Type.UINT32);
-        m.put(NativeType.UINT64, com.kenai.jffi.Type.UINT64);
+        m.put(NativeType.UCHAR, com.kenai.jffi.Type.UINT8);
+        m.put(NativeType.USHORT, com.kenai.jffi.Type.UINT16);
+        m.put(NativeType.UINT, com.kenai.jffi.Type.UINT32);
+        m.put(NativeType.ULONG_LONG, com.kenai.jffi.Type.UINT64);
 
         if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
             m.put(NativeType.LONG, com.kenai.jffi.Type.SINT32);
@@ -45,8 +45,8 @@ public final class FFIUtil {
             m.put(NativeType.LONG, com.kenai.jffi.Type.SINT64);
             m.put(NativeType.ULONG, com.kenai.jffi.Type.UINT64);
         }
-        m.put(NativeType.FLOAT32, com.kenai.jffi.Type.FLOAT);
-        m.put(NativeType.FLOAT64, com.kenai.jffi.Type.DOUBLE);
+        m.put(NativeType.FLOAT, com.kenai.jffi.Type.FLOAT);
+        m.put(NativeType.DOUBLE, com.kenai.jffi.Type.DOUBLE);
         m.put(NativeType.POINTER, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.BUFFER_IN, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.BUFFER_OUT, com.kenai.jffi.Type.POINTER);

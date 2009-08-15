@@ -42,18 +42,18 @@ public abstract class Type extends RubyObject {
         RubyModule nativeType = ffiModule.defineModuleUnder("NativeType");
 
         
-        defineBuiltinType(runtime, builtinClass, NativeType.INT8, "char", "int8", "sint8");
-        defineBuiltinType(runtime, builtinClass, NativeType.UINT8, "uchar", "uint8");
-        defineBuiltinType(runtime, builtinClass, NativeType.INT16, "short", "int16", "sint16");
-        defineBuiltinType(runtime, builtinClass, NativeType.UINT16, "ushort", "uint16");
-        defineBuiltinType(runtime, builtinClass, NativeType.INT32, "int", "int32", "sint32");
-        defineBuiltinType(runtime, builtinClass, NativeType.UINT32, "uint", "uint32");
-        defineBuiltinType(runtime, builtinClass, NativeType.INT64, "long_long", "int64", "sint64");
-        defineBuiltinType(runtime, builtinClass, NativeType.UINT64, "ulong_long", "uint64");
+        defineBuiltinType(runtime, builtinClass, NativeType.CHAR, "char", "int8", "sint8");
+        defineBuiltinType(runtime, builtinClass, NativeType.UCHAR, "uchar", "uint8");
+        defineBuiltinType(runtime, builtinClass, NativeType.SHORT, "short", "int16", "sint16");
+        defineBuiltinType(runtime, builtinClass, NativeType.USHORT, "ushort", "uint16");
+        defineBuiltinType(runtime, builtinClass, NativeType.INT, "int", "int32", "sint32");
+        defineBuiltinType(runtime, builtinClass, NativeType.UINT, "uint", "uint32");
+        defineBuiltinType(runtime, builtinClass, NativeType.LONG_LONG, "long_long", "int64", "sint64");
+        defineBuiltinType(runtime, builtinClass, NativeType.ULONG_LONG, "ulong_long", "uint64");
         defineBuiltinType(runtime, builtinClass, NativeType.LONG, "long");
         defineBuiltinType(runtime, builtinClass, NativeType.ULONG, "ulong");
-        defineBuiltinType(runtime, builtinClass, NativeType.FLOAT32, "float", "float32");
-        defineBuiltinType(runtime, builtinClass, NativeType.FLOAT64, "double", "float64");
+        defineBuiltinType(runtime, builtinClass, NativeType.FLOAT, "float", "float32");
+        defineBuiltinType(runtime, builtinClass, NativeType.DOUBLE, "double", "float64");
         
         for (NativeType t : NativeType.values()) {
             if (!builtinClass.hasConstant(t.name())) {
@@ -286,18 +286,18 @@ public abstract class Type extends RubyObject {
         switch (type) {
             case VOID:
             case BOOL:
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-            case INT64:
-            case UINT64:
+            case CHAR:
+            case UCHAR:
+            case SHORT:
+            case USHORT:
+            case INT:
+            case UINT:
+            case LONG_LONG:
+            case ULONG_LONG:
             case LONG:
             case ULONG:
-            case FLOAT32:
-            case FLOAT64:
+            case FLOAT:
+            case DOUBLE:
             case BUFFER_IN:
             case BUFFER_INOUT:
             case BUFFER_OUT:

@@ -345,21 +345,21 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             switch (type.getNativeType()) {
                 case VOID:
                     break;
-                case INT8:
+                case CHAR:
                     buffer.setByteReturn((byte) longValue(value)); break;
-                case UINT8:
+                case UCHAR:
                     buffer.setByteReturn((byte) longValue(value)); break;
-                case INT16:
+                case SHORT:
                     buffer.setShortReturn((short) longValue(value)); break;
-                case UINT16:
+                case USHORT:
                     buffer.setShortReturn((short) longValue(value)); break;
-                case INT32:
+                case INT:
                     buffer.setIntReturn((int) longValue(value)); break;
-                case UINT32:
+                case UINT:
                     buffer.setIntReturn((int) longValue(value)); break;
-                case INT64:
+                case LONG_LONG:
                     buffer.setLongReturn(Util.int64Value(value)); break;
-                case UINT64:
+                case ULONG_LONG:
                     buffer.setLongReturn(Util.uint64Value(value)); break;
 
                 case LONG:
@@ -378,9 +378,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     }
                     break;
 
-                case FLOAT32:
+                case FLOAT:
                     buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
-                case FLOAT64:
+                case DOUBLE:
                     buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
                 case POINTER:
                     buffer.setAddressReturn(addressValue(value)); break;
@@ -415,21 +415,21 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         switch (type.getNativeType()) {
             case VOID:
                 return runtime.getNil();
-            case INT8:
+            case CHAR:
                 return Util.newSigned8(runtime, buffer.getByte(index));
-            case UINT8:
+            case UCHAR:
                 return Util.newUnsigned8(runtime, buffer.getByte(index));
-            case INT16:
+            case SHORT:
                 return Util.newSigned16(runtime, buffer.getShort(index));
-            case UINT16:
+            case USHORT:
                 return Util.newUnsigned16(runtime, buffer.getShort(index));
-            case INT32:
+            case INT:
                 return Util.newSigned32(runtime, buffer.getInt(index));
-            case UINT32:
+            case UINT:
                 return Util.newUnsigned32(runtime, buffer.getInt(index));
-            case INT64:
+            case LONG_LONG:
                 return Util.newSigned64(runtime, buffer.getLong(index));
-            case UINT64:
+            case ULONG_LONG:
                 return Util.newUnsigned64(runtime, buffer.getLong(index));
 
             case LONG:
@@ -441,9 +441,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                         ? Util.newUnsigned32(runtime, buffer.getInt(index))
                         : Util.newUnsigned64(runtime, buffer.getLong(index));
 
-            case FLOAT32:
+            case FLOAT:
                 return runtime.newFloat(buffer.getFloat(index));
-            case FLOAT64:
+            case DOUBLE:
                 return runtime.newFloat(buffer.getDouble(index));
             case POINTER: {
                 final long address = buffer.getAddress(index);
@@ -491,18 +491,18 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final boolean isReturnTypeValid(Type type) {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
-                case INT8:
-                case UINT8:
-                case INT16:
-                case UINT16:
-                case INT32:
-                case UINT32:
+                case CHAR:
+                case UCHAR:
+                case SHORT:
+                case USHORT:
+                case INT:
+                case UINT:
                 case LONG:
                 case ULONG:
-                case INT64:
-                case UINT64:
-                case FLOAT32:
-                case FLOAT64:
+                case LONG_LONG:
+                case ULONG_LONG:
+                case FLOAT:
+                case DOUBLE:
                 case POINTER:
                 case VOID:
                 case BOOL:
@@ -523,18 +523,18 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final boolean isParameterTypeValid(Type type) {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
-                case INT8:
-                case UINT8:
-                case INT16:
-                case UINT16:
-                case INT32:
-                case UINT32:
+                case CHAR:
+                case UCHAR:
+                case SHORT:
+                case USHORT:
+                case INT:
+                case UINT:
                 case LONG:
                 case ULONG:
-                case INT64:
-                case UINT64:
-                case FLOAT32:
-                case FLOAT64:
+                case LONG_LONG:
+                case ULONG_LONG:
+                case FLOAT:
+                case DOUBLE:
                 case POINTER:
                 case STRING:
                 case BOOL:

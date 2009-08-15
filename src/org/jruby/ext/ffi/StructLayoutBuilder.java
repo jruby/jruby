@@ -288,18 +288,18 @@ public final class StructLayoutBuilder extends RubyObject {
 
         switch (type.getNativeType()) {
             case BOOL:
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-            case INT64:
-            case UINT64:
+            case CHAR:
+            case UCHAR:
+            case SHORT:
+            case USHORT:
+            case INT:
+            case UINT:
+            case LONG_LONG:
+            case ULONG_LONG:
             case LONG:
             case ULONG:
-            case FLOAT32:
-            case FLOAT64:
+            case FLOAT:
+            case DOUBLE:
                 return new PrimitiveMember(name, type, index, offset);
 
             case POINTER:

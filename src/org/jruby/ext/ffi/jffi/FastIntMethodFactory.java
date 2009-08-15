@@ -38,12 +38,12 @@ public class FastIntMethodFactory extends MethodFactory {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {
                 case VOID:
-                case INT8:
-                case UINT8:
-                case INT16:
-                case UINT16:
-                case INT32:
-                case UINT32:
+                case CHAR:
+                case UCHAR:
+                case SHORT:
+                case USHORT:
+                case INT:
+                case UINT:
                 case BOOL:
                     return true;
                 case POINTER:
@@ -60,14 +60,14 @@ public class FastIntMethodFactory extends MethodFactory {
     final boolean isFastIntParam(Type paramType) {
         if (paramType instanceof Type.Builtin) {
             switch (paramType.getNativeType()) {
-                case INT8:
-                case UINT8:
-                case INT16:
-                case UINT16:
-                case INT32:
-                case UINT32:
+                case CHAR:
+                case UCHAR:
+                case SHORT:
+                case USHORT:
+                case INT:
+                case UINT:
                 case BOOL:
-//                case FLOAT32:
+//                case FLOAT:
                     return true;
                 case LONG:
                 case ULONG:
@@ -106,13 +106,13 @@ public class FastIntMethodFactory extends MethodFactory {
     final IntParameterConverter getIntParameterConverter(NativeParam type) {
         switch ((NativeType) type) {
             case BOOL: return BooleanParameterConverter.INSTANCE;
-            case INT8: return Signed8ParameterConverter.INSTANCE;
-            case UINT8: return Unsigned8ParameterConverter.INSTANCE;
-            case INT16: return Signed16ParameterConverter.INSTANCE;
-            case UINT16: return Unsigned16ParameterConverter.INSTANCE;
-            case INT32: return Signed32ParameterConverter.INSTANCE;
-            case UINT32: return Unsigned32ParameterConverter.INSTANCE;
-            case FLOAT32: return Float32ParameterConverter.INSTANCE;
+            case CHAR: return Signed8ParameterConverter.INSTANCE;
+            case UCHAR: return Unsigned8ParameterConverter.INSTANCE;
+            case SHORT: return Signed16ParameterConverter.INSTANCE;
+            case USHORT: return Unsigned16ParameterConverter.INSTANCE;
+            case INT: return Signed32ParameterConverter.INSTANCE;
+            case UINT: return Unsigned32ParameterConverter.INSTANCE;
+            case FLOAT: return Float32ParameterConverter.INSTANCE;
             case LONG:
                 if (Platform.getPlatform().longSize() == 32) {
                     return Signed32ParameterConverter.INSTANCE;
@@ -142,13 +142,13 @@ public class FastIntMethodFactory extends MethodFactory {
         switch (type) {
             case VOID: return VoidResultConverter.INSTANCE;
             case BOOL: return BooleanResultConverter.INSTANCE;
-            case INT8: return Signed8ResultConverter.INSTANCE;
-            case UINT8: return Unsigned8ResultConverter.INSTANCE;
-            case INT16: return Signed16ResultConverter.INSTANCE;
-            case UINT16: return Unsigned16ResultConverter.INSTANCE;
-            case INT32: return Signed32ResultConverter.INSTANCE;
-            case UINT32: return Unsigned32ResultConverter.INSTANCE;
-            case FLOAT32: return Float32ResultConverter.INSTANCE;
+            case CHAR: return Signed8ResultConverter.INSTANCE;
+            case UCHAR: return Unsigned8ResultConverter.INSTANCE;
+            case SHORT: return Signed16ResultConverter.INSTANCE;
+            case USHORT: return Unsigned16ResultConverter.INSTANCE;
+            case INT: return Signed32ResultConverter.INSTANCE;
+            case UINT: return Unsigned32ResultConverter.INSTANCE;
+            case FLOAT: return Float32ResultConverter.INSTANCE;
             case LONG:
                 if (Platform.getPlatform().longSize() == 32) {
                     return Signed32ResultConverter.INSTANCE;

@@ -157,21 +157,21 @@ public final class DefaultMethodFactory {
                 return BooleanInvoker.INSTANCE;
             case POINTER:
                 return PointerInvoker.INSTANCE;
-            case INT8:
+            case CHAR:
                 return Signed8Invoker.INSTANCE;
-            case INT16:
+            case SHORT:
                 return Signed16Invoker.INSTANCE;
-            case INT32:
+            case INT:
                 return Signed32Invoker.INSTANCE;
-            case UINT8:
+            case UCHAR:
                 return Unsigned8Invoker.INSTANCE;
-            case UINT16:
+            case USHORT:
                 return Unsigned16Invoker.INSTANCE;
-            case UINT32:
+            case UINT:
                 return Unsigned32Invoker.INSTANCE;
-            case INT64:
+            case LONG_LONG:
                 return Signed64Invoker.INSTANCE;
-            case UINT64:
+            case ULONG_LONG:
                 return Unsigned64Invoker.INSTANCE;
             case LONG:
                 return Platform.getPlatform().longSize() == 32
@@ -181,9 +181,9 @@ public final class DefaultMethodFactory {
                 return Platform.getPlatform().longSize() == 32
                         ? Unsigned32Invoker.INSTANCE
                         : Unsigned64Invoker.INSTANCE;
-            case FLOAT32:
+            case FLOAT:
                 return Float32Invoker.INSTANCE;
-            case FLOAT64:
+            case DOUBLE:
                 return Float64Invoker.INSTANCE;
             case STRING:
                 return StringInvoker.INSTANCE;
@@ -220,14 +220,14 @@ public final class DefaultMethodFactory {
      */
     static final ParameterMarshaller getEnumMarshaller(Type type, IRubyObject enums) {
         switch (type.getNativeType()) {
-            case INT8:
-            case UINT8:
-            case INT16:
-            case UINT16:
-            case INT32:
-            case UINT32:
-            case INT64:
-            case UINT64:
+            case CHAR:
+            case UCHAR:
+            case SHORT:
+            case USHORT:
+            case INT:
+            case UINT:
+            case LONG_LONG:
+            case ULONG_LONG:
                 if (!(enums instanceof RubyHash)) {
                     throw type.getRuntime().newArgumentError("wrong argument type "
                             + enums.getMetaClass().getName() + " (expected Hash)");
@@ -248,21 +248,21 @@ public final class DefaultMethodFactory {
         switch (type) {
             case BOOL:
                 return BooleanMarshaller.INSTANCE;
-            case INT8:
+            case CHAR:
                 return Signed8Marshaller.INSTANCE;
-            case UINT8:
+            case UCHAR:
                 return Unsigned8Marshaller.INSTANCE;
-            case INT16:
+            case SHORT:
                 return Signed16Marshaller.INSTANCE;
-            case UINT16:
+            case USHORT:
                 return Unsigned16Marshaller.INSTANCE;
-            case INT32:
+            case INT:
                 return Signed32Marshaller.INSTANCE;
-            case UINT32:
+            case UINT:
                 return Unsigned32Marshaller.INSTANCE;
-            case INT64:
+            case LONG_LONG:
                 return Signed64Marshaller.INSTANCE;
-            case UINT64:
+            case ULONG_LONG:
                 return Unsigned64Marshaller.INSTANCE;
             case LONG:
                 return Platform.getPlatform().longSize() == 32
@@ -272,9 +272,9 @@ public final class DefaultMethodFactory {
                 return Platform.getPlatform().longSize() == 32
                         ? Signed32Marshaller.INSTANCE
                         : Unsigned64Marshaller.INSTANCE;
-            case FLOAT32:
+            case FLOAT:
                 return Float32Marshaller.INSTANCE;
-            case FLOAT64:
+            case DOUBLE:
                 return Float64Marshaller.INSTANCE;
             case STRING:
                 return StringMarshaller.INSTANCE;
