@@ -4,6 +4,7 @@ package org.jruby.ext.ffi;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -47,10 +48,17 @@ public abstract class Type extends RubyObject {
             } catch (UnsupportedOperationException ex) { }
         }
 
+        RubyClass arrayTypeClass = typeClass.defineClassUnder("Array", typeClass,
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        arrayTypeClass.defineAnnotatedMethods(Type.Array.class);
+
         return typeClass;
     }
     
-    
+    public static final RubyClass getTypeClass(Ruby runtime) {
+        return runtime.fastGetModule("FFI").fastGetClass("Type");
+    }
+
     /**
      * Initializes a new <tt>Type</tt> instance.
      */
@@ -153,6 +161,50 @@ public abstract class Type extends RubyObject {
             hash = 23 * hash + nativeType.hashCode();
             return hash;
         }
+    }
+
+    @JRubyClass(name = "FFI::Type::Array", parent = "FFI::Type")
+    public final static class Array extends Type {
+        private final Type componentType;
+        private final int length;
+
+        /**
+         * Initializes a new <tt>BuiltinType</tt> instance.
+         */
+        public Array(Ruby runtime, RubyClass klass, Type componentType, int length) {
+            super(runtime, klass, NativeType.ARRAY, componentType.getNativeSize() * length, componentType.getNativeAlignment());
+            this.componentType = componentType;
+            this.length = length;
+        }
+
+
+        public final Type getComponentType() {
+            return componentType;
+        }
+
+        public final int length() {
+            return length;
+        }
+
+        @JRubyMethod(name = "new", required = 2, meta = true)
+        public static final IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject componentType, IRubyObject length) {
+            if (!(componentType instanceof Type)) {
+                throw context.getRuntime().newTypeError(componentType, getTypeClass(context.getRuntime()));
+            }
+
+            return new Array(context.getRuntime(), (RubyClass) klass, (Type) componentType, RubyNumeric.fix2int(length));
+        }
+
+        @JRubyMethod
+        public final IRubyObject length(ThreadContext context) {
+            return context.getRuntime().newFixnum(length);
+        }
+
+        @JRubyMethod
+        public final IRubyObject elem_type(ThreadContext context) {
+            return componentType;
+        }
+
     }
 
     private static final boolean isPrimitive(NativeType type) {

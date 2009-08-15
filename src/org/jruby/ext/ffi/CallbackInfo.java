@@ -67,6 +67,7 @@ public class CallbackInfo extends Type implements NativeParam {
         result.defineAnnotatedMethods(CallbackInfo.class);
         result.defineAnnotatedConstants(CallbackInfo.class);
 
+        module.fastGetClass("Type").fastSetConstant("Function", result);
         return result;
     }
     
