@@ -1,1 +1,0 @@
-fails(JRUBY-3707):Process.egid returns the effective group ID for this process
