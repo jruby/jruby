@@ -19,82 +19,82 @@ module FFI
   end
 
   # Converts a char
-  add_typedef(NativeType::INT8, :char)
+  add_typedef(Type::CHAR, :char)
 
   # Converts an unsigned char
-  add_typedef(NativeType::UINT8, :uchar)
+  add_typedef(Type::UCHAR, :uchar)
 
   # Converts an 8 bit int
-  add_typedef(NativeType::INT8, :int8)
+  add_typedef(Type::INT8, :int8)
 
   # Converts an unsigned char
-  add_typedef(NativeType::UINT8, :uint8)
+  add_typedef(Type::UINT8, :uint8)
 
   # Converts a short
-  add_typedef(NativeType::INT16, :short)
+  add_typedef(Type::SHORT, :short)
 
   # Converts an unsigned short
-  add_typedef(NativeType::UINT16, :ushort)
+  add_typedef(Type::USHORT, :ushort)
 
   # Converts a 16bit int
-  add_typedef(NativeType::INT16, :int16)
+  add_typedef(Type::INT16, :int16)
 
   # Converts an unsigned 16 bit int
-  add_typedef(NativeType::UINT16, :uint16)
+  add_typedef(Type::UINT16, :uint16)
 
   # Converts an int
-  add_typedef(NativeType::INT32, :int)
+  add_typedef(Type::INT, :int)
 
   # Converts an unsigned int
-  add_typedef(NativeType::UINT32, :uint)
+  add_typedef(Type::UINT, :uint)
 
   # Converts a 32 bit int
-  add_typedef(NativeType::INT32, :int32)
+  add_typedef(Type::INT32, :int32)
 
   # Converts an unsigned 16 bit int
-  add_typedef(NativeType::UINT32, :uint32)
+  add_typedef(Type::UINT32, :uint32)
 
   # Converts a long
-  add_typedef(NativeType::LONG, :long)
+  add_typedef(Type::LONG, :long)
 
   # Converts an unsigned long
-  add_typedef(NativeType::ULONG, :ulong)
+  add_typedef(Type::ULONG, :ulong)
 
   # Converts a 64 bit int
-  add_typedef(NativeType::INT64, :int64)
+  add_typedef(Type::INT64, :int64)
 
   # Converts an unsigned 64 bit int
-  add_typedef(NativeType::UINT64, :uint64)
+  add_typedef(Type::UINT64, :uint64)
 
   # Converts a long long
-  add_typedef(NativeType::INT64, :long_long)
+  add_typedef(Type::LONG_LONG, :long_long)
 
   # Converts an unsigned long long
-  add_typedef(NativeType::UINT64, :ulong_long)
+  add_typedef(Type::ULONG_LONG, :ulong_long)
 
   # Converts a float
-  add_typedef(NativeType::FLOAT32, :float)
+  add_typedef(Type::FLOAT, :float)
 
   # Converts a double
-  add_typedef(NativeType::FLOAT64, :double)
+  add_typedef(Type::DOUBLE, :double)
 
   # Converts a pointer to opaque data
-  add_typedef(NativeType::POINTER, :pointer)
+  add_typedef(Type::POINTER, :pointer)
 
   # For when a function has no return value
-  add_typedef(NativeType::VOID, :void)
+  add_typedef(Type::VOID, :void)
 
   # Native boolean type
-  add_typedef(NativeType::BOOL, :bool)
+  add_typedef(Type::BOOL, :bool)
 
   # Converts NUL-terminated C strings
-  add_typedef(NativeType::STRING, :string)
+  add_typedef(Type::STRING, :string)
 
   # Converts FFI::Buffer objects
-  add_typedef(NativeType::BUFFER_IN, :buffer_in)
-  add_typedef(NativeType::BUFFER_OUT, :buffer_out)
-  add_typedef(NativeType::BUFFER_INOUT, :buffer_inout)
-  add_typedef(NativeType::VARARGS, :varargs)
+  add_typedef(Type::BUFFER_IN, :buffer_in)
+  add_typedef(Type::BUFFER_OUT, :buffer_out)
+  add_typedef(Type::BUFFER_INOUT, :buffer_inout)
+  add_typedef(Type::VARARGS, :varargs)
 
   # Use for a C struct with a char [] embedded inside.
   add_typedef(NativeType::CHAR_ARRAY, :char_array)
@@ -104,21 +104,6 @@ module FFI
     2 => :short,
     4 => :int,
     8 => :long_long,
-  }
-  SizeTypes = {
-    NativeType::INT8 => 1,
-    NativeType::UINT8 => 1,
-    NativeType::INT16 => 2,
-    NativeType::UINT16 => 2,
-    NativeType::INT32 => 4,
-    NativeType::UINT32 => 4,
-    NativeType::INT64 => 8,
-    NativeType::UINT64 => 8,
-    NativeType::FLOAT32 => 4,
-    NativeType::FLOAT64 => 8,
-    NativeType::LONG => FFI::Platform::LONG_SIZE / 8,
-    NativeType::ULONG => FFI::Platform::LONG_SIZE / 8,
-    NativeType::POINTER => FFI::Platform::ADDRESS_SIZE / 8,
   }
 
   def self.size_to_type(size)
@@ -130,8 +115,8 @@ module FFI
     return :int
   end
   def self.type_size(type)
-    if sz = SizeTypes[find_type(type)]
-      return sz
+    if type.kind_of?(Type) || (type = find_type(type))
+      return type.size
     end
     raise ArgumentError, "Unknown native type"
   end
