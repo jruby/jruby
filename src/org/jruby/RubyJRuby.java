@@ -65,6 +65,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 
@@ -297,57 +298,78 @@ public class RubyJRuby {
 
     public abstract static class JRubyExecutionContextLocal extends RubyObject {
         private IRubyObject default_value;
+        private RubyProc default_proc;
 
         public JRubyExecutionContextLocal(Ruby runtime, RubyClass type) {
             super(runtime, type);
             default_value = runtime.getNil();
+            default_proc = null;
         }
 
         @JRubyMethod(name="initialize", required=0, optional=1)
         public IRubyObject rubyInitialize(ThreadContext context, IRubyObject args[], Block block) {
-            if (args.length > 0) {
-                default_value = args[0];
+            if (block.isGiven()) {
+                if (args.length != 0) {
+                    throw context.getRuntime().newArgumentError("wrong number of arguments");
+                }
+                default_proc = block.getProcObject();
+                if (default_proc == null) {
+                    default_proc = RubyProc.newProc(context.getRuntime(), block, block.type);
+                }
+            } else {
+                if (args.length == 1) {
+                    default_value = args[0];
+                } else if (args.length != 0) {
+                    throw context.getRuntime().newArgumentError("wrong number of arguments");
+                }
             }
             return context.getRuntime().getNil();
         }
 
-        @JRubyMethod(name="default_value", required=0)
-        public IRubyObject getDefaultValue(ThreadContext context, Block block) {
+        @JRubyMethod(name="default", required=0)
+        public IRubyObject getDefault(ThreadContext context) {
             return default_value;
         }
 
+        @JRubyMethod(name="default_proc", required=0)
+        public IRubyObject getDefaultProc(ThreadContext context) {
+            if (default_proc != null) {
+                return default_proc;
+            } else {
+                return context.getRuntime().getNil();
+            }
+        }
+
+        private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
+
         @JRubyMethod(name="value", required=0)
-        public IRubyObject getValue(ThreadContext context, Block block) {
+        public IRubyObject getValue(ThreadContext context) {
             final IRubyObject value;
-            value = getContextVariables(context).get(this);
+            final Map<Object, IRubyObject> contextVariables;
+            contextVariables = getContextVariables(context);
+            value = contextVariables.get(this);
             if (value != null) {
                 return value;
+            } else if (default_proc != null) {
+                // pre-set for the sake of terminating recursive calls
+                contextVariables.put(this, context.getRuntime().getNil());
+
+                final IRubyObject new_value;
+                new_value = default_proc.call(context, EMPTY_ARGS, null, Block.NULL_BLOCK);
+                contextVariables.put(this, new_value);
+                return new_value;
             } else {
                 return default_value;
             }
         }
 
         @JRubyMethod(name="value=", required=1)
-        public IRubyObject setValue(ThreadContext context, IRubyObject value, Block block) {
+        public IRubyObject setValue(ThreadContext context, IRubyObject value) {
             getContextVariables(context).put(this, value);
             return value;
         }
 
-        @JRubyMethod(name="with_value", required=1)
-        public IRubyObject withValue(ThreadContext context, IRubyObject value, Block block) {
-             final Map<Object, IRubyObject> contextVariables;
-             contextVariables = getContextVariables(context);
-             final IRubyObject old_value;
-             old_value = contextVariables.get(this);
-             contextVariables.put(this, value);
-             try {
-                 return block.yieldSpecific(context);
-             } finally {
-                 contextVariables.put(this, old_value);
-             }
-        }
-
-        private final Map<Object, IRubyObject> getContextVariables(ThreadContext context) {
+        protected final Map<Object, IRubyObject> getContextVariables(ThreadContext context) {
             return getExecutionContext(context).getContextVariables();
         }
 
@@ -381,6 +403,20 @@ public class RubyJRuby {
 
         public JRubyFiberLocal(Ruby runtime, RubyClass type) {
             super(runtime, type);
+        }
+
+        @JRubyMethod(name="with_value", required=1)
+        public IRubyObject withValue(ThreadContext context, IRubyObject value, Block block) {
+            final Map<Object, IRubyObject> contextVariables;
+            contextVariables = getContextVariables(context);
+            final IRubyObject old_value;
+            old_value = contextVariables.get(this);
+            contextVariables.put(this, value);
+            try {
+                return block.yieldSpecific(context);
+            } finally {
+                contextVariables.put(this, old_value);
+            }
         }
 
         protected final ExecutionContext getExecutionContext(ThreadContext context) {
