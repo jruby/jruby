@@ -111,7 +111,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     public static final class LastError {
         @JRubyMethod(name = {  "error" }, meta = true)
         public static final  IRubyObject error(ThreadContext context, IRubyObject recv) {
-            return context.getRuntime().newFixnum(com.kenai.jffi.LastError.getInstance().getError());
+            return context.getRuntime().newFixnum(com.kenai.jffi.LastError.getInstance().get());
         }
     }
 }
