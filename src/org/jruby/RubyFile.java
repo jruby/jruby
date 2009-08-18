@@ -1321,27 +1321,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         return runtime.newFixnum(count);
     }
-    
-    @JRubyMethod(required = 3, rest = true, meta = true)
+
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject lchown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
         int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
         int count = 0;
-        
+
         for (int i = 2; i < args.length; i++) {
             IRubyObject filename = args[i];
-            
-            if (!RubyFileTest.exist_p(filename, filename.convertToString()).isTrue()) {
-                throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
-            }
-            
-            boolean result = 0 == runtime.getPosix().lchown(filename.toString(), owner, group);
-            if (result) {
+
+            if (0 != runtime.getPosix().lchown(filename.toString(), owner, group)) {
+                throw runtime.newErrnoFromLastPOSIXErrno();
+            } else {
                 count++;
             }
         }
-        
+
         return runtime.newFixnum(count);
     }
 

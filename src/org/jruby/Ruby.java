@@ -2912,6 +2912,10 @@ public final class Ruby {
         return newRaiseException(getSystemCallError(), message);
     }
 
+    public RaiseException newErrnoFromLastPOSIXErrno() {
+        return newRaiseException(getErrno(getPosix().errno()), null);
+    }
+
     public RaiseException newTypeError(String message) {
         return newRaiseException(getTypeError(), message);
     }
