@@ -1,0 +1,1 @@
+fails(JRUBY-3886):Regexps with modifers does not do thread synchronization for /o

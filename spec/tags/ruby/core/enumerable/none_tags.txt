@@ -1,0 +1,6 @@
+fails(JRUBY-3885):Enumerable#none? returns true if none of the elements in self are true
+fails(JRUBY-3885):Enumerable#none? returns false if at least one of the elements in self are true
+fails(JRUBY-3885):Enumerable#none? with a block passes each element to the block in turn until it returns true
+fails(JRUBY-3885):Enumerable#none? with a block stops passing elements to the block when it returns true
+fails(JRUBY-3885):Enumerable#none? with a block returns true if the block never returns true
+fails(JRUBY-3885):Enumerable#none? with a block returns false if the block ever returns true
