@@ -136,3 +136,7 @@ ensure
   ENV['TZ'] = old_tz
 end
 =end
+
+# JRUBY-3873
+test_equal "12:00AM%", Time.utc(2007,01,01,0,0).strftime("%I:%M%p%")
+

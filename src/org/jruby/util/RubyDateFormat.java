@@ -132,7 +132,10 @@ public class RubyDateFormat extends DateFormat {
         for (int i = 0; i < len;) {
             if (pattern.charAt(i) == '%') {
                 i++;
-                switch (pattern.charAt(i)) {
+                if(i == len) {
+                    compiledPattern.add(new Token(FORMAT_STRING, "%"));
+                } else {
+                    switch (pattern.charAt(i)) {
                     case 'A' :
                         compiledPattern.add(new Token(FORMAT_WEEK_LONG));
                         break;
@@ -261,8 +264,9 @@ public class RubyDateFormat extends DateFormat {
                         break;
                     default:
                         compiledPattern.add(new Token(FORMAT_STRING, "%" + pattern.charAt(i)));
+                    }
+                    i++;
                 }
-                i++;
             } else {
                 StringBuilder sb = new StringBuilder();
                 for (;i < len && pattern.charAt(i) != '%'; i++) {
