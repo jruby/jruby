@@ -1212,7 +1212,9 @@
             <include name="jffi-*.jar"/>
         </fileset>
         <patternset>
-            <include name="**/libjffi.*"/>
+            <include name="**/libjffi-*.so"/>
+            <include name="**/libjffi-*.jnilib"/>
+            <include name="**/jffi-*.dll"/>
         </patternset>
         <mapper>
             <filtermapper>
