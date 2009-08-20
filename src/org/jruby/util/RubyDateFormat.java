@@ -72,6 +72,15 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_YEAR_SHORT = 20;
     private static final int FORMAT_ZONE_OFF = 21;
     private static final int FORMAT_ZONE_ID = 22;
+    private static final int FORMAT_CENTURY = 23;
+    private static final int FORMAT_HOUR_BLANK = 24;
+    private static final int FORMAT_MILLISEC = 25;
+    private static final int FORMAT_EPOCH = 26;
+    private static final int FORMAT_DAY_WEEK2 = 27;
+    private static final int FORMAT_WEEK_YEAR = 28;
+    private static final int FORMAT_NANOSEC = 29;
+    private static final int FORMAT_PRECISION = 30;
+
 
     private static class Token {
         private int format;
@@ -146,7 +155,11 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_MONTH_LONG));
                         break;
                     case 'b' :
+                    case 'h' :
                         compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
+                        break;
+                    case 'C' :
+                        compiledPattern.add(new Token(FORMAT_CENTURY));
                         break;
                     case 'c' :
                         compiledPattern.add(new Token(FORMAT_WEEK_SHORT));
@@ -192,6 +205,12 @@ public class RubyDateFormat extends DateFormat {
                     case 'j':
                         compiledPattern.add(new Token(FORMAT_DAY_YEAR));
                         break;
+                    case 'k':
+                        compiledPattern.add(new Token(FORMAT_HOUR_BLANK));
+                        break;
+                    case 'L':
+                        compiledPattern.add(new Token(FORMAT_MILLISEC));
+                        break;
                     case 'l':
                         compiledPattern.add(new Token(FORMAT_HOUR_S));
                         break;
@@ -201,18 +220,34 @@ public class RubyDateFormat extends DateFormat {
                     case 'm':
                         compiledPattern.add(new Token(FORMAT_MONTH));
                         break;
+                    case 'N':
+                        compiledPattern.add(new Token(FORMAT_NANOSEC));
+                        break;
+                    case 'n':
+                        compiledPattern.add(new Token(FORMAT_STRING, "\n"));
+                        break;
                     case 'p':
                         compiledPattern.add(new Token(FORMAT_MERIDIAN));
                         break;
                     case 'P':
-                        // this is technically not supported until 1.9, but it's
-                        // such a hassle to filter by version
                         compiledPattern.add(new Token(FORMAT_MERIDIAN_LOWER_CASE));
                         break;
                     case 'R':
                         compiledPattern.add(new Token(FORMAT_HOUR));
                         compiledPattern.add(new Token(FORMAT_STRING, ":"));
                         compiledPattern.add(new Token(FORMAT_MINUTES));
+                        break;
+                    case 'r':
+                        compiledPattern.add(new Token(FORMAT_HOUR_M));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(new Token(FORMAT_MINUTES));
+                        compiledPattern.add(new Token(FORMAT_STRING, ":"));
+                        compiledPattern.add(new Token(FORMAT_SECONDS));
+                        compiledPattern.add(new Token(FORMAT_STRING, " "));
+                        compiledPattern.add(new Token(FORMAT_MERIDIAN));
+                        break;
+                    case 's':
+                        compiledPattern.add(new Token(FORMAT_EPOCH));
                         break;
                     case 'S':
                         compiledPattern.add(new Token(FORMAT_SECONDS));
@@ -224,8 +259,24 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_STRING, ":"));
                         compiledPattern.add(new Token(FORMAT_SECONDS));
                         break;
+                    case 't':
+                        compiledPattern.add(new Token(FORMAT_STRING,"\t"));
+                        break;
+                    case 'u':
+                        compiledPattern.add(new Token(FORMAT_DAY_WEEK2));
+                        break;
                     case 'U':
                         compiledPattern.add(new Token(FORMAT_WEEK_YEAR_S));
+                        break;
+                    case 'v':
+                        compiledPattern.add(new Token(FORMAT_DAY_S));
+                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(new Token(FORMAT_MONTH_SHORT));
+                        compiledPattern.add(new Token(FORMAT_STRING, "-"));
+                        compiledPattern.add(new Token(FORMAT_YEAR_LONG));
+                        break;
+                    case 'V':
+                        compiledPattern.add(new Token(FORMAT_WEEK_YEAR));
                         break;
                     case 'W':
                         compiledPattern.add(new Token(FORMAT_WEEK_YEAR_M));
@@ -329,9 +380,10 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_HOUR:
+                case FORMAT_HOUR_BLANK:
                     value = dt.getHourOfDay();
                     if (value < 10) {
-                        toAppendTo.append('0');
+                        toAppendTo.append(token.getFormat() == FORMAT_HOUR ? '0' : ' ');
                     }
                     toAppendTo.append(value);
                     break;
@@ -393,12 +445,15 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_WEEK_YEAR_M:
                 	formatWeekYear(java.util.Calendar.MONDAY, toAppendTo);
                     break;
-                	// intentional fall-through
                 case FORMAT_WEEK_YEAR_S:
                 	formatWeekYear(java.util.Calendar.SUNDAY, toAppendTo);
                     break;
                 case FORMAT_DAY_WEEK:
+                case FORMAT_DAY_WEEK2:
                     value = dt.getDayOfWeek() ;
+                    if (token.getFormat() == FORMAT_DAY_WEEK2) {
+                        value += 1;
+                    }
                     toAppendTo.append(value);
                     break;
                 case FORMAT_YEAR_LONG:
@@ -439,6 +494,34 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_ZONE_ID:
                     toAppendTo.append(dt.getZone().getShortName(dt.getMillis()));
+                    break;
+                case FORMAT_CENTURY:
+                    toAppendTo.append(dt.getCenturyOfEra());
+                    break;
+                case FORMAT_MILLISEC:
+                    value = dt.getMillisOfSecond();
+                    if (value < 100) {
+                        toAppendTo.append('0');
+                    }
+                    if (value < 10) {
+                        toAppendTo.append('0');
+                    }
+                    toAppendTo.append(value);
+                    break;
+                case FORMAT_EPOCH:
+                    toAppendTo.append(dt.getMillis());
+                    break;
+                case FORMAT_WEEK_YEAR:
+                    value = dt.getWeekOfWeekyear();
+                    if (value < 10) {
+                        toAppendTo.append('0');
+                    }
+                    toAppendTo.append(value);
+                    break;
+                case FORMAT_NANOSEC:
+                    long nano = System.nanoTime();
+                    value = (int) (nano % 1000000000);
+                    toAppendTo.append(value);
                     break;
             }
         }
