@@ -1328,30 +1328,30 @@ public final class Ruby {
         addLazyBuiltin("jruby/ext.rb", "jruby/ext", "org.jruby.RubyJRuby$ExtLibrary");
         addLazyBuiltin("jruby/core_ext.rb", "jruby/core_ext", "org.jruby.RubyJRuby$CoreExtLibrary");
         addLazyBuiltin("jruby/type.rb", "jruby/type", "org.jruby.RubyJRuby$TypeLibrary");
-        addLazyBuiltin("iconv.so", "iconv", "org.jruby.libraries.IConvLibrary");
-        addLazyBuiltin("nkf.so", "nkf", "org.jruby.libraries.NKFLibrary");
-        addLazyBuiltin("stringio.so", "stringio", "org.jruby.libraries.StringIOLibrary");
-        addLazyBuiltin("strscan.so", "strscan", "org.jruby.libraries.StringScannerLibrary");
-        addLazyBuiltin("zlib.so", "zlib", "org.jruby.libraries.ZlibLibrary");
-        addLazyBuiltin("enumerator.so", "enumerator", "org.jruby.libraries.EnumeratorLibrary");
+        addLazyBuiltin("iconv.jar", "iconv", "org.jruby.libraries.IConvLibrary");
+        addLazyBuiltin("nkf.jar", "nkf", "org.jruby.libraries.NKFLibrary");
+        addLazyBuiltin("stringio.jar", "stringio", "org.jruby.libraries.StringIOLibrary");
+        addLazyBuiltin("strscan.jar", "strscan", "org.jruby.libraries.StringScannerLibrary");
+        addLazyBuiltin("zlib.jar", "zlib", "org.jruby.libraries.ZlibLibrary");
+        addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.libraries.EnumeratorLibrary");
         addLazyBuiltin("generator_internal.rb", "generator_internal", "org.jruby.ext.Generator$Service");
-        addLazyBuiltin("readline.so", "readline", "org.jruby.ext.Readline$Service");
-        addLazyBuiltin("thread.so", "thread", "org.jruby.libraries.ThreadLibrary");
-        addLazyBuiltin("digest.so", "digest", "org.jruby.libraries.DigestLibrary");
+        addLazyBuiltin("readline.jar", "readline", "org.jruby.ext.Readline$Service");
+        addLazyBuiltin("thread.jar", "thread", "org.jruby.libraries.ThreadLibrary");
+        addLazyBuiltin("digest.jar", "digest", "org.jruby.libraries.DigestLibrary");
         addLazyBuiltin("digest.rb", "digest", "org.jruby.libraries.DigestLibrary");
-        addLazyBuiltin("digest/md5.so", "digest/md5", "org.jruby.libraries.DigestLibrary$MD5");
-        addLazyBuiltin("digest/rmd160.so", "digest/rmd160", "org.jruby.libraries.DigestLibrary$RMD160");
-        addLazyBuiltin("digest/sha1.so", "digest/sha1", "org.jruby.libraries.DigestLibrary$SHA1");
-        addLazyBuiltin("digest/sha2.so", "digest/sha2", "org.jruby.libraries.DigestLibrary$SHA2");
-        addLazyBuiltin("bigdecimal.so", "bigdecimal", "org.jruby.libraries.BigDecimalLibrary");
-        addLazyBuiltin("io/wait.so", "io/wait", "org.jruby.libraries.IOWaitLibrary");
-        addLazyBuiltin("etc.so", "etc", "org.jruby.libraries.EtcLibrary");
+        addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.libraries.DigestLibrary$MD5");
+        addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.libraries.DigestLibrary$RMD160");
+        addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.libraries.DigestLibrary$SHA1");
+        addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.libraries.DigestLibrary$SHA2");
+        addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.libraries.BigDecimalLibrary");
+        addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.libraries.IOWaitLibrary");
+        addLazyBuiltin("etc.jar", "etc", "org.jruby.libraries.EtcLibrary");
         addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRef$WeakRefLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.Timeout");
-        addLazyBuiltin("socket.so", "socket", "org.jruby.ext.socket.RubySocket$Service");
+        addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.RubySocket$Service");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.libraries.JRubySerializationLibrary");
-        addLazyBuiltin("ffi-internal.so", "ffi-internal", "org.jruby.ext.ffi.Factory$Service");
+        addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.Factory$Service");
         addLazyBuiltin("tempfile.rb", "tempfile", "org.jruby.libraries.TempfileLibrary");
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.libraries.FcntlLibrary");
         
@@ -1360,10 +1360,10 @@ public final class Ruby {
         }
         
         if (is1_9()) {
-            addLazyBuiltin("fiber.so", "fiber", "org.jruby.libraries.FiberLibrary");
+            addLazyBuiltin("fiber.jar", "fiber", "org.jruby.libraries.FiberLibrary");
         }
         
-        addBuiltinIfAllowed("openssl.so", new Library() {
+        addBuiltinIfAllowed("openssl.jar", new Library() {
             public void load(Ruby runtime, boolean wrap) throws IOException {
                 runtime.getLoadService().require("jruby/openssl/stub");
             }

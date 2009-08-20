@@ -126,8 +126,8 @@ public class LoadService {
         Source, Extension, Both, Neither;
         
         public static final String[] sourceSuffixes = { ".class", ".rb" };
-        public static final String[] extensionSuffixes = { ".jar", ".so" };
-        private static final String[] allSuffixes = { ".class", ".rb", ".so", ".jar" };
+        public static final String[] extensionSuffixes = { ".jar" };
+        private static final String[] allSuffixes = { ".class", ".rb", ".jar" };
         private static final String[] emptySuffixes = { "" };
         
         public String[] getSuffixes() {
@@ -197,13 +197,11 @@ public class LoadService {
                        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
                        addPath(rubyDir + "site_ruby");
                        addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
-                       addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION + sep + "java");
                    } else {
                        // Add 1.8 libs
                        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
                        addPath(rubyDir + "site_ruby");
                        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-                       addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
                    }
 
                    // Added to make sure we find default distribution files within jar file.
@@ -295,9 +293,15 @@ public class LoadService {
 
     private Map requireLocks = new Hashtable();
 
-    public boolean smartLoad(final String file) {
+    public boolean smartLoad(String file) {
         checkEmptyLoad(file);
 
+        // We don't support .so, but some stdlib require .so directly
+        // replace it with .jar to look for an extension type we do support
+        if (file.endsWith(".so")) {
+            file = file.replaceAll(".so$", ".jar");
+        }
+        
         try {
             SearchState state = findFileForLoad(file);
             return tryLoadingLibraryOrScript(runtime, state);
