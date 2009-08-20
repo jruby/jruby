@@ -167,4 +167,10 @@ DEPS
   def test_loading_so_fails
     assert_raise(LoadError) { load("test/bogus.so") }
   end
+  
+  def test_require_relative_from_jar_in_classpath
+    $CLASSPATH << File.join(
+      File.dirname(__FILE__), 'jar_with_relative_require1.jar')
+    require 'test/require_relative1'
+  end
 end

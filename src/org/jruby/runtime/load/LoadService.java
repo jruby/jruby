@@ -761,10 +761,13 @@ public class LoadService {
             for (String suffix : suffixType.getSuffixes()) {
                 String namePlusSuffix = baseName + suffix;
                 try {
-                    JarFile file = new JarFile(namePlusSuffix.substring(5, namePlusSuffix.indexOf("!/")));
+                    String jarFile = namePlusSuffix.substring(5, namePlusSuffix.indexOf("!/"));
+                    JarFile file = new JarFile(jarFile);
                     String filename = namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2);
-                    if(file.getJarEntry(filename) != null) {
-                        foundResource = new LoadServiceResource(new URL("jar:" + namePlusSuffix), namePlusSuffix);
+                    String canonicalFilename = canonicalizePath(filename);
+                    
+                    if(file.getJarEntry(canonicalFilename) != null) {
+                        foundResource = new LoadServiceResource(new URL("jar:file:" + jarFile + "!/" + canonicalFilename), namePlusSuffix);
                     }
                 } catch(Exception e) {}
                 if (foundResource != null) {
@@ -876,10 +879,7 @@ public class LoadService {
         }
         String canonicalEntry = after+namePlusSuffix;
         if(after.length()>0) {
-            try {
-                canonicalEntry = new File(after+namePlusSuffix).getCanonicalPath().substring(new File(".")
-                                                     .getCanonicalPath().length()+1).replaceAll("\\\\","/");
-            } catch(Exception e) {}
+            canonicalEntry = canonicalizePath(canonicalEntry);
         }
         if (current != null && current.getJarEntry(canonicalEntry) != null) {
             try {
@@ -1024,5 +1024,16 @@ public class LoadService {
             } catch (Exception e) {}
         }
         return false;
+    }
+    
+    private String canonicalizePath(String path) {
+        try {
+            String cwd = new File(runtime.getCurrentDirectory()).getCanonicalPath();
+            return new File(path).getCanonicalPath()
+                                 .substring(cwd.length() + 1)
+                                 .replaceAll("\\\\","/");
+      } catch(Exception e) {
+        return path;
+      }
     }
 }
