@@ -647,6 +647,11 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "to_s")
     @Override
     public IRubyObject to_s() {
+        if (getRuntime().is1_9()) {
+            // 1.9 seems to just do inspect for to_s now
+            return inspect();
+        }
+        
         if (realLength == 0) return RubyString.newEmptyString(getRuntime());
 
         return join(getRuntime().getCurrentContext(), getRuntime().getGlobalVariables().get("$,"));
