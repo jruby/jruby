@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.ext.posix.POSIX;
 import org.jruby.ext.posix.util.Platform;
 
 import org.jruby.javasupport.JavaUtil;
@@ -65,6 +64,8 @@ public class RubyDir extends RubyObject {
     private   String[]  snapshot;   // snapshot of contents of directory
     private   int       pos;        // current position in directory
     private boolean isOpen = true;
+
+    private static final String URL_PATTERN = "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?";
 
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -223,17 +224,41 @@ public class RubyDir extends RubyObject {
                 runtime, path.convertToString().toString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
-        final JRubyFile directory = JRubyFile.create(
-                recv.getRuntime().getCurrentDirectory(), adjustedPath);
-
-        if (!directory.isDirectory()) {
-            throw recv.getRuntime().newErrnoENOENTError("No such directory");
+        if (!RubyFileTest.directory_p(recv, RubyString.newString(runtime, adjustedPath)).isTrue()) {
+            throw runtime.newErrnoENOENTError("No such directory");
         }
+
+        if (adjustedPath.matches(URL_PATTERN)) {
+            return entriesIntoAJarFile(runtime, adjustedPath);
+        } else {
+            return entriesIntoADirectory(runtime, adjustedPath);
+        }
+    }
+
+    private static RubyArray entriesIntoADirectory(Ruby runtime, String path) {
+        final JRubyFile directory = JRubyFile.create(
+                runtime.getCurrentDirectory(), path);
+
         List<String> fileList = getContents(directory);
-		fileList.add(0, ".");
-		fileList.add(1, "..");
+               fileList.add(0, ".");
+               fileList.add(1, "..");
         Object[] files = fileList.toArray();
-        return recv.getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+        return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
+    }
+
+    private static RubyArray entriesIntoAJarFile(Ruby runtime, String path) {
+        List<ByteList> dirs = Dir.push_glob(runtime.getCurrentDirectory(),
+                RubyString.newString(runtime, path + "/*").getByteList(), Dir.FNM_DOTMATCH);
+
+        List<String> fileList = new ArrayList<String>();
+        for (ByteList file : dirs) {
+            IRubyObject obj = JavaUtil.convertJavaToRuby(runtime, file);
+            String[] split = obj.asJavaString().split("/");
+            fileList.add(split[split.length -1]);
+         }
+
+         Object[] files = fileList.toArray();
+        return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
     }
     
     // MRI behavior: just plain '//' or '\\\\' are considered illegal on Windows.
