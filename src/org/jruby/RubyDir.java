@@ -414,6 +414,17 @@ public class RubyDir extends RubyObject {
         return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
+    @Override
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect() {
+        Ruby runtime = getRuntime();
+        StringBuilder part = new StringBuilder();
+        String cname = getMetaClass().getRealClass().getName();
+        part.append("#<").append(cname).append(":").append(path.asJavaString()).append(">");
+
+        return runtime.newString(part.toString());
+    }
+
     /**
      * Returns the current position in the directory.
      */
