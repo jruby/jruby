@@ -27,14 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
-
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import java.util.Enumeration;
 
 import org.jruby.ext.posix.JavaSecuredFile;
 
@@ -529,7 +528,7 @@ public class Dir {
             bytes[begin+2] == 'l' && bytes[begin+3] == 'e' && bytes[begin+4] == ':';
     }
 
-    private static String[] files(JavaSecuredFile directory) {
+    private static String[] files(File directory) {
         String[] files = directory.list();
         
         if (files != null) {
@@ -548,7 +547,7 @@ public class Dir {
         int p,m;
         int status = 0;
         byte[] newpath = null;
-        JavaSecuredFile st;
+        File st;
         p = sub != -1 ? sub : begin;
         if (!has_magic(bytes, p, end, flags)) {
             if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
