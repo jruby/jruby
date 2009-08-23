@@ -69,14 +69,14 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "directory?", required = 1, module = true)
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
+        return directory_p(recv.getRuntime(), filename);
+    }
+
+    public static IRubyObject directory_p(Ruby runtime, IRubyObject filename) {
         ZipEntry entry = file_in_archive(filename);
         if (entry != null) {
-            return entry.isDirectory() ?
-                recv.getRuntime().getTrue() :
-                recv.getRuntime().getFalse();
+            return entry.isDirectory() ? runtime.getTrue() : runtime.getFalse();
         }
-
-        Ruby runtime = recv.getRuntime();
         JRubyFile file = file(filename);
 
         return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isDirectory());
