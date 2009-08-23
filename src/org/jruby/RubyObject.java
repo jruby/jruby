@@ -1174,7 +1174,7 @@ public class RubyObject extends RubyBasicObject {
             }
             if (all) {
                 RubyClass superClass = getMetaClass().getSuperClass();
-                while (superClass.isIncluded()) {
+                while (superClass.isSingleton() || superClass.isIncluded()) {
                     singletonMethods.concat(superClass.instance_methods(new IRubyObject[] {context.getRuntime().getFalse()}));
                     superClass = superClass.getSuperClass();
                 }
