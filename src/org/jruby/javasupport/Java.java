@@ -1430,21 +1430,6 @@ public class Java implements Library {
         return getInstance(runtime, ((JavaObject) java_object).getValue());
     }
 
-    // Java methods
-    @JRubyMethod(required = 1, optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject define_exception_handler(IRubyObject recv, IRubyObject[] args, Block block) {
-        String name = args[0].toString();
-        RubyProc handler = null;
-        if (args.length > 1) {
-            handler = (RubyProc) args[1];
-        } else {
-            handler = recv.getRuntime().newProc(Block.Type.PROC, block);
-        }
-        recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
-
-        return recv;
-    }
-
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.primitive_to_java(recv, object, unusedBlock);

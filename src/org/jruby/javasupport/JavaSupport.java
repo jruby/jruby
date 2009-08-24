@@ -65,8 +65,6 @@ public class JavaSupport {
     }
 
     private final Ruby runtime;
-
-    private final Map<String, RubyProc> exceptionHandlers = new HashMap<String, RubyProc>();
     
     private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache = 
         // TODO: specifying soft refs, may want to compare memory consumption,
@@ -188,26 +186,12 @@ public class JavaSupport {
     public void putJavaClassIntoCache(JavaClass clazz) {
         javaClassCache.put(clazz.javaClass(), clazz);
     }
-    
-    public void defineExceptionHandler(String exceptionClass, RubyProc handler) {
-        exceptionHandlers.put(exceptionClass, handler);
-    }
 
     public void handleNativeException(Throwable exception) {
         if (exception instanceof RaiseException) {
             throw (RaiseException) exception;
         }
-        Class excptnClass = exception.getClass();
-        RubyProc handler = exceptionHandlers.get(excptnClass.getName());
-        while (handler == null &&
-               excptnClass != Throwable.class) {
-            excptnClass = excptnClass.getSuperclass();
-        }
-        if (handler != null) {
-            handler.call(runtime.getCurrentContext(), new IRubyObject[]{JavaUtil.convertJavaToRuby(runtime, exception)});
-        } else {
-            throw createRaiseException(exception);
-        }
+        throw createRaiseException(exception);
     }
 
     private RaiseException createRaiseException(Throwable exception) {
