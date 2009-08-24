@@ -64,6 +64,11 @@ module java::util::Collection
   def join(*args)
     self.to_a.join(*args)
   end
+  def to_a
+    # JRUBY-3910: conversion is faster by going directly to java array
+    # first
+    toArray.to_a
+  end
 end
 
 module java::util::Enumeration
