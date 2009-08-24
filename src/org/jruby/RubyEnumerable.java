@@ -147,15 +147,18 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "cycle", frame = true)
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        if (arg.isNil()) return cycle(context, self, block);
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), self, "cycle", arg);
-        long nv = -1;
-        if(!arg.isNil()) {
-            nv = RubyNumeric.num2long(arg);
-        }
 
-        return nv <= 0 ? context.getRuntime().getNil(): cycleCommon(context, self, nv, block);
+        long times = RubyNumeric.num2long(arg);
+        if (times <= 0) return context.getRuntime().getNil();
+
+        return cycleCommon(context, self, times, block);
     }
 
+    /*
+     * @param nv number of times to cycle or -1 to cycle indefinitely
+     */
     private static IRubyObject cycleCommon(ThreadContext context, IRubyObject self, long nv, final Block block) {
         final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
@@ -308,9 +311,12 @@ public class RubyEnumerable {
         final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
         final ThreadContext localContext = context;
+        final int firstCount = RubyNumeric.fix2int(num);
 
-        if(RubyNumeric.fix2int(num) < 0) {
+        if (firstCount < 0) {
             throw runtime.newArgumentError("negative index");
+        } else if (firstCount == 0) {
+            return result;
         }
 
         try {
@@ -319,10 +325,10 @@ public class RubyEnumerable {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         IRubyObject larg = checkArgs(runtime, largs);
                         checkContext(localContext, ctx, "first");
-                        if (iter-- == 0) {
+                        result.append(larg);
+                        if (iter-- == 1) {
                             throw JumpException.SPECIAL_JUMP;
                         }
-                        result.append(larg);
                         return runtime.getNil();
                     }
                 });
