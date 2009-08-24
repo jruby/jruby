@@ -128,6 +128,11 @@ public class RubyFixnum extends RubyInteger {
     public final boolean eql(IRubyObject other) {
         return other instanceof RubyFixnum && value == ((RubyFixnum)other).value;
     }
+
+    @Override
+    public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
+        return context.getRuntime().newBoolean(this == obj || eql(obj));
+    }
     
     @Override
     public boolean isImmediate() {
