@@ -1242,12 +1242,15 @@ block_var     : lhs
 opt_block_var : none
               | tPIPE /* none */ tPIPE {
                   $$ = new ZeroArgNode(getPosition($1));
+                  lexer.commandStart = true;
               }
               | tOROP {
                   $$ = new ZeroArgNode(getPosition($1));
+                  lexer.commandStart = true;
 	      }
               | tPIPE block_var tPIPE {
                   $$ = $2;
+                  lexer.commandStart = true;
 
 		  // Include pipes on multiple arg type
                   if ($2 instanceof MultipleAsgnNode) {
@@ -1607,6 +1610,7 @@ f_arglist      : tLPAREN2 f_args opt_nl tRPAREN {
                    $$ = $2;
                    $<ISourcePositionHolder>$.setPosition(getPosition($1));
                    lexer.setState(LexState.EXPR_BEG);
+                   lexer.commandStart = true;
                }
                | f_args term {
                    $$ = $1;

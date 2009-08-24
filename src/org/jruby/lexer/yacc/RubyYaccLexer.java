@@ -1501,6 +1501,8 @@ public class RubyYaccLexer {
                 } else {
                     yaccValue = new Token(tempVal, getPosition());
                     if (keyword.id0 == Tokens.kDO) {
+                        commandStart = true;
+                        
                         if (!isOneEight && leftParenBegin > 0 && leftParenBegin == parenNest) {
                             leftParenBegin = 0;
                             parenNest--;
