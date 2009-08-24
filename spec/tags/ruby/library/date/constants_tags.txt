@@ -1,2 +1,0 @@
-fails(JRUBY-3319):Date constants should define JULIAN
-fails(JRUBY-3319):Date constants should define GREGORIAN
