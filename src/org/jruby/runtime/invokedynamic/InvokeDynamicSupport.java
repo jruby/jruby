@@ -281,7 +281,6 @@ public class InvokeDynamicSupport {
 
     public static IRubyObject handleBreakJump(JumpException.BreakJump bj, ThreadContext context) throws JumpException.BreakJump {
         if (context.getFrameJumpTarget() == bj.getTarget()) {
-            System.out.println("here");
             return (IRubyObject) bj.getValue();
         }
         throw bj;
