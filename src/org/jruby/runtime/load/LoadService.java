@@ -203,10 +203,6 @@ public class LoadService {
                        addPath(rubyDir + "site_ruby");
                        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
                    }
-
-                   // Added to make sure we find default distribution files within jar file.
-                   // TODO: Either make jrubyHome become the jar file or allow "classpath-only" paths
-                   addPath("lib" + sep + "ruby" + sep + Constants.RUBY_MAJOR_VERSION);
                }
            } catch(SecurityException e) {}
        }
