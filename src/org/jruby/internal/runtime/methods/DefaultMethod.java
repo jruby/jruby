@@ -342,6 +342,9 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
 
     @Override
     public void setVisibility(Visibility visibility) {
+        // We promote our box to being its own box since we're changing
+        // visibilities, and need it to be reflected on this method object
+        // independent of any other sharing the box.
         DynamicMethodBox newBox = new DynamicMethodBox();
         newBox.actualMethod = box.actualMethod.dup();
         newBox.callCount = box.callCount;
