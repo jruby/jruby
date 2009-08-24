@@ -466,7 +466,8 @@ public class RubySocket extends RubyBasicSocket {
             //IRubyObject family = args[2];
             IRubyObject socktype = args[3];
             //IRubyObject protocol = args[4];
-            //IRubyObject flags = args[5];
+            IRubyObject flags = args[5];
+
             boolean sock_stream = true;
             boolean sock_dgram = true;
             if(!socktype.isNil()) {
@@ -477,9 +478,23 @@ public class RubySocket extends RubyBasicSocket {
                     sock_stream = false;
                 }
             }
-            InetAddress[] addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
+
+            // When Socket::AI_PASSIVE and host is nil, return 'any' address. 
+            InetAddress[] addrs = null; 
+            if(!flags.isNil()) {
+                // The value of 1 is for Socket::AI_PASSIVE.
+                int flag = RubyNumeric.fix2int(flags);
+                if ((flag == 1) && host.isNil() ) {
+                    addrs = InetAddress.getAllByName("0.0.0.0");
+                }
+
+            }
+
+            if (addrs == null)
+                addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
+
             List<IRubyObject> l = new ArrayList<IRubyObject>();
-            for(int i=0;i<addrs.length;i++) {
+            for(int i = 0; i < addrs.length; i++) {
                 IRubyObject[] c;
                 if(sock_dgram) {
                     c = new IRubyObject[7];

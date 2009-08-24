@@ -16,6 +16,25 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  #JRUBY-3827
+  def test_nil_hostname_and_passive_returns_inaddr_any
+    assert_nothing_raised do
+      addrs = Socket::getaddrinfo(nil, 7789, Socket::AF_UNSPEC, Socket::SOCK_STREAM, 0, Socket::AI_PASSIVE)
+      assert_equal(1, addrs.size)
+      assert_equal("0.0.0.0", addrs[0][2])
+      assert_equal("0.0.0.0", addrs[0][3])
+    end
+  end
+
+  def test_nil_hostname_and_no_flags_returns_localhost
+    assert_nothing_raised do
+      addrs = Socket::getaddrinfo(nil, 7789, Socket::AF_UNSPEC, Socket::SOCK_STREAM, 0)
+      assert_equal(1, addrs.size)
+      assert_equal("localhost", addrs[0][2])
+      assert_equal("127.0.0.1", addrs[0][3])
+    end
+  end
+
   def test_basic_socket_reverse_lookup
     assert_nothing_raised do
       reverse = BasicSocket.do_not_reverse_lookup
