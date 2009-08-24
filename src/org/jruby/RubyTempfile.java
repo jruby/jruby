@@ -156,11 +156,25 @@ public class RubyTempfile extends RubyFile {
     @JRubyMethod(frame = true, required = 2, visibility = Visibility.PRIVATE)
     public IRubyObject make_tmpname(ThreadContext context, IRubyObject basename, IRubyObject n, Block block) {
         Ruby runtime = context.getRuntime();
-        IRubyObject[] newargs = new IRubyObject[4];
-        newargs[0] = runtime.newString("%s.%d.%d");
-        newargs[1] = basename;
+        IRubyObject[] newargs = new IRubyObject[5];
+
+        IRubyObject base, suffix;
+        if (basename instanceof RubyArray) {
+            RubyArray array = (RubyArray) basename;
+            int length = array.getLength();
+
+            base = length > 0 ? array.eltInternal(0) : runtime.getNil();
+            suffix = length > 0 ? array.eltInternal(1) : runtime.getNil();
+        } else {
+            base = basename;
+            suffix = runtime.newString("");
+        }
+
+        newargs[0] = runtime.newString("%s.%d.%d%s");
+        newargs[1] = base;
         newargs[2] = runtime.getGlobalVariables().get("$$"); // PID
         newargs[3] = n;
+        newargs[4] = suffix;
         return callMethod(context, "sprintf", newargs);
     }
 
