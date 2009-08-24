@@ -68,11 +68,13 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
     private final Node body;
     private final ArgsNode argsNode;
     private final ISourcePosition position;
+    private final InterpretedMethod interpretedMethod;
     
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
         super(implementationClass, visibility, CallConfiguration.FrameFullScopeFull);
-        this.box.actualMethod = new InterpretedMethod(implementationClass, staticScope, body, argsNode, visibility, position);
+        this.interpretedMethod = new InterpretedMethod(implementationClass, staticScope, body, argsNode, visibility, position);
+        this.box.actualMethod = interpretedMethod;
         this.argsNode = argsNode;
         this.body = body;
         this.staticScope = staticScope;
@@ -338,5 +340,12 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
         return newMethod;
     }
 
-
+    @Override
+    public void setVisibility(Visibility visibility) {
+        DynamicMethodBox newBox = new DynamicMethodBox();
+        newBox.actualMethod = box.actualMethod.dup();
+        newBox.callCount = box.callCount;
+        box = newBox;
+        super.setVisibility(visibility);
+    }
 }
