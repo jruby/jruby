@@ -125,6 +125,13 @@ test_equal 2038, Time.utc(38).year
 test_equal 2038, Time.utc(138).year
 test_equal 1902, Time.utc(1902).year
 
+# JRUBY-3815
+test_equal("2000年01月01日(Sat) 14時58分42秒", t.strftime("%Y年%m月%d日(%a) %H時%M分%S秒"))
+# JRUBY-3550
+test_equal("Thursday csütörtök", Time.mktime(2009,1,1,0,0).strftime("%A csütörtök"))
+
+test_exception {Time.mktime(2009,1,1,0,0).strftime(12345)}
+
 =begin Disabled, see http://jira.codehaus.org/browse/JRUBY-3079
 old_tz = ENV['TZ']
 begin
