@@ -3044,9 +3044,13 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "cycle")
     public IRubyObject cycle(ThreadContext context, IRubyObject arg, Block block) {
+        if (arg.isNil()) return cycle(context, block);
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "cycle", arg);
-        long n = RubyNumeric.num2long(arg);
-        return n <= 0 ? context.getRuntime().getNil() : cycleCommon(context, n, block);
+
+        long times = RubyNumeric.num2long(arg);
+        if (times <= 0) return context.getRuntime().getNil();
+
+        return cycleCommon(context, times, block);
     }
 
     private IRubyObject cycleCommon(ThreadContext context, long n, Block block) {
