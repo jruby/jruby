@@ -169,10 +169,10 @@ class TC_Rational_Stdlib < Test::Unit::TestCase
       assert_equal(1, @rat2.to_i)
       assert_equal(0, @rat4.to_i)
       assert_equal(9, @rat5.to_i)
-      # JRUBY-3860
+      # JRUBY-3860 (resolved -- we match 1.8.7 and 1.9.2 behavior now)
       #assert_equal(-1, @rat6.to_i)
       assert_equal(0, @rat7.to_i)
-      # JRUBY-3860
+      # JRUBY-3860 (resolved -- we match 1.8.7 and 1.9.2 behavior now)
       #assert_equal(-1, @rat8.to_i)
       assert_equal(0, @rat9.to_i)
    end
