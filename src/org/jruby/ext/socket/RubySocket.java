@@ -458,6 +458,7 @@ public class RubySocket extends RubyBasicSocket {
             Ruby r = context.getRuntime();
             IRubyObject host = args[0];
             IRubyObject port = args[1];
+            boolean emptyHost = host.isNil() || host.convertToString().isEmpty();
 
             if(port instanceof RubyString) {
                 port = getservbyname(context, recv, new IRubyObject[]{port});
@@ -484,14 +485,14 @@ public class RubySocket extends RubyBasicSocket {
             if(!flags.isNil()) {
                 // The value of 1 is for Socket::AI_PASSIVE.
                 int flag = RubyNumeric.fix2int(flags);
-                if ((flag == 1) && host.isNil() ) {
+                if ((flag == 1) && emptyHost ) {
                     addrs = InetAddress.getAllByName("0.0.0.0");
                 }
 
             }
 
             if (addrs == null)
-                addrs = InetAddress.getAllByName(host.isNil() ? null : host.convertToString().toString());
+                addrs = InetAddress.getAllByName(emptyHost ? null : host.convertToString().toString());
 
             List<IRubyObject> l = new ArrayList<IRubyObject>();
             for(int i = 0; i < addrs.length; i++) {
