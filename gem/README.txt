@@ -1,25 +1,30 @@
-= jruby
+= jruby-jars
 
 http://www.jruby.org
 
 == DESCRIPTION:
 
-JRuby is an implementation of the Ruby language atop the Java virtual machine.
+This gem includes the core JRuby code and the JRuby 1.8 stdlib as jar files.
+It provides a way to have other gems depend on JRuby without including (and
+freezing to) a specific jruby-complete jar version.
 
 == FEATURES/PROBLEMS:
 
-This is the initial release of JRuby as a gem. The version number does not yet
-reflect the actual JRuby version packaged for now, but it may in the future.
+* JRuby core and JRuby stdlib as jars
+* a jruby-jars.rb that provides the filesystem paths to those jars
 
 == SYNOPSIS:
 
-The gem installs a 'jruby' command that runs JRuby. Otherwise it acts like Ruby.
+To get the full path to the core and stdlib jars:
+
+  require 'jruby-jars'
+
+  puts JRubyJars.core_jar_path # => path to jruby-core-VERSION.jar
+  puts JRubyJars.stdlib_jar_path # => path to jruby-stdlib-VERSION.jar
 
 == REQUIREMENTS:
 
-The only requirement is that you have a JVM available on the system, and that
-either the JAVA_HOME env var points at that JVM installation or 'java' command
-is available in PATH.
+A Ruby implementation with working RubyGems.
 
 == INSTALL:
 
