@@ -2,12 +2,12 @@ package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
+import org.jruby.compiler.ir.opts.Optimization;
 
 public class IR_Script extends IR_ScopeImpl
 {
     public final String    _fileName;    // SSS FIXME: Should this be a string literal or a string?
     public final IR_Class  _dummyClass;  // Dummy class for the script
-    public final IR_Method _dummyMethod; // Dummy top-level method for the script -- added to the dummy class
 
     public IR_Script(String className, String sourceName)
     {
@@ -19,15 +19,11 @@ public class IR_Script extends IR_ScopeImpl
 
         // SSS FIXME: Set other appropriate JVM flags on the class ... see line below from StandardASMCompiler.java
         // classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);
-
-            // Build a dummy static method for the dummy class
-        _dummyMethod = new IR_Method(_dummyClass, _dummyClass, "__file__", "__file__", false);
-        _dummyClass.addMethod(_dummyMethod);
     }
 
     public Operand getFileName() { return new StringLiteral(_fileName); }
 
-    public IR_Method getRootMethod() { return _dummyMethod; }
+    public IR_Method getRootMethod() { return _dummyClass.getRootMethod(); }
 
     public IR_Class getRootClass() { return _dummyClass; }
 
@@ -38,10 +34,10 @@ public class IR_Script extends IR_ScopeImpl
                 super.toString();
     }
 
-    public void peepHoleOptimize()
+    public void optimize(Optimization opt)
     {
-        super.peepHoleOptimize();
+        super.optimize(opt);
         // SSS FIXME: Is there a reason why we cannot add dummy class to the list of classes for the script??
-        getRootClass().peepHoleOptimize();
+        getRootClass().optimize(opt);
     }
 }

@@ -207,8 +207,7 @@ public class IR_Builder
 
     public static void main(String[] args) {
         IR_Scope scope = buildFromMain(args);
-        scope.peepHoleOptimize();
-
+        scope.optimize(new org.jruby.compiler.ir.opts.PeepholeOpt());
         System.out.println(scope);
     }
 
@@ -751,7 +750,7 @@ public class IR_Builder
 
             // Build the class body!
         if (classNode.getBodyNode() != null)
-            build(classNode.getBodyNode(), c);
+            build(classNode.getBodyNode(), c.getRootMethod());
 
             // Return a meta object corresponding to the class
         return cMetaObj;
@@ -2462,13 +2461,14 @@ public class IR_Builder
         // Top-level script!
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Class  rootClass = script._dummyClass;
+		  IR_Method rootMethod = rootClass.getRootMethod();
 
         // add a "self" recv here
         // TODO: is this right?
-        rootClass.addInstr(new RECV_ARG_Instr(rootClass.getSelf(), 0));
+        rootMethod.addInstr(new RECV_ARG_Instr(rootClass.getSelf(), 0));
 
         RootNode rootNode = (RootNode) node;
-        build(rootNode.getBodyNode(), rootClass);
+        build(rootNode.getBodyNode(), rootMethod);
 
         return script;
     }

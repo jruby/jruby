@@ -19,6 +19,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.opts.Optimization;
 
 public abstract class IR_ScopeImpl implements IR_Scope
 {
@@ -232,47 +233,19 @@ public abstract class IR_ScopeImpl implements IR_Scope
                 (_instrs.isEmpty() ? "" : "\n  live variables:\n" + toStringVariables());
     }
 
-    public void peepHoleOptimize()
+    public void optimize(Optimization opt)
     {
         if (!_modules.isEmpty())
             for (IR_Scope m: _modules)
-                m.peepHoleOptimize();
+                m.optimize(opt);
 
         if (!_classes.isEmpty())
             for (IR_Scope c: _classes)
-                c.peepHoleOptimize();
+                c.optimize(opt);
 
         if (!_methods.isEmpty())
             for (IR_Scope meth: _methods)
-                meth.peepHoleOptimize();
-
-        Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
-        for (IR_Instr i : _instrs) {
-            // Reset value map if this instruction is the start/end of a basic block
-            //
-            // Right now, calls are considered hard boundaries for optimization and
-            // information cannot be propagated across them!
-            //
-            // SSS FIXME: Rather than treat all calls with a broad brush, what we need
-            // is to capture different attributes about a call :
-            //   - uses closures
-            //   - known call target
-            //   - can modify scope,
-            //   - etc.
-            //
-            // This information is probably already present in the AST Inspector
-            Operation iop = i._op;
-            if (iop.startsBasicBlock() || iop.endsBasicBlock() || iop.isCall()) {
-                valueMap = new HashMap<Operand,Operand>();
-            }
-
-            // Simplify instruction and record mapping between target variable and simplified value
-            Operand val = i.simplifyAndGetResult(valueMap);
-            Operand res = i.getResult();
-            System.out.println("For " + i + "; dst = " + res + "; val = " + val);
-            if (val != null && res != null && res != val)
-                valueMap.put(res, val);
-        }
+                meth.optimize(opt);
     }
 
     public String toStringInstrs() {

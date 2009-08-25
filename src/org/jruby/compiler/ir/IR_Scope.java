@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.opts.Optimization;
 
 // Easier to understand and it is in any case a scope, not just a IR builder context!
 public interface IR_Scope
@@ -69,6 +70,6 @@ public interface IR_Scope
         // Indicate that we are done processing the loop
     public void endLoop(IR_Loop l);
 	 	
-// --- Methods below this point are optimization specific methods ---
-    public void peepHoleOptimize();
+        // Run the passed in optimization on this scope!
+    public void optimize(Optimization opt);
 }

@@ -9,6 +9,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.opts.Optimization;
 
 public class IR_Method extends IR_ScopeImpl
 {
@@ -18,12 +19,13 @@ public class IR_Method extends IR_ScopeImpl
     public final Label _startLabel; // Label for the start of the method
     public final Label _endLabel;   // Label for the end of the method
 
-	 private List<Operand> _callArgs;
+    private boolean _optimizable;
+    private List<Operand> _callArgs;
 
     public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, String javaName, boolean isInstanceMethod)
     {
         this(parent, lexicalParent, name, isInstanceMethod);
-		  _callArgs = new ArrayList<Operand>();
+        _callArgs = new ArrayList<Operand>();
     }
 
     public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, boolean isInstanceMethod)
@@ -33,19 +35,20 @@ public class IR_Method extends IR_ScopeImpl
         _isInstanceMethod = isInstanceMethod;
         _startLabel = getNewLabel("_METH_START_");
         _endLabel   = getNewLabel("_METH_END_");
-		  _callArgs = new ArrayList<Operand>();
+        _callArgs = new ArrayList<Operand>();
+        _optimizable = true;
     }
 
-	 public void addInstr(IR_Instr i)
-	 {
-		 // Accumulate call arguments
-		 if (i instanceof RECV_ARG_Instr)
-			 _callArgs.add(i._result);
+    public void addInstr(IR_Instr i)
+    {
+        // Accumulate call arguments
+        if (i instanceof RECV_ARG_Instr)
+        _callArgs.add(i._result);
 
-		 super.addInstr(i);
-	 }
+        super.addInstr(i);
+    }
 
-	 public Operand[] getCallArgs() { return _callArgs.toArray(new Operand[_callArgs.size()]); }
+    public Operand[] getCallArgs() { return _callArgs.toArray(new Operand[_callArgs.size()]); }
 
     public Operand getConstantValue(String constRef)
     {
@@ -62,13 +65,23 @@ public class IR_Method extends IR_ScopeImpl
     }
 
     public void setConstantValue(String constRef, Operand val) 
-    { 
+    {
         // SSS FIXME: Throw an exception here?
     }
+
+    public void markUnoptimizable() { _optimizable = false; }
+
+    public boolean isUnoptimizable() { return _optimizable; }
 
     public String toString() {
         return "Method: " +
                 "\n  name: " + _name +
                 super.toString();
+    }
+
+    public void optimize(Optimization opt)
+    {
+        super.optimize(opt);
+        opt.run(this);
     }
 }
