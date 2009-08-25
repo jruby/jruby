@@ -2101,14 +2101,26 @@ public class RubyIO extends RubyObject {
     }
 
     public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
+        if (args.length == 0) {
+            return writeSeparator(context, maybeIO);
+        }
+
+        return putsArray(context, maybeIO, args);
+    }
+
+    private static IRubyObject writeSeparator(ThreadContext context, IRubyObject maybeIO) {
         Ruby runtime = context.getRuntime();
         assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
         RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
 
-        if (args.length == 0) {
-            write(context, maybeIO, separator.getByteList());
-            return runtime.getNil();
-        }
+        write(context, maybeIO, separator.getByteList());
+        return runtime.getNil();
+    }
+
+    private static IRubyObject putsArray(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
 
         for (int i = 0; i < args.length; i++) {
             ByteList line;
@@ -2141,19 +2153,10 @@ public class RubyIO extends RubyObject {
         maybeIO.callMethod(context, "write", RubyString.newStringShared(context.getRuntime(), byteList));
     }
 
-    private IRubyObject inspectPuts(ThreadContext context, RubyArray array) {
-        try {
-            context.getRuntime().registerInspecting(array);
-            return puts(context, array.toJavaArray());
-        } finally {
-            context.getRuntime().unregisterInspecting(array);
-        }
-    }
-
     private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
         try {
             context.getRuntime().registerInspecting(array);
-            return puts(context, maybeIO, array.toJavaArray());
+            return putsArray(context, maybeIO, array.toJavaArray());
         } finally {
             context.getRuntime().unregisterInspecting(array);
         }
