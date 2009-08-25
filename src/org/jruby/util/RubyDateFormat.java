@@ -77,9 +77,10 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_MILLISEC = 25;
     private static final int FORMAT_EPOCH = 26;
     private static final int FORMAT_DAY_WEEK2 = 27;
-    private static final int FORMAT_WEEK_YEAR = 28;
+    private static final int FORMAT_WEEK_WEEKYEAR = 28;
     private static final int FORMAT_NANOSEC = 29;
     private static final int FORMAT_PRECISION = 30;
+    private static final int FORMAT_WEEKYEAR = 31;
 
 
     private static class Token {
@@ -196,6 +197,9 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_STRING, "-"));
                         compiledPattern.add(new Token(FORMAT_DAY));
                         break;
+                    case 'G':
+                        compiledPattern.add(new Token(FORMAT_WEEKYEAR));
+                        break;
                     case 'H':
                         compiledPattern.add(new Token(FORMAT_HOUR));
                         break;
@@ -276,7 +280,7 @@ public class RubyDateFormat extends DateFormat {
                         compiledPattern.add(new Token(FORMAT_YEAR_LONG));
                         break;
                     case 'V':
-                        compiledPattern.add(new Token(FORMAT_WEEK_YEAR));
+                        compiledPattern.add(new Token(FORMAT_WEEK_WEEKYEAR));
                         break;
                     case 'W':
                         compiledPattern.add(new Token(FORMAT_WEEK_YEAR_M));
@@ -451,8 +455,8 @@ public class RubyDateFormat extends DateFormat {
                 case FORMAT_DAY_WEEK:
                 case FORMAT_DAY_WEEK2:
                     value = dt.getDayOfWeek() ;
-                    if (token.getFormat() == FORMAT_DAY_WEEK2) {
-                        value += 1;
+                    if (token.getFormat() == FORMAT_DAY_WEEK) {
+                        value = value % 7;
                     }
                     toAppendTo.append(value);
                     break;
@@ -509,9 +513,9 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_EPOCH:
-                    toAppendTo.append(dt.getMillis());
+                    toAppendTo.append(dt.getMillis()/1000);
                     break;
-                case FORMAT_WEEK_YEAR:
+                case FORMAT_WEEK_WEEKYEAR:
                     value = dt.getWeekOfWeekyear();
                     if (value < 10) {
                         toAppendTo.append('0');
@@ -522,6 +526,9 @@ public class RubyDateFormat extends DateFormat {
                     long nano = System.nanoTime();
                     value = (int) (nano % 1000000000);
                     toAppendTo.append(value);
+                    break;
+                case FORMAT_WEEKYEAR:
+                    toAppendTo.append(dt.getWeekyear());
                     break;
             }
         }
