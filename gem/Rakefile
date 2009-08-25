@@ -15,7 +15,9 @@ file 'pkg/jruby-complete.jar' => "pkg" do
   end
 end
 
-task :prepare => ['pkg/jruby-complete.jar', "pkg/jruby-jars-#{JRUBY_VERSION}/lib"] do
+desc "Run to update jars and versions"
+task :update => ['pkg/jruby-complete.jar', "pkg/jruby-jars-#{JRUBY_VERSION}/lib"] do
+  rm_f 'lib/*.jar'
   %w(pkg/jruby-complete pkg/jruby-core).each {|d| rm_rf d; mkdir_p d }
   Dir.chdir("pkg/jruby-complete") do
     sh "jar xf ../jruby-complete.jar"
@@ -24,6 +26,25 @@ task :prepare => ['pkg/jruby-complete.jar', "pkg/jruby-jars-#{JRUBY_VERSION}/lib
   sh "jar cfm pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-core-#{JRUBY_VERSION}.jar pkg/jruby-complete/META-INF/MANIFEST.MF -C pkg/jruby-core ."
   rm "pkg/jruby-complete/META-INF/MANIFEST.MF"
   sh "jar cf pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-stdlib-#{JRUBY_VERSION}.jar -C pkg/jruby-complete ."
+  cp "pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-core-#{JRUBY_VERSION}.jar", 'lib'
+  cp "pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-stdlib-#{JRUBY_VERSION}.jar", 'lib'
+
+  mkdir_p 'lib/jruby-jars'
+  File.open('lib/jruby-jars/version.rb', 'w') do |file|
+    file.write("module JRubyJars\n  VERSION = '#{JRUBY_VERSION}'\nend")
+  end
+
+  File.open('Manifest.txt', 'w') do |file|
+    file.write <<EOS
+History.txt
+Manifest.txt
+README.txt
+lib/jruby-jars/version.rb
+lib/jruby-jars.rb
+lib/jruby-core-#{JRUBY_VERSION}.jar
+lib/jruby-stdlib-#{JRUBY_VERSION}.jar
+EOS
+  end
 end
 
 Hoe.new('jruby-jars', JRUBY_VERSION) do |p|
