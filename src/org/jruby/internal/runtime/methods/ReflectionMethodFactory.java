@@ -38,6 +38,7 @@ import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
+import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -76,7 +77,8 @@ public class ReflectionMethodFactory extends MethodFactory {
             String methodName, Arity arity, Visibility visibility, 
             StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
         try {
-            Method method = scriptObject.getClass().getMethod(methodName, COMPILED_METHOD_PARAMS);
+            Class scriptClass = scriptObject.getClass();
+            Method method = scriptClass.getMethod(methodName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
             return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException("No method with name " + methodName + " found in " + scriptObject.getClass());
@@ -142,11 +144,12 @@ public class ReflectionMethodFactory extends MethodFactory {
 
     public CompiledBlockCallback getBlockCallback(String method, final Object scriptObject) {
         try {
-            final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject.class});
+            Class scriptClass = scriptObject.getClass();
+            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class);
             return new CompiledBlockCallback() {
                 public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args) {
                     try {
-                        return (IRubyObject)blockMethod.invoke(scriptObject, new Object[]{context, self, args});
+                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args);
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     } catch (IllegalArgumentException ex) {
@@ -170,11 +173,12 @@ public class ReflectionMethodFactory extends MethodFactory {
 
     public CompiledBlockCallback19 getBlockCallback19(String method, final Object scriptObject) {
         try {
-            final Method blockMethod = scriptObject.getClass().getMethod(method, new Class[]{ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class});
+            Class scriptClass = scriptObject.getClass();
+            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
             return new CompiledBlockCallback19() {
                 public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
-                        return (IRubyObject)blockMethod.invoke(scriptObject, new Object[]{context, self, args, block});
+                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args, block);
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     } catch (IllegalArgumentException ex) {
