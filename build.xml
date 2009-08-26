@@ -654,6 +654,9 @@
   <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled,run-junit-reflected-precompiled,run-junit-reflected-interpreted"/>
   <target name="test-threadpool" depends="copy-test-files,run-junit-compiled-threadpool,run-junit-precompiled-threadpool,run-junit-interpreted-threadpool"/>
 
+  <target name="test-1.9" depends="test-compiled-1.9, test-interpreted-1.9"
+    description="Runs unit tests compatible with ruby 1.9"/>
+
   <target name="test-all" depends="
       copy-test-files,
       test-security-manager,
