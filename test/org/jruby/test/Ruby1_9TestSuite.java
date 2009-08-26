@@ -1,15 +1,6 @@
-/*
- * TestUnitTestSuite.java
- * JUnit based test
- *
- * Created on January 15, 2007, 4:06 PM
- */
-
 package org.jruby.test;
 
-
 import junit.framework.Test;
-
 
 /**
  *
@@ -35,9 +26,8 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
         script.append("require 'minitest/unit'\n");
         script.append("require '" + scriptName + "'\n");
         script.append("unit = MiniTest::Unit.new\n");
-        script.append("unit.run_test_suites \"" + testClass + "\"\n");
+        script.append("unit.run_test_suites\n");
         script.append("unit.report\n");
-
         return script.toString();
     }
 }
