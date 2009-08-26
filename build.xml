@@ -153,8 +153,6 @@
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
     </apt>
-
-    <antcall target="instrument" inheritall="true" inheritrefs="true"/>
   </target>
 
   <target name="compile" depends="compile-jruby"
@@ -612,7 +610,7 @@
     </path>
   </target>
 
-  <target name="instrument" if="emma.present">
+  <target name="instrument" depends="emma">
     <emma enabled="${emma.enabled}" >
       <instr instrpathref="classes_to_instrument"
              mode="overwrite"
@@ -621,6 +619,7 @@
         <filter excludes="*INVOKER*"/>
       </instr>
     </emma>
+    <antcall target="jar"/>
   </target>
 
   <target name="coverage-report" description="Generate a coverage report based on aggregated runs." depends="emma">
@@ -636,7 +635,6 @@
 
   <target name="test" depends="
     copy-test-files,
-    instrument,
     run-junit-compiled-short,
     test-rake-targets"
     description="Runs unit tests.">
@@ -644,7 +642,6 @@
 
   <target name="test-extended" depends="
     copy-test-files,
-    instrument,
     run-junit-compiled,
     test-rake-targets"
     description="Runs unit tests.">
@@ -659,7 +656,6 @@
 
   <target name="test-all" depends="
       copy-test-files,
-      instrument,
       test-security-manager,
       run-junit-interpreted,
       run-junit-compiled,
@@ -998,7 +994,7 @@
       <delete file="${spec.dir}/rubyspecs.current.revision"/>
   </target>
 
-  <target name="run-specs" depends="instrument, run-specs-precompiled, run-specs-compiled, run-specs-interpreted">
+  <target name="run-specs" depends="run-specs-precompiled, run-specs-compiled, run-specs-interpreted">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
@@ -1009,7 +1005,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short" depends="instrument, run-specs-interpreted-short">
+  <target name="run-specs-short" depends="run-specs-interpreted-short">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.INTERPRETED}"    arg2="0"/>
@@ -1018,7 +1014,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short-1.9" depends="instrument, run-specs-precompiled-short-1.9">
+  <target name="run-specs-short-1.9" depends="run-specs-precompiled-short-1.9">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}"    arg2="0"/>
@@ -1027,7 +1023,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-ci" depends="instrument, run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short">
+  <target name="run-specs-ci" depends="run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
@@ -1038,7 +1034,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-ci-1.9" depends="instrument, run-specs-compiled-short-1.9, run-specs-interpreted-short-1.9, run-specs-precompiled-short-1.9">
+  <target name="run-specs-ci-1.9" depends="run-specs-compiled-short-1.9, run-specs-interpreted-short-1.9, run-specs-precompiled-short-1.9">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
