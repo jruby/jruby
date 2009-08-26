@@ -1,5 +1,6 @@
-To compile the nailgun client on systems with gcc and make,
-type "make" in the project directory.
+To compile the nailgun client, type './configure' and 'make' in this directory.
+
+Windows binary is distributed with JRuby.
 
 Documentation is under development.  For up-to-date information,
 including a "Quick Start" guide, visit:
