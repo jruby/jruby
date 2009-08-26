@@ -998,7 +998,7 @@ public class RubyEnumerable {
         return runtime.newArrayNoCopy(result);
     }
     
-    @JRubyMethod(name = "none?", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "none?", frame = true)
     public static IRubyObject none_p(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
