@@ -599,7 +599,7 @@
     </java>
   </target>
 
-  <target name="emma" description="turns on EMMA instrumentation/reporting" >
+  <target name="emma" description="Turns on EMMA instrumentation/reporting; use with 'jar' to create an instrumented jar." >
     <available property="emma.present"
                classname="com.vladium.app.IAppVersion"
                classpathref="emma.classpath"/>
@@ -623,7 +623,7 @@
     </emma>
   </target>
 
-  <target name="coverage-report">
+  <target name="coverage-report" description="Generate a coverage report based on aggregated runs." depends="emma">
     <emma enabled="${emma.enabled}" >
       <report sourcepath="${src.dir}" >
         <fileset dir="${test.results.dir}" >
