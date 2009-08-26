@@ -298,8 +298,18 @@ public class RubyEnumerator extends RubyObject {
 
         @JRubyMethod(name = "each_with_object", frame = true, compat = CompatVersion.RUBY1_9)
         public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
+            return with_object_common(context, self, arg, block, "each_with_object");
+        }
+
+        @JRubyMethod(name = "with_object", frame = true, compat = CompatVersion.RUBY1_9)
+        public static IRubyObject with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
+            return with_object_common(context, self, arg, block, "with_object");
+        }
+
+        private static IRubyObject with_object_common(ThreadContext context, IRubyObject self,
+                final IRubyObject arg, final Block block, final String rubyMethodName) {
             final Ruby runtime = context.getRuntime();
-            if (!block.isGiven()) return enumeratorize(runtime, self , "each_with_object", arg);
+            if (!block.isGiven()) return enumeratorize(runtime, self , rubyMethodName, arg);
 
             RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
@@ -325,8 +335,11 @@ public class RubyEnumerator extends RubyObject {
         }
     }
 
-    public static IRubyObject with_index_common(ThreadContext context, IRubyObject self, final Block block) {
+    private static IRubyObject with_index_common(ThreadContext context, IRubyObject self, 
+            final Block block, final String rubyMethodName) {
         final Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, self , rubyMethodName);
+        
         IRubyObject[] args = new IRubyObject[0];
 
         RubyEnumerator e = (RubyEnumerator)self;
@@ -339,16 +352,12 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = context.getRuntime();
-        if (!block.isGiven()) return enumeratorize(runtime, self , "each_with_index");
-        return with_index_common(context, self, block);
+        return with_index_common(context, self, block, "each_with_index");
     }
 
     @JRubyMethod(name = "with_index", frame = true)
     public static IRubyObject with_index(ThreadContext context, IRubyObject self, final Block block) {
-        final Ruby runtime = context.getRuntime();
-        if (!block.isGiven()) return enumeratorize(runtime, self , "with_index");
-        return with_index_common(context, self, block);
+        return with_index_common(context, self, block, "with_index");
     }
 
     @JRubyMethod(name = "next", frame = true)
