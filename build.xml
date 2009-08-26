@@ -668,8 +668,7 @@
       run-junit-compiled-1.9,
       run-junit-reflected-precompiled,
       run-junit-interpreted-threadpool,
-      compile-stdlib,
-      coverage-report"
+      compile-stdlib"
 	  description="Runs unit tests in all modes."/>
 
   <!-- All junit permutations for 1.8 and 1.9 support -->
