@@ -193,6 +193,9 @@ do
             fi
             java_args=("${java_args[@]}" "${1:2}")
         fi
+        if [ "$CP" != "" ]; then
+          CLASSPATH=""
+        fi
         ;;
      # Match switches that take an argument
      -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;

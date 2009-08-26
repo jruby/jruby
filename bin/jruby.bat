@@ -13,6 +13,10 @@ IF EXIST "%~dp0_jrubyvars.bat" (set FULL_PATH=%~dp0) ELSE (set FULL_PATH=%~dp$PA
 
 call "%FULL_PATH%_jrubyvars.bat" %*
 
+if "%CP%" != "" (
+  set CLASSPATH = ""
+)
+
 if %JRUBY_BAT_ERROR%==0 (
   if "%_NAILGUN_CLIENT%" == "" (
      "%_STARTJAVA%" %_VM_OPTS% %_JRUBY_BOOTCP_OPTS% -classpath "%CP%;%CLASSPATH%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib="%JRUBY_HOME%\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat %_JAVA_CLASS% %JRUBY_OPTS% %_RUBY_OPTS%
