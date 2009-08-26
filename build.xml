@@ -153,6 +153,8 @@
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
     </apt>
+
+    <antcall target="instrument" inheritall="true" inheritrefs="true"/>
   </target>
 
   <target name="compile" depends="compile-jruby"
@@ -264,6 +266,7 @@
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <zipfileset src="${build.lib.dir}/emma.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -612,13 +615,15 @@
   <target name="instrument" if="emma.present">
     <emma enabled="${emma.enabled}" >
       <instr instrpathref="classes_to_instrument"
-             destdir="${jruby.instrumented.classes.dir}"
+             mode="overwrite"
              metadatafile="${test.results.dir}/metadata.emma"
-         merge="false" />
+             merge="false">
+        <filter excludes="*INVOKER*"/>
+      </instr>
     </emma>
   </target>
 
-  <target name="coverage-report" if="emma.present">
+  <target name="coverage-report">
     <emma enabled="${emma.enabled}" >
       <report sourcepath="${src.dir}" >
         <fileset dir="${test.results.dir}" >
@@ -633,9 +638,7 @@
     copy-test-files,
     instrument,
     run-junit-compiled-short,
-    test-security-manager,
-    test-rake-targets,
-    coverage-report"
+    test-rake-targets"
     description="Runs unit tests.">
   </target>
 
@@ -643,9 +646,7 @@
     copy-test-files,
     instrument,
     run-junit-compiled,
-    test-security-manager,
-    test-rake-targets,
-    coverage-report"
+    test-rake-targets"
     description="Runs unit tests.">
   </target>
 
@@ -692,7 +693,6 @@
   <target name="run-junit-precompiled-threadpool"><run-junit-1.8 compile.mode="FORCE" jit.threshold="0" thread.pooling="true"/></target>
 
   <path id="test.class.path">
-    <pathelement location="${jruby.instrumented.classes.dir}" />
     <fileset dir="${build.lib.dir}" includes="*.jar">
       <exclude name="jcodings.jar"/>
       <exclude name="joni.jar"/>
@@ -732,8 +732,11 @@
 	<sysproperty key="jruby.reflection" value="@{reflection}"/>
 	<sysproperty key="jruby.jit.logging.verbose" value="true"/>
 	<sysproperty key="jruby.compile.lazyHandles" value="true"/>
+
+        <!-- emma coverage tool properties -->
 	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
 	<sysproperty key="emma.coverage.out.merge" value="true" />
+        <sysproperty key="emma.verbosity.level" value="silent" />
 
         <!-- force encoding to UTF-8 because of stupid Macroman on OS X -->
         <sysproperty key="file.encoding" value="UTF-8"/>
@@ -819,9 +822,9 @@
   </macrodef>
 
   <target name="test-security-manager">
-    <java classname="org.jruby.Main" fork="true" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+    <java classname="org.jruby.Main" fork="true" failonerror="false">
+      <classpath refid="test.class.path"/>
+
       <sysproperty key="java.security.manager" value=""/>
       <sysproperty key="java.security.policy" value="file:test/restricted.policy"/>
       <sysproperty key="java.awt.headless" value="true"/>
@@ -855,8 +858,7 @@
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="@{dir}">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
+        <classpath refid="test.class.path"/>
 
         <jvmarg line="@{jvm.args}"/>
 
@@ -871,6 +873,9 @@
         <sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
         <sysproperty key="jruby.reflection" value="@{reflection}"/>
         <sysproperty key="jruby.launch.inproc" value="@{inproc}"/>
+	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
+	<sysproperty key="emma.coverage.out.merge" value="true" />
+        <sysproperty key="emma.verbosity.level" value="silent" />
 
         <arg line="@{jruby.args}"/>
         <arg line="${base.dir}/bin/rake"/>
@@ -994,7 +999,7 @@
       <delete file="${spec.dir}/rubyspecs.current.revision"/>
   </target>
 
-  <target name="run-specs" depends="run-specs-precompiled, run-specs-compiled, run-specs-interpreted, jar">
+  <target name="run-specs" depends="instrument, run-specs-precompiled, run-specs-compiled, run-specs-interpreted">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
@@ -1005,7 +1010,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short" depends="run-specs-interpreted-short, jar">
+  <target name="run-specs-short" depends="instrument, run-specs-interpreted-short">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.INTERPRETED}"    arg2="0"/>
@@ -1014,7 +1019,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short-1.9" depends="run-specs-precompiled-short-1.9, jar">
+  <target name="run-specs-short-1.9" depends="instrument, run-specs-precompiled-short-1.9">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}"    arg2="0"/>
@@ -1023,7 +1028,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-ci" depends="run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short, jar">
+  <target name="run-specs-ci" depends="instrument, run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
@@ -1034,7 +1039,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-ci-1.9" depends="run-specs-compiled-short-1.9, run-specs-interpreted-short-1.9, run-specs-precompiled-short-1.9, jar">
+  <target name="run-specs-ci-1.9" depends="instrument, run-specs-compiled-short-1.9, run-specs-interpreted-short-1.9, run-specs-precompiled-short-1.9">
     <condition property="spec.status.combined.OK">
       <and>
         <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
@@ -1129,13 +1134,13 @@
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} compat=@{compat}"/>
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" resultproperty="spec.status.@{mode.name}" dir="${base.dir}">
-	<classpath refid="build.classpath"/>
-	<classpath path="${jruby.classes.dir}"/>
+	<classpath refid="test.class.path"/>
 
 	<jvmarg value="-ea"/>
 
 	<sysproperty key="jruby.home" value="${basedir}"/>
 	<sysproperty key="jruby.launch.inproc" value="false"/>
+        <sysproperty key="emma.verbosity.level" value="silent" />
 
 	<arg line="${mspec.dir}/bin/mspec ci"/>
 	<arg line="-T -J-ea"/>
@@ -1146,7 +1151,11 @@
 	<arg line="-T -J-Djruby.objectspace.enabled=@{objectspace.enabled}"/>
 	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
 	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
-    <arg line="-T -J-Djruby.compat.version=@{compat}"/>
+        <arg line="-T -J-Djruby.compat.version=@{compat}"/>
+        <arg line="-T -J-Demma.coverage.out.file=${test.results.dir}/coverage.emma"/>
+        <arg line="-T -J-Demma.coverage.out.merge=true"/>
+        <arg line="-T -J-Demma.verbosity.level=silent" />
+        <env key="JAVA_OPTS" value="-Demma.verbosity.level=silent"/>
 	<arg line="-f m"/>
 	<arg line="-B @{spec.config}"/>
       </java>

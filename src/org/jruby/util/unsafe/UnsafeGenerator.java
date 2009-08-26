@@ -24,12 +24,14 @@ public class UnsafeGenerator {
         
         SkinnyMethodAdapter method = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class), null, null));
         method.start();
+        method.line(0);
         method.aload(0);
         method.invokespecial(p(Object.class), "<init>", sig(void.class));
         method.voidreturn();
         method.end();
         
         method = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "throwException", sig(void.class, Throwable.class), null, null));
+        method.line(0);
         method.start();
         method.aload(1);
         method.athrow();
