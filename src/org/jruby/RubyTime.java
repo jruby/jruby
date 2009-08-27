@@ -278,6 +278,17 @@ public class RubyTime extends RubyObject {
         String result = rubyDateFormat.format(null);
         return getRuntime().newString(result);
     }
+
+    @JRubyMethod(name = "==", required = 1, compat= CompatVersion.RUBY1_9)
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        if (other.isNil()) {
+            return RubyBoolean.newBoolean(getRuntime(), false);
+        } else if (other instanceof RubyTime) {
+            return getRuntime().newBoolean(cmp((RubyTime) other) == 0);
+        }
+
+        return RubyComparable.op_equal(context, this, other);
+    }
     
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
