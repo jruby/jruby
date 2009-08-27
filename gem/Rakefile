@@ -15,13 +15,17 @@ file 'pkg/jruby-complete.jar' => "pkg" do
   end
 end
 
+def core_files_and_dirs
+  FileList[*%w(builtin jruby org com jline jay jni YechtService.class)].select{|f| File.exist?(f) }
+end
+
 desc "Run to update jars and versions"
 task :update => ['pkg/jruby-complete.jar', "pkg/jruby-jars-#{JRUBY_VERSION}/lib"] do
   rm_f 'lib/*.jar'
   %w(pkg/jruby-complete pkg/jruby-core).each {|d| rm_rf d; mkdir_p d }
   Dir.chdir("pkg/jruby-complete") do
     sh "jar xf ../jruby-complete.jar"
-    mv FileList[*%w(builtin jruby org com jline)], "../jruby-core"
+    mv core_files_and_dirs, "../jruby-core"
   end
   sh "jar cfm pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-core-#{JRUBY_VERSION}.jar pkg/jruby-complete/META-INF/MANIFEST.MF -C pkg/jruby-core ."
   rm "pkg/jruby-complete/META-INF/MANIFEST.MF"
