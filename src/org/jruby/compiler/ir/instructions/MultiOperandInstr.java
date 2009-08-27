@@ -30,8 +30,7 @@ public class MultiOperandInstr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
-        for (int i = 0; i < _args.length; i++) {
+        for (int i = 0; i < _args.length; i++)
             _args[i] = _args[i].getSimplifiedOperand(valueMap);
-        }
     }
 }

@@ -207,8 +207,8 @@ public class IR_Builder
 
     public static void main(String[] args) {
         IR_Scope scope = buildFromMain(args);
-        scope.optimize(new org.jruby.compiler.ir.opts.PeepholeOpt());
-        System.out.println(scope);
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
     }
 
     public static IR_Scope buildFromMain(String[] args) {
@@ -847,11 +847,11 @@ public class IR_Builder
             }
         }
         else if (iVisited instanceof Colon2MethodNode) {
-            Colon2MethodNode     c2mNode    = (Colon2MethodNode)iVisited;
-            List<Operand> args         = setupCallArgs(null, s);
-            Operand       block        = setupCallClosure(null, s);
-            Variable      callResult   = s.getNewVariable();
-            IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
+            Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
+            List<Operand> args       = setupCallArgs(null, s);
+            Operand       block      = setupCallClosure(null, s);
+            Variable      callResult = s.getNewVariable();
+            IR_Instr      callInstr  = new CALL_Instr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
             s.addInstr(callInstr);
             return callResult;
         }

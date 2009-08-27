@@ -24,7 +24,7 @@ public class MethAddr extends Reference
 
     public MethAddr(String name) { super(name); }
 
-    public String toString() {
-        return _refName;
-    }
+    public String getName() { return _refName; }
+
+    public String toString() { return _refName; }
 }

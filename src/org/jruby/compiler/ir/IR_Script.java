@@ -2,7 +2,6 @@ package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
-import org.jruby.compiler.ir.opts.Optimization;
 
 public class IR_Script extends IR_ScopeImpl
 {
@@ -13,12 +12,8 @@ public class IR_Script extends IR_ScopeImpl
     {
         super((IR_Scope)null, null);
         _fileName = sourceName;
-
-            // Build a dummy class: SSS FIXME: What name for the class?
-        _dummyClass = new IR_Class(this, this, null, "_DUMMY_", false);
-
-        // SSS FIXME: Set other appropriate JVM flags on the class ... see line below from StandardASMCompiler.java
-        // classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);
+        _dummyClass = new IR_Class(this, this, null, "__SCRIPT_ROOT__", false);
+		  addClass(_dummyClass);
     }
 
     public Operand getFileName() { return new StringLiteral(_fileName); }
@@ -30,14 +25,6 @@ public class IR_Script extends IR_ScopeImpl
     public String toString() {
         return "Script: " +
                 "\n  file: " + getFileName() +
-                "\n  class:\n" + getRootClass() +
                 super.toString();
-    }
-
-    public void optimize(Optimization opt)
-    {
-        super.optimize(opt);
-        // SSS FIXME: Is there a reason why we cannot add dummy class to the list of classes for the script??
-        getRootClass().optimize(opt);
     }
 }

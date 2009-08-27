@@ -17,4 +17,10 @@ public class IR_Module extends IR_ScopeImpl
         super(parent, lexicalParent);
         _moduleName = name;
     }
+
+    public String toString() {
+        return "Module: " +
+                "\n  moduleName: " + _moduleName +
+                super.toString();
+    }
 }

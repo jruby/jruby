@@ -19,7 +19,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.opts.Optimization;
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 
 public abstract class IR_ScopeImpl implements IR_Scope
 {
@@ -162,10 +162,17 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addMethod(IR_Method m) {
         _methods.add(m);
-        if (this instanceof IR_Class)
-            addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr((IR_Class)this, m) : new DEFINE_CLASS_METHOD_Instr((IR_Class)this, m));
-        else
+        if ((this instanceof IR_Method) && ((IR_Method)this).isAClassRootMethod()) {
+            IR_Class c = (IR_Class)(((MetaObject)this._parent)._scope);
+            addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
+        }
+        else if (this instanceof IR_Class) {
+            IR_Class c = (IR_Class)this;
+            addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
+        }
+        else {
             throw new RuntimeException("Encountered method add in a non-class scope!");
+        }
     }
 
     public void addInstr(IR_Instr i)   { _instrs.add(i); }
@@ -224,28 +231,30 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public IR_Loop getCurrentLoop() { return _loopStack.peek(); }
 
     public String toString() {
-        return
-                (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap) +
-                (_instrs.isEmpty() ? "" : "\n  instrs:\n" + toStringInstrs()) +
-                (_modules.isEmpty() ? "" : "\n  modules:\n" + _modules) +
-                (_classes.isEmpty() ? "" : "\n  classes:\n" + _classes) +
-                (_methods.isEmpty() ? "" : "\n  methods:\n" + _methods) +
-                (_instrs.isEmpty() ? "" : "\n  live variables:\n" + toStringVariables());
+        return (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap);
     }
 
-    public void optimize(Optimization opt)
+    public void runCompilerPass(CompilerPass p)
     {
+        boolean isPreOrder =  p.isPreOrder();
+
+        if (isPreOrder)
+            p.run(this);
+
         if (!_modules.isEmpty())
             for (IR_Scope m: _modules)
-                m.optimize(opt);
+                m.runCompilerPass(p);
 
         if (!_classes.isEmpty())
             for (IR_Scope c: _classes)
-                c.optimize(opt);
+                c.runCompilerPass(p);
 
         if (!_methods.isEmpty())
             for (IR_Scope meth: _methods)
-                meth.optimize(opt);
+                meth.runCompilerPass(p);
+
+        if (!isPreOrder)
+            p.run(this);
     }
 
     public String toStringInstrs() {

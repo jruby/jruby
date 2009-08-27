@@ -10,6 +10,8 @@ public class Variable extends Operand implements Comparable
 
     public String toString() { return _name; }
 
+    public boolean isSelf() { return _name.equals("self"); }
+
     @Override
     public int hashCode() {
         return _name.hashCode();
