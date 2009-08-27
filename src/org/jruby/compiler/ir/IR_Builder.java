@@ -822,8 +822,19 @@ public class IR_Builder
         return val;
     }
 
+    private Operand loadConst(IR_Scope s, IR_Scope currScope, String name)
+    {
+        Operand cv = s.getConstantValue(name);
+        if (cv == null) {
+            Variable v = currScope.getNewVariable();
+            currScope.addInstr(new GET_CONST_Instr(v, s, name));
+            cv = v;
+        }
+        return cv;
+    }
+
     public Operand buildConst(ConstNode node, IR_Scope s) {
-        return s.getConstantValue(node.getName()); 
+        return loadConst(s, s, node.getName()); 
     }
 
     public Operand buildColon2(final Colon2Node iVisited, IR_Scope s) {
@@ -831,14 +842,14 @@ public class IR_Builder
         final String name = iVisited.getName();
 
         if (leftNode == null) {
-            return s.getConstantValue(name);
+            return loadConst(s, s, name);
         } 
         else if (iVisited instanceof Colon2ConstNode) {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
             Operand module = build(iVisited.getLeftNode(), s);
             if (module instanceof MetaObject) {
-                return ((MetaObject)module)._scope.getConstantValue(name);
+                return loadConst(((MetaObject)module)._scope, s, name);
             }
             else {
                 Variable constVal = s.getNewVariable();
@@ -2461,7 +2472,7 @@ public class IR_Builder
         // Top-level script!
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Class  rootClass = script._dummyClass;
-		  IR_Method rootMethod = rootClass.getRootMethod();
+        IR_Method rootMethod = rootClass.getRootMethod();
 
         // add a "self" recv here
         // TODO: is this right?

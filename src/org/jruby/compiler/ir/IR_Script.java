@@ -23,8 +23,6 @@ public class IR_Script extends IR_ScopeImpl
     public IR_Class getRootClass() { return _dummyClass; }
 
     public String toString() {
-        return "Script: " +
-                "\n  file: " + getFileName() +
-                super.toString();
+        return "Script: file: " + getFileName() + super.toString();
     }
 }

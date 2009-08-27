@@ -9,7 +9,15 @@ public class IR_Class extends IR_ScopeImpl
     public static boolean isAClassRootMethod(IR_Method m) { return m._name.startsWith(ROOT_METHOD_PREFIX); }
 
     // Object class meta-object
+    // SSS FIXME: These should be available via bootstrapping!
+    // SSS FIXME: Parent/super-type info is incorrect!  These are just placeholders
     final public static IR_Class OBJECT = new IR_Class((IR_Scope)null, (IR_Scope)null, null, "Object", false);
+    final public static IR_Class FIXNUM = new IR_Class(OBJECT, (IR_Scope)null, null, "Fixnum", false);
+    final public static IR_Class FLOAT  = new IR_Class(OBJECT, (IR_Scope)null, null, "Float", false);
+    final public static IR_Class STRING = new IR_Class(OBJECT, (IR_Scope)null, null, "String", false);
+    final public static IR_Class ARRAY  = new IR_Class(OBJECT, (IR_Scope)null, null, "Array", false);
+    final public static IR_Class RANGE  = new IR_Class(OBJECT, (IR_Scope)null, null, "Range", false);
+    final public static IR_Class HASH   = new IR_Class(OBJECT, (IR_Scope)null, null, "Hash", false);
 
     final public String  _className;
     final public Operand _superClass;
@@ -19,7 +27,7 @@ public class IR_Class extends IR_ScopeImpl
 
     private void addRootMethod()
     {
-        // Build a dummy static method for the dummy class
+        // Build a dummy static method for the class -- the scope in which all definitions, and class code executes, equivalent to java clinit
         String n = ROOT_METHOD_PREFIX + _className;
         _rootMethod = new IR_Method(this, this, n, n, false);
         addMethod(_rootMethod);
@@ -55,8 +63,6 @@ public class IR_Class extends IR_ScopeImpl
     }
 
     public String toString() {
-        return "Class: " +
-                "\n  className: " + _className +
-                super.toString();
+        return "Class: " + _className + super.toString();
     }
 }

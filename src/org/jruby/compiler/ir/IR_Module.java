@@ -19,8 +19,6 @@ public class IR_Module extends IR_ScopeImpl
     }
 
     public String toString() {
-        return "Module: " +
-                "\n  moduleName: " + _moduleName +
-                super.toString();
+        return "Module: " + _moduleName + super.toString();
     }
 }

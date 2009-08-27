@@ -198,17 +198,15 @@ public abstract class IR_ScopeImpl implements IR_Scope
         //    if the reference is unresolved, when a value is retrieved for the forward-ref
         //    and we get a null, we can throw a ConstMissing exception!  Not sure!
         //
-        // SSS FIXME: Is this just a premature optimization?  Should we instead introduce 
-        // PUT_CONST_Instr and GET_CONST_Instr instructions always?
-        //
-    public Operand getConstantValue(String constRef) 
-    { 
-        Operand cv = _constMap.get(constRef); 
-        if (cv == null) {
-            Variable v = getNewVariable();
-            addInstr(new GET_CONST_Instr(v, this, constRef));
-            cv = v;
-        }
+    public Operand getConstantValue(String constRef)
+    {
+        // System.out.println("Looking in " + this + " for constant: " + constRef);
+        Operand cv = _constMap.get(constRef);
+        Operand p  = _parent;
+        // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the parent is a static scope
+        if ((cv == null) && (p != null) && (p instanceof MetaObject))
+            cv = ((MetaObject)p)._scope.getConstantValue(constRef);
+
         return cv;
     }
 

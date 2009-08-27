@@ -54,26 +54,15 @@ public class IR_Method extends IR_ScopeImpl
 
     public Operand[] getCallArgs() { return _callArgs.toArray(new Operand[_callArgs.size()]); }
 
-    public Operand getConstantValue(String constRef)
-    {
-            // Constants are defined in classes & modules, not in methods!
-            // So, this reference is actually defined in the containing class/module
-        if (_parent instanceof MetaObject) {
-            return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
-        }
-        else {
-            Variable cv = getNewVariable();
-            addInstr(new GET_CONST_Instr(cv, _parent, constRef));
-            return cv;
-        }
-    }
-
     public void setConstantValue(String constRef, Operand val) 
     {
-        // SSS FIXME: Throw an exception here?
+        if (isAClassRootMethod())
+            ((MetaObject)_parent)._scope.setConstantValue(constRef, val);
+        else
+		    throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a method!");
     }
 
-	 public boolean isAClassRootMethod() { return IR_Class.isAClassRootMethod(this); }
+    public boolean isAClassRootMethod() { return IR_Class.isAClassRootMethod(this); }
 
     public void markUnoptimizable() { _optimizable = false; }
 
@@ -87,8 +76,6 @@ public class IR_Method extends IR_ScopeImpl
     public CodeVersion getCodeVersionToken() { return _token; }
 
     public String toString() {
-        return "Method: " +
-                "\n  name: " + _name +
-                super.toString();
+        return "Method: " + _name + super.toString();
     }
 }

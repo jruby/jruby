@@ -21,23 +21,9 @@ public class IR_Closure extends IR_ScopeImpl
         _endLabel   = getNewLabel("_CLOSURE_END_");
     }
 
-    public Operand getConstantValue(String constRef)
-    {
-            // Constants are defined in classes & modules, not in closures!
-            // So, this reference is actually defined in the containing class/module
-        if (_parent instanceof MetaObject) {
-            return ((MetaObject)_parent)._scope.getConstantValue(constRef);  
-        }
-        else {
-            Variable cv = getNewVariable();
-            addInstr(new GET_CONST_Instr(cv, _parent, constRef));
-            return cv;
-        }
-    }
-
     public void setConstantValue(String constRef, Operand val) 
-    { 
-        // SSS FIXME: Throw an exception here?
+    {
+		  throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a closure!");
     }
 
     public String toString() { return "Closure: {" + super.toString() + "}"; }
