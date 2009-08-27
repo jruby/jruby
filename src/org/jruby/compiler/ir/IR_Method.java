@@ -24,6 +24,7 @@ public class IR_Method extends IR_ScopeImpl
     private CodeVersion _token;   // Current code version token for this method -- can change during execution as methods get redefined!
 
     private boolean _optimizable;
+    private boolean _canModifyCode;
     private List<Operand> _callArgs;
 
     public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, String javaName, boolean isInstanceMethod)
@@ -39,15 +40,19 @@ public class IR_Method extends IR_ScopeImpl
         _startLabel = getNewLabel("_METH_START_");
         _endLabel   = getNewLabel("_METH_END_");
         _callArgs = new ArrayList<Operand>();
-        _optimizable = true;
         _token = CodeVersion.getVersionToken();
+        _optimizable = true;
+            // Does this method define code? 
+            // Default is yes -- which basically leads to pessimistic but safe optimizations
+            // But, for library and internal methods, this might be false.
+        _canModifyCode = true;
     }
 
     public void addInstr(IR_Instr i)
     {
         // Accumulate call arguments
         if (i instanceof RECV_ARG_Instr)
-        _callArgs.add(i._result);
+            _callArgs.add(i._result);
 
         super.addInstr(i);
     }
@@ -64,14 +69,13 @@ public class IR_Method extends IR_ScopeImpl
 
     public boolean isAClassRootMethod() { return IR_Class.isAClassRootMethod(this); }
 
-    public void markUnoptimizable() { _optimizable = false; }
+    public void setOptimizatableFlag(boolean f) { _optimizable = f; }
 
     public boolean isUnoptimizable() { return _optimizable; }
 
-    // Does this method define code? 
-    // Default is yes -- which basically leads to pessimistic but safe optimizations
-    // But, for library and internal methods, this might be false.
-    public boolean modifiesCode() { return true; }
+    public void setCodeModificationFlag(boolean f) { _canModifyCode = f; }
+
+    public boolean modifiesCode() { return _canModifyCode; }
 
     public CodeVersion getCodeVersionToken() { return _token; }
 

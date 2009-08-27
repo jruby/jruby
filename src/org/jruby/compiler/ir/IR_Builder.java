@@ -723,7 +723,7 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new MetaObject(IR_Class.OBJECT);
+            container = new MetaObject(IR_Class.getCoreClass("Object"));
         }
 
             // Build a new class and add it to the current scope (could be a script / module / class)
@@ -1902,7 +1902,7 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new MetaObject(IR_Class.OBJECT); // SSS FIXME: Is this correct?
+            container = new MetaObject(IR_Class.getCoreClass("Object")); // SSS FIXME: Is this correct?
         }
 
         // Build the new module

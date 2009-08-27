@@ -36,7 +36,7 @@ public class LocalOptimizationPass implements CompilerPass
         //
         // This information is probably already present in the AST Inspector
         IR_Method m = (IR_Method)s;
-        Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
+        Map<Operand,Operand>  valueMap = new HashMap<Operand,Operand>();
         for (IR_Instr i : m.getInstrs()) {
             Operation iop = i._op;
             if (iop.startsBasicBlock())
@@ -45,9 +45,25 @@ public class LocalOptimizationPass implements CompilerPass
             // Simplify instruction and record mapping between target variable and simplified value
             Operand val = i.simplifyAndGetResult(valueMap);
             Operand res = i.getResult();
-            // System.out.println("For " + i + "; dst = " + res + "; val = " + val);
+//            System.out.println("For " + i + "; dst = " + res + "; val = " + val);
             if (val != null && res != null && res != val)
                 valueMap.put(res, val);
+
+/**
+            // Optimize some core class method calls for constant values
+            if (iop.isCall()) {
+                CALL_Instr call = ((CALL_Instr)i);
+                Operand    r    = call.getReceiver();
+                Operand    ma   = call.getMethodAddr();
+                IR_Class   rc   = r.getTargetClass();
+                if ((rc == IR_Class.getCoreClass("Fixnum")) && (ma instanceof MethAddr)) {
+                    Operand[] args = call.getCallArgs();
+                }
+                else if (rc == IR_Class.getCoreClass("Array") && (ma instanceof MethAddr)) {
+                    Operand[] args = call.getCallArgs();
+                }
+            }
+**/
 
             if (iop.endsBasicBlock() || iop.isCall())
                 valueMap = new HashMap<Operand,Operand>();

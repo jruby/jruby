@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Scope;
@@ -14,7 +15,9 @@ public class MetaObject extends Operand
 
     public String toString() { 
         if (_scope instanceof IR_Class)
-            return "Class " + ((IR_Class)_scope)._className;
+            return "Class " + ((IR_Class)_scope)._name;
+        else if (_scope instanceof IR_Module)
+            return "Module " + ((IR_Module)_scope)._name;
         else if (_scope instanceof IR_Method)
             return "Method " + ((IR_Method)_scope)._name;
         else if (_scope instanceof IR_Script)
@@ -24,4 +27,7 @@ public class MetaObject extends Operand
     }
 
     public boolean isConstant() { return true; }
+
+    // SSS FIXME: Incomplete!
+    public IR_Class getTargetClass() { return (_scope instanceof IR_Module) ? IR_Class.getCoreClass("Module") : null; }
 }

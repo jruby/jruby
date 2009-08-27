@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.IR_Class;
+
 import java.math.BigInteger;
 
 public class Fixnum extends Constant
@@ -13,4 +15,6 @@ public class Fixnum extends Constant
 
 // ---------- These methods below are used during compile-time optimizations ------- 
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return (argIndex == 0) ? this : Nil.NIL; }
+
+    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Fixnum"); }
 }

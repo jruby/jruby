@@ -3,6 +3,8 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.compiler.ir.IR_Class;
+
 // Represents an array [_, _, .., _] in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -59,6 +61,8 @@ public class Array extends Operand
             }
         }
     }
+
+    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Array"); }
 
     public Operand toArray() { return this; }
 }

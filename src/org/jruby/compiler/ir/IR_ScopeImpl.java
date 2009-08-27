@@ -150,13 +150,13 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addModule(IR_Module m) 
     {
-        setConstantValue(m._moduleName, new MetaObject(m)) ;
+        setConstantValue(m._name, new MetaObject(m)) ;
         _modules.add(m);
     }
 
     public void addClass(IR_Class c)
     { 
-        setConstantValue(c._className, new MetaObject(c));
+        setConstantValue(c._name, new MetaObject(c));
         _classes.add(c);
     }
 
@@ -166,9 +166,13 @@ public abstract class IR_ScopeImpl implements IR_Scope
             IR_Class c = (IR_Class)(((MetaObject)this._parent)._scope);
             addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
         }
-        else if (this instanceof IR_Class) {
+        else if (m._isInstanceMethod && (this instanceof IR_Class)) {
             IR_Class c = (IR_Class)this;
-            addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
+            addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
+        }
+        else if (!m._isInstanceMethod && (this instanceof IR_Module)) {
+            IR_Module c = (IR_Module)this;
+            addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
         }
         else {
             throw new RuntimeException("Encountered method add in a non-class scope!");

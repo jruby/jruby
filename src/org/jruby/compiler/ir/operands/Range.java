@@ -2,6 +2,8 @@ package org.jruby.compiler.ir.operands;
 
 import java.util.Map;
 
+import org.jruby.compiler.ir.IR_Class;
+
 // Represents a range (1..5) or (a..b) in ruby code
 //
 // NOTE: This operand is only used in the initial stages of optimization
@@ -31,6 +33,8 @@ public class Range extends Operand
         // So for now, return null!
         return null;
     }
+
+    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Range"); }
 
     public boolean isNonAtomicValue() { return true; }
 

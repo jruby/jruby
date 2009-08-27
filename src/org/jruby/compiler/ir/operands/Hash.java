@@ -3,6 +3,8 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.compiler.ir.IR_Class;
+
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -38,4 +40,6 @@ public class Hash extends Operand
 
         return this;
     }
+
+    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Hash"); }
 }

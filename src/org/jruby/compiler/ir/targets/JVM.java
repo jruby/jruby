@@ -155,7 +155,7 @@ public class JVM implements CompilerTarget {
 
     public void emit(IR_Class cls) {
         pushclass();
-        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls._className, null, p(RubyObject.class), null);
+        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls._name, null, p(RubyObject.class), null);
         cls().visitSource(script.getFileName().toString(), null);
 
         // root-level logic
