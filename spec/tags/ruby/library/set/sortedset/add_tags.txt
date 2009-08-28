@@ -1,1 +1,1 @@
-fails(JRUBY-3657):SortedSet#add takes only values which responds <=>
+fails(JRUBY-3657 ruby_bug[1.8.7]):SortedSet#add takes only values which responds <=>
