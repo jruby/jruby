@@ -279,6 +279,17 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
 
+    /** Returns the base 2 logarithm of x.
+     *
+     */
+    @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE)
+    public static RubyFloat log2(IRubyObject recv, IRubyObject x) {
+        double value = ((RubyFloat)RubyKernel.new_float(recv, x)).getDoubleValue();
+        double result = Math.log(value)/Math.log(2);
+        domainCheck(recv, result, "log2");
+        return RubyFloat.newFloat(recv.getRuntime(), result);
+    }
+
     @JRubyMethod(name = "sqrt", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sqrt(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
