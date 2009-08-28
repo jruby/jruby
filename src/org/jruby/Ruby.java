@@ -129,6 +129,7 @@ import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -3310,6 +3311,14 @@ public final class Ruby {
     }
 
     /**
+     * Get a new serial number for a new DynamicMethod instance
+     * @return a new serial number
+     */
+    public long getNextDynamicMethodSerial() {
+        return dynamicMethodSerial.getAndIncrement();
+    }
+
+    /**
      * Get the global object used to synchronize class-hierarchy modifications like
      * cache invalidation, subclass sets, and included hierarchy sets.
      *
@@ -3496,5 +3505,9 @@ public final class Ruby {
     // A thread pool to use for executing this runtime's Ruby threads
     private ExecutorService executor;
 
+    // A global object lock for class hierarchy mutations
     private Object hierarchyLock = new Object();
+
+    // An atomic long for generating DynamicMethod serial numbers
+    private AtomicLong dynamicMethodSerial = new AtomicLong(0);
 }

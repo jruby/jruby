@@ -11,6 +11,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -22,6 +23,37 @@ public abstract class CachingCallSite extends CallSite {
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
         totalCallSites++;
+    }
+
+    public CacheEntry getCache() {
+        return cache;
+    }
+
+    public boolean isOptimizable() {
+        if (getCache() != CacheEntry.NULL_CACHE) {
+            return true;
+        }
+        return false;
+    }
+
+    public int getCachedClassIndex() {
+        CacheEntry cacheEntry = getCache();
+        if (cacheEntry != CacheEntry.NULL_CACHE) {
+            return cacheEntry.method.getImplementationClass().index;
+        }
+        return ClassIndex.NO_INDEX;
+    }
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public long getCachedMethodSerial() {
+        CacheEntry cacheEntry = getCache();
+        if (cacheEntry != CacheEntry.NULL_CACHE) {
+            return cacheEntry.method.getSerialNumber();
+        }
+        return -1;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {

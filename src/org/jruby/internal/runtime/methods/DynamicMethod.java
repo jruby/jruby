@@ -67,6 +67,8 @@ public abstract class DynamicMethod {
     protected Visibility visibility;
     /** The "call configuration" to use for pre/post call logic. */
     protected CallConfiguration callConfig;
+    /** The serial number for this method object, to globally identify it */
+    protected long serialNumber;
     
     /**
      * Base constructor for dynamic method handles.
@@ -99,6 +101,16 @@ public abstract class DynamicMethod {
         // in the implementationClass
         this.protectedClass = calculateProtectedClass(implementationClass);
         this.callConfig = callConfig;
+        this.serialNumber = implementationClass.getRuntime().getNextDynamicMethodSerial();
+    }
+
+    /**
+     * Get the global serial number for this method object
+     *
+     * @return This method object's serial number
+     */
+    public long getSerialNumber() {
+        return serialNumber;
     }
 
     /**

@@ -50,7 +50,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Convert;
 import org.jruby.util.Convert2;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
