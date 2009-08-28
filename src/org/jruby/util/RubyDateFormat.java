@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002, 2009 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
@@ -45,6 +45,7 @@ import org.joda.time.DateTime;
 public class RubyDateFormat extends DateFormat {
     private static final long serialVersionUID = -250429218019023997L;
 
+    private boolean ruby_1_9;
     private List<Token> compiledPattern;
 
     private final DateFormatSymbols formatSymbols;
@@ -81,11 +82,13 @@ public class RubyDateFormat extends DateFormat {
     private static final int FORMAT_NANOSEC = 29;
     private static final int FORMAT_PRECISION = 30;
     private static final int FORMAT_WEEKYEAR = 31;
+    private static final int FORMAT_OUTPUT = 32;
 
 
     private static class Token {
         private int format;
         private Object data;
+        private TimeOutputFormatter outputFormatter;
         
         public Token(int format) {
             this(format, null);
@@ -123,6 +126,11 @@ public class RubyDateFormat extends DateFormat {
     public RubyDateFormat(String pattern, Locale aLocale) {
         this(pattern, new DateFormatSymbols(aLocale));
     }
+
+    public RubyDateFormat(String pattern, Locale aLocale, boolean ruby_1_9) {
+        this(pattern, aLocale);
+        this.ruby_1_9 = ruby_1_9;
+    }
     
     public RubyDateFormat(String pattern, DateFormatSymbols formatSymbols) {
         super();
@@ -142,9 +150,12 @@ public class RubyDateFormat extends DateFormat {
         for (int i = 0; i < len;) {
             if (pattern.charAt(i) == '%') {
                 i++;
+
                 if(i == len) {
                     compiledPattern.add(new Token(FORMAT_STRING, "%"));
                 } else {
+                    i = addOutputFormatter(pattern, i);
+
                     switch (pattern.charAt(i)) {
                     case 'A' :
                         compiledPattern.add(new Token(FORMAT_WEEK_LONG));
@@ -332,6 +343,24 @@ public class RubyDateFormat extends DateFormat {
         }
     }
 
+    private int addOutputFormatter(String pattern, int index) {
+        if (ruby_1_9) {
+            TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern);
+            if (outputFormatter != null) {
+                index += outputFormatter.getFormatter().length();
+                compiledPattern.add(new Token(FORMAT_OUTPUT, outputFormatter));
+            }
+        }
+        return index;
+    }
+
+    private String formatOutput(TimeOutputFormatter formatter, String output) {
+        if (formatter == null) return output;
+        output = formatter.format(output);
+        formatter = null;
+        return output;
+    }
+
     private DateTime dt;
 
     public void setDateTime(final DateTime dt) {
@@ -342,10 +371,18 @@ public class RubyDateFormat extends DateFormat {
      * @see DateFormat#format(Date, StringBuffer, FieldPosition)
      */
     public StringBuffer format(Date ignored, StringBuffer toAppendTo, FieldPosition fieldPosition) {
+        TimeOutputFormatter formatter = null;
         for (Token token: compiledPattern) {
+            String output = null;
+            boolean format = true;
+
             switch (token.getFormat()) {
+                case FORMAT_OUTPUT:
+                    formatter = (TimeOutputFormatter) token.getData();
+                    break;
                 case FORMAT_STRING:
-                    toAppendTo.append(token.getData());
+                    output = token.getData().toString();
+                    format = false;
                     break;
                 case FORMAT_WEEK_LONG:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
@@ -353,7 +390,7 @@ public class RubyDateFormat extends DateFormat {
                     if(v == 0) {
                         v++;
                     }
-                    toAppendTo.append(formatSymbols.getWeekdays()[v]);
+                    output = formatSymbols.getWeekdays()[v];
                     break;
                 case FORMAT_WEEK_SHORT:
                     // This is GROSS, but Java API's aren't ISO 8601 compliant at all
@@ -361,35 +398,30 @@ public class RubyDateFormat extends DateFormat {
                     if(v == 0) {
                         v++;
                     }
-                    toAppendTo.append(formatSymbols.getShortWeekdays()[v]);
+                    output = formatSymbols.getShortWeekdays()[v];
                     break;
                 case FORMAT_MONTH_LONG:
-                    toAppendTo.append(formatSymbols.getMonths()[dt.getMonthOfYear()-1]);
+                    output = formatSymbols.getMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_MONTH_SHORT:
-                    toAppendTo.append(formatSymbols.getShortMonths()[dt.getMonthOfYear()-1]);
+                    output = formatSymbols.getShortMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_DAY:
                     int value = dt.getDayOfMonth();
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%02d", value);
                     break;
                 case FORMAT_DAY_S: 
                     value = dt.getDayOfMonth();
-                    if (value < 10) {
-                        toAppendTo.append(' ');
-                    }
-                    toAppendTo.append(value);
+                    output = (value < 10 ? " " : "") + Integer.toString(value);
                     break;
                 case FORMAT_HOUR:
                 case FORMAT_HOUR_BLANK:
                     value = dt.getHourOfDay();
+                    output = "";
                     if (value < 10) {
-                        toAppendTo.append(token.getFormat() == FORMAT_HOUR ? '0' : ' ');
+                        output += token.getFormat() == FORMAT_HOUR ? "0" : " ";
                     }
-                    toAppendTo.append(value);
+                    output += value;
                     break;
                 case FORMAT_HOUR_M:
                 case FORMAT_HOUR_S:
@@ -400,57 +432,44 @@ public class RubyDateFormat extends DateFormat {
                     }
 
                     if(value == 0) {
-                        toAppendTo.append("12");
+                        output = "12";
                     } else {
+                        output = "";
                         if (value < 10) {
-                            toAppendTo.append(token.getFormat() == FORMAT_HOUR_M ? '0' : ' ');
+                            output += token.getFormat() == FORMAT_HOUR_M ? "0" : " ";
                         }
-                        toAppendTo.append(value);
+                        output += value;
                     }
                     break;
                 case FORMAT_DAY_YEAR:
                     value = dt.getDayOfYear();
-                    if (value < 10) {
-                        toAppendTo.append("00");
-                    } else if (value < 100) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%03d", value);
                     break;
                 case FORMAT_MINUTES:
                     value = dt.getMinuteOfHour();
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%02d", value);
                     break;
                 case FORMAT_MONTH:
                     value = dt.getMonthOfYear();
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%02d", value);
                     break;
                 case FORMAT_MERIDIAN:
                 case FORMAT_MERIDIAN_LOWER_CASE:
                     if (dt.getHourOfDay() < 12) {
-                        toAppendTo.append(token.getFormat() == FORMAT_MERIDIAN ? "AM" : "am");
+                        output = token.getFormat() == FORMAT_MERIDIAN ? "AM" : "am";
                     } else {
-                        toAppendTo.append(token.getFormat() == FORMAT_MERIDIAN ? "PM" : "pm");
+                        output = token.getFormat() == FORMAT_MERIDIAN ? "PM" : "pm";
                     }
                     break;
                 case FORMAT_SECONDS:
                     value = dt.getSecondOfMinute();
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = (value < 10 ? "0" : "") + Integer.toString(value);
                     break;
                 case FORMAT_WEEK_YEAR_M:
-                	formatWeekYear(java.util.Calendar.MONDAY, toAppendTo);
+                    output = formatWeekYear(java.util.Calendar.MONDAY);
                     break;
                 case FORMAT_WEEK_YEAR_S:
-                	formatWeekYear(java.util.Calendar.SUNDAY, toAppendTo);
+                    output = formatWeekYear(java.util.Calendar.SUNDAY);
                     break;
                 case FORMAT_DAY_WEEK:
                 case FORMAT_DAY_WEEK2:
@@ -458,43 +477,30 @@ public class RubyDateFormat extends DateFormat {
                     if (token.getFormat() == FORMAT_DAY_WEEK) {
                         value = value % 7;
                     }
-                    toAppendTo.append(value);
+                    output = Integer.toString(value);
                     break;
                 case FORMAT_YEAR_LONG:
                     value = dt.getYear();
-                    if (value < 10) {
-                        toAppendTo.append("000");
-                    } else if (value < 100) {
-                        toAppendTo.append("00");
-                    } else if (value < 1000) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%04d", value);
                     break;
                 case FORMAT_YEAR_SHORT:
                     value = dt.getYear() % 100;
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%02d", value);
                     break;
                 case FORMAT_ZONE_OFF:
                     value = dt.getZone().getOffset(dt.getMillis());
-                    if (value < 0) {
-                        toAppendTo.append('-');
-                    } else {
-                        toAppendTo.append('+');
-                    }
+                    output = value < 0 ? "-" : "+";
+
                     value = Math.abs(value);
                     if (value / 3600000 < 10) {
-                        toAppendTo.append('0');
+                        output += "0";
                     }
-                    toAppendTo.append(value / 3600000);
+                    output += (value / 3600000);
                     value = value % 3600000 / 60000;
                     if (value < 10) {
-                        toAppendTo.append('0');
+                        output += "0";
                     }
-                    toAppendTo.append(value);
+                    output += value;
                     break;
                 case FORMAT_ZONE_ID:
                     toAppendTo.append(dt.getZone().getShortName(dt.getMillis()));
@@ -504,54 +510,46 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_MILLISEC:
                     value = dt.getMillisOfSecond();
-                    if (value < 100) {
-                        toAppendTo.append('0');
-                    }
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%03d", value);
                     break;
                 case FORMAT_EPOCH:
-                    toAppendTo.append(dt.getMillis()/1000);
+                    output = Long.toString(dt.getMillis()/1000);
                     break;
                 case FORMAT_WEEK_WEEKYEAR:
                     value = dt.getWeekOfWeekyear();
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
+                    output = String.format("%02d", value);
                     break;
                 case FORMAT_NANOSEC:
                     long nano = System.nanoTime();
                     value = (int) (nano % 1000000000);
-                    toAppendTo.append(value);
+                    output = Integer.toString(value);
                     break;
                 case FORMAT_WEEKYEAR:
-                    toAppendTo.append(dt.getWeekyear());
+                    output = Integer.toString(dt.getWeekyear());
                     break;
+            }
+
+            if (output != null) {
+                toAppendTo.append(format ? formatOutput(formatter, output) : output);
             }
         }
 
         return toAppendTo;
     }
 
-	private void formatWeekYear(int firstDayOfWeek, StringBuffer toAppendTo) {
-        java.util.Calendar calendar = dt.toGregorianCalendar();
-		calendar.setFirstDayOfWeek(firstDayOfWeek);
-		calendar.setMinimalDaysInFirstWeek(7);
-		int value = calendar.get(java.util.Calendar.WEEK_OF_YEAR);
-		if ((value == 52 || value == 53)
-		        && (calendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
-		    // MRI behavior: Week values are monotonous.
-		    // So, weeks that effectively belong to previous year,
-		    // will get the value of 0, not 52 or 53, as in Java.
-		    value = 0;
-		}
-		if (value < 10) {
-		    toAppendTo.append('0');
-		}
-		toAppendTo.append(value);
+	private String formatWeekYear(int firstDayOfWeek) {
+            java.util.Calendar calendar = dt.toGregorianCalendar();
+            calendar.setFirstDayOfWeek(firstDayOfWeek);
+            calendar.setMinimalDaysInFirstWeek(7);
+            int value = calendar.get(java.util.Calendar.WEEK_OF_YEAR);
+            if ((value == 52 || value == 53)
+                    && (calendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+                // MRI behavior: Week values are monotonous.
+                // So, weeks that effectively belong to previous year,
+                // will get the value of 0, not 52 or 53, as in Java.
+                value = 0;
+            }
+            return String.format("%02d", value);
 	}
 
     /**

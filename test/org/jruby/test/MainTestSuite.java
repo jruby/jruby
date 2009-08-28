@@ -44,6 +44,7 @@ import org.jruby.runtime.EventHookTest;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.PlatformTest;
 import org.jruby.util.ShellLauncherTest;
+import org.jruby.util.TimeOutputFormatterTest;
 
 /**
  *
@@ -84,6 +85,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestJavaReentrantExceptions.class);
         suite.addTestSuite(EventHookTest.class);
         suite.addTestSuite(TestMethodFactories.class);
+        suite.addTestSuite(TimeOutputFormatterTest.class);
         return suite;
     }
 }
