@@ -36,6 +36,8 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.ArgsNoArgNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -131,7 +133,7 @@ public class Interpreted19Block  extends BlockBody {
         Frame lastFrame = pre(context, null, binding);
 
         try {
-            setupBlockArgs(context, value, self, Block.NULL_BLOCK, type);
+            setupBlockArgs(context, value, self, Block.NULL_BLOCK, type, false);
 
             return evalBlockBody(context, self);
         } catch (JumpException.NextJump nj) {
@@ -166,7 +168,7 @@ public class Interpreted19Block  extends BlockBody {
         Frame lastFrame = pre(context, klass, binding);
 
         try {
-            setupBlockArgs(context, value, self, block, type);
+            setupBlockArgs(context, value, self, block, type, aValue);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, self);
@@ -202,14 +204,46 @@ public class Interpreted19Block  extends BlockBody {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
 
-    private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
+    private IRubyObject convertIfAlreadyArray(ThreadContext context, IRubyObject value) {
+        int length = ArgsUtil.arrayLength(value);
+        switch (length) {
+        case 0:
+            value = context.getRuntime().getNil();
+            break;
+        case 1:
+            value = ((RubyArray)value).eltInternal(0);
+            break;
+        default:
+            context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + length + " for 1)");
+        }
+
+        return value;
+    }
+
+    private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
         IRubyObject[] parameters;
 
+//        System.out.println("AA: " + alreadyArray + "(" + value + ")");
+
+//        if (alreadyArray && args.getMaxArgumentsCount() == 1) {
+//            value = convertIfAlreadyArray(context, value);
+//        }
+
+        if (value == null) {
+            parameters = IRubyObject.NULL_ARRAY;
+        } else if (value instanceof RubyArray && alreadyArray) {
+            parameters = ((RubyArray) value).toJavaArray();
+        } else {
+            parameters = new IRubyObject[] { value };
+        }
+
+        /*
         if (value instanceof RubyArray && args.getMaxArgumentsCount() != 1) {
             parameters = ((RubyArray) value).toJavaArray();
         } else {
             parameters = new IRubyObject[] { value };
         }
+         */
 
         if (!(args instanceof ArgsNoArgNode)) {
             Ruby runtime = context.getRuntime();

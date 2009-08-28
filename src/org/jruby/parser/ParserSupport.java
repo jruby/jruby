@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import org.jruby.CompatVersion;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsPreOneArgNode;
 import org.jruby.ast.ArgsPreTwoArgNode;
@@ -1252,8 +1253,8 @@ public class ParserSupport {
                         lexer.getCurrentLine(), "Block argument should not be given.");
             }
 
-            // FIXME: This does not seem to be in 1.9
-            if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
+            if (node instanceof ArrayNode && configuration.getVersion() == CompatVersion.RUBY1_8 &&
+                    ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
                 state = false;
             }
