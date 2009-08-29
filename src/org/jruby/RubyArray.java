@@ -214,6 +214,9 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args, int begin, int length) {
+        assert begin >= 0 : "begin must be >= 0";
+        assert length >= 0 : "length must be >= 0";
+        
         return new RubyArray(runtime, args, begin, length);
     }
 
