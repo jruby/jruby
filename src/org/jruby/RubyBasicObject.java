@@ -1070,7 +1070,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for (Map.Entry<String, RubyClass.VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null) continue;
-            list.add(new VariableEntry<Object>(entry.getKey(), (IRubyObject)value));
+            list.add(new VariableEntry<Object>(entry.getKey(), value));
         }
         return list;
     }
