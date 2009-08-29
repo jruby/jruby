@@ -3274,11 +3274,15 @@ public class RubyArray extends RubyObject implements List {
         Random random = runtime.getRandom();
         int n = RubyNumeric.num2int(nv);
 
+        if (n < 0) throw runtime.newArgumentError("negative sample number");
+
         int i, j, k;
         switch (n) {
         case 0: 
             return newEmptyArray(runtime);
         case 1:
+            if (realLength <= 0) return newEmptyArray(runtime);
+            
             return newArray(runtime, values[begin + random.nextInt(realLength)]);
         case 2:
             i = random.nextInt(realLength);
