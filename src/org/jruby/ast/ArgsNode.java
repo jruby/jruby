@@ -400,7 +400,12 @@ public class ArgsNode extends Node {
     protected void prepareRestArg(ThreadContext context, Ruby runtime, DynamicScope scope,
             IRubyObject[] args, int givenArgsCount) {
         if (restArg >= 0) {
-            scope.setValue(restArg, RubyArray.newArrayNoCopy(runtime, args, givenArgsCount, args.length - postCount - givenArgsCount), 0);
+            int sizeOfRestArg = args.length - postCount - givenArgsCount;
+            if (sizeOfRestArg <= 0) { // no more values to stick in rest arg
+                scope.setValue(restArg, RubyArray.newArray(runtime), 0);
+            } else {
+                scope.setValue(restArg, RubyArray.newArrayNoCopy(runtime, args, givenArgsCount, sizeOfRestArg), 0);
+            }
         }
     }
 
