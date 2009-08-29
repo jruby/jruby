@@ -2,9 +2,9 @@ SRC      = src/c/ng.c
 CC       = @CC@
 WIN32_CC = /usr/local/mingw32/bin/mingw32-gcc
 
-CFLAGS = @LIBS@ -s -O3
+CFLAGS = @CFLAGS@ @LIBS@ -s -O3
 
-ng: $(SRC)
+ng: Makefile $(SRC)
 	@echo "Building ng client.  To build a Windows binary, type 'make ng.exe'"
 	${CC} ${CFLAGS} -o ng src/c/ng.c
 
@@ -19,3 +19,5 @@ clean:
 	@echo "installed - so I'd rather not delete something they can't rebuild."
 	rm ng
 #	rm ng.exe
+
+Makefile: Makefile.in
