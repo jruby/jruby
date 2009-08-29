@@ -168,7 +168,7 @@ public class ReflectionCallback implements Callback {
                 if(e.getTargetException() instanceof MainExitException) {
                     throw (RuntimeException)e.getTargetException();
                 }
-                recv.getRuntime().getJavaSupport().handleNativeException(e.getTargetException());
+                recv.getRuntime().getJavaSupport().handleNativeException(e.getTargetException(), method);
                 return recv.getRuntime().getNil();
             } else {
                 throw (Error) e.getTargetException();

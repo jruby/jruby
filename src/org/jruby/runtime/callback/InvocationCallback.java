@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.callback;
 
+import java.lang.reflect.Member;
 import org.jruby.Ruby;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -47,6 +48,7 @@ public abstract class InvocationCallback implements Callback {
     private Class[] argumentTypes;
     private String javaName;
     private boolean isSingleton;
+    private Member target;
     
     public InvocationCallback() {
         this.argumentTypes = EMPTY_ARGS;
@@ -75,7 +77,7 @@ public abstract class InvocationCallback implements Callback {
             throw e;
         } catch(Exception e) {
             Ruby runtime = recv.getRuntime();
-            runtime.getJavaSupport().handleNativeException(e);
+            runtime.getJavaSupport().handleNativeException(e, getTarget());
             return runtime.getNil();
         }        
     }
@@ -113,5 +115,13 @@ public abstract class InvocationCallback implements Callback {
     
     public boolean isSingleton() {
         return isSingleton;
+    }
+
+    public void setTarget(Member target) {
+        this.target = target;
+    }
+
+    public Member getTarget() {
+        return target;
     }
 }// InvocationCallback

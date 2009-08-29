@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -187,15 +188,15 @@ public class JavaSupport {
         javaClassCache.put(clazz.javaClass(), clazz);
     }
 
-    public void handleNativeException(Throwable exception) {
+    public void handleNativeException(Throwable exception, Member target) {
         if (exception instanceof RaiseException) {
             throw (RaiseException) exception;
         }
-        throw createRaiseException(exception);
+        throw createRaiseException(exception, target);
     }
 
-    private RaiseException createRaiseException(Throwable exception) {
-        RaiseException re = RaiseException.createNativeRaiseException(runtime, exception);
+    private RaiseException createRaiseException(Throwable exception, Member target) {
+        RaiseException re = RaiseException.createNativeRaiseException(runtime, exception, target);
         
         return re;
     }

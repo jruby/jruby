@@ -63,7 +63,7 @@ public abstract class FastInvocationCallback extends InvocationCallback {
             throw e;
         } catch(Exception e) {
             Ruby runtime = recv.getRuntime();
-            runtime.getJavaSupport().handleNativeException(e);
+            runtime.getJavaSupport().handleNativeException(e, getTarget());
             return runtime.getNil();
         }
     }

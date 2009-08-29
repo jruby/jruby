@@ -206,7 +206,7 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access");
         } catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), constructor);
             // not reached
             assert false;
             return null;
@@ -227,7 +227,7 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal access");
         } catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), constructor);
             // not reached
             assert false;
             return null;
@@ -246,9 +246,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, constructor);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, constructor);
         }
     }
 
@@ -262,9 +262,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, constructor);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, constructor);
         }
     }
 
@@ -278,9 +278,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, constructor);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, constructor);
         }
     }
 
@@ -294,9 +294,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, constructor);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, constructor);
         }
     }
 
@@ -310,9 +310,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, constructor);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, constructor);
         }
     }
 
@@ -326,9 +326,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, constructor);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, constructor);
         }
     }
 

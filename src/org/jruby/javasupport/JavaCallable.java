@@ -32,6 +32,7 @@ package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
@@ -159,14 +160,14 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return str.toString();
     }
 
-    protected IRubyObject handleThrowable(Throwable t) {
-        getRuntime().getJavaSupport().handleNativeException(t);
+    protected IRubyObject handleThrowable(Throwable t, Member target) {
+        getRuntime().getJavaSupport().handleNativeException(t, target);
         // This point is only reached if there was an exception handler installed.
         return getRuntime().getNil();
     }
 
-    protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite) {
-        getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+    protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite, Member target) {
+        getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), target);
         // This point is only reached if there was an exception handler installed.
         return getRuntime().getNil();
     }

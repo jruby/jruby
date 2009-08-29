@@ -1443,7 +1443,7 @@ public class Java implements Library {
         try {
             return JavaUtil.java_to_ruby(recv.getRuntime(), object);
         } catch (RuntimeException e) {
-            recv.getRuntime().getJavaSupport().handleNativeException(e);
+            recv.getRuntime().getJavaSupport().handleNativeException(e, null);
             // This point is only reached if there was an exception handler installed.
             return recv.getRuntime().getNil();
         }

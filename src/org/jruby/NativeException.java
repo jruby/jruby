@@ -29,6 +29,7 @@ package org.jruby;
 
 import java.io.PrintStream;
 
+import java.lang.reflect.Member;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
@@ -36,6 +37,7 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.SafePropertyAccessor;
 
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
@@ -94,10 +96,52 @@ public class NativeException extends RubyException {
         return array;
     }
 
+    public void trimStackTrace(Member target) {
+        Throwable t = new Throwable();
+        StackTraceElement[] origStackTrace = cause.getStackTrace();
+        StackTraceElement[] currentStackTrace = t.getStackTrace();
+        int skip = 0;
+        for (int i = 1;
+                i <= origStackTrace.length && i <= currentStackTrace.length;
+                ++i) {
+            StackTraceElement a = origStackTrace[origStackTrace.length - i];
+            StackTraceElement b = currentStackTrace[currentStackTrace.length - i];
+            if (a.equals(b)) {
+                skip += 1;
+            } else {
+                break;
+            }
+        }
+        // If we know what method was being called, strip everything
+        // before the call. This hides the JRuby and reflection internals.
+        if (target != null) {
+            String className = target.getDeclaringClass().getName();
+            String methodName = target.getName();
+            for (int i = origStackTrace.length - skip; i >= 0; --i) {
+                StackTraceElement frame = origStackTrace[i];
+                if (frame.getClassName().equals(className) &&
+                    frame.getMethodName().equals(methodName)) {
+                    skip = origStackTrace.length - i - 1;
+                    break;
+                }
+            }
+        }
+        if (skip > 0) {
+            StackTraceElement[] newStackTrace =
+                    new StackTraceElement[origStackTrace.length - skip];
+            for (int i = 0; i < newStackTrace.length; ++i) {
+                newStackTrace[i] = origStackTrace[i];
+            }
+            cause.setStackTrace(newStackTrace);
+        }
+    }
+
     public void printBacktrace(PrintStream errorStream) {
         super.printBacktrace(errorStream);
-        errorStream.println("Complete Java stackTrace");
-        cause.printStackTrace(errorStream);
+        if (getRuntime().getDebug().isTrue()) {
+            errorStream.println("Complete Java stackTrace");
+            cause.printStackTrace(errorStream);
+        }
     }
 
     public Throwable getCause() {

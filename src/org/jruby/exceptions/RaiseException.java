@@ -39,6 +39,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import java.lang.reflect.Member;
 import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -85,8 +86,11 @@ public class RaiseException extends JumpException {
         setException(exception, isNativeException);
     }
 
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
+    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
         NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
+        if (!runtime.getDebug().isTrue()) {
+            nativeException.trimStackTrace(target);
+        }
         return new RaiseException(cause, nativeException);
     }
 
@@ -105,7 +109,7 @@ public class RaiseException extends JumpException {
     public RaiseException(Throwable cause, NativeException nativeException) {
         super(buildMessage(cause), cause);
         providedMessage = buildMessage(cause);
-        setException(nativeException, false);
+        setException(nativeException, true);
     }
 
     @Override

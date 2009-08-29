@@ -395,7 +395,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                         iae.getMessage());
             } catch (InvocationTargetException ite) {
                 if (getRuntime().getDebug().isTrue()) ite.getTargetException().printStackTrace();
-                getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
+                getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), sm);
                 // This point is only reached if there was an exception handler
                 // installed.
                 return getRuntime().getNil();

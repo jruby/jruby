@@ -388,9 +388,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -405,9 +405,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -422,9 +422,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -439,9 +439,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -456,9 +456,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -473,9 +473,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -490,9 +490,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 
@@ -507,9 +507,9 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(method, iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite);
+            return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
-            return handleThrowable(t);
+            return handleThrowable(t, method);
         }
     }
 

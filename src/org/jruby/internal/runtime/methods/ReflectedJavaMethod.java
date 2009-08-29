@@ -154,9 +154,9 @@ public class ReflectedJavaMethod extends JavaMethod {
             }
         } catch (IllegalArgumentException e) {
             System.out.println(method);
-            throw RaiseException.createNativeRaiseException(runtime, e);
+            throw RaiseException.createNativeRaiseException(runtime, e, method);
         } catch (IllegalAccessException e) {
-            throw RaiseException.createNativeRaiseException(runtime, e);
+            throw RaiseException.createNativeRaiseException(runtime, e, method);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException) {
@@ -164,7 +164,7 @@ public class ReflectedJavaMethod extends JavaMethod {
             } else if (cause instanceof Error) {
                 throw (Error)cause;
             } else {
-                throw RaiseException.createNativeRaiseException(runtime, cause);
+                throw RaiseException.createNativeRaiseException(runtime, cause, method);
             }
         } finally {
             callConfig.post(context);
