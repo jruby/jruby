@@ -36,4 +36,21 @@ class TestTime19 < Test::Unit::TestCase
   def test_format_just_date_modifiers
     assert_equal('FEBa', @time.strftime('%^ha'))
   end
+
+  def test_format_strftime
+    expected = {
+      "%10h" => '       Feb',
+      "%^10h" => '       FEB',
+      "%_10h" => '       Feb',
+      "%_010h" => '0000000Feb',
+      "%0_10h" => '       Feb',
+      "%0_-10h" => 'Feb',
+      "%0-_10h" => 'Feb'
+    }
+
+    ["%10h","%^10h","%_10h","%_010h","%0_10h","%0_-10h","%0-_10h"].each do |f|
+      assert_equal expected[f], @time.strftime(f)
+    end
+  end
+
 end

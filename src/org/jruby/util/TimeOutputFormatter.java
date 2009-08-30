@@ -35,16 +35,17 @@ public class TimeOutputFormatter {
     private final String formatter;
     private final int totalPadding;
 
+    private static final String formatPattern = "%([\\^0_-]+)?(\\d+)?.+";
+    private static final Pattern regexp = Pattern.compile(formatPattern);
+
     public TimeOutputFormatter(String formatter, int totalPadding) {
         this.formatter = formatter;
         this.totalPadding = totalPadding;
     }
 
     public static TimeOutputFormatter getFormatter(String pattern) {
-        final String formatterMatcher = "%([\\^0_-]+)(\\d+)?.+";
-        Pattern regexp = Pattern.compile(formatterMatcher);
         Matcher matcher = regexp.matcher(pattern);
-        if (matcher.matches()) {
+        if (matcher.matches() && (matcher.group(1) != null || matcher.group(2) != null)) {
             String formatter = matcher.group(1);
             int totalPadding = matcher.group(2) != null ? Integer.valueOf(matcher.group(2)) : 0;
 
@@ -54,28 +55,34 @@ public class TimeOutputFormatter {
     }
 
     public String getFormatter() {
-        return formatter + (totalPadding > 0 ? totalPadding : "");
+        return (formatter != null ? formatter : "") + (totalPadding > 0 ? totalPadding : "");
     }
 
     public String format(String sequence) {
-        for (int i = 0; i < formatter.length(); i++) {
-            switch (formatter.charAt(i)) {
-                case '^':
-                    sequence = sequence.toUpperCase();
-                    break;
-                case '_':
-                    sequence = padding(sequence, null);
-                    break;
-                case '0':
-                    sequence = padding(sequence, "0");
-                    break;
+        String paddedWith = null;
+        if (formatter != null) {
+            for (int i = 0; i < formatter.length(); i++) {
+                switch (formatter.charAt(i)) {
+                    case '^':
+                        sequence = sequence.toUpperCase();
+                        break;
+                    case '_':
+                        paddedWith = "#";
+                        break;
+                    case '0':
+                        paddedWith = "0";
+                        break;
+                }
             }
+        }
+        if (totalPadding > 0) {
+            sequence = padding(sequence, paddedWith);
         }
         return sequence;
     }
 
     private String padding(String sequence, String padder) {
-        if (formatter.contains("-")) return sequence;
+        if (formatter != null && formatter.contains("-")) return sequence;
 
         if (sequence != null && sequence.length() < totalPadding) {
             String format = String.format("%1$#" + totalPadding + "s", sequence);

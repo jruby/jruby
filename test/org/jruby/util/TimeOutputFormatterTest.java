@@ -68,4 +68,24 @@ public class TimeOutputFormatterTest extends TestCase {
         TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^_5H");
         assertEquals("   UP", formatter.format("up"));
     }
+
+    public void testPaddingWithoutFormat() {
+        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%5H");
+        assertEquals("   up", formatter.format("up"));
+    }
+
+    public void testPaddingZeroFirstOption() {
+        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%0_5H");
+        assertEquals("   up", formatter.format("up"));
+    }
+
+    public void testPaddingBlankFirstOption() {
+        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%_05H");
+        assertEquals("000up", formatter.format("up"));
+    }
+
+    public void testPaddingWithUpperCase() {
+        TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^5H");
+        assertEquals("   UP", formatter.format("up"));
+    }
 }
