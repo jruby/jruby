@@ -176,7 +176,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     static RubyComplex newComplexBang(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
-        assert x instanceof RubyComplex && y instanceof RubyComplex;
+// FIXME: what should these really be? Numeric?       assert x instanceof RubyComplex && y instanceof RubyComplex;
         return new RubyComplex(context.getRuntime(), clazz, x, y);
     }
 
@@ -184,7 +184,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     public static RubyComplex newComplexBang(ThreadContext context, IRubyObject clazz, IRubyObject x) {
-        assert x instanceof RubyComplex;
+// FIXME: what should this really be?       assert x instanceof RubyComplex;
         return newComplexBang(context, clazz, x, RubyFixnum.zero(context.getRuntime()));
     }
 
