@@ -12,5 +12,21 @@ TIMES.times do
       ell = lambda {self}
       10_000_000.times { ell.call }
     end
+    bm.report("10m lambda.call one arg") do
+      ell = lambda {|a| self}
+      10_000_000.times { ell.call(self) }
+    end
+    bm.report("10m lambda.call two args") do
+      ell = lambda {|a,b| self}
+      10_000_000.times { ell.call(self, self) }
+    end
+    bm.report("10m lambda.call three args") do
+      ell = lambda {|a,b,c| self}
+      10_000_000.times { ell.call(self, self, self) }
+    end
+    bm.report("10m lambda.call four args") do
+      ell = lambda {|a,b,c,d| self}
+      10_000_000.times { ell.call(self,self,self,self) }
+    end
   end
 end
