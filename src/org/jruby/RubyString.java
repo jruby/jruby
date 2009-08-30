@@ -2312,14 +2312,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_sub / rb_str_sub_bang
      *
      */
-    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "sub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
         RubyString str = strDup(context.getRuntime());
         str.sub_bang(context, arg0, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "sub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyString str = strDup(context.getRuntime());
         str.sub_bang(context, arg0, arg1, block);
@@ -2395,14 +2395,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "sub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub19(ThreadContext context, IRubyObject arg0, Block block) {
         RubyString str = strDup(context.getRuntime());
         str.sub_bang19(context, arg0, block);
         return str;
     }
 
-    @JRubyMethod(name = "sub", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "sub", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyString str = strDup(context.getRuntime());
         str.sub_bang19(context, arg0, arg1, block);
@@ -2489,7 +2489,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int range = begin + value.realSize;
         final Matcher matcher = prepared.matcher(value.bytes, begin, range);
 
-        DynamicScope scope = context.getPreviousScope();
+        DynamicScope scope = context.getCurrentScope();
         if (matcher.search(begin, range, Option.NONE) >= 0) {
             repl = RubyRegexp.regsub19(repl, this, matcher, pattern);
             RubyMatchData match = RubyRegexp.updateBackRef19(context, this, scope, matcher, pattern);
