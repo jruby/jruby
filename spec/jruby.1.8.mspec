@@ -2,11 +2,10 @@
 
 # detect windows platform:
 require 'rbconfig'
-WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
 require 'java'
 
+WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
-
 DIR = File.dirname(__FILE__)
 
 class MSpecScript
