@@ -46,6 +46,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class Interpreted19Block  extends BlockBody {
+    private static final boolean ALREADY_ARRAY = true;
+
     /** The argument list, pulled out of iterNode */
     private final ArgsNode args;
 
@@ -67,7 +69,7 @@ public class Interpreted19Block  extends BlockBody {
         super(-1); // We override that the logic which uses this
 
         if (iter instanceof LambdaNode) {
-            LambdaNode lambda = (LambdaNode)iter;
+            LambdaNode lambda = (LambdaNode) iter;
             
             this.arity = lambda.getArgs().getArity();
             this.args = lambda.getArgs();
@@ -75,10 +77,6 @@ public class Interpreted19Block  extends BlockBody {
             this.scope = lambda.getScope();
         } else {
             ArgsNode argsNode = (ArgsNode) iter.getVarNode();
-
-            if (argsNode == null) {
-                System.out.println("ITER HAS NO ARGS: " + iter);
-            }
 
             this.arity = argsNode.getArity();
             this.args = argsNode;
@@ -100,30 +98,34 @@ public class Interpreted19Block  extends BlockBody {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         IRubyObject value = args.length == 1 ? args[0] : context.getRuntime().newArrayNoCopy(args);
 
-        return yield(context, value, null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, value, null, null, ALREADY_ARRAY, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
         IRubyObject value = args.length == 1 ? args[0] : context.getRuntime().newArrayNoCopy(args);
 
-        return yield(context, value, null, null, true, binding, type, block);
+        return yield(context, value, null, null, ALREADY_ARRAY, binding, type, block);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
         return yield(context, null, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         return yield(context, arg0, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, ALREADY_ARRAY, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, ALREADY_ARRAY, binding, type);
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -133,7 +135,7 @@ public class Interpreted19Block  extends BlockBody {
         Frame lastFrame = pre(context, null, binding);
 
         try {
-            setupBlockArgs(context, value, self, Block.NULL_BLOCK, type, false);
+            setupBlockArg(context, value, self, Block.NULL_BLOCK, type);
 
             return evalBlockBody(context, self);
         } catch (JumpException.NextJump nj) {
@@ -220,30 +222,48 @@ public class Interpreted19Block  extends BlockBody {
         return value;
     }
 
+    private void setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
+        // System.out.println("AA: (" + value + ")");
+        
+        int requiredCount = args.getRequiredArgsCount();
+        boolean isRest = args.getRestArg() != -1;
+
+        IRubyObject[] parameters;
+        if (value == null) {
+            parameters = IRubyObject.NULL_ARRAY;
+        } else if (value instanceof RubyArray && ((isRest && requiredCount > 0) || (!isRest && requiredCount > 1))) {
+            parameters = ((RubyArray) value).toJavaArray();
+        } else {
+            parameters = new IRubyObject[] { value };
+        }
+
+        if (!(args instanceof ArgsNoArgNode)) {
+            Ruby runtime = context.getRuntime();
+
+            // FIXME: This needs to happen for lambdas
+//            args.checkArgCount(runtime, parameters.length);
+            args.prepare(context, runtime, self, parameters, block);
+        }
+    }
+    // . Array given to rest should pass itself
+    // . Array with rest + other args should extract array
+    // . Array with multiple values and NO rest should extract args if there are more than one argument
+
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
         IRubyObject[] parameters;
 
-//        System.out.println("AA: " + alreadyArray + "(" + value + ")");
+//        System.out.println("AS: " + alreadyArray + "(" + value + ")");
 
-//        if (alreadyArray && args.getMaxArgumentsCount() == 1) {
-//            value = convertIfAlreadyArray(context, value);
-//        }
+        int requiredCount = args.getRequiredArgsCount();
+        boolean isRest = args.getRestArg() != -1;
 
         if (value == null) {
             parameters = IRubyObject.NULL_ARRAY;
-        } else if (value instanceof RubyArray && alreadyArray) {
+        } else if (value instanceof RubyArray && (alreadyArray || isRest && requiredCount > 0)) {
             parameters = ((RubyArray) value).toJavaArray();
         } else {
             parameters = new IRubyObject[] { value };
         }
-
-        /*
-        if (value instanceof RubyArray && args.getMaxArgumentsCount() != 1) {
-            parameters = ((RubyArray) value).toJavaArray();
-        } else {
-            parameters = new IRubyObject[] { value };
-        }
-         */
 
         if (!(args instanceof ArgsNoArgNode)) {
             Ruby runtime = context.getRuntime();
