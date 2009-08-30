@@ -106,7 +106,7 @@
         </fileset>
     </copy>
     <copy todir="${jruby.classes.dir}/builtin">
-        <fileset dir="${lib.dir}/ruby/site_ruby/1.8/builtin">
+        <fileset dir="${lib.dir}/ruby/site_ruby/shared/builtin">
             <include name="**/*.rb"/>
             <include name="**/*.jar"/>
         </fileset>
