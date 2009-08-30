@@ -96,4 +96,14 @@ class MSpecScript
   end
 
   set :target, DIR + '/../bin/' + jruby_script
+
+  set :backtrace_filter, /mspec\//
+
+  set :tags_patterns, [
+                        [%r(ruby/language/),     'tags/1.8/ruby/language/'],
+                        [%r(ruby/core/),         'tags/1.8/ruby/core/'],
+                        [%r(ruby/command_line/), 'tags/1.8/ruby/command_line/'],
+                        [%r(ruby/library/),      'tags/1.8/ruby/library/'],
+                        [/_spec.rb$/,       '_tags.txt']
+                      ]
 end

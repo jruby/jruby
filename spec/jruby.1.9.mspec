@@ -66,7 +66,14 @@ class MSpecScript
   # The default implementation to run the specs.
   # TODO: this needs to be more sophisticated since the
   # executable is not consistently named.
-  set :target, 'jruby'
+  # The default implementation to run the specs.
+  if WINDOWS
+    jruby_script = 'jruby.bat'
+  else
+    jruby_script = 'jruby'
+  end
+
+  set :target, DIR + '/../bin/' + jruby_script
 
   set :backtrace_filter, /mspec\//
 
