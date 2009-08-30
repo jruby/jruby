@@ -103,9 +103,7 @@ public class Interpreted19Block  extends BlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        IRubyObject value = args.length == 1 ? args[0] : context.getRuntime().newArrayNoCopy(args);
-
-        return yield(context, value, null, null, ALREADY_ARRAY, binding, type, block);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, ALREADY_ARRAY, binding, type, block);
     }
 
     @Override
@@ -223,7 +221,7 @@ public class Interpreted19Block  extends BlockBody {
     }
 
     private void setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
-        // System.out.println("AA: (" + value + ")");
+//        System.out.println("AA: (" + value + ")");
         
         int requiredCount = args.getRequiredArgsCount();
         boolean isRest = args.getRestArg() != -1;
@@ -250,16 +248,15 @@ public class Interpreted19Block  extends BlockBody {
     // . Array with multiple values and NO rest should extract args if there are more than one argument
 
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
-        IRubyObject[] parameters;
-
 //        System.out.println("AS: " + alreadyArray + "(" + value + ")");
 
         int requiredCount = args.getRequiredArgsCount();
         boolean isRest = args.getRestArg() != -1;
 
+        IRubyObject[] parameters;
         if (value == null) {
             parameters = IRubyObject.NULL_ARRAY;
-        } else if (value instanceof RubyArray && (alreadyArray || isRest && requiredCount > 0)) {
+        } else if (value instanceof RubyArray && (alreadyArray || (isRest && requiredCount > 0))) {
             parameters = ((RubyArray) value).toJavaArray();
         } else {
             parameters = new IRubyObject[] { value };
