@@ -196,6 +196,7 @@ public class LoadService {
                    if (runtime.is1_9()) {
                        addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
                        addPath(rubyDir + "site_ruby");
+                       addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
                        addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
                    } else {
                        // Add 1.8 libs
