@@ -517,11 +517,15 @@ public class RubyInstanceConfig {
     }
 
     public String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2008 The JRuby Community (and contribs)";
+        return "JRuby - Copyright (C) 2001-2009 The JRuby Community (and contribs)";
     }
 
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();
+        String rubyopt = System.getenv("RUBYOPT");
+        if (rubyopt != null) {
+            new ArgumentProcessor(rubyopt.split("\\s+")).processArguments();
+        }
     }
 
     public CompileMode getCompileMode() {
