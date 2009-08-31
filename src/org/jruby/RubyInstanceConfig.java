@@ -524,7 +524,13 @@ public class RubyInstanceConfig {
         new ArgumentProcessor(arguments).processArguments();
         String rubyopt = System.getenv("RUBYOPT");
         if (rubyopt != null) {
-            new ArgumentProcessor(rubyopt.split("\\s+")).processArguments();
+            String[] rubyoptArgs = rubyopt.split("\\s+");
+            for (int i = 0; i < rubyoptArgs.length; i++) {
+                if (!rubyoptArgs[i].startsWith("-")) {
+                    rubyoptArgs[i] = "-" + rubyoptArgs[i];
+                }
+            }
+            new ArgumentProcessor(rubyoptArgs).processArguments();
         }
     }
 
