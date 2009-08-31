@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, load_op, store_op, declare_type_op };
+enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, load_op, store_op, declare_type_op, guard_op };
 
 public enum Operation
 {
@@ -51,7 +51,10 @@ public enum Operation
     EQQ(OpType.call_op), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
 
 // a case/when branch
-    CASE(OpType.branch_op);
+    CASE(OpType.branch_op),
+    
+// optimization guards
+    ASSERT_METHOD_VERSION(OpType.guard_op);
 
     private OpType _type;
 

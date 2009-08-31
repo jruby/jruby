@@ -7,6 +7,8 @@ public class CodeVersion
 
     public static CodeVersion getVersionToken() { _nextVersionNumber++; return new CodeVersion(_nextVersionNumber); }
 
+    public String toString() { return _version + "L"; }
+
     private CodeVersion(long v) { _version = v; }
 
     private static long _nextVersionNumber = 0L;

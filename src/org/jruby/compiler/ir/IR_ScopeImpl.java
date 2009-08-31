@@ -181,9 +181,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addInstr(IR_Instr i)   { _instrs.add(i); }
 
-    public List<IR_Instr> getInstrs() {
-        return Collections.unmodifiableList(_instrs);
-    }
+    public List<IR_Instr> getInstrs() { return _instrs; }
 
         // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
         // We might not .. for the following reasons:
@@ -266,6 +264,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
         for (IR_Instr instr : _instrs) {
             if (i > 0) b.append("\n");
             b.append("  " + i++ + "\t");
+				if (instr.isDead())
+					b.append("[DEAD]");
             b.append(instr);
         }
 
