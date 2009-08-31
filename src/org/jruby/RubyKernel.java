@@ -1141,7 +1141,19 @@ public class RubyKernel {
     public static IRubyObject singleton_method_undefined(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
         return context.getRuntime().getNil();
     }
-    
+
+    @JRubyMethod(name = "define_singleton_method", required = 1, optional = 1, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyProc define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        if (args.length == 0) throw context.getRuntime().newArgumentError(0, 1);
+
+        RubyClass singleton_class = recv.getSingletonClass();
+        RubyProc proc;
+        proc = args.length > 1 ?
+            (RubyProc) singleton_class.define_method(context, args[0], args[1], block) :
+            (RubyProc) singleton_class.define_method(context, args[0], block);
+        return proc;
+    }
+
     @JRubyMethod(name = {"proc", "lambda"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
         return context.getRuntime().newProc(Block.Type.LAMBDA, block);
