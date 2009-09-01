@@ -122,9 +122,13 @@ public class CaseNode extends Node {
 
         context.pollThreadEvents();
 
-        // We know all cases are when nodes...assert?
         for (Node child : cases.childNodes()) {
             WhenNode when = (WhenNode) child;
+            ISourcePosition position = child.getPosition();
+
+            context.setFile(position.getFile());
+            context.setLine(position.getStartLine());
+
             if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
             IRubyObject result = when.when(expression, context, runtime, self, aBlock);
             if (result != null) return result;
