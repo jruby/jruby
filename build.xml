@@ -436,6 +436,11 @@
       </antcall>
     </target>
 
+    <target name="dist-jar-complete" depends="jar-complete">
+        <move file="${dest.lib.dir}/jruby-complete.jar" todir="${basedir}"/>
+        <checksum file="jruby-complete.jar"/>
+    </target>
+
     <target name="jar-complete-1.9" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
@@ -1330,6 +1335,9 @@
         <patternset refid="dist.bin.files"/>
       </zipfileset>
     </zip>
+
+    <checksum file="jruby-bin-${version.jruby}.zip"/>
+    <checksum file="jruby-bin-${version.jruby}.tar.gz"/>
   </target>
 
   <target name="dist-src" depends="jar">
@@ -1366,6 +1374,9 @@
         <patternset refid="dist.src.files"/>
       </zipfileset>
     </zip>
+
+    <checksum file="jruby-src-${version.jruby}.zip"/>
+    <checksum file="jruby-src-${version.jruby}.tar.gz"/>
   </target>
 
   <target name="dist-snapshot" depends="jar">
@@ -1397,13 +1408,15 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="dist-bin,dist-src"/>
+  <target name="dist" depends="dist-bin,dist-src,dist-jar-complete"/>
 
   <target name="dist-clean">
     <delete includeEmptyDirs="true" quiet="true">
       <fileset dir=".">
         <include name="jruby-*.tar.gz"/>
         <include name="jruby-*.zip"/>
+        <include name="jruby-*.tar.gz.MD5"/>
+        <include name="jruby-*.zip.MD5"/>
       </fileset>
       <fileset dir="dist" includes="**/*"/>
     </delete>
