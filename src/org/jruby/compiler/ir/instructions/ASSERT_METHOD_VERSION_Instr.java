@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 
 import org.jruby.compiler.ir.CodeVersion;
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
@@ -12,21 +12,21 @@ import org.jruby.compiler.ir.operands.Label;
 // If this check fails, control is transferred to a label where fixup code compiles a fresh de-optimized version of the method!
 public class ASSERT_METHOD_VERSION_Instr extends IR_Instr
 {
-    IR_Class    _c;
-    String      _m;
-    CodeVersion _v;
-    Label       _l;
+    IR_Module   _module;
+    String      _method;
+    CodeVersion _version;
+    Label       _label;
 
-    public ASSERT_METHOD_VERSION_Instr(IR_Class c, String methodName, CodeVersion currVersion, Label deoptLabel)
+    public ASSERT_METHOD_VERSION_Instr(IR_Module module, String methodName, CodeVersion currVersion, Label deoptLabel)
     {
         super(Operation.ASSERT_METHOD_VERSION);
-        _c = c;
-        _m = methodName;
-        _v = currVersion;
-        _l = deoptLabel;
+        _module = module;
+        _method = methodName;
+        _version = currVersion;
+        _label = deoptLabel;
     }
 
-    public String toString() { return super.toString() + "(" + _c._name + ":" + _m + "=" + _v + ", " + _l + ")"; }
+    public String toString() { return super.toString() + "(" + _module._name + ":" + _method + "=" + _version + ", " + _label + ")"; }
 
     public Operand[] getOperands() { return new Operand[]{}; }
 

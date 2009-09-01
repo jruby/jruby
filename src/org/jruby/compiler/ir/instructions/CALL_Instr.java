@@ -42,22 +42,14 @@ public class CALL_Instr extends MultiOperandInstr
     public Operand   getClosureArg() { return _closure; }
     public Operand   getReceiver()   { return _args[0]; }
 
-    public IR_Method getTargetMethod()
+    public IR_Method getTargetMethodWithReceiver(Operand receiver)
     {
         if (!(_methAddr instanceof MethAddr))
            return null;
 
-        Operand receiver = getReceiver();
-        if (receiver.isConstant()) {
-            if (receiver instanceof MetaObject) {
-                IR_Module m = (IR_Module)(((MetaObject)receiver)._scope);
-                return m.getClassMethod(((MethAddr)_methAddr).getName());
-            }
-            else {
-                // SSS FIXME: Why would c be null?
-                IR_Class c = receiver.getTargetClass();
-                return (c == null) ? null : c.getInstanceMethod(((MethAddr)_methAddr).getName());
-            }
+        if (receiver instanceof MetaObject) {
+            IR_Module m = (IR_Module)(((MetaObject)receiver)._scope);
+            return m.getClassMethod(((MethAddr)_methAddr).getName());
         }
 /**
             // self.foo(..);
@@ -69,8 +61,14 @@ public class CALL_Instr extends MultiOperandInstr
         }
 **/
         else {
-            return null;
+            IR_Class c = receiver.getTargetClass();
+            return (c == null) ? null : c.getInstanceMethod(((MethAddr)_methAddr).getName());
         }
+    }
+
+    public IR_Method getTargetMethod()
+    {
+        return getTargetMethodWithReceiver(getReceiver());
     }
 
     public String toString() {

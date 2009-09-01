@@ -7,6 +7,7 @@ import java.util.ListIterator;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
@@ -75,68 +76,48 @@ public class LocalOptimizationPass implements CompilerPass
                 val = null;
                 CALL_Instr call = ((CALL_Instr)i);
                 Operand    r    = call.getReceiver();
-                Operand    ma   = call.getMethodAddr();
 
                     // If 'r' is not a constant, it could actually be a compound value!
-                    // Look in our value map to see if we have a simplified value for the receiver
+                    // Look in our value map to see if we have a simplified value for the receiver.
                 if (!r.isConstant()) {
                     Operand v = valueMap.get(r);
                     if (v != null)
                         r = v;
                 }
 
-                    // Check if we can optimize this call based on the receiver type
-                IR_Class rc = r.getTargetClass();
-                if ((rc == IR_Class.getCoreClass("Fixnum")) && (ma instanceof MethAddr)) {
-                    MethAddr  maRef = (MethAddr)ma;
-                    Operand[] args = call.getCallArgs();
-                    if (args[1].isConstant()) {
-                        IR_Method   meth         = rc.getInstanceMethod(maRef._refName);
-                        String      fullName     = rc._name + ":" + maRef._refName; // SSS FIXME: Not correct
-                        CodeVersion knownVersion = versionMap.get(fullName);
-                        CodeVersion methVersion  = meth.getCodeVersionToken();
-                        if ((knownVersion == null) || (knownVersion._version != methVersion._version)) {
-                            instrs.add(new ASSERT_METHOD_VERSION_Instr(rc, maRef._refName, meth.getCodeVersionToken(), deoptLabel));
-                            versionMap.put(fullName, methVersion);
+                // Check if we can optimize this call based on the receiving method and receiver type
+                // Use the simplified receiver!
+                IR_Method rm = call.getTargetMethodWithReceiver(r);
+                if (rm != null) {
+                    IR_Module rc = rm.getDefiningModule();
+                    if (rc == IR_Class.getCoreClass("Fixnum")) {
+                        Operand[] args = call.getCallArgs();
+                        if (args[1].isConstant()) {
+                            addMethodGuard(rm, deoptLabel, versionMap, instrs);
+                            val = ((Fixnum)r).computeValue(rm._name, (Constant)args[1]);
                         }
-                        val = ((Fixnum)r).computeValue(maRef._refName, (Constant)args[1]);
                     }
-                }
-                else if ((rc == IR_Class.getCoreClass("Float")) && (ma instanceof MethAddr)) {
-                    MethAddr  maRef = (MethAddr)ma;
-                    Operand[] args = call.getCallArgs();
-                    if (args[1].isConstant()) {
-                        IR_Method   meth         = rc.getInstanceMethod(maRef._refName);
-                        String      fullName     = rc._name + ":" + maRef._refName; // SSS FIXME: Not correct
-                        CodeVersion knownVersion = versionMap.get(fullName);
-                        CodeVersion methVersion  = meth.getCodeVersionToken();
-                        if ((knownVersion == null) || (knownVersion._version != methVersion._version)) {
-                            instrs.add(new ASSERT_METHOD_VERSION_Instr(rc, maRef._refName, meth.getCodeVersionToken(), deoptLabel));
-                            versionMap.put(fullName, methVersion);
+                    else if (rc == IR_Class.getCoreClass("Float")) {
+                        Operand[] args = call.getCallArgs();
+                        if (args[1].isConstant()) {
+                            addMethodGuard(rm, deoptLabel, versionMap, instrs);
+                            val = ((Float)r).computeValue(rm._name, (Constant)args[1]);
                         }
-                        val = ((Float)r).computeValue(maRef._refName, (Constant)args[1]);
                     }
-                }
-                else if (rc == IR_Class.getCoreClass("Array") && (ma instanceof MethAddr)) {
-                    MethAddr  maRef = (MethAddr)ma;
-                    Operand[] args = call.getCallArgs();
-                    if (args[1] instanceof Fixnum && (maRef._refName == "[]")) {
-                        IR_Method   meth         = rc.getInstanceMethod(maRef._refName);
-                        String      fullName     = rc._name + ":" + maRef._refName; // SSS FIXME: Not correct
-                        CodeVersion knownVersion = versionMap.get(fullName);
-                        CodeVersion methVersion  = meth.getCodeVersionToken();
-                        if ((knownVersion == null) || (knownVersion._version != methVersion._version)) {
-                            instrs.add(new ASSERT_METHOD_VERSION_Instr(rc, maRef._refName, meth.getCodeVersionToken(), deoptLabel));
-                            versionMap.put(fullName, methVersion);
+                    else if (rc == IR_Class.getCoreClass("Array")) {
+                        Operand[] args = call.getCallArgs();
+                        if (args[1] instanceof Fixnum && (rm._name == "[]")) {
+                            addMethodGuard(rm, deoptLabel, versionMap, instrs);
+                            val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[1])._value.intValue(), false);
                         }
-                        val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[1])._value.intValue(), false);
                     }
-                }
 
-                if (val != null) {
-                    i.markDead();
-                    instrs.add(new COPY_Instr(res, val));
-                    valueMap.put(res, val);
+                    // If we got a simplified value, mark the call dead and insert a copy in its place!
+                    if (val != null) {
+                        i.markDead();
+                        instrs.add(new COPY_Instr(res, val));
+                        valueMap.put(res, val);
+                    }
                 }
             } 
 
@@ -145,6 +126,17 @@ public class LocalOptimizationPass implements CompilerPass
                 valueMap = new HashMap<Operand,Operand>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
+        }
+    }
+
+    private void addMethodGuard(IR_Method m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
+    {
+        String      fullName     = m.getFullyQualifiedName();
+        CodeVersion knownVersion = versionMap.get(fullName);
+        CodeVersion mVersion     = m.getCodeVersionToken();
+        if ((knownVersion == null) || (knownVersion._version != mVersion._version)) {
+            instrs.add(new ASSERT_METHOD_VERSION_Instr(m.getDefiningModule(), m._name, m.getCodeVersionToken(), deoptLabel));
+            versionMap.put(fullName, mVersion);
         }
     }
 }

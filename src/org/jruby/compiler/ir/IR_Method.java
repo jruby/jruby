@@ -77,6 +77,16 @@ public class IR_Method extends IR_ScopeImpl
 
     public boolean modifiesCode() { return _canModifyCode; }
 
+    // SSS FIXME: Incorect!
+    public String getFullyQualifiedName() {
+        IR_Module m = getDefiningModule();
+        return (m == null) ? null : m._name + ":" + _name;
+    }
+
+    public IR_Module getDefiningModule() {
+        return (_parent instanceof MetaObject) ? (IR_Module)((MetaObject)_parent)._scope : null;
+    }
+
     public CodeVersion getCodeVersionToken() { return _token; }
 
     public String toString() {
