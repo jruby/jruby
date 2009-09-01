@@ -1490,6 +1490,11 @@ public class RubyObject extends RubyBasicObject {
     	return context.getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "!~", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
+        return context.getRuntime().newBoolean(! callMethod(context, "=~", arg).isTrue());
+    }
+
     public IRubyObject to_java() {
         throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
     }
