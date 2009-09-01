@@ -1675,7 +1675,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     p += n;
                     continue;
                 } else if (c == '/') {
-                    to.append(c);
+                    to.append((byte) '\\');
                     to.append(bytes, p, cl);
                 } else if (!Encoding.isAscii(c)) {
                     int l = StringSupport.length(enc, bytes, p, end);
