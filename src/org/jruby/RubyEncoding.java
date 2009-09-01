@@ -276,4 +276,55 @@ public class RubyEncoding extends RubyObject {
 
         return enc == null ? runtime.getNil() : new RubyEncoding(runtime, enc);
     }
+
+    @JRubyMethod(name = "default_external", meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject getDefaultExternal(IRubyObject recv) {
+        return getDefaultExternal(recv.getRuntime());
+    }
+
+    public static IRubyObject getDefaultExternal(Ruby runtime) {
+        return convertEncodingToRubyEncoding(runtime, runtime.getDefaultExternalEncoding());
+    }
+
+    @JRubyMethod(name = "default_external=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static void setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
+        if (encoding.isNil()) {
+            recv.getRuntime().newArgumentError("default_external can not be nil");
+        }
+        recv.getRuntime().setDefaultExternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
+    }
+
+    @JRubyMethod(name = "default_internal", meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject getDefaultInternal(IRubyObject recv) {
+        return getDefaultInternal(recv.getRuntime());
+    }
+
+    public static IRubyObject getDefaultInternal(Ruby runtime) {
+        return convertEncodingToRubyEncoding(runtime, runtime.getDefaultInternalEncoding());
+    }
+
+    @JRubyMethod(name = "default_internal=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static void setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
+        if (encoding.isNil()) {
+            recv.getRuntime().newArgumentError("default_internal can not be nil");
+        }
+        recv.getRuntime().setDefaultInternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
+    }
+
+    public static IRubyObject convertEncodingToRubyEncoding(Ruby runtime, Encoding defaultEncoding) {
+        if (defaultEncoding != null) {
+            return new RubyEncoding(runtime, defaultEncoding);
+        }
+        return runtime.getNil();
+    }
+
+    public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
+        Encoding encoding;
+        if (arg instanceof RubyEncoding) {
+            encoding = ((RubyEncoding) arg).getEncoding();
+        } else {
+            encoding = arg.convertToString().toEncoding(runtime);
+        }
+        return encoding;
+    }
 }

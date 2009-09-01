@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Set;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -99,6 +100,8 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 public class RubyIO extends RubyObject {
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
+    protected IRubyObject externalEncoding;
+    protected IRubyObject internalEncoding;
     
 
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
@@ -591,8 +594,10 @@ public class RubyIO extends RubyObject {
             case '+':
                 modes = (modes & ~ModeFlags.ACCMODE) | ModeFlags.RDWR;
                 break;
+            case 't' :
+                // FIXME: add text mode to mode flags
+                break;
             case ':':
-                // TODO: 1.9 encoding handling
                 break ModifierLoop;
             default:
                 throw runtime.newArgumentError("illegal access mode " + modes);
@@ -853,10 +858,9 @@ public class RubyIO extends RubyObject {
         int fileno = RubyNumeric.fix2int(fileNumber);
         ModeFlags modes;
         if (second instanceof RubyHash) {
-            // TODO: Add option parsing here [JRUBY-3605]
-            modes = null;
+            modes = parseOptions(context, second, null);
         } else {
-            modes = parseModes(second);
+            modes = parseModes19(context, second);
         }
 
         return initializeCommon19(fileno, modes);
@@ -865,9 +869,9 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unusedBlock) {
         int fileno = RubyNumeric.fix2int(fileNumber);
-        ModeFlags modes = parseModes(modeValue);
+        ModeFlags modes = parseModes19(context, modeValue);
 
-        // TODO: Add option parsing here [JRUBY-3605]
+        modes = parseOptions(context, options, modes);
         return initializeCommon19(fileno, modes);
     }
 
@@ -878,6 +882,32 @@ public class RubyIO extends RubyObject {
             return getIOModes(getRuntime(), arg.convertToString().toString());
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
+        }
+    }
+
+    private ModeFlags parseModes19(ThreadContext context, IRubyObject arg) {
+        ModeFlags modes = parseModes(arg);
+
+        if (arg instanceof RubyString) {
+            parseEncodingFromString(context, arg, 1);
+        }
+
+        return modes;
+    }
+
+    private void parseEncodingFromString(ThreadContext context, IRubyObject arg, int initialPosition) {
+        RubyString modes19 = arg.convertToString();
+        if (modes19.toString().contains(":")) {
+            IRubyObject[] fullEncoding = modes19.split(context, RubyString.newString(context.getRuntime(), ":")).toJavaArray();
+
+            IRubyObject externalEncodingOption = fullEncoding[initialPosition];
+            IRubyObject internalEncodingOption = null;
+            if (fullEncoding.length > (initialPosition + 1)) {
+                internalEncodingOption = fullEncoding[initialPosition + 1];
+                set_encoding(context, externalEncodingOption, internalEncodingOption);
+            } else {
+                set_encoding(context, externalEncodingOption);
+            }
         }
     }
 
@@ -957,26 +987,51 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject external_encoding(ThreadContext context) {
-        // FIXME: JRUBY-3607
-        return context.getRuntime().getEncodingService().getEncoding(KCode.NONE.getEncoding()).asString();
+        return externalEncoding != null ? externalEncoding : context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject internal_encoding(ThreadContext context) {
+        return internalEncoding != null ? internalEncoding : context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat=CompatVersion.RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString) {
-        // FIXME: JRUBY-3606
+        setExternalEncoding(context, encodingString);
         return context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat=CompatVersion.RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding) {
-        // FIXME: JRUBY-3606
+        setExternalEncoding(context, encodingString);
+        setInternalEncoding(context, internalEncoding);
         return context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding, IRubyObject options) {
-        // FIXME: JRUBY-3606
+        setExternalEncoding(context, encodingString);
+        setInternalEncoding(context, internalEncoding);
         return context.getRuntime().getNil();
+    }
+
+    private void setExternalEncoding(ThreadContext context, IRubyObject encoding) {
+        externalEncoding = getEncodingCommon(context, encoding);
+    }
+
+    private void setInternalEncoding(ThreadContext context, IRubyObject encoding) {
+        internalEncoding = getEncodingCommon(context, encoding);
+    }
+
+    private IRubyObject getEncodingCommon(ThreadContext context, IRubyObject encoding) {
+        IRubyObject rubyEncoding = null;
+        if (encoding instanceof RubyEncoding) {
+            rubyEncoding = encoding;
+        } else {
+            Encoding encodingObj = RubyEncoding.getEncodingFromObject(context.getRuntime(), encoding);
+            rubyEncoding = RubyEncoding.convertEncodingToRubyEncoding(context.getRuntime(), encodingObj);            
+        }
+        return rubyEncoding;
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
@@ -1056,6 +1111,11 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
             return this;
+    }
+
+    @JRubyMethod(name = "binmode?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_binmode(ThreadContext context) {
+        return RubyBoolean.newBoolean(context.getRuntime(), openFile.isBinmode());
     }
     
     /** @deprecated will be removed in 1.2 */
@@ -3399,5 +3459,88 @@ public class RubyIO extends RubyObject {
             // raise will also wake the thread from selection
             thread.raise(new IRubyObject[] {getRuntime().newIOError("stream closed").getException()}, Block.NULL_BLOCK);
         }
+    }
+
+    /**
+     *
+     *  ==== Options
+     *  <code>opt</code> can have the following keys
+     *  :mode ::
+     *    same as <code>mode</code> parameter
+     *  :external_encoding ::
+     *    external encoding for the IO. "-" is a
+     *    synonym for the default external encoding.
+     *  :internal_encoding ::
+     *    internal encoding for the IO.
+     *    "-" is a synonym for the default internal encoding.
+     *    If the value is nil no conversion occurs.
+     *  :encoding ::
+     *    specifies external and internal encodings as "extern:intern".
+     *  :textmode ::
+     *    If the value is truth value, same as "b" in argument <code>mode</code>.
+     *  :binmode ::
+     *    If the value is truth value, same as "t" in argument <code>mode</code>.
+     *
+     *  Also <code>opt</code> can have same keys in <code>String#encode</code> for
+     *  controlling conversion between the external encoding and the internal encoding.
+     *
+     */
+    private ModeFlags parseOptions(ThreadContext context, IRubyObject options, ModeFlags modes) {
+        Ruby runtime = context.getRuntime();
+
+        RubyHash rubyOptions = (RubyHash) options;
+
+        IRubyObject internalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("internal_encoding"));
+        IRubyObject externalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("external_encoding"));
+        if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
+            if (internalEncodingOption.asJavaString().equals("-")) {
+                internalEncodingOption = RubyEncoding.getDefaultInternal(runtime);
+            }
+            setInternalEncoding(context, internalEncodingOption);
+        }
+
+        if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
+            if (externalEncodingOption.asJavaString().equals("-")) {
+                externalEncodingOption = RubyEncoding.getDefaultExternal(runtime);
+            }
+            setExternalEncoding(context, externalEncodingOption);
+        }
+
+        IRubyObject encoding = rubyOptions.fastARef(runtime.newSymbol("encoding"));
+        if (encoding != null && !encoding.isNil()) {
+            if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
+                context.getRuntime().getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': external_encoding is used");
+            } else if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
+                context.getRuntime().getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': internal_encoding is used");
+            } else {
+                parseEncodingFromString(context, encoding, 0);
+            }
+        }
+
+        if (rubyOptions.containsKey(runtime.newSymbol("mode"))) {
+            modes = parseModes19(context, rubyOptions.fastARef(runtime.newSymbol("mode")).asString());
+        }
+
+//      FIXME: check how ruby 1.9 handles this
+
+//        if (rubyOptions.containsKey(runtime.newSymbol("textmode")) &&
+//                rubyOptions.fastARef(runtime.newSymbol("textmode")).isTrue()) {
+//            try {
+//                modes = getIOModes(runtime, "t");
+//            } catch (InvalidValueException e) {
+//                throw getRuntime().newErrnoEINVALError();
+//            }
+//        }
+//
+//        if (rubyOptions.containsKey(runtime.newSymbol("binmode")) &&
+//                rubyOptions.fastARef(runtime.newSymbol("binmode")).isTrue()) {
+//            try {
+//                modes = getIOModes(runtime, "b");
+//            } catch (InvalidValueException e) {
+//                throw getRuntime().newErrnoEINVALError();
+//            }
+//        }
+
+        return modes;
     }
 }

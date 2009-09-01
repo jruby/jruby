@@ -6838,12 +6838,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "force_encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
         modify19();
-        Encoding encoding;
-        if (enc instanceof RubyEncoding) {
-            encoding = ((RubyEncoding) enc).getEncoding();
-        } else {
-            encoding = enc.convertToString().toEncoding(context.getRuntime());
-        }
+        Encoding encoding = RubyEncoding.getEncodingFromObject(context.getRuntime(), enc);
         associateEncoding(encoding);
         return this;
     }
