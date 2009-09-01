@@ -932,7 +932,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "!=", required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
-        return context.getRuntime().newBoolean(!equalInternal(context, this, other));
+        return context.getRuntime().newBoolean(!op_equal(context, other).isTrue());
     }
 
     public int compareTo(IRubyObject other) {
@@ -957,7 +957,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "equal?", required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return context.getRuntime().newBoolean(equalInternal(context, this, other));
+        return op_equal(context, other);
     }
 
     /**
