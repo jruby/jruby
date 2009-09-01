@@ -135,8 +135,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_dash_copyright_displays_copyright
-    assert_equal "JRuby - Copyright (C) 2001-2008 The JRuby Community (and contribs)\n",
-      `#{RUBY} --copyright`
+     assert_match /Copyright \(C\) 2001-2.../, `#{RUBY} --copyright`
   end
 
   # TODO --debug: cannot figure out how to test
