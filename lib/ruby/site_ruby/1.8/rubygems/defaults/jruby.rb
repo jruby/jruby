@@ -9,7 +9,7 @@ module Gem
   class << self
     alias_method :original_ensure_gem_subdirectories, :ensure_gem_subdirectories
     def ensure_gem_subdirectories(gemdir)
-      original_ensure_gem_subdirectories(gemdir) if writable_path? gemdir
+      original_ensure_gem_subdirectories(gemdir) if writable_path? gemdir.to_s
     end
 
     alias_method :original_set_paths, :set_paths
