@@ -2407,23 +2407,45 @@ public class RubyModule extends RubyObject {
         throw runtime.newNameError("uninitialized constant " + name, name);
     }
 
+    @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_8)
+    public RubyArray constants(ThreadContext context) {
+        return constantsCommon(context, true);
+    }
+
+    @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_9)
+    public RubyArray constants19(ThreadContext context) {
+        return constantsCommon(context, true);
+    }
+
+    @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_9)
+    public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
+        return constantsCommon(context, allConstants.isTrue());
+    }
+
     /** rb_mod_constants
      *
      */
-    @JRubyMethod(name = "constants")
-    public RubyArray constants(ThreadContext context) {
+    public RubyArray constantsCommon(ThreadContext context, boolean allConstants) {
         Ruby runtime = context.getRuntime();
         RubyArray array = runtime.newArray();
         RubyModule objectClass = runtime.getObject();
 
-        if (getRuntime().getModule() == this || objectClass == this) {
-            array.addAll(objectClass.getConstantNames());
-        } else {
-            Set<String> names = new HashSet<String>();
-            for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
-                names.addAll(module.getConstantNames());
+        if (allConstants) {
+            if (getRuntime().getModule() == this || objectClass == this) {
+                array.addAll(objectClass.getConstantNames());
+            } else {
+                Set<String> names = new HashSet<String>();
+                for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
+                    names.addAll(module.getConstantNames());
+                }
+                array.addAll(names);
             }
-            array.addAll(names);
+        } else {
+            if (getRuntime().getModule() == this || objectClass == this) {
+                array.addAll(objectClass.getConstantNames());
+            } else {
+                array.addAll(getConstantNames());
+            }
         }
 
         return array;
