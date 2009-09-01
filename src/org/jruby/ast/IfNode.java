@@ -103,6 +103,11 @@ public class IfNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        ISourcePosition position = getPosition();
+
+        context.setFile(position.getFile());
+        context.setLine(position.getStartLine());
+
         IRubyObject result = condition.interpret(runtime, context, self, aBlock);
         
         // TODO: put these nil guards into tree (bigger than I want to do right now)
