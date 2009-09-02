@@ -67,12 +67,13 @@ public class RubyIPSocket extends RubyBasicSocket {
         return new RaiseException(runtime, runtime.fastGetClass("SocketError"), msg, true);
     }
 
-    private IRubyObject addrFor(Ruby r, InetSocketAddress addr) {
+    private IRubyObject addrFor(ThreadContext context, InetSocketAddress addr) {
+        Ruby r = context.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = r.newString("AF_INET");
         ret[1] = r.newFixnum(addr.getPort());
         String hostAddress = addr.getAddress().getHostAddress();
-        if(r.isDoNotReverseLookupEnabled()) {
+        if (doNotReverseLookup(context)) {
             ret[2] = r.newString(hostAddress);
         } else {
             ret[2] = r.newString(addr.getHostName());
@@ -90,7 +91,7 @@ public class RubyIPSocket extends RubyBasicSocket {
         if (address == null) {
             throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
         }
-        return addrFor(context.getRuntime(), address);
+        return addrFor(context, address);
     }
     @Deprecated
     public IRubyObject peeraddr() {
@@ -102,8 +103,9 @@ public class RubyIPSocket extends RubyBasicSocket {
         if (address == null) {
             throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
         }
-        return addrFor(context.getRuntime(), address);
+        return addrFor(context, address);
     }
+    @Override
     public IRubyObject getsockname(ThreadContext context) {
         InetSocketAddress sock = getLocalSocket();
         if (sock == null) {
@@ -115,6 +117,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 					       addr);
 	}
     }
+    @Override
     public IRubyObject getpeername(ThreadContext context) {
         InetSocketAddress sock = getRemoteSocket();
         if (sock == null) {
