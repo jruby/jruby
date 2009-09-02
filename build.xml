@@ -1025,10 +1025,10 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-short-1.9" depends="run-specs-precompiled-short-1.9">
+  <target name="run-specs-short-1.9" depends="run-specs-interpreted-short-1.9">
     <condition property="spec.status.combined.OK">
       <and>
-        <equals arg1="${spec.status.PRECOMPILED}"    arg2="0"/>
+        <equals arg1="${spec.status.INTERPRETED}"    arg2="0"/>
       </and>
     </condition>
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
@@ -1079,13 +1079,13 @@
   </target>
 
   <target name="run-specs-compiled-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec" compat="RUBY1_9"/>
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
   </target>
   <target name="run-specs-precompiled-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec" compat="RUBY1_9"/>
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
   </target>
   <target name="run-specs-interpreted-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.8.mspec" compat="RUBY1_9"/>
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
   </target>
 
   <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
@@ -1148,6 +1148,8 @@
 	<sysproperty key="jruby.launch.inproc" value="false"/>
         <sysproperty key="emma.verbosity.level" value="silent" />
 
+        <env key="JAVA_OPTS" value="-Demma.verbosity.level=silent"/>
+
 	<arg line="${mspec.dir}/bin/mspec ci"/>
 	<arg line="-T -J-ea"/>
 	<arg line="-T -J-Djruby.launch.inproc=false"/>
@@ -1161,7 +1163,6 @@
         <arg line="-T -J-Demma.coverage.out.file=${test.results.dir}/coverage.emma"/>
         <arg line="-T -J-Demma.coverage.out.merge=true"/>
         <arg line="-T -J-Demma.verbosity.level=silent" />
-        <env key="JAVA_OPTS" value="-Demma.verbosity.level=silent"/>
 	<arg line="-f m"/>
 	<arg line="-B @{spec.config}"/>
       </java>

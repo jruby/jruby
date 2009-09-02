@@ -6,7 +6,6 @@
 
 require 'rbconfig'
 
-WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
 DIR = File.join(File.dirname(__FILE__), "ruby")
 
 class MSpecScript
@@ -67,17 +66,7 @@ class MSpecScript
   # A list of _all_ optional library specs
   set :optional, [get(:ffi)]
 
-  # The default implementation to run the specs.
-  # TODO: this needs to be more sophisticated since the
-  # executable is not consistently named.
-  # The default implementation to run the specs.
-  if WINDOWS
-    jruby_script = 'jruby.bat'
-  else
-    jruby_script = 'jruby'
-  end
-
-  set :target, DIR + '/../bin/' + jruby_script
+  set :target, DIR + '/../bin/' + Config::CONFIG['ruby_install_name']
 
   set :backtrace_filter, /mspec\//
 

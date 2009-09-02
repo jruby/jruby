@@ -1,0 +1,1 @@
+fails(crashes):File#flock should lock a file

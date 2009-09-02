@@ -4,7 +4,6 @@
 require 'rbconfig'
 require 'java'
 
-WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 DIR = File.dirname(__FILE__)
 
@@ -88,13 +87,7 @@ class MSpecScript
   set :ci_files, get(:language) + get(:core) + get(:library)
 
   # The default implementation to run the specs.
-  if WINDOWS
-    jruby_script = 'jruby.bat'
-  else
-    jruby_script = 'jruby'
-  end
-
-  set :target, DIR + '/../bin/' + jruby_script
+  set :target, DIR + '/../bin/' + Config::CONFIG['ruby_install_name']
 
   set :backtrace_filter, /mspec\//
 
