@@ -960,22 +960,32 @@ abstract public class AbstractMemory extends RubyObject {
         return getPointer(context.getRuntime(), getOffset(offset));
     }
 
-    @JRubyMethod(name = "put_pointer", required = 2)
-    public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
+    private void putPointer(ThreadContext context, long offset, IRubyObject value) {
         if (value instanceof Pointer) {
-            MemoryIO ptr = ((Pointer) value).getMemoryIO();
-            if (ptr.isDirect()) {
-                getMemoryIO().putMemoryIO(getOffset(offset), ptr);
-            } else if (ptr.isNull()) {
-                getMemoryIO().putAddress(getOffset(offset), 0L);
-            } else {
-                throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
-            }
+            putPointer(context, offset, (Pointer) value);
         } else if (value.isNil()) {
-            getMemoryIO().putAddress(getOffset(offset), 0L);
+            getMemoryIO().putAddress(offset, 0L);
+        } else if (value.respondsTo("to_ptr")) {
+            putPointer(context, offset, value.callMethod(context, "to_ptr"));
+        } else {
+            throw context.getRuntime().newTypeError(value, context.getRuntime().fastGetModule("FFI").fastGetClass("Pointer"));
+        }
+    }
+
+    private void putPointer(ThreadContext context, long offset, Pointer value) {
+        MemoryIO ptr = value.getMemoryIO();
+        if (ptr.isDirect()) {
+            getMemoryIO().putMemoryIO(offset, ptr);
+        } else if (ptr.isNull()) {
+            getMemoryIO().putAddress(offset, 0L);
         } else {
             throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
         }
+    }
+
+    @JRubyMethod(name = "put_pointer", required = 2)
+    public IRubyObject put_pointer(ThreadContext context, IRubyObject offset, IRubyObject value) {
+        putPointer(context, getOffset(offset), value);
         return this;
     }
 
@@ -993,6 +1003,7 @@ abstract public class AbstractMemory extends RubyObject {
 
         return arr;
     }
+
     @JRubyMethod(name = { "put_array_of_pointer" }, required = 2)
     public IRubyObject put_array_of_pointer(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
@@ -1001,14 +1012,7 @@ abstract public class AbstractMemory extends RubyObject {
 
         long off = getOffset(offset);
         for (int i = 0; i < count; ++i) {
-            IRubyObject ptr = arr.entry(i);
-            if (ptr instanceof Pointer) {
-                getMemoryIO().putMemoryIO(off + (i * POINTER_SIZE), ((Pointer) ptr).getMemoryIO());
-            } else if (ptr.isNil()) {
-                getMemoryIO().putAddress(off + (i * POINTER_SIZE), 0);
-            } else {
-                throw context.getRuntime().newTypeError(ptr, context.getRuntime().fastGetModule("FFI").fastGetClass("Pointer"));
-            }
+            putPointer(context, off + (i * POINTER_SIZE), arr.entry(i));
         }
         return this;
     }

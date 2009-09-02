@@ -473,9 +473,9 @@ public class RubySocket extends RubyBasicSocket {
             boolean sock_dgram = true;
             if(!socktype.isNil()) {
                 int val = RubyNumeric.fix2int(socktype);
-                if(val == 1) {
+                if(val == SOCK_STREAM.value()) {
                     sock_dgram = false;
-                } else if(val == 2) {
+                } else if(val == SOCK_DGRAM.value()) {
                     sock_stream = false;
                 }
             }
