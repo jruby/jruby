@@ -294,6 +294,21 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
+    @JRubyMethod(name = "cbrt", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat cbrt(IRubyObject recv, IRubyObject x) {
+        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
+        double result;
+
+        if (value < 0) {
+            result = Math.pow(-value, 1/3.0);
+        } else{
+            result = Math.pow(value, 1/3.0);
+        }
+
+        domainCheck(recv, result, "cbrt");
+        return RubyFloat.newFloat(recv.getRuntime(), result);
+    }
+
     @JRubyMethod(name = "hypot", required = 2, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat hypot(IRubyObject recv, IRubyObject x, IRubyObject y) {
         double valuea = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(); 
@@ -478,4 +493,146 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),result);        
     }
 
+    private static final double FACTORIAL[] = {
+        /*  0! */ 1.0,
+        /*  1! */ 1.0,
+        /*  2! */ 2.0,
+        /*  3! */ 6.0,
+        /*  4! */ 24.0,
+        /*  5! */ 120.0,
+        /*  6! */ 720.0,
+        /*  7! */ 5040.0,
+        /*  8! */ 40320.0,
+        /*  9! */ 362880.0,
+        /* 10! */ 3628800.0,
+        /* 11! */ 39916800.0,
+        /* 12! */ 479001600.0,
+        /* 13! */ 6227020800.0,
+        /* 14! */ 87178291200.0,
+        /* 15! */ 1307674368000.0,
+        /* 16! */ 20922789888000.0,
+        /* 17! */ 355687428096000.0,
+        /* 18! */ 6402373705728000.0,
+        /* 19! */ 121645100408832000.0,
+        /* 20! */ 2432902008176640000.0,
+        /* 21! */ 51090942171709440000.0,
+        /* 22! */ 1124000727777607680000.0
+    };
+
+    private static final double NEMES_GAMMA_COEFF[] = {
+        1.00000000000000000000000000000000000,
+        0                                    ,
+        0.08333333333333333333333333333333333,
+        0                                    ,
+        0.00069444444444444444444444444444444,
+        0                                    ,
+        0.00065861992945326278659611992945326,
+        0                                    ,
+       -0.00053287817827748383303938859494415,
+        0                                    ,
+        0.00079278588700608376534302460228386,
+        0                                    ,
+       -0.00184758189322033028400606295961969,
+        0                                    ,
+        0.00625067824784941846328836824623616,
+        0                                    ,
+       -0.02901710246301150993444701506844402,
+        0                                    ,
+        0.17718457242491308890302832366796470,
+        0                                    ,
+       -1.37747681703993534399676348903067470
+    };
+
+
+    /**
+     * Based on Gerg&#337; Nemes's Gamma Function approximation formula, we compute
+     * approximate value of Gamma function of x.
+     * @param recv Math module
+     * @param x a real number
+     * @return &Gamma;(x) for real number x
+     * @see <a href="http://www.ebyte.it/library/downloads/2008_MTH_Nemes_GammaApproximationUpdate.pdf">
+     * New asymptotic expansion for the &Gamma;(x) function</a>
+     */
+
+    @JRubyMethod(name = "gamma", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat gamma(IRubyObject recv, IRubyObject x) {
+        double value = ((RubyFloat) RubyKernel.new_float(recv, x)).getDoubleValue();
+        double result = nemes_gamma(value);
+        /* note nemes_gamma can return Double.POSITIVE_INFINITY or Double.NEGATIVE_INFINITY
+         * when value is an integer less than 1.
+         * We treat 0 as a special case to avoid Domain error.
+         */
+        if (Double.isInfinite(result) && value < 0) {
+            result = Double.NaN;
+        }
+        domainCheck(recv, result, "gamma");
+        return RubyFloat.newFloat(recv.getRuntime(), result);
+
+    }
+
+    /**
+     * Based on Gerg&#337; Nemes's Gamma Function approximation formula, we compute
+     * Log Gamma function for real number x.
+     * @param recv Math module
+     * @param x a real number
+     * @return ln(&Gamma;(x)) for real number x
+     * @see #gamma(org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.builtin.IRubyObject)
+     */
+
+    @JRubyMethod(name = "lgamma", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyArray lgamma(IRubyObject recv, IRubyObject x) {
+        Ruby runtime = recv.getRuntime();
+        double value = RubyKernel.new_float(recv, x).getDoubleValue();
+        double lgamma_value = nemes_lgamma(value);
+
+        // somewhat awkward, but to be consistent with MRI,
+        // which yields Math.lgamma(x)=[Infinity,1] for a negative odd integer x
+        int sign = (lgamma_value > 0 || Double.isInfinite(lgamma_value)) ? 1 :
+            lgamma_value < 0 ? -1 : 0;
+
+        domainCheck(recv, lgamma_value, "lgamma");
+        IRubyObject[] ary = new IRubyObject[2];
+        ary[0] = RubyFloat.newFloat(runtime, lgamma_value);
+        ary[1] = RubyInteger.int2fix(runtime, sign);
+
+        return RubyArray.newArray(recv.getRuntime(), ary);
+    }
+
+    private static double nemes_gamma(double x) {
+        double int_part = (int) x;
+        double frac_part = x - int_part;
+
+        if (frac_part == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
+            return FACTORIAL[(int) int_part - 1];
+        }
+
+        return Math.exp(nemes_lgamma(x));
+
+    }
+
+    private static double nemes_lgamma(double x) {
+        double int_part = (int) x;
+        if (x < 10) {
+            /* to get a good approximation,
+             * use the natural log form of known identity
+             * G(x)=G(x+n)/[x*(x+1)*...*(x+n-1)]
+             */
+            double rising_factorial = 1;
+            for (int i = 0; i < -int_part + 10; i++) {
+                rising_factorial *= (x + i);
+            }
+            return nemes_lgamma(x - int_part + 10) - Math.log(rising_factorial);
+        }
+
+        double temp = 0.0;
+        for (int i = 0; i < NEMES_GAMMA_COEFF.length; i++) {
+            temp += NEMES_GAMMA_COEFF[i] * 1.0 / Math.pow(x, i);
+        }
+
+        /* the natural log form of the equation (3.1)
+         * in Nemes's paper mentioned above.
+         */
+        return x*( Math.log(x) - 1 + Math.log(temp) ) +
+            ( Math.log(2) + Math.log(Math.PI) - Math.log(x) )/2.0;
+    }
 }
