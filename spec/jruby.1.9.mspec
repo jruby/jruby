@@ -4,6 +4,8 @@
 # use this config file if the Ruby interpreter with which MSpec advertises
 # itself with RUBY_VERSION =~ /1.9/
 
+require 'rbconfig'
+
 WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
 DIR = File.join(File.dirname(__FILE__), "ruby")
 

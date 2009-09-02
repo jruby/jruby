@@ -1,7 +1,8 @@
 !.gitignore
 *.gz
 *.zip
-*.MD5
+*.md5
+*.sha1
 jruby-complete.jar
 bin/*
 !bin/gem

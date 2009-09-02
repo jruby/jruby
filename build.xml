@@ -438,7 +438,8 @@
 
     <target name="dist-jar-complete" depends="jar-complete">
         <move file="${dest.lib.dir}/jruby-complete.jar" todir="${basedir}"/>
-        <checksum file="jruby-complete.jar"/>
+        <checksum file="jruby-complete.jar" algorithm="md5"/>
+        <checksum file="jruby-complete.jar" algorithm="sha1"/>
     </target>
 
     <target name="jar-complete-1.9" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
@@ -1336,8 +1337,10 @@
       </zipfileset>
     </zip>
 
-    <checksum file="jruby-bin-${version.jruby}.zip"/>
-    <checksum file="jruby-bin-${version.jruby}.tar.gz"/>
+    <checksum file="jruby-bin-${version.jruby}.zip" algorithm="md5"/>
+    <checksum file="jruby-bin-${version.jruby}.zip" algorithm="sha1"/>
+    <checksum file="jruby-bin-${version.jruby}.tar.gz" algorithm="md5"/>
+    <checksum file="jruby-bin-${version.jruby}.tar.gz" algorithm="sha1"/>
   </target>
 
   <target name="dist-src" depends="jar">
@@ -1375,8 +1378,10 @@
       </zipfileset>
     </zip>
 
-    <checksum file="jruby-src-${version.jruby}.zip"/>
-    <checksum file="jruby-src-${version.jruby}.tar.gz"/>
+    <checksum file="jruby-src-${version.jruby}.zip" algorithm="md5"/>
+    <checksum file="jruby-src-${version.jruby}.zip" algorithm="sha1"/>
+    <checksum file="jruby-src-${version.jruby}.tar.gz" algorithm="md5"/>
+    <checksum file="jruby-src-${version.jruby}.tar.gz" algorithm="sha1"/>
   </target>
 
   <target name="dist-snapshot" depends="jar">
@@ -1415,8 +1420,10 @@
       <fileset dir=".">
         <include name="jruby-*.tar.gz"/>
         <include name="jruby-*.zip"/>
-        <include name="jruby-*.tar.gz.MD5"/>
-        <include name="jruby-*.zip.MD5"/>
+        <include name="jruby-*.tar.gz.md5"/>
+        <include name="jruby-*.tar.gz.sha1"/>
+        <include name="jruby-*.zip.md5"/>
+        <include name="jruby-*.zip.sha1"/>
       </fileset>
       <fileset dir="dist" includes="**/*"/>
     </delete>
