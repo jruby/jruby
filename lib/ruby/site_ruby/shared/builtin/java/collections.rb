@@ -96,7 +96,7 @@ module java::util::List
     if (ix2)
       sub_list(ix1, ix1 + ix2)
     elsif (ix1.is_a?(Range))
-      sub_list(ix1.first, ix1.last)
+      sub_list(ix1.first, ix1.exclude_end? ? ix1.last : ix1.last + 1)
     elsif ix1 < size
       get(ix1)
     else

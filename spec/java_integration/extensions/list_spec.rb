@@ -42,4 +42,16 @@ describe "List Ruby extensions" do
 
     list.to_a.should == expected
   end
+
+  it "should support slicing with 2 arguments" do
+    @list[0,3].to_a.should == @data[0,3]
+  end
+
+  it "should support slicing with inclusive ranges" do
+    @list[0..3].to_a.should == @data[0..3]
+  end
+
+   it "should support slicing with exclusive ranges" do
+    @list[0...2].to_a.should == @data[0...2]
+  end
 end
