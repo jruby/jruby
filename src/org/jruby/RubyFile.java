@@ -409,14 +409,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return openFile(args);
     }
 
-        @JRubyMethod(name ="initialize", required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
         if (openFile == null) {
             throw context.getRuntime().newRuntimeError("reinitializing File");
         }
 
         if (args.length > 0 && args.length <= 3) {
-            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], getRuntime().getFixnum(), "to_int");
+            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], context.getRuntime().getFixnum(), "to_int");
             if (!fd.isNil()) {
                 args[0] = fd;
                 if (args.length == 1) {
@@ -433,7 +433,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
         IRubyObject filename = args[0].convertToString();
-        getRuntime().checkSafeString(filename);
+        context.getRuntime().checkSafeString(filename);
 
         path = filename.convertToString().getUnicodeValue();
 
@@ -460,7 +460,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 openInternal(path, modeString, modes);
             }
         } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+            throw context.getRuntime().newErrnoEINVALError();
         } finally {}
 
         return this;
