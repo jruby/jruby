@@ -1,5 +1,9 @@
 require 'test/unit'
 
+#
+# FIXME: This tests should be move to Rubyspecs as soon as specs run with jruby 1.9 compatibility option
+#
+
 class TestIO19 < Test::Unit::TestCase
 
   def test_external_encoding_concated_to_mode
@@ -46,5 +50,17 @@ class TestIO19 < Test::Unit::TestCase
   def test_binmode?
     io = IO.new(2, 'wb')
     assert_equal true, io.binmode?
+  end
+
+  def test_new_file_with_encoding_in_mode
+    io = File.new(__FILE__, 'r:UTF-8:iso-8859-1')
+    assert_equal 'UTF-8', io.external_encoding.to_s
+    assert_equal 'ISO-8859-1', io.internal_encoding.to_s
+  end
+
+  def test_new_file_with_encoding_as_option
+    io = File.new(__FILE__, 'r', :encoding => 'UTF-8:iso-8859-1')
+    assert_equal 'UTF-8', io.external_encoding.to_s
+    assert_equal 'ISO-8859-1', io.internal_encoding.to_s
   end
 end

@@ -875,7 +875,7 @@ public class RubyIO extends RubyObject {
         return initializeCommon19(fileno, modes);
     }
 
-    private ModeFlags parseModes(IRubyObject arg) {
+    protected ModeFlags parseModes(IRubyObject arg) {
         try {
             if (arg instanceof RubyFixnum) return new ModeFlags(RubyFixnum.fix2long(arg));
 
@@ -885,7 +885,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    private ModeFlags parseModes19(ThreadContext context, IRubyObject arg) {
+    protected ModeFlags parseModes19(ThreadContext context, IRubyObject arg) {
         ModeFlags modes = parseModes(arg);
 
         if (arg instanceof RubyString) {
@@ -3485,7 +3485,7 @@ public class RubyIO extends RubyObject {
      *  controlling conversion between the external encoding and the internal encoding.
      *
      */
-    private ModeFlags parseOptions(ThreadContext context, IRubyObject options, ModeFlags modes) {
+    protected ModeFlags parseOptions(ThreadContext context, IRubyObject options, ModeFlags modes) {
         Ruby runtime = context.getRuntime();
 
         RubyHash rubyOptions = (RubyHash) options;
