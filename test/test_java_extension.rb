@@ -64,7 +64,7 @@ class TestJavaExtension < Test::Unit::TestCase
     a << 2
 
     assert([1, 2, 3], a.sort)
-		assert([1, 2], a[2..3])
+		assert([1, 2], a[2...3])
 		assert([3, 1], a[0, 2])
     assert([1], a.select {|e| e >= 1 })
   end
