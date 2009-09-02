@@ -1,0 +1,2 @@
+fails(JRUBY-3939):Bignum#== calls 'other == self' if the given argument is not an Integer
+fails(JRUBY-3939):Bignum#== returns the result of 'other == self' as a boolean
