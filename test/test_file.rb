@@ -859,4 +859,9 @@ class TestFile < Test::Unit::TestCase
 
     assert_equal(expect, got)
   end
+
+  def test_basename_unicode
+    filename = 'dir/a ⼈〉〃〄⨶↖.pdf'
+    assert_equal("a \342\274\210\343\200\211\343\200\203\343\200\204\342\250\266\342\206\226.pdf", File.basename(filename))
+  end
 end

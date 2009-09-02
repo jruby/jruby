@@ -711,7 +711,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        String name = RubyString.stringValue(args[0]).toString();
+        String name = RubyString.stringValue(args[0]).getUnicodeValue();
 
         // MRI-compatible basename handling for windows drive letter paths
         if (Platform.IS_WINDOWS) {
