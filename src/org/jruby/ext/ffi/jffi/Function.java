@@ -11,6 +11,7 @@ import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.AbstractInvoker;
+import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.FreedMemoryIO;
 import org.jruby.ext.ffi.Pointer;
@@ -29,6 +30,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     private final Type[] parameterTypes;
     private final CallingConvention convention;
     private final IRubyObject enums;
+    private volatile boolean autorelease = true;
 
     public static RubyClass createFunctionClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Function",
@@ -125,8 +127,10 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {
-        if (getMemoryIO() instanceof AllocatedNativeMemoryIO) {
-            ((AllocatedNativeMemoryIO) getMemoryIO()).free();
+        if (getMemoryIO() instanceof AllocatedDirectMemoryIO) {
+            ((AllocatedDirectMemoryIO) getMemoryIO()).free();
+        } else {
+            throw context.getRuntime().newRuntimeError("cannot free non-allocated function");
         }
         
         // Replace memory object with one that throws an exception on any access
@@ -136,11 +140,16 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        if (getMemoryIO() instanceof AllocatedNativeMemoryIO) {
-            ((AllocatedNativeMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
+        if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO) {
+            ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());
         }
         
         return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = { "autorelease?", "autorelease" })
+    public final IRubyObject autorelease_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(autorelease);
     }
 
     @Override
