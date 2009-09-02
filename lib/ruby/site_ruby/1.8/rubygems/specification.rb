@@ -4,7 +4,6 @@
 # See LICENSE.txt for permissions.
 #++
 
-require 'rubygems'
 require 'rubygems/version'
 require 'rubygems/requirement'
 require 'rubygems/platform'
@@ -848,7 +847,7 @@ class Gem::Specification
             'authors must be Array of Strings'
     end
 
-    licenses.each{ |license|
+    licenses.each { |license|
       if license.length > 64
         raise Gem::InvalidSpecificationException,
           "each license must be 64 characters or less"

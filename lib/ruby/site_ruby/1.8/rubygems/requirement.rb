@@ -4,8 +4,6 @@
 # See LICENSE.txt for permissions.
 #++
 
-require 'rubygems/version'
-
 ##
 # Requirement version includes a prefaced comparator in addition
 # to a version number.
@@ -65,7 +63,7 @@ class Gem::Requirement
 
   ##
   # Constructs a Requirement from +requirements+ which can be a String, a
-  # Gem::Version, or an Array of those.  See parse for details on the
+  # Gem::Version, or an Array of those.  See #parse for details on the
   # formatting of requirement strings.
 
   def initialize(requirements)
@@ -142,7 +140,7 @@ class Gem::Requirement
   # Parse the version requirement obj returning the operator and version.
   #
   # The requirement can be a String or a Gem::Version.  A String can be an
-  # operator (<, <=, =, =>, >, !=, ~>), a version number, or both, operator
+  # operator (<, <=, =, >=, >, !=, ~>), a version number, or both, operator
   # first.
 
   def parse(obj)

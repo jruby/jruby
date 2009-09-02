@@ -4,7 +4,6 @@
 # See LICENSE.txt for permissions.
 #++
 
-require 'rubygems'
 require 'rubygems/user_interaction'
 require 'rubygems/specification'
 
@@ -31,7 +30,7 @@ class Gem::SourceIndex
 
   include Gem::UserInteraction
 
-  attr_reader :gems, :prerelease_gems # :nodoc:
+  attr_reader :gems # :nodoc:
 
   ##
   # Directories to use to refresh this SourceIndex when calling refresh!
@@ -116,16 +115,29 @@ class Gem::SourceIndex
   end
 
   ##
-  # Constructs a source index instance from the provided
-  # specifications
-  #
-  # specifications::
-  #   [Hash] hash of [Gem name, Gem::Specification] pairs
+  # Constructs a source index instance from the provided specifications, which
+  # is a Hash of gem full names and Gem::Specifications.
+  #--
+  # TODO merge @gems and @prerelease_gems and provide a separate method
+  # #prerelease_gems
 
   def initialize(specifications={})
-    @gems, @prerelease_gems = [{}, {}]
+    @gems = {}
     specifications.each{ |full_name, spec| add_spec spec }
     @spec_dirs = nil
+  end
+
+  # TODO: remove method
+  def all_gems
+    @gems
+  end
+
+  def prerelease_gems
+    @gems.reject{ |name, gem| !gem.version.prerelease? }
+  end
+
+  def released_gems
+    @gems.reject{ |name, gem| gem.version.prerelease? }
   end
 
   ##
@@ -147,8 +159,8 @@ class Gem::SourceIndex
   end
 
   ##
-  # Returns an Array specifications for the latest versions of each gem in
-  # this index.
+  # Returns an Array specifications for the latest released versions
+  # of each gem in this index.
 
   def latest_specs
     result = Hash.new { |h,k| h[k] = [] }
@@ -159,6 +171,7 @@ class Gem::SourceIndex
       curr_ver = spec.version
       prev_ver = latest.key?(name) ? latest[name].version : nil
 
+      next if curr_ver.prerelease?
       next unless prev_ver.nil? or curr_ver >= prev_ver or
                   latest[name].platform != Gem::Platform::RUBY
 
@@ -186,7 +199,14 @@ class Gem::SourceIndex
   # An array including only the prerelease gemspecs
 
   def prerelease_specs
-    @prerelease_gems.values
+    prerelease_gems.values
+  end
+
+  ##
+  # An array including only the released gemspecs
+
+  def released_specs
+    released_gems.values
   end
 
   ##
@@ -195,11 +215,7 @@ class Gem::SourceIndex
   def add_spec(gem_spec, name = gem_spec.full_name)
     # No idea why, but the Indexer wants to insert them using original_name
     # instead of full_name. So we make it an optional arg.
-    if gem_spec.version.prerelease?
-      @prerelease_gems[name] = gem_spec
-    else
-      @gems[name] = gem_spec
-    end
+    @gems[name] = gem_spec
   end
 
   ##
@@ -215,7 +231,7 @@ class Gem::SourceIndex
   # Remove a gem specification named +full_name+.
 
   def remove_spec(full_name)
-    @gems.delete(full_name)
+    @gems.delete full_name
   end
 
   ##
@@ -279,7 +295,7 @@ class Gem::SourceIndex
 
     # TODO - Remove support and warning for legacy arguments after 2008/11
     unless Gem::Dependency === gem_pattern
-      warn "#{Gem.location_of_caller.join ':'}:Warning: Gem::SourceIndex#search support for #{gem_pattern.class} patterns is deprecated"
+      warn "#{Gem.location_of_caller.join ':'}:Warning: Gem::SourceIndex#search support for #{gem_pattern.class} patterns is deprecated, use #find_name"
     end
 
     case gem_pattern
@@ -304,7 +320,7 @@ class Gem::SourceIndex
       version_requirement = Gem::Requirement.create version_requirement
     end
 
-    specs = @gems.values.select do |spec|
+    specs = all_gems.values.select do |spec|
       spec.name =~ gem_pattern and
         version_requirement.satisfied_by? spec.version
     end

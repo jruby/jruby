@@ -45,6 +45,11 @@ class Gem::Commands::QueryCommand < Gem::Command
       options[:all] = value
     end
 
+    add_option(      '--prerelease',
+               'Display prerelease versions') do |value, options|
+      options[:prerelease] = value
+    end
+
     add_local_remote_options
   end
 
@@ -56,6 +61,7 @@ class Gem::Commands::QueryCommand < Gem::Command
     exit_code = 0
 
     name = options[:name]
+    prerelease = options[:prerelease]
 
     if options[:installed] then
       if name.source.empty? then
@@ -74,6 +80,10 @@ class Gem::Commands::QueryCommand < Gem::Command
     dep = Gem::Dependency.new name, Gem::Requirement.default
 
     if local? then
+      if prerelease and not both? then
+        alert_warning "prereleases are always shown locally"
+      end
+
       if ui.outs.tty? or both? then
         say
         say "*** LOCAL GEMS ***"
@@ -100,8 +110,13 @@ class Gem::Commands::QueryCommand < Gem::Command
 
       begin
         fetcher = Gem::SpecFetcher.fetcher
-        spec_tuples = fetcher.find_matching dep, all, false
+        spec_tuples = fetcher.find_matching dep, all, false, prerelease
       rescue Gem::RemoteFetcher::FetchError => e
+        if prerelease then
+          raise Gem::OperationNotSupportedError,
+                "Prereleases not supported on legacy repositories"
+        end
+
         raise unless fetcher.warn_legacy e do
           require 'rubygems/source_info_cache'
 
