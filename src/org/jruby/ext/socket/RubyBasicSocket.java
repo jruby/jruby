@@ -43,6 +43,7 @@ import java.net.ServerSocket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
+import org.jruby.CompatVersion;
 import org.jruby.util.io.OpenFile;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -76,6 +77,9 @@ public class RubyBasicSocket extends RubyIO {
 
         rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
     }
+
+    // By default we always reverse lookup unless do_not_reverse_lookup set.
+    private boolean doNotReverseLookup = false;
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -599,6 +603,21 @@ public class RubyBasicSocket extends RubyIO {
             throw context.getRuntime().newNotImplementedError("Shutdown currently only works with how=2");
         }
         return close();
+    }
+
+    protected boolean doNotReverseLookup(ThreadContext context) {
+        return context.getRuntime().isDoNotReverseLookupEnabled() || doNotReverseLookup;
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
+        return context.getRuntime().newBoolean(doNotReverseLookup);
+    }
+
+    @JRubyMethod(name = "do_not_reverse_lookup=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject set_do_not_reverse_lookup19(ThreadContext context, IRubyObject flag) {
+        doNotReverseLookup = flag.isTrue();
+        return do_not_reverse_lookup19(context);
     }
 
     @JRubyMethod(meta = true)

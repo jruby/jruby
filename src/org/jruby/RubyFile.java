@@ -391,7 +391,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (openFile == null) {
@@ -408,6 +408,63 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         return openFile(args);
     }
+
+    @JRubyMethod(name = "initialize", required = 1, optional = 2, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (openFile == null) {
+            throw context.getRuntime().newRuntimeError("reinitializing File");
+        }
+
+        if (args.length > 0 && args.length <= 3) {
+            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], context.getRuntime().getFixnum(), "to_int");
+            if (!fd.isNil()) {
+                args[0] = fd;
+                if (args.length == 1) {
+                    return super.initialize19(context, args[0], block);
+                } else if (args.length == 2) {
+                    return super.initialize19(context, args[0], args[1], block);
+                }
+                return super.initialize19(context, args[0], args[1], args[2], block);
+            }
+        }
+
+        return openFile19(context, args);
+    }
+
+    private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
+        IRubyObject filename = args[0].convertToString();
+        context.getRuntime().checkSafeString(filename);
+
+        path = filename.convertToString().getUnicodeValue();
+
+        String modeString = "r";
+        ModeFlags modes = null;
+        int perm = 0;
+
+        try {
+            if (args.length > 1) {
+                modes = parseModes19(context, args[1]);
+            } else {
+                modes = parseModes19(context, RubyString.newString(context.getRuntime(), modeString));
+            }
+            if (args.length > 2 && !args[2].isNil()) {
+                if (args[2] instanceof RubyHash) {
+                    modes = parseOptions(context, args[2], modes);
+                } else {
+                    perm = getFilePermissions(args);
+                }
+            }
+            if (perm > 0) {
+                sysopenInternal(path, modes, perm);
+            } else {
+                openInternal(path, modeString, modes);
+            }
+        } catch (InvalidValueException ex) {
+            throw context.getRuntime().newErrnoEINVALError();
+        } finally {}
+
+        return this;
+    }
     
     private IRubyObject openFile(IRubyObject args[]) {
         IRubyObject filename = args[0].convertToString();
@@ -421,25 +478,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         try {
             if ((args.length > 1 && args[1] instanceof RubyFixnum) || (args.length > 2 && !args[2].isNil())) {
-                if (args[1] instanceof RubyFixnum) {
-                    modes = new ModeFlags(RubyNumeric.num2int(args[1]));
-                } else {
-                    modeString = args[1].convertToString().toString();
-                    modes = getIOModes(getRuntime(), modeString);
-                }
-                if (args.length > 2 && !args[2].isNil()) {
-                    perm = RubyNumeric.num2int(args[2]);
-                } else {
-                    perm = 438; // 0666
-                }
+                modes = parseModes(args[1]);
+                perm = getFilePermissions(args);
 
                 sysopenInternal(path, modes, perm);
             } else {
                 modeString = "r";
-                if (args.length > 1) {
-                    if (!args[1].isNil()) {
-                        modeString = args[1].convertToString().toString();
-                    }
+                if (args.length > 1 && !args[1].isNil()) {
+                    modeString = args[1].convertToString().toString();
                 }
                 
                 openInternal(path, modeString);
@@ -449,6 +495,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } finally {}
         
         return this;
+    }
+
+    private int getFilePermissions(IRubyObject[] args) {
+        return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
     protected void sysopenInternal(String path, ModeFlags modes, int perm) throws InvalidValueException {
@@ -463,6 +513,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMainStream(fdopen(descriptor, modes));
         
         registerDescriptor(descriptor);
+    }
+
+    protected void openInternal(String path, String modeString, ModeFlags modes) throws InvalidValueException {
+        openFile = new OpenFile();
+
+        openFile.setMode(modes.getOpenFileFlags());
+        openFile.setPath(path);
+        openFile.setMainStream(fopen(path, modeString));
+
+        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     protected void openInternal(String path, String modeString) throws InvalidValueException {

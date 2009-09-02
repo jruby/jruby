@@ -556,7 +556,7 @@ public class RubyObject extends RubyBasicObject {
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return super.op_eqq(context, other);
+        return context.getRuntime().newBoolean(equalInternal(context, this, other));
     }
 
     /**
