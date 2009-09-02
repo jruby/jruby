@@ -1,0 +1,14 @@
+fails(hangs):Fiber#transfer can be invoked from the root Fiber
+fails(hangs):Fiber#transfer passes control to the beginning of the block on first invocation
+fails(hangs):Fiber#transfer returns the last value encountered on first invocation
+fails(hangs):Fiber#transfer resume from the last call to Fiber.yield on subsequent invocations
+fails(hangs):Fiber#transfer accepts any number of arguments
+fails(hangs):Fiber#transfer resumes from the last call to Fiber.yield on subsequent invocations
+fails(hangs):Fiber#transfer raises a FiberError if the Fiber is dead
+fails(hangs):Fiber#transfer raises a LocalJumpError if the block includes a return statement
+fails(hangs):Fiber#transfer raises a LocalJumpError if the block includes a break statement
+fails(hangs):Fiber#transfer runs until the end of the block or Fiber.yield on first invocation
+fails(hangs):Fiber#transfer sets the block parameters to its arguments on the first invocation
+fails(hangs):Fiber#transfer transfers control from one Fiber to another when called from a Fiber
+fails(hangs):Fiber#transfer can be invoked from the same Fiber it transfers control to
+fails(hangs):Fiber#transfer can transfer control to a Fiber that has transfered to another Fiber

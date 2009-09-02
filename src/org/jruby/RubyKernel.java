@@ -1143,15 +1143,14 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "define_singleton_method", required = 1, optional = 1, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
-    public static RubyProc define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    public static IRubyObject define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) throw context.getRuntime().newArgumentError(0, 1);
 
         RubyClass singleton_class = recv.getSingletonClass();
-        RubyProc proc;
-        proc = args.length > 1 ?
-            (RubyProc) singleton_class.define_method(context, args[0], args[1], block) :
-            (RubyProc) singleton_class.define_method(context, args[0], block);
-        return proc;
+        IRubyObject obj = args.length > 1 ?
+            singleton_class.define_method(context, args[0], args[1], block) :
+            singleton_class.define_method(context, args[0], block);
+        return obj;
     }
 
     @JRubyMethod(name = {"proc", "lambda"}, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)

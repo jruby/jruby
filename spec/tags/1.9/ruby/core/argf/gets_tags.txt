@@ -1,0 +1,3 @@
+fails(hangs):ARGF.gets modifies the files when in place edit mode is on
+fails(hangs):ARGF.gets modifies and backups two files when in place edit mode is on
+

@@ -55,7 +55,8 @@ class MSpecScript
   ]
 
   # An ordered list of the directories containing specs to run
-  set :files, get(:language) + get(:core) + get(:library)
+  # FIXME: add 1.9 library back at a later date
+  set :files, get(:language) + get(:core) #+ get(:library)
 
   # This set of files is run by mspec ci
   set :ci_files, get(:files)
@@ -81,10 +82,10 @@ class MSpecScript
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
-                        [%r(language/),     'tags/1.9/language/'],
-                        [%r(core/),         'tags/1.9/core/'],
-                        [%r(command_line/), 'tags/1.9/command_line/'],
-                        [%r(library/),      'tags/1.9/library/'],
+                        [%r(ruby/language/),     'tags/1.9/ruby/language/'],
+                        [%r(ruby/core/),         'tags/1.9/ruby/core/'],
+                        [%r(ruby/command_line/), 'tags/1.9/ruby/command_line/'],
+                        [%r(ruby/library/),      'tags/1.9/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 end

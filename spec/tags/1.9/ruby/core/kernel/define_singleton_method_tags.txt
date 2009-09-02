@@ -1,0 +1,1 @@
+fails:Kernel#define_singleton_method defines a new singleton method for objects

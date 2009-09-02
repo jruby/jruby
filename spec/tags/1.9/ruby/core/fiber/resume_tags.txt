@@ -1,0 +1,12 @@
+fails(hangs):Fiber#resume can be invoked from the root Fiber
+fails(hangs):Fiber#resume passes control to the beginning of the block on first invocation
+fails(hangs):Fiber#resume returns the last value encountered on first invocation
+fails(hangs):Fiber#resume resume from the last call to Fiber.yield on subsequent invocations
+fails(hangs):Fiber#resume accepts any number of arguments
+fails(hangs):Fiber#resume resumes from the last call to Fiber.yield on subsequent invocations
+fails(hangs):Fiber#resume raises a FiberError if the Fiber is dead
+fails(hangs):Fiber#resume raises a LocalJumpError if the block includes a return statement
+fails(hangs):Fiber#resume raises a LocalJumpError if the block includes a break statement
+fails(hangs):Fiber#resume runs until the end of the block or Fiber.yield on first invocation
+fails(hangs):Fiber#resume sets the block parameters to its arguments on the first invocation
+fails(hangs):Fiber#resume raises a FiberError if the Fiber has transfered control to another Fiber
