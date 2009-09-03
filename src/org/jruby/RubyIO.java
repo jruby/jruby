@@ -3492,15 +3492,16 @@ public class RubyIO extends RubyObject {
 
         IRubyObject internalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("internal_encoding"));
         IRubyObject externalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("external_encoding"));
+        RubyString dash = runtime.newString("-");
         if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
-            if (internalEncodingOption.asJavaString().equals("-")) {
+            if (dash.eql(internalEncodingOption)) {
                 internalEncodingOption = RubyEncoding.getDefaultInternal(runtime);
             }
             setInternalEncoding(context, internalEncodingOption);
         }
 
         if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
-            if (externalEncodingOption.asJavaString().equals("-")) {
+            if (dash.eql(externalEncodingOption)) {
                 externalEncodingOption = RubyEncoding.getDefaultExternal(runtime);
             }
             setExternalEncoding(context, externalEncodingOption);

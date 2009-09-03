@@ -319,10 +319,10 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
-        Encoding encoding;
+        Encoding encoding = null;
         if (arg instanceof RubyEncoding) {
             encoding = ((RubyEncoding) arg).getEncoding();
-        } else {
+        } else if (!arg.isNil()) {
             encoding = arg.convertToString().toEncoding(runtime);
         }
         return encoding;
