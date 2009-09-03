@@ -27,10 +27,14 @@ class Object
       # FIXME: When I changed this user const_set instead of eval below Comparator got lost
       # which means I am missing something.
       constant = include_class.java_class.to_s.split(".").last
+      
+      # JRUBY-3453: Make import not complain if Java already has already imported the specific Java class
+      # If no constant is defined, or the constant is not already set to the include_class, assign it
+      eval_str = "if !defined?(#{constant}) || #{constant} != include_class; #{constant} = include_class; end"
       if (Module === self)
-        return class_eval("#{constant} = include_class", __FILE__, __LINE__)
+        return class_eval(eval_str, __FILE__, __LINE__)
       else
-        return eval("#{constant} = include_class", binding, __FILE__, __LINE__)
+        return eval(eval_str, binding, __FILE__, __LINE__)
       end
     end
     
