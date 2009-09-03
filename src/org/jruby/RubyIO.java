@@ -1019,8 +1019,16 @@ public class RubyIO extends RubyObject {
         externalEncoding = getEncodingCommon(context, encoding);
     }
 
+
     private void setInternalEncoding(ThreadContext context, IRubyObject encoding) {
-        internalEncoding = getEncodingCommon(context, encoding);
+        IRubyObject internalEncodingOption = getEncodingCommon(context, encoding);
+
+        if (internalEncodingOption.toString().equals(external_encoding(context).toString())) {
+            context.getRuntime().getWarnings().warn("Ignoring internal encoding " + encoding
+                    + ": it is identical to external encoding " + external_encoding(context));
+        } else {
+            internalEncoding = internalEncodingOption;
+        }
     }
 
     private IRubyObject getEncodingCommon(ThreadContext context, IRubyObject encoding) {
@@ -3493,18 +3501,18 @@ public class RubyIO extends RubyObject {
         IRubyObject internalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("internal_encoding"));
         IRubyObject externalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("external_encoding"));
         RubyString dash = runtime.newString("-");
-        if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
-            if (dash.eql(internalEncodingOption)) {
-                internalEncodingOption = RubyEncoding.getDefaultInternal(runtime);
-            }
-            setInternalEncoding(context, internalEncodingOption);
-        }
-
         if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
             if (dash.eql(externalEncodingOption)) {
                 externalEncodingOption = RubyEncoding.getDefaultExternal(runtime);
             }
             setExternalEncoding(context, externalEncodingOption);
+        }
+
+        if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
+            if (dash.eql(internalEncodingOption)) {
+                internalEncodingOption = RubyEncoding.getDefaultInternal(runtime);
+            }
+            setInternalEncoding(context, internalEncodingOption);
         }
 
         IRubyObject encoding = rubyOptions.fastARef(runtime.newSymbol("encoding"));

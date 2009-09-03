@@ -47,6 +47,12 @@ class TestIO19 < Test::Unit::TestCase
     assert_equal 'ISO-8859-1', io.internal_encoding.to_s
   end
 
+  def test_io_should_ignore_internal_encoding
+    io = IO.new(2, 'w:UTF-8:UTF-8')
+    assert_equal 'UTF-8', io.external_encoding.to_s
+    assert_equal nil, io.internal_encoding
+  end
+
   def test_binmode?
     io = IO.new(2, 'wb')
     assert_equal true, io.binmode?
