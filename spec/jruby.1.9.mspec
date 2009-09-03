@@ -6,51 +6,51 @@
 
 require 'rbconfig'
 
-DIR = File.join(File.dirname(__FILE__), "ruby")
+DIR = File.dirname(__FILE__)
 
 class MSpecScript
   # Language features specs
-  set :language, [ DIR + '/language' ]
+  set :language, [ DIR + '/ruby/language' ]
 
   # Core library specs
   set :core, [
-    DIR + '/core',
+    DIR + '/ruby/core',
 
-    '^' + DIR + '/core/continuation'
+    '^' + DIR + '/ruby/core/continuation'
   ]
 
   # Standard library specs
   set :library, [
-    DIR + '/library',
+    DIR + '/ruby/library',
 
     # obsolete libraries
-    '^' + DIR + '/library/cgi-lib',
-    '^' + DIR + '/library/date2',
-    '^' + DIR + '/library/enumerator',
-    '^' + DIR + '/library/eregex',
-    '^' + DIR + '/library/finalize',
-    '^' + DIR + '/library/ftools',
-    '^' + DIR + '/library/generator',
-    '^' + DIR + '/library/getopts',
-    '^' + DIR + '/library/importenv',
-    '^' + DIR + '/library/jcode',
-    '^' + DIR + '/library/mailread',
-    '^' + DIR + '/library/parsearg',
-    '^' + DIR + '/library/parsedate',
-    '^' + DIR + '/library/ping',
-    '^' + DIR + '/library/readbytes',
-    '^' + DIR + '/library/rubyunit',
-    '^' + DIR + '/library/runit',
-    '^' + DIR + '/library/soap',
-    '^' + DIR + '/library/wsdl',
-    '^' + DIR + '/library/xsd',
-    '^' + DIR + '/library/Win32API',
+    '^' + DIR + '/ruby/library/cgi-lib',
+    '^' + DIR + '/ruby/library/date2',
+    '^' + DIR + '/ruby/library/enumerator',
+    '^' + DIR + '/ruby/library/eregex',
+    '^' + DIR + '/ruby/library/finalize',
+    '^' + DIR + '/ruby/library/ftools',
+    '^' + DIR + '/ruby/library/generator',
+    '^' + DIR + '/ruby/library/getopts',
+    '^' + DIR + '/ruby/library/importenv',
+    '^' + DIR + '/ruby/library/jcode',
+    '^' + DIR + '/ruby/library/mailread',
+    '^' + DIR + '/ruby/library/parsearg',
+    '^' + DIR + '/ruby/library/parsedate',
+    '^' + DIR + '/ruby/library/ping',
+    '^' + DIR + '/ruby/library/readbytes',
+    '^' + DIR + '/ruby/library/rubyunit',
+    '^' + DIR + '/ruby/library/runit',
+    '^' + DIR + '/ruby/library/soap',
+    '^' + DIR + '/ruby/library/wsdl',
+    '^' + DIR + '/ruby/library/xsd',
+    '^' + DIR + '/ruby/library/Win32API',
 
-    '^' + DIR + '/library/test/unit/collector',
-    '^' + DIR + '/library/test/unit/ui',
-    '^' + DIR + '/library/test/unit/util',
+    '^' + DIR + '/ruby/library/test/unit/collector',
+    '^' + DIR + '/ruby/library/test/unit/ui',
+    '^' + DIR + '/ruby/library/test/unit/util',
 
-    '^' + DIR + '/library/dl',  # reimplemented and API changed
+    '^' + DIR + '/ruby/library/dl',  # reimplemented and API changed
   ]
 
   # An ordered list of the directories containing specs to run
@@ -61,7 +61,7 @@ class MSpecScript
   set :ci_files, get(:files)
 
   # Optional library specs
-  set :ffi, DIR + '/optional/ffi'
+  set :ffi, DIR + '/ruby/optional/ffi'
 
   # A list of _all_ optional library specs
   set :optional, [get(:ffi)]
