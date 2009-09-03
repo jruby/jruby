@@ -311,7 +311,7 @@ public class RubyMath {
         double result;
 
         if (value < 0) {
-            result = Math.pow(-value, 1/3.0);
+            result = -Math.pow(-value, 1/3.0);
         } else{
             result = Math.pow(value, 1/3.0);
         }
@@ -586,64 +586,62 @@ public class RubyMath {
      * Log Gamma function for real number x.
      * @param recv Math module
      * @param x a real number
-     * @return ln(&Gamma;(x)) for real number x
+     * @return 2-element array [ln(&Gamma;(x)), sgn] for real number x,
+     *  where sgn is the sign of &Gamma;(x) when exponentiated
      * @see #gamma(org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.builtin.IRubyObject)
      */
 
     @JRubyMethod(name = "lgamma", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyArray lgamma(IRubyObject recv, IRubyObject x) {
-        Ruby runtime = recv.getRuntime();
-        double value = RubyKernel.new_float(recv, x).getDoubleValue();
-        double lgamma_value = nemes_lgamma(value);
-
-        // somewhat awkward, but to be consistent with MRI,
-        // which yields Math.lgamma(x)=[Infinity,1] for a negative odd integer x
-        int sign = (lgamma_value > 0 || Double.isInfinite(lgamma_value)) ? 1 :
-            lgamma_value < 0 ? -1 : 0;
-
-        domainCheck(recv, lgamma_value, "lgamma");
+        Ruby runtime      = recv.getRuntime();
+        double value      = RubyKernel.new_float(recv, x).getDoubleValue();
+        NemesLogGamma l   = new NemesLogGamma(value);
         IRubyObject[] ary = new IRubyObject[2];
-        ary[0] = RubyFloat.newFloat(runtime, lgamma_value);
-        ary[1] = RubyInteger.int2fix(runtime, sign);
+        ary[0] = RubyFloat.newFloat(runtime, l.value);
+        ary[1] = RubyInteger.int2fix(runtime, (int) l.sign);
 
         return RubyArray.newArray(recv.getRuntime(), ary);
     }
 
     private static double nemes_gamma(double x) {
         double int_part = (int) x;
-        double frac_part = x - int_part;
 
-        if (frac_part == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
+        if ((x - int_part) == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
             return FACTORIAL[(int) int_part - 1];
         }
-
-        return Math.exp(nemes_lgamma(x));
-
+        NemesLogGamma l = new NemesLogGamma(x);
+        return l.sign * Math.exp(l.value);
     }
 
-    private static double nemes_lgamma(double x) {
-        double int_part = (int) x;
-        if (x < 10) {
-            /* to get a good approximation,
-             * use the natural log form of known identity
-             * G(x)=G(x+n)/[x*(x+1)*...*(x+n-1)]
-             */
-            double rising_factorial = 1;
-            for (int i = 0; i < -int_part + 10; i++) {
-                rising_factorial *= (x + i);
+    /**
+     * Inner class to help with &Gamma; functions
+     */
+    private static class NemesLogGamma {
+        double value;
+        double sign;
+
+        private NemesLogGamma(double x) {
+            double int_part = (int) x;
+            sign = (int_part % 2 == 0 && (x - int_part) != 0.0 && (x < 0)) ? -1 : 1;
+            if ((x - int_part) == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
+                value = Math.log(FACTORIAL[(int) int_part - 1]);
             }
-            return nemes_lgamma(x - int_part + 10) - Math.log(rising_factorial);
-        }
+            else if (x < 10) {
+                double rising_factorial = 1;
+                for (int i = 0; i < (int) Math.abs(x) - int_part + 10; i++) {
+                    rising_factorial *= (x + i);
+                }
+                NemesLogGamma l = new NemesLogGamma(x + (int) Math.abs(x) - int_part + 10);
+                value = l.value - Math.log(Math.abs(rising_factorial));
+            } else {
+                double temp = 0.0;
+                for (int i = 0; i < NEMES_GAMMA_COEFF.length; i++) {
+                    temp += NEMES_GAMMA_COEFF[i] * 1.0 / Math.pow(x, i);
+                }
 
-        double temp = 0.0;
-        for (int i = 0; i < NEMES_GAMMA_COEFF.length; i++) {
-            temp += NEMES_GAMMA_COEFF[i] * 1.0 / Math.pow(x, i);
+                value = x * (Math.log(x) - 1 + Math.log(temp)) +
+                        (Math.log(2) + Math.log(Math.PI) - Math.log(x)) / 2.0;
+            }
         }
-
-        /* the natural log form of the equation (3.1)
-         * in Nemes's paper mentioned above.
-         */
-        return x*( Math.log(x) - 1 + Math.log(temp) ) +
-            ( Math.log(2) + Math.log(Math.PI) - Math.log(x) )/2.0;
     }
 }
