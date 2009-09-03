@@ -437,14 +437,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         path = filename.convertToString().getUnicodeValue();
 
-        String modeString = "r";
-        ModeFlags modes = null;
+        String modeString;
+        ModeFlags modes = new ModeFlags();
         int perm = 0;
 
         try {
             if (args.length > 1) {
+                modeString = args[1].convertToString().toString();
                 modes = parseModes19(context, args[1]);
             } else {
+                modeString = "r";
                 modes = parseModes19(context, RubyString.newString(context.getRuntime(), modeString));
             }
             if (args.length > 2 && !args[2].isNil()) {
