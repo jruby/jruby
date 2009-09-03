@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.nio.charset.Charset;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -283,7 +284,17 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static IRubyObject getDefaultExternal(Ruby runtime) {
-        return convertEncodingToRubyEncoding(runtime, runtime.getDefaultExternalEncoding());
+        IRubyObject defaultExternal = convertEncodingToRubyEncoding(runtime, runtime.getDefaultExternalEncoding());
+
+        if (defaultExternal.isNil()) {
+            ByteList encodingName = ByteList.create(Charset.defaultCharset().name());
+            Encoding encoding = runtime.getEncodingService().loadEncoding(encodingName);
+
+            runtime.setDefaultExternalEncoding(encoding);
+            defaultExternal = convertEncodingToRubyEncoding(runtime, encoding);
+        }
+
+        return defaultExternal;
     }
 
     @JRubyMethod(name = "default_external=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)

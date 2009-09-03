@@ -23,8 +23,8 @@ class TestIO19 < Test::Unit::TestCase
   end
 
   def test_internal_encoding_as_option
-    io = IO.new(2, 'w', {:internal_encoding => 'UTF-8'})
-    assert_equal 'UTF-8', io.internal_encoding.to_s
+    io = IO.new(2, 'w', {:internal_encoding => 'iso-8859-1'})
+    assert_equal 'ISO-8859-1', io.internal_encoding.to_s
   end
 
   def test_encoding_as_option
@@ -37,8 +37,8 @@ class TestIO19 < Test::Unit::TestCase
     io = IO.new(2, 'w', {:external_encoding => 'UTF-8', :encoding => 'iso-8859-1:iso-8859-1'})
     assert_equal 'UTF-8', io.external_encoding.to_s
 
-    io = IO.new(2, 'w', {:internal_encoding => 'UTF-8', :encoding => 'iso-8859-1:iso-8859-1'})
-    assert_equal 'UTF-8', io.internal_encoding.to_s
+    io = IO.new(2, 'w', {:internal_encoding => 'iso-8859-1', :encoding => 'iso-8859-1:iso-8859-1'})
+    assert_equal 'ISO-8859-1', io.internal_encoding.to_s
   end
 
   def test_mode_as_option
@@ -62,5 +62,10 @@ class TestIO19 < Test::Unit::TestCase
     io = File.new(__FILE__, 'r', :encoding => 'UTF-8:iso-8859-1')
     assert_equal 'UTF-8', io.external_encoding.to_s
     assert_equal 'ISO-8859-1', io.internal_encoding.to_s
+  end
+
+  def test_new_file_with_default_external_encoding
+    io = File.new(__FILE__)
+    assert_equal 'UTF-8', io.external_encoding.to_s
   end
 end
