@@ -204,7 +204,7 @@ public class Main {
             config.processArguments(args);
         }
         Ruby runtime     = Ruby.newInstance(config);
-        
+
         // set thread context JRuby classloader here, for the main thread
         try {
             Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());

@@ -977,17 +977,17 @@ public class RubyClass extends RubyModule {
      * Stand up a real Java class for the backing store of this object
      */
     public synchronized void reify() {
-        Class parent = RubyObject.class;
+        Class reifiedParent = RubyObject.class;
         String javaName = "ruby." + getBaseName();
         String javaPath = "ruby/" + getBaseName();
         JRubyClassLoader parentCL = runtime.getJRubyClassLoader();
 
         if (superClass.reifiedClass != null) {
-            parent = superClass.reifiedClass;
+            reifiedParent = superClass.reifiedClass;
         }
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(parent), null);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent), null);
 
         if (classAnnotations != null && classAnnotations.size() != 0) {
             for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
@@ -1034,7 +1034,7 @@ public class RubyClass extends RubyModule {
         m.aload(0);
         m.getstatic(javaPath, "ruby", ci(Ruby.class));
         m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-        m.invokespecial(p(parent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
         m.voidreturn();
         m.end();
 

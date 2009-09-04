@@ -171,6 +171,7 @@ public final class Ruby {
     public static Ruby newInstance(RubyInstanceConfig config) {
         Ruby ruby = new Ruby(config);
         ruby.init();
+        setGlobalRuntimeFirstTimeOnly(ruby);
         return ruby;
     }
 
@@ -195,15 +196,17 @@ public final class Ruby {
 
     private static Ruby globalRuntime;
 
-    public static synchronized Ruby getGlobalRuntime() {
+    private static synchronized void setGlobalRuntimeFirstTimeOnly(Ruby runtime) {
         if (globalRuntime == null) {
-            initGlobalRuntime();
+            globalRuntime = runtime;
         }
-        return globalRuntime;
     }
 
-    private static void initGlobalRuntime() {
-        globalRuntime = newInstance();
+    public static synchronized Ruby getGlobalRuntime() {
+        if (globalRuntime == null) {
+            newInstance();
+        }
+        return globalRuntime;
     }
     
     /**
