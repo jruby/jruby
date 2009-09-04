@@ -59,6 +59,12 @@ public class RubyMath {
             throw recv.getRuntime().newErrnoEDOMError(msg);
         }
     }
+
+    private static void zeroInLogCheck(IRubyObject recv, double value) {
+        if (value == 0.0) {
+            throw recv.getRuntime().newErrnoEDOMError("log");
+        }
+    }
     
     private static double chebylevSerie(double x, double coef[]) {
         double  b0, b1, b2, twox;
@@ -226,9 +232,23 @@ public class RubyMath {
         .6698674738165069539715526882986e-17,
         .4497954546494931083083327624533e-18
     };    
-    
-    @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE)
+
+    @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat atanh(IRubyObject recv, IRubyObject x) {
+        return atanh_common(recv, x);
+    }
+
+    @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat atanh_19(IRubyObject recv, IRubyObject x) {
+        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
+        double  y = Math.abs(value);
+        if (y==1.0) {
+            throw recv.getRuntime().newErrnoEDOMError("atanh");
+        }
+        return atanh_common(recv, x);
+    }
+
+    private static RubyFloat atanh_common(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double  y = Math.abs(value);
         double  result;
@@ -257,37 +277,60 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),Math.exp(value));
     }
 
+    private static RubyFloat log_common(IRubyObject recv, IRubyObject x, double base) {
+        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
+        double result = Math.log(value)/Math.log(base);
+        domainCheck(recv, result, "log");
+        return RubyFloat.newFloat(recv.getRuntime(),result);
+    }
+
     /** Returns the natural logarithm of x.
      * 
      */
-    @JRubyMethod(name = "log", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "log", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log(IRubyObject recv, IRubyObject x) {
-        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
-        double result = Math.log(value);
-        domainCheck(recv, result, "log");
-        return RubyFloat.newFloat(recv.getRuntime(),result);
+        return log_common(recv, x, Math.E);
+    }
+
+    @JRubyMethod(name = "log", required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat log_19(IRubyObject recv, IRubyObject[] args) {
+        double value = ((RubyFloat)RubyKernel.new_float(recv,args[0])).getDoubleValue();
+        double base = Math.E;
+        if (args.length == 2) {
+            base = ((RubyFloat)RubyKernel.new_float(recv,args[1])).getDoubleValue();
+        }
+        zeroInLogCheck(recv, value);
+        return log_common(recv, args[0], base);
     }
 
     /** Returns the base 10 logarithm of x.
      * 
      */
-    @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log10(IRubyObject recv, IRubyObject x) {
+        return log_common(recv, x, 10);
+    }
+
+    @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat log10_19(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
-        double result =  Math.log(value) / Math.log(10);
-        domainCheck(recv, result, "log10");
-        return RubyFloat.newFloat(recv.getRuntime(),result);
+        zeroInLogCheck(recv, value);
+        return log_common(recv, x, 10);
     }
 
     /** Returns the base 2 logarithm of x.
      *
      */
-    @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log2(IRubyObject recv, IRubyObject x) {
-        double value = ((RubyFloat)RubyKernel.new_float(recv, x)).getDoubleValue();
-        double result = Math.log(value)/Math.log(2);
-        domainCheck(recv, result, "log2");
-        return RubyFloat.newFloat(recv.getRuntime(), result);
+        return log_common(recv, x, 2);
+    }
+
+    @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat log2_19(IRubyObject recv, IRubyObject x) {
+        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
+        zeroInLogCheck(recv, value);
+        return log_common(recv, x, 2);
     }
 
     @JRubyMethod(name = "sqrt", required = 1, module = true, visibility = Visibility.PRIVATE)
