@@ -432,10 +432,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
-        IRubyObject filename = args[0].convertToString();
+        RubyString filename = get_path(context, args[0]);
         context.getRuntime().checkSafeString(filename);
 
-        path = filename.convertToString().getUnicodeValue();
+        path = filename.getUnicodeValue();
 
         String modeString;
         ModeFlags modes = new ModeFlags();
@@ -469,10 +469,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
     
     private IRubyObject openFile(IRubyObject args[]) {
-        IRubyObject filename = args[0].convertToString();
+        RubyString filename = get_path(getRuntime().getCurrentContext(), args[0]);
         getRuntime().checkSafeString(filename);
         
-        path = filename.convertToString().getUnicodeValue();
+        path = filename.getUnicodeValue();
         
         String modeString;
         ModeFlags modes;
@@ -694,20 +694,32 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getLastModified(context.getRuntime(), path);
     }
 
-    @JRubyMethod(meta = true, frame = true)
+    @JRubyMethod(meta = true, frame = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject path(ThreadContext context, IRubyObject self, IRubyObject str) {
-        if (str instanceof RubyString) {
-            return (RubyString)str;
-        } else {
-            if (str.respondsTo("to_path")) {
-                return str.callMethod(context, "to_path");
-            } else {
-                return str.convertToString();
-            }
-        }
+        return get_path(context, str);
     }
 
-    @JRubyMethod
+    /**
+     * similar in spirit to rb_get_path from 1.9 source
+     * @param context
+     * @param obj
+     * @return
+     */
+    public static RubyString get_path(ThreadContext context, IRubyObject obj) {
+        if (context.getRuntime().is1_9()) {
+            IRubyObject str = obj.checkStringType();
+            if (!str.isNil()) {
+                return (RubyString) str;
+            }
+            if (obj.respondsTo("to_path")) {
+                obj = obj.callMethod(context, "to_path");
+            }
+        }
+
+        return obj.convertToString();
+    }
+
+    @JRubyMethod(name = {"path", "to_path"})
     public RubyString path(ThreadContext context) {
         return context.getRuntime().newString(path);
     }
@@ -773,7 +785,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        String name = RubyString.stringValue(args[0]).getUnicodeValue();
+        String name = get_path(context,args[0]).getUnicodeValue();
 
         // MRI-compatible basename handling for windows drive letter paths
         if (Platform.IS_WINDOWS) {
@@ -847,13 +859,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
         for (int i = 1; i < args.length; i++) {
-            IRubyObject filename = args[i];
+            RubyString filename = get_path(context, args[i]);
             
-            if (!RubyFileTest.exist_p(filename, filename.convertToString()).isTrue()) {
+            if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            boolean result = 0 == runtime.getPosix().chmod(filename.toString(), (int)mode.getLongValue());
+            boolean result = 0 == runtime.getPosix().chmod(filename.getUnicodeValue(), (int)mode.getLongValue());
             if (result) {
                 count++;
             }
@@ -877,14 +889,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             group = RubyNumeric.num2int(args[1]);
         }
         for (int i = 2; i < args.length; i++) {
-            IRubyObject filename = args[i];
+            RubyString filename = get_path(context, args[i]);
 
-            RubyString fileString = filename.convertToString();
-            if (!RubyFileTest.exist_p(filename, fileString).isTrue()) {
+            if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            boolean result = 0 == runtime.getPosix().chown(fileString.getUnicodeValue(), owner, group);
+            boolean result = 0 == runtime.getPosix().chown(filename.getUnicodeValue(), owner, group);
             if (result) {
                 count++;
             }
@@ -895,7 +906,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyString filename = RubyString.stringValue(arg);
+        RubyString filename = get_path(context, arg);
         
         String jfilename = filename.getUnicodeValue();
         
@@ -997,25 +1008,58 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return expandPathInternal(context, recv, args, true);
+    }
+
+
+    /**
+     * ---------------------------------------------------- File::absolute_path
+     *      File.absolute_path(file_name [, dir_string] ) -> abs_file_name
+     *
+     *      From Ruby 1.9.1
+     * ------------------------------------------------------------------------
+     *      Converts a pathname to an absolute pathname. Relative paths are
+     *      referenced from the current working directory of the process unless
+     *      _dir_string_ is given, in which case it will be used as the
+     *      starting point. If the given pathname starts with a ``+~+'' it is
+     *      NOT expanded, it is treated as a normal directory name.
+     *
+     *         File.absolute_path("~oracle/bin")       #=> "<relative_path>/~oracle/bin"
+     *
+     * @param context
+     * @param recv
+     * @param args
+     * @return
+     */
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return expandPathInternal(context, recv, args, false);
+    }
+
+    private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean expandUser) {
         Ruby runtime = context.getRuntime();
-        
-        String relativePath = RubyString.stringValue(args[0]).getUnicodeValue();;
+
+        String relativePath = get_path(context, args[0]).getUnicodeValue();
 
         boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:");
 
         String cwd = null;
         
         // Handle ~user paths 
-        relativePath = expandUserPath(context, relativePath);
+        if (expandUser) {
+            relativePath = expandUserPath(context, relativePath);
+        }
         
         // If there's a second argument, it's the path to which the first 
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
             
-            String cwdArg = RubyString.stringValue(args[1]).getUnicodeValue();;
-            
+            cwd = get_path(context, args[1]).getUnicodeValue();
+
             // Handle ~user paths.
-            cwd = expandUserPath(context, cwdArg);
+            if (expandUser) {
+                cwd = expandUserPath(context, cwd);
+            }
 
             cwd = adjustRootPathOnWindows(runtime, cwd, null);
 
@@ -1243,7 +1287,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int flags = args.length == 3 ? RubyNumeric.num2int(args[2]) : 0;
 
         ByteList pattern = args[0].convertToString().getByteList();
-        ByteList path = args[1].convertToString().getByteList();
+        ByteList path = get_path(context, args[1]).getByteList();
 
         if (org.jruby.util.Dir.fnmatch(pattern.bytes, pattern.begin, pattern.begin+pattern.realSize, 
                                        path.bytes, path.begin, path.begin+path.realSize, flags) == 0) {
@@ -1254,7 +1298,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(name = "ftype", required = 1, meta = true)
     public static IRubyObject ftype(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return context.getRuntime().newFileStat(filename.convertToString().getUnicodeValue(), true).ftype();
+        return context.getRuntime().newFileStat(get_path(context, filename).getUnicodeValue(), true).ftype();
     }
 
     private static String inspectJoin(ThreadContext context, IRubyObject recv, RubyArray parent, RubyArray array) {
@@ -1283,17 +1327,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             String element;
             if (args[i] instanceof RubyString) {
-                element = args[i].convertToString().getUnicodeValue(); //toString();
+                element = args[i].convertToString().getUnicodeValue();
             } else if (args[i] instanceof RubyArray) {
                 if (runtime.isInspecting(args[i])) {
-                    element = "[...]";
+                    throw runtime.newArgumentError("recursive array");
                 } else {
                     element = inspectJoin(context, recv, ary, ((RubyArray)args[i]));
                 }
             } else {
-                IRubyObject path = args[i];
-                if (runtime.is1_9()) path = path(context, recv, path);
-                element = path.convertToString().toString();
+                RubyString path = get_path(context, args[i]);
+                element = path.getUnicodeValue();
             }
             
             chomp(buffer);
@@ -1328,7 +1371,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        String f = filename.convertToString().getUnicodeValue();
+        String f = get_path(context, filename).getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1337,7 +1380,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        String f = filename.convertToString().getUnicodeValue();
+        String f = get_path(context, filename).getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1346,7 +1389,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        String f = filename.convertToString().getUnicodeValue();
+        String f = get_path(context, filename).getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1355,7 +1398,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        String f = filename.convertToString().getUnicodeValue();
+        String f = get_path(context, filename).getUnicodeValue();
         if(f.startsWith("file:") && f.indexOf('!') != -1) {
             f = f.substring(5, f.indexOf("!"));
         }
@@ -1369,13 +1412,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
         for (int i = 1; i < args.length; i++) {
-            IRubyObject filename = args[i];
+            RubyString filename = get_path(context, args[i]);
             
-            if (!RubyFileTest.exist_p(filename, filename.convertToString()).isTrue()) {
+            if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
                 throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
             }
             
-            boolean result = 0 == runtime.getPosix().lchmod(filename.toString(), (int)mode.getLongValue());
+            boolean result = 0 == runtime.getPosix().lchmod(filename.getUnicodeValue(), (int)mode.getLongValue());
             if (result) {
                 count++;
             }
@@ -1426,7 +1469,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return getLastModified(context.getRuntime(), filename.convertToString().getUnicodeValue());
+        return getLastModified(context.getRuntime(), get_path(context, filename).getUnicodeValue());
     }
     
     @JRubyMethod(required = 2, meta = true)
@@ -1470,7 +1513,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     @JRubyMethod(required = 1, meta = true)
     public static RubyArray split(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyString filename = RubyString.stringValue(arg);
+        RubyString filename = get_path(context, arg);
         
         return context.getRuntime().newArray(dirname(context, recv, filename),
                 basename(context, recv, new IRubyObject[] { filename }));
@@ -1479,8 +1522,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject symlink(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.getRuntime();
-        RubyString fromStr = RubyString.stringValue(from);
-        RubyString toStr = RubyString.stringValue(to);
+        RubyString fromStr = get_path(context, from);
+        RubyString toStr = get_path(context, to);
         String tovalue = toStr.getUnicodeValue();
         tovalue = JRubyFile.create(runtime.getCurrentDirectory(), tovalue).getAbsolutePath();
         try {
@@ -1583,7 +1626,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         for (int i = 2, j = args.length; i < j; i++) {
-            RubyString filename = RubyString.stringValue(args[i]);
+            RubyString filename = get_path(context, args[i]);
             runtime.checkSafeString(filename);
             
             JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.getUnicodeValue());
@@ -1603,7 +1646,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.getRuntime();
          
         for (int i = 0; i < args.length; i++) {
-            RubyString filename = RubyString.stringValue(args[i]);
+            RubyString filename = get_path(context, args[i]);
             runtime.checkSafeString(filename);
             JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
             

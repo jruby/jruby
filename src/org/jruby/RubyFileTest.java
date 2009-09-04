@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2004-2005, 2009 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
@@ -38,6 +38,8 @@ import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
+
+import static org.jruby.RubyFile.get_path;
 
 @JRubyModule(name = "FileTest")
 public class RubyFileTest {
@@ -100,19 +102,21 @@ public class RubyFileTest {
 
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
         if (Ruby.isSecurityRestricted()) {
-            return recv.getRuntime().getFalse();
+            return runtime.getFalse();
         }
 
         if (file_in_archive(filename) != null) {
-            return recv.getRuntime().getTrue();
+            return runtime.getTrue();
         }
 
-        return recv.getRuntime().newBoolean(file(filename).exists());
+        return runtime.newBoolean(file(filename).exists());
     }
 
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
         ZipEntry entry = file_in_archive(filename);
         if (entry != null) {
             return entry.isDirectory() ?
@@ -122,7 +126,7 @@ public class RubyFileTest {
 
         JRubyFile file = file(filename);
 
-        return filename.getRuntime().newBoolean(file.exists() && file.isFile());
+        return runtime.newBoolean(file.exists() && file.isFile());
     }
 
     @JRubyMethod(name = "grpowned?", required = 1, module = true)
@@ -162,6 +166,7 @@ public class RubyFileTest {
     // We use file test since it is faster than a stat; also euid == uid in Java always
     @JRubyMethod(name = {"readable?", "readable_real?"}, required = 1, module = true)
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
         ZipEntry entry = file_in_archive(filename);
         if (entry != null) {
             return entry.isDirectory() ?
@@ -171,7 +176,7 @@ public class RubyFileTest {
 
         JRubyFile file = file(filename);
 
-        return recv.getRuntime().newBoolean(file.exists() && file.canRead());
+        return runtime.newBoolean(file.exists() && file.canRead());
     }
 
     // Not exposed by filetest, but so similiar in nature that it is stored here
@@ -200,9 +205,10 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "size", required = 1, module = true)
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
         ZipEntry entry = file_in_archive(filename);
         if (entry != null) {
-            return recv.getRuntime().newFixnum(entry.getSize());
+            return runtime.newFixnum(entry.getSize());
         }
 
         JRubyFile file = file(filename);
@@ -211,32 +217,33 @@ public class RubyFileTest {
             noFileError(filename);
         }
 
-        return recv.getRuntime().newFixnum(file.length());
+        return runtime.newFixnum(file.length());
     }
 
     @JRubyMethod(name = "size?", required = 1, module = true)
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
         ZipEntry entry = file_in_archive(filename);
         if (entry != null) {
             long size = entry.getSize();
             if (size > 0) {
-                return recv.getRuntime().newFixnum(size);
+                return runtime.newFixnum(size);
             } else {
-                return recv.getRuntime().getNil();
+                return runtime.getNil();
             }
         }
 
         JRubyFile file = file(filename);
 
         if (!file.exists()) {
-            return recv.getRuntime().getNil();
+            return runtime.getNil();
         }
 
         long length = file.length();
         if (length > 0) {
-            return recv.getRuntime().newFixnum(length);
+            return runtime.newFixnum(length);
         } else {
-            return recv.getRuntime().getNil();
+            return runtime.getNil();
         }
     }
 
@@ -284,14 +291,15 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "zero?", required = 1, module = true)
     public static RubyBoolean zero_p(IRubyObject recv, IRubyObject filename) {
+        Ruby runtime = recv.getRuntime();
         ZipEntry entry = file_in_archive(filename);
         if (entry != null) {
-            return filename.getRuntime().newBoolean(entry.getSize() == 0L);
+            return runtime.newBoolean(entry.getSize() == 0L);
         }
 
         JRubyFile file = file(filename);
 
-        return filename.getRuntime().newBoolean(file.exists() && file.length() == 0L);
+        return runtime.newBoolean(file.exists() && file.length() == 0L);
     }
 
     private static JRubyFile file(IRubyObject pathOrFile) {
@@ -300,28 +308,22 @@ public class RubyFileTest {
         if (pathOrFile instanceof RubyFile) {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
         } else {
-            if (runtime.is1_9()) {
-                // do to_path coercion
-                pathOrFile = RubyFile.path(runtime.getCurrentContext(), runtime.getFile(), pathOrFile);
-            }
-            return JRubyFile.create(runtime.getCurrentDirectory(), pathOrFile.convertToString().getUnicodeValue());
+            RubyString path = get_path(runtime.getCurrentContext(), pathOrFile);
+            return JRubyFile.create(runtime.getCurrentDirectory(), path.getUnicodeValue());
         }
     }
 
     private static ZipEntry file_in_archive(IRubyObject path) {
         Ruby runtime = path.getRuntime();
-        
+
         if (path instanceof RubyFile) {
             return null;
         }
 
-        if (runtime.is1_9()) {
-            // do to_path coercion
-            path = RubyFile.path(runtime.getCurrentContext(), runtime.getFile(), path);
-        }
-        
-        if (path.convertToString().toString().startsWith("file:")) {
-            String file = path.convertToString().toString().substring(5);
+        RubyString pathStr = get_path(runtime.getCurrentContext(), path);
+        String pathJStr = pathStr.getUnicodeValue();
+        if (pathJStr.startsWith("file:")) {
+            String file = pathJStr.substring(5);
             int bang = file.indexOf('!');
             if (bang == -1 || bang == file.length() - 1) {
                 return null;
