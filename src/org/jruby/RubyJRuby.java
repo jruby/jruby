@@ -160,6 +160,23 @@ public class RubyJRuby {
         return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
     }
 
+    @JRubyMethod(frame = true, module = true)
+    public static IRubyObject with_current_runtime_as_global(ThreadContext context, IRubyObject recv, Block block) {
+        Ruby currentRuntime = context.getRuntime();
+        Ruby globalRuntime = Ruby.getGlobalRuntime();
+        try {
+            if (globalRuntime != currentRuntime) {
+                currentRuntime.useAsGlobalRuntime();
+            }
+            block.yieldSpecific(context);
+        } finally {
+            if (Ruby.getGlobalRuntime() != globalRuntime) {
+                globalRuntime.useAsGlobalRuntime();
+            }
+        }
+        return currentRuntime.getNil();
+    }
+
     @JRubyMethod(name = "objectspace", frame = true, module = true)
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv, Block b) {
         Ruby runtime = recv.getRuntime();

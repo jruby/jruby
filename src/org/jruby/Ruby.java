@@ -210,6 +210,18 @@ public final class Ruby {
     }
     
     /**
+     * Convenience method for java integrators who may need to switch the notion 
+     * of "global" runtime. Use <tt>JRuby.runtime.use_as_global_runtime</tt>
+     * from Ruby code to activate the current runtime as the global one.
+     */
+    public void useAsGlobalRuntime() {
+        synchronized(Ruby.class) {
+            globalRuntime = null;
+            setGlobalRuntimeFirstTimeOnly(this);
+        }
+    }
+
+    /**
      * Create and initialize a new JRuby runtime. The properties of the
      * specified RubyInstanceConfig will be used to determine various JRuby
      * runtime characteristics.
