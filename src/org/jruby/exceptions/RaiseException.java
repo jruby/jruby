@@ -86,6 +86,13 @@ public class RaiseException extends JumpException {
         setException(exception, isNativeException);
     }
 
+    /**
+     * Method still in use by jruby-openssl <= 0.5.2
+     */
+    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
+        return createNativeRaiseException(runtime, cause, null);
+    }
+
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
         NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
         if (!runtime.getDebug().isTrue()) {
