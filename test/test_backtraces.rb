@@ -51,6 +51,18 @@ class TestBacktraces < Test::Unit::TestCase
     check(expectation, ex)
   end
 
+  import org.jruby.test.TestHelper
+
+  def test_java_backtrace
+    TestHelper.throwTestHelperException
+  rescue NativeException => ex
+    backtrace = ex.backtrace.join("\r\n")
+
+    if (!backtrace.include?("throwTestHelperException"))
+      flunk("test_java_backtrace not in backtrace")
+    end
+  end
+    
   def test_simple_exception_recursive
     @offset = __LINE__
     def meth(n)
