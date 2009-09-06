@@ -1579,24 +1579,24 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public boolean containsKey(Object key) {
-        return internalGet(JavaUtil.convertJavaToRuby(getRuntime(), key)) != null;
+        return internalGet(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key)) != null;
     }
 
     public boolean containsValue(Object value) {
-        return hasValue(getRuntime().getCurrentContext(), JavaUtil.convertJavaToRuby(getRuntime(), value));
+        return hasValue(getRuntime().getCurrentContext(), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value));
     }
 
     public Object get(Object key) {
-        return JavaUtil.convertRubyToJava(internalGet(JavaUtil.convertJavaToRuby(getRuntime(), key)));
+        return JavaUtil.convertRubyToJava(internalGet(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key)));
     }
 
     public Object put(Object key, Object value) {
-        internalPut(JavaUtil.convertJavaToRuby(getRuntime(), key), JavaUtil.convertJavaToRuby(getRuntime(), value));
+        internalPut(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value));
         return value;
     }
 
     public Object remove(Object key) {
-        IRubyObject rubyKey = JavaUtil.convertJavaToRuby(getRuntime(), key);
+        IRubyObject rubyKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key);
         return internalDelete(rubyKey).value;
     }
 
@@ -1604,7 +1604,7 @@ public class RubyHash extends RubyObject implements Map {
         Ruby runtime = getRuntime();
         for (Iterator<Map.Entry> iter = map.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = iter.next();
-            internalPut(JavaUtil.convertJavaToRuby(runtime, entry.getKey()), JavaUtil.convertJavaToRuby(runtime, entry.getValue()));
+            internalPut(JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey()), JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue()));
         }
     }
 
@@ -1812,7 +1812,7 @@ public class RubyHash extends RubyObject implements Map {
             return hash.containsValue(o);
         }
         public boolean remove(RubyHash hash, Object o) {
-            IRubyObject value = JavaUtil.convertJavaToRuby(hash.getRuntime(), o);
+            IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(hash.getRuntime(), o);
             IRubyObject key = hash.internalIndex(hash.getRuntime().getCurrentContext(), value);
             if (key == null) return false;
             return hash.internalDelete(key) != NO_ENTRY;
@@ -1868,7 +1868,7 @@ public class RubyHash extends RubyObject implements Map {
             return JavaUtil.convertRubyToJava(entry.value, Object.class);
         }
         public Object setValue(Object o) {
-            return entry.setValue(JavaUtil.convertJavaToRuby(runtime, o));
+            return entry.setValue(JavaUtil.convertJavaToUsableRubyObject(runtime, o));
         }
 
         @Override

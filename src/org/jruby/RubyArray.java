@@ -3408,12 +3408,12 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public boolean add(Object element) {
-        append(JavaUtil.convertJavaToRuby(getRuntime(), element));
+        append(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element));
         return true;
     }
 
     public boolean remove(Object element) {
-        IRubyObject deleted = delete(getRuntime().getCurrentContext(), JavaUtil.convertJavaToRuby(getRuntime(), element), Block.NULL_BLOCK);
+        IRubyObject deleted = delete(getRuntime().getCurrentContext(), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element), Block.NULL_BLOCK);
         return deleted.isNil() ? false : true; // TODO: is this correct ?
     }
 
@@ -3470,12 +3470,12 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public Object set(int index, Object element) {
-        return store(index, JavaUtil.convertJavaToRuby(getRuntime(), element));
+        return store(index, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element));
     }
 
     // TODO: make more efficient by not creating IRubyArray[]
     public void add(int index, Object element) {
-        insert(new IRubyObject[]{RubyFixnum.newFixnum(getRuntime(), index), JavaUtil.convertJavaToRuby(getRuntime(), element)});
+        insert(new IRubyObject[]{RubyFixnum.newFixnum(getRuntime(), index), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element)});
     }
 
     public Object remove(int index) {
@@ -3486,7 +3486,7 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
 
         if (element != null) {
-            IRubyObject convertedElement = JavaUtil.convertJavaToRuby(getRuntime(), element);
+            IRubyObject convertedElement = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element);
 
             for (int i = begin; i < begin + realLength; i++) {
                 if (convertedElement.equals(values[i])) {
@@ -3501,7 +3501,7 @@ public class RubyArray extends RubyObject implements List {
         int begin = this.begin;
 
         if (element != null) {
-            IRubyObject convertedElement = JavaUtil.convertJavaToRuby(getRuntime(), element);
+            IRubyObject convertedElement = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element);
 
             for (int i = begin + realLength - 1; i >= begin; i--) {
                 if (convertedElement.equals(values[i])) {
@@ -3569,11 +3569,11 @@ public class RubyArray extends RubyObject implements List {
         public void set(Object obj) {
             if (last == -1) throw new IllegalStateException();
 
-            store(last, JavaUtil.convertJavaToRuby(getRuntime(), obj));
+            store(last, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj));
         }
 
         public void add(Object obj) {
-            insert(new IRubyObject[] { RubyFixnum.newFixnum(getRuntime(), index++), JavaUtil.convertJavaToRuby(getRuntime(), obj) });
+            insert(new IRubyObject[] { RubyFixnum.newFixnum(getRuntime(), index++), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj) });
             last = -1;
         }
     }
