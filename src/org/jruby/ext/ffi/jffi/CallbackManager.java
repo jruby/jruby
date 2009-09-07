@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -114,7 +114,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         final WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
         final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
                 info.ffiReturnType, info.ffiParameterTypes, info.convention);
-        Callback cb = new Callback(runtime, handle, cbInfo, proc);
+        Callback cb = new Callback(runtime, handle, cbInfo);
         map.put(cbInfo, cb);
 
         return cb;
@@ -172,13 +172,11 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     @JRubyClass(name = "FFI::Callback", parent = "FFI::Pointer")
     static class Callback extends Pointer {
         private final CallbackInfo cbInfo;
-        private final Object proc;
         
-        Callback(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, Object proc) {
+        Callback(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass("Callback"),
                     new CallbackMemoryIO(runtime, handle), Long.MAX_VALUE);
             this.cbInfo = cbInfo;
-            this.proc = proc;
         }
     }
 
@@ -256,13 +254,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * CallbackMemoryIO instance is contained in a valid Callback pointer.
      */
     static final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectMemoryIO {
-        /**
-         * Reference map to keep code alive if autorelease=(true) is set
-         */
-        private static final Map<CallbackMemoryIO, Boolean> refmap
-            = new ConcurrentHashMap<CallbackMemoryIO, Boolean>();
-
         private final Closure.Handle handle;
+        private final AtomicBoolean released = new AtomicBoolean(false);
 
         public CallbackMemoryIO(Ruby runtime,  Closure.Handle handle) {
             super(runtime);
@@ -282,17 +275,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         }
 
         public void free() {
-            refmap.remove(this);
+            if (released.getAndSet(true)) {
+                throw runtime.newRuntimeError("callback already freed");
+            }
+            handle.free();
         }
 
         public void setAutoRelease(boolean autorelease) {
-            if (autorelease) {
-                refmap.remove(this);
-            } else {
-                refmap.put(this, true);
-            }
+            handle.setAutoRelease(autorelease);
         }
-
     }
 
     /**

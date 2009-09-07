@@ -10,7 +10,7 @@ import org.jruby.exceptions.RaiseException;
  * An implementation of MemoryIO that throws an exception on any access.
  */
 public abstract class InvalidMemoryIO implements MemoryIO {
-    private final Ruby runtime;
+    protected final Ruby runtime;
     private final String message;
     
     public InvalidMemoryIO(Ruby runtime) {
