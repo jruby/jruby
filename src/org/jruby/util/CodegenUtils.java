@@ -10,6 +10,8 @@
 package org.jruby.util;
 
 import java.util.Arrays;
+import java.util.Map;
+import org.objectweb.asm.AnnotationVisitor;
 
 /**
  *
@@ -175,5 +177,23 @@ public class CodegenUtils {
             commonClassSuffix = (isStatic ? "$s" : "$i" ) + "_method_" + required + "_" + optional + marker + javaMethodName;
         }
         return typeName + commonClassSuffix;
+    }
+
+    public static void visitAnnotationFields(AnnotationVisitor visitor, Map<String, Object> fields) {
+        for (Map.Entry<String, Object> fieldEntry : fields.entrySet()) {
+            Object value = fieldEntry.getValue();
+            if (value.getClass().isArray()) {
+                Object[] values = (Object[]) value;
+                AnnotationVisitor arrayV = visitor.visitArray(fieldEntry.getKey());
+                for (int i = 0; i < values.length; i++) {
+                    arrayV.visit(null, values[i]);
+                }
+                arrayV.visitEnd();
+            } else if (value.getClass().isEnum()) {
+                visitor.visitEnum(fieldEntry.getKey(), ci(value.getClass()), value.toString());
+            } else {
+                visitor.visit(fieldEntry.getKey(), value);
+            }
+        }
     }
 }

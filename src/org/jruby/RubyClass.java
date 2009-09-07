@@ -64,6 +64,7 @@ import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -602,6 +603,31 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1, arg2);
     }
+
+    private void dumpReifiedClass(String javaPath, byte[] classBytes) {
+        String dumpDir = SafePropertyAccessor.getProperty("jruby.dump.reified.classes");
+        if (dumpDir != null) {
+            if (dumpDir.equals("") || dumpDir.equals("true")) {
+                dumpDir = ".";
+            }
+            java.io.FileOutputStream classStream = null;
+            try {
+                java.io.File classFile = new java.io.File(dumpDir, javaPath + ".class");
+                classFile.getParentFile().mkdirs();
+                classStream = new java.io.FileOutputStream(classFile);
+                classStream.write(classBytes);
+            } catch (IOException io) {
+                getRuntime().getWarnings().warn("unable to dump class file: " + io.getMessage());
+            } finally {
+                if (classStream != null) {
+                    try {
+                        classStream.close();
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+        }
+    }
     
     private boolean shouldCallMethodMissing(DynamicMethod method) {
         return method.isUndefined();
@@ -995,11 +1021,7 @@ public class RubyClass extends RubyModule {
                 Map<String,Object> fields = entry.getValue();
 
                 AnnotationVisitor av = cw.visitAnnotation(ci(annoType), true);
-
-                for (Map.Entry<String,Object> fieldEntry : fields.entrySet()) {
-                    av.visit(fieldEntry.getKey(), fieldEntry.getValue());
-                }
-
+                CodegenUtils.visitAnnotationFields(av, entry.getValue());
                 av.visitEnd();
             }
         }
@@ -1095,20 +1117,10 @@ public class RubyClass extends RubyModule {
 
                 MiniJava.coerceResultAndReturn(m, methodSignature[0]);
             }
-            
 
             if (methodAnnotations != null && methodAnnotations.size() != 0) {
                 for (Map.Entry<Class,Map<String,Object>> entry : methodAnnotations.entrySet()) {
-                    Class annoType = entry.getKey();
-                    Map<String,Object> fields = entry.getValue();
-
-                    AnnotationVisitor av = m.visitAnnotation(ci(annoType), true);
-
-                    for (Map.Entry<String,Object> fieldEntry : fields.entrySet()) {
-                        av.visit(fieldEntry.getKey(), fieldEntry.getValue());
-                    }
-
-                    av.visitEnd();
+                    m.visitAnnotationWithFields(ci(entry.getKey()), true, entry.getValue());
                 }
             }
 
@@ -1116,8 +1128,9 @@ public class RubyClass extends RubyModule {
         }
 
         cw.visitEnd();
-
-        Class result = parentCL.defineClass(javaName, cw.toByteArray());
+        byte[] classBytes = cw.toByteArray();
+        dumpReifiedClass(javaPath, classBytes);
+        Class result = parentCL.defineClass(javaName, classBytes);
 
         try {
             java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);

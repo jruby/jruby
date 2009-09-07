@@ -34,14 +34,19 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
 
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
@@ -64,8 +69,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
-import org.jruby.RubyObject;
-import org.jruby.RubyProc;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 
@@ -537,13 +540,7 @@ public class RubyJRuby {
 
         @JRubyMethod
         public static IRubyObject add_method_annotation(ThreadContext context, IRubyObject maybeClass, IRubyObject methodName, IRubyObject annoMap) {
-            RubyClass clazz;
-            if (maybeClass instanceof RubyClass) {
-                clazz = (RubyClass)maybeClass;
-            } else {
-                throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
-            }
-
+            RubyClass clazz = getRubyClass(maybeClass, context);
             String method = methodName.convertToString().asJavaString();
 
             Map<Class,Map<String,Object>> annos = (Map<Class,Map<String,Object>>)annoMap;
@@ -551,27 +548,38 @@ public class RubyJRuby {
             for (Map.Entry<Class,Map<String,Object>> entry : annos.entrySet()) {
                 Map<String,Object> value = entry.getValue();
                 if (value == null) value = Collections.EMPTY_MAP;
-                clazz.addMethodAnnotation(method, entry.getKey(), value);
+                clazz.addMethodAnnotation(method, getAnnoClass(context, entry.getKey()), value);
             }
 
             return context.getRuntime().getNil();
         }
 
+//        @JRubyMethod
+//        public static IRubyObject add_parameter_annotation(ThreadContext context, IRubyObject maybeClass, IRubyObject methodName, IRubyObject paramAnnoMaps) {
+//            RubyClass clazz = getRubyClass(maybeClass, context);
+//            String method = methodName.convertToString().asJavaString();
+//            List<Map<Class,Map<String,Object>>> annos = (List<Map<Class,Map<String,Object>>>) paramAnnoMaps;
+//
+//            for (int i = 0; i < annos.size(); i++) {
+//                Map<Class, Map<String, Object>> paramAnnos = annos.get(i);
+//                for (Map.Entry<Class,Map<String,Object>> entry : paramAnnos.entrySet()) {
+//                    Map<String,Object> value = entry.getValue();
+//                    if (value == null) value = Collections.EMPTY_MAP;
+//                    clazz.addParameterAnnotation(method, i, getAnnoClass(context, entry.getKey()), value);
+//                }
+//            }
+//            return context.getRuntime().getNil();
+//        }
+
         @JRubyMethod
         public static IRubyObject add_class_annotation(ThreadContext context, IRubyObject maybeClass, IRubyObject annoMap) {
-            RubyClass clazz;
-            if (maybeClass instanceof RubyClass) {
-                clazz = (RubyClass)maybeClass;
-            } else {
-                throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
-            }
-
+            RubyClass clazz = getRubyClass(maybeClass, context);
             Map<Class,Map<String,Object>> annos = (Map<Class,Map<String,Object>>)annoMap;
 
             for (Map.Entry<Class,Map<String,Object>> entry : annos.entrySet()) {
                 Map<String,Object> value = entry.getValue();
                 if (value == null) value = Collections.EMPTY_MAP;
-                clazz.addClassAnnotation(entry.getKey(), value);
+                clazz.addClassAnnotation(getAnnoClass(context, entry.getKey()), value);
             }
 
             return context.getRuntime().getNil();
@@ -579,18 +587,37 @@ public class RubyJRuby {
 
         @JRubyMethod
         public static IRubyObject add_method_signature(ThreadContext context, IRubyObject maybeClass, IRubyObject methodName, IRubyObject clsList) {
-            RubyClass clazz;
-            if (maybeClass instanceof RubyClass) {
-                clazz = (RubyClass)maybeClass;
-            } else {
-                throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
+            RubyClass clazz = getRubyClass(maybeClass, context);
+            List<Class> types = new ArrayList<Class>();
+            for (Iterator i = ((List)clsList).iterator(); i.hasNext();) {
+                types.add(getAnnoClass(context, i.next()));
             }
-
-            List<Class> types = (List<Class>)clsList;
 
             clazz.addMethodSignature(methodName.convertToString().asJavaString(), types.toArray(new Class[types.size()]));
 
             return context.getRuntime().getNil();
+        }
+
+        private static Class getAnnoClass(ThreadContext context, Object annoClass) {
+            if (annoClass instanceof Class) {
+                return (Class) annoClass;
+            } else if (annoClass instanceof IRubyObject) {
+                IRubyObject annoMod = (IRubyObject) annoClass;
+                if (annoMod.respondsTo("java_class")) {
+                    return (Class) JavaUtil.convertRubyToJava(annoMod.callMethod(context, "java_class"));
+                }
+            }
+            throw context.getRuntime().newArgumentError("must supply java class argument instead of " + annoClass.toString());
+        }
+
+        private static RubyClass getRubyClass(IRubyObject maybeClass, ThreadContext context) throws RaiseException {
+            RubyClass clazz;
+            if (maybeClass instanceof RubyClass) {
+                clazz = (RubyClass) maybeClass;
+            } else {
+                throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
+            }
+            return clazz;
         }
     }
 

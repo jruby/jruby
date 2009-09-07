@@ -11,14 +11,15 @@ package org.jruby.compiler.impl;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Map;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.CodegenUtils.*;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.CheckMethodAdapter;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
 /**
@@ -789,6 +790,12 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         return getMethodVisitor().visitParameterAnnotation(arg0, arg1, arg2);
     }
 
+    public void visitAnnotationWithFields(String name, boolean visible, Map<String,Object> fields) {
+        AnnotationVisitor visitor = visitAnnotation(name, visible);
+        visitAnnotationFields(visitor, fields);
+        visitor.visitEnd();
+    }
+
     public void visitAttribute(Attribute arg0) {
         getMethodVisitor().visitAttribute(arg0);
     }
@@ -885,5 +892,4 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     public void visitFrame(int arg0, int arg1, Object[] arg2, int arg3, Object[] arg4) {
         getMethodVisitor().visitFrame(arg0, arg1, arg2, arg3, arg4);
     }
-
 }
