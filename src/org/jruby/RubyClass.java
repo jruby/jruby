@@ -604,10 +604,9 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, this, name, arg0, arg1, arg2);
     }
 
-    private void dumpReifiedClass(String javaPath, byte[] classBytes) {
-        String dumpDir = SafePropertyAccessor.getProperty("jruby.dump.reified.classes");
+    private void dumpReifiedClass(String dumpDir, String javaPath, byte[] classBytes) {
         if (dumpDir != null) {
-            if (dumpDir.equals("") || dumpDir.equals("true")) {
+            if (dumpDir.equals("")) {
                 dumpDir = ".";
             }
             java.io.FileOutputStream classStream = null;
@@ -999,10 +998,15 @@ public class RubyClass extends RubyModule {
         }
     };
 
+    public synchronized void reify() {
+        reify(null);
+    }
+
     /**
      * Stand up a real Java class for the backing store of this object
+     * @param classDumpDir Directory to save reified java class
      */
-    public synchronized void reify() {
+    public synchronized void reify(String classDumpDir) {
         Class reifiedParent = RubyObject.class;
         String javaName = "ruby." + getBaseName();
         String javaPath = "ruby/" + getBaseName();
@@ -1129,7 +1133,7 @@ public class RubyClass extends RubyModule {
 
         cw.visitEnd();
         byte[] classBytes = cw.toByteArray();
-        dumpReifiedClass(javaPath, classBytes);
+        dumpReifiedClass(classDumpDir, javaPath, classBytes);
         Class result = parentCL.defineClass(javaName, classBytes);
 
         try {

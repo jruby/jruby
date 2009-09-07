@@ -508,8 +508,8 @@ public class RubyJRuby {
             return RubyArray.newArray(context.getRuntime(), clazz.subclasses(recursive)).freeze(context);
         }
 
-        @JRubyMethod(name = "become_java!")
-        public static IRubyObject become_java_bang(ThreadContext context, IRubyObject maybeClass) {
+        @JRubyMethod(name = "become_java!", optional = 1)
+        public static IRubyObject become_java_bang(ThreadContext context, IRubyObject maybeClass, IRubyObject[] args) {
             RubyClass clazz;
             if (maybeClass instanceof RubyClass) {
                 clazz = (RubyClass)maybeClass;
@@ -517,7 +517,11 @@ public class RubyJRuby {
                 throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
             }
 
-            clazz.reify();
+            if (args.length > 0) {
+                clazz.reify(args[0].convertToString().asJavaString());
+            } else {
+                clazz.reify();
+            }
 
             return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), clazz.getReifiedClass());
         }
