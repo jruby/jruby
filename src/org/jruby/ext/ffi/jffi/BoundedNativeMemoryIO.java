@@ -4,7 +4,6 @@ package org.jruby.ext.ffi.jffi;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Util;
 
@@ -47,6 +46,10 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
 
     public final java.nio.ByteBuffer asByteBuffer() {
         return IO.newDirectByteBuffer(address, (int) size);
+    }
+
+    Ruby getRuntime() {
+        return this.runtime;
     }
 
     @Override

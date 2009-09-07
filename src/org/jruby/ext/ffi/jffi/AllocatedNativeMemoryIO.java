@@ -1,10 +1,11 @@
 package org.jruby.ext.ffi.jffi;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 
 final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
-    private volatile boolean released = false;
+    private final AtomicBoolean released = new AtomicBoolean(false);
     private volatile boolean autorelease = true;
 
     /** The real memory address */
@@ -19,8 +20,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
      * @return A new {@link AllocatedDirectMemoryIO}
      */
     static final AllocatedNativeMemoryIO allocate(Ruby runtime, int size, boolean clear) {
-        long memory = IO.allocateMemory(size, clear);
-        return memory != 0 ? new AllocatedNativeMemoryIO(runtime, memory, size, 1) : null;
+        return allocateAligned(runtime, size, 1, clear);
     }
 
     /**
@@ -33,8 +33,13 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
      * @return A new {@link AllocatedDirectMemoryIO}
      */
     static final AllocatedNativeMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
-        long memory = IO.allocateMemory(size + align - 1, clear);
-        return memory != 0 ? new AllocatedNativeMemoryIO(runtime, memory, size, align) : null;
+        final long address = IO.allocateMemory(size + align - 1, clear);
+        try {
+            return address != 0 ? new AllocatedNativeMemoryIO(runtime, address, size, align) : null;
+        } catch (Throwable t) {
+            IO.freeMemory(address);
+            throw new RuntimeException(t);
+        }
     }
     
     private AllocatedNativeMemoryIO(Ruby runtime, long address, int size, int align) {
@@ -43,10 +48,10 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     }
 
     public void free() {
-        if (!released) {
-            IO.freeMemory(storage);
-            released = true;
+        if (released.getAndSet(true)) {
+            throw getRuntime().newRuntimeError("memory already freed");
         }
+        IO.freeMemory(storage);
     }
 
     public void setAutoRelease(boolean release) {
@@ -56,9 +61,8 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     @Override
     protected void finalize() throws Throwable {
         try {
-            if (!released && autorelease) {
+            if (autorelease && !released.getAndSet(true)) {
                 IO.freeMemory(storage);
-                released = true;
             }
         } finally {
             super.finalize();
