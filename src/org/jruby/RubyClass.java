@@ -38,6 +38,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jruby.anno.JRubyMethod;
@@ -627,6 +629,25 @@ public class RubyClass extends RubyModule {
             }
         }
     }
+
+    private void generateMethodAnnotations(Map<Class, Map<String, Object>> methodAnnos, SkinnyMethodAdapter m, List<Map<Class, Map<String, Object>>> parameterAnnos) {
+        if (methodAnnos != null && methodAnnos.size() != 0) {
+            for (Map.Entry<Class, Map<String, Object>> entry : methodAnnos.entrySet()) {
+                m.visitAnnotationWithFields(ci(entry.getKey()), true, entry.getValue());
+            }
+        }
+        if (parameterAnnos != null && parameterAnnos.size() != 0) {
+            for (int i = 0; i < parameterAnnos.size(); i++) {
+                Map<Class, Map<String, Object>> annos = parameterAnnos.get(i);
+                if (annos != null && annos.size() != 0) {
+                    for (Iterator<Map.Entry<Class, Map<String, Object>>> it = annos.entrySet().iterator(); it.hasNext();) {
+                        Map.Entry<Class, Map<String, Object>> entry = it.next();
+                        m.visitParameterAnnotationWithFields(i, ci(entry.getKey()), true, entry.getValue());
+                    }
+                }
+            }
+        }
+    }
     
     private boolean shouldCallMethodMissing(DynamicMethod method) {
         return method.isUndefined();
@@ -1045,17 +1066,17 @@ public class RubyClass extends RubyModule {
         m.end();
 
         // standard constructor that accepts Ruby, RubyClass
-//        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
-//        m = new SkinnyMethodAdapter(mv);
-//        m.aload(0);
-//        m.aload(1);
-//        m.aload(2);
-//        m.invokespecial(p(parent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
-//        m.voidreturn();
-//        m.end();
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
+        m = new SkinnyMethodAdapter(mv);
+        m.aload(0);
+        m.aload(1);
+        m.aload(2);
+        m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        m.voidreturn();
+        m.end();
 
         // no-arg constructor using static references to Ruby and RubyClass
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
+        mv = cw.visitMethod(ACC_PUBLIC, "<init>", CodegenUtils.sig(void.class), null, null);
         m = new SkinnyMethodAdapter(mv);
         m.aload(0);
         m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -1067,7 +1088,8 @@ public class RubyClass extends RubyModule {
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
-            Map<Class,Map<String,Object>> methodAnnotations = getMethodAnnotations().get(methodName);
+            Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(methodName);
+            List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMethodSignatures().get(methodName);
 
             if (methodSignature == null) {
@@ -1076,6 +1098,7 @@ public class RubyClass extends RubyModule {
                 case 0:
                     mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class), null, null);
                     m = new SkinnyMethodAdapter(mv);
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
                     m.ldc(methodName);
@@ -1084,6 +1107,7 @@ public class RubyClass extends RubyModule {
                 default:
                     mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
                     m = new SkinnyMethodAdapter(mv);
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
                     m.ldc(methodName);
@@ -1109,7 +1133,7 @@ public class RubyClass extends RubyModule {
 
                 mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(methodSignature[0], params), null, null);
                 m = new SkinnyMethodAdapter(mv);
-
+                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
                 m.astore(rubyIndex);
@@ -1120,12 +1144,6 @@ public class RubyClass extends RubyModule {
                 m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
 
                 MiniJava.coerceResultAndReturn(m, methodSignature[0]);
-            }
-
-            if (methodAnnotations != null && methodAnnotations.size() != 0) {
-                for (Map.Entry<Class,Map<String,Object>> entry : methodAnnotations.entrySet()) {
-                    m.visitAnnotationWithFields(ci(entry.getKey()), true, entry.getValue());
-                }
             }
 
             m.end();
@@ -1150,7 +1168,38 @@ public class RubyClass extends RubyModule {
     public Class getReifiedClass() {
         return reifiedClass;
     }
-    
+
+    private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
+
+    public Map<String, List<Map<Class, Map<String,Object>>>> getParameterAnnotations() {
+        if (parameterAnnotations == null) return Collections.EMPTY_MAP;
+        return parameterAnnotations;
+    }
+
+    public void addParameterAnnotation(String method, int i, Class annoClass, Map<String,Object> value) {
+        if (parameterAnnotations == null) parameterAnnotations = new Hashtable<String,List<Map<Class,Map<String,Object>>>>();
+        List<Map<Class,Map<String,Object>>> paramList = parameterAnnotations.get(method);
+        if (paramList == null) {
+            paramList = new ArrayList<Map<Class,Map<String,Object>>>(i + 1);
+            parameterAnnotations.put(method, paramList);
+        }
+        if (paramList.size() < i + 1) {
+            for (int j = paramList.size(); j < i + 1; j++) {
+                paramList.add(null);
+            }
+        }
+        if (annoClass != null && value != null) {
+            Map<Class, Map<String, Object>> annos = paramList.get(i);
+            if (annos == null) {
+                annos = new HashMap<Class, Map<String, Object>>();
+                paramList.set(i, annos);
+            }
+            annos.put(annoClass, value);
+        } else {
+            paramList.set(i, null);
+        }
+    }
+
     private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
 
     public Map<String,Map<Class,Map<String,Object>>> getMethodAnnotations() {

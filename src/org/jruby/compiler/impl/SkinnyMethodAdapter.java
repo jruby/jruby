@@ -796,6 +796,12 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         visitor.visitEnd();
     }
 
+    public void visitParameterAnnotationWithFields(int param, String name, boolean visible, Map<String,Object> fields) {
+        AnnotationVisitor visitor = visitParameterAnnotation(param, name, visible);
+        visitAnnotationFields(visitor, fields);
+        visitor.visitEnd();
+    }
+
     public void visitAttribute(Attribute arg0) {
         getMethodVisitor().visitAttribute(arg0);
     }

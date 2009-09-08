@@ -558,22 +558,22 @@ public class RubyJRuby {
             return context.getRuntime().getNil();
         }
 
-//        @JRubyMethod
-//        public static IRubyObject add_parameter_annotation(ThreadContext context, IRubyObject maybeClass, IRubyObject methodName, IRubyObject paramAnnoMaps) {
-//            RubyClass clazz = getRubyClass(maybeClass, context);
-//            String method = methodName.convertToString().asJavaString();
-//            List<Map<Class,Map<String,Object>>> annos = (List<Map<Class,Map<String,Object>>>) paramAnnoMaps;
-//
-//            for (int i = 0; i < annos.size(); i++) {
-//                Map<Class, Map<String, Object>> paramAnnos = annos.get(i);
-//                for (Map.Entry<Class,Map<String,Object>> entry : paramAnnos.entrySet()) {
-//                    Map<String,Object> value = entry.getValue();
-//                    if (value == null) value = Collections.EMPTY_MAP;
-//                    clazz.addParameterAnnotation(method, i, getAnnoClass(context, entry.getKey()), value);
-//                }
-//            }
-//            return context.getRuntime().getNil();
-//        }
+        @JRubyMethod
+        public static IRubyObject add_parameter_annotations(ThreadContext context, IRubyObject maybeClass, IRubyObject methodName, IRubyObject paramAnnoMaps) {
+            RubyClass clazz = getRubyClass(maybeClass, context);
+            String method = methodName.convertToString().asJavaString();
+            List<Map<Class,Map<String,Object>>> annos = (List<Map<Class,Map<String,Object>>>) paramAnnoMaps;
+
+            for (int i = annos.size() - 1; i >= 0; i--) {
+                Map<Class, Map<String, Object>> paramAnnos = annos.get(i);
+                for (Map.Entry<Class,Map<String,Object>> entry : paramAnnos.entrySet()) {
+                    Map<String,Object> value = entry.getValue();
+                    if (value == null) value = Collections.EMPTY_MAP;
+                    clazz.addParameterAnnotation(method, i, getAnnoClass(context, entry.getKey()), value);
+                }
+            }
+            return context.getRuntime().getNil();
+        }
 
         @JRubyMethod
         public static IRubyObject add_class_annotation(ThreadContext context, IRubyObject maybeClass, IRubyObject annoMap) {
