@@ -3,10 +3,9 @@ enabled=false
 #enabled=true
 
 # JRuby does not support mkmf yet, so we fail hard here with a useful message
-unless enabled
-  raise NotImplementedError.new(
-    "JRuby does not support native extensions. Check wiki.jruby.org for alternatives.")
-end
+if !enabled
+  warn "warning: JRuby does not support native extensions or the `mkmf' library.\n         Check wiki.jruby.org for alternatives."
+else
 
 # We're missing this in our rbconfig
 module Config
@@ -1864,4 +1863,6 @@ realclean:	distclean
 
 if not $extmk and /\A(extconf|makefile).rb\z/ =~ File.basename($0)
   END {mkmf_failed($0)}
+end
+
 end
