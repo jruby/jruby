@@ -16,9 +16,9 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:svn:http://svn.codehaus.org/jruby/trunk/jruby/</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/jruby/trunk/jruby/</developerConnection>
-    <url>http://svn.codehaus.org/jruby</url>
+    <connection>scm:git:git://kenai.com/jruby~main</connection>
+    <developerConnection>scm:git:ssh://git.kenai.com/jruby~main</developerConnection>
+    <url>http://kenai.com/projects/jruby/sources</url>
   </scm>
 
   <licenses>
