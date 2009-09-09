@@ -12,6 +12,7 @@ package org.jruby.util;
 import java.util.Arrays;
 import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Type;
 
 /**
  *
@@ -191,6 +192,8 @@ public class CodegenUtils {
                 arrayV.visitEnd();
             } else if (value.getClass().isEnum()) {
                 visitor.visitEnum(fieldEntry.getKey(), ci(value.getClass()), value.toString());
+            } else if (value instanceof Class) {
+                visitor.visit(fieldEntry.getKey(), Type.getType((Class)value));
             } else {
                 visitor.visit(fieldEntry.getKey(), value);
             }
