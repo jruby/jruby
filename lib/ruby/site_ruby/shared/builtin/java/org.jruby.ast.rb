@@ -1,4 +1,4 @@
-class Java::OrgJrubyAst::Node
+class org::jruby::ast::Node
   POS = org.jruby.lexer.yacc.SimpleSourcePosition.new("-",-1)
   def [](ix)
     self.child_nodes[ix]
@@ -65,7 +65,7 @@ class Java::OrgJrubyAst::Node
       end
     end
 
-    if Java::OrgJrubyAst::ListNode === self
+    if org::jruby::ast::ListNode === self
       (0...self.size).each do |n|
         begin
           s << "\n#{self.get(n).inspect(indent+2)}" if self.get(n)
@@ -86,7 +86,7 @@ class Java::OrgJrubyAst::Node
         content << self.send(mm) if self.send(mm)
       end
     end
-    if Java::OrgJrubyAst::ListNode === self
+    if org::jruby::ast::ListNode === self
       (0...self.size).each do |n|
         content << self.get(n) if self.get(n)
       end

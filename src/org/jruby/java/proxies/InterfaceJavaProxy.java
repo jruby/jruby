@@ -12,6 +12,7 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtilities;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -54,7 +55,7 @@ public class InterfaceJavaProxy extends JavaProxy {
                         self,
                         RubyArray.newArray(context.getRuntime(), javaClass),
                         block);
-                Java.JavaUtilities.set_java_object(proxy, proxy, proxyInstance);
+                JavaUtilities.set_java_object(proxy, proxy, proxyInstance);
 
                 RuntimeHelpers.invoke(context, self, "initialize", args, block);
 

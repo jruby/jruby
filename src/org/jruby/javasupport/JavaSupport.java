@@ -42,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;

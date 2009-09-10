@@ -4,6 +4,7 @@ import org.jruby.javasupport.*;
 import java.util.Arrays;
 import java.util.Map;
 import org.jruby.RubyModule;
+import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
@@ -52,7 +53,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
             if (arity >= javaCallables.length || (callablesForArity = javaCallables[arity]) == null) {
                 throw self.getRuntime().newArgumentError(args.length, javaCallables.length - 1);
             }
-            callable = Java.matchingCallableArityN(self, cache, callablesForArity, args, arity);
+            callable = CallableSelector.matchingCallableArityN(self, cache, callablesForArity, args, arity);
         } else {
             if (callable.getParameterTypes().length != args.length) {
                 throw self.getRuntime().newArgumentError(args.length, callable.getParameterTypes().length);
@@ -86,7 +87,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
             if (javaCallables.length < 1 || (callablesForArity = javaCallables[1]) == null) {
                 throw self.getRuntime().newArgumentError(1, javaCallables.length - 1);
             }
-            callable = Java.matchingCallableArityOne(self, cache, callablesForArity, arg0);
+            callable = CallableSelector.matchingCallableArityOne(self, cache, callablesForArity, arg0);
         } else {
             if (callable.getParameterTypes().length != 1) {
                 throw self.getRuntime().newArgumentError(1, callable.getParameterTypes().length);
@@ -103,7 +104,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
             if (javaCallables.length <= 2 || (callablesForArity = javaCallables[2]) == null) {
                 throw self.getRuntime().newArgumentError(2, javaCallables.length - 1);
             }
-            callable = Java.matchingCallableArityTwo(self, cache, callablesForArity, arg0, arg1);
+            callable = CallableSelector.matchingCallableArityTwo(self, cache, callablesForArity, arg0, arg1);
         } else {
             if (callable.getParameterTypes().length != 2) {
                 throw self.getRuntime().newArgumentError(2, callable.getParameterTypes().length);
@@ -120,7 +121,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
             if (javaCallables.length <= 3 || (callablesForArity = javaCallables[3]) == null) {
                 throw self.getRuntime().newArgumentError(3, javaCallables.length - 1);
             }
-            callable = Java.matchingCallableArityThree(self, cache, callablesForArity, arg0, arg1, arg2);
+            callable = CallableSelector.matchingCallableArityThree(self, cache, callablesForArity, arg0, arg1, arg2);
         } else {
             if (callable.getParameterTypes().length != 3) {
                 throw self.getRuntime().newArgumentError(3, callable.getParameterTypes().length);
@@ -137,7 +138,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
             if (javaCallables.length <= 4 || (callablesForArity = javaCallables[4]) == null) {
                 throw self.getRuntime().newArgumentError(4, javaCallables.length - 1);
             }
-            callable = Java.matchingCallableArityFour(self, cache, callablesForArity, arg0, arg1, arg2, arg3);
+            callable = CallableSelector.matchingCallableArityFour(self, cache, callablesForArity, arg0, arg1, arg2, arg3);
         } else {
             if (callable.getParameterTypes().length != 4) {
                 throw self.getRuntime().newArgumentError(4, callable.getParameterTypes().length);

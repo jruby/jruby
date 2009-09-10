@@ -1007,8 +1007,7 @@ public class JavaUtil {
     
     public static Object convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class target) {
         Ruby runtime = context.getRuntime();
-        IRubyObject javaUtilities = runtime.getJavaSupport().getJavaUtilitiesModule();
-        IRubyObject javaInterfaceModule = Java.get_interface_module(javaUtilities, JavaClass.get(runtime, target));
+        IRubyObject javaInterfaceModule = Java.get_interface_module(runtime, JavaClass.get(runtime, target));
         if (!((RubyModule) javaInterfaceModule).isInstance(rubyObject)) {
             rubyObject.extend(new IRubyObject[]{javaInterfaceModule});
         }
@@ -1047,6 +1046,8 @@ public class JavaUtil {
     }
 
     public static Object convertArgumentToType(ThreadContext context, IRubyObject arg, Class target) {
+        System.out.println(target);
+        System.out.println(arg.dataGetStruct());
         if (arg instanceof JavaObject) {
             return coerceJavaObjectToType(context, ((JavaObject)arg).getValue(), target);
         } else if (arg instanceof JavaProxy) {

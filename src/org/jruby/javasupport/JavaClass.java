@@ -1666,7 +1666,7 @@ public class JavaClass extends JavaObject {
         return assignable(javaClass(), otherClass) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    static boolean assignable(Class<?> thisClass, Class<?> otherClass) {
+    public static boolean assignable(Class<?> thisClass, Class<?> otherClass) {
         if(!thisClass.isPrimitive() && otherClass == Void.TYPE ||
             thisClass.isAssignableFrom(otherClass)) {
             return true;

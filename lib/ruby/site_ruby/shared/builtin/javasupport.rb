@@ -39,11 +39,9 @@ require 'builtin/javasupport/proxy/interface'
 require 'builtin/javasupport/utilities/base'
 require 'builtin/javasupport/utilities/array'
 require 'builtin/javasupport/core_ext'
-# interface extenders need to load before concrete implementors
-require 'builtin/java/collections'
-require 'builtin/java/interfaces'
-require 'builtin/java/io'
-require 'builtin/java/exceptions'
-require 'builtin/java/regex'
-# AST code pulls in concrete java.util.ArrayList
-require 'builtin/java/ast'
+
+require 'builtin/java/java.lang'
+require 'builtin/java/java.util'
+require 'builtin/java/java.util.regex'
+require 'builtin/java/java.io'
+require 'builtin/java/org.jruby.ast'

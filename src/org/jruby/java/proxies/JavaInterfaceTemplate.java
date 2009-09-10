@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
@@ -226,7 +227,7 @@ public class JavaInterfaceTemplate {
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
                         RubyArray javaInterfaces = (RubyArray)self.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
                         for (int i = 0; i < javaInterfaces.size(); i++) {
-                            RuntimeHelpers.invoke(context, Java.JavaUtilities.get_interface_module(self, javaInterfaces.eltInternal(i)), "implement", self);
+                            RuntimeHelpers.invoke(context, JavaUtilities.get_interface_module(self, javaInterfaces.eltInternal(i)), "implement", self);
                         }
                         return javaInterfaces;
                     }
@@ -260,7 +261,7 @@ public class JavaInterfaceTemplate {
 
         // construct the new interface impl and set it into the object
         IRubyObject newObject = Java.new_proxy_instance2(self, self, interfaces2, Block.NULL_BLOCK);
-        return Java.JavaUtilities.set_java_object(self, self, newObject);
+        return JavaUtilities.set_java_object(self, self, newObject);
     }
 
     private static void appendFeaturesToModule(ThreadContext context, IRubyObject self, RubyModule module) {
@@ -324,7 +325,7 @@ public class JavaInterfaceTemplate {
         // array-of-interface-type creation/identity
         if (args.length == 0) {
             // keep this variant for kind_of? testing
-            return Java.JavaUtilities.get_proxy_class(self,
+            return JavaUtilities.get_proxy_class(self,
                     ((JavaClass)RuntimeHelpers.invoke(context, self, "java_class")).array_class());
         } else {
             // array creation should use this variant
@@ -338,7 +339,7 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod(rest = true, backtrace = true)
     public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        IRubyObject proxy = Java.JavaUtilities.get_deprecated_interface_proxy(
+        IRubyObject proxy = getDeprecatedInterfaceProxy(
                 context,
                 self,
                 self.getInstanceVariables().fastGetInstanceVariable("@java_class"));
@@ -348,11 +349,55 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod(name = "new", rest = true, backtrace = true)
     public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        IRubyObject proxy = Java.JavaUtilities.get_deprecated_interface_proxy(
+        IRubyObject proxy = getDeprecatedInterfaceProxy(
                 context,
                 self,
                 self.getInstanceVariables().fastGetInstanceVariable("@java_class"));
 
         return RuntimeHelpers.invoke(context, proxy, "new", args, block);
+    }
+
+    private static IRubyObject getDeprecatedInterfaceProxy(ThreadContext context, IRubyObject recv, IRubyObject javaClassObject) {
+        Ruby runtime = context.getRuntime();
+        JavaClass javaClass;
+        if (javaClassObject instanceof RubyString) {
+            javaClass = JavaClass.for_name(recv, javaClassObject);
+        } else if (javaClassObject instanceof JavaClass) {
+            javaClass = (JavaClass) javaClassObject;
+        } else {
+            throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
+        }
+        if (!javaClass.javaClass().isInterface()) {
+            throw runtime.newArgumentError("expected Java interface class, got " + javaClassObject);
+        }
+        RubyClass proxyClass;
+        if ((proxyClass = javaClass.getProxyClass()) != null) {
+            return proxyClass;
+        }
+        javaClass.lockProxy();
+        try {
+            if ((proxyClass = javaClass.getProxyClass()) == null) {
+                RubyModule interfaceModule = Java.getInterfaceModule(runtime, javaClass);
+                RubyClass interfaceJavaProxy = runtime.fastGetClass("InterfaceJavaProxy");
+                proxyClass = RubyClass.newClass(runtime, interfaceJavaProxy);
+                proxyClass.setAllocator(interfaceJavaProxy.getAllocator());
+                proxyClass.makeMetaClass(interfaceJavaProxy.getMetaClass());
+                // parent.setConstant(name, proxyClass); // where the name should come from ?
+                proxyClass.inherit(interfaceJavaProxy);
+                proxyClass.callMethod(context, "java_class=", javaClass);
+                // including interface module so old-style interface "subclasses" will
+                // respond correctly to #kind_of?, etc.
+                proxyClass.includeModule(interfaceModule);
+                javaClass.setupProxy(proxyClass);
+                // add reference to interface module
+                if (proxyClass.fastGetConstantAt("Includable") == null) {
+                    proxyClass.fastSetConstant("Includable", interfaceModule);
+                }
+
+            }
+        } finally {
+            javaClass.unlockProxy();
+        }
+        return proxyClass;
     }
 }
