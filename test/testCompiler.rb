@@ -519,3 +519,12 @@ class AFromLocal < a
 end
 AFromLocal.to_s
 EOS
+
+# self should not always be true
+module SelfCheck
+  def self_check; if self; true; else; false; end; end
+end
+
+[NilClass, FalseClass].each {|c| c.__send__ :include, SelfCheck}
+test_equal false, nil.self_check
+test_equal false, false.self_check

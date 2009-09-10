@@ -56,7 +56,6 @@ public enum NodeType {
         switch (this) {
         case TRUENODE:
         case FIXNUMNODE:
-        case SELFNODE:
         case FLOATNODE:
         case REGEXPNODE:
         case STRNODE:
