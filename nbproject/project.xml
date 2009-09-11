@@ -185,6 +185,7 @@
             <compilation-unit>
                 <package-root>spec</package-root>
                 <unit-tests/>
+                <classpath mode="compile">build_lib/junit.jar</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>

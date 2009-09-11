@@ -300,6 +300,7 @@ public class Java implements Library {
         try {
             return JavaClass.for_name(recv, name);
         } catch (Exception e) {
+            recv.getRuntime().getJavaSupport().handleNativeException(e, null);
             return recv.getRuntime().getNil();
         }
     }

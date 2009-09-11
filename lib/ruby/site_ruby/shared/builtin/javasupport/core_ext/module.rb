@@ -20,10 +20,20 @@ class Module
         real_name = @java_aliases[constant] || constant
 
         java_class = nil
-        return super unless @included_packages.detect {|package|
-            java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
-        }
-        
+
+        error_chain = []
+        @included_packages.each do |package|
+            begin
+              java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
+            rescue
+              error_chain << $!
+            end
+            break if java_class
+        end
+
+        raise error_chain.last if java_class.nil? && !error_chain.empty?
+        return super unless java_class
+
         JavaUtilities.create_proxy_class(constant, java_class, self)
       end
   end
