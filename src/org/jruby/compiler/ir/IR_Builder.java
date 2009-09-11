@@ -207,11 +207,12 @@ public class IR_Builder
 
     public static void main(String[] args) {
         IR_Scope scope = buildFromMain(args);
-		  System.out.println("------------------ Before local optimization pass ---------------------");
+        System.out.println("------------------ Before local optimization pass ---------------------");
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
-		  System.out.println("------------------ After local optimization pass ---------------------");
+        System.out.println("------------------ After local optimization pass ---------------------");
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
     }
 
     public static IR_Scope buildFromMain(String[] args) {

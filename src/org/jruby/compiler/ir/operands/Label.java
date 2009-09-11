@@ -8,7 +8,9 @@ public class Label extends Operand
 
     public Label(String l) { _label = l; }
 
-    public String toString() {
-        return _label;
-    }
+    public String toString() { return _label; }
+
+	 public int hashCode() { return _label.hashCode(); }
+
+	 public boolean equals(Object o) { return (o instanceof Label) && _label.equals(((Label)o)._label); }
 }

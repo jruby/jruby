@@ -16,4 +16,6 @@ public class JUMP_Instr extends NoOperandInstr
     public String toString() {
         return super.toString() + " " + _target;
     }
+
+    public Label getJumpTarget() { return _target; }
 }

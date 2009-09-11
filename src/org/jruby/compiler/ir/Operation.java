@@ -18,7 +18,7 @@ public enum Operation
 // method handle, arg receive, return value, and  call instructions
     GET_METHOD(OpType.dont_care),
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
-	 RECV_ARG(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
+    RECV_ARG(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
     CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op), ATTR_ASSIGN(OpType.call_op),
     DECLARE_TYPE(OpType.declare_type_op),
 
@@ -35,10 +35,10 @@ public enum Operation
     THROW(OpType.dont_care), RESCUE(OpType.dont_care), RETRY(OpType.dont_care),
 
 // Loads
-	 GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op), 
+    GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op), 
 
 // Stores
-	 PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
+    PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
 
 // jump and branch operations
     BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
@@ -48,7 +48,7 @@ public enum Operation
 
 // comparisons & checks
     IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false
-    EQQ(OpType.call_op), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
+    EQQ(OpType.dont_care), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
 
 // a case/when branch
     CASE(OpType.branch_op),
