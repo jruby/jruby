@@ -412,7 +412,7 @@ public final class StructLayout extends Type {
             return context.getRuntime().newFixnum(offset);
         }
 
-        @JRubyMethod
+        @JRubyMethod(name = { "type", "ffi_type" })
         public IRubyObject ffi_type(ThreadContext context) {
             return type;
         }
