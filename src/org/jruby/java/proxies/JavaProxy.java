@@ -201,6 +201,11 @@ public class JavaProxy extends RubyObject {
         return context.getRuntime().getNil();
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject to_java_object(IRubyObject recv) {
+        return recv.getInstanceVariables().fastGetInstanceVariable("@java_class");
+    }
+
     @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();

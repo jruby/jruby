@@ -829,6 +829,11 @@ public class Java implements Library {
         return JavaUtil.ruby_to_java(recv, object, unusedBlock);
     }
 
+    @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
+        return JavaUtil.java_to_primitive(recv, object, unusedBlock);
+    }
+
     @JRubyMethod(required = 1, rest = true, frame = true, module = true, visibility = Visibility.PRIVATE)
     @Deprecated
     public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args, Block block) {

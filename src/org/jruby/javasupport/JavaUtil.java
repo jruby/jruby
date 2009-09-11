@@ -1046,8 +1046,6 @@ public class JavaUtil {
     }
 
     public static Object convertArgumentToType(ThreadContext context, IRubyObject arg, Class target) {
-        System.out.println(target);
-        System.out.println(arg.dataGetStruct());
         if (arg instanceof JavaObject) {
             return coerceJavaObjectToType(context, ((JavaObject)arg).getValue(), target);
         } else if (arg instanceof JavaProxy) {
