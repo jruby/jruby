@@ -758,6 +758,7 @@ public class RubyInstanceConfig {
             }
 
             // Remaining arguments are for the script itself
+            for (String arg : argv) arglist.add(arg);
             argv = arglist.toArray(new String[arglist.size()]);
         }
 
