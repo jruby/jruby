@@ -1578,7 +1578,7 @@ public final class Ruby {
     public RubyClass getGenerator() {
         return generatorClass;
     }
-    void setGenerator(RubyClass generatorClass) {
+    public void setGenerator(RubyClass generatorClass) {
         this.generatorClass = generatorClass;
     }
 

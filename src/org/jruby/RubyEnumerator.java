@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ext.Generator;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -70,7 +71,7 @@ public class RubyEnumerator extends RubyObject {
         runtime.setEnumerator(enmr);
 
         if (runtime.is1_9()) {
-            RubyGenerator.createGeneratorClass(runtime);
+            Generator.createGenerator(runtime);
             RubyYielder.createYielderClass(runtime);
         }
     }
@@ -360,15 +361,51 @@ public class RubyEnumerator extends RubyObject {
         return with_index_common(context, self, block, "with_index");
     }
 
-    @JRubyMethod(name = "next", frame = true)
+    @JRubyMethod(name = "next", frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject next(ThreadContext context, IRubyObject self, Block block) {
         context.getRuntime().getLoadService().lockAndRequire("generator");
-        return self.callMethod(context, "next", new IRubyObject[0], block);
+        return self.callMethod(context, "next", IRubyObject.NULL_ARRAY, block);
     }
 
-    @JRubyMethod(name = "rewind", frame = true)
+    @JRubyMethod(name = "rewind", frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject rewind(ThreadContext context, IRubyObject self, Block block) {
         context.getRuntime().getLoadService().lockAndRequire("generator");
-        return self.callMethod(context, "rewind", new IRubyObject[0], block);
+        return self.callMethod(context, "rewind", IRubyObject.NULL_ARRAY, block);
+    }
+
+    private static final ByteList ITER_END_MESSAGE = ByteList.create("iteration reached at end");
+
+    @JRubyMethod(name = "next", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject next19(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject currentGen = ensureGenerator(context, self);
+
+        if (currentGen.callMethod(context, "end?").isTrue()) {
+            currentGen.callMethod(context, "rewind");
+            return self.callMethod(context, "raise",
+                    new IRubyObject[] {runtime.getStopIteration(), RubyString.newStringShared(runtime, ITER_END_MESSAGE)},
+                    Block.NULL_BLOCK);
+        }
+        return currentGen.callMethod(context, "next");
+    }
+
+    @JRubyMethod(name = "rewind", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject rewind19(ThreadContext context, IRubyObject self, Block block) {
+        IRubyObject currentGen = ensureGenerator(context, self);
+        
+        currentGen.callMethod(context, "rewind");
+        return self;
+    }
+
+    private static IRubyObject ensureGenerator(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
+        
+        IRubyObject currentGen = self.getInstanceVariables().fastGetInstanceVariable("@generator");
+        if (currentGen == null || !currentGen.isTrue()) {
+            currentGen = runtime.getGenerator().callMethod(context, "new", self);
+            self.getInstanceVariables().fastSetInstanceVariable("@generator", currentGen);
+        }
+
+        return currentGen;
     }
 }

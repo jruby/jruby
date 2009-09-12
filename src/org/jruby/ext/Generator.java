@@ -45,7 +45,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -59,10 +58,11 @@ public class Generator {
         }
     }
 
-    public static void createGenerator(Ruby runtime) throws IOException {
+    public static void createGenerator(Ruby runtime) {
         RubyClass cGen = runtime.defineClass("Generator",runtime.getObject(), runtime.getObject().getAllocator());
         cGen.includeModule(runtime.getEnumerable());
         cGen.defineAnnotatedMethods(Generator.class);
+        runtime.setGenerator(cGen);
     }
 
     static class GeneratorData implements Runnable {
