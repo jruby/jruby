@@ -32,6 +32,7 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.load.LoadService;
 
 public class LateLoadingLibrary implements Library {
     private final String libraryName;
@@ -45,20 +46,7 @@ public class LateLoadingLibrary implements Library {
     }
     
     public synchronized void load(Ruby runtime, boolean wrap) throws IOException {
-        try {
-            if (classLoader == null && Ruby.isSecurityRestricted()) {
-                classLoader = runtime.getInstanceConfig().getLoader();
-            }
-            
-            Library library = (Library) classLoader.loadClass(className).newInstance();
-            
-            library.load(runtime, wrap);
-        } catch (RaiseException re) {
-            throw re;
-        } catch (Throwable e) {
-            if (runtime.getDebug().isTrue()) e.printStackTrace();
-            throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e);
-        }
+        LoadService.reflectedLoad(runtime, libraryName, className, classLoader, wrap);
     }
 
 }

@@ -1376,7 +1376,7 @@ public final class Ruby {
         }
         
         if (is1_9()) {
-            addLazyBuiltin("fiber.jar", "fiber", "org.jruby.libraries.FiberLibrary");
+            LoadService.reflectedLoad(this, "fiber", "org.jruby.libraries.FiberLibrary", getJRubyClassLoader(), false);
         }
         
         addBuiltinIfAllowed("openssl.jar", new Library() {

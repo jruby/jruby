@@ -315,6 +315,35 @@ public class LoadService {
         return smartLoad(file);
     }
 
+    /**
+     * Load the org.jruby.runtime.load.Library implementation specified by
+     * className. The purpose of using this method is to avoid having static
+     * references to the given library class, thereby avoiding the additional
+     * classloading when the library is not in use.
+     * 
+     * @param runtime The runtime in which to load
+     * @param libraryName The name of the library, to use for error messages
+     * @param className The class of the library
+     * @param classLoader The classloader to use to load it
+     * @param wrap Whether to wrap top-level in an anonymous module
+     */
+    public static void reflectedLoad(Ruby runtime, String libraryName, String className, ClassLoader classLoader, boolean wrap) {
+        try {
+            if (classLoader == null && Ruby.isSecurityRestricted()) {
+                classLoader = runtime.getInstanceConfig().getLoader();
+            }
+
+            Library library = (Library) classLoader.loadClass(className).newInstance();
+
+            library.load(runtime, false);
+        } catch (RaiseException re) {
+            throw re;
+        } catch (Throwable e) {
+            if (runtime.getDebug().isTrue()) e.printStackTrace();
+            throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e);
+        }
+    }
+
     public IRubyObject getLoadPath() {
         return loadPath;
     }

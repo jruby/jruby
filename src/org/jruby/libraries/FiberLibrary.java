@@ -53,7 +53,7 @@ import static org.jruby.runtime.Visibility.*;
  * A basic implementation of Ruby 1.9 Fiber library.
  */
 public class FiberLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) {
         RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 return new Fiber(runtime, klazz);
