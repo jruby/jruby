@@ -261,6 +261,10 @@
         <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
@@ -329,6 +333,10 @@
         <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
@@ -417,6 +425,10 @@
         <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
@@ -499,6 +511,10 @@
         <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
