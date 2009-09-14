@@ -74,7 +74,7 @@ import org.jruby.util.io.InvalidValueException;
  */
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
-    protected static LibCSocket INSTANCE = null;
+    protected static volatile LibCSocket INSTANCE = null;
 
     /**
      * Implements reading and writing to a socket fd using recv and send
@@ -129,7 +129,17 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 if(INSTANCE != null) {
                     return true;
                 }
-                INSTANCE = (LibCSocket)com.kenai.jaffl.Library.loadLibrary("c", LibCSocket.class);
+
+                String[] libnames = Platform.IS_SOLARIS
+                        ? new String[] { "socket", "nsl", "c" }
+                        : new String[] { "c" };
+//                String libName = "c";
+//                if (Platform.IS_SOLARIS) {
+//                    libName = "socket";
+//                    System.loadLibrary("nsl");
+//                }
+
+                INSTANCE = (LibCSocket)com.kenai.jaffl.Library.loadLibrary(LibCSocket.class, libnames);
                 return true;
             }
         } catch(Throwable e) {
