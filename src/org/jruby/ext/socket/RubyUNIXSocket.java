@@ -133,11 +133,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 String[] libnames = Platform.IS_SOLARIS
                         ? new String[] { "socket", "nsl", "c" }
                         : new String[] { "c" };
-//                String libName = "c";
-//                if (Platform.IS_SOLARIS) {
-//                    libName = "socket";
-//                    System.loadLibrary("nsl");
-//                }
 
                 INSTANCE = (LibCSocket)com.kenai.jaffl.Library.loadLibrary(LibCSocket.class, libnames);
                 return true;
