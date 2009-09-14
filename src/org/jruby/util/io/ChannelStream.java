@@ -272,24 +272,11 @@ public class ChannelStream implements Stream, Finalizable {
         return buf;
     }
     
-    /**
-     * An version of read that reads all bytes up to and including a terminator byte.
-     * <p>
-     * If the terminator byte is found, it will be the last byte in the output buffer.
-     * </p>
-     *
-     * @param dst The output buffer.
-     * @param terminator The byte to terminate reading.
-     * @return The number of bytes read, or -1 if EOF is reached.
-     * 
-     * @throws java.io.IOException
-     * @throws org.jruby.util.io.BadDescriptorException
-     */
     public synchronized int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();
         descriptor.checkOpen();
-        
+
         int totalRead = 0;
         boolean found = false;
         if (ungotc != -1) {
@@ -307,6 +294,48 @@ public class ChannelStream implements Stream, Finalizable {
                 found = bytes[i] == terminator;
                 ++len;
             }
+            if (len > 0) {
+                dst.append(buffer, len);
+                totalRead += len;
+            }
+            if (!found) {
+                int n = refillBuffer();
+                if (n <= 0) {
+                    if (n < 0 && totalRead < 1) {
+                        return -1;
+                    }
+                    break;
+                }
+            }
+        }
+        return totalRead;
+    }
+
+    public synchronized int getline(ByteList dst, byte terminator, long limit) throws IOException, BadDescriptorException {
+        checkReadable();
+        ensureRead();
+        descriptor.checkOpen();
+        
+        int totalRead = 0;
+        boolean found = false;
+        if (ungotc != -1) {
+            dst.append((byte) ungotc);
+            found = ungotc == terminator;
+            ungotc = -1;
+            limit--;
+            ++totalRead;
+        }
+        while (!found) {
+            final byte[] bytes = buffer.array();
+            final int begin = buffer.arrayOffset() + buffer.position();
+            final int end = begin + buffer.remaining();
+            int len = 0;
+            for (int i = begin; i < end && limit-- > 0 && !found; ++i) {
+                found = bytes[i] == terminator;
+                ++len;
+            }
+            if (limit < 1) found = true;
+
             if (len > 0) {
                 dst.append(buffer, len);
                 totalRead += len;

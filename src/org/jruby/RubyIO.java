@@ -74,7 +74,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.ShellLauncher;
@@ -607,22 +606,24 @@ public class RubyIO extends RubyObject {
         return modes;
     }
 
-    private static ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
-        IRubyObject sepVal;
+    /*
+     * Ensure that separator is valid otherwise give it the default paragraph separator.
+     */
+    private static ByteList separator(Ruby runtime) {
+        return separator(runtime.getRecordSeparatorVar().get());
+    }
 
-        if (args.length > idx) {
-            sepVal = args[idx];
-        } else {
-            sepVal = runtime.getRecordSeparatorVar().get();
-        }
+    private static ByteList separator(IRubyObject separatorValue) {
+        ByteList separator = separatorValue.isNil() ? null :
+            separatorValue.convertToString().getByteList();
 
-        ByteList separator = sepVal.isNil() ? null : sepVal.convertToString().getByteList();
-
-        if (separator != null && separator.realSize == 0) {
-            separator = Stream.PARAGRAPH_DELIMETER;
-        }
+        if (separator != null && separator.realSize == 0) separator = Stream.PARAGRAPH_DELIMETER;
 
         return separator;
+    }
+
+    private static ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
+        return separator(args.length > idx ? args[idx] : runtime.getRecordSeparatorVar().get());
     }
 
     private ByteList getSeparatorForGets(Ruby runtime, IRubyObject[] args) {
@@ -630,6 +631,14 @@ public class RubyIO extends RubyObject {
     }
 
     public IRubyObject getline(Ruby runtime, ByteList separator) {
+        return getline(runtime, separator, -1);
+    }
+
+    /**
+     * getline using logic of gets.  If limit is -1 then read unlimited amount.
+     *
+     */
+    public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
 
@@ -637,21 +646,20 @@ public class RubyIO extends RubyObject {
             myOpenFile.setReadBuffered();
 
             boolean isParagraph = separator == Stream.PARAGRAPH_DELIMETER;
-            separator = (separator == Stream.PARAGRAPH_DELIMETER) ?
-                    Stream.PARAGRAPH_SEPARATOR : separator;
+            separator = isParagraph ? Stream.PARAGRAPH_SEPARATOR : separator;
             
-            if (isParagraph) {
-                swallow('\n');
-            }
+            if (isParagraph) swallow('\n');
             
-            if (separator == null) {
+            if (separator == null && limit < 0) {
                 IRubyObject str = readAll(null);
                 if (((RubyString)str).getByteList().length() == 0) {
                     return runtime.getNil();
                 }
                 incrementLineno(runtime, myOpenFile);
                 return str;
-            } else if (separator.length() == 1) {
+            } else if (limit == 0) {
+                return runtime.newString("");
+            } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0));
             } else {
                 Stream readStream = myOpenFile.getMainStream();
@@ -661,6 +669,7 @@ public class RubyIO extends RubyObject {
 
                 ByteList buf = new ByteList(0);
                 boolean update = false;
+                boolean limitReached = false;
                 
                 while (true) {
                     do {
@@ -668,7 +677,17 @@ public class RubyIO extends RubyObject {
                         readStream.clearerr();
                         
                         try {
-                            n = readStream.getline(buf, (byte) newline);
+                            if (limit == -1) {
+                                n = readStream.getline(buf, (byte) newline);
+                            } else {
+                                n = readStream.getline(buf, (byte) newline, limit);
+                                limit -= n;
+                                if (limit <= 0) {
+                                    update = limitReached = true;
+                                    break;
+                                }
+                            }
+
                             c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
                         } catch (EOFException e) {
                             n = -1;
@@ -676,10 +695,7 @@ public class RubyIO extends RubyObject {
 
                         if (n == -1) {
                             if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                                if(!(waitReadable(((ChannelStream)readStream).getDescriptor()))) {
-                                    throw runtime.newIOError("bad file descriptor: " + openFile.getPath());
-                                }
-
+                                checkDescriptor(runtime, ((ChannelStream) readStream).getDescriptor());
                                 continue;
                             } else {
                                 break;
@@ -689,10 +705,8 @@ public class RubyIO extends RubyObject {
                         update = true;
                     } while (c != newline); // loop until we see the nth separator char
                     
-                    // if we hit EOF, we're done
-                    if (n == -1) {
-                        break;
-                    }
+                    // if we hit EOF or reached limit then we're done
+                    if (n == -1 || limitReached) break;
                     
                     // if we've found the last char of the separator,
                     // and we've found at least as many characters as separator length,
@@ -703,11 +717,7 @@ public class RubyIO extends RubyObject {
                     }
                 }
                 
-                if (isParagraph) {
-                    if (c != -1) {
-                        swallow('\n');
-                    }
-                }
+                if (isParagraph && c != -1) swallow('\n');
                 
                 if (!update) {
                     return runtime.getNil();
@@ -789,9 +799,7 @@ public class RubyIO extends RubyObject {
             
             if (n == -1) {
                 if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                    if(!(waitReadable(((ChannelStream)readStream).getDescriptor()))) {
-                        throw runtime.newIOError("bad file descriptor: " + openFile.getPath());
-                    }
+                    checkDescriptor(runtime, ((ChannelStream)readStream).getDescriptor());
                     continue;
                 } else {
                     break;
@@ -1297,6 +1305,13 @@ public class RubyIO extends RubyObject {
                 selectable.configureBlocking(oldBlocking);
             }
         }
+    }
+
+    /*
+     * Throw bad file descriptor is we can not read on supplied descriptor.
+     */
+    private void checkDescriptor(Ruby runtime, ChannelDescriptor descriptor) throws IOException {
+        if (!(waitReadable(descriptor))) throw runtime.newIOError("bad file descriptor: " + openFile.getPath());
     }
 
     protected boolean waitReadable(ChannelDescriptor descriptor) throws IOException {
@@ -2064,15 +2079,65 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    @Deprecated
+    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
+        return args.length == 0 ? gets(context) : gets(context, args[0]);
+    }
+
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
-    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_8)
+    public IRubyObject gets(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        ByteList separator = getSeparatorForGets(runtime, args);
-        
-        IRubyObject result = getline(runtime, separator);
+        IRubyObject result = getline(runtime, separator(runtime.getRecordSeparatorVar().get()));
+
+        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+
+        return result;
+    }
+
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_8)
+    public IRubyObject gets(ThreadContext context, IRubyObject separatorArg) {
+        IRubyObject result = getline(context.getRuntime(), separator(separatorArg));
+
+        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+
+        return result;
+    }
+
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_9)
+    public IRubyObject gets19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject result = getline(runtime, separator(runtime));
+
+        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+
+        return result;
+    }
+
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_9)
+    public IRubyObject gets19(ThreadContext context, IRubyObject arg) {
+        ByteList separator;
+        long limit = -1;
+        if (arg instanceof RubyInteger) {
+            limit = RubyInteger.fix2long(arg);
+            separator = separator(context.getRuntime());
+        } else {
+            separator = separator(arg);
+        }
+
+        IRubyObject result = getline(context.getRuntime(), separator, limit);
+
+        if (!result.isNil()) context.getCurrentScope().setLastLine(result);
+
+        return result;
+    }
+
+    @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_9)
+    public IRubyObject gets19(ThreadContext context, IRubyObject separator, IRubyObject limit_arg) {
+        long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(limit_arg);
+        IRubyObject result = getline(context.getRuntime(), separator(separator), limit);
 
         if (!result.isNil()) context.getCurrentScope().setLastLine(result);
 
@@ -2230,15 +2295,29 @@ public class RubyIO extends RubyObject {
         }
     }
 
+    @Deprecated
+    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
+        return args.length == 0 ? readline(context) : readline(context, args[0]);
+    }
+
     /** Read a line.
      * 
      */
-    @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
-    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
-        IRubyObject line = gets(context, args);
+    @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+    public IRubyObject readline(ThreadContext context) {
+        IRubyObject line = gets(context);
 
         if (line.isNil()) throw context.getRuntime().newEOFError();
         
+        return line;
+    }
+
+    @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+    public IRubyObject readline(ThreadContext context, IRubyObject separator) {
+        IRubyObject line = gets(context, separator);
+
+        if (line.isNil()) throw context.getRuntime().newEOFError();
+
         return line;
     }
 

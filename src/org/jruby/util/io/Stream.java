@@ -58,7 +58,37 @@ public interface Stream {
 
     public abstract ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
     public abstract ByteList readall() throws IOException, BadDescriptorException, EOFException;
+    
+
+    /**
+     * Read all bytes up to and including a terminator byte.
+     *
+     * <p>If the terminator byte is found, it will be the last byte in the output buffer.</p>
+     *
+     * @param dst The output buffer.
+     * @param terminator The byte to terminate reading.
+     * @return The number of bytes read, or -1 if EOF is reached.
+     *
+     * @throws java.io.IOException
+     * @throws org.jruby.util.io.BadDescriptorException
+     */
     public abstract int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException;
+
+    /**
+     * Reads all bytes up to and including a terminator byte or until limit is reached.
+     *
+     * <p>If the terminator byte is found, it will be the last byte in the output buffer.</p>
+     *
+     * @param dst The output buffer.
+     * @param terminator The byte to terminate reading.
+     * @param limit the number of bytes to read unless EOF or terminator is found
+     * @return The number of bytes read, or -1 if EOF is reached.
+     *
+     * @throws java.io.IOException
+     * @throws org.jruby.util.io.BadDescriptorException
+     */
+    public abstract int getline(ByteList dst, byte terminator, long limit) throws IOException, BadDescriptorException;
+    
     // TODO: We overflow on large files...We could increase to long to limit
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).
