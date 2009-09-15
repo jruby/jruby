@@ -60,6 +60,24 @@
     <condition property="ruby.home" value="${env.RUBY_HOME}">
       <not><isset property="ruby.home"/></not>
     </condition>
+    <condition property="run.jvm.model" value="-d64">
+      <or>
+        <os arch="amd64"/>
+        <os arch="x86_64"/>
+        <os arch="sparcv9"/>
+      </or>
+    </condition>
+    <condition property="run.jvm.model" value="-d32">
+      <or>
+        <os arch="i386"/>
+        <os arch="x86"/>
+        <os arch="powerpc"/>
+        <os arch="sparc"/>
+      </or>
+    </condition>
+    <condition property="run.jvm.model" value="">
+        <not><isset property="run.jvm.model"/></not>
+    </condition>
     <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
     <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri/1.8/system/created.rid"/>
   </target>
@@ -171,6 +189,7 @@
     <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
+      <jvmarg value="${run.jvm.model}"/>
       <!-- uncomment this line when building on a JVM with invokedynamic
       <jvmarg line="-XX:+InvokeDynamic"/>
       -->
@@ -199,6 +218,7 @@
     <java classname="org.jruby.util.unsafe.UnsafeGenerator" fork="true" failonerror="true">
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
+        <jvmarg value="${run.jvm.model}"/>
         <!-- uncomment this line when building on a JVM with invokedynamic
         <jvmarg line="-XX:+InvokeDynamic"/>
         -->
@@ -229,6 +249,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
+        <jvmarg value="${run.jvm.model}"/>
         <arg value="tool/snapshot.rb"/>
         <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </java>
@@ -388,6 +409,7 @@
           <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+        <jvmarg value="${run.jvm.model}"/>
         <arg value="--command"/>
         <arg value="maybe_install_gems"/>
         <arg value="${build.lib.dir}/${rspec.gem}"/>
@@ -474,6 +496,7 @@
           <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+        <jvmarg value="${run.jvm.model}"/>
         <arg value="--command"/>
         <arg value="maybe_install_gems"/>
         <arg value="${build.lib.dir}/${rspec.gem}"/>
@@ -612,6 +635,7 @@
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <jvmarg value="-ea"/>
+      <jvmarg value="${run.jvm.model}"/>
 
       <arg value="-I"/>
       <arg value="bin/"/>
@@ -767,6 +791,8 @@
 
 	<jvmarg value="-ea"/>
 
+        <jvmarg value="${run.jvm.model}"/>
+
         <!-- force client VM to improve test run times -->
         <jvmarg value="-client"/>
 
@@ -861,6 +887,7 @@
       <sysproperty key="java.security.manager" value=""/>
       <sysproperty key="java.security.policy" value="file:test/restricted.policy"/>
       <sysproperty key="java.awt.headless" value="true"/>
+      <jvmarg value="${run.jvm.model}"/>
       <arg value="-e"/>
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
@@ -894,6 +921,7 @@
         <classpath refid="test.class.path"/>
 
         <jvmarg line="@{jvm.args}"/>
+        <jvmarg value="${run.jvm.model}"/>
 
         <sysproperty key="jruby.home" value="${basedir}"/>
         <sysproperty key="jruby.launch.inproc" value="false"/>
@@ -1170,6 +1198,7 @@
 	<classpath refid="test.class.path"/>
 
 	<jvmarg value="-ea"/>
+        <jvmarg value="${run.jvm.model}"/>
 
 	<sysproperty key="jruby.home" value="${basedir}"/>
 	<sysproperty key="jruby.launch.inproc" value="false"/>
@@ -1190,6 +1219,7 @@
         <arg line="-T -J-Demma.coverage.out.file=${test.results.dir}/coverage.emma"/>
         <arg line="-T -J-Demma.coverage.out.merge=true"/>
         <arg line="-T -J-Demma.verbosity.level=silent" />
+        <arg line="-T -J${run.jvm.model}" />
 	<arg line="-f m"/>
 	<arg line="-B @{spec.config}"/>
       </java>
@@ -1597,6 +1627,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <jvmarg value="-client"/>
+        <jvmarg value="${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <arg value="-X-C"/>
         <arg value="bench/language/bench_all.rb"/>
@@ -1606,6 +1637,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <jvmarg value="-client"/>
+        <jvmarg value="${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <sysproperty key="jruby.jit.threshold" value="5"/>
         <arg value="bench/language/bench_all.rb"/>
@@ -1615,6 +1647,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <jvmarg value="-client"/>
+        <jvmarg value="${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <arg value="-X+C"/>
         <arg value="bench/language/bench_all.rb"/>
@@ -1625,6 +1658,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <jvmarg value="-server"/>
+        <jvmarg value="${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <arg value="-X-C"/>
         <arg value="bench/language/bench_all.rb"/>
@@ -1634,6 +1668,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <jvmarg value="-server"/>
+        <jvmarg value="${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <sysproperty key="jruby.jit.threshold" value="5"/>
         <arg value="bench/language/bench_all.rb"/>
@@ -1643,6 +1678,7 @@
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <jvmarg value="-server"/>
+        <jvmarg value="${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <arg value="-X+C"/>
         <arg value="bench/language/bench_all.rb"/>
