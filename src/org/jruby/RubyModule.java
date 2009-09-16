@@ -1733,18 +1733,17 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
     
-    /** rb_mod_attr/1.9
-     *
-     */
     @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_9)
-    public IRubyObject attr_1_9(ThreadContext context, IRubyObject[] args) {
-        // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
-        Visibility visibility = context.getCurrentVisibility();
+    public IRubyObject attr19(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
 
-        for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), visibility, true, false);
+        if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
+            runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            addAccessor(context, args[0].asJavaString().intern(), context.getCurrentVisibility(), args[0].isTrue(), true);
+            return runtime.getNil();
         }
-        return getRuntime().getNil();
+
+        return attr_reader(context, args);
     }
 
     @Deprecated
