@@ -740,11 +740,23 @@ public class ASTCompiler {
             Node argument = callNode.getArgsNode().childNodes().get(0);
             if (name.length() == 1) {
                 switch (name.charAt(0)) {
-                case '+': case '-': case '<':
+                case '+': case '-': case '*': case '/': case '<': case '>':
                     if (argument instanceof FixnumNode) {
                         context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
                         if (!expr) context.consumeCurrentValue();
                         return;
+                    }
+                }
+            } else if (name.length() == 2) {
+                switch (name.charAt(0)) {
+                case '<': case '>': case '=':
+                    switch (name.charAt(1)) {
+                    case '=': case '<':
+                        if (argument instanceof FixnumNode) {
+                            context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
+                            if (!expr) context.consumeCurrentValue();
+                            return;
+                        }
                     }
                 }
             }
