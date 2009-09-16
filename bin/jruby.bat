@@ -13,7 +13,7 @@ IF EXIST "%~dp0_jrubyvars.bat" (set FULL_PATH=%~dp0) ELSE (set FULL_PATH=%~dp$PA
 
 call "%FULL_PATH%_jrubyvars.bat" %*
 
-if "%CP%" != "" (
+if not "%CP%" == "" (
   set CLASSPATH = ""
 )
 
