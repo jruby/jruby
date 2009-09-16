@@ -4279,47 +4279,26 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyArray result = runtime.newArray();
         Encoding enc = checkEncoding(spat);
+        ByteList pattern = spat.value;
 
-        byte[]bytes = value.bytes;
-        int p = value.begin;
-        int begin = p;
-        int len = value.realSize;
-        int end = p + len;
-
-        ByteList svalue = spat.value;
-        byte[]sbytes = svalue.bytes;
-        int sp = svalue.begin;
-        int slen = svalue.realSize;
-
-        int e;
-        while (p < end && (e = find(bytes, begin, len, sbytes, sp, slen, p)) >= 0) {
-            int t = enc.rightAdjustCharHead(bytes, p, e, end);
+        int e, p = 0;
+        
+        while (p < value.realSize && (e = value.indexOf(pattern, p)) >= 0) {
+            int t = enc.rightAdjustCharHead(value.bytes, p + value.begin, e, p + value.realSize);
             if (t != e) {
                 p = t;
                 continue;
             }
-            result.append(makeShared19(runtime, p - begin, e - p));
-            p = e + slen;
+            result.append(makeShared19(runtime, p, e - p));
+            p = e + pattern.realSize;
             if (limit && lim <= ++i) break;
         }
-        if (len > 0 && (limit || len > p || lim < 0)) result.append(makeShared19(runtime, p, len - p));
-        return result;
-    }
 
-    private static int find(byte[] in, int inP, int inLen, byte[] what, int whatP, int whatLen, int start) {
-        byte first  = what[whatP];
-        int max = inP + (inLen - whatLen);
-
-        for (int i = inP + start; i <= max; i++) {
-            if (in[i] != first) while (++i <= max && in[i] != first);
-            if (i <= max) {
-                int j = i + 1;
-                int end = j + whatLen - 1;
-                for (int k = whatP + 1; j < end && in[j] == what[k]; j++, k++);
-                if (j == end) return i - inP;
-            }
+        if (value.realSize > 0 && (limit || value.realSize > p || lim < 0)) {
+            result.append(makeShared19(runtime, p, value.realSize - p));
         }
-        return -1;
+
+        return result;
     }
 
     private RubyString getStringForPattern(IRubyObject obj) {
