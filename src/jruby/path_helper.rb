@@ -7,15 +7,15 @@ module JRuby
       parts = [""]
       in_quote = nil
       escape = false
-      cmd.each_byte do |c|
+      cmd.each_char do |c|
         if escape
           parts.last << c
           escape = false
         else
           case c
-          when ?\\
+          when "\\"
             escape = true
-          when ?", ?'
+          when "\"", "'"
             if in_quote && in_quote == c
               in_quote = nil
             elsif in_quote.nil?
@@ -23,7 +23,7 @@ module JRuby
             else
               parts.last << c
             end
-          when 32 # space
+          when " " # space
             if in_quote
               parts.last << c
             else
