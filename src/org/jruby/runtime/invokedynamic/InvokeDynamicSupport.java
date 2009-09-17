@@ -10,7 +10,6 @@ import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -78,7 +77,11 @@ public class InvokeDynamicSupport {
         return entry.typeOk(self.getMetaClass());
     }
 
-    public static IRubyObject fallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name) {
+    public static IRubyObject fallback(JRubyCallSite site, 
+            ThreadContext context,
+            IRubyObject caller,
+            IRubyObject self,
+            String name) {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
         if (methodMissing(entry, site.callType(), name, caller)) {
@@ -273,7 +276,7 @@ public class InvokeDynamicSupport {
         return RuntimeHelpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, arg2, block);
     }
 
-    private static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
+    public static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
         RubyClass selfType = self.getMetaClass();
         return selfType;
