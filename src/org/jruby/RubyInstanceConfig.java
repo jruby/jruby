@@ -262,14 +262,29 @@ public class RubyInstanceConfig {
 
     public int characterIndex = 0;
 
-    public RubyInstanceConfig() {
-        if (Ruby.isSecurityRestricted())
-            currentDirectory = "/";
-        else {
-            currentDirectory = JRubyFile.getFileProperty("user.dir");
-        }
+    public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
+        setCurrentDirectory(parentConfig.getCurrentDirectory());
+        samplingEnabled = parentConfig.samplingEnabled;
+        compatVersion = parentConfig.compatVersion;
+        compileMode = parentConfig.getCompileMode();
+        jitLogging = parentConfig.jitLogging;
+        jitLoggingVerbose = parentConfig.jitLoggingVerbose;
+        jitLogEvery = parentConfig.jitLogEvery;
+        jitThreshold = parentConfig.jitThreshold;
+        jitMax = parentConfig.jitMax;
+        jitMaxSize = parentConfig.jitMaxSize;
+        managementEnabled = parentConfig.managementEnabled;
+        runRubyInProcess = parentConfig.runRubyInProcess;
+        excludedMethods = parentConfig.excludedMethods;
+        threadDumpSignal = parentConfig.threadDumpSignal;
+        
+        classCache = new ClassCache<Script>(loader, jitMax);
+    }
 
+    public RubyInstanceConfig() {
+        setCurrentDirectory(Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir"));
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
+
         String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", "RUBY1_8");
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
             compatVersion = CompatVersion.RUBY1_8;

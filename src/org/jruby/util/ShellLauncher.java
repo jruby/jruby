@@ -79,12 +79,14 @@ public class ShellLauncher {
         private RubyInstanceConfig config;
         private Thread processThread;
         private int result;
+        private Ruby parentRuntime;
         
-        public ScriptThreadProcess(final String[] argArray, final String[] env, final File dir) {
-            this(argArray, env, dir, true);
+        public ScriptThreadProcess(Ruby parentRuntime, final String[] argArray, final String[] env, final File dir) {
+            this(parentRuntime, argArray, env, dir, true);
         }
 
-        public ScriptThreadProcess(final String[] argArray, final String[] env, final File dir, final boolean pipedStreams) {
+        public ScriptThreadProcess(Ruby parentRuntime, final String[] argArray, final String[] env, final File dir, final boolean pipedStreams) {
+            this.parentRuntime = parentRuntime;
             this.argArray = argArray;
             this.env = env;
             this.pwd = dir;
@@ -121,14 +123,14 @@ public class ShellLauncher {
         }
 
         public void start() throws IOException {
-            this.config = new RubyInstanceConfig() {{
+            config = new RubyInstanceConfig(parentRuntime.getInstanceConfig()) {{
                 setEnvironment(environmentMap(env));
                 setCurrentDirectory(pwd.toString());
             }};
             if (pipedStreams) {
-                this.config.setInput(new PipedInputStream(processInput));
-                this.config.setOutput(new PrintStream(new PipedOutputStream(processOutput)));
-                this.config.setError(new PrintStream(new PipedOutputStream(processError)));
+                config.setInput(new PipedInputStream(processInput));
+                config.setOutput(new PrintStream(new PipedOutputStream(processOutput)));
+                config.setError(new PrintStream(new PipedOutputStream(processError)));
             }
             String procName = "piped";
             if (argArray.length > 0) {
@@ -215,7 +217,7 @@ public class ShellLauncher {
                 }
                 String[] newargs = new String[args.length - startIndex];
                 System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-                ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(runtime), pwd, false);
+                ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime, newargs, getCurrentEnv(runtime), pwd, false);
                 ipScript.start();
                 
                 return ipScript.waitFor();
@@ -661,7 +663,7 @@ public class ShellLauncher {
             }
             String[] newargs = new String[args.length - startIndex];
             System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-            ScriptThreadProcess ipScript = new ScriptThreadProcess(newargs, getCurrentEnv(runtime), pwd);
+            ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime, newargs, getCurrentEnv(runtime), pwd);
             ipScript.start();
             aProcess = ipScript;
         } else if (rawArgs.length == 1 && shouldRunInShell(shell, args)) {
