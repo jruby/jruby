@@ -90,6 +90,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @return A native value returned to the native caller.
      */
     public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+        if (proc instanceof Function) {
+            return (Function) proc;
+        }
+
         Map<CallbackInfo, Callback> map;
         synchronized (callbackMap) {
             map = callbackMap.get(proc);

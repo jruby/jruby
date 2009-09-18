@@ -67,7 +67,7 @@ final class CallbackMarshaller implements ParameterMarshaller {
     }
     private void marshalParam(ThreadContext context, InvocationBuffer buffer, Object value) {
         Pointer cb = CallbackManager.getInstance().getCallback(context.getRuntime(), cbInfo, value);
-        buffer.putAddress(((CallbackManager.Callback) cb).getAddress());
+        buffer.putAddress(cb.getAddress());
     }
     public boolean needsInvocationSession() {
         return false;
