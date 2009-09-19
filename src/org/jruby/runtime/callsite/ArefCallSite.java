@@ -9,6 +9,7 @@ public class ArefCallSite extends NormalCachingCallSite {
         super("[]");
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
         if (self.getMetaClass() == context.getRuntime().getArray()) {
             return ((RubyArray) self).entry(fixnum);

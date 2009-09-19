@@ -146,8 +146,6 @@ public class MethodIndex {
             return new MinusCallSite();
         } else if (name.equals("*")) {
             return new MulCallSite();
-        } else if (name.equals("/")) {
-            return new DivCallSite();
         } else if (name.equals("<")) {
             return new LtCallSite();
         } else if (name.equals("<=")) {
