@@ -748,11 +748,11 @@ public class ASTCompiler {
                     }
                 }
             } else if (name.length() == 2) {
-                switch (name.charAt(0)) {
-                case '<': case '>': case '=':
-                    switch (name.charAt(1)) {
-                    case '=': case '<':
-                        if (argument instanceof FixnumNode) {
+                if (argument instanceof FixnumNode) {
+                    switch (name.charAt(0)) {
+                    case '<': case '>': case '=': case '[':
+                        switch (name.charAt(1)) {
+                        case '=': case '<': case ']':
                             context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
                             if (!expr) context.consumeCurrentValue();
                             return;
