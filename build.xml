@@ -730,13 +730,14 @@
     <attribute name="jruby.version" default="ruby1_8"/>
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
+    <attribute name="jit.maxsize" default="20"/>
     <attribute name="jit.max" default="-1"/>
     <attribute name="objectspace.enabled" default="true"/>
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
     <element name="junit-tests"/>
     <sequential>
-      <echo message="compile=@{compile.mode}, jit.threshold=@{jit.threshold}, jit.max=@{jit.max}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} version=@{jruby.version}"/>
+      <echo message="compile=@{compile.mode}, jit.threshold=@{jit.threshold}, jit.maxsize=@{jit.maxsize}, jit.max=@{jit.max}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} version=@{jruby.version}"/>
       <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
 
       <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1800000">
@@ -747,6 +748,7 @@
 	<sysproperty key="jruby.lib" value="${lib.dir}"/>
 	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
 	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
+	<sysproperty key="jruby.jit.maxsize" value="@{jit.maxsize}"/>
 	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
 	<sysproperty key="jruby.compat.version" value="@{jruby.version}"/>
 	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
@@ -788,11 +790,14 @@
   <macrodef name="run-junit-1.8-short">
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
+    <attribute name="jit.maxsize" default="1000000000"/>
     <attribute name="reflection" default="false"/>
     <attribute name="thread.pooling" default="false"/>
 
     <sequential>
-      <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" reflection="@{reflection}" thread.pooling="@{thread.pooling}">
+      <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" 
+                reflection="@{reflection}" thread.pooling="@{thread.pooling}"
+                jit.maxsize="@{jit.maxsize}">
 	<junit-tests>
 	  <test name="${test}" if="test"/>
 	  <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
@@ -808,11 +813,14 @@
   <macrodef name="run-junit-1.8">
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
+    <attribute name="jit.maxsize" default="1000000000"/>
     <attribute name="reflection" default="false"/>
     <attribute name="thread.pooling" default="false"/>
 
     <sequential>
-      <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" reflection="@{reflection}" thread.pooling="@{thread.pooling}">
+      <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
+                reflection="@{reflection}" thread.pooling="@{thread.pooling}"
+                jit.maxsize="@{jit.maxsize}">
 	<junit-tests>
 	  <test name="${test}" if="test"/>
 	  <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
@@ -834,7 +842,10 @@
     <attribute name="thread.pooling" default="false"/>
 
     <sequential>
-      <run-junit objectspace.enabled="false" jruby.version="ruby1_9" compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}" reflection="@{reflection}" thread.pooling="@{thread.pooling}">
+      <run-junit objectspace.enabled="false" jruby.version="ruby1_9"
+                compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
+                reflection="@{reflection}" thread.pooling="@{thread.pooling}"
+                jit.maxsize="@{jit.maxsize}">
 	<junit-tests>
 	  <test name="${test}" if="test"/>
 	  <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}"  unless="test"/>
