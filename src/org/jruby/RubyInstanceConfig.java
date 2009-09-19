@@ -65,7 +65,7 @@ public class RubyInstanceConfig {
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    private static final int JIT_MAX_SIZE_LIMIT = Integer.MAX_VALUE;
+    private static final int JIT_MAX_SIZE_LIMIT = 10000;
 
     /**
      * The JIT threshold to the specified method invocation count.
