@@ -133,29 +133,31 @@ public class MethodIndex {
         // fast and safe respond_to? call site logic
         if (name.equals("respond_to?")) return new RespondToCallSite();
         
-        if (!RubyInstanceConfig.FASTOPS_COMPILE_ENABLED) {
-            return new NormalCachingCallSite(name);
-        } else {
-            if (name.equals("+")) {
-                return new PlusCallSite();
-            } else if (name.equals("-")) {
-                return new MinusCallSite();
-            } else if (name.equals("*")) {
-                return new MulCallSite();
-            } else if (name.equals("/")) {
-                return new DivCallSite();
-            } else if (name.equals("<")) {
-                return new LtCallSite();
-            } else if (name.equals("<=")) {
-                return new LeCallSite();
-            } else if (name.equals(">")) {
-                return new GtCallSite();
-            } else if (name.equals(">=")) {
-                return new GeCallSite();
-            } else {
-                return new NormalCachingCallSite(name);
-            }
+        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED) return getFastOpsCallSite(name);
+
+        return new NormalCachingCallSite(name);
+    }
+
+    public synchronized static CallSite getFastOpsCallSite(String name) {
+        if (name.equals("+")) {
+            return new PlusCallSite();
+        } else if (name.equals("-")) {
+            return new MinusCallSite();
+        } else if (name.equals("*")) {
+            return new MulCallSite();
+        } else if (name.equals("/")) {
+            return new DivCallSite();
+        } else if (name.equals("<")) {
+            return new LtCallSite();
+        } else if (name.equals("<=")) {
+            return new LeCallSite();
+        } else if (name.equals(">")) {
+            return new GtCallSite();
+        } else if (name.equals(">=")) {
+            return new GeCallSite();
         }
+
+        return new NormalCachingCallSite(name);
     }
     
     public synchronized static CallSite getFunctionalCallSite(String name) {

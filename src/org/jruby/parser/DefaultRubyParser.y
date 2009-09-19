@@ -1052,7 +1052,7 @@ primary       : literal
                   if ($1 instanceof SelfNode) {
                       $$ = support.new_fcall(new Token("[]", getPosition($1)), $3, null);
                   } else {
-                      $$ = support.new_call($1, new Token("[]", getPosition($1)), $3, null);
+                      $$ = support.new_aref($1, new Token("[]", getPosition($1)), $3);
                   }
               }
               | tLBRACK aref_args tRBRACK {

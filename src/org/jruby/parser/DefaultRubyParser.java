@@ -3715,7 +3715,7 @@ public Object case280_line1051(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-3+yyTop]) instanceof SelfNode) {
                       yyVal = support.new_fcall(new Token("[]", getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]), null);
                   } else {
-                      yyVal = support.new_call(((Node)yyVals[-3+yyTop]), new Token("[]", getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]), null);
+                      yyVal = support.new_aref(((Node)yyVals[-3+yyTop]), new Token("[]", getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   }
     return yyVal;
 }
