@@ -33,6 +33,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -57,12 +58,8 @@ public final class CallOneArgFixnumNode extends CallNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-
-        if (receiver instanceof RubyFixnum) return callAdapter.call(context, self, receiver, arg1);
-
-        return callAdapter.call(context, self, receiver,
-                ((ArrayNode) getArgsNode()).get(0).interpret(runtime, context, self, aBlock));
+        return callAdapter.call(context, self,
+                getReceiverNode().interpret(runtime, context, self, aBlock), arg1);
     }
     
     @Override
