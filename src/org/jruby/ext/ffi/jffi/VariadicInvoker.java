@@ -113,12 +113,17 @@ public class VariadicInvoker extends RubyObject {
             ffiParamTypes[i] = getFFIType(paramTypes[i]);
         }
         Invocation invocation = new Invocation(context);
-        Function function = new Function(address, returnType, ffiParamTypes, convention);
-        HeapInvocationBuffer args = new HeapInvocationBuffer(function);
-        for (int i = 0; i < types.length; ++i) {
-            DefaultMethodFactory.getMarshaller(paramTypes[i]).marshal(invocation, args, params[i]);
+        try {
+            Function function = new Function(address, returnType, ffiParamTypes, convention);
+            HeapInvocationBuffer args = new HeapInvocationBuffer(function);
+            for (int i = 0; i < types.length; ++i) {
+                DefaultMethodFactory.getMarshaller(paramTypes[i]).marshal(invocation, args, params[i]);
+            }
+
+            return functionInvoker.invoke(context.getRuntime(), function, args);
+        } finally {
+            invocation.finish();
         }
-        return functionInvoker.invoke(context.getRuntime(), function, args);
     }
     private static final Type getFFIType(NativeParam type) {
         if (type instanceof NativeType) switch ((NativeType) type) {

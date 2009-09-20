@@ -32,12 +32,14 @@ class DefaultMethod extends JFFIDynamicMethod {
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
         if (needsInvocationSession) {
             Invocation invocation = new Invocation(context);
-            for (int i = 0; i < args.length; ++i) {
-                marshallers[i].marshal(invocation, buffer, args[i]);
+            try {
+                for (int i = 0; i < args.length; ++i) {
+                    marshallers[i].marshal(invocation, buffer, args[i]);
+                }
+                return functionInvoker.invoke(context.getRuntime(), function, buffer);
+            } finally {
+                invocation.finish();
             }
-            IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, buffer);
-            invocation.finish();
-            return retVal;
         } else {
             for (int i = 0; i < args.length; ++i) {
                 marshallers[i].marshal(context, buffer, args[i]);

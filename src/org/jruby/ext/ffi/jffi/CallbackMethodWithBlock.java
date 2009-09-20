@@ -39,24 +39,26 @@ final class CallbackMethodWithBlock extends DynamicMethod {
                 marshallers.length - (blockGiven ? 1 : 0), marshallers.length);
         
         Invocation invocation = new Invocation(context);
-        HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
-        
-        if (!blockGiven) {
-            for (int i = 0; i < args.length; ++i) {
-                marshallers[i].marshal(invocation, buffer, args[i]);
+        try {
+            HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
+
+            if (!blockGiven) {
+                for (int i = 0; i < args.length; ++i) {
+                    marshallers[i].marshal(invocation, buffer, args[i]);
+                }
+            } else {
+                for (int i = 0; i < cbindex; ++i) {
+                    marshallers[i].marshal(invocation, buffer, args[i]);
+                }
+                ((CallbackMarshaller)marshallers[cbindex]).marshal(invocation, buffer, block);
+                for (int i = cbindex + 1; i < marshallers.length; ++i) {
+                    marshallers[i].marshal(invocation, buffer, args[i - 1]);
+                }
             }
-        } else {
-            for (int i = 0; i < cbindex; ++i) {
-                marshallers[i].marshal(invocation, buffer, args[i]);
-            }
-            ((CallbackMarshaller)marshallers[cbindex]).marshal(invocation, buffer, block);
-            for (int i = cbindex + 1; i < marshallers.length; ++i) {
-                marshallers[i].marshal(invocation, buffer, args[i - 1]);
-            }
+            return functionInvoker.invoke(context.getRuntime(), function, buffer);
+        } finally {
+            invocation.finish();
         }
-        IRubyObject retVal = functionInvoker.invoke(context.getRuntime(), function, buffer);
-        invocation.finish();
-        return retVal;
     }
     @Override
     public DynamicMethod dup() {
