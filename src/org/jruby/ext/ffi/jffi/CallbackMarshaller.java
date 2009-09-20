@@ -62,14 +62,37 @@ final class CallbackMarshaller implements ParameterMarshaller {
             throw context.getRuntime().newTypeError("wrong argument type.  Expected callable object");
         }
     }
-    void marshal(ThreadContext context, InvocationBuffer buffer, Block value) {
-        marshalParam(context, buffer, value);
+
+    private static final class CallbackReaper implements Runnable {
+        private final CallbackManager.Callback cb;
+
+        public CallbackReaper(CallbackManager.Callback cb) {
+            this.cb = cb;
+        }
+
+        public void run() {
+            cb.dispose();
+        }
     }
+
+    void marshal(Invocation session, InvocationBuffer buffer, Block value) {
+        final CallbackManager.Callback cb = CallbackManager.getInstance().getCallback(session.getThreadContext().getRuntime(), cbInfo, value);
+        buffer.putAddress(cb.getAddress());
+
+        //
+        // Adding a post-invoke for the cb result serves to both keep it alive
+        // until after the function returns, and allows us to clean up the native
+        // trampoline early, instead of letting them accumulate until a GC run
+        //
+        session.addPostInvoke(new CallbackReaper(cb));
+    }
+
     private void marshalParam(ThreadContext context, InvocationBuffer buffer, Object value) {
         Pointer cb = CallbackManager.getInstance().getCallback(context.getRuntime(), cbInfo, value);
         buffer.putAddress(cb.getAddress());
     }
+
     public boolean needsInvocationSession() {
-        return false;
+        return true;
     }
 }

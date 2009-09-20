@@ -6,7 +6,6 @@ import com.kenai.jffi.Closure;
 import com.kenai.jffi.ClosureManager;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,11 +13,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.InvalidMemoryIO;
+import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
@@ -33,6 +34,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final int LONG_SIZE = Platform.getPlatform().longSize();
+    private static final String CALLBACK_ID = "ffi_callback";
 
     /** Holder for the single instance of CallbackManager */
     private static final class SingletonHolder {
@@ -65,19 +67,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         return cbClass;
     }
     
-    /**
-     * A map to keep {@link Callback} instances alive
-     * 
-     * This maps from either a Proc or Block to another map of
-     * CallbackInfo:Callback. This allows the fringe case of a single proc 
-     * object being passed as an argument to different functions.
-     */
-    private final Map<Object, Map<CallbackInfo, Callback>> callbackMap =
-            new WeakHashMap<Object, Map<CallbackInfo, Callback>>();
-
     /** A map of Ruby CallbackInfo to low level JFFI Closure metadata */
     private final Map<CallbackInfo, ClosureInfo> infoMap =
             Collections.synchronizedMap(new WeakHashMap<CallbackInfo, ClosureInfo>());
+
+    public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+        return proc instanceof RubyObject
+                ? getCallback(runtime, cbInfo, (RubyObject) proc)
+                : newCallback(runtime, cbInfo, proc);
+    }
 
     /**
      * Gets a Callback object conforming to the signature contained in the
@@ -85,28 +83,66 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      *
      * @param runtime The ruby runtime the callback is attached to
      * @param cbInfo The signature of the native callback
-     * @param proc The ruby <tt>Proc</tt> or <tt>Block</tt> object to call when
-     * the callback is invoked.
+     * @param proc The ruby object to call when the callback is invoked.
      * @return A native value returned to the native caller.
      */
-    public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+    public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, RubyObject proc) {
         if (proc instanceof Function) {
             return (Function) proc;
         }
 
-        Map<CallbackInfo, Callback> map;
-        synchronized (callbackMap) {
-            map = callbackMap.get(proc);
-            if (map != null) {
-                Callback cb = map.get(cbInfo);
+        synchronized (proc) {
+            Object existing = proc.fastGetInternalVariable(CALLBACK_ID);
+            if (existing instanceof Callback && ((Callback) existing).cbInfo == cbInfo) {
+                return (Callback) existing;
+            } else if (existing instanceof Map) {
+                Map m = (Map) existing;
+                Callback cb = (Callback) m.get(proc);
                 if (cb != null) {
                     return cb;
                 }
-            } else {
-                callbackMap.put(proc, map = Collections.synchronizedMap(new HashMap<CallbackInfo, Callback>(2)));
             }
-        }
 
+            Callback cb = newCallback(runtime, cbInfo, proc);
+            
+            if (existing == null) {
+                ((RubyObject) proc).fastSetInternalVariable(CALLBACK_ID, cb);
+            } else {
+                Map<CallbackInfo, Callback> m = existing instanceof Map
+                        ? (Map<CallbackInfo, Callback>) existing
+                        : Collections.synchronizedMap(new WeakHashMap<CallbackInfo, Callback>());
+                m.put(cbInfo, cb);
+                m.put(((Callback) existing).cbInfo, (Callback) existing);
+                ((RubyObject) proc).fastSetInternalVariable(CALLBACK_ID, m);
+            }
+
+            return cb;
+        }
+        
+    }
+
+    /**
+     * Gets a Callback object conforming to the signature contained in the
+     * <tt>CallbackInfo</tt> for the ruby <tt>Proc</tt> or <tt>Block</tt> instance.
+     *
+     * @param runtime The ruby runtime the callback is attached to
+     * @param cbInfo The signature of the native callback
+     * @param proc The ruby <tt>Block</tt> object to call when the callback is invoked.
+     * @return A native value returned to the native caller.
+     */
+    final Callback getCallback(Ruby runtime, CallbackInfo cbInfo, Block proc) {
+        return newCallback(runtime, cbInfo, proc);
+    }
+
+    private final Callback newCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+        ClosureInfo info = getClosureInfo(runtime, cbInfo);
+        WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
+        Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
+                info.ffiReturnType, info.ffiParameterTypes, info.convention);
+        return new Callback(runtime, handle, cbInfo);
+    }
+
+    private final ClosureInfo getClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
         ClosureInfo info = infoMap.get(cbInfo);
         if (info == null) {
             CallingConvention convention = "stdcall".equals(null)
@@ -114,14 +150,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             info = new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(), convention);
             infoMap.put(cbInfo, info);
         }
-        
-        final WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
-        final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
-                info.ffiReturnType, info.ffiParameterTypes, info.convention);
-        Callback cb = new Callback(runtime, handle, cbInfo);
-        map.put(cbInfo, cb);
 
-        return cb;
+        return info;
     }
 
     /**
@@ -181,6 +211,13 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass("Callback"),
                     new CallbackMemoryIO(runtime, handle), Long.MAX_VALUE);
             this.cbInfo = cbInfo;
+        }
+
+        void dispose() {
+            MemoryIO mem = getMemoryIO();
+            if (mem instanceof CallbackMemoryIO) {
+                ((CallbackMemoryIO) mem).free();
+            }
         }
     }
 

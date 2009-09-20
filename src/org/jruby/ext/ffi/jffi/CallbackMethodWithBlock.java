@@ -49,7 +49,7 @@ final class CallbackMethodWithBlock extends DynamicMethod {
             for (int i = 0; i < cbindex; ++i) {
                 marshallers[i].marshal(invocation, buffer, args[i]);
             }
-            ((CallbackMarshaller)marshallers[cbindex]).marshal(context, buffer, block);
+            ((CallbackMarshaller)marshallers[cbindex]).marshal(invocation, buffer, block);
             for (int i = cbindex + 1; i < marshallers.length; ++i) {
                 marshallers[i].marshal(invocation, buffer, args[i - 1]);
             }
