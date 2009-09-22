@@ -7,8 +7,6 @@ import java.util.List;
 
 public class BasicBlock
 {
-    static private int _nextBBId = 1;
-
     int            _id;     // Basic Block id
     CFG            _cfg;    // CFG that this basic block belongs to
     Label          _label;  // All basic blocks have a starting label
@@ -21,19 +19,16 @@ public class BasicBlock
         _label  = l;
         _isLive = true;
         _cfg = c;
-        _id = _nextBBId;
-        _nextBBId++;
+        _id = c.getNextBBId();
     }
 
-    public void addInstr(IR_Instr i)
-    {
-        _instrs.add(i);
-    }
+    public int getID() { return _id; }
 
-    public void insertInstr(IR_Instr i)
-    {
-        _instrs.add(0, i);
-    }
+    public void addInstr(IR_Instr i) { _instrs.add(i); }
+
+    public void insertInstr(IR_Instr i) { _instrs.add(0, i); }
+
+    public List<IR_Instr> getInstrs() { return _instrs; }
 
     public String toString() { return "BB<" + _id + "," + _label + ">"; }
 }

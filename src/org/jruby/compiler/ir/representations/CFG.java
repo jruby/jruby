@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.Operation;
@@ -20,22 +21,67 @@ import org.jgrapht.graph.*;
 
 public class CFG
 {
-    IR_Method  _method;  // Method to which this cfg belongs
-    BasicBlock _entryBB; // Entry BB -- dummy
-    BasicBlock _exitBB;  // Exit BB -- dummy
-    Graph<BasicBlock, DefaultEdge> _cfg;
+    public static class CFG_Edge
+    {
+        final public BasicBlock _src;
+        final public BasicBlock _dst;
+
+        public CFG_Edge(BasicBlock s, BasicBlock d)
+        {
+            _src = s;
+            _dst = d;
+        }
+
+        public String toString()
+        {
+            return "<" + _src.getID() + " --> " + _dst.getID() + ">";
+        }
+    }
+
+    IR_Method  _method;    // Method to which this cfg belongs
+    BasicBlock _entryBB;   // Entry BB -- dummy
+    BasicBlock _exitBB;    // Exit BB -- dummy
+    DirectedGraph<BasicBlock, CFG_Edge> _cfg;  // The actual graph
+    int        _nextBBId;  // Next available basic block id
 
     public CFG(IR_Method m)
     {
+        _nextBBId = 0; // Init before building basic blocks below!
         _method = m;
         _entryBB = new BasicBlock(this, getNewLabel());
         _exitBB  = new BasicBlock(this, getNewLabel());
         buildCFG();
     }
 
-    public Graph getCFG()
+    public DirectedGraph getCFG()
     {
         return _cfg;
+    }
+
+    public int getNextBBId()
+    {
+       _nextBBId++;
+       return _nextBBId;
+    }
+
+    public int getMaxNodeID()
+    {
+       return _nextBBId;
+    }
+
+    public Set<CFG_Edge> incomingEdgesOf(BasicBlock bb)
+    {
+        return _cfg.incomingEdgesOf(bb);
+    }
+
+    public Set<CFG_Edge> outgoingEdgesOf(BasicBlock bb)
+    {
+        return _cfg.outgoingEdgesOf(bb);
+    }
+
+    public Set<BasicBlock> getNodes()
+    {
+        return _cfg.vertexSet();
     }
 
     private Label getNewLabel()
@@ -53,7 +99,10 @@ public class CFG
         bbMap.put(_entryBB._label, _entryBB);
         bbMap.put(_exitBB._label, _exitBB);
 
-        DirectedGraph<BasicBlock, DefaultEdge> g = new DefaultDirectedGraph<BasicBlock, DefaultEdge>(DefaultEdge.class);
+        DirectedGraph<BasicBlock, CFG_Edge> g = new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
+                                                    new EdgeFactory<BasicBlock, CFG_Edge>() {
+                                                        public CFG_Edge createEdge(BasicBlock s, BasicBlock d) { return new CFG_Edge(s, d); }
+                                                    });
         g.addVertex(_entryBB);
         g.addVertex(_exitBB);
 
