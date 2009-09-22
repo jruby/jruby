@@ -74,10 +74,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 public class JavaUtil {
-    public static Object convertRubyToJava(IRubyObject rubyObject) {
-        return convertRubyToJava(rubyObject, Object.class);
-    }
-    
     public interface RubyConverter {
         public Object convert(ThreadContext context, IRubyObject rubyObject);
     }
@@ -942,22 +938,38 @@ public class JavaUtil {
 
     public static NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
-            return Byte.valueOf((byte)numeric.getLongValue());
+            long value = numeric.getLongValue();
+            if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+                numeric.getRuntime().newTypeError("too big for byte or Byte: " + numeric);
+            }
+            return Byte.valueOf((byte)value);
         }
     };
     public static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
-            return Short.valueOf((short)numeric.getLongValue());
+            long value = numeric.getLongValue();
+            if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+                numeric.getRuntime().newTypeError("too big for short or Short: " + numeric);
+            }
+            return Short.valueOf((short)value);
         }
     };
     public static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
-            return Character.valueOf((char)numeric.getLongValue());
+            long value = numeric.getLongValue();
+            if (value > Character.MAX_VALUE || value < Character.MIN_VALUE) {
+                numeric.getRuntime().newTypeError("too big for char or Character: " + numeric);
+            }
+            return Character.valueOf((char)value);
         }
     };
     public static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
-            return Integer.valueOf((int)numeric.getLongValue());
+            long value = numeric.getLongValue();
+            if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+                numeric.getRuntime().newTypeError("too big for int or Integer: " + numeric);
+            }
+            return Integer.valueOf((int)value);
         }
     };
     public static NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
@@ -967,7 +979,11 @@ public class JavaUtil {
     };
     public static NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
-            return Float.valueOf((float)numeric.getDoubleValue());
+            double value = numeric.getDoubleValue();
+            if (value > Float.MAX_VALUE || value < Float.MIN_VALUE) {
+                numeric.getRuntime().newTypeError("too big for float or Float: " + numeric);
+            }
+            return Float.valueOf((float)value);
         }
     };
     public static NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
@@ -1289,6 +1305,11 @@ public class JavaUtil {
         } else {
             throw runtime.newTypeError(errorMessage);
         }
+    }
+
+    @Deprecated
+    public static Object convertRubyToJava(IRubyObject rubyObject) {
+        return convertRubyToJava(rubyObject, Object.class);
     }
 
     @Deprecated
