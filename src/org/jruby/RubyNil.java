@@ -34,6 +34,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -195,5 +196,13 @@ public class RubyNil extends RubyObject {
     @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
     public static IRubyObject to_r(ThreadContext context, IRubyObject recv) {
         return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.getRuntime()));
+    }
+
+    public Object toJava(Class target) {
+        if(target.isPrimitive()) {
+            throw getRuntime().newTypeError("primitives do not accept null");
+        } else {
+            return null;
+        }
     }
 }

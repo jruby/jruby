@@ -209,14 +209,19 @@ public class JavaProxy extends RubyObject {
     @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        if (other.dataGetStruct() instanceof JavaObject) {
-            boolean equal = unwrap() == ((JavaObject)other.dataGetStruct()).getValue();
+        if (other instanceof JavaProxy) {
+            boolean equal = getObject() == ((JavaProxy)other).getObject();
             return runtime.newBoolean(equal);
         }
         return runtime.getFalse();
     }
+
+    public Object toJava(Class type) {
+        getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+        return getObject();
+    }
     
     public Object unwrap() {
-        return ((JavaObject)dataGetStruct()).getValue();
+        return getObject();
     }
 }

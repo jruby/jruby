@@ -715,6 +715,10 @@ public class RubyTime extends RubyObject {
         return s_mload(recv, (RubyTime)(((RubyClass)recv).allocate()), from);
     }
 
+    public Object toJava(Class target) {
+        return getJavaDate();
+    }
+    
     protected static RubyTime s_mload(IRubyObject recv, RubyTime time, IRubyObject from) {
         Ruby runtime = recv.getRuntime();
 

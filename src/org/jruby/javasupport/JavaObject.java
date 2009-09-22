@@ -269,6 +269,9 @@ public class JavaObject extends RubyObject {
         }
     }
 
+    public Object toJava(Class cls) {
+        return JavaUtil.coerceJavaObjectToType(getRuntime().getCurrentContext(), getValue(), cls);
+    }
 
     private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {

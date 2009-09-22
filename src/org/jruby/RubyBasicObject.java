@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -708,6 +709,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (obj instanceof RubyFixnum) return obj;
         IRubyObject conv = TypeConverter.convertToType(obj, getRuntime().getInteger(), method, false);
         return conv instanceof RubyInteger ? conv : obj.getRuntime().getNil();
+    }
+
+    /**
+     * @see IRubyObject.toJava
+     */
+    public Object toJava(Class target) {
+        if (dataGetStruct() instanceof JavaObject) {
+            // for interface impls
+
+            JavaObject innerWrapper = (JavaObject)dataGetStruct();
+
+            // ensure the object is associated with the wrapper we found it in,
+            // so that if it comes back we don't re-wrap it
+            getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), this);
+
+            return innerWrapper.getValue();
+        } else {
+            return JavaUtil.coerceOtherToType(getRuntime().getCurrentContext(), this, target);
+        }
     }
 
     public IRubyObject dup() {

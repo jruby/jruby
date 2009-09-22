@@ -45,6 +45,7 @@ import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -915,6 +916,10 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = {"conjugate", "conj"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject conjugate(ThreadContext context) {
         return this;
+    }
+
+    public Object toJava(Class target) {
+        return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
 
     public static class InvalidIntegerException extends NumberFormatException {

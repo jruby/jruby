@@ -74,6 +74,7 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.MiniJava;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -6874,6 +6875,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public IRubyObject to_java() {
         return MiniJava.javaToRuby(getRuntime(), new String(getBytes()));
+    }
+
+    public Object toJava(Class target) {
+        return JavaUtil.coerceStringToType(this, target);
     }
 
     /**

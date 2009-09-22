@@ -25,7 +25,7 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     }
 
     static Object convertArg(ThreadContext context, IRubyObject arg, JavaCallable method, int index) {
-        return JavaUtil.convertArgumentToType(context, arg, method.getParameterTypes()[index]);
+        return arg.toJava(method.getParameterTypes()[index]);
     }
 
     static JavaProxy castJavaProxy(IRubyObject self) {

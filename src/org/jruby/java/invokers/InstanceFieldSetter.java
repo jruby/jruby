@@ -17,7 +17,7 @@ public class InstanceFieldSetter extends FieldMethodOne {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
         try {
             JavaProxy proxy = InstanceMethodInvoker.castJavaProxy(self);
-            Object newValue = JavaUtil.convertArgumentToType(context, arg, field.getType());
+            Object newValue = arg.toJava(field.getType());
             field.set(proxy.getObject(), newValue);
         } catch (IllegalAccessException iae) {
             throw context.getRuntime().newTypeError("illegal access setting variable: " + iae.getMessage());

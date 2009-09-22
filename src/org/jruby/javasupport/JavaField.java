@@ -141,7 +141,7 @@ public class JavaField extends JavaAccessibleObject {
             val = (IRubyObject)val.dataGetStruct();
         }
         try {
-            Object convertedValue = JavaUtil.convertArgumentToType(val.getRuntime().getCurrentContext(), val, field.getType());
+            Object convertedValue = val.toJava(field.getType());
 
             field.set(javaObject, convertedValue);
         } catch (IllegalAccessException iae) {

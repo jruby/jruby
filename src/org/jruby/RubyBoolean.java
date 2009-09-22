@@ -163,5 +163,11 @@ public class RubyBoolean extends RubyObject {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
     }
+
+    public Object toJava(Class target) {
+        if (isFalse()) return Boolean.FALSE;
+
+        return Boolean.TRUE;
+    }
 }
 

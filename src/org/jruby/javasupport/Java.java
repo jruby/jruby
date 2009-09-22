@@ -524,7 +524,7 @@ public class Java implements Library {
                 Object[] newArgs = new Object[args.length];
                 Class[] parameterTypes = matching.getParameterTypes();
                 for (int i = 0; i < args.length; i++) {
-                    newArgs[i] = JavaUtil.convertArgumentToType(context, args[i], parameterTypes[i]);
+                    newArgs[i] = args[i].toJava(parameterTypes[i]);
                 }
                 JavaObject newObject = matching.newInstance(self, newArgs);
                 return JavaUtilities.set_java_object(self, self, newObject);
