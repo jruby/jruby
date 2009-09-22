@@ -78,82 +78,6 @@ public class JavaUtil {
         public Object convert(ThreadContext context, IRubyObject rubyObject);
     }
     
-    public static final RubyConverter RUBY_BOOLEAN_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            return Boolean.valueOf(rubyObject.isTrue());
-        }
-    };
-    
-    public static final RubyConverter RUBY_BYTE_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_i")) {
-                return new Byte((byte) ((RubyNumeric) rubyObject.callMethod(
-                        context, "to_i")).getLongValue());
-            }
-            return new Byte((byte) 0);
-        }
-    };
-    
-    public static final RubyConverter RUBY_SHORT_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_i")) {
-                return new Short((short) ((RubyNumeric) rubyObject.callMethod(
-                        context, "to_i")).getLongValue());
-            }
-            return new Short((short) 0);
-        }
-    };
-    
-    public static final RubyConverter RUBY_CHAR_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_i")) {
-                return new Character((char) ((RubyNumeric) rubyObject.callMethod(
-                        context, "to_i")).getLongValue());
-            }
-            return new Character((char) 0);
-        }
-    };
-    
-    public static final RubyConverter RUBY_INTEGER_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_i")) {
-                return new Integer((int) ((RubyNumeric) rubyObject.callMethod(
-                        context, "to_i")).getLongValue());
-            }
-            return new Integer(0);
-        }
-    };
-    
-    public static final RubyConverter RUBY_LONG_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_i")) {
-                return new Long(((RubyNumeric) rubyObject.callMethod(
-                        context, "to_i")).getLongValue());
-            }
-            return new Long(0);
-        }
-    };
-    
-    public static final RubyConverter RUBY_FLOAT_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_f")) {
-                return new Float((float) ((RubyNumeric) rubyObject.callMethod(
-                        context, "to_f")).getDoubleValue());
-            }
-            return new Float(0.0);
-        }
-    };
-    
-    public static final RubyConverter RUBY_DOUBLE_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_f")) {
-                return new Double(((RubyNumeric) rubyObject.callMethod(
-                        context, "to_f")).getDoubleValue());
-            }
-            return new Double(0.0);
-        }
-    };
-    
     public static final RubyConverter ARRAY_BOOLEAN_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject == context.getRuntime().getFalse() || rubyObject.isNil()) {
@@ -371,26 +295,9 @@ public class JavaUtil {
             }
         }
     };
-    
-    public static final Map<Class, RubyConverter> RUBY_CONVERTERS = new HashMap<Class, RubyConverter>();
+
     public static final Map<Class, RubyConverter> ARRAY_CONVERTERS = new HashMap<Class, RubyConverter>();
-    
     static {
-        RUBY_CONVERTERS.put(Boolean.class, RUBY_BOOLEAN_CONVERTER);
-        RUBY_CONVERTERS.put(Boolean.TYPE, RUBY_BOOLEAN_CONVERTER);
-        RUBY_CONVERTERS.put(Byte.class, RUBY_BYTE_CONVERTER);
-        RUBY_CONVERTERS.put(Byte.TYPE, RUBY_BYTE_CONVERTER);
-        RUBY_CONVERTERS.put(Short.class, RUBY_SHORT_CONVERTER);
-        RUBY_CONVERTERS.put(Short.TYPE, RUBY_SHORT_CONVERTER);
-        RUBY_CONVERTERS.put(Integer.class, RUBY_INTEGER_CONVERTER);
-        RUBY_CONVERTERS.put(Integer.TYPE, RUBY_INTEGER_CONVERTER);
-        RUBY_CONVERTERS.put(Long.class, RUBY_LONG_CONVERTER);
-        RUBY_CONVERTERS.put(Long.TYPE, RUBY_LONG_CONVERTER);
-        RUBY_CONVERTERS.put(Float.class, RUBY_FLOAT_CONVERTER);
-        RUBY_CONVERTERS.put(Float.TYPE, RUBY_FLOAT_CONVERTER);
-        RUBY_CONVERTERS.put(Double.class, RUBY_DOUBLE_CONVERTER);
-        RUBY_CONVERTERS.put(Double.TYPE, RUBY_DOUBLE_CONVERTER);
-        
         ARRAY_CONVERTERS.put(Boolean.class, ARRAY_BOOLEAN_CONVERTER);
         ARRAY_CONVERTERS.put(Boolean.TYPE, ARRAY_BOOLEAN_CONVERTER);
         ARRAY_CONVERTERS.put(Byte.class, ARRAY_BYTE_CONVERTER);
@@ -706,26 +613,6 @@ public class JavaUtil {
         }
         return convertJavaToRuby(runtime, object, object.getClass());
     }
-    
-    public static IRubyObject convertJavaToRuby(Ruby runtime, int i) {
-        return runtime.newFixnum(i);
-    }
-    
-    public static IRubyObject convertJavaToRuby(Ruby runtime, long l) {
-        return runtime.newFixnum(l);
-    }
-    
-    public static IRubyObject convertJavaToRuby(Ruby runtime, float f) {
-        return runtime.newFloat(f);
-    }
-    
-    public static IRubyObject convertJavaToRuby(Ruby runtime, double d) {
-        return runtime.newFloat(d);
-    }
-    
-    public static IRubyObject convertJavaToRuby(Ruby runtime, boolean b) {
-        return runtime.newBoolean(b);
-    }
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object, Class javaClass) {
         return getJavaConverter(javaClass).convert(runtime, object);
@@ -786,20 +673,12 @@ public class JavaUtil {
         return converter.convert(runtime, object);
     }
 
-    public static IRubyObject convertJavaToRuby(Ruby runtime, JavaConverter converter, Object object) {
-        if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
-            return Java.getInstance(runtime, object);
-        }
-        return converter.convert(runtime, object);
-    }
-
     public static IRubyObject convertJavaArrayElementToRuby(Ruby runtime, JavaConverter converter, Object array, int i) {
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
             return convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
         }
         return converter.get(runtime, array, i);
     }
-
     public static Class<?> primitiveToWrapper(Class<?> type) {
         if (type.isPrimitive()) {
             if (type == Integer.TYPE) {
@@ -1453,5 +1332,141 @@ public class JavaUtil {
     @Deprecated
     public static Object coerceNilToType(RubyNil nil, Class target) {
         return nil.toJava(target);
+    }
+
+    @Deprecated
+    public static final RubyConverter RUBY_BOOLEAN_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return Boolean.valueOf(rubyObject.isTrue());
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_BYTE_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_i")) {
+                return new Byte((byte) ((RubyNumeric) rubyObject.callMethod(
+                        context, "to_i")).getLongValue());
+            }
+            return new Byte((byte) 0);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_SHORT_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_i")) {
+                return new Short((short) ((RubyNumeric) rubyObject.callMethod(
+                        context, "to_i")).getLongValue());
+            }
+            return new Short((short) 0);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_CHAR_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_i")) {
+                return new Character((char) ((RubyNumeric) rubyObject.callMethod(
+                        context, "to_i")).getLongValue());
+            }
+            return new Character((char) 0);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_INTEGER_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_i")) {
+                return new Integer((int) ((RubyNumeric) rubyObject.callMethod(
+                        context, "to_i")).getLongValue());
+            }
+            return new Integer(0);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_LONG_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_i")) {
+                return new Long(((RubyNumeric) rubyObject.callMethod(
+                        context, "to_i")).getLongValue());
+            }
+            return new Long(0);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_FLOAT_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_f")) {
+                return new Float((float) ((RubyNumeric) rubyObject.callMethod(
+                        context, "to_f")).getDoubleValue());
+            }
+            return new Float(0.0);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter RUBY_DOUBLE_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            if (rubyObject.respondsTo("to_f")) {
+                return new Double(((RubyNumeric) rubyObject.callMethod(
+                        context, "to_f")).getDoubleValue());
+            }
+            return new Double(0.0);
+        }
+    };
+
+    @Deprecated
+    public static final Map<Class, RubyConverter> RUBY_CONVERTERS = new HashMap<Class, RubyConverter>();
+    static {
+        RUBY_CONVERTERS.put(Boolean.class, RUBY_BOOLEAN_CONVERTER);
+        RUBY_CONVERTERS.put(Boolean.TYPE, RUBY_BOOLEAN_CONVERTER);
+        RUBY_CONVERTERS.put(Byte.class, RUBY_BYTE_CONVERTER);
+        RUBY_CONVERTERS.put(Byte.TYPE, RUBY_BYTE_CONVERTER);
+        RUBY_CONVERTERS.put(Short.class, RUBY_SHORT_CONVERTER);
+        RUBY_CONVERTERS.put(Short.TYPE, RUBY_SHORT_CONVERTER);
+        RUBY_CONVERTERS.put(Integer.class, RUBY_INTEGER_CONVERTER);
+        RUBY_CONVERTERS.put(Integer.TYPE, RUBY_INTEGER_CONVERTER);
+        RUBY_CONVERTERS.put(Long.class, RUBY_LONG_CONVERTER);
+        RUBY_CONVERTERS.put(Long.TYPE, RUBY_LONG_CONVERTER);
+        RUBY_CONVERTERS.put(Float.class, RUBY_FLOAT_CONVERTER);
+        RUBY_CONVERTERS.put(Float.TYPE, RUBY_FLOAT_CONVERTER);
+        RUBY_CONVERTERS.put(Double.class, RUBY_DOUBLE_CONVERTER);
+        RUBY_CONVERTERS.put(Double.TYPE, RUBY_DOUBLE_CONVERTER);
+    }
+
+    @Deprecated
+    public static IRubyObject convertJavaToRuby(Ruby runtime, int i) {
+        return runtime.newFixnum(i);
+    }
+
+    @Deprecated
+    public static IRubyObject convertJavaToRuby(Ruby runtime, long l) {
+        return runtime.newFixnum(l);
+    }
+
+    @Deprecated
+    public static IRubyObject convertJavaToRuby(Ruby runtime, float f) {
+        return runtime.newFloat(f);
+    }
+
+    @Deprecated
+    public static IRubyObject convertJavaToRuby(Ruby runtime, double d) {
+        return runtime.newFloat(d);
+    }
+
+    @Deprecated
+    public static IRubyObject convertJavaToRuby(Ruby runtime, boolean b) {
+        return runtime.newBoolean(b);
+    }
+
+    @Deprecated
+    public static IRubyObject convertJavaToRuby(Ruby runtime, JavaConverter converter, Object object) {
+        if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
+            return Java.getInstance(runtime, object);
+        }
+        return converter.convert(runtime, object);
     }
 }
