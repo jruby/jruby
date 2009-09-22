@@ -1,6 +1,5 @@
 package org.jruby.java.invokers;
 
-import org.jruby.javasupport.*;
 import java.lang.reflect.Field;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -22,7 +21,7 @@ public abstract class FieldMethodZero extends JavaMethodZero {
     }
 
     protected Object safeConvert(IRubyObject value) {
-        Object newValue = JavaUtil.convertRubyToJava(value);
+        Object newValue = value.toJava(Object.class);
         if (newValue == null) {
             if (field.getType().isPrimitive()) {
                 throw value.getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": null");

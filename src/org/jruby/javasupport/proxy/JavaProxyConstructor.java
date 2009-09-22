@@ -187,10 +187,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                 }
                 
                 if (v < 0 || v == (newArgs.length)) {
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs), m.getReturnType());
+                    return RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs).toJava(m.getReturnType());
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK), m.getReturnType());
+                    return RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK).toJava(m.getReturnType());
                 }
             }
         };
@@ -227,10 +227,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                 }
                 
                 if (v < 0 || v == (newArgs.length)) {
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs), m.getReturnType());
+                    return RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs).toJava(m.getReturnType());
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return JavaUtil.convertRubyToJava(RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK), m.getReturnType());
+                    return RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK).toJava(m.getReturnType());
                 }
             }
         };
@@ -291,8 +291,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                             nargs[i]);
                 }
                 IRubyObject call_result = proc.call(getRuntime().getCurrentContext(), rubyArgs);
-                Object converted_result = JavaUtil.convertRubyToJava(
-                        call_result, method.getReturnType());
+                Object converted_result = call_result.toJava(method.getReturnType());
                 return converted_result;
             }
 

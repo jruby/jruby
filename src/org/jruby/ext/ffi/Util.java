@@ -163,10 +163,11 @@ public final class Util {
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
                     : runtime.newFixnum(value);
     }
+    @Deprecated
     public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
         return paramClass.cast(parameter instanceof JavaObject
             ? ((JavaObject) parameter).getValue()
-            : JavaUtil.convertRubyToJava(parameter, paramClass));
+            : parameter.toJava(paramClass));
     }
     public static final ByteBuffer slice(ByteBuffer buf, int offset) {
         ByteBuffer tmp = buf.duplicate();

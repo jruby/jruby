@@ -608,7 +608,7 @@ public class RubyJRuby {
             } else if (annoClass instanceof IRubyObject) {
                 IRubyObject annoMod = (IRubyObject) annoClass;
                 if (annoMod.respondsTo("java_class")) {
-                    return (Class) JavaUtil.convertRubyToJava(annoMod.callMethod(context, "java_class"));
+                    return (Class) annoMod.callMethod(context, "java_class").toJava(Object.class);
                 }
             }
             throw context.getRuntime().newArgumentError("must supply java class argument instead of " + annoClass.toString());

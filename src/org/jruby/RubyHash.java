@@ -328,14 +328,14 @@ public class RubyHash extends RubyObject implements Map {
             return key;
         }
         public Object getJavaifiedKey(){
-            return JavaUtil.convertRubyToJava(key);
+            return key.toJava(Object.class);
         }
 
         public Object getValue() {
             return value;
         }
         public Object getJavaifiedValue() {
-            return JavaUtil.convertRubyToJava(value);
+            return value.toJava(Object.class);
         }
 
         public Object setValue(Object value) {
@@ -1587,7 +1587,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public Object get(Object key) {
-        return JavaUtil.convertRubyToJava(internalGet(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key)));
+        return internalGet(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key)).toJava(Object.class);
     }
 
     public Object put(Object key, Object value) {
@@ -1776,7 +1776,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final EntryView KEY_VIEW = new EntryView() {
         public Object convertEntry(Ruby runtime, RubyHashEntry entry) {
-            return JavaUtil.convertRubyToJava(entry.key, Object.class);
+            return entry.key.toJava(Object.class);
         }
         public boolean contains(RubyHash hash, Object o) {
             return hash.containsKey(o);
@@ -1806,7 +1806,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private final EntryView VALUE_VIEW = new EntryView() {
         public Object convertEntry(Ruby runtime, RubyHashEntry entry) {
-            return JavaUtil.convertRubyToJava(entry.value, Object.class);
+            return entry.value.toJava(Object.class);
         }
         public boolean contains(RubyHash hash, Object o) {
             return hash.containsValue(o);
@@ -1862,10 +1862,10 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         public Object getKey() {
-            return JavaUtil.convertRubyToJava(entry.key, Object.class);
+            return entry.key.toJava(Object.class);
         }
         public Object getValue() {
-            return JavaUtil.convertRubyToJava(entry.value, Object.class);
+            return entry.value.toJava(Object.class);
         }
         public Object setValue(Object o) {
             return entry.setValue(JavaUtil.convertJavaToUsableRubyObject(runtime, o));

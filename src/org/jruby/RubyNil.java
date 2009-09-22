@@ -198,11 +198,17 @@ public class RubyNil extends RubyObject {
         return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.getRuntime()));
     }
 
+    @Override
     public Object toJava(Class target) {
-        if(target.isPrimitive()) {
-            throw getRuntime().newTypeError("primitives do not accept null");
-        } else {
-            return null;
+        if (target.isPrimitive()) {
+            if (target == Boolean.TYPE) {
+                return Boolean.FALSE;
+            } else {
+                return 0;
+            }
+        } else if (Number.class.isAssignableFrom(target)) {
+            return 0;
         }
+        return null;
     }
 }

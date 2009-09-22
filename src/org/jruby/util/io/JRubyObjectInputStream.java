@@ -42,7 +42,7 @@ public class JRubyObjectInputStream extends RubyObject {
     
     @JRubyMethod(name="initialize",required=1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject wrappedStream) throws IOException {
-	InputStream stream = (InputStream)JavaUtil.convertRubyToJava(wrappedStream, InputStream.class);
+	InputStream stream = (InputStream)wrappedStream.toJava(InputStream.class);
 	impl = new JRubyObjectInputStreamImpl(getRuntime(),stream);
 	return this;
     }

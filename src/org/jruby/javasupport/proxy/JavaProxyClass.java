@@ -382,7 +382,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             Class[] parameterTypes = getParameterTypes();
             for (int i = 0; i < arguments.length; i++) {
                 arguments[i] = 
-                    JavaUtil.convertRubyToJava((IRubyObject) arguments[i], parameterTypes[i]);
+                    ((IRubyObject) arguments[i]).toJava(parameterTypes[i]);
             }
 
             try {

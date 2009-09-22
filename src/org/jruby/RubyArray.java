@@ -3388,7 +3388,7 @@ public class RubyArray extends RubyObject implements List {
     public Object[] toArray() {
         Object[] array = new Object[realLength];
         for (int i = begin; i < realLength; i++) {
-            array[i - begin] = JavaUtil.convertRubyToJava(values[i]);
+            array[i - begin] = values[i].toJava(Object.class);
         }
         return array;
     }
@@ -3402,7 +3402,7 @@ public class RubyArray extends RubyObject implements List {
         int length = realLength - begin;
 
         for (int i = 0; i < length; i++) {
-            array[i] = JavaUtil.convertRubyToJava(values[i + begin]);
+            array[i] = values[i + begin].toJava(Object.class);
         }
         return array;
     }
@@ -3466,7 +3466,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public Object get(int index) {
-        return JavaUtil.convertRubyToJava((IRubyObject) elt(index), Object.class);
+        return elt(index).toJava(Object.class);
     }
 
     public Object set(int index, Object element) {
@@ -3479,7 +3479,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public Object remove(int index) {
-        return JavaUtil.convertRubyToJava(delete_at(index), Object.class);
+        return delete_at(index).toJava(Object.class);
     }
 
     public int indexOf(Object element) {
@@ -3524,7 +3524,7 @@ public class RubyArray extends RubyObject implements List {
         public Object next() {
             IRubyObject element = elt(index);
             last = index++;
-            return JavaUtil.convertRubyToJava(element, Object.class);
+            return element.toJava(Object.class);
         }
 
         public void remove() {
@@ -3548,26 +3548,28 @@ public class RubyArray extends RubyObject implements List {
 
         public RubyArrayConversionListIterator(int index) {
             this.index = index;
-		}
+        }
 
-		public boolean hasPrevious() {
+        public boolean hasPrevious() {
             return index >= 0;
-		}
+        }
 
-		public Object previous() {
-            return JavaUtil.convertRubyToJava((IRubyObject) elt(last = --index), Object.class);
-		}
+        public Object previous() {
+            return elt(last = --index).toJava(Object.class);
+        }
 
-		public int nextIndex() {
+        public int nextIndex() {
             return index;
-		}
+        }
 
-		public int previousIndex() {
+        public int previousIndex() {
             return index - 1;
-		}
+        }
 
         public void set(Object obj) {
-            if (last == -1) throw new IllegalStateException();
+            if (last == -1) {
+                throw new IllegalStateException();
+            }
 
             store(last, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj));
         }

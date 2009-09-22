@@ -71,7 +71,7 @@ public class TestBSF extends RubyTestCase {
         SimpleInterface si = (SimpleInterface) manager.eval("ruby", "(java)", 1, 1, "SimpleInterfaceImpl.new");
         
         for (Iterator e = si.getList().iterator(); e.hasNext(); ) {
-            assertTrue(e.next().getClass() == Long.class);
+            assertTrue(e.next().getClass() == Byte.class);
         }
     }
     
@@ -102,7 +102,7 @@ public class TestBSF extends RubyTestCase {
         Object[] array = list.toArray();
         
         assertEquals(4, array.length);
-        assertEquals(3, ((Long) array[2]).longValue());
+        assertEquals(3, ((Number) array[2]).longValue());
         
         List subList = list.subList(0, 2);
         assertEquals(3, subList.size());
@@ -181,7 +181,7 @@ public class TestBSF extends RubyTestCase {
             Object value = map.get(key);
             
             assertTrue(key.getClass() == String.class);
-            assertTrue(value.getClass() == Long.class);
+            assertTrue(value.getClass() == Byte.class);
             
             // Get the value from the map via the values iterator
             Object valueViaValuesIterator = valuesIterator.next();
@@ -235,15 +235,15 @@ public class TestBSF extends RubyTestCase {
             assertNotNull(o);
             Map.Entry entry = (Map.Entry) o;
             assertTrue(entry.getKey().getClass() == String.class);
-            assertTrue(entry.getValue().getClass() == Long.class);
+            assertTrue(entry.getValue().getClass() == Byte.class);
             if (iteration++ == 1) {
                 assertEquals("A", entry.getKey());
-                assertEquals(new Long(1L), entry.getValue());
+                assertEquals(Byte.valueOf((byte)1), entry.getValue());
                 // Set a value in the RubyHash
                 entry.setValue(new Long(3));
             } else {
                 assertEquals("B", entry.getKey());
-                assertEquals(new Long(2L), entry.getValue());
+                assertEquals(Byte.valueOf((byte)2), entry.getValue());
                 // Set a value in the RubyHash
                 entry.setValue(new TestMapValue());
             }
@@ -257,9 +257,9 @@ public class TestBSF extends RubyTestCase {
             Map.Entry entry = (Map.Entry) o;
             assertTrue(entry.getKey().getClass() == String.class);
             if (iteration++ == 1) {
-                assertTrue(entry.getValue().getClass() == Long.class);
+                assertTrue(entry.getValue().getClass() == Byte.class);
                 assertEquals("A", entry.getKey());
-                assertEquals(new Long(3L), entry.getValue());
+                assertEquals(Byte.valueOf((byte)3), entry.getValue());
             } else {
                 assertTrue(entry.getValue().getClass() == TestMapValue.class);
                 assertEquals("B", entry.getKey());
@@ -298,9 +298,9 @@ public class TestBSF extends RubyTestCase {
             Object key = e.next();
             Object value = map.get(key);
             assertTrue(key.getClass() == String.class);
-            assertTrue(value.getClass() == Long.class);
+            assertTrue(value.getClass() == Byte.class);
             
-            map.put(key, new Long(((Long) value).longValue() + 1));
+            map.put(key, new Long(((Number) value).longValue() + 1));
         }
         
         Boolean answer = (Boolean) manager.eval("ruby", "(java)", 1, 1, "{'A'=> 2, 'B' => 3} == MODIFY_MAP.getMap");
@@ -308,7 +308,7 @@ public class TestBSF extends RubyTestCase {
         
         assertEquals(2, map.size());
         
-        Long value = (Long) map.get("B");
+        Number value = (Number) map.get("B");
         assertEquals(3, value.longValue());
         
         map.remove("B");
