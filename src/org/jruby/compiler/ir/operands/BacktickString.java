@@ -36,4 +36,12 @@ public class BacktickString extends Operand
 
         return this;
     }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        for (Operand o: _pieces)
+            o.addUsedVariables(l);
+    }
 }

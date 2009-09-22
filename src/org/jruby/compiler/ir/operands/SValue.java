@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import java.util.Map;
 
 // Represents a svalue node in Ruby code
@@ -41,4 +42,11 @@ public class SValue extends Operand
     }
 
     public boolean isNonAtomicValue() { return true; }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        _array.addUsedVariables(l);
+    }
 }

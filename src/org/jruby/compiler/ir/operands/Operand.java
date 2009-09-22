@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import java.util.Map;
 import org.jruby.compiler.ir.IR_Class;
 
@@ -36,36 +37,6 @@ public abstract class Operand
     // Get the target class of this operand, if we know it!
     public IR_Class getTargetClass() { return null; }
 
-//    public abstract Operand toArray();
-
-// ---------- Only static definitions further below ---------
-
-    /* Lattice TOP, BOTTOM, ANY values -- these will be used during dataflow analyses */
-
-    public static final Operand TOP    = new LatticeTop();
-    public static final Operand BOTTOM = new LatticeBottom();
-    public static final Operand ANY    = new Anything();
-  
-    private static class LatticeBottom extends Operand
-    {
-        LatticeBottom() { }
-       
-        public String toString() { return "bottom"; }
-    }
-  
-    private static class LatticeTop extends Operand
-    {
-        LatticeTop() { }
-       
-        public String toString() { return "top"; }
-        public Operand Compute_CP_Meet(Operand op) { return op; }
-    }
-  
-    private static class Anything extends Operand
-    {
-        Anything() { }
-       
-        public String toString() { return "anything"; }
-        public Operand Compute_CP_Meet(Operand op) { return op; }
-    }
+    /** Append the list of variables used in this operand to the input list */
+    public void addUsedVariables(List<Variable> l) { /* Nothing to do by default */ }
 }

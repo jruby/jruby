@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import java.util.Map;
 
 public class Variable extends Operand implements Comparable
@@ -47,4 +48,8 @@ public class Variable extends Operand implements Comparable
         Operand v = valueMap.get(this);
         return (v == null) ? this : v;
     }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l) { l.add(this); }
 }

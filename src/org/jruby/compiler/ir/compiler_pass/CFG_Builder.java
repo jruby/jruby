@@ -26,6 +26,9 @@ public class CFG_Builder implements CompilerPass
             CFG c = new CFG(m);
             System.out.println("CFG for " + m._name + "is ...");
             System.out.println(c.getCFG().toString());
+            org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem lvp = new org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem(c);
+            lvp.compute_MOP_Solution();
+            System.out.println("LVP Output:" + lvp.toString());
         }
     }
 }

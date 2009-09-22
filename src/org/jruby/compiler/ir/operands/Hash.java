@@ -42,4 +42,14 @@ public class Hash extends Operand
     }
 
     public IR_Class getTargetClass() { return IR_Class.getCoreClass("Hash"); }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        for (KeyValuePair kv: _pairs) {
+            kv._key.addUsedVariables(l);
+            kv._value.addUsedVariables(l);
+        }
+    }
 }

@@ -65,4 +65,12 @@ public class Array extends Operand
     public IR_Class getTargetClass() { return IR_Class.getCoreClass("Array"); }
 
     public Operand toArray() { return this; }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        for (Operand o: _elts)
+            o.addUsedVariables(l);
+    }
 }

@@ -38,10 +38,6 @@ public abstract class DataFlowProblem
 
 	 public DF_Direction getFlowDirection() { return _direction; }
 
-    public Set<CFG_Edge> incomingEdgesOf(BasicBlock bb) { return _cfg.incomingEdgesOf(bb); }
-
-    public Set<CFG_Edge> outgoingEdgesOf(BasicBlock bb) { return _cfg.outgoingEdgesOf(bb); }
-
     /* Compute Meet Over All Paths solution for this dataflow problem
      * This implements a standard worklist algorithm */
     public void compute_MOP_Solution()
@@ -50,21 +46,31 @@ public abstract class DataFlowProblem
         if (!isEmpty()) {
             LinkedList<FlowGraphNode> workList = buildFlowGraph();
             while (!workList.isEmpty()) {
-                workList.removeFirst().computeDataFlowInfo(this, workList, _bbSet);
+                workList.removeFirst().computeDataFlowInfo(workList, _bbSet);
             }
         }
     }
+
+    public int getDFVarsCount() { return _dfVars.size(); }
+
+    public Set<CFG_Edge> incomingEdgesOf(BasicBlock bb) { return _cfg.incomingEdgesOf(bb); }
+
+    public Set<CFG_Edge> outgoingEdgesOf(BasicBlock bb) { return _cfg.outgoingEdgesOf(bb); }
+
+    /* Individual analyses should override this */
+    public String getDataFlowVarsForOutput() { return ""; }
 
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
         buf.append("----").append(getProblemName()).append("----\n");
   
-        for (DataFlowVar v: _dfVars)
-            buf.append(v.toString());
+        buf.append("---- Data Flow Vars: ----\n");
+		  buf.append(getDataFlowVarsForOutput());
+        buf.append("-------------------------\n");
   
         for (FlowGraphNode n: _fgNodes)
-            buf.append("BB ").append(n._bb.getID()).append("\n").append(n.toString());
+            buf.append("DF State for BB ").append(n._bb.getID()).append(":\n").append(n.toString());
 
         return buf.toString();
     }
@@ -74,7 +80,7 @@ public abstract class DataFlowProblem
     {
         // We want unique ids for dataflow variables
         _nextDFVarId++;
-        _dfVars.set(_nextDFVarId, v);
+        _dfVars.add(_nextDFVarId, v);
         return _nextDFVarId;
     }
 
@@ -98,17 +104,17 @@ public abstract class DataFlowProblem
 
         for (BasicBlock bb: _cfg.getNodes()) {
             FlowGraphNode fgNode = buildFlowGraphNode(bb);
-            fgNode.buildDataFlowVars(this);
+            fgNode.buildDataFlowVars();
             workList.add(fgNode);
             _bbTofgMap.put(bb, fgNode);
             _bbSet.set(bb.getID());
         }
-       
+
         _fgNodes = (List<FlowGraphNode>)workList.clone();
-       
+
         // Initialize all flow graph nodes 
         for (FlowGraphNode fg: workList)
-           fg.init(this);
+           fg.init();
 
         return workList;
     }

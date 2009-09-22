@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import java.util.Map;
 
 // Represents a regexp from ruby
@@ -24,5 +25,12 @@ public class Regexp extends Operand
     {
         _re = _re.getSimplifiedOperand(valueMap);
         return this;
+    }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        _re.addUsedVariables(l);
     }
 }

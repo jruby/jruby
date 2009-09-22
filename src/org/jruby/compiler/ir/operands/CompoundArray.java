@@ -13,8 +13,6 @@ public class CompoundArray extends Operand
     Operand _a1;
     Operand _a2;
 
-    private Operand _simplifiedValue;
-
     public CompoundArray(Operand a1, Operand a2) { _a1 = a1; _a2 = a2; }
 
     public boolean isConstant() { return _a1.isConstant() && _a2.isConstant(); }
@@ -58,4 +56,12 @@ public class CompoundArray extends Operand
     }
 
     public boolean isNonAtomicValue() { return true; }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        _a1.addUsedVariables(l);
+        _a2.addUsedVariables(l);
+    }
 }

@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import java.util.Map;
 
 // Represents a splat value in Ruby code: *array
@@ -35,5 +36,12 @@ public class Splat extends Operand
             return ((Range)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
         else
             return null;
+    }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        _array.addUsedVariables(l);
     }
 }

@@ -2,7 +2,7 @@
 
 package org.jruby.compiler.ir.dataflow;
 
-abstract public class DataFlowVar
+public class DataFlowVar
 {
 /* ******************** PUBLIC INTERFACE ******************* */
     public final int _id;   // Unique ID assigned to this variable

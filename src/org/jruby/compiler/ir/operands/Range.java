@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.IR_Class;
@@ -43,5 +44,13 @@ public class Range extends Operand
         _begin = _begin.getSimplifiedOperand(valueMap);
         _end = _end.getSimplifiedOperand(valueMap);
         return this;
+    }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l)
+    {
+        _begin.addUsedVariables(l);
+        _end.addUsedVariables(l);
     }
 }
