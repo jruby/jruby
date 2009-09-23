@@ -83,9 +83,6 @@ class TestProcess < Test::Unit::TestCase
       # TODO: JRUBY-2639, doesn't work on x64 JVM
       assert_equal 0, Process.ppid unless WINDOWS_JVM_64
 
-      # TODO: temporal (JRUBY-2353)
-      assert_raise(NotImplementedError) { Process.kill(100, 100) }
-
       # TODO: temporal (JRUBY-2354)
       assert_raise(NotImplementedError) { Process.wait }
       assert_raise(NotImplementedError) { Process.wait2 }

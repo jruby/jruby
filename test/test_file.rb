@@ -1,10 +1,22 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 require 'test/unit'
 require 'rbconfig'
 require 'fileutils'
+require 'tempfile'
 
 class TestFile < Test::Unit::TestCase
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+
+  def setup
+    @teardown_blocks = []
+  end
+
+  def teardown
+    @teardown_blocks.each do |b|
+      b.call
+    end
+  end
+
   def jruby_specific_test
     flunk("JRuby specific test") unless defined?(JRUBY_VERSION)
   end
@@ -60,7 +72,7 @@ class TestFile < Test::Unit::TestCase
 
   # JRUBY-1116: these are currently broken on windows
   # what are these testing anyway?!?!
-  if Config::CONFIG['target_os'] =~ /Windows|mswin/
+  if WINDOWS
     def test_windows_basename
       assert_equal "", File.basename("c:")
       assert_equal "\\", File.basename("c:\\")
@@ -816,34 +828,37 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_allow_override_of_make_tmpname
-    require 'tempfile'
     # mimics behavior of attachment_fu, which overrides private #make_tmpname
     Tempfile.class_eval do
+      alias_method :save_make_tmpname, :make_tmpname
       def make_tmpname(basename, n)
         ext = nil
         sprintf("%s%d-%d%s", basename.to_s.gsub(/\.\w+$/) { |s| ext = s; '' }, $$, n, ext)
       end
     end
 
+    @teardown_blocks << proc do
+      Tempfile.class_eval { alias_method :make_tmpname, :save_make_tmpname }
+    end
+
     t = Tempfile.new "tcttac.jpg", File.dirname(__FILE__)
     assert t.path =~ /\.jpg$/
   end
 
-  def test_mode_of_tempfile_is_600
-    t = Tempfile.new "tcttac.jpg"
-    assert_equal 0100600, File.stat(t.path).mode
+  unless WINDOWS
+    def test_mode_of_tempfile_is_600
+      t = Tempfile.new "tcttac.jpg"
+      assert_equal 0100600, File.stat(t.path).mode
+    end
   end
 
   # See JRUBY-2694; we don't have 1.8.7 support yet
-=begin
   def test_tempfile_with_suffix
-    require 'tempfile'
     Tempfile.open(['prefix', 'suffix']) { |f|
       assert_match(/^prefix/, File.basename(f.path))
       assert_match(/suffix$/, f.path)
     }
   end
-=end
 
   def test_file_size
     size = File.size('build.xml')
@@ -855,7 +870,7 @@ class TestFile < Test::Unit::TestCase
   def test_file_url
     path = File.expand_path(__FILE__)
     expect = File.read(__FILE__)[0..100]
-    got = File.read("file://#{path}")[0..100]
+    got = File.read("file:///#{path}")[0..100]
 
     assert_equal(expect, got)
   end

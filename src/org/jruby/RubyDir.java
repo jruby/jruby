@@ -65,8 +65,6 @@ public class RubyDir extends RubyObject {
     private   int       pos;        // current position in directory
     private boolean isOpen = true;
 
-    private static final String URL_PATTERN = "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?";
-
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -227,7 +225,7 @@ public class RubyDir extends RubyObject {
             throw runtime.newErrnoENOENTError("No such directory");
         }
         
-        if (path.matches(URL_PATTERN)) {
+        if (path.startsWith("file:")) {
             return entriesIntoAJarFile(runtime, path);
         } else {
             return entriesIntoADirectory(runtime, path);

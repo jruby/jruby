@@ -6,6 +6,6 @@ class TestUnicodePaths < Test::Unit::TestCase
     exp_hex = expanded.unpack('H*')
 
     # assert byte sequence is what we expect
-    assert_equal "2fc3bc", exp_hex[0]
+    assert exp_hex[0] =~ /2fc3bc$/
   end
 end

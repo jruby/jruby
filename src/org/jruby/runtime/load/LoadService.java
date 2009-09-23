@@ -58,6 +58,7 @@ import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
@@ -297,6 +298,9 @@ public class LoadService {
         // replace it with .jar to look for an extension type we do support
         if (file.endsWith(".so")) {
             file = file.replaceAll(".so$", ".jar");
+        }
+        if (Platform.IS_WINDOWS) {
+            file = file.replace('\\', '/');
         }
         
         try {

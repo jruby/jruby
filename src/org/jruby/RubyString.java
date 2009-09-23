@@ -82,7 +82,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -366,13 +365,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
         assert value != null;
-        this.value = new ByteList(ByteList.plain(value), false);
-    }
-
-    public RubyString(Ruby runtime, RubyClass rubyClass, String value) {
-        super(runtime, rubyClass);
-        assert value != null;
-        this.value = new ByteList(value.getBytes(), false);
+        byte[] bytes = null;
+        try {
+            bytes = value.toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            bytes = ByteList.plain(value);
+        }
+        this.value = new ByteList(bytes, false);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {

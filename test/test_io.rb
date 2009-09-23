@@ -187,27 +187,29 @@ class TestIO < Test::Unit::TestCase
     assert_raises(Errno::EBADF) { f.close }
   end
 
-  def test_sysopen
-    ensure_files @file
+  unless WINDOWS # Windows doesn't take kindly to perm mode tests
+    def test_sysopen
+      ensure_files @file
 
-    fno = IO::sysopen(@file, "r", 0124) # not creating, mode is ignored
-    assert_instance_of(Fixnum, fno)
-    assert_raises(Errno::EINVAL) { IO.open(fno, "w") } # not writable
-    IO.open(fno, "r") do |io|
-      assert_equal(fno, io.fileno)
-      assert(!io.closed?)
-    end
-    assert_raises(Errno::EBADF) { IO.open(fno, "r") } # fd is closed
-    File.open(@file) do |f|
-      mode = (f.stat.mode & 0777) # only comparing lower 9 bits
-      assert(mode > 0124)
-    end
+      fno = IO::sysopen(@file, "r", 0124) # not creating, mode is ignored
+      assert_instance_of(Fixnum, fno)
+      assert_raises(Errno::EINVAL) { IO.open(fno, "w") } # not writable
+      IO.open(fno, "r") do |io|
+        assert_equal(fno, io.fileno)
+        assert(!io.closed?)
+      end
+      assert_raises(Errno::EBADF) { IO.open(fno, "r") } # fd is closed
+      File.open(@file) do |f|
+        mode = (f.stat.mode & 0777) # only comparing lower 9 bits
+        assert(mode > 0124)
+      end
 
-    File.delete(@file)
-    fno = IO::sysopen(@file, "w", 0611) # creating, mode is enforced
-    File.open(@file) do |f|
-      mode = (f.stat.mode & 0777)
-      assert_equal(0611, mode)
+      File.delete(@file)
+      fno = IO::sysopen(@file, "w", 0611) # creating, mode is enforced
+      File.open(@file) do |f|
+        mode = (f.stat.mode & 0777)
+        assert_equal(0611, mode)
+      end
     end
   end
 
