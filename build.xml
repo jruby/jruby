@@ -65,6 +65,7 @@
         <os arch="amd64"/>
         <os arch="x86_64"/>
         <os arch="sparcv9"/>
+        <os arch="s390x"/>
       </or>
     </condition>
     <condition property="run.jvm.model" value="-d32">
@@ -287,6 +288,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -359,6 +361,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -452,6 +455,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
@@ -539,6 +543,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>	
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>

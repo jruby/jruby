@@ -78,6 +78,7 @@ public class Platform {
         POWERPC64,
         SPARC,
         SPARCV9,
+        S390X,
         UNKNOWN;
         @Override
         public String toString() { return name().toLowerCase(); }
@@ -133,7 +134,9 @@ public class Platform {
             return CPU.SPARC;
         } else if ("sparcv9".equals(archString)) {
             return CPU.SPARCV9;
-        } else {
+        } else if ("s390x".equals(archString)) {
+            return CPU.S390X;
+	} else {
             return CPU.UNKNOWN;
         }
     }
@@ -180,6 +183,7 @@ public class Platform {
                 case X86_64:
                 case POWERPC64:
                 case SPARCV9:
+                case S390X:
                     dataModel = 64;
                     break;
                 default:
