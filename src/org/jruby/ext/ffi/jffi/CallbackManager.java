@@ -67,10 +67,6 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         return cbClass;
     }
     
-    /** A map of Ruby CallbackInfo to low level JFFI Closure metadata */
-    private final Map<CallbackInfo, ClosureInfo> infoMap =
-            Collections.synchronizedMap(new WeakHashMap<CallbackInfo, ClosureInfo>());
-
     public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
         return proc instanceof RubyObject
                 ? getCallback(runtime, cbInfo, (RubyObject) proc)
@@ -143,15 +139,16 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     }
 
     private final ClosureInfo getClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
-        ClosureInfo info = infoMap.get(cbInfo);
-        if (info == null) {
-            CallingConvention convention = "stdcall".equals(null)
-                    ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
-            info = new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(), convention);
-            infoMap.put(cbInfo, info);
+        Object info = cbInfo.getProviderCallbackInfo();
+        if (info != null && info instanceof ClosureInfo) {
+            return (ClosureInfo) info;
         }
+        cbInfo.setProviderCallbackInfo(info = newClosureInfo(runtime, cbInfo));
+        return (ClosureInfo) info;
+    }
 
-        return info;
+    private final ClosureInfo newClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
+        return new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(), CallingConvention.DEFAULT);
     }
 
     /**
