@@ -60,6 +60,9 @@
     <condition property="ruby.home" value="${env.RUBY_HOME}">
       <not><isset property="ruby.home"/></not>
     </condition>
+    <condition property="run.jvm.model" value="">
+        <os family="windows"/>
+    </condition>
     <condition property="run.jvm.model" value="-d64">
       <or>
         <os arch="amd64"/>
