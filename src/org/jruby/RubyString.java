@@ -56,6 +56,8 @@ import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -6813,6 +6815,29 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
         return context.getRuntime().getEncodingService().getEncoding(value.encoding);
+    }
+
+    @JRubyMethod(name = "encode!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc) {
+        modify19();
+
+        // from encoding, special-casing ASCII* to ASCII
+        Charset from = value.encoding.toString().startsWith("ASCII") ?
+            Charset.forName("ASCII") :
+            Charset.forName(value.encoding.toString());
+
+        // to encoding, same special-casing
+        Encoding encoding = RubyEncoding.getEncodingFromObject(context.getRuntime(), enc);
+        Charset to = encoding.toString().startsWith("ASCII") ?
+            Charset.forName("ASCII") :
+            Charset.forName(encoding.toString());
+
+        // decode from "from" and encode to "to"
+        ByteBuffer fromBytes = ByteBuffer.wrap(value.unsafeBytes(), value.begin(), value.length());
+        ByteBuffer toBytes = to.encode(from.decode(fromBytes));
+        value = new ByteList(toBytes.array(), encoding);
+
+        return this;
     }
     
     @JRubyMethod(name = "force_encoding", compat = CompatVersion.RUBY1_9)
