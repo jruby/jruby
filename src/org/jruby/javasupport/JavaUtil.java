@@ -818,7 +818,7 @@ public class JavaUtil {
     public static NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
-            if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+            if (isLongByteable(value)) {
                 numeric.getRuntime().newTypeError("too big for byte or Byte: " + numeric);
             }
             return Byte.valueOf((byte)value);
@@ -827,7 +827,7 @@ public class JavaUtil {
     public static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
-            if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+            if (isLongShortable(value)) {
                 numeric.getRuntime().newTypeError("too big for short or Short: " + numeric);
             }
             return Short.valueOf((short)value);
@@ -836,7 +836,7 @@ public class JavaUtil {
     public static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
-            if (value > Character.MAX_VALUE || value < Character.MIN_VALUE) {
+            if (isLongCharable(value)) {
                 numeric.getRuntime().newTypeError("too big for char or Character: " + numeric);
             }
             return Character.valueOf((char)value);
@@ -845,7 +845,7 @@ public class JavaUtil {
     public static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
-            if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+            if (isLongIntable(value)) {
                 numeric.getRuntime().newTypeError("too big for int or Integer: " + numeric);
             }
             return Integer.valueOf((int)value);
@@ -859,10 +859,12 @@ public class JavaUtil {
     public static NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             double value = numeric.getDoubleValue();
-            if (value > Float.MAX_VALUE || value < Float.MIN_VALUE) {
-                numeric.getRuntime().newTypeError("too big for float or Float: " + numeric);
+            // many cases are ok to convert to float; if not one of these, error
+            if (isDoubleFloatable(value)) {
+                return Float.valueOf((float)value);
+            } else {
+                throw numeric.getRuntime().newTypeError("too big for float or Float: " + numeric);
             }
-            return Float.valueOf((float)value);
         }
     };
     public static NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
@@ -880,20 +882,18 @@ public class JavaUtil {
             // for Object, default to natural wrapper type
             if (numeric instanceof RubyFixnum) {
                 long value = numeric.getLongValue();
-                if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+                if (isLongByteable(value)) {
                     return Byte.valueOf((byte)value);
-                } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+                } else if (isLongShortable(value)) {
                     return Short.valueOf((short)value);
-                } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+                } else if (isLongIntable(value)) {
                     return Integer.valueOf((int)value);
                 }
 
                 return Long.valueOf(value);
             } else if (numeric instanceof RubyFloat) {
                 double value = numeric.getDoubleValue();
-                if (value == 0.0 || value >= Float.MIN_VALUE && value <= Float.MAX_VALUE ||
-                        value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE ||
-                        Double.isNaN(value) || value == Double.POSITIVE_INFINITY || value == Double.NEGATIVE_INFINITY) {
+                if (isDoubleFloatable(value)) {
                     return Float.valueOf((float)value);
                 }
 
@@ -910,6 +910,27 @@ public class JavaUtil {
             throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
         }
     };
+    private static boolean isDoubleFloatable(double value) {
+        return
+                value == 0.0 || // 0.0 is ok
+                value >= Float.MIN_VALUE && value <= Float.MAX_VALUE || // float range
+                value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE || // inverted float range?
+                Double.isNaN(value) || // NaN
+                value == Double.POSITIVE_INFINITY || // +infinity
+                value == Double.NEGATIVE_INFINITY; // -infinity
+    }
+    private static boolean isLongByteable(long value) {
+        return value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE;
+    }
+    private static boolean isLongShortable(long value) {
+        return value >= Short.MIN_VALUE && value <= Short.MAX_VALUE;
+    }
+    private static boolean isLongCharable(long value) {
+        return value >= Character.MIN_VALUE && value <= Character.MAX_VALUE;
+    }
+    private static boolean isLongIntable(long value) {
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+    }
     
     public static Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
 
@@ -944,6 +965,12 @@ public class JavaUtil {
     public static Object coerceStringToType(RubyString string, Class target) {
         try {
             ByteList bytes = string.getByteList();
+
+            // 1.9 support for encodings
+            if (string.getRuntime().is1_9()) {
+                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
+            }
+
             return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
         } catch (UnsupportedEncodingException uee) {
             return string.toString();
