@@ -819,36 +819,36 @@ public class JavaUtil {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongByteable(value)) {
-                numeric.getRuntime().newTypeError("too big for byte or Byte: " + numeric);
+                return Byte.valueOf((byte)value);
             }
-            return Byte.valueOf((byte)value);
+            throw numeric.getRuntime().newTypeError("too big for byte or Byte: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongShortable(value)) {
-                numeric.getRuntime().newTypeError("too big for short or Short: " + numeric);
+                return Short.valueOf((short)value);
             }
-            return Short.valueOf((short)value);
+            throw numeric.getRuntime().newTypeError("too big for short or Short: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongCharable(value)) {
-                numeric.getRuntime().newTypeError("too big for char or Character: " + numeric);
+                return Character.valueOf((char)value);
             }
-            return Character.valueOf((char)value);
+            throw numeric.getRuntime().newTypeError("too big for char or Character: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongIntable(value)) {
-                numeric.getRuntime().newTypeError("too big for int or Integer: " + numeric);
+                return Integer.valueOf((int)value);
             }
-            return Integer.valueOf((int)value);
+            throw numeric.getRuntime().newTypeError("too big for int or Integer: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
