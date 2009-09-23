@@ -43,13 +43,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
-    private JavaUtil.RubyConverter rubyConverter;
     private JavaUtil.JavaConverter javaConverter;
     
     public JavaArray(Ruby runtime, Object array) {
         super(runtime, runtime.getJavaSupport().getJavaArrayClass(), array);
         assert array.getClass().isArray();
-        rubyConverter = JavaUtil.getArrayConverter(array.getClass().getComponentType());
         javaConverter = JavaUtil.getJavaConverter(array.getClass().getComponentType());
     }
 
@@ -61,10 +59,6 @@ public class JavaArray extends JavaObject {
     
     public Class getComponentType() {
         return getValue().getClass().getComponentType();
-    }
-    
-    public JavaUtil.RubyConverter getRubyConverter() {
-        return rubyConverter;
     }
 
     public RubyFixnum length() {

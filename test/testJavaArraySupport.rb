@@ -1,6 +1,7 @@
 require 'test/minirunit'
 test_check "Extended Java Array Support"
 
+=begin
   include Java
   
   ruby_array = [1,2,3,4,5,6,7,8,9,0]
@@ -132,5 +133,4 @@ test_check "Extended Java Array Support"
   # test add and index
   test_equal("867-5309",(string_array[-3,1]+int_array[5...7]+['-']+ruby_array[4,1]+
              string_array[2..2]+int_array[-1,1]+ruby_array[-2..-2]).to_a.join)  
-  
-  
+=end

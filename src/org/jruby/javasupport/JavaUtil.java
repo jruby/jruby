@@ -51,7 +51,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyNumeric;
@@ -61,7 +60,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -74,260 +72,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 public class JavaUtil {
-    public interface RubyConverter {
-        public Object convert(ThreadContext context, IRubyObject rubyObject);
-    }
-    
-    public static final RubyConverter ARRAY_BOOLEAN_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject == context.getRuntime().getFalse() || rubyObject.isNil()) {
-                return Boolean.FALSE;
-            } else if (rubyObject == context.getRuntime().getTrue()) {
-                return Boolean.TRUE;
-            } else if (rubyObject instanceof RubyNumeric) {
-                return ((RubyNumeric)rubyObject).getLongValue() == 0 ? Boolean.FALSE : Boolean.TRUE;
-            } else if (rubyObject instanceof RubyString) {
-                return Boolean.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return integer.getLongValue() == 0 ? Boolean.FALSE : Boolean.TRUE;
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_BYTE_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Byte.valueOf((byte)((RubyNumeric)rubyObject).getLongValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Byte.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Byte.valueOf((byte)integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_SHORT_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Short.valueOf((short)((RubyNumeric)rubyObject).getLongValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Short.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Short.valueOf((short)integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_CHAR_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Character.valueOf((char)((RubyNumeric)rubyObject).getLongValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Character.valueOf(rubyObject.asJavaString().charAt(0));
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Character.valueOf((char)integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_INT_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Integer.valueOf((int)((RubyNumeric)rubyObject).getLongValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Integer.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Integer.valueOf((int)integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_LONG_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Long.valueOf(((RubyNumeric)rubyObject).getLongValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Long.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Long.valueOf(integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_FLOAT_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Float.valueOf((float)((RubyNumeric)rubyObject).getDoubleValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Float.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Float.valueOf((float)integer.getDoubleValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_DOUBLE_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return Double.valueOf(((RubyNumeric)rubyObject).getDoubleValue());
-            } else if (rubyObject instanceof RubyString) {
-                return Double.valueOf(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return Double.valueOf(integer.getDoubleValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_OBJECT_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyInteger) {
-                long value = ((RubyInteger)rubyObject).getLongValue();
-                if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-                    return Integer.valueOf((int)value);
-                } else if (value >= Long.MIN_VALUE && value <= Long.MAX_VALUE) {
-                    return Long.valueOf(value);
-                } else {
-                    return new BigInteger(rubyObject.toString());
-                }
-            } else if (rubyObject instanceof RubyFloat) {
-                return Double.valueOf(((RubyFloat)rubyObject).getDoubleValue());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ((JavaProxy)rubyObject).getObject();
-            } else {
-                return rubyObject.toJava(Object.class);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_CLASS_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof JavaClass) {
-                return ((JavaClass)rubyObject).javaClass();
-            } else {
-                return rubyObject.toJava(Object.class);
-            }
-        }
-    };
-
-    public static final RubyConverter ARRAY_STRING_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyString) {
-                return ((RubyString)rubyObject).getUnicodeValue();
-            } else {
-                return rubyObject.toString();
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_BIGINTEGER_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return BigInteger.valueOf(((RubyNumeric)rubyObject).getLongValue());
-            } else if (rubyObject instanceof RubyString) {
-                return new BigDecimal(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return BigInteger.valueOf(integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-    
-    public static final RubyConverter ARRAY_BIGDECIMAL_CONVERTER = new RubyConverter() {
-        public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject instanceof RubyNumeric) {
-                return BigDecimal.valueOf(((RubyNumeric)rubyObject).getDoubleValue());
-            } else if (rubyObject instanceof RubyString) {
-                return new BigDecimal(rubyObject.asJavaString());
-            } else if (rubyObject instanceof JavaProxy) {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            } else if (rubyObject.respondsTo("to_f")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_f");
-                return BigDecimal.valueOf(integer.getDoubleValue());
-            } else if (rubyObject.respondsTo("to_i")) {
-                RubyInteger integer = (RubyInteger)RuntimeHelpers.invoke(context, rubyObject, "to_i");
-                return BigDecimal.valueOf(integer.getLongValue());
-            } else {
-                return ruby_to_java(rubyObject, rubyObject, Block.NULL_BLOCK);
-            }
-        }
-    };
-
-    public static final Map<Class, RubyConverter> ARRAY_CONVERTERS = new HashMap<Class, RubyConverter>();
-    static {
-        ARRAY_CONVERTERS.put(Boolean.class, ARRAY_BOOLEAN_CONVERTER);
-        ARRAY_CONVERTERS.put(Boolean.TYPE, ARRAY_BOOLEAN_CONVERTER);
-        ARRAY_CONVERTERS.put(Byte.class, ARRAY_BYTE_CONVERTER);
-        ARRAY_CONVERTERS.put(Byte.TYPE, ARRAY_BYTE_CONVERTER);
-        ARRAY_CONVERTERS.put(Short.class, ARRAY_SHORT_CONVERTER);
-        ARRAY_CONVERTERS.put(Short.TYPE, ARRAY_SHORT_CONVERTER);
-        ARRAY_CONVERTERS.put(Character.class, ARRAY_CHAR_CONVERTER);
-        ARRAY_CONVERTERS.put(Character.TYPE, ARRAY_CHAR_CONVERTER);
-        ARRAY_CONVERTERS.put(Integer.class, ARRAY_INT_CONVERTER);
-        ARRAY_CONVERTERS.put(Integer.TYPE, ARRAY_INT_CONVERTER);
-        ARRAY_CONVERTERS.put(Long.class, ARRAY_LONG_CONVERTER);
-        ARRAY_CONVERTERS.put(Long.TYPE, ARRAY_LONG_CONVERTER);
-        ARRAY_CONVERTERS.put(Float.class, ARRAY_FLOAT_CONVERTER);
-        ARRAY_CONVERTERS.put(Float.TYPE, ARRAY_FLOAT_CONVERTER);
-        ARRAY_CONVERTERS.put(Double.class, ARRAY_DOUBLE_CONVERTER);
-        ARRAY_CONVERTERS.put(Double.TYPE, ARRAY_DOUBLE_CONVERTER);
-        ARRAY_CONVERTERS.put(String.class, ARRAY_STRING_CONVERTER);
-        ARRAY_CONVERTERS.put(Class.class, ARRAY_CLASS_CONVERTER);
-        ARRAY_CONVERTERS.put(BigInteger.class, ARRAY_BIGINTEGER_CONVERTER);
-        ARRAY_CONVERTERS.put(BigDecimal.class, ARRAY_BIGDECIMAL_CONVERTER);
-    }
-    
-    public static RubyConverter getArrayConverter(Class type) {
-        RubyConverter converter = ARRAY_CONVERTERS.get(type);
-        if (converter == null) {
-            return ARRAY_OBJECT_CONVERTER;
-        }
-        return converter;
-    }
-
     public static IRubyObject[] convertJavaArrayToRuby(Ruby runtime, Object[] objects) {
         if (objects == null) return IRubyObject.NULL_ARRAY;
         
@@ -821,7 +565,7 @@ public class JavaUtil {
             if (isLongByteable(value)) {
                 return Byte.valueOf((byte)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for byte or Byte: " + numeric);
+            throw numeric.getRuntime().newTypeError("too big for signed byte: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
@@ -830,7 +574,7 @@ public class JavaUtil {
             if (isLongShortable(value)) {
                 return Short.valueOf((short)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for short or Short: " + numeric);
+            throw numeric.getRuntime().newTypeError("too big for signed short: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
@@ -839,7 +583,7 @@ public class JavaUtil {
             if (isLongCharable(value)) {
                 return Character.valueOf((char)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for char or Character: " + numeric);
+            throw numeric.getRuntime().newTypeError("too big for char: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
@@ -848,7 +592,7 @@ public class JavaUtil {
             if (isLongIntable(value)) {
                 return Integer.valueOf((int)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for int or Integer: " + numeric);
+            throw numeric.getRuntime().newTypeError("too big for signed int: " + numeric);
         }
     };
     public static NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
@@ -863,7 +607,7 @@ public class JavaUtil {
             if (isDoubleFloatable(value)) {
                 return Float.valueOf((float)value);
             } else {
-                throw numeric.getRuntime().newTypeError("too big for float or Float: " + numeric);
+                throw numeric.getRuntime().newTypeError("too big for float: " + numeric);
             }
         }
     };
@@ -1495,5 +1239,135 @@ public class JavaUtil {
             return Java.getInstance(runtime, object);
         }
         return converter.convert(runtime, object);
+    }
+
+    @Deprecated
+    public interface RubyConverter {
+        public Object convert(ThreadContext context, IRubyObject rubyObject);
+    }
+
+    @Deprecated
+    public static final RubyConverter ARRAY_BOOLEAN_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Boolean.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_BYTE_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Byte.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_SHORT_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Short.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_CHAR_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Character.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_INT_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Integer.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_LONG_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Long.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_FLOAT_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Float.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_DOUBLE_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Double.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_OBJECT_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Object.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_CLASS_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(Class.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_STRING_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(String.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_BIGINTEGER_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(BigInteger.class);
+        }
+    };
+
+    @Deprecated
+    public static final RubyConverter ARRAY_BIGDECIMAL_CONVERTER = new RubyConverter() {
+        public Object convert(ThreadContext context, IRubyObject rubyObject) {
+            return rubyObject.toJava(BigDecimal.class);
+        }
+    };
+
+    @Deprecated
+    public static final Map<Class, RubyConverter> ARRAY_CONVERTERS = new HashMap<Class, RubyConverter>();
+    static {
+        ARRAY_CONVERTERS.put(Boolean.class, ARRAY_BOOLEAN_CONVERTER);
+        ARRAY_CONVERTERS.put(Boolean.TYPE, ARRAY_BOOLEAN_CONVERTER);
+        ARRAY_CONVERTERS.put(Byte.class, ARRAY_BYTE_CONVERTER);
+        ARRAY_CONVERTERS.put(Byte.TYPE, ARRAY_BYTE_CONVERTER);
+        ARRAY_CONVERTERS.put(Short.class, ARRAY_SHORT_CONVERTER);
+        ARRAY_CONVERTERS.put(Short.TYPE, ARRAY_SHORT_CONVERTER);
+        ARRAY_CONVERTERS.put(Character.class, ARRAY_CHAR_CONVERTER);
+        ARRAY_CONVERTERS.put(Character.TYPE, ARRAY_CHAR_CONVERTER);
+        ARRAY_CONVERTERS.put(Integer.class, ARRAY_INT_CONVERTER);
+        ARRAY_CONVERTERS.put(Integer.TYPE, ARRAY_INT_CONVERTER);
+        ARRAY_CONVERTERS.put(Long.class, ARRAY_LONG_CONVERTER);
+        ARRAY_CONVERTERS.put(Long.TYPE, ARRAY_LONG_CONVERTER);
+        ARRAY_CONVERTERS.put(Float.class, ARRAY_FLOAT_CONVERTER);
+        ARRAY_CONVERTERS.put(Float.TYPE, ARRAY_FLOAT_CONVERTER);
+        ARRAY_CONVERTERS.put(Double.class, ARRAY_DOUBLE_CONVERTER);
+        ARRAY_CONVERTERS.put(Double.TYPE, ARRAY_DOUBLE_CONVERTER);
+        ARRAY_CONVERTERS.put(String.class, ARRAY_STRING_CONVERTER);
+        ARRAY_CONVERTERS.put(Class.class, ARRAY_CLASS_CONVERTER);
+        ARRAY_CONVERTERS.put(BigInteger.class, ARRAY_BIGINTEGER_CONVERTER);
+        ARRAY_CONVERTERS.put(BigDecimal.class, ARRAY_BIGDECIMAL_CONVERTER);
+    }
+
+    @Deprecated
+    public static RubyConverter getArrayConverter(Class type) {
+        RubyConverter converter = ARRAY_CONVERTERS.get(type);
+        if (converter == null) {
+            return ARRAY_OBJECT_CONVERTER;
+        }
+        return converter;
     }
 }
