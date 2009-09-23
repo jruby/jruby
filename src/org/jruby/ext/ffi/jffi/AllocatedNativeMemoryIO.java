@@ -56,7 +56,9 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         if (holder.released) {
             throw getRuntime().newRuntimeError("memory already freed");
         }
+        
         holder.free();
+        referenceSet.remove(holder); // No auto cleanup needed
     }
 
     public void setAutoRelease(boolean release) {
