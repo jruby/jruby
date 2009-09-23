@@ -1,15 +1,16 @@
 package org.jruby.ext.ffi.jffi;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
+import org.jruby.util.ReferenceReaper;
 
 final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
-    private final AtomicBoolean released = new AtomicBoolean(false);
-    private volatile boolean autorelease = true;
+    /** Keeps strong references to the MemoryHolder until cleanup */
+    private static final Map<MemoryHolder, Boolean> referenceSet = new ConcurrentHashMap<MemoryHolder, Boolean>();
 
-    /** The real memory address */
-    private final long storage;
+    private final MemoryHolder holder;
 
     /**
      * Allocates native memory
@@ -34,8 +35,12 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
      */
     static final AllocatedNativeMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
         final long address = IO.allocateMemory(size + align - 1, clear);
+        if (address == 0) {
+            throw runtime.newRuntimeError("failed to allocate " + size + " bytes of native memory");
+        }
+
         try {
-            return address != 0 ? new AllocatedNativeMemoryIO(runtime, address, size, align) : null;
+            return new AllocatedNativeMemoryIO(runtime, address, size, align);
         } catch (Throwable t) {
             IO.freeMemory(address);
             throw new RuntimeException(t);
@@ -44,28 +49,43 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     
     private AllocatedNativeMemoryIO(Ruby runtime, long address, int size, int align) {
         super(runtime, ((address - 1) & ~(align - 1)) + align, size);
-        this.storage = address;
+        referenceSet.put(holder = new MemoryHolder(this, address), Boolean.TRUE);
     }
 
     public void free() {
-        if (released.getAndSet(true)) {
+        if (holder.released) {
             throw getRuntime().newRuntimeError("memory already freed");
         }
-        IO.freeMemory(storage);
+        holder.free();
     }
 
     public void setAutoRelease(boolean release) {
-        this.autorelease = release;
+        holder.autorelease = release;
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (autorelease && !released.getAndSet(true)) {
+    private static final class MemoryHolder extends ReferenceReaper.Phantom<AllocatedNativeMemoryIO> implements Runnable {        
+
+        private final long storage;
+        private volatile boolean released = false;
+        private volatile boolean autorelease = true;
+
+        MemoryHolder(AllocatedNativeMemoryIO mem, long storage) {
+            super(mem);
+            this.storage = storage;
+        }
+
+        public final void run() {
+            referenceSet.remove(this);
+            if (autorelease) {
+                free();
+            }
+        }
+
+        final void free() {
+            if (!released) {
+                released = true;
                 IO.freeMemory(storage);
             }
-        } finally {
-            super.finalize();
         }
     }
 }

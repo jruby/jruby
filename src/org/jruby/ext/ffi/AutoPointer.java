@@ -1,9 +1,8 @@
 
 package org.jruby.ext.ffi;
 
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -12,14 +11,17 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.ReferenceReaper;
 
 @JRubyClass(name = "FFI::" + AutoPointer.AUTOPTR_CLASS_NAME, parent = "FFI::Pointer")
 public final class AutoPointer extends Pointer {
     static final String AUTOPTR_CLASS_NAME = "AutoPointer";
+    
+    /** Keep strong references to the Reaper until cleanup */
+    private static final Map<Reaper, Boolean> referenceSet = new ConcurrentHashMap<Reaper, Boolean>();
+    
     private Pointer pointer;
-    private PointerHolder holder;
-
+    
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(AUTOPTR_CLASS_NAME,
                 module.getClass("Pointer"),
@@ -67,7 +69,7 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
-        this.holder = new PointerHolder(pointer, new ReleaseMethodReaper(pointer, getMetaClass()));
+        referenceSet.put(new Reaper(this, pointer, getMetaClass(), "release"), Boolean.TRUE);
 
         return this;
     }
@@ -80,51 +82,26 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
-        this.holder = new PointerHolder(pointer, new ProcReaper(pointer, releaser));
+        referenceSet.put(new Reaper(this, pointer, releaser, "call"), Boolean.TRUE);
 
         return this;
-    }    
-    
-    private static final class PointerHolder {
-        static final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
-        
-        protected final Pointer pointer;
-        protected final Runnable reaper;
-        public PointerHolder(Pointer pointer, Runnable reaper) {
-            this.pointer = pointer;
-            this.reaper = reaper;
-        }
-        @Override
-        protected void finalize() throws Exception {
-            executor.execute(reaper);
-        }
-    }
-    
-    private static final class ProcReaper implements Runnable {
-        private final Pointer pointer;
-        private final IRubyObject proc;
-        private ProcReaper(Pointer pointer, IRubyObject proc) {
-            this.pointer = pointer;
-            this.proc = proc;
-        }
-        public void run() {
-            try {
-                proc.callMethod(pointer.getRuntime().getCurrentContext(), "call", pointer);
-            } catch (Exception ex) {}
-        }
     }
 
-    private static final class ReleaseMethodReaper implements Runnable {
+    private static final class Reaper extends ReferenceReaper.Phantom<AutoPointer> implements Runnable {
         private final Pointer pointer;
-        private final IRubyObject releaser;
-        private ReleaseMethodReaper(Pointer pointer, IRubyObject releaser) {
-            this.pointer = pointer;
-            this.releaser = releaser;
+        private final IRubyObject proc;
+        private final String methodName;
+
+        private Reaper(AutoPointer pointer, Pointer ptr, IRubyObject proc, String methodName) {
+            super(pointer);
+            this.pointer = ptr;
+            this.proc = proc;
+            this.methodName = methodName;
         }
+
         public void run() {
-            try {
-                releaser.callMethod(pointer.getRuntime().getCurrentContext(), "release", pointer);
-            } catch (Exception ex) {}
+            referenceSet.remove(this);
+            proc.callMethod(pointer.getRuntime().getCurrentContext(), methodName, pointer);
         }
     }
 }
