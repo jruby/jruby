@@ -254,7 +254,7 @@ public class IntHashMap {
 
 	private class KeyIterator extends HashIterator {
 		public Object next() {
-			return new Integer(nextEntry().key);
+			return Integer.valueOf(nextEntry().key);
 		}
 	}
 

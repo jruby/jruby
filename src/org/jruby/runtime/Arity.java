@@ -122,13 +122,12 @@ public final class Arity implements Serializable {
     }
     
     private static Arity newArity(int value) {
-        Integer integerValue = new Integer(value);
         Arity result;
         synchronized (arities) {
-            result = arities.get(integerValue);
+            result = arities.get(value);
             if (result == null) {
                 result = new Arity(value);
-                arities.put(integerValue, result);
+                arities.put(value, result);
             }
         }
         return result;

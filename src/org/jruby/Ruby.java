@@ -3142,8 +3142,7 @@ public final class Ruby {
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
         cleanDescriptors();
         
-        int fileno = descriptor.getFileno();
-        Integer filenoKey = new Integer(fileno);
+        Integer filenoKey = descriptor.getFileno();
         descriptors.put(filenoKey, new WeakDescriptorReference(descriptor, descriptorQueue));
         if (isRetained) {
             retainedDescriptors.put(filenoKey, descriptor);
@@ -3157,7 +3156,7 @@ public final class Ruby {
     public void unregisterDescriptor(int aFileno) {
         cleanDescriptors();
         
-        Integer aFilenoKey = new Integer(aFileno);
+        Integer aFilenoKey = aFileno;
         descriptors.remove(aFilenoKey);
         retainedDescriptors.remove(aFilenoKey);
     }
@@ -3165,7 +3164,7 @@ public final class Ruby {
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
         cleanDescriptors();
         
-        Reference reference = descriptors.get(new Integer(aFileno));
+        Reference reference = descriptors.get(aFileno);
         if (reference == null) {
             return null;
         }
