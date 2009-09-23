@@ -615,7 +615,7 @@ public class RubyEnumerable {
         return block.isGiven() ? reject(context, self, block) : enumeratorize(context.getRuntime(), self, "reject");
     }
 
-    @JRubyMethod(name = {"collect", "map"}, frame = true)
+    @JRubyMethod(name = {"collect", "map"}, frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject collect(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final RubyArray result = runtime.newArray();
@@ -634,6 +634,48 @@ public class RubyEnumerable {
         } else {
             callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
         }
+        return result;
+    }
+
+    @JRubyMethod(name = {"collect"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject collect19(ThreadContext context, IRubyObject self, final Block block) {
+        return collectCommon19(context, self, block, "collect");
+    }
+
+    @JRubyMethod(name = {"map"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject map19(ThreadContext context, IRubyObject self, final Block block) {
+        return collectCommon19(context, self, block, "map");
+    }
+
+    private static IRubyObject collectCommon19(ThreadContext context, IRubyObject self, final Block block, String methodName) {
+        final Ruby runtime = context.getRuntime();
+        if (block.isGiven()) {
+            final RubyArray result = runtime.newArray();
+
+            callEach(runtime, context, self, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(runtime, largs);
+
+                    if (larg instanceof RubyArray && !((RubyArray) larg).isEmpty()) {
+                        larg = ((RubyArray) larg).at(runtime.newFixnum(0));
+                    }
+                    
+                    IRubyObject value = block.yield(ctx, larg);
+                    synchronized (result) {
+                        result.append(value);
+                    }
+                    return runtime.getNil();
+                }
+            });
+            return result;
+        } else {
+            return enumeratorize(runtime, self, methodName);
+        }
+    }
+
+    public static IRubyObject collectCommon(ThreadContext context, Ruby runtime, IRubyObject self,
+            RubyArray result, final Block block, BlockCallback blockCallback) {
+        callEach(runtime, context, self, blockCallback);
         return result;
     }
 
@@ -1146,14 +1188,24 @@ public class RubyEnumerable {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(name = "zip", rest = true, frame = true)
+    @JRubyMethod(name = "zip", rest = true, frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject zip(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
+        return zipCommon(context, self, args, block, "to_a");
+    }
+    
+    @JRubyMethod(name = "zip", rest = true, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject zip19(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
+        return zipCommon(context, self, args, block, "to_ary");
+    }
+
+    private static IRubyObject zipCommon(ThreadContext context, IRubyObject self,
+            final IRubyObject[] args, final Block block, String methodConverter) {
         final Ruby runtime = context.getRuntime();
 
         for (int i = 0; i < args.length; i++) {
-            args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), "to_a");
+            args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), methodConverter);
         }
-        
+
         final int aLen = args.length + 1;
 
         if (block.isGiven()) {
