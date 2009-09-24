@@ -36,10 +36,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.anno.JRubyClass;
@@ -160,7 +158,7 @@ public class RubyJRuby {
     
     @JRubyMethod(name = "runtime", frame = true, module = true)
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
-        return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), recv.getRuntime()), Block.NULL_BLOCK);
+        return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), recv.getRuntime());
     }
 
     @JRubyMethod(frame = true, module = true)
@@ -202,7 +200,7 @@ public class RubyJRuby {
                 throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
             }
             Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
-            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), ((InterpretedBlock)block.getBody()).getBodyNode()), Block.NULL_BLOCK);
+            return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), ((InterpretedBlock)block.getBody()).getBodyNode());
         } else {
             Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
             String filename = "-";
@@ -214,8 +212,8 @@ public class RubyJRuby {
                     extraPositionInformation = args[2].isTrue();
                 }
             }
-            return Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), 
-               recv.getRuntime().parse(content.getByteList(), filename, null, 0, extraPositionInformation)), Block.NULL_BLOCK);
+            return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(),
+               recv.getRuntime().parse(content.getByteList(), filename, null, 0, extraPositionInformation));
         }
     }
 
@@ -267,7 +265,7 @@ public class RubyJRuby {
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "name=", recv.getRuntime().newString(filename));
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "class_name=", recv.getRuntime().newString(classname));
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "original_script=", content);
-        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "code=", Java.java_to_ruby(recv, JavaObject.wrap(recv.getRuntime(), bts), Block.NULL_BLOCK));
+        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "code=", JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), bts));
 
         return compiledScript;
     }

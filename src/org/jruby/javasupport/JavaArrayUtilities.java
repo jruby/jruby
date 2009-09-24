@@ -31,7 +31,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.anno.JRubyModule;
@@ -68,9 +67,7 @@ public class JavaArrayUtilities {
         if (!(string instanceof RubyString)) {
             throw runtime.newTypeError(string, runtime.getString());
         }
-        return Java.java_to_ruby(recv,
-                JavaObject.wrap(runtime, ((RubyString)string).getBytes()),
-                Block.NULL_BLOCK);
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, ((RubyString)string).getBytes());
     }
 
 }

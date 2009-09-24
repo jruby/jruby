@@ -248,8 +248,7 @@ public class RubyDir extends RubyObject {
 
         List<String> fileList = new ArrayList<String>();
         for (ByteList file : dirs) {
-            IRubyObject obj = JavaUtil.convertJavaToRuby(runtime, file);
-            String[] split = obj.asJavaString().split("/");
+            String[] split = file.toString().split("/");
             fileList.add(split[split.length -1]);
          }
 

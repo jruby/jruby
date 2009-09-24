@@ -16,8 +16,7 @@ class InterfaceJavaProxy < JavaProxy
     def new(*outer_args, &block)
       proxy = allocate
       JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
-        args.collect! { |arg| Java.java_to_ruby(arg) }
-        Java.ruby_to_java(proxy.send(method.name, *args))
+        proxy.send(method.name, *args)
       })
       proxy.send(:initialize,*outer_args,&block)
       proxy

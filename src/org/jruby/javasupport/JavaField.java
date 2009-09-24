@@ -182,8 +182,7 @@ public class JavaField extends JavaAccessibleObject {
             throw getRuntime().newTypeError("not a java object:" + value);
         }
         try {
-            Object convertedValue = JavaUtil.convertArgument(getRuntime(), ((JavaObject) value).getValue(),
-                                                             field.getType());
+            Object convertedValue = value.toJava(field.getType());
             // TODO: Only setAccessible to account for pattern found by
             // accessing constants included from a non-public interface.
             // (aka java.util.zip.ZipConstants being implemented by many

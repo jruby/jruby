@@ -810,6 +810,7 @@ public class Java implements Library {
     /**
      * High-level object conversion utility function 'java_to_primitive' is the low-level version 
      */
+    @Deprecated
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         try {
@@ -825,11 +826,13 @@ public class Java implements Library {
     /**
      * High-level object conversion utility. 
      */
+    @Deprecated
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.ruby_to_java(recv, object, unusedBlock);
     }
 
+    @Deprecated
     @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
@@ -881,12 +884,12 @@ public class Java implements Library {
                 Ruby runtime = recv.getRuntime();
                 int length = nargs == null ? 0 : nargs.length;
                 IRubyObject[] rubyArgs = new IRubyObject[length + 2];
-                rubyArgs[0] = JavaObject.wrap(runtime, proxy);
+                rubyArgs[0] = JavaUtil.convertJavaToRuby(runtime, proxy);
                 rubyArgs[1] = new JavaMethod(runtime, method);
                 for (int i = 0; i < length; i++) {
-                    rubyArgs[i + 2] = JavaObject.wrap(runtime, nargs[i]);
+                    rubyArgs[i + 2] = JavaUtil.convertJavaToRuby(runtime, nargs[i]);
                 }
-                return JavaUtil.convertArgument(runtime, proc.call(runtime.getCurrentContext(), rubyArgs), method.getReturnType());
+                return proc.call(runtime.getCurrentContext(), rubyArgs).toJava(method.getReturnType());
             }
         }));
     }

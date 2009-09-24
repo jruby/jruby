@@ -77,7 +77,7 @@ public class JavaUtil {
         
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
-            rubyObjects[i] = convertJavaToRuby(runtime, objects[i]);
+            rubyObjects[i] = convertJavaToUsableRubyObject(runtime, objects[i]);
         }
         return rubyObjects;
     }
@@ -89,20 +89,34 @@ public class JavaUtil {
         public abstract IRubyObject get(Ruby runtime, Object array, int i);
         public String toString() {return type.getName() + " converter";}
     }
+
+    private static IRubyObject trySimpleConversions(Ruby runtime, Object object) {
+        if (object == null) {
+            return runtime.getNil();
+        }
+
+        if (object instanceof IRubyObject) {
+            return (IRubyObject) object;
+        }
+
+        if (object instanceof InternalJavaProxy) {
+            InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
+            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
+
+            if (orig != null) {
+                return orig;
+            }
+        }
+
+        return null;
+    }
     
     public static final JavaConverter JAVA_DEFAULT_CONVERTER = new JavaConverter(Object.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
-            if (object == null) {
-                return runtime.getNil();
-            }
+            IRubyObject result = trySimpleConversions(runtime, object);
 
-            if (object instanceof IRubyObject) {
-                return (IRubyObject) object;
-            }
- 
-            // Note: returns JavaObject instance, which is not
-            // directly usable. probably too late to change this now,
-            // supplying alternate method convertJavaToUsableRubyObject
+            if (result != null) return result;
+            
             return JavaObject.wrap(runtime, object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
@@ -339,27 +353,12 @@ public class JavaUtil {
         return converter;
     }
 
-    /**
-     * Converts object to the corresponding Ruby type; however, for non-primitives,
-     * a JavaObject instance is returned. This must be subsequently wrapped by
-     * calling one of Java.wrap, Java.java_to_ruby, Java.new_instance_for, or
-     * Java.getInstance, depending on context.
-     * 
-     * @param runtime
-     * @param object 
-     * @return corresponding Ruby type, or a JavaObject instance
-     */
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object) {
-        if (object == null) {
-            return runtime.getNil();
-        } else if (object instanceof IRubyObject) {
-            return (IRubyObject)object;
-        }
-        return convertJavaToRuby(runtime, object, object.getClass());
+        return convertJavaToUsableRubyObject(runtime, object);
     }
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object, Class javaClass) {
-        return getJavaConverter(javaClass).convert(runtime, object);
+        return convertJavaToUsableRubyObjectWithConverter(runtime, object, getJavaConverter(javaClass));
     }
     
     /**
@@ -371,23 +370,11 @@ public class JavaUtil {
      * @return corresponding Ruby type, or a functional Java proxy
      */
     public static IRubyObject convertJavaToUsableRubyObject(Ruby runtime, Object object) {
-        if (object == null) return runtime.getNil();
-        
-        // if it's already IRubyObject, don't re-wrap (JRUBY-2480)
-        if (object instanceof IRubyObject) {
-            return (IRubyObject)object;
-        }
-        
-        if (object instanceof InternalJavaProxy) {
-            InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
-            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
+        IRubyObject result = trySimpleConversions(runtime, object);
 
-            if (orig != null) {
-                return orig;
-            }
-        }
+        if (result != null) return result;
 
-        JavaConverter converter = JAVA_CONVERTERS.get(object.getClass());
+        JavaConverter converter = getJavaConverter(object.getClass());
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
             return Java.getInstance(runtime, object);
         }
@@ -395,21 +382,9 @@ public class JavaUtil {
     }
 
     public static IRubyObject convertJavaToUsableRubyObjectWithConverter(Ruby runtime, Object object, JavaConverter converter) {
-        if (object == null) return runtime.getNil();
+        IRubyObject result = trySimpleConversions(runtime, object);
 
-        // if it's already IRubyObject, don't re-wrap (JRUBY-2480)
-        if (object instanceof IRubyObject) {
-            return (IRubyObject)object;
-        }
-
-        if (object instanceof InternalJavaProxy) {
-            InternalJavaProxy internalJavaProxy = (InternalJavaProxy) object;
-            IRubyObject orig = internalJavaProxy.___getInvocationHandler().getOrig();
-
-            if (orig != null) {
-                return orig;
-            }
-        }
+        if (result != null) return result;
 
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
             return Java.getInstance(runtime, object);
@@ -423,75 +398,30 @@ public class JavaUtil {
         }
         return converter.get(runtime, array, i);
     }
+    
     public static Class<?> primitiveToWrapper(Class<?> type) {
         if (type.isPrimitive()) {
-            if (type == Integer.TYPE) {
-                return Integer.class;
-            } else if (type == Double.TYPE) {
-                return Double.class;
-            } else if (type == Boolean.TYPE) {
+            if (type == boolean.class) {
                 return Boolean.class;
-            } else if (type == Byte.TYPE) {
+            } else if (type == byte.class) {
                 return Byte.class;
-            } else if (type == Character.TYPE) {
-                return Character.class;
-            } else if (type == Float.TYPE) {
-                return Float.class;
-            } else if (type == Long.TYPE) {
-                return Long.class;
-            } else if (type == Void.TYPE) {
-                return Void.class;
-            } else if (type == Short.TYPE) {
+            } else if (type == short.class) {
                 return Short.class;
+            } else if (type == char.class) {
+                return Character.class;
+            } else if (type == int.class) {
+                return Integer.class;
+            } else if (type == long.class) {
+                return Long.class;
+            } else if (type == float.class) {
+                return Float.class;
+            } else if (type == double.class) {
+                return Double.class;
+            } else if (type == void.class) {
+                return Void.class;
             }
         }
         return type;
-    }
-
-    public static Object convertArgument(Ruby runtime, Object argument, Class<?> parameterType) {
-        if (argument == null) {
-          if(parameterType.isPrimitive()) {
-            throw runtime.newTypeError("primitives do not accept null");
-          } else {
-            return null;
-          }
-        }
-        
-        if (argument instanceof JavaObject) {
-            argument = ((JavaObject) argument).getValue();
-            if (argument == null) {
-                return null;
-            }
-        }
-        Class<?> type = primitiveToWrapper(parameterType);
-        if (type == Void.class) {
-            return null;
-        }
-        if (argument instanceof Number) {
-            final Number number = (Number) argument;
-            if (type == Long.class) {
-                return new Long(number.longValue());
-            } else if (type == Integer.class) {
-                return new Integer(number.intValue());
-            } else if (type == Byte.class) {
-                return new Byte(number.byteValue());
-            } else if (type == Character.class) {
-                return new Character((char) number.intValue());
-            } else if (type == Double.class) {
-                return new Double(number.doubleValue());
-            } else if (type == Float.class) {
-                return new Float(number.floatValue());
-            } else if (type == Short.class) {
-                return new Short(number.shortValue());
-            }
-        }
-        if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
-            RubyObject rubyObject = (RubyObject) argument;
-            if (!rubyObject.respondsTo("java_object")) {
-                return convertProcToInterface(runtime.getCurrentContext(), rubyObject, parameterType);
-            }
-        }
-        return argument;
     }
     
     public static boolean isDuckTypeConvertable(Class providedArgumentType, Class parameterType) {
@@ -742,88 +672,6 @@ public class JavaUtil {
         // not one of the types we convert, so just pass it out as-is without wrapping
         return arg;
     }
-
-    public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return object;
-        }
-        Ruby runtime = recv.getRuntime();
-        Object javaObject;
-        switch (object.getMetaClass().index) {
-        case ClassIndex.NIL:
-            javaObject = null;
-            break;
-        case ClassIndex.FIXNUM:
-            javaObject = new Long(((RubyFixnum) object).getLongValue());
-            break;
-        case ClassIndex.BIGNUM:
-            javaObject = ((RubyBignum) object).getValue();
-            break;
-        case ClassIndex.FLOAT:
-            javaObject = new Double(((RubyFloat) object).getValue());
-            break;
-        case ClassIndex.STRING:
-            try {
-                ByteList bytes = ((RubyString) object).getByteList();
-                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
-            } catch (UnsupportedEncodingException uee) {
-                javaObject = object.toString();
-            }
-            break;
-        case ClassIndex.TRUE:
-            javaObject = Boolean.TRUE;
-            break;
-        case ClassIndex.FALSE:
-            javaObject = Boolean.FALSE;
-            break;
-        case ClassIndex.TIME:
-            javaObject = ((RubyTime) object).getJavaDate();
-            break;
-        default:
-            // it's not one of the types we convert, so just pass it out as-is without wrapping
-            return object;
-        }
-
-        // we've found a Java type to which we've coerced the Ruby value, wrap it
-        return JavaObject.wrap(runtime, javaObject);
-    }
-
-    /**
-     * High-level object conversion utility function 'java_to_primitive' is the low-level version 
-     */
-    public static IRubyObject java_to_ruby(Ruby runtime, IRubyObject object) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToUsableRubyObject(runtime, ((JavaObject) object).getValue());
-        }
-        return object;
-    }
-
-    // TODO: Formalize conversion mechanisms between Java and Ruby
-    /**
-     * High-level object conversion utility. 
-     */
-    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object.respondsTo("to_java_object")) {
-            IRubyObject result = (JavaObject)object.dataGetStruct();
-            if (result == null) {
-                result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
-            }
-            if (result instanceof JavaObject) {
-                recv.getRuntime().getJavaSupport().getObjectProxyCache().put(((JavaObject) result).getValue(), object);
-            }
-            return result;
-        }
-
-        return primitive_to_java(recv, object, unusedBlock);
-    }
-
-    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
-        }
-
-        return object;
-    }
     
     public static boolean isJavaObject(IRubyObject candidate) {
         return candidate.dataGetStruct() instanceof JavaObject;
@@ -831,6 +679,34 @@ public class JavaUtil {
     
     public static Object unwrapJavaObject(IRubyObject object) {
         return ((JavaObject)object.dataGetStruct()).getValue();
+    }
+
+    public static JavaObject unwrapJavaObject(Ruby runtime, IRubyObject convertee, String errorMessage) {
+        IRubyObject obj = convertee;
+        if(!(obj instanceof JavaObject)) {
+            if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
+                obj = (JavaObject)obj.dataGetStruct();
+            } else {
+                throw runtime.newTypeError(errorMessage);
+            }
+        }
+        return (JavaObject)obj;
+    }
+
+    public static Object unwrapJavaValue(Ruby runtime, IRubyObject obj, String errorMessage) {
+        if(obj instanceof JavaMethod) {
+            return ((JavaMethod)obj).getValue();
+        } else if(obj instanceof JavaConstructor) {
+            return ((JavaConstructor)obj).getValue();
+        } else if(obj instanceof JavaField) {
+            return ((JavaField)obj).getValue();
+        } else if(obj instanceof JavaObject) {
+            return ((JavaObject)obj).getValue();
+        } else if(obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof IRubyObject)) {
+            return unwrapJavaValue(runtime, ((IRubyObject)obj.dataGetStruct()), errorMessage);
+        } else {
+            throw runtime.newTypeError(errorMessage);
+        }
     }
 
     private static final Pattern JAVA_PROPERTY_CHOPPER = Pattern.compile("(get|set|is)([A-Z0-9])(.*)");
@@ -927,34 +803,6 @@ public class JavaUtil {
         }
         
         return nameSet;
-    }
-
-    public static JavaObject unwrapJavaObject(Ruby runtime, IRubyObject convertee, String errorMessage) {
-        IRubyObject obj = convertee;
-        if(!(obj instanceof JavaObject)) {
-            if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
-                obj = (JavaObject)obj.dataGetStruct();
-            } else {
-                throw runtime.newTypeError(errorMessage);
-            }
-        }
-        return (JavaObject)obj;
-    }
-
-    public static Object unwrapJavaValue(Ruby runtime, IRubyObject obj, String errorMessage) {
-        if(obj instanceof JavaMethod) {
-            return ((JavaMethod)obj).getValue();
-        } else if(obj instanceof JavaConstructor) {
-            return ((JavaConstructor)obj).getValue();
-        } else if(obj instanceof JavaField) {
-            return ((JavaField)obj).getValue();
-        } else if(obj instanceof JavaObject) {
-            return ((JavaObject)obj).getValue();
-        } else if(obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof IRubyObject)) {
-            return unwrapJavaValue(runtime, ((IRubyObject)obj.dataGetStruct()), errorMessage);
-        } else {
-            throw runtime.newTypeError(errorMessage);
-        }
     }
 
     @Deprecated
@@ -1369,5 +1217,137 @@ public class JavaUtil {
             return ARRAY_OBJECT_CONVERTER;
         }
         return converter;
+    }
+
+    /**
+     * High-level object conversion utility.
+     */
+    @Deprecated
+    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
+        if (object.respondsTo("to_java_object")) {
+            IRubyObject result = (JavaObject)object.dataGetStruct();
+            if (result == null) {
+                result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
+            }
+            if (result instanceof JavaObject) {
+                recv.getRuntime().getJavaSupport().getObjectProxyCache().put(((JavaObject) result).getValue(), object);
+            }
+            return result;
+        }
+
+        return primitive_to_java(recv, object, unusedBlock);
+    }
+
+    @Deprecated
+    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
+        if (object instanceof JavaObject) {
+            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
+        }
+
+        return object;
+    }
+
+    @Deprecated
+    public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
+        if (object instanceof JavaObject) {
+            return object;
+        }
+        Ruby runtime = recv.getRuntime();
+        Object javaObject;
+        switch (object.getMetaClass().index) {
+        case ClassIndex.NIL:
+            javaObject = null;
+            break;
+        case ClassIndex.FIXNUM:
+            javaObject = new Long(((RubyFixnum) object).getLongValue());
+            break;
+        case ClassIndex.BIGNUM:
+            javaObject = ((RubyBignum) object).getValue();
+            break;
+        case ClassIndex.FLOAT:
+            javaObject = new Double(((RubyFloat) object).getValue());
+            break;
+        case ClassIndex.STRING:
+            try {
+                ByteList bytes = ((RubyString) object).getByteList();
+                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+            } catch (UnsupportedEncodingException uee) {
+                javaObject = object.toString();
+            }
+            break;
+        case ClassIndex.TRUE:
+            javaObject = Boolean.TRUE;
+            break;
+        case ClassIndex.FALSE:
+            javaObject = Boolean.FALSE;
+            break;
+        case ClassIndex.TIME:
+            javaObject = ((RubyTime) object).getJavaDate();
+            break;
+        default:
+            // it's not one of the types we convert, so just pass it out as-is without wrapping
+            return object;
+        }
+
+        // we've found a Java type to which we've coerced the Ruby value, wrap it
+        return JavaObject.wrap(runtime, javaObject);
+    }
+
+    @Deprecated
+    public static Object convertArgument(Ruby runtime, Object argument, Class<?> parameterType) {
+        if (argument == null) {
+          if(parameterType.isPrimitive()) {
+            throw runtime.newTypeError("primitives do not accept null");
+          } else {
+            return null;
+          }
+        }
+
+        if (argument instanceof JavaObject) {
+            argument = ((JavaObject) argument).getValue();
+            if (argument == null) {
+                return null;
+            }
+        }
+        Class<?> type = primitiveToWrapper(parameterType);
+        if (type == Void.class) {
+            return null;
+        }
+        if (argument instanceof Number) {
+            final Number number = (Number) argument;
+            if (type == Long.class) {
+                return new Long(number.longValue());
+            } else if (type == Integer.class) {
+                return new Integer(number.intValue());
+            } else if (type == Byte.class) {
+                return new Byte(number.byteValue());
+            } else if (type == Character.class) {
+                return new Character((char) number.intValue());
+            } else if (type == Double.class) {
+                return new Double(number.doubleValue());
+            } else if (type == Float.class) {
+                return new Float(number.floatValue());
+            } else if (type == Short.class) {
+                return new Short(number.shortValue());
+            }
+        }
+        if (isDuckTypeConvertable(argument.getClass(), parameterType)) {
+            RubyObject rubyObject = (RubyObject) argument;
+            if (!rubyObject.respondsTo("java_object")) {
+                return convertProcToInterface(runtime.getCurrentContext(), rubyObject, parameterType);
+            }
+        }
+        return argument;
+    }
+
+    /**
+     * High-level object conversion utility function 'java_to_primitive' is the low-level version
+     */
+    @Deprecated
+    public static IRubyObject java_to_ruby(Ruby runtime, IRubyObject object) {
+        if (object instanceof JavaObject) {
+            return JavaUtil.convertJavaToUsableRubyObject(runtime, ((JavaObject) object).getValue());
+        }
+        return object;
     }
 }

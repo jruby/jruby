@@ -218,7 +218,7 @@ public class JavaMethod extends JavaCallable {
     public IRubyObject invoke(IRubyObject[] args) {
         checkArity(args.length - 1);
         Object[] arguments = new Object[args.length - 1];
-        convertArguments(getRuntime(), arguments, args, 1);
+        convertArguments(args, arguments, 1);
 
         IRubyObject invokee = args[0];
         if(invokee.isNil()) {
@@ -256,7 +256,7 @@ public class JavaMethod extends JavaCallable {
         checkArity(args.length);
         Object[] arguments = new Object[args.length];
         System.arraycopy(args, 0, arguments, 0, arguments.length);
-        convertArguments(getRuntime(), arguments, args, 0);
+        convertArguments(args, arguments, 0);
         return invokeWithExceptionHandling(method, null, arguments);
     }
 
@@ -540,10 +540,10 @@ public class JavaMethod extends JavaCallable {
                 iae.getMessage());
     }
 
-    private void convertArguments(Ruby runtime, Object[] arguments, Object[] args, int from) {
+    private void convertArguments(IRubyObject[] argsIn, Object[] argsOut, int from) {
         Class<?>[] types = parameterTypes;
-        for (int i = arguments.length; --i >= 0; ) {
-            arguments[i] = JavaUtil.convertArgument(runtime, args[i+from], types[i]);
+        for (int i = argsOut.length; --i >= 0; ) {
+            argsOut[i] = argsIn[i+from].toJava(types[i]);
         }
     }
 

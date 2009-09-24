@@ -88,22 +88,21 @@ module java::util::List
     val
   end
   def sort()
-    comparator = java::util::Comparator.new
-    
-    if block_given?
-      # These gymnastics are needed because using def will not capture the block in it's closure
-      comparator_singleton = (class << comparator; self; end)
-      comparator_singleton.send :define_method, :compare do |o1, o2|
-        yield(o1, o2)
+    comparator = Class.new do
+      include java::util::Comparator
+      if block_given?
+        define_method :compare do |o1, o2|
+          yield o1, o2
+        end
+      else
+        def compare(o1, o2)
+          o1 <=> o2
+        end
       end
-    else
-      def comparator.compare(o1, o2)
-        o1 <=> o2
-      end
-    end
+    end.new
 
     # This should probably return a new instance of self class instead of ArrayList
-    list = java::util::ArrayList.new
+    list = self.class.new
     list.addAll(self)
 
     java::util::Collections.sort(list, comparator)

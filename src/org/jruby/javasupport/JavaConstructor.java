@@ -194,7 +194,7 @@ public class JavaConstructor extends JavaCallable {
         }
         Object[] constructorArguments = new Object[length];
         for (int i = length; --i >= 0; ) {
-            constructorArguments[i] = JavaUtil.convertArgument(getRuntime(), args[i], types[i]);
+            constructorArguments[i] = args[i].toJava(types[i]);
         }
         try {
             Object result = constructor.newInstance(constructorArguments);
