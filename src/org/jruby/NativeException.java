@@ -117,7 +117,7 @@ public class NativeException extends RubyException {
         if (target != null) {
             String className = target.getDeclaringClass().getName();
             String methodName = target.getName();
-            for (int i = origStackTrace.length - skip; i >= 0; --i) {
+            for (int i = origStackTrace.length - skip - 1; i >= 0; --i) {
                 StackTraceElement frame = origStackTrace[i];
                 if (frame.getClassName().equals(className) &&
                     frame.getMethodName().equals(methodName)) {
