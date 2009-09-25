@@ -59,7 +59,7 @@ public class TimeOutputFormatter {
     }
 
     public String format(String sequence) {
-        String paddedWith = null;
+        String paddedWith = " ";
         if (formatter != null) {
             for (int i = 0; i < formatter.length(); i++) {
                 switch (formatter.charAt(i)) {
@@ -67,7 +67,7 @@ public class TimeOutputFormatter {
                         sequence = sequence.toUpperCase();
                         break;
                     case '_':
-                        paddedWith = "#";
+                        paddedWith = " ";
                         break;
                     case '0':
                         paddedWith = "0";
@@ -85,11 +85,9 @@ public class TimeOutputFormatter {
         if (formatter != null && formatter.contains("-")) return sequence;
 
         if (sequence != null && sequence.length() < totalPadding) {
-            String format = String.format("%1$#" + totalPadding + "s", sequence);
-            if ("0".equals(padder)) {
-                format = format.substring(0, format.indexOf(sequence)).replaceAll(" ", "0") + sequence;
+            for (int i = sequence.length(); i < totalPadding; i++) {
+                sequence = padder + sequence;
             }
-            return format;
         }
         return sequence;
     }
