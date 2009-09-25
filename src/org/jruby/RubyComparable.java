@@ -96,19 +96,28 @@ public class RubyComparable {
     /** cmp_equal (cmp_eq inlined here)
      * 
      */
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_8)
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        return callCmpMethod(context, recv, other, context.getRuntime().getNil());
+    }
 
+    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject op_equal19(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        return callCmpMethod(context, recv, other, context.getRuntime().newBoolean(false));
+    }
+
+    private static IRubyObject callCmpMethod(ThreadContext context, IRubyObject recv, IRubyObject other, IRubyObject returnValueOnError) {
+        Ruby runtime = context.getRuntime();
+        
         if (recv == other) return runtime.getTrue();
 
         try {
             IRubyObject result = recv.callMethod(context, "<=>", other);
-            
+
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                return runtime.getNil();
+                return returnValueOnError;
             } else {
                 throw e;
             }
