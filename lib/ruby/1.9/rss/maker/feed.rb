@@ -22,6 +22,8 @@ module RSS
         end
 
         class Channel < ChannelBase
+          include SetupDefaultLanguage
+
           def to_feed(feed)
             set_default_values do
               setup_values(feed)
@@ -71,14 +73,11 @@ module RSS
           def _set_default_values(&block)
             keep = {
               :id => id,
-              :updated => updated,
             }
             self.id ||= about
-            self.updated ||= dc_date
             super(&block)
           ensure
             self.id = keep[:id]
-            self.updated = keep[:updated]
           end
 
           class SkipDays < SkipDaysBase
@@ -182,6 +181,7 @@ module RSS
               set_default_values do
                 entry = feed.class::Entry.new
                 set = setup_values(entry)
+                entry.dc_dates.clear
                 setup_other_elements(feed, entry)
                 if set
                   feed.entries << entry
@@ -216,14 +216,11 @@ module RSS
             def _set_default_values(&block)
               keep = {
                 :id => id,
-                :updated => updated,
               }
               self.id ||= link
-              self.updated ||= dc_date
               super(&block)
             ensure
               self.id = keep[:id]
-              self.updated = keep[:updated]
             end
 
             class Guid < GuidBase

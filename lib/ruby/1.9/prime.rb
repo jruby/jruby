@@ -21,9 +21,9 @@ class Integer
   def Integer.from_prime_division(pd)
     Prime.int_from_prime_division(pd)
   end
-  
+
   # Returns the factorization of +self+.
-  # 
+  #
   # See Prime#prime_division for more details.
   def prime_division(generator = Prime::Generator23.new)
     Prime.prime_division(self, generator)
@@ -34,7 +34,7 @@ class Integer
     Prime.prime?(self)
   end
 
-  # Iterates the given block over all prime numbers. 
+  # Iterates the given block over all prime numbers.
   #
   # See +Prime+#each for more details.
   def Integer.each_prime(ubound, &block) # :yields: prime
@@ -51,11 +51,11 @@ end
 #  end
 #
 # == Retrieving the instance
-# +Prime+.new is obsolete. Now +Prime+ has the default instance and you can 
+# +Prime+.new is obsolete. Now +Prime+ has the default instance and you can
 # access it as +Prime+.instance.
 #
 # For convenience, each instance method of +Prime+.instance can be accessed
-# as a class method of +Prime+. 
+# as a class method of +Prime+.
 #
 # e.g.
 #  Prime.instance.prime?(2)  #=> true
@@ -64,19 +64,19 @@ end
 # == Generators
 # A "generator" provides an implementation of enumerating pseudo-prime
 # numbers and it remembers the position of enumeration and upper bound.
-# Futhermore, it is a external iterator of prime enumeration which is 
+# Futhermore, it is a external iterator of prime enumeration which is
 # compatible to an Enumerator.
 #
 # +Prime+::+PseudoPrimeGenerator+ is the base class for generators.
 # There are few implementations of generator.
 #
 # [+Prime+::+EratosthenesGenerator+]
-#   Uses eratosthenes's sieve. 
+#   Uses eratosthenes's sieve.
 # [+Prime+::+TrialDivisionGenerator+]
 #   Uses the trial division method.
 # [+Prime+::+Generator23+]
 #   Generates all positive integers which is not divided by 2 nor 3.
-#   This sequence is very bad as a pseudo-prime sequence. But this 
+#   This sequence is very bad as a pseudo-prime sequence. But this
 #   is faster and uses much less memory than other generators. So,
 #   it is suitable for factorizing an integer which is not large but
 #   has many prime factors. e.g. for Prime#prime? .
@@ -106,28 +106,28 @@ class Prime
   #
   # == Parameters
   # +ubound+::
-  #   Optional. An arbitrary positive number. 
+  #   Optional. An arbitrary positive number.
   #   The upper bound of enumeration. The method enumerates
-  #   prime numbers infinitely if +ubound+ is nil. 
+  #   prime numbers infinitely if +ubound+ is nil.
   # +generator+::
   #   Optional. An implementation of pseudo-prime generator.
   #
   # == Return value
   # An evaluated value of the given block at the last time.
   # Or an enumerator which is compatible to an +Enumerator+
-  # if no block given. 
+  # if no block given.
   #
   # == Description
-  # Calls +block+ once for each prime numer, passing the prime as
+  # Calls +block+ once for each prime number, passing the prime as
   # a parameter.
   #
   # +ubound+::
-  #   Upper bound of prime numbers. The iterator stops after 
+  #   Upper bound of prime numbers. The iterator stops after
   #   yields all prime numbers p <= +ubound+.
   #
   # == Note
   # +Prime+.+new+ returns a object extended by +Prime+::+OldCompatibility+
-  # in order to compatibility to Ruby 1.9, and +Prime+#each is overwritten
+  # in order to compatibility to Ruby 1.8, and +Prime+#each is overwritten
   # by +Prime+::+OldCompatibility+#+each+.
   #
   # +Prime+.+new+ is now obsolete. Use +Prime+.+instance+.+each+ or simply
@@ -144,6 +144,8 @@ class Prime
   # +value+:: an arbitrary integer to be checked.
   # +generator+:: optional. A pseudo-prime generator.
   def prime?(value, generator = Prime::Generator23.new)
+    value = -value if value < 0
+    return false if value < 2
     for num in generator
       q,r = value.divmod num
       return true if q < num
@@ -154,9 +156,9 @@ class Prime
   # Re-composes a prime factorization and returns the product.
   #
   # == Parameters
-  # +pd+:: Array of pairs of integers. The each internal 
+  # +pd+:: Array of pairs of integers. The each internal
   #        pair consists of a prime number -- a prime factor --
-  #        and a natural number -- an exponent. 
+  #        and a natural number -- an exponent.
   #
   # == Example
   # For [[p_1, e_1], [p_2, e_2], ...., [p_n, e_n]], it returns
@@ -174,7 +176,7 @@ class Prime
   # == Parameters
   # +value+:: An arbitrary integer.
   # +generator+:: Optional. A pseudo-prime generator.
-  #               +generator+.succ must return the next 
+  #               +generator+.succ must return the next
   #               pseudo-prime number in the ascendent
   #               order. It must generate all prime numbers,
   #               but may generate non prime numbers.
@@ -183,7 +185,7 @@ class Prime
   # +ZeroDivisionError+:: when +value+ is zero.
   #
   # == Example
-  # For an arbitrary integer 
+  # For an arbitrary integer
   # n = p_1**e_1 * p_2**e_2 * .... * p_n**e_n,
   # prime_division(n) returns
   # [[p_1, e_1], [p_2, e_2], ...., [p_n, e_n]].
@@ -192,7 +194,12 @@ class Prime
   #
   def prime_division(value, generator= Prime::Generator23.new)
     raise ZeroDivisionError if value == 0
-    pv = []
+    if value < 0
+      value = -value
+      pv = [[-1, 1]]
+    else
+      pv = []
+    end
     for prime in generator
       count = 0
       while (value1, mod = value.divmod(prime)
@@ -229,9 +236,9 @@ class Prime
     end
 
     # returns the next pseudo-prime number, and move the internal
-    # position forward. 
+    # position forward.
     #
-    # +PseudoPrimeGenerator+#succ raises +NotImplementedError+. 
+    # +PseudoPrimeGenerator+#succ raises +NotImplementedError+.
     def succ
       raise NotImplementedError, "need to define `succ'"
     end
@@ -276,7 +283,7 @@ class Prime
       end
     end
   end
-  
+
   # An implementation of +PseudoPrimeGenerator+.
   #
   # Uses +EratosthenesSieve+.
@@ -284,7 +291,7 @@ class Prime
     def initialize
       @last_prime = nil
     end
-    
+
     def succ
       @last_prime = @last_prime ? EratosthenesSieve.instance.next_to(@last_prime) : 2
     end
@@ -294,13 +301,13 @@ class Prime
     alias next succ
   end
 
-  # An implementation of +PseudoPrimeGenerator+ which uses 
+  # An implementation of +PseudoPrimeGenerator+ which uses
   # a prime table generated by trial division.
   class TrialDivisionGenerator<PseudoPrimeGenerator
     def initialize
       @index = -1
     end
-    
+
     def succ
       TrialDivision.instance[@index += 1]
     end
@@ -313,15 +320,15 @@ class Prime
   # Generates all integer which are greater than 2 and
   # are not divided by 2 nor 3.
   #
-  # This is a pseudo-prime generator, suitable on 
-  # checking primality of a integer by brute force 
+  # This is a pseudo-prime generator, suitable on
+  # checking primality of a integer by brute force
   # method.
   class Generator23<PseudoPrimeGenerator
     def initialize
       @prime = 1
       @step = nil
     end
-    
+
     def succ
       loop do
 	if (@step)
@@ -356,7 +363,7 @@ class Prime
 
       # There must be no primes between @primes[-1] and @next_to_check.
       @primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101]
-      # @next_to_check % 6 must be 1.  
+      # @next_to_check % 6 must be 1.
       @next_to_check = 103            # @primes[-1] - @primes[-1] % 6 + 7
       @ulticheck_index = 3            # @primes.index(@primes.reverse.find {|n|
       #   n < Math.sqrt(@@next_to_check) })
@@ -370,7 +377,7 @@ class Prime
     alias primes cache
     alias primes_so_far cache
 
-    # Returns the +index+th prime number. 
+    # Returns the +index+th prime number.
     #
     # +index+ is a 0-based index.
     def [](index)
@@ -388,7 +395,7 @@ class Prime
 	@primes.push @next_to_check if @primes[2..@ulticheck_index].find {|prime| @next_to_check % prime == 0 }.nil?
 	@next_to_check += 4
 	@primes.push @next_to_check if @primes[2..@ulticheck_index].find {|prime| @next_to_check % prime == 0 }.nil?
-	@next_to_check += 2 
+	@next_to_check += 2
       end
       return @primes[index]
     end

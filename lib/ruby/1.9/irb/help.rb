@@ -1,12 +1,12 @@
 #
 #   irb/help.rb - print usage module
-#   	$Release Version: 0.9.5$
-#   	$Revision: 20882 $
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 # --
 #
-#   
+#
 #
 
 require 'irb/magic-file'

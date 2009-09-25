@@ -1,13 +1,13 @@
 #
 # = uri/ldap.rb
 #
-# Author:: 
+# Author::
 #  Takaaki Tateishi <ttate@jaist.ac.jp>
 #  Akira Yamada <akira@ruby-lang.org>
-# License:: 
+# License::
 #   URI::LDAP is copyrighted free software by Takaaki Tateishi and Akira Yamada.
 #   You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: ldap.rb 11708 2007-02-12 23:01:19Z shyouhei $
+# Revision:: $Id: ldap.rb 22784 2009-03-06 03:56:38Z nobu $
 #
 
 require 'uri/generic'
@@ -21,7 +21,7 @@ module URI
   class LDAP < Generic
 
     DEFAULT_PORT = 389
-    
+
     COMPONENT = [
       :scheme,
       :host, :port,

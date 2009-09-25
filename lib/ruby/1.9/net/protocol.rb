@@ -11,7 +11,7 @@
 # modify this program under the same terms as Ruby itself,
 # Ruby Distribute License or GNU General Public License.
 #
-# $Id: protocol.rb 12091 2007-03-19 02:27:08Z aamine $
+# $Id: protocol.rb 23674 2009-06-12 21:50:35Z nobu $
 #++
 #
 # WARNING: This file is going to remove.
@@ -121,7 +121,7 @@ module Net # :nodoc:
         return rbuf_consume(@rbuf.size)
       end
     end
-        
+
     def readline
       readuntil("\n").chop
     end
@@ -131,9 +131,23 @@ module Net # :nodoc:
     BUFSIZE = 1024 * 16
 
     def rbuf_fill
-      timeout(@read_timeout) {
-        @rbuf << @io.sysread(BUFSIZE)
-      }
+      begin
+        @rbuf << @io.read_nonblock(BUFSIZE)
+      rescue IO::WaitReadable
+        if IO.select([@io], nil, nil, @read_timeout)
+          retry
+        else
+          raise Timeout::Error
+        end
+      rescue IO::WaitWritable
+        # OpenSSL::Buffering#read_nonblock may fail with IO::WaitWritable.
+        # http://www.openssl.org/support/faq.html#PROG10
+        if IO.select(nil, [@io], nil, @read_timeout)
+          retry
+        else
+          raise Timeout::Error
+        end
+      end
     end
 
     def rbuf_consume(len)
@@ -222,7 +236,7 @@ module Net # :nodoc:
       LOG_on()
       LOG "read message (#{read_bytes} bytes)"
     end
-  
+
     # *library private* (cannot handle 'break')
     def each_list_item
       while (str = readuntil("\r\n")) != ".\r\n"

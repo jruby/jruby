@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 # Define a task library for running unit tests.
 
 require 'rake'
@@ -10,7 +8,7 @@ module Rake
   # Create a task that runs a set of tests.
   #
   # Example:
-  #  
+  #
   #   Rake::TestTask.new do |t|
   #     t.libs << "test"
   #     t.test_files = FileList['test/test*.rb']
@@ -63,7 +61,7 @@ module Rake
     # * :rake -- Rake provided test loading script (default).
     # * :testrb -- Ruby provided test loading script.
     # * :direct -- Load tests using command line loader.
-    # 
+    #
     attr_accessor :loader
 
     # Array of commandline options to pass to ruby when running test loader.
@@ -95,7 +93,7 @@ module Rake
 
     # Create the tasks defined by this task lib.
     def define
-      lib_path = @libs.join(File::PATH_SEPARATOR)
+      lib_path = @libs.collect {|path| "-I#{File.expand_path(path)}"}
       desc "Run tests" + (@name==:test ? "" : " for #{@name}")
       task @name do
         run_code = ''
@@ -109,7 +107,7 @@ module Rake
             when :rake
               rake_loader
             end
-          @ruby_opts.unshift( "-I#{lib_path}" )
+          @ruby_opts.unshift( *lib_path )
           @ruby_opts.unshift( "-w" ) if @warning
           ruby @ruby_opts.join(" ") +
             " \"#{run_code}\" " +

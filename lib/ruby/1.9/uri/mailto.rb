@@ -3,7 +3,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: mailto.rb 19495 2008-09-23 18:16:08Z drbrain $
+# Revision:: $Id: mailto.rb 23598 2009-05-27 17:48:54Z akr $
 #
 
 require 'uri/generic'
@@ -68,20 +68,20 @@ module URI
     #
     # If a Hash is used, the keys are the component names preceded by colons.
     #
-    # The headers can be supplied as a pre-encoded string, such as 
+    # The headers can be supplied as a pre-encoded string, such as
     # "subject=subscribe&cc=address", or as an Array of Arrays like
     # [['subject', 'subscribe'], ['cc', 'address']]
     #
     # Examples:
-    # 
+    #
     #    require 'uri'
-    #    
+    #
     #    m1 = URI::MailTo.build(['joe@example.com', 'subject=Ruby'])
     #    puts m1.to_s  ->  mailto:joe@example.com?subject=Ruby
-    #    
+    #
     #    m2 = URI::MailTo.build(['john@example.com', [['Subject', 'Ruby'], ['Cc', 'jack@example.com']]])
     #    puts m2.to_s  ->  mailto:john@example.com?Subject=Ruby&Cc=jack@example.com
-    #    
+    #
     #    m3 = URI::MailTo.build({:to => 'listman@example.com', :headers => [['subject', 'subscribe']]})
     #    puts m3.to_s  ->  mailto:listman@example.com?subject=subscribe
     #
@@ -159,7 +159,7 @@ module URI
       return true unless v
       return true if v.size == 0
 
-      if @parser.regexp[:OPAQUE] !~ v || /\A#{MAILBOX_PATTERN}*\z/o !~ v
+      if parser.regexp[:OPAQUE] !~ v || /\A#{MAILBOX_PATTERN}*\z/o !~ v
         raise InvalidComponentError,
           "bad component(expected opaque component): #{v}"
       end
@@ -183,7 +183,7 @@ module URI
       return true unless v
       return true if v.size == 0
 
-      if @parser.regexp[:OPAQUE] !~ v || 
+      if parser.regexp[:OPAQUE] !~ v ||
           /\A(#{HEADER_PATTERN}(?:\&#{HEADER_PATTERN})*)\z/o !~ v
         raise InvalidComponentError,
           "bad component(expected opaque component): #{v}"
@@ -210,12 +210,12 @@ module URI
     end
 
     def to_s
-      @scheme + ':' + 
-        if @to 
+      @scheme + ':' +
+        if @to
           @to
         else
           ''
-        end + 
+        end +
         if @headers.size > 0
           '?' + @headers.collect{|x| x.join('=')}.join('&')
         else
@@ -227,7 +227,7 @@ module URI
           ''
         end
     end
-    
+
     # Returns the RFC822 e-mail text equivalent of the URL, as a String.
     #
     # Example:
@@ -239,18 +239,18 @@ module URI
     #   # => "To: ruby-list@ruby-lang.org\nSubject: subscribe\nCc: myaddr\n\n\n"
     #
     def to_mailtext
-      to = @parser.unescape(@to)
+      to = parser.unescape(@to)
       head = ''
       body = ''
       @headers.each do |x|
         case x[0]
         when 'body'
-          body = @parser.unescape(x[1])
+          body = parser.unescape(x[1])
         when 'to'
-          to << ', ' + @parser.unescape(x[1])
+          to << ', ' + parser.unescape(x[1])
         else
-          head << @parser.unescape(x[0]).capitalize + ': ' +
-            @parser.unescape(x[1])  + "\n"
+          head << parser.unescape(x[0]).capitalize + ': ' +
+            parser.unescape(x[1])  + "\n"
         end
       end
 

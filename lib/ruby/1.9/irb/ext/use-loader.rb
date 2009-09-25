@@ -1,12 +1,12 @@
 #
-#   use-loader.rb - 
-#   	$Release Version: 0.9.5$
-#   	$Revision: 14912 $
+#   use-loader.rb -
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 
 require "irb/cmd/load"
@@ -30,7 +30,7 @@ module IRB
   class Context
 
     IRB.conf[:USE_LOADER] = false
-    
+
     def use_loader
       IRB.conf[:USE_LOADER]
     end

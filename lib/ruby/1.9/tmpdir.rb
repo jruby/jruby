@@ -1,7 +1,7 @@
 #
 # tmpdir - retrieve temporary directory path
 #
-# $Id: tmpdir.rb 19513 2008-09-24 05:39:39Z usa $
+# $Id: tmpdir.rb 23661 2009-06-10 09:15:55Z usa $
 #
 
 require 'fileutils'
@@ -18,17 +18,17 @@ class Dir
     begin
       getdir = Win32API.new('shell32', 'SHGetFolderPath', 'LLLLP', 'L')
       raise RuntimeError if getdir.call(0, CSIDL_LOCAL_APPDATA, 0, 0, windir) != 0
-      windir = File.expand_path(windir.rstrip)
+      windir.rstrip!
     rescue RuntimeError
       begin
         getdir = Win32API.new('kernel32', 'GetSystemWindowsDirectory', 'PL', 'L')
       rescue RuntimeError
         getdir = Win32API.new('kernel32', 'GetWindowsDirectory', 'PL', 'L')
       end
-      len = getdir.call(windir, windir.size)
-      windir = File.expand_path(windir[0, len])
+      windir[getdir.call(windir, windir.size)..-1] = ""
     end
-    temp = File.join(windir.untaint, 'temp')
+    windir.force_encoding(Dir.pwd.encoding)
+    temp = File.expand_path('temp', windir.untaint)
     @@systmpdir = temp if File.directory?(temp) and File.writable?(temp)
   rescue LoadError
   end
@@ -41,12 +41,11 @@ class Dir
     if $SAFE > 0
       tmp = @@systmpdir
     else
-      for dir in [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'],
-	          ENV['USERPROFILE'], @@systmpdir, '/tmp']
-	if dir and File.directory?(dir) and File.writable?(dir)
+      for dir in [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp']
+	if dir and stat = File.stat(dir) and stat.directory? and stat.writable?
 	  tmp = dir
 	  break
-	end
+	end rescue nil
       end
       File.expand_path(tmp)
     end

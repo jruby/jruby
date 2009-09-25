@@ -12,7 +12,7 @@ require 'monitor'
 # License::
 #   You can redistribute it and/or modify it under the same terms of Ruby's
 #   license; either the dual license version in 2003, or any later version.
-# Revision:: $Id: logger.rb 20321 2008-11-22 14:52:06Z yugui $
+# Revision:: $Id: logger.rb 20290 2008-11-19 22:35:40Z matz $
 #
 # See Logger for documentation.
 #
@@ -181,7 +181,7 @@ require 'monitor'
 
 class Logger
   VERSION = "1.2.6"
-  id, name, rev = %w$Id: logger.rb 20321 2008-11-22 14:52:06Z yugui $
+  id, name, rev = %w$Id: logger.rb 20290 2008-11-19 22:35:40Z matz $
   if name
     name = name.chomp(",v")
   else

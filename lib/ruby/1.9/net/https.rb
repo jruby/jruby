@@ -16,8 +16,8 @@
   You can get it from RAA or Ruby's CVS repository.
 
 == Version
-  $Id: https.rb 18512 2008-08-12 05:20:09Z aamine $
-  
+  $Id: https.rb 22784 2009-03-06 03:56:38Z nobu $
+
   2001-11-06: Contiributed to Ruby/OpenSSL project.
   2004-03-06: Some code is merged in to net/http.
 
@@ -73,7 +73,7 @@ It can be replaced by the following code:
 
 : ca_file, ca_file=((|path|))
     Sets path of a CA certification file in PEM format.
-    The file can contrain several CA certificats.
+    The file can contrain several CA certificates.
 
 : ca_path, ca_path=((|path|))
     Sets path of a CA certification directory containing certifications

@@ -1,16 +1,16 @@
 #
 #   irb/locale.rb - internationalization module
-#   	$Release Version: 0.9.5$
-#   	$Revision: 20889 $
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 module IRB
   class Locale
-    @RCS_ID='-$Id: locale.rb 20889 2008-12-20 02:02:48Z yugui $-'
+    @RCS_ID='-$Id: locale.rb 23985 2009-07-07 11:36:20Z keiju $-'
 
     LOCALE_NAME_RE = %r[
       (?<language>[[:alpha:]]{2})
@@ -30,7 +30,7 @@ module IRB
 
     def initialize(locale = nil)
       @lang = @territory = @encoding_name = @modifier = nil
-      @locale = locale || ENV["IRB_LANG"] || ENV["LC_MESSAGES"] || ENV["LC_ALL"] || ENV["LANG"] || "C" 
+      @locale = locale || ENV["IRB_LANG"] || ENV["LC_MESSAGES"] || ENV["LC_ALL"] || ENV["LANG"] || "C"
       if m = LOCALE_NAME_RE.match(@locale)
 	@lang, @territory, @encoding_name, @modifier = m[:language], m[:territory], m[:codeset], m[:modifier]
 
@@ -50,7 +50,7 @@ module IRB
     def String(mes)
       mes = super(mes)
       if @encoding
-	mes.encode(@encoding) 
+	mes.encode(@encoding)
       else
 	mes
       end
@@ -109,7 +109,7 @@ module IRB
     end
 
     alias toplevel_load load
-    
+
     def load(file, priv=nil)
       dir = File.dirname(file)
       dir = "" if dir == "."
@@ -125,7 +125,7 @@ module IRB
 	return real_load(lc_path, priv) if lc_path
       end
       raise LoadError, "No such file to load -- #{file}"
-    end 
+    end
 
     def real_load(path, priv)
       src = MagicFile.open(path){|f| f.read}
@@ -141,7 +141,7 @@ module IRB
       dir = File.dirname(file)
       dir = "" if dir == "."
       base = File.basename(file)
-      if dir[0] == ?/ #/
+      if dir =~ /^\//
 	  return lc_path = search_file(dir, base)
       else
 	for path in $:

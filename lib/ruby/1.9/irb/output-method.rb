@@ -1,12 +1,12 @@
 #
-#   output-method.rb - optput methods used by irb 
-#   	$Release Version: 0.9.5$
-#   	$Revision: 14912 $
+#   output-method.rb - optput methods used by irb
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 
 require "e2mmap"
@@ -16,7 +16,7 @@ module IRB
   #   StdioOutputMethod
 
   class OutputMethod
-    @RCS_ID='-$Id: output-method.rb 14912 2008-01-06 15:49:38Z akr $-'
+    @RCS_ID='-$Id: output-method.rb 23985 2009-07-07 11:36:20Z keiju $-'
 
     def print(*opts)
       IRB.fail NotImplementError, "print"
@@ -39,7 +39,7 @@ module IRB
     # <minimum field width> (\*|\*[1-9][0-9]*\$|[1-9][0-9]*)
     # <precision>.(\*|\*[1-9][0-9]*\$|[1-9][0-9]*|)?
     # #<length modifier>(hh|h|l|ll|L|q|j|z|t)
-    # <conversion specifier>[diouxXeEfgGcsb%] 
+    # <conversion specifier>[diouxXeEfgGcsb%]
     def parse_printf_format(format, opts)
       return format, opts if $1.size % 2 == 1
     end

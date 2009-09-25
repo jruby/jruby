@@ -1,12 +1,12 @@
 #
-#   history.rb - 
-#   	$Release Version: 0.9.5$
-#   	$Revision: 14912 $
+#   history.rb -
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 
 module IRB
@@ -48,7 +48,7 @@ module IRB
   end
 
   class History
-    @RCS_ID='-$Id: history.rb 14912 2008-01-06 15:49:38Z akr $-'
+    @RCS_ID='-$Id: history.rb 23985 2009-07-07 11:36:20Z keiju $-'
 
     def initialize(size = 16)
       @size = size
@@ -56,7 +56,7 @@ module IRB
     end
 
     def size(size)
-      if size != 0 && size < @size 
+      if size != 0 && size < @size
 	@contents = @contents[@size - size .. @size]
       end
       @size = size
@@ -78,7 +78,7 @@ module IRB
       @contents.push [no, val]
       @contents.shift if @size != 0 && @contents.size > @size
     end
-    
+
     alias real_inspect inspect
 
     def inspect

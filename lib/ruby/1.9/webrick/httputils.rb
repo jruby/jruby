@@ -98,7 +98,7 @@ module WEBrick
           next if /^#/ =~ line
           line.chomp!
           mimetype, ext0 = line.split(/\s+/, 2)
-          next unless ext0   
+          next unless ext0
           next if ext0.empty?
           ext0.split(/\s+/).each{ |ext| hash[ext] = mimetype }
         }
@@ -216,7 +216,7 @@ module WEBrick
           super("")
         else
           @raw_header = EmptyRawHeader
-          @header = EmptyHeader 
+          @header = EmptyHeader
           super(args.shift)
           unless args.empty?
             @next_data = self.class.new(*args)
@@ -250,7 +250,7 @@ module WEBrick
       def append_data(data)
         tmp = self
         while tmp
-          unless tmp.next_data 
+          unless tmp.next_data
             tmp.next_data = data
             break
           end
@@ -305,7 +305,7 @@ module WEBrick
     module_function :parse_query
 
     def parse_form_data(io, boundary)
-      boundary_regexp = /\A--#{boundary}(--)?#{CRLF}\z/
+      boundary_regexp = /\A--#{Regexp.quote(boundary)}(--)?#{CRLF}\z/
       form_data = Hash.new
       return form_data unless io
       data = nil
@@ -317,7 +317,7 @@ module WEBrick
             if form_data.has_key?(key)
               form_data[key].append_data(data)
             else
-              form_data[key] = data 
+              form_data[key] = data
             end
           end
           data = FormData.new

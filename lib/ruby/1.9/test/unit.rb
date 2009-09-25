@@ -16,12 +16,12 @@ module Test
       while arg = original_argv.shift
         case arg
         when '-v'
-          minitest_argv << '-v'
-        when '-n', '--name'
           minitest_argv << arg
-          minitest_argv << original_argv.shift
-        when '-x'
-          reject << original_argv.shift
+        when /\A(-n)(.+)?/, /\A(--name)=?\b(.+)?/
+          minitest_argv << $1
+          minitest_argv << ($2 || original_argv.shift)
+        when /\A-x(.+)?/
+          reject << ($1 || original_argv.shift)
         else
           files << arg
         end
@@ -45,7 +45,7 @@ module Test
 
       reject_pat = Regexp.union(reject.map {|r| /#{r}/ })
       files.reject! {|f| reject_pat =~ f }
-        
+
       files.each {|f|
         d = File.dirname(File.expand_path(f))
         unless $:.include? d

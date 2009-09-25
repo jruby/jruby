@@ -1,12 +1,12 @@
 #
 #   irb/multi-irb.rb - multiple irb module
-#   	$Release Version: 0.9.5$
-#   	$Revision: 18837 $
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 IRB.fail CantShiftToMultiIrbMode unless defined?(Thread)
 require "thread"
@@ -14,7 +14,7 @@ require "thread"
 module IRB
   # job management class
   class JobManager
-    @RCS_ID='-$Id: multi-irb.rb 18837 2008-08-25 13:41:11Z mame $-'
+    @RCS_ID='-$Id: multi-irb.rb 23985 2009-07-07 11:36:20Z keiju $-'
 
     def initialize
       # @jobs = [[thread, irb],...]
@@ -66,7 +66,7 @@ module IRB
 	IRB.fail IrbAlreadyDead unless th.alive?
 	th.exit
       end
-    end    
+    end
 
     def search(key)
       job = case key
@@ -123,8 +123,8 @@ module IRB
 	  t_status = "exited"
 	end
 	ary.push format("#%d->%s on %s (%s: %s)",
-			i, 
-			irb.context.irb_name, 
+			i,
+			irb.context.irb_name,
 			irb.context.main,
 			th,
 			t_status)
@@ -143,14 +143,14 @@ module IRB
     IRB.JobManager.irb(Thread.current).context
   end
 
-  # invoke multi-irb 
+  # invoke multi-irb
   def IRB.irb(file = nil, *main)
     workspace = WorkSpace.new(*main)
     parent_thread = Thread.current
     Thread.start do
       begin
 	irb = Irb.new(workspace, file)
-      rescue 
+      rescue
 	print "Subirb can't start with context(self): ", workspace.main.inspect, "\n"
 	print "return to main irb\n"
 	Thread.pass

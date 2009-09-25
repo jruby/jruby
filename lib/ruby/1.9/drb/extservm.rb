@@ -1,6 +1,6 @@
 =begin
  external service manager
- 	Copyright (c) 2000 Masatoshi SEKI 
+ 	Copyright (c) 2000 Masatoshi SEKI
 =end
 
 require 'drb/drb'
@@ -21,7 +21,7 @@ module DRb
     def self.command=(cmd)
       @@command = cmd
     end
-      
+
     def initialize
       super()
       @cond = new_cond
@@ -51,7 +51,7 @@ module DRb
       end
       self
     end
-    
+
     def unregist(name)
       synchronize do
 	@servers.delete(name)
@@ -79,11 +79,7 @@ module DRb
 	@servers[name] = false
       end
       uri = @uri || DRb.uri
-      if RUBY_PLATFORM =~ /mswin32/ && /NT/ =~ ENV["OS"]
-        system(%Q'cmd /c start "ruby" /b #{command} #{uri} #{name}')
-      else
-	system("#{command} #{uri} #{name} &")
-      end
+      Process.detach spawn("#{command} #{uri} #{name}")
     end
   end
 end

@@ -3,7 +3,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: http.rb 11708 2007-02-12 23:01:19Z shyouhei $
+# Revision:: $Id: http.rb 22784 2009-03-06 03:56:38Z nobu $
 #
 
 require 'uri/generic'
@@ -14,18 +14,18 @@ module URI
   # The syntax of HTTP URIs is defined in RFC1738 section 3.3.
   #
   # Note that the Ruby URI library allows HTTP URLs containing usernames and
-  # passwords. This is not legal as per the RFC, but used to be 
-  # supported in Internet Explorer 5 and 6, before the MS04-004 security 
+  # passwords. This is not legal as per the RFC, but used to be
+  # supported in Internet Explorer 5 and 6, before the MS04-004 security
   # update. See <URL:http://support.microsoft.com/kb/834489>.
   #
   class HTTP < Generic
     DEFAULT_PORT = 80
 
     COMPONENT = [
-      :scheme, 
-      :userinfo, :host, :port, 
-      :path, 
-      :query, 
+      :scheme,
+      :userinfo, :host, :port,
+      :path,
+      :query,
       :fragment
     ].freeze
 
@@ -37,21 +37,21 @@ module URI
     # The components accepted are userinfo, host, port, path, query and
     # fragment.
     #
-    # The components should be provided either as an Array, or as a Hash 
-    # with keys formed by preceding the component names with a colon. 
+    # The components should be provided either as an Array, or as a Hash
+    # with keys formed by preceding the component names with a colon.
     #
     # If an Array is used, the components must be passed in the order
     # [userinfo, host, port, path, query, fragment].
     #
     # Example:
     #
-    #     newuri = URI::HTTP.build({:host => 'www.example.com', 
+    #     newuri = URI::HTTP.build({:host => 'www.example.com',
     #       :path> => '/foo/bar'})
     #
-    #     newuri = URI::HTTP.build([nil, "www.example.com", nil, "/path", 
+    #     newuri = URI::HTTP.build([nil, "www.example.com", nil, "/path",
     #       "query", 'fragment'])
     #
-    # Currently, if passed userinfo components this method generates 
+    # Currently, if passed userinfo components this method generates
     # invalid HTTP URIs as per RFC 1738.
     #
     def self.build(args)
@@ -63,10 +63,10 @@ module URI
     # == Description
     #
     # Create a new URI::HTTP object from generic URI components as per
-    # RFC 2396. No HTTP-specific syntax checking (as per RFC 1738) is 
+    # RFC 2396. No HTTP-specific syntax checking (as per RFC 1738) is
     # performed.
     #
-    # Arguments are +scheme+, +userinfo+, +host+, +port+, +registry+, +path+, 
+    # Arguments are +scheme+, +userinfo+, +host+, +port+, +registry+, +path+,
     # +opaque+, +query+ and +fragment+, in that order.
     #
     # Example:

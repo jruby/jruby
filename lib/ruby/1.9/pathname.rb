@@ -36,27 +36,27 @@
 # === Example 1: Using Pathname
 #
 #   require 'pathname'
-#   p = Pathname.new("/usr/bin/ruby")
-#   size = p.size              # 27662
-#   isdir = p.directory?       # false
-#   dir  = p.dirname           # Pathname:/usr/bin
-#   base = p.basename          # Pathname:ruby
-#   dir, base = p.split        # [Pathname:/usr/bin, Pathname:ruby]
-#   data = p.read
-#   p.open { |f| _ }
-#   p.each_line { |line| _ }
+#   pn = Pathname.new("/usr/bin/ruby")
+#   size = pn.size              # 27662
+#   isdir = pn.directory?       # false
+#   dir  = pn.dirname           # Pathname:/usr/bin
+#   base = pn.basename          # Pathname:ruby
+#   dir, base = pn.split        # [Pathname:/usr/bin, Pathname:ruby]
+#   data = pn.read
+#   pn.open { |f| _ }
+#   pn.each_line { |line| _ }
 #
 # === Example 2: Using standard Ruby
 #
-#   p = "/usr/bin/ruby"
-#   size = File.size(p)        # 27662
-#   isdir = File.directory?(p) # false
-#   dir  = File.dirname(p)     # "/usr/bin"
-#   base = File.basename(p)    # "ruby"
-#   dir, base = File.split(p)  # ["/usr/bin", "ruby"]
-#   data = File.read(p)
-#   File.open(p) { |f| _ }
-#   File.foreach(p) { |line| _ }
+#   pn = "/usr/bin/ruby"
+#   size = File.size(pn)        # 27662
+#   isdir = File.directory?(pn) # false
+#   dir  = File.dirname(pn)     # "/usr/bin"
+#   base = File.basename(pn)    # "ruby"
+#   dir, base = File.split(pn)  # ["/usr/bin", "ruby"]
+#   data = File.read(pn)
+#   File.open(pn) { |f| _ }
+#   File.foreach(pn) { |line| _ }
 #
 # === Example 3: Special features
 #
@@ -76,9 +76,9 @@
 #
 # === Core methods
 #
-# These methods are effectively manipulating a String, because that's all a path
-# is.  Except for #mountpoint?, #children, and #realpath, they don't access the
-# filesystem.
+# These methods are effectively manipulating a String, because that's
+# all a path is.  Except for #mountpoint?, #children, #each_child,
+# #realdirpath and #realpath, they don't access the filesystem.
 #
 # - +
 # - #join
@@ -90,7 +90,9 @@
 # - #each_filename
 # - #cleanpath
 # - #realpath
+# - #realdirpath
 # - #children
+# - #each_child
 # - #mountpoint?
 #
 # === File status predicate methods
@@ -165,6 +167,7 @@
 # These methods are a facade for IO:
 # - #each_line(*args, &block)
 # - #read(*args)
+# - #binread(*args)
 # - #readlines(*args)
 # - #sysopen(*args)
 #
@@ -194,6 +197,13 @@ class Pathname
     # to_path is implemented so Pathname objects are usable with File.open, etc.
     TO_PATH = :to_path
   end
+
+  SAME_PATHS = if File::FNM_SYSCASE
+    proc {|a, b| a.casecmp(b).zero?}
+  else
+    proc {|a, b| a == b}
+  end
+
   # :startdoc:
 
   #
@@ -251,7 +261,21 @@ class Pathname
 
   # Return a pathname which is substituted by String#sub.
   def sub(pattern, *rest, &block)
-    self.class.new(@path.sub(pattern, *rest, &block))
+    if block
+      path = @path.sub(pattern, *rest) {|*args|
+        begin
+          old = Thread.current[:pathname_sub_matchdata]
+          Thread.current[:pathname_sub_matchdata] = $~
+          eval("$~ = Thread.current[:pathname_sub_matchdata]", block.binding)
+        ensure
+          Thread.current[:pathname_sub_matchdata] = old
+        end
+        yield(*args)
+      }
+    else
+      path = @path.sub(pattern, *rest)
+    end
+    self.class.new(path)
   end
 
   if File::ALT_SEPARATOR
@@ -274,7 +298,7 @@ class Pathname
   # chop_basename(path) -> [pre-basename, basename] or nil
   def chop_basename(path)
     base = File.basename(path)
-    if /\A#{SEPARATOR_PAT}?\z/ =~ base
+    if /\A#{SEPARATOR_PAT}?\z/o =~ base
       return nil
     else
       return path[0, path.rindex(base)], base
@@ -296,7 +320,7 @@ class Pathname
   def prepend_prefix(prefix, relpath)
     if relpath.empty?
       File.dirname(prefix)
-    elsif /#{SEPARATOR_PAT}/ =~ prefix
+    elsif /#{SEPARATOR_PAT}/o =~ prefix
       prefix = File.dirname(prefix)
       prefix = File.join(prefix, "") if File.basename(prefix + 'a') != 'a'
       prefix + relpath
@@ -411,7 +435,7 @@ class Pathname
   end
   private :cleanpath_conservative
 
-  def realpath_rec(prefix, unresolved, h)
+  def realpath_rec(prefix, unresolved, h, strict, last = true)
     resolved = []
     until unresolved.empty?
       n = unresolved.shift
@@ -428,14 +452,20 @@ class Pathname
             prefix, *resolved = h[path]
           end
         else
-          s = File.lstat(path)
+          begin
+            s = File.lstat(path)
+          rescue Errno::ENOENT => e
+            raise e if strict || !last || !unresolved.empty?
+            resolved << n
+            break
+          end
           if s.symlink?
             h[path] = :resolving
             link_prefix, link_names = split_names(File.readlink(path))
             if link_prefix == ''
-              prefix, *resolved = h[path] = realpath_rec(prefix, resolved + link_names, h)
+              prefix, *resolved = h[path] = realpath_rec(prefix, resolved + link_names, h, strict, unresolved.empty?)
             else
-              prefix, *resolved = h[path] = realpath_rec(link_prefix, link_names, h)
+              prefix, *resolved = h[path] = realpath_rec(link_prefix, link_names, h, strict, unresolved.empty?)
             end
           else
             resolved << n
@@ -448,21 +478,37 @@ class Pathname
   end
   private :realpath_rec
 
-  #
-  # Returns a real (absolute) pathname of +self+ in the actual filesystem.
-  # The real pathname doesn't contain symlinks or useless dots.
-  #
-  # No arguments should be given; the old behaviour is *obsoleted*.
-  #
-  def realpath
+  def real_path_internal(strict = false)
     path = @path
     prefix, names = split_names(path)
     if prefix == ''
       prefix, names2 = split_names(Dir.pwd)
       names = names2 + names
     end
-    prefix, *names = realpath_rec(prefix, names, {})
+    prefix, *names = realpath_rec(prefix, names, {}, strict)
     self.class.new(prepend_prefix(prefix, File.join(*names)))
+  end
+  private :real_path_internal
+
+  #
+  # Returns the real (absolute) pathname of +self+ in the actual
+  # filesystem not containing symlinks or useless dots.
+  #
+  # All components of the pathname must exist when this method is
+  # called.
+  #
+  def realpath
+    real_path_internal(true)
+  end
+
+  #
+  # Returns the real (absolute) pathname of +self+ in the actual filesystem.
+  # The real pathname doesn't contain symlinks or useless dots.
+  #
+  # The last component of the real pathname can be nonexistent.
+  #
+  def realdirpath
+    real_path_internal(false)
   end
 
   # #parent returns the parent directory.
@@ -664,12 +710,12 @@ class Pathname
   # filename only.
   #
   # For example:
-  #   p = Pathname("/usr/lib/ruby/1.8")
-  #   p.children
+  #   pn = Pathname("/usr/lib/ruby/1.8")
+  #   pn.children
   #       # -> [ Pathname:/usr/lib/ruby/1.8/English.rb,
   #              Pathname:/usr/lib/ruby/1.8/Env.rb,
   #              Pathname:/usr/lib/ruby/1.8/abbrev.rb, ... ]
-  #   p.children(false)
+  #   pn.children(false)
   #       # -> [ Pathname:English.rb, Pathname:Env.rb, Pathname:abbrev.rb, ... ]
   #
   # Note that the result never contain the entries <tt>.</tt> and <tt>..</tt> in
@@ -689,6 +735,36 @@ class Pathname
       end
     }
     result
+  end
+
+  # Iterates over the children of the directory
+  # (files and subdirectories, not recursive).
+  # It yields Pathname object for each child.
+  # By default, the yielded pathnames will have enough information to access the files.
+  # If you set +with_directory+ to +false+, then the returned pathnames will contain the filename only.
+  #
+  #   Pathname("/usr/local").each_child {|f| p f }
+  #   #=> #<Pathname:/usr/local/share>
+  #   #   #<Pathname:/usr/local/bin>
+  #   #   #<Pathname:/usr/local/games>
+  #   #   #<Pathname:/usr/local/lib>
+  #   #   #<Pathname:/usr/local/include>
+  #   #   #<Pathname:/usr/local/sbin>
+  #   #   #<Pathname:/usr/local/src>
+  #   #   #<Pathname:/usr/local/man>
+  #
+  #   Pathname("/usr/local").each_child(false) {|f| p f }
+  #   #=> #<Pathname:share>
+  #   #   #<Pathname:bin>
+  #   #   #<Pathname:games>
+  #   #   #<Pathname:lib>
+  #   #   #<Pathname:include>
+  #   #   #<Pathname:sbin>
+  #   #   #<Pathname:src>
+  #   #   #<Pathname:man>
+  #
+  def each_child(with_directory=true, &b)
+    children(with_directory).each(&b)
   end
 
   #
@@ -717,12 +793,12 @@ class Pathname
       base_prefix, basename = r
       base_names.unshift basename if basename != '.'
     end
-    if dest_prefix != base_prefix
+    unless SAME_PATHS[dest_prefix, base_prefix]
       raise ArgumentError, "different prefix: #{dest_prefix.inspect} and #{base_directory.inspect}"
     end
     while !dest_names.empty? &&
           !base_names.empty? &&
-          dest_names.first == base_names.first
+          SAME_PATHS[dest_names.first, base_names.first]
       dest_names.shift
       base_names.shift
     end
@@ -750,15 +826,13 @@ class Pathname    # * IO *
     IO.foreach(@path, *args, &block)
   end
 
-  # Pathname#foreachline is *obsoleted* at 1.8.1.  Use #each_line.
-  def foreachline(*args, &block)
-    warn "Pathname#foreachline is obsoleted.  Use Pathname#each_line."
-    each_line(*args, &block)
-  end
-
-  # See <tt>IO.read</tt>.  Returns all the bytes from the file, or the first +N+
+  # See <tt>IO.read</tt>.  Returns all data from the file, or the first +N+ bytes
   # if specified.
   def read(*args) IO.read(@path, *args) end
+
+  # See <tt>IO.binread</tt>.  Returns all the bytes from the file, or the first +N+
+  # if specified.
+  def binread(*args) IO.binread(@path, *args) end
 
   # See <tt>IO.readlines</tt>.  Returns all the lines from the file.
   def readlines(*args) IO.readlines(@path, *args) end
@@ -846,20 +920,6 @@ class Pathname    # * File *
   # See <tt>File.split</tt>.  Returns the #dirname and the #basename in an
   # Array.
   def split() File.split(@path).map {|f| self.class.new(f) } end
-
-  # Pathname#link is confusing and *obsoleted* because the receiver/argument
-  # order is inverted to corresponding system call.
-  def link(old)
-    warn 'Pathname#link is obsoleted.  Use Pathname#make_link.'
-    File.link(old, @path)
-  end
-
-  # Pathname#symlink is confusing and *obsoleted* because the receiver/argument
-  # order is inverted to corresponding system call.
-  def symlink(old)
-    warn 'Pathname#symlink is obsoleted.  Use Pathname#make_symlink.'
-    File.symlink(old, @path)
-  end
 end
 
 
@@ -941,7 +1001,7 @@ end
 
 class Pathname    # * Dir *
   # See <tt>Dir.glob</tt>.  Returns or yields Pathname objects.
-  def Pathname.glob(*args) # :yield: p
+  def Pathname.glob(*args) # :yield: pathname
     if block_given?
       Dir.glob(*args) {|f| yield self.new(f) }
     else
@@ -953,18 +1013,6 @@ class Pathname    # * Dir *
   def Pathname.getwd() self.new(Dir.getwd) end
   class << self; alias pwd getwd end
 
-  # Pathname#chdir is *obsoleted* at 1.8.1.
-  def chdir(&block)
-    warn "Pathname#chdir is obsoleted.  Use Dir.chdir."
-    Dir.chdir(@path, &block)
-  end
-
-  # Pathname#chroot is *obsoleted* at 1.8.1.
-  def chroot
-    warn "Pathname#chroot is obsoleted.  Use Dir.chroot."
-    Dir.chroot(@path)
-  end
-
   # Return the entries (files and subdirectories) in the directory, each as a
   # Pathname object.
   def entries() Dir.entries(@path).map {|f| self.class.new(f) } end
@@ -973,14 +1021,8 @@ class Pathname    # * Dir *
   # yields a Pathname object for each entry.
   #
   # This method has existed since 1.8.1.
-  def each_entry(&block) # :yield: p
+  def each_entry(&block) # :yield: pathname
     Dir.foreach(@path) {|f| yield self.class.new(f) }
-  end
-
-  # Pathname#dir_foreach is *obsoleted* at 1.8.1.
-  def dir_foreach(*args, &block)
-    warn "Pathname#dir_foreach is obsoleted.  Use Pathname#each_entry."
-    each_entry(*args, &block)
   end
 
   # See <tt>Dir.mkdir</tt>.  Create the referenced directory.
@@ -1007,7 +1049,7 @@ class Pathname    # * Find *
   # If +self+ is <tt>.</tt>, yielded pathnames begin with a filename in the
   # current directory, not <tt>./</tt>.
   #
-  def find(&block) # :yield: p
+  def find(&block) # :yield: pathname
     require 'find'
     if @path == '.'
       Find.find(@path) {|f| yield self.class.new(f.sub(%r{\A\./}, '')) }
@@ -1049,18 +1091,6 @@ class Pathname    # * mixed *
     end
   end
   alias delete unlink
-
-  # This method is *obsoleted* at 1.8.1.  Use #each_line or #each_entry.
-  def foreach(*args, &block)
-    warn "Pathname#foreach is obsoleted.  Use each_line or each_entry."
-    if FileTest.directory? @path
-      # For polymorphism between Dir.foreach and IO.foreach,
-      # Pathname#foreach doesn't yield Pathname object.
-      Dir.foreach(@path, *args, &block)
-    else
-      IO.foreach(@path, *args, &block)
-    end
-  end
 end
 
 class Pathname

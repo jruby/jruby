@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-#   irb/lc/ja/error.rb - 
-#   	$Release Version: 0.9.5$
-#   	$Revision: 20882 $
+#   irb/lc/ja/error.rb -
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 require "e2mmap"
 

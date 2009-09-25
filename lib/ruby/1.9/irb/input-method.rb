@@ -1,18 +1,18 @@
 #
 #   irb/input-method.rb - input methods used irb
-#   	$Release Version: 0.9.5$
-#   	$Revision: 21546 $
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 require 'irb/src_encoding'
 require 'irb/magic-file'
 
 module IRB
-  # 
+  #
   # InputMethod
   #	StdioInputMethod
   #	FileInputMethod
@@ -20,7 +20,7 @@ module IRB
   #
   STDIN_FILE_NAME = "(line)"
   class InputMethod
-    @RCS_ID='-$Id: input-method.rb 21546 2009-01-15 15:36:57Z yugui $-'
+    @RCS_ID='-$Id: input-method.rb 23985 2009-07-07 11:36:20Z keiju $-'
 
     def initialize(file = STDIN_FILE_NAME)
       @file_name = file
@@ -28,7 +28,7 @@ module IRB
     attr_reader :file_name
 
     attr_accessor :prompt
-    
+
     def gets
       IRB.fail NotImplementedError, "gets"
     end
@@ -38,7 +38,7 @@ module IRB
       false
     end
   end
-  
+
   class StdioInputMethod < InputMethod
     def initialize
       super
@@ -70,7 +70,7 @@ module IRB
       @stdin.external_encoding
     end
   end
-  
+
   class FileInputMethod < InputMethod
     def initialize(file)
       super
@@ -97,7 +97,7 @@ module IRB
   begin
     require "readline"
     class ReadlineInputMethod < InputMethod
-      include Readline 
+      include Readline
       def initialize
 	super
 

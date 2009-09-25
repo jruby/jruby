@@ -1,13 +1,11 @@
-#!/usr/local/bin/ruby
-#
-#   multi.rb - 
-#   	$Release Version: 0.9.5$
-#   	$Revision: 14912 $
+#   multi.rb -
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 
 require "irb/cmd/nop.rb"

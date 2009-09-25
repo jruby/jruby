@@ -1,12 +1,12 @@
 #
 #   irb/init.rb - irb initialize module
-#   	$Release Version: 0.9.5$
-#   	$Revision: 20882 $
+#   	$Release Version: 0.9.6$
+#   	$Revision: 23985 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 
 module IRB
@@ -20,7 +20,7 @@ module IRB
     IRB.load_modules
 
     unless @CONF[:PROMPT][@CONF[:PROMPT_MODE]]
-      IRB.fail(UndefinedPromptMode, @CONF[:PROMPT_MODE]) 
+      IRB.fail(UndefinedPromptMode, @CONF[:PROMPT_MODE])
     end
   end
 
@@ -44,7 +44,7 @@ module IRB
 
     @CONF[:MATH_MODE] = false
     @CONF[:USE_READLINE] = false unless defined?(ReadlineInputMethod)
-    @CONF[:INSPECT_MODE] = nil
+    @CONF[:INSPECT_MODE] = true
     @CONF[:USE_TRACER] = false
     @CONF[:USE_LOADER] = false
     @CONF[:IGNORE_SIGINT] = true
@@ -112,7 +112,7 @@ module IRB
 
 #    @CONF[:LC_MESSAGES] = "en"
     @CONF[:LC_MESSAGES] = Locale.new
-    
+
     @CONF[:DEBUG_LEVEL] = 1
   end
 
@@ -145,7 +145,11 @@ module IRB
 	opt = $1 || ARGV.shift
 	set_encoding(*opt.split(':', 2))
       when "--inspect"
-	@CONF[:INSPECT_MODE] = true
+	if /^-/ !~ ARGV.first 
+	  @CONF[:INSPECT_MODE] = ARGV.shift
+	else
+	  @CONF[:INSPECT_MODE] = true
+	end
       when "--noinspect"
 	@CONF[:INSPECT_MODE] = false
       when "--readline"
@@ -246,7 +250,7 @@ module IRB
       yield proc{|rc| rc == "rc" ? irbrc : irbrc+rc}
     end
     if home = ENV["HOME"]
-      yield proc{|rc| home+"/.irb#{rc}"} 
+      yield proc{|rc| home+"/.irb#{rc}"}
     end
     home = Dir.pwd
     yield proc{|rc| home+"/.irb#{rc}"}

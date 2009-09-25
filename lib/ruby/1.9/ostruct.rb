@@ -12,13 +12,13 @@
 # OpenStruct allows you to create data objects and set arbitrary attributes.
 # For example:
 #
-#   require 'ostruct' 
+#   require 'ostruct'
 #
 #   record = OpenStruct.new
 #   record.name    = "John Smith"
 #   record.age     = 70
 #   record.pension = 300
-#   
+#
 #   puts record.name     # -> "John Smith"
 #   puts record.address  # -> nil
 #
@@ -41,7 +41,7 @@ class OpenStruct
   #
   #   p data        # -> <OpenStruct country="Australia" population=20000000>
   #
-  # By default, the resulting OpenStruct object will have no attributes. 
+  # By default, the resulting OpenStruct object will have no attributes.
   #
   def initialize(hash=nil)
     @table = {}
@@ -53,7 +53,7 @@ class OpenStruct
     end
   end
 
-  # Duplicate an OpenStruct object members. 
+  # Duplicate an OpenStruct object members.
   def initialize_copy(orig)
     super
     @table = @table.dup
@@ -67,29 +67,35 @@ class OpenStruct
     @table.each_key{|key| new_ostruct_member(key)}
   end
 
+  def modifiable
+    begin
+      @modifiable = true
+    rescue
+      raise TypeError, "can't modify frozen #{self.class}", caller(3)
+    end
+    @table
+  end
+  protected :modifiable
+
   def new_ostruct_member(name)
     name = name.to_sym
     unless self.respond_to?(name)
       class << self; self; end.class_eval do
         define_method(name) { @table[name] }
-        define_method(:"#{name}=") { |x| @table[name] = x }
+        define_method("#{name}=") { |x| modifiable[name] = x }
       end
     end
+    name
   end
 
   def method_missing(mid, *args) # :nodoc:
     mname = mid.id2name
     len = args.length
-    if mname =~ /=$/
+    if mname.chomp!('=')
       if len != 1
         raise ArgumentError, "wrong number of arguments (#{len} for 1)", caller(1)
       end
-      if self.frozen?
-        raise TypeError, "can't modify frozen #{self.class}", caller(1)
-      end
-      mname.chop!
-      self.new_ostruct_member(mname)
-      @table[mname.intern] = args[0]
+      modifiable[new_ostruct_member(mname)] = args[0]
     elsif len == 0
       @table[mid]
     else

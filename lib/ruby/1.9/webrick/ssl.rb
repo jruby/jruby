@@ -2,8 +2,8 @@
 # ssl.rb -- SSL/TLS enhancement for GenericServer
 #
 # Copyright (c) 2003 GOTOU Yuuzou All rights reserved.
-# 
-# $Id: ssl.rb 11708 2007-02-12 23:01:19Z shyouhei $
+#
+# $Id: ssl.rb 22784 2009-03-06 03:56:38Z nobu $
 
 require 'webrick'
 require 'openssl'
@@ -41,7 +41,7 @@ module WEBrick
         case p
         when 0; $stderr.putc "."  # BN_generate_prime
         when 1; $stderr.putc "+"  # BN_generate_prime
-        when 2; $stderr.putc "*"  # searching good prime,  
+        when 2; $stderr.putc "*"  # searching good prime,
                                   # n = #of try,
                                   # but also data from BN_generate_prime
         when 3; $stderr.putc "\n" # found good prime, n==0 - p, n==1 - q,
@@ -88,7 +88,7 @@ module WEBrick
       if @config[:SSLEnable]
         unless ssl_context
           @ssl_context = setup_ssl_context(@config)
-          @logger.info("\n" + @config[:SSLCertificate].to_text) 
+          @logger.info("\n" + @config[:SSLCertificate].to_text)
         end
         listeners.collect!{|svr|
           ssvr = ::OpenSSL::SSL::SSLServer.new(svr, ssl_context)

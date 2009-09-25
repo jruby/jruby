@@ -1,12 +1,12 @@
 #
-#   shell/error.rb - 
+#   shell/error.rb -
 #   	$Release Version: 0.7 $
-#   	$Revision: 14912 $
+#   	$Revision: 22784 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
 #
-#   
+#
 #
 
 require "e2mmap"

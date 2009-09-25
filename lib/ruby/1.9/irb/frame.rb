@@ -1,12 +1,12 @@
 #
-#   frame.rb - 
+#   frame.rb -
 #   	$Release Version: 0.9$
-#   	$Revision: 14912 $
+#   	$Revision: 22784 $
 #   	by Keiju ISHITSUKA(Nihon Rational Software Co.,Ltd)
 #
 # --
 #
-#   
+#
 #
 
 require "e2mmap"

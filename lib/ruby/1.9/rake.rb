@@ -1,8 +1,6 @@
-#!/usr/bin/env ruby
-
 #--
 
-# Copyright (c) 2003, 2004, 2005, 2006, 2007  Jim Weirich
+# Copyright 2003, 2004, 2005, 2006, 2007, 2008 by Jim Weirich (jim@weirichhouse.org)
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -29,7 +27,7 @@
 # as a library via a require statement, but it can be distributed
 # independently as an application.
 
-RAKEVERSION = '0.8.3'
+RAKEVERSION = '0.8.4'
 
 require 'rbconfig'
 require 'fileutils'
@@ -74,7 +72,7 @@ end # module Module
 #
 class String
   rake_extension("ext") do
-    # Replace the file extension with +newext+.  If there is no extenson on
+    # Replace the file extension with +newext+.  If there is no extension on
     # the string, append the new extension to the end.  If the new extension
     # is not given, or is the empty string, remove any existing extension.
     #
@@ -115,7 +113,7 @@ class String
       File.join(partial_dirs)
     end
     protected :pathmap_partial
-      
+
     # Preform the pathmap replacement operations on the given path. The
     # patterns take the form 'pat1,rep1;pat2,rep2...'.
     def pathmap_replace(patterns, &block)
@@ -362,9 +360,9 @@ module Rake
     def inspect
       to_s
     end
-    
+
     protected
-    
+
     def lookup(name)
       if @hash.has_key?(name)
         @hash[name]
@@ -745,9 +743,7 @@ module Rake
     # Is this file task needed?  Yes if it doesn't exist, or if its time stamp
     # is out of date.
     def needed?
-      return true unless File.exist?(name)
-      return true if out_of_date?(timestamp)
-      false
+      ! File.exist?(name) || out_of_date?(timestamp)
     end
 
     # Time stamp for file task.
@@ -936,7 +932,7 @@ end
 # added to the FileUtils utility functions.
 #
 module FileUtils
-  RUBY = File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']).
+  RUBY = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).
     sub(/.*\s.*/m, '"\&"')
 
   OPT_TABLE['sh']  = %w(noop verbose)
@@ -969,7 +965,7 @@ module FileUtils
       }
     end
     if RakeFileUtils.verbose_flag == :default
-      options[:verbose] = false
+      options[:verbose] = true
     else
       options[:verbose] ||= RakeFileUtils.verbose_flag
     end
@@ -1232,23 +1228,21 @@ module Rake
     # Now do the delegation.
     DELEGATING_METHODS.each_with_index do |sym, i|
       if SPECIAL_RETURN.include?(sym)
-        ln = __LINE__+1
-        class_eval %{
+        class_eval <<-END, __FILE__, __LINE__+1
           def #{sym}(*args, &block)
             resolve
             result = @items.send(:#{sym}, *args, &block)
             FileList.new.import(result)
           end
-        }, __FILE__, ln
+        END
       else
-        ln = __LINE__+1
-        class_eval %{
+        class_eval <<-END, __FILE__, __LINE__+1
           def #{sym}(*args, &block)
             resolve
             result = @items.send(:#{sym}, *args, &block)
             result.object_id == @items.object_id ? self : result
           end
-        }, __FILE__, ln
+        END
       end
     end
 
@@ -1456,8 +1450,8 @@ module Rake
       collect { |fn| fn.pathmap(spec) }
     end
 
-    # Return a new array with <tt>String#ext</tt> method applied to each
-    # member of the array.
+    # Return a new file list with <tt>String#ext</tt> method applied
+    # to each member of the array.
     #
     # This method is a shortcut for:
     #
@@ -1643,9 +1637,9 @@ module Rake
       @task_manager.lookup(name, @scope)
     end
 
-    # Return the list of tasks defined in this namespace.
+    # Return the list of tasks defined in this and nested namespaces.
     def tasks
-      @task_manager.tasks
+      @task_manager.tasks_in_scope(@scope)
     end
   end # NameSpace
 
@@ -1734,7 +1728,7 @@ module Rake
       [task_name, arg_names, []]
     end
     private :resolve_args_without_dependencies
-    
+
     # Resolve task arguments for a task or rule when there are
     # dependencies declared.
     #
@@ -1765,7 +1759,7 @@ module Rake
       [task_name, arg_names, deps]
     end
     private :resolve_args_with_dependencies
-    
+
     # If a rule can be found that matches the task name, enhance the
     # task with the prerequisites and actions from the rule.  Set the
     # source attribute of the task appropriately for the rule.  Return
@@ -1788,6 +1782,15 @@ module Rake
     # List of all defined tasks in this application.
     def tasks
       @tasks.values.sort_by { |t| t.name }
+    end
+
+    # List of all the tasks defined in the given scope (and its
+    # sub-scopes).
+    def tasks_in_scope(scope)
+      prefix = scope.join(":")
+      tasks.select { |t|
+        /^#{prefix}:/ =~ t.name
+      }
     end
 
     # Clear all tasks in this application.
@@ -1968,7 +1971,8 @@ module Rake
     def init(app_name='rake')
       standard_exception_handling do
         @name = app_name
-        collect_tasks handle_options
+        handle_options
+        collect_tasks
       end
     end
 
@@ -2035,7 +2039,7 @@ module Rake
         exit(false)
       rescue Exception => ex
         # Exit with error message
-        $stderr.puts "rake aborted!"
+        $stderr.puts "#{name} aborted!"
         $stderr.puts ex.message
         if options.trace
           $stderr.puts ex.backtrace.join("\n")
@@ -2051,7 +2055,10 @@ module Rake
     # If a match is found, it is copied into @rakefile.
     def have_rakefile
       @rakefiles.each do |fn|
-        if File.exist?(fn) || fn == ''
+        if File.exist?(fn)
+          others = Dir.glob(fn, File::FNM_CASEFOLD)
+          return others.size == 1 ? others.first : fn
+        elsif fn == ''
           return fn
         end
       end
@@ -2074,14 +2081,14 @@ module Rake
       tty_output? || ENV['RAKE_COLUMNS']
     end
 
-    # Display the tasks and dependencies.
+    # Display the tasks and comments.
     def display_tasks_and_comments
       displayable_tasks = tasks.select { |t|
         t.comment && t.name =~ options.show_task_pattern
       }
       if options.full_description
         displayable_tasks.each do |t|
-          puts "rake #{t.name_with_args}"
+          puts "#{name} #{t.name_with_args}"
           t.full_comment.split("\n").each do |line|
             puts "    #{line}"
           end
@@ -2108,7 +2115,7 @@ module Rake
       80
     end
 
-    # Calculate the dynamic width of the 
+    # Calculate the dynamic width of the
     def dynamic_width
       @dynamic_width ||= (dynamic_width_stty.nonzero? || dynamic_width_tput)
     end
@@ -2124,7 +2131,7 @@ module Rake
     def unix?
       RUBY_PLATFORM =~ /(aix|darwin|linux|(net|free|open)bsd|cygwin|solaris|irix|hpux)/i
     end
-    
+
     def windows?
       Win32.windows?
     end
@@ -2140,7 +2147,7 @@ module Rake
     # Display the tasks and prerequisites
     def display_prerequisites
       tasks.each do |t|
-        puts "rake #{t.name}"
+        puts "#{name} #{t.name}"
         t.prerequisites.each { |pre| puts "    #{pre}" }
       end
     end
@@ -2184,7 +2191,7 @@ module Rake
         ],
         ['--execute-continue',  '-E CODE',
           "Execute some Ruby code, then continue with normal task processing.",
-          lambda { |value| eval(value) }            
+          lambda { |value| eval(value) }
         ],
         ['--libdir', '-I LIBDIR', "Include LIBDIR in the search path for required modules.",
           lambda { |value| $:.push(value) }
@@ -2196,9 +2203,9 @@ module Rake
           lambda { |value| verbose(false) }
         ],
         ['--rakefile', '-f [FILE]', "Use FILE as the rakefile.",
-          lambda { |value| 
+          lambda { |value|
             value ||= ''
-            @rakefiles.clear 
+            @rakefiles.clear
             @rakefiles << value
           }
         ],
@@ -2252,7 +2259,7 @@ module Rake
             verbose(true)
           }
         ],
-        ['--verbose', '-v', "Log message to standard output (default).",
+        ['--verbose', '-v', "Log message to standard output.",
           lambda { |value| verbose(true) }
         ],
         ['--version', '-V', "Display the program version.",
@@ -2268,18 +2275,18 @@ module Rake
     def handle_options
       options.rakelib = ['rakelib']
 
-      opts = OptionParser.new
-      opts.banner = "rake [-f rakefile] {options} targets..."
-      opts.separator ""
-      opts.separator "Options are ..."
-      
-      opts.on_tail("-h", "--help", "-H", "Display this help message.") do
-        puts opts
-        exit
-      end
-      
-      standard_rake_options.each { |args| opts.on(*args) }
-      parsed_argv = opts.parse(ARGV)
+      OptionParser.new do |opts|
+        opts.banner = "rake [-f rakefile] {options} targets..."
+        opts.separator ""
+        opts.separator "Options are ..."
+
+        opts.on_tail("-h", "--help", "-H", "Display this help message.") do
+          puts opts
+          exit
+        end
+
+        standard_rake_options.each { |args| opts.on(*args) }
+      end.parse!
 
       # If class namespaces are requested, set the global options
       # according to the values in the options structure.
@@ -2290,7 +2297,6 @@ module Rake
         $dryrun = options.dryrun
         $silent = options.silent
       end
-      parsed_argv
     end
 
     # Similar to the regular Ruby +require+ command, but will check
@@ -2365,7 +2371,7 @@ module Rake
           end
         end
     end
-    
+
     # The standard directory containing system wide rake files.
     if Win32.windows?
       def standard_system_dir #:nodoc:
@@ -2381,9 +2387,9 @@ module Rake
     # Collect the list of tasks on the command line.  If no tasks are
     # given, return a list containing only the default task.
     # Environmental assignments are processed at this time as well.
-    def collect_tasks(argv)
+    def collect_tasks
       @top_level_tasks = []
-      argv.each do |arg|
+      ARGV.each do |arg|
         if arg =~ /^(\w+)=(.*)$/
           ENV[$1] = $2
         else

@@ -28,7 +28,7 @@ module Test
           as = e.instance_of?(MiniTest::Assertion)
           if as
             ans = /\A#{Regexp.quote(__FILE__)}:#{line}:in /o
-            bt.reject! {|line| ans =~ line}
+            bt.reject! {|ln| ans =~ ln}
           end
           if ((args.empty? && !as) ||
               args.any? {|a| a.instance_of?(Module) ? e.is_a?(a) : e.class == a })
@@ -69,6 +69,10 @@ module Test
             elsif exp.is_a?(Time) && act.is_a?(Time)
               exp_comment = " (nsec=#{exp.nsec})"
               act_comment = " (nsec=#{act.nsec})"
+            elsif exp.class != act.class
+              # a subclass of Range, for example.
+              exp_comment = " (#{exp.class})"
+              act_comment = " (#{act.class})"
             end
           elsif !Encoding.compatible?(exp_str, act_str)
             if exp.is_a?(String) && act.is_a?(String)
@@ -111,6 +115,17 @@ with id <?> expected to not be equal\\? to
 with id <?>.
 EOT
         assert(!actual.equal?(expected), msg)
+      end
+
+      # get rid of overcounting
+      def assert_respond_to obj, meth, msg = nil
+        super if !caller[0].rindex(MiniTest::MINI_DIR, 0) || !obj.respond_to?(meth)
+      end
+
+      ms = instance_methods(true).map {|sym| sym.to_s }
+      ms.grep(/\Arefute_/) do |m|
+        mname = ('assert_not_' << m.to_s[/.*?_(.*)/, 1])
+        alias_method(mname, m) unless ms.include? mname
       end
 
       def build_message(head, template=nil, *arguments)

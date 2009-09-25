@@ -1,15 +1,15 @@
 #
 # optparse.rb - command-line option analysis with the OptionParser class.
-# 
+#
 # Author:: Nobu Nakada
 # Documentation:: Nobu Nakada and Gavin Sinclair.
 #
-# See OptionParser for documentation. 
+# See OptionParser for documentation.
 #
 
 
-# == Developer Documentation (not for RDoc output) 
-# 
+# == Developer Documentation (not for RDoc output)
+#
 # === Class tree
 #
 # - OptionParser:: front end
@@ -51,7 +51,7 @@
 # solution.
 #
 # === Features
-# 
+#
 # 1. The argument specification and the code to handle it are written in the
 #    same place.
 # 2. It can output an option summary; you don't need to maintain this string
@@ -88,12 +88,12 @@
 #   require 'optparse/time'
 #   require 'ostruct'
 #   require 'pp'
-#   
+#
 #   class OptparseExample
-#   
+#
 #     CODES = %w[iso-2022-jp shift_jis euc-jp utf8 binary]
 #     CODE_ALIASES = { "jis" => "iso-2022-jp", "sjis" => "shift_jis" }
-#   
+#
 #     #
 #     # Return a structure describing the options.
 #     #
@@ -106,19 +106,19 @@
 #       options.encoding = "utf8"
 #       options.transfer_type = :auto
 #       options.verbose = false
-#       
+#
 #       opts = OptionParser.new do |opts|
 #         opts.banner = "Usage: example.rb [options]"
-#       
+#
 #         opts.separator ""
 #         opts.separator "Specific options:"
-#       
+#
 #         # Mandatory argument.
 #         opts.on("-r", "--require LIBRARY",
 #                 "Require the LIBRARY before executing your script") do |lib|
 #           options.library << lib
 #         end
-#       
+#
 #         # Optional argument; multi-line description.
 #         opts.on("-i", "--inplace [EXTENSION]",
 #                 "Edit ARGV files in place",
@@ -127,28 +127,28 @@
 #           options.extension = ext || ''
 #           options.extension.sub!(/\A\.?(?=.)/, ".")  # Ensure extension begins with dot.
 #         end
-#       
+#
 #         # Cast 'delay' argument to a Float.
 #         opts.on("--delay N", Float, "Delay N seconds before executing") do |n|
 #           options.delay = n
 #         end
-#       
+#
 #         # Cast 'time' argument to a Time object.
 #         opts.on("-t", "--time [TIME]", Time, "Begin execution at given time") do |time|
 #           options.time = time
 #         end
-#       
+#
 #         # Cast to octal integer.
 #         opts.on("-F", "--irs [OCTAL]", OptionParser::OctalInteger,
 #                 "Specify record separator (default \\0)") do |rs|
 #           options.record_separator = rs
 #         end
-#       
+#
 #         # List of arguments.
 #         opts.on("--list x,y,z", Array, "Example 'list' of arguments") do |list|
 #           options.list = list
 #         end
-#       
+#
 #         # Keyword completion.  We are specifying a specific set of arguments (CODES
 #         # and CODE_ALIASES - notice the latter is a Hash), and the user may provide
 #         # the shortest unambiguous text.
@@ -157,41 +157,41 @@
 #                 "  (#{code_list})") do |encoding|
 #           options.encoding = encoding
 #         end
-#       
+#
 #         # Optional argument with keyword completion.
 #         opts.on("--type [TYPE]", [:text, :binary, :auto],
 #                 "Select transfer type (text, binary, auto)") do |t|
 #           options.transfer_type = t
 #         end
-#       
+#
 #         # Boolean switch.
 #         opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
 #           options.verbose = v
 #         end
-#       
+#
 #         opts.separator ""
 #         opts.separator "Common options:"
-#       
+#
 #         # No argument, shows at tail.  This will print an options summary.
 #         # Try it and see!
 #         opts.on_tail("-h", "--help", "Show this message") do
 #           puts opts
 #           exit
 #         end
-#       
+#
 #         # Another typical switch to print the version.
 #         opts.on_tail("--version", "Show version") do
 #           puts OptionParser::Version.join('.')
 #           exit
 #         end
 #       end
-#       
+#
 #       opts.parse!(args)
 #       options
 #     end  # parse()
-#   
+#
 #   end  # class OptparseExample
-#   
+#
 #   options = OptparseExample.parse(ARGV)
 #   pp options
 #
@@ -203,7 +203,7 @@
 #
 class OptionParser
   # :stopdoc:
-  RCSID = %w$Id: optparse.rb 21070 2008-12-26 11:16:16Z yugui $[1..-1].each {|s| s.freeze}.freeze
+  RCSID = %w$Id: optparse.rb 23286 2009-04-26 06:13:11Z nobu $[1..-1].each {|s| s.freeze}.freeze
   Version = (RCSID[1].split('.').collect {|s| s.to_i}.extend(Comparable).freeze if RCSID[1])
   LastModified = (Time.gm(*RCSID[2, 2].join('-').scan(/\d+/).collect {|s| s.to_i}) if RCSID[2])
   Release = RCSID[2]
@@ -276,7 +276,7 @@ class OptionParser
   # Individual switch class.  Not important to the user.
   #
   # Defined within Switch are several Switch-derived classes: NoArgument,
-  # RequiredArgument, etc. 
+  # RequiredArgument, etc.
   #
   class Switch
     attr_reader :pattern, :conv, :short, :long, :arg, :desc, :block
@@ -384,10 +384,16 @@ class OptionParser
         left[-1] << if left[-1].empty? then ' ' * 4 else ', ' end << s
       end
 
-      left[0] << arg if arg
+      if arg
+        left[0] << (left[1] ? arg.sub(/\A(\[?)=/, '\1') + ',' : arg)
+      end
       mlen = left.collect {|ss| ss.length}.max.to_i
       while mlen > width and l = left.shift
         mlen = left.collect {|ss| ss.length}.max.to_i if l.length == mlen
+        if l.length < width and (r = right[0]) and !r.empty?
+          l = l.to_s.ljust(width) + ' ' + r
+          right.shift
+        end
         yield(indent + l)
       end
 
@@ -505,13 +511,13 @@ class OptionParser
   class List
     # Map from acceptable argument types to pattern and converter pairs.
     attr_reader :atype
-    
+
     # Map from short style option switches to actual switch objects.
     attr_reader :short
-    
+
     # Map from long style option switches to actual switch objects.
     attr_reader :long
-    
+
     # List of all switches and summary string.
     attr_reader :list
 
@@ -528,7 +534,7 @@ class OptionParser
     #
     # See OptionParser.accept.
     #
-    def accept(t, pat = /.*/nm, &block)
+    def accept(t, pat = /.*/m, &block)
       if pat
         pat.respond_to?(:match) or
           raise TypeError, "has no `match'", ParseError.filter_backtrace(caller(2))
@@ -568,7 +574,7 @@ class OptionParser
     #
     # Inserts +switch+ at the head of the list, and associates short, long
     # and negated long options. Arguments are:
-    # 
+    #
     # +switch+::      OptionParser::Switch instance to be inserted.
     # +short_opts+::  List of short style options.
     # +long_opts+::   List of long style options.
@@ -584,7 +590,7 @@ class OptionParser
     #
     # Appends +switch+ at the tail of the list, and associates short, long
     # and negated long options. Arguments are:
-    # 
+    #
     # +switch+::      OptionParser::Switch instance to be inserted.
     # +short_opts+::  List of short style options.
     # +long_opts+::   List of long style options.
@@ -750,7 +756,7 @@ class OptionParser
   # Initializes a new instance and evaluates the optional block in context
   # of the instance. Arguments +args+ are passed to #new, see there for
   # description of parameters.
-  # 
+  #
   # This method is *deprecated*, its behavior corresponds to the older #new
   # method.
   #
@@ -1043,7 +1049,7 @@ class OptionParser
   #   There is also a special form which matches character range (not full
   #   set of regular expression):
   #     "-[a-z]MANDATORY"
-  #     "-[a-z][OPTIONAL]" 
+  #     "-[a-z][OPTIONAL]"
   #     "-[a-z]"
   #
   # [Argument style and description:]
@@ -1055,7 +1061,7 @@ class OptionParser
   # [Description:]
   #   Description string for the option.
   #     "Run verbosely"
-  # 
+  #
   # [Handler:]
   #   Handler for the parsed argument value. Either give a block or pass a
   #   Proc or Method as an argument.
@@ -1259,7 +1265,7 @@ class OptionParser
       while arg = argv.shift
         case arg
         # long option
-        when /\A--([^=]*)(?:=(.*))?/nm
+        when /\A--([^=]*)(?:=(.*))?/m
           opt, rest = $1, $2
           begin
             sw, = complete(:long, opt, true)
@@ -1275,7 +1281,7 @@ class OptionParser
           end
 
         # short option
-        when /\A-(.)((=).*|.+)?/nm
+        when /\A-(.)((=).*|.+)?/m
           opt, has_arg, eq, val, rest = $1, $3, $3, $2, $2
           begin
             sw, = search(:short, opt)
@@ -1298,7 +1304,7 @@ class OptionParser
           begin
             opt, cb, val = sw.parse(val, argv) {|*exc| raise(*exc) if eq}
             raise InvalidOption, arg if has_arg and !eq and arg == "-#{opt}"
-            argv.unshift(opt) if opt and (opt = opt.sub(/\A-*/, '-')) != '-'
+            argv.unshift(opt) if opt and (!rest or (opt = opt.sub(/\A-*/, '-')) != '-')
             val = cb.call(val) if cb
             setter.call(sw.switch_name, val) if setter
           rescue ParseError
@@ -1502,7 +1508,7 @@ class OptionParser
   #
   # Any non-empty string, and no conversion.
   #
-  accept(String, /.+/nm) {|s,*|s}
+  accept(String, /.+/m) {|s,*|s}
 
   #
   # Ruby/C-like integer, octal for 0-7 sequence, binary for 0b, hexadecimal
