@@ -382,7 +382,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref19(IRubyObject idx) {
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? ((RubyArray)to_a()).aref(idx) : result;
+        return result == null ? ((RubyArray)to_a()).aref19(idx) : result;
     }
 
     /** match_aref
@@ -391,7 +391,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? ((RubyArray)to_a()).aref19(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {

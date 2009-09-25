@@ -1,0 +1,1 @@
+fails(stack):Fiber.yield returns to the Fiber the value of the #resume call that invoked it
