@@ -287,13 +287,12 @@ public class RubyInstanceConfig {
 
         String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", "RUBY1_8");
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
-            compatVersion = CompatVersion.RUBY1_8;
+            setCompatVersion(CompatVersion.RUBY1_8);
         } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
-            compatVersion = CompatVersion.RUBY1_9;
-            compileMode = compileMode.OFF;
+            setCompatVersion(CompatVersion.RUBY1_9);
         } else {
             error.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
-            compatVersion = CompatVersion.RUBY1_8;
+            setCompatVersion(CompatVersion.RUBY1_8);
         }
 
         if (Ruby.isSecurityRestricted()) {
@@ -509,7 +508,7 @@ public class RubyInstanceConfig {
     public String getVersionString() {
         String ver = null;
         int patchlevel = 0;
-        switch (compatVersion) {
+        switch (getCompatVersion()) {
         case RUBY1_8:
             ver = Constants.RUBY_VERSION;
             patchlevel = Constants.RUBY_PATCHLEVEL;
@@ -606,6 +605,10 @@ public class RubyInstanceConfig {
     }
 
     public void setCompatVersion(CompatVersion compatVersion) {
+        // Until we get a little more solid on 1.9 support we will only run interpreted mode
+        if (compatVersion == CompatVersion.RUBY1_9) compileMode = CompileMode.OFF;
+        if (compatVersion == null) compatVersion = CompatVersion.RUBY1_8;
+
         this.compatVersion = compatVersion;
     }
 
@@ -980,13 +983,7 @@ public class RubyInstanceConfig {
                         break;
                     } else if (argument.equals("--compat")) {
                         characterIndex = argument.length();
-                        compatVersion = CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9")));
-                        if (compatVersion == CompatVersion.RUBY1_9) {
-                            compileMode = compileMode.OFF;
-                        }
-                        if (compatVersion == null) {
-                            compatVersion = CompatVersion.RUBY1_8;
-                        }
+                        setCompatVersion(CompatVersion.getVersionFromString(grabValue(getArgumentError("--compat must be RUBY1_8 or RUBY1_9"))));
                         break FOR;
                     } else if (argument.equals("--copyright")) {
                         setShowCopyright(true);
@@ -1027,10 +1024,10 @@ public class RubyInstanceConfig {
                         RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
                     } else if (argument.equals("--1.9")) {
-                        compatVersion = CompatVersion.RUBY1_9;
+                        setCompatVersion(CompatVersion.RUBY1_9);
                         break FOR;
                     } else if (argument.equals("--1.8")) {
-                        compatVersion = CompatVersion.RUBY1_8;
+                        setCompatVersion(CompatVersion.RUBY1_8);
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
@@ -1313,7 +1310,7 @@ public class RubyInstanceConfig {
     }
 
     public ASTCompiler newCompiler() {
-        if (compatVersion == CompatVersion.RUBY1_8) {
+        if (getCompatVersion() == CompatVersion.RUBY1_8) {
             return new ASTCompiler();
         } else {
             return new ASTCompiler19();
