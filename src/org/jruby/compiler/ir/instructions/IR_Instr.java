@@ -49,20 +49,19 @@ public abstract class IR_Instr
         _isDead = false;
     }
 
-    public void markDead() { _isDead = true; }
-    public boolean isDead() { return _isDead; }
-
     public String toString() {
-        return "\t" + (_result == null ? "" : _result + " = ") + _op;
+        return "\t" + (isDead() ? "[DEAD]" : "") + (_result == null ? "" : _result + " = ") + _op;
     }
 
     public Variable getResult() { return _result; }
-/**
+
         // Does this instruction have side effects as a result of its operation
         // This information is used in optimization phases to impact dead code elimination
         // and other optimization passes
-    public abstract boolean hasSideEffects();
-**/
+    public boolean hasSideEffects() { return _op.hasSideEffects(); }
+
+    public void markDead() { _isDead = true; }
+    public boolean isDead() { return _isDead; }
 
 /* --------- "Abstract"/"please-override" methods --------- */
 

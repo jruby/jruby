@@ -14,7 +14,7 @@ import java.util.ListIterator;
 
 public class LiveVariableNode extends FlowGraphNode
 {
-/* ******************** PUBLIC INTERFACE ******************* */
+/* ---------- Public fields, methods --------- */
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) { super(prob, n); }
 
     public void init()
@@ -27,10 +27,9 @@ public class LiveVariableNode extends FlowGraphNode
     {
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
         Variable v = i.getResult();
-        System.out.println("Looking for df var for: " + v);
         if ((v != null) && (lvp.getDFVar(v) == null)) {
             lvp.addDFVar(v);
-            System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v));
+//            System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v)._id);
         }
     }
 
@@ -41,14 +40,14 @@ public class LiveVariableNode extends FlowGraphNode
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
     {
-        System.out.println("computing meet for BB " + _bb.getID() + " with BB " + ((LiveVariableNode)pred)._bb.getID());
+//        System.out.println("computing meet for BB " + _bb.getID() + " with BB " + ((LiveVariableNode)pred)._bb.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
         _tmp.or(((LiveVariableNode)pred)._in);
     }
 
     public boolean applyTransferFunction()
     {
-        System.out.println("Apply TF for BB " + _bb.getID());
+//        System.out.println("Apply TF for BB " + _bb.getID());
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
 
         // OUT = UNION(IN(succs))
@@ -62,7 +61,7 @@ public class LiveVariableNode extends FlowGraphNode
 
             // v is defined => It is no longer live before 'i'
             Variable v = i.getResult();
-            System.out.println("will clear flag for: " + v);
+//            System.out.println("will clear flag for: " + v);
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                 _tmp.clear(dv._id);
@@ -71,7 +70,7 @@ public class LiveVariableNode extends FlowGraphNode
             // Now, for all variables used by 'i' mark them live before 'i'
             for (Variable x: i.getUsedVariables()) {
                 DataFlowVar dv = lvp.getDFVar(x);
-                System.out.println("will set flag for: " + x);
+//                System.out.println("will set flag for: " + x);
                 // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                 if (dv != null)
                     _tmp.set(dv._id);
@@ -123,7 +122,51 @@ public class LiveVariableNode extends FlowGraphNode
         return buf.append('\n').toString();
     }
 
-/* ******************** PRIVATE INTERFACE ****************** */
+/* ---------- Protected / package fields, methods --------- */
+    void markDeadInstructions()
+    {
+        LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
+        _tmp = (BitSet)_out.clone();
+
+        // Traverse the instructions in this basic block in reverse order!
+        // Mark as dead all instructions whose results are not used! 
+        List<IR_Instr> instrs = _bb.getInstrs();
+        ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
+        while (it.hasPrevious()) {
+            IR_Instr i = it.previous();
+//            System.out.println("DEAD?? " + i);
+            Variable v = i.getResult();
+            if (v != null) {
+                DataFlowVar dv = lvp.getDFVar(v);
+                    // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
+                if ((_tmp.get(dv._id) == false) && !i.hasSideEffects()) {
+//                    System.out.println("YES!");
+                    i.markDead();
+                }
+                else if (_tmp.get(dv._id) == false) {
+//                    System.out.println("NO!  has side effects! Op is: " + i._op);
+                }
+                else {
+//                    System.out.println("NO! LIVE result:" + v);
+                    _tmp.clear(dv._id);
+                }
+            }
+            else {
+//                System.out.println("IGNORING! No result!");
+            }
+
+            // Do not mark this instruction's operands live if the instruction itself is dead!
+            if (!i.isDead()) {
+               for (Variable x: i.getUsedVariables()) {
+                   DataFlowVar dv = lvp.getDFVar(x);
+                   if (dv != null)
+                       _tmp.set(dv._id);
+               }
+            }
+        }
+    }
+
+/* ---------- Private fields, methods --------- */
     private BitSet _in;         // Variables live at entry of this node
     private BitSet _out;        // Variables live at exit of node
     private BitSet _tmp;        // Temporary set of live variables

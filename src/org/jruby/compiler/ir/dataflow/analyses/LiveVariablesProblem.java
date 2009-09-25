@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class LiveVariablesProblem extends DataFlowProblem
 {
 /* ----------- Public Interface ------------ */
-    public LiveVariablesProblem(CFG cfg) { super(cfg, DataFlowProblem.DF_Direction.BACKWARD); }
+    public LiveVariablesProblem()              { super(DataFlowProblem.DF_Direction.BACKWARD); }
     public String        getProblemName()      { return "Live Variables Analysis"; }
     public DataFlowVar   getDFVar(Variable v)  { return _dfVarMap.get(v); }
     public void          addDFVar(Variable v)  { _dfVarMap.put(v, new DataFlowVar(this)); }
@@ -27,6 +27,12 @@ public class LiveVariablesProblem extends DataFlowProblem
             buf.append("DF Var ").append(_dfVarMap.get(v)._id).append(" = ").append(v).append("\n");
 
         return buf.toString();
+    }
+
+    public void markDeadInstructions()
+    {
+        for (FlowGraphNode n: _fgNodes)
+            ((LiveVariableNode)n).markDeadInstructions();
     }
 
 /* ----------- Private Interface ------------ */

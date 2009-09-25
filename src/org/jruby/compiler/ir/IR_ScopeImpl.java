@@ -20,6 +20,7 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.representations.CFG;
 
 public abstract class IR_ScopeImpl implements IR_Scope
 {
@@ -55,6 +56,9 @@ public abstract class IR_ScopeImpl implements IR_Scope
         // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
         // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IR_Loop> _loopStack;
+
+        // Control flow graph for this scope
+    private CFG _cfg;
 
     private int _nextMethodIndex;
     
@@ -132,22 +136,6 @@ public abstract class IR_ScopeImpl implements IR_Scope
         // get "self"
     public Variable getSelf() { return new Variable("self"); }
 
-        // Delegate method to the containing script/module/class
-    public Operand getFileName() 
-    {
-            // Static scope
-        if (_parent instanceof MetaObject) {
-            return ((MetaObject)_parent)._scope.getFileName();
-        }
-            // Dynamic scope!
-        else {
-            Variable fn = getNewVariable();
-                // At runtime, the parent operand will be the meta-object (runtime object) representing a script/module/class/method
-            addInstr(new JRUBY_IMPL_CALL_Instr(fn, MethAddr.GET_FILE_NAME, new Operand[]{_parent}));
-            return fn;
-        }
-    }
-
     public void addModule(IR_Module m) 
     {
         setConstantValue(m._name, new MetaObject(m)) ;
@@ -181,7 +169,20 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addInstr(IR_Instr i)   { _instrs.add(i); }
 
+    // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
     public List<IR_Instr> getInstrs() { return _instrs; }
+
+    public CFG buildCFG()
+    {
+        _cfg = new CFG(this);
+        _cfg.build(_instrs);
+        return _cfg;
+    }
+
+    public CFG getCFG()
+    {
+        return _cfg;
+    }
 
         // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
         // We might not .. for the following reasons:

@@ -207,12 +207,15 @@ public class IR_Builder
 
     public static void main(String[] args) {
         IR_Scope scope = buildFromMain(args);
-        System.out.println("------------------ Before local optimization pass ---------------------");
+        System.out.println("################## Before local optimization pass ##################");
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
-        System.out.println("------------------ After local optimization pass ---------------------");
+        System.out.println("################## After local optimization pass ##################");
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
+        System.out.println("################## After dead code elimination pass ##################");
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
     }
 
     public static IR_Scope buildFromMain(String[] args) {
@@ -2497,8 +2500,6 @@ public class IR_Builder
     }
 
     public Operand buildStr(StrNode strNode, IR_Scope s) {
-        // SSS FIXME: Looks like this will always be a constant string!  Hurray!
-        // return (strNode instanceof FileNode) ? s.getFileName() : new StringLiteral(strNode.getValue());
         return new StringLiteral(strNode.getValue());
     }
 

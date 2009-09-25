@@ -16,17 +16,11 @@ public class COPY_Instr extends OneOperandInstr
         super(Operation.COPY, d, s);
     }
 
-    public String toString() { return "\t" + _result + " = " + _arg; }
+    public String toString() { return "\t[COPY]: " + _result + " = " + _arg; }
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
     {
         simplifyOperands(valueMap);
         return _arg;
-/**
-        simplifyOperands(valueMap);
-        // Since compound values get left in place and don't get replaced,
-        // and we want to pass along the simplified value, look it up!
-        return _arg instanceof Variable ? valueMap.get(_arg) : _arg;
-**/
     }
 }

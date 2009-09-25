@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 import org.jruby.compiler.ir.representations.BasicBlock;
@@ -17,12 +19,10 @@ public abstract class DataFlowProblem
 /* -------------- Public fields and methods below ---------------- */
     public enum DF_Direction { FORWARD, BACKWARD, BIDIRECTIONAL };
 
-    public final CFG          _cfg;
     public final DF_Direction _direction;
 
-    public DataFlowProblem(CFG cfg, DF_Direction d)
+    public DataFlowProblem(DF_Direction d)
     {
-        _cfg = cfg;
         _direction = d;
         _dfVars = new ArrayList<DataFlowVar>();
         _nextDFVarId = -1;
@@ -36,12 +36,14 @@ public abstract class DataFlowProblem
     /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
     public boolean isEmpty() { return false; }
 
-	 public DF_Direction getFlowDirection() { return _direction; }
+    public DF_Direction getFlowDirection() { return _direction; }
 
-    /* Compute Meet Over All Paths solution for this dataflow problem
-     * This implements a standard worklist algorithm */
-    public void compute_MOP_Solution()
+    /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
+     * This implements a standard worklist algorithm. */
+    public void compute_MOP_Solution(CFG c)
     {
+        _cfg = c;
+
         /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
         if (!isEmpty()) {
             LinkedList<FlowGraphNode> workList = buildFlowGraph();
@@ -89,8 +91,11 @@ public abstract class DataFlowProblem
         return _bbTofgMap.get(b);
     }
 
+/* -------------- Protected fields and methods below ---------------- */
+    protected CFG                    _cfg;
+    protected List<FlowGraphNode>    _fgNodes;
+
 /* -------------- Private fields and methods below ---------------- */
-    private List<FlowGraphNode>    _fgNodes;
     private ArrayList<DataFlowVar> _dfVars;
     private BitSet                 _bbSet;
     private int                    _nextDFVarId;

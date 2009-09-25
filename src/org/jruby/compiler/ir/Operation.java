@@ -66,7 +66,16 @@ public enum Operation
     public boolean isStore()  { return _type == OpType.store_op; }
     public boolean isCall()   { return _type == OpType.call_op; }
     public boolean isEval()   { return _type == OpType.eval_op; }
+    public boolean isReturn() { return _type == OpType.ret_op; }
 
     public boolean startsBasicBlock() { return this == LABEL; }
     public boolean endsBasicBlock() { return isBranch(); }
+
+        // By default, call instructions cannot be deleted even if their results aren't used by anyone
+        // unless we know more about what the call is, what it does, etc.
+        // Similarly for evals, stores, returns.
+    public boolean hasSideEffects() 
+    {
+        return isCall() || isEval() || isStore() || isReturn();
+    }
 }

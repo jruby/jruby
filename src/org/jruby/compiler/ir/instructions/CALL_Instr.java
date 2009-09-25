@@ -32,9 +32,9 @@ public class CALL_Instr extends MultiOperandInstr
 
     public boolean isRubyInternalsCall() { return false; }
     public boolean isStaticCallTarget()  { return getTargetMethod() != null; }
-       // Can this call lead to ruby code getting modified?  
-       // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
-       // If we do know the target method, we ask the method itself whether it modifies ruby code
+        // Can this call lead to ruby code getting modified?  
+        // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
+        // If we do know the target method, we ask the method itself whether it modifies ruby code
     public boolean canModifyCode()       { IR_Method m = getTargetMethod(); return (m == null) ? true : m.modifiesCode(); }
 
     public Operand[] getCallArgs()   { return _args; }

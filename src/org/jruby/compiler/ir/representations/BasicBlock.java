@@ -30,5 +30,16 @@ public class BasicBlock
 
     public List<IR_Instr> getInstrs() { return _instrs; }
 
-    public String toString() { return "BB<" + _id + "," + _label + ">"; }
+    public String toString() { return "BB [" + _id + ":" + _label + "]"; }
+
+    public String toStringInstrs()
+    {
+        StringBuffer buf = new StringBuffer();
+        buf.append(toString()).append("\n");
+        for (IR_Instr instr : _instrs) {
+            if (!instr.isDead())
+                buf.append('\t').append(instr).append('\n');
+        }
+        return buf.toString();
+    }
 }

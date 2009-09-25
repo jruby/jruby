@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
@@ -38,22 +38,21 @@ public class CFG
         }
     }
 
-    IR_Method  _method;    // Method to which this cfg belongs
+    IR_Scope   _scope;     // Scope (method/closure) to which this cfg belongs
     BasicBlock _entryBB;   // Entry BB -- dummy
     BasicBlock _exitBB;    // Exit BB -- dummy
     DirectedGraph<BasicBlock, CFG_Edge> _cfg;  // The actual graph
     int        _nextBBId;  // Next available basic block id
 
-    public CFG(IR_Method m)
+    public CFG(IR_Scope s)
     {
         _nextBBId = 0; // Init before building basic blocks below!
-        _method = m;
+        _scope = s;
         _entryBB = new BasicBlock(this, getNewLabel());
         _exitBB  = new BasicBlock(this, getNewLabel());
-        buildCFG();
     }
 
-    public DirectedGraph getCFG()
+    public DirectedGraph getGraph()
     {
         return _cfg;
     }
@@ -86,10 +85,10 @@ public class CFG
 
     private Label getNewLabel()
     {
-        return _method.getNewLabel();
+        return _scope.getNewLabel();
     }
 
-    private void buildCFG()
+    public void build(List<IR_Instr> instrs)
     {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
@@ -110,7 +109,6 @@ public class CFG
         BasicBlock newBB  = null;
         boolean    bbEnded = false;
         boolean    bbEndedWithJump = false;
-        List<IR_Instr> instrs = _method.getInstrs();
         for (IR_Instr i: instrs) {
             Operation iop = i._op;
             if (iop.startsBasicBlock()) {
@@ -186,5 +184,14 @@ public class CFG
         }
 
         _cfg = g;
+    }
+
+    public String toStringInstrs()
+    {
+        StringBuffer buf = new StringBuffer();
+        for (BasicBlock b: getNodes())
+            buf.append(b.toStringInstrs());
+
+        return buf.toString();
     }
 }
