@@ -24,6 +24,11 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
       out = jruby_with_pipe("echo echo 'one_two_three_test'", %q{-e "system 'cmd'"})
       assert(out =~ /one_two_three_test/)
     end
+
+    def test_escaping_chars_in_vmopts_processing
+      out = jruby(%{-e "a = 'sq'; print a; (1..3).each {|f| print f}"})
+      assert_equal "sq123", out
+    end
   else
     def test_system_call_with_stdin_data_doesnt_hang
       out = jruby_with_pipe("echo 'vvs'", %q{-e "system 'cat'"})
