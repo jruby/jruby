@@ -642,14 +642,19 @@ public class RubyComplex extends RubyNumeric {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) {
-            RubyComplex otherComplex = (RubyComplex)other;
-            if (f_equal_p(context, real, otherComplex.real) && f_equal_p(context, image, otherComplex.image)) return context.getRuntime().getTrue();
-            return context.getRuntime().getFalse();
-        } else if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
-            if (f_equal_p(context, real, other) && f_zero_p(context, image)) return context.getRuntime().getTrue();
-            return context.getRuntime().getFalse();
+            RubyComplex otherComplex = (RubyComplex) other;
+            boolean test = f_equal_p(context, real, otherComplex.real) && f_equal_p(context, image, otherComplex.image);
+
+            return context.getRuntime().newBoolean(test);
         }
-        return other.callMethod(context, "==", this);
+
+        if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
+            boolean test = f_equal_p(context, real, other) && f_zero_p(context, image);
+            
+            return context.getRuntime().newBoolean(test);
+        }
+        
+        return context.getRuntime().newBoolean(f_equal_p(context, other, this));
     }
 
     /** nucomp_coerce 
