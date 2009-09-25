@@ -565,6 +565,7 @@ public class RubyComplex extends RubyNumeric {
      *
      */
     @JRubyMethod(name = "fdiv")
+    @Override
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
         IRubyObject complex = newComplex(context, getMetaClass(),
                                          f_to_f(context, real),   
@@ -638,6 +639,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "==")
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) {
             RubyComplex otherComplex = (RubyComplex)other;
@@ -647,7 +649,7 @@ public class RubyComplex extends RubyNumeric {
             if (f_equal_p(context, real, other) && f_zero_p(context, image)) return context.getRuntime().getTrue();
             return context.getRuntime().getFalse();
         }
-        return f_equal_p(context, other, this) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();        
+        return other.callMethod(context, "==", this);
     }
 
     /** nucomp_coerce 
@@ -665,6 +667,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = {"abs", "magnitude"})
+    @Override
     public IRubyObject abs(ThreadContext context) {
         return RubyMath.hypot(this, real, image);
     }
@@ -673,6 +676,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "abs2")
+    @Override
     public IRubyObject abs2(ThreadContext context) {
         return f_add(context,
                      f_mul(context, real, real),
@@ -683,6 +687,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = {"arg", "angle", "phase"})
+    @Override
     public IRubyObject arg(ThreadContext context) {
         return RubyMath.atan2(this, image, real);
     }
@@ -691,6 +696,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = {"rectangular", "rect"})
+    @Override
     public IRubyObject rect(ThreadContext context) {
         return context.getRuntime().newArray(real, image);
     }
@@ -699,6 +705,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "polar")
+    @Override
     public IRubyObject polar(ThreadContext context) {
         return context.getRuntime().newArray(f_abs(context, this), f_arg(context, this));
     }
@@ -707,6 +714,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = {"conjugate", "conj", "~"})
+    @Override
     public IRubyObject conjugate(ThreadContext context) {
         return newComplex(context, getMetaClass(), real, f_negate(context, image));
     }
@@ -755,6 +763,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "numerator")
+    @Override
     public IRubyObject numerator(ThreadContext context) {
         IRubyObject cd = callMethod(context, "denominator");
         return newComplex(context, getMetaClass(),
@@ -778,6 +787,7 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "eql?")
+    @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) {
             RubyComplex otherComplex = (RubyComplex)other;
