@@ -349,7 +349,7 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = {"getwd", "pwd"}, meta = true)
     public static RubyString getwd(IRubyObject recv) {
         Ruby ruby = recv.getRuntime();
-        return RubyString.newUnicodeString(ruby, ruby.getCurrentDirectory());
+        return RubyString.newUnicodeString(ruby, getCWD(ruby));
     }
 
     /**

@@ -3,6 +3,7 @@ require 'test/unit'
 require 'rbconfig'
 require 'fileutils'
 require 'tempfile'
+require 'pathname'
 
 class TestFile < Test::Unit::TestCase
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
@@ -153,6 +154,10 @@ class TestFile < Test::Unit::TestCase
       ### assert_equal("//bar/foo", File.expand_path("../foo", "//bar"))
       ### assert_equal("///bar/foo", File.expand_path("../foo", "///bar"))
       ### assert_equal("//one/two", File.expand_path("/two", "//one"))
+    end
+
+    def test_pathname_windows
+      assert_equal(Pathname('foo.bar.rb').expand_path.relative_path_from(Pathname(Dir.pwd)), Pathname('foo.bar.rb'))
     end
   else
     def test_expand_path
