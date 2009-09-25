@@ -9,7 +9,4 @@ public class CLOSURE_RETURN_Instr extends OneOperandInstr
     {
         super(Operation.CLOSURE_RETURN, null, rv);
     }
-
-        // By default, return instructions cannot be deleted
-    public boolean hasSideEffects() { return true; }
 }
