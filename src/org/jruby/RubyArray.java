@@ -56,6 +56,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.Ruby19Parser;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -963,12 +964,19 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_insert
      * 
      */
-    @JRubyMethod(name = "insert")
+    @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_8)
     public IRubyObject insert(IRubyObject arg) {
         return this;
     }
+    
+    @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_9)
+    public IRubyObject insert19(IRubyObject arg) {
+        modifyCheck();
+        
+        return insert(arg);
+    }
 
-    @JRubyMethod(name = "insert")
+    @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_8)
     public IRubyObject insert(IRubyObject arg1, IRubyObject arg2) {
         long pos = RubyNumeric.num2long(arg1);
 
@@ -980,7 +988,14 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    @JRubyMethod(name = "insert", required = 1, rest = true)
+    @JRubyMethod(name = "insert", compat = CompatVersion.RUBY1_9)
+    public IRubyObject insert19(IRubyObject arg1, IRubyObject arg2) {
+        modifyCheck();
+
+        return insert(arg1, arg2);
+    }
+
+    @JRubyMethod(name = "insert", required = 1, rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject insert(IRubyObject[] args) {
         if (args.length == 1) return this;
 
@@ -999,12 +1014,20 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
+    @JRubyMethod(name = "insert", required = 1, rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject insert19(IRubyObject[] args) {
+        modifyCheck();
+
+        return insert(args);
+    }
+
     /** rb_ary_dup
      * 
      */
     public final RubyArray aryDup() {
         RubyArray dup = new RubyArray(getRuntime(), getMetaClass(), this);
         dup.flags |= flags & TAINTED_F; // from DUP_SETUP
+        dup.flags |= flags & UNTRUSTED_F;
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
         return dup;
     }
@@ -1153,13 +1176,20 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_push_m
      * FIXME: Whis is this named "push_m"?
      */
-    @JRubyMethod(name = "push", rest = true)
+    @JRubyMethod(name = "push", rest = true, compat = CompatVersion.RUBY1_8)
     public RubyArray push_m(IRubyObject[] items) {
         for (int i = 0; i < items.length; i++) {
             append(items[i]);
         }
         
         return this;
+    }
+
+    @JRubyMethod(name = "push", rest = true, compat = CompatVersion.RUBY1_9)
+    public RubyArray push_m19(IRubyObject[] items) {
+        modifyCheck();
+
+        return push_m(items);
     }
 
     /** rb_ary_pop
@@ -1197,6 +1227,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_shift
      *
      */
+    @JRubyMethod(name = "shift")
     public IRubyObject shift(ThreadContext context) {
         modifyCheck();
         Ruby runtime = context.getRuntime();
@@ -1217,12 +1248,7 @@ public class RubyArray extends RubyObject implements List {
     }    
 
     @JRubyMethod(name = "shift")
-    public IRubyObject shift19(ThreadContext context) {
-        return shift(context);
-    }
-
-    @JRubyMethod(name = "shift")
-    public IRubyObject shift19(ThreadContext context, IRubyObject num) {
+    public IRubyObject shift(ThreadContext context, IRubyObject num) {
         modify();
 
         RubyArray result = makeSharedFirst(context, num, false, context.getRuntime().getArray());
@@ -1233,15 +1259,23 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", compat = CompatVersion.RUBY1_8)
     public IRubyObject unshift() {
         return this;
+    }
+
+    @JRubyMethod(name = "unshift", compat = CompatVersion.RUBY1_9)
+    public IRubyObject unshift19() {
+        modifyCheck();
+
+        return this;
+
     }
 
     /** rb_ary_unshift
      *
      */
-    @JRubyMethod(name = "unshift")
+    @JRubyMethod(name = "unshift", compat = CompatVersion.RUBY1_8)
     public IRubyObject unshift(IRubyObject item) {
         if (begin == 0 || isShared) {
             modify();
@@ -1276,7 +1310,14 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    @JRubyMethod(name = "unshift", rest = true)
+    @JRubyMethod(name = "unshift", compat = CompatVersion.RUBY1_9)
+    public IRubyObject unshift19(IRubyObject item) {
+        modifyCheck();
+
+        return unshift(item);
+    }
+
+    @JRubyMethod(name = "unshift", rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject unshift(IRubyObject[] items) {
         long len = realLength;
         if (items.length == 0) return this;
@@ -1291,6 +1332,13 @@ public class RubyArray extends RubyObject implements List {
         }
         
         return this;
+    }
+
+    @JRubyMethod(name = "unshift", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject unshift19(IRubyObject[] items) {
+        modifyCheck();
+
+        return unshift(items);
     }
 
     /** rb_ary_includes
@@ -1440,13 +1488,20 @@ public class RubyArray extends RubyObject implements List {
 	/** rb_ary_concat
      *
      */
-    @JRubyMethod(name = "concat", required = 1)
+    @JRubyMethod(name = "concat", required = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray concat(IRubyObject obj) {
         RubyArray ary = obj.convertToArray();
         
         if (ary.realLength > 0) splice(realLength, 0, ary);
 
         return this;
+    }
+
+    @JRubyMethod(name = "concat", required = 1, compat = CompatVersion.RUBY1_9)
+    public RubyArray concat19(IRubyObject obj) {
+        modifyCheck();
+
+        return concat(obj);
     }
 
     /** inspect_ary
@@ -1572,7 +1627,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_each
      *
      */
-    public IRubyObject each(ThreadContext context, Block block) {
+    public IRubyObject eachCommon(ThreadContext context, Block block) {
         if (!block.isGiven()) {
             throw context.getRuntime().newLocalJumpErrorNoBlock();
         }
@@ -1583,14 +1638,14 @@ public class RubyArray extends RubyObject implements List {
     }
 
     @JRubyMethod(name = "each", frame = true)
-    public IRubyObject each19(ThreadContext context, Block block) {
-        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
+    public IRubyObject each(ThreadContext context, Block block) {
+        return block.isGiven() ? eachCommon(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
     /** rb_ary_each_index
      *
      */
-    public IRubyObject each_index(ThreadContext context, Block block) {
+    public IRubyObject eachIndex(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) {
             throw runtime.newLocalJumpErrorNoBlock();
@@ -1602,14 +1657,14 @@ public class RubyArray extends RubyObject implements List {
     }
     
     @JRubyMethod(name = "each_index", frame = true)
-    public IRubyObject each_index19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_index(context, block) : enumeratorize(context.getRuntime(), this, "each_index");
+    public IRubyObject each_index(ThreadContext context, Block block) {
+        return block.isGiven() ? eachIndex(context, block) : enumeratorize(context.getRuntime(), this, "each_index");
     }
 
     /** rb_ary_reverse_each
      *
      */
-    public IRubyObject reverse_each(ThreadContext context, Block block) {
+    public IRubyObject reverseEach(ThreadContext context, Block block) {
         int len = realLength;
 
         while(len-- > 0) {
@@ -1621,8 +1676,8 @@ public class RubyArray extends RubyObject implements List {
     }
 
     @JRubyMethod(name = "reverse_each", frame = true)
-    public IRubyObject reverse_each19(ThreadContext context, Block block) {
-        return block.isGiven() ? reverse_each(context, block) : enumeratorize(context.getRuntime(), this, "reverse_each");
+    public IRubyObject reverse_each(ThreadContext context, Block block) {
+        return block.isGiven() ? reverseEach(context, block) : enumeratorize(context.getRuntime(), this, "reverse_each");
     }
 
     private IRubyObject inspectJoin(ThreadContext context, RubyArray tmp, IRubyObject sep) {
@@ -1650,12 +1705,17 @@ public class RubyArray extends RubyObject implements List {
         if (realLength == 0) return RubyString.newEmptyString(runtime);
 
         boolean taint = isTaint() || sep.isTaint();
+        boolean untrusted = isUntrusted() || sep.isUntrusted();
 
         int len = 1;
         for (int i = begin; i < begin + realLength; i++) {            
             IRubyObject value;
             try {
                 value = values[i];
+                
+                if (runtime.is1_9() && equalInternal(context, this, value)) {
+                    throw runtime.newArgumentError("recursive array join");
+                }
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
                 return RubyString.newEmptyString(runtime);
@@ -1695,10 +1755,13 @@ public class RubyArray extends RubyObject implements List {
 
             buf.append(tmp.asString().getByteList());
             if (tmp.isTaint()) taint = true;
+            if (tmp.isUntrusted()) untrusted = true;
         }
 
         RubyString result = runtime.newString(buf); 
         if (taint) result.setTaint(true);
+        if (untrusted) result.untrust(context);
+        
         return result;
     }
 
@@ -1988,13 +2051,13 @@ public class RubyArray extends RubyObject implements List {
     }
 
     @JRubyMethod(name = {"index", "find_index"}, frame = true)
-    public IRubyObject index19(ThreadContext context, IRubyObject obj, Block unused) {
+    public IRubyObject index(ThreadContext context, IRubyObject obj, Block unused) {
         if (unused.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
         return index(context, obj); 
     }
 
     @JRubyMethod(name = {"index", "find_index"}, frame = true)
-    public IRubyObject index19(ThreadContext context, Block block) {
+    public IRubyObject index(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "index");
 
@@ -2024,13 +2087,13 @@ public class RubyArray extends RubyObject implements List {
     }
 
     @JRubyMethod(name = "rindex", frame = true)
-    public IRubyObject rindex19(ThreadContext context, IRubyObject obj, Block unused) {
+    public IRubyObject rindex(ThreadContext context, IRubyObject obj, Block unused) {
         if (unused.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
         return rindex(context, obj); 
     }
 
     @JRubyMethod(name = "rindex", frame = true)
-    public IRubyObject rindex19(ThreadContext context, Block block) {
+    public IRubyObject rindex(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "rindex");
 
@@ -2124,7 +2187,8 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect
      *
      */
-    public RubyArray collect(ThreadContext context, Block block) {
+    @JRubyMethod(name = "collect", frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject collect(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return new RubyArray(runtime, runtime.getArray(), this);
 
@@ -2137,10 +2201,15 @@ public class RubyArray extends RubyObject implements List {
         return collect;
     }
 
+    @JRubyMethod(name = "collect", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject collect19(ThreadContext context, Block block) {
+        return block.isGiven() ? collect(context, block) : enumeratorize(context.getRuntime(), this, "collect");
+    }
+
     /** rb_ary_collect_bang
      *
      */
-    public RubyArray collect_bang(ThreadContext context, Block block) {
+    public RubyArray collectBang(ThreadContext context, Block block) {
         if (!block.isGiven()) throw context.getRuntime().newLocalJumpErrorNoBlock();
         modify();
         for (int i = 0, len = realLength; i < len; i++) {
@@ -2153,16 +2222,16 @@ public class RubyArray extends RubyObject implements List {
     *
     */
     @JRubyMethod(name = "collect!", frame = true)
-    public IRubyObject collect_bang19(ThreadContext context, Block block) {
-        return block.isGiven() ? collect_bang(context, block) : enumeratorize(context.getRuntime(), this, "collect!");
+    public IRubyObject collect_bang(ThreadContext context, Block block) {
+        return block.isGiven() ? collectBang(context, block) : enumeratorize(context.getRuntime(), this, "collect!");
     }
 
     /** rb_ary_collect_bang
     *
     */
     @JRubyMethod(name = "map!", frame = true)
-    public IRubyObject map_bang19(ThreadContext context, Block block) {
-        return block.isGiven() ? collect_bang(context, block) : enumeratorize(context.getRuntime(), this, "map!");
+    public IRubyObject map_bang(ThreadContext context, Block block) {
+        return block.isGiven() ? collectBang(context, block) : enumeratorize(context.getRuntime(), this, "map!");
     }
 
     /** rb_ary_select
@@ -2258,21 +2327,21 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_reject_bang
      * 
      */
-    public IRubyObject reject(ThreadContext context, Block block) {
+    public IRubyObject rejectCommon(ThreadContext context, Block block) {
         RubyArray ary = aryDup();
         ary.reject_bang(context, block);
         return ary;
     }
 
     @JRubyMethod(name = "reject", frame = true)
-    public IRubyObject reject19(ThreadContext context, Block block) {
-        return block.isGiven() ? reject(context, block) : enumeratorize(context.getRuntime(), this, "reject");
+    public IRubyObject reject(ThreadContext context, Block block) {
+        return block.isGiven() ? rejectCommon(context, block) : enumeratorize(context.getRuntime(), this, "reject");
     }
 
     /** rb_ary_reject_bang
      *
      */
-    public IRubyObject reject_bang(ThreadContext context, Block block) {
+    public IRubyObject rejectBang(ThreadContext context, Block block) {
         if (!block.isGiven()) throw context.getRuntime().newLocalJumpErrorNoBlock();
 
         int i2 = 0;
@@ -2299,22 +2368,23 @@ public class RubyArray extends RubyObject implements List {
     }
 
     @JRubyMethod(name = "reject!", frame = true)
-    public IRubyObject reject_bang19(ThreadContext context, Block block) {
-        return block.isGiven() ? reject_bang(context, block) : enumeratorize(context.getRuntime(), this, "reject!");
+    public IRubyObject reject_bang(ThreadContext context, Block block) {
+        return block.isGiven() ? rejectBang(context, block) : enumeratorize(context.getRuntime(), this, "reject!");
     }
 
     /** rb_ary_delete_if
      *
      */
-    public IRubyObject delete_if(ThreadContext context, Block block) {
+    public IRubyObject deleteIf(ThreadContext context, Block block) {
         reject_bang(context, block);
         return this;
     }
 
     @JRubyMethod(name = "delete_if", frame = true)
-    public IRubyObject delete_if19(ThreadContext context, Block block) {
-        return block.isGiven() ? delete_if(context, block) : enumeratorize(context.getRuntime(), this, "delete_if");
+    public IRubyObject delete_if(ThreadContext context, Block block) {
+        return block.isGiven() ? deleteIf(context, block) : enumeratorize(context.getRuntime(), this, "delete_if");
     }
+
 
     /** rb_ary_zip
      * 
@@ -2487,67 +2557,7 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
-    /** flatten
-     * 
-     */
-    private final int flatten(ThreadContext context, int index, RubyArray ary2, RubyArray memo) {
-        int i = index;
-        int n;
-        int lim = index + ary2.realLength;
-
-        IRubyObject id = ary2.id();
-
-        if (memo.includes(context, id)) throw getRuntime().newArgumentError("tried to flatten recursive array");
-
-        memo.append(id);
-        splice(index, 1, ary2);
-        while (i < lim) {
-            IRubyObject tmp = elt(i).checkArrayType();
-            if (!tmp.isNil()) {
-                n = flatten(context, i, (RubyArray) tmp, memo);
-                i += n;
-                lim += n;
-            }
-            i++;
-        }
-        memo.pop(context);
-        return lim - index - 1; /* returns number of increased items */
-    }
-
-    /** rb_ary_flatten_bang
-     *
-     */
-    public IRubyObject flatten_bang(ThreadContext context) {
-        int i = 0;
-        RubyArray memo = null;
-
-        while (i < realLength) {
-            IRubyObject ary2 = values[begin + i];
-            IRubyObject tmp = ary2.checkArrayType();
-            if (!tmp.isNil()) {
-                if (memo == null) {
-                    memo = new RubyArray(context.getRuntime(), ARRAY_DEFAULT_SIZE, false); // doesn't escape, don't fill with nils
-                }
-
-                i += flatten(context, i, (RubyArray) tmp, memo);
-            }
-            i++;
-        }
-        if (memo == null) return context.getRuntime().getNil();
-
-        return this;
-    }
-
-    /** rb_ary_flatten
-    *
-    */
-    public IRubyObject flatten(ThreadContext context) {
-        RubyArray ary = aryDup();
-        ary.flatten_bang(context);
-        return ary;
-    }
-
-    private boolean flatten19(ThreadContext context, int level, RubyArray result) {
+    private boolean flatten(ThreadContext context, int level, RubyArray result) {
         Ruby runtime = context.getRuntime();
         RubyArray stack = new RubyArray(runtime, ARRAY_DEFAULT_SIZE, false);
         IdentityHashMap<Object, Object> memo = new IdentityHashMap<Object, Object>();
@@ -2583,12 +2593,12 @@ public class RubyArray extends RubyObject implements List {
         return modified;
     }
 
-    @JRubyMethod(name = "flatten!")
-    public IRubyObject flatten_bang19(ThreadContext context) {
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_8)
+    public IRubyObject flatten_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
-        if (flatten19(context, -1, result)) {
+        if (flatten(context, -1, result)) {
             modify();
             begin = 0;
             realLength = result.realLength;
@@ -2598,14 +2608,21 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "flatten!")
-    public IRubyObject flatten_bang19(ThreadContext context, IRubyObject arg) {
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten_bang19(ThreadContext context) {
+        modifyCheck();
+
+        return flatten_bang(context);
+    }
+
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_8)
+    public IRubyObject flatten_bang(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return this;
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
-        if (flatten19(context, level, result)) {
+        if (flatten(context, level, result)) {
             begin = 0;
             realLength = result.realLength;
             values = result.values;
@@ -2614,24 +2631,31 @@ public class RubyArray extends RubyObject implements List {
         return runtime.getNil();
     }
 
+    @JRubyMethod(name = "flatten!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten_bang19(ThreadContext context, IRubyObject arg) {
+        modifyCheck();
+
+        return flatten_bang(context, arg);
+    }
+
     @JRubyMethod(name = "flatten")
-    public IRubyObject flatten19(ThreadContext context) {
+    public IRubyObject flatten(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
-        flatten19(context, -1, result);
+        flatten(context, -1, result);
         result.infectBy(this);
         return result;
     }
 
     @JRubyMethod(name = "flatten")
-    public IRubyObject flatten19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject flatten(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return this;
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
-        flatten19(context, level, result);
+        flatten(context, level, result);
         result.infectBy(this);
         return result;
     }
@@ -2786,6 +2810,8 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = "uniq!", compat = CompatVersion.RUBY1_9)
     public IRubyObject uniq_bang19(ThreadContext context, Block block) {
+        modifyCheck();
+        
         if (!block.isGiven()) return uniq_bang(context);
         RubyHash hash = makeHash(context, block);
         if (realLength == hash.size()) return context.getRuntime().getNil();
@@ -2911,7 +2937,8 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject sort_bang(ThreadContext context, Block block) {
         modify();
         if (realLength > 1) {
-            flags |= TMPLOCK_ARR_F;
+            if (!context.getRuntime().is1_9()) flags |= TMPLOCK_ARR_F;
+
             try {
                 return block.isGiven() ? sortInternal(context, block): sortInternal(context);
             } finally {
@@ -3212,18 +3239,22 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_choice
-     * 
-     */
-    @JRubyMethod(name = "choice")
+    @JRubyMethod(name = "choice", compat = CompatVersion.RUBY1_8)
     public IRubyObject choice(ThreadContext context) {
-        Random random = context.getRuntime().getRandom();
-        int i = realLength;
-        if(i == 0) {
-            return context.getRuntime().getNil();
+        return (realLength == 0) ? context.getRuntime().getNil() : choiceCommon(context);
+    }
+
+    @JRubyMethod(name = "choice", compat = CompatVersion.RUBY1_9)
+    public IRubyObject choice19(ThreadContext context) {
+        if (realLength == 0) {
+            throw context.getRuntime().newNoMethodError("undefined method 'choice' for []:Array", null, context.getRuntime().getNil());
         }
-        int r = random.nextInt(i);
-        return values[begin + r];
+        
+        return choiceCommon(context);
+    }
+
+    public IRubyObject choiceCommon(ThreadContext context) {
+        return values[begin + context.getRuntime().getRandom().nextInt(realLength)];
     }
 
     @JRubyMethod(name = "shuffle!")
