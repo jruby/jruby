@@ -252,14 +252,14 @@ public class RubyFixnum extends RubyInteger {
     @Override
     public IRubyObject times(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
-        long value = this.value;
+        long lvalue = this.value;
         if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
             IRubyObject nil = runtime.getNil();
-            for (long i = 0; i < value; i++) {
+            for (long i = 0; i < lvalue; i++) {
                 block.yield(context, nil);
             }
         } else {
-            for (long i = 0; i < value; i++) {
+            for (long i = 0; i < lvalue; i++) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         }
@@ -478,9 +478,15 @@ public class RubyFixnum extends RubyInteger {
      * 
      * also note that RubyFloat doesn't override Numeric.div
      */
-    @JRubyMethod(name = "div")
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
     public IRubyObject div_div(ThreadContext context, IRubyObject other) {
         return idiv(context, other, "div");
+    }
+
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
+    public IRubyObject div_div19(ThreadContext context, IRubyObject other) {
+        checkZeroDivisionError(context, other);
+        return div_div(context, other);
     }
     	
     @JRubyMethod(name = "/")
@@ -541,13 +547,18 @@ public class RubyFixnum extends RubyInteger {
     /** fix_mod
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"})
+    @JRubyMethod(name = {"%", "modulo"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-
             return moduloFixnum(context, other);
         }
         return coerceBin(context, "%", other);
+    }
+
+    @JRubyMethod(name = {"%", "modulo"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+        checkZeroDivisionError(context, other);
+        return op_mod(context, other);
     }
 
     private IRubyObject moduloFixnum(ThreadContext context, IRubyObject other) {
@@ -567,13 +578,19 @@ public class RubyFixnum extends RubyInteger {
     /** fix_divmod
      * 
      */
-    @JRubyMethod
+    @JRubyMethod(name = "divmod", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return divmodFixnum(context, other);
         }
         return coerceBin(context, "divmod", other);
+    }
+
+    @JRubyMethod(name = "divmod", compat = CompatVersion.RUBY1_9)
+    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        checkZeroDivisionError(context, other);
+        return divmod(context, other);
     }
 
     private IRubyObject divmodFixnum(ThreadContext context, IRubyObject other) {
@@ -598,6 +615,7 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_8)
+    @Override
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyFloat.newFloat(context.getRuntime(), (double) value / (double) ((RubyFixnum) other).value);
@@ -701,6 +719,7 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     @JRubyMethod
+    @Override
     public IRubyObject abs(ThreadContext context) {
         if (value < 0) {
             // A gotcha for Long.MIN_VALUE: value = -value
@@ -717,6 +736,7 @@ public class RubyFixnum extends RubyInteger {
      * 
      */
     @JRubyMethod(name = "magnitude", compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject magnitude(ThreadContext context) {
         return abs(context);
     }
@@ -1109,5 +1129,11 @@ public class RubyFixnum extends RubyInteger {
         };
         JAVA_COERCERS.put(int.class, intCoercer);
         JAVA_COERCERS.put(Integer.class, intCoercer);
+    }
+
+    private void checkZeroDivisionError(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyFloat && ((RubyFloat)other).getDoubleValue() == 0.0d) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
     }
 }
