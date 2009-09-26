@@ -58,11 +58,10 @@ import org.jruby.util.ByteList;
  */
 @JRubyClass(name="Dir", include="Enumerable")
 public class RubyDir extends RubyObject {
-	// What we passed to the constructor for method 'path'
-    private RubyString    path;
-    protected JRubyFile      dir;
-    private   String[]  snapshot;   // snapshot of contents of directory
-    private   int       pos;        // current position in directory
+    private RubyString path;       // What we passed to the constructor for method 'path'
+    protected JRubyFile dir;
+    private String[] snapshot;     // snapshot of contents of directory
+    private int pos;               // current position in directory
     private boolean isOpen = true;
 
     public RubyDir(Ruby runtime, RubyClass type) {
@@ -80,7 +79,6 @@ public class RubyDir extends RubyObject {
         runtime.setDir(dirClass);
 
         dirClass.includeModule(runtime.getEnumerable());
-        
         dirClass.defineAnnotatedMethods(RubyDir.class);
 
         return dirClass;
@@ -173,14 +171,14 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "glob", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
+        Ruby runtime = context.getRuntime();
         int flags = args.length == 2 ?  RubyNumeric.num2int(args[1]) : 0;
 
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
         if (tmp.isNil()) {
             ByteList globPattern = args[0].convertToString().getByteList();
-            dirs = Dir.push_glob(recv.getRuntime().getCurrentDirectory(), globPattern, flags);
+            dirs = Dir.push_glob(runtime.getCurrentDirectory(), globPattern, flags);
         } else {
             dirs = dirGlobs(getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
         }
@@ -190,10 +188,10 @@ public class RubyDir extends RubyObject {
                 block.yield(context, RubyString.newString(runtime, dirs.get(i)));
             }
         
-            return recv.getRuntime().getNil();
+            return runtime.getNil();
         }
 
-        return asRubyStringList(recv.getRuntime(), dirs);
+        return asRubyStringList(runtime, dirs);
     }
 
     /**
@@ -207,16 +205,21 @@ public class RubyDir extends RubyObject {
     /**
      * Returns an array containing all of the filenames in the given directory.
      */
-    @JRubyMethod(name = "entries", required = 1, meta = true)
+    @JRubyMethod(name = "entries", required = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
-        Ruby runtime = recv.getRuntime();
+        return entriesCommon(recv.getRuntime(), path.convertToString().toString());
+    }
 
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(
-                runtime, path.convertToString().toString(), null);
+    @JRubyMethod(name = "entries", required = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return entriesCommon(context.getRuntime(), getPath19(context, arg));
+    }
+
+    private static RubyArray entriesCommon(Ruby runtime, String path) {
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path, null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
-        List<String> fileList = getEntries(runtime, adjustedPath);
-        Object[] files = fileList.toArray();
+        Object[] files = getEntries(runtime, adjustedPath).toArray();
         return runtime.newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(runtime, files));
     }
 
@@ -225,16 +228,13 @@ public class RubyDir extends RubyObject {
             throw runtime.newErrnoENOENTError("No such directory");
         }
         
-        if (path.startsWith("file:")) {
-            return entriesIntoAJarFile(runtime, path);
-        } else {
-            return entriesIntoADirectory(runtime, path);
-        }
+        if (path.startsWith("file:")) return entriesIntoAJarFile(runtime, path);
+
+        return entriesIntoADirectory(runtime, path);
     }
 
     private static List<String> entriesIntoADirectory(Ruby runtime, String path) {
-        final JRubyFile directory = JRubyFile.create(
-                runtime.getCurrentDirectory(), path);
+        final JRubyFile directory = JRubyFile.create(runtime.getCurrentDirectory(), path);
 
         List<String> fileList = getContents(directory);
         fileList.add(0, ".");
@@ -265,14 +265,14 @@ public class RubyDir extends RubyObject {
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(name = "chdir", optional = 1, frame = true, meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString path = args.length == 1 ? 
+        Ruby runtime = context.getRuntime();
+        RubyString path = args.length == 1 ?
             (RubyString) args[0].convertToString() : getHomeDirectoryPath(context);
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(
-                recv.getRuntime(), path.getUnicodeValue(), null);
-        checkDirIsTwoSlashesOnWindows(recv.getRuntime(), adjustedPath);
-        JRubyFile dir = getDir(recv.getRuntime(), adjustedPath, true);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.getUnicodeValue(), null);
+        checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
+        JRubyFile dir = getDir(runtime, adjustedPath, true);
         String realPath = null;
-        String oldCwd = recv.getRuntime().getCurrentDirectory();
+        String oldCwd = runtime.getCurrentDirectory();
         
         // We get canonical path to try and flatten the path out.
         // a dir '/subdir/..' should return as '/'
@@ -286,16 +286,16 @@ public class RubyDir extends RubyObject {
         IRubyObject result = null;
         if (block.isGiven()) {
         	// FIXME: Don't allow multiple threads to do this at once
-            recv.getRuntime().setCurrentDirectory(realPath);
+            runtime.setCurrentDirectory(realPath);
             try {
                 result = block.yield(context, path);
             } finally {
-                dir = getDir(recv.getRuntime(), oldCwd, true);
-                recv.getRuntime().setCurrentDirectory(oldCwd);
+                dir = getDir(runtime, oldCwd, true);
+                runtime.setCurrentDirectory(oldCwd);
             }
         } else {
-        	recv.getRuntime().setCurrentDirectory(realPath);
-        	result = recv.getRuntime().newFixnum(0);
+        	runtime.setCurrentDirectory(realPath);
+        	result = runtime.newFixnum(0);
         }
         
         return result;
@@ -314,41 +314,63 @@ public class RubyDir extends RubyObject {
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
      */
-    @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true)
+    @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
-        JRubyFile directory = getDir(recv.getRuntime(), path.convertToString().getUnicodeValue(), true);
-        
+        return rmdirCommon(recv.getRuntime(), path.convertToString().getUnicodeValue());
+    }
+    
+    @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return rmdirCommon(context.getRuntime(), getPath19(context, path));
+    }
+
+    private static IRubyObject rmdirCommon(Ruby runtime, String path) {
+        JRubyFile directory = getDir(runtime, path, true);
+
         if (!directory.delete()) {
-            throw recv.getRuntime().newSystemCallError("No such directory");
+            throw runtime.newSystemCallError("No such directory");
         }
-        
-        return recv.getRuntime().newFixnum(0);
+
+        return runtime.newFixnum(0);
     }
 
     /**
      * Executes the block once for each file in the directory specified by
      * <code>path</code>.
      */
+    @JRubyMethod(name = "foreach", frame = true, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject foreach(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
-        RubyString path = _path.convertToString();
-        recv.getRuntime().checkSafeString(path);
-
-        RubyClass dirClass = recv.getRuntime().getDir();
-        RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[] { path }, block);
+        RubyString pathString = _path.convertToString();
         
-        dir.each(context, block);
-        return recv.getRuntime().getNil();
+        return foreachCommon(context, recv, context.getRuntime(), pathString, block);
     }
 
-    @JRubyMethod(name = "foreach", frame = true, meta = true)
-    public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
-        return block.isGiven() ? foreach(context, recv, _path, block) : enumeratorize(context.getRuntime(), recv, "foreach", _path);
+    @JRubyMethod(name = "foreach", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
+        RubyString pathString = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
+            
+        return foreachCommon(context, recv, context.getRuntime(), pathString, block);
+    }
+
+    private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, Block block) {
+        if (block.isGiven()) {
+            runtime.checkSafeString(_path);
+
+            RubyClass dirClass = runtime.getDir();
+            RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[] { _path }, block);
+
+            dir.each(context, block);
+            return runtime.getNil();
+        } 
+
+        return enumeratorize(runtime, recv, "foreach", _path);
     }
 
     /** Returns the current directory. */
     @JRubyMethod(name = {"getwd", "pwd"}, meta = true)
     public static RubyString getwd(IRubyObject recv) {
         Ruby ruby = recv.getRuntime();
+
         return RubyString.newUnicodeString(ruby, getCWD(ruby));
     }
 
@@ -357,26 +379,34 @@ public class RubyDir extends RubyObject {
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
      */
-    @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         runtime.checkSafeString(args[0]);
         
         String path= args[0].convertToString().getUnicodeValue();
 
+        return mkdirCommon(runtime, path, args);
+    }
+
+    @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return mkdirCommon(context.getRuntime(), getPath19(context, args[0]), args);
+    }
+
+    private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
         File newDir = getDir(runtime, path, false);
-        if (File.separatorChar == '\\') {
-            newDir = new File(newDir.getPath());
-        }
-        
+
+        if (File.separatorChar == '\\') newDir = new File(newDir.getPath());
+
         int mode = args.length == 2 ? ((int) args[1].convertToInteger().getLongValue()) : 0777;
 
         if (runtime.getPosix().mkdir(newDir.getAbsolutePath(), mode) < 0) {
             // FIXME: This is a system error based on errno
-            throw recv.getRuntime().newSystemCallError("mkdir failed");
+            throw runtime.newSystemCallError("mkdir failed");
         }
-        
-        return RubyFixnum.zero(recv.getRuntime());
+
+        return RubyFixnum.zero(runtime);
     }
 
     /**
@@ -384,11 +414,10 @@ public class RubyDir extends RubyObject {
      * provided, a new directory object is passed to the block, which closes the
      * directory object before terminating.
      */
-    @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
+    @JRubyMethod(name = "open", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        RubyDir directory = 
-            (RubyDir) recv.getRuntime().getDir().newInstance(context,
-                    new IRubyObject[] { path }, Block.NULL_BLOCK);
+        RubyDir directory = (RubyDir) context.getRuntime().getDir().newInstance(context,
+                new IRubyObject[]{path}, Block.NULL_BLOCK);
 
         if (!block.isGiven()) return directory;
         
@@ -397,6 +426,12 @@ public class RubyDir extends RubyObject {
         } finally {
             directory.close();
         }
+    }
+
+    @JRubyMethod(name = "open", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
+        RubyString pathString = path instanceof RubyString ? (RubyString) path : path.callMethod(context, "to_path").convertToString();
+        return open(context, recv, pathString, block);
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
@@ -481,9 +516,8 @@ public class RubyDir extends RubyObject {
     public IRubyObject read() {
         checkDir();
 
-        if (pos >= snapshot.length) {
-            return getRuntime().getNil();
-        }
+        if (pos >= snapshot.length) return getRuntime().getNil();
+
         RubyString result = getRuntime().newString(snapshot[pos]);
         pos++;
         return result;
@@ -499,7 +533,21 @@ public class RubyDir extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = {"exists?", "exist?"}, meta = true, frame = true, required = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        try {
+            return context.getRuntime().newFileStat(getPath19(context, arg), false).directory_p();
+        } catch (Exception e) {
+            return context.getRuntime().newBoolean(false);
+        }
+    }
+
 // ----- Helper Methods --------------------------------------------------------
+
+    protected static String getPath19(ThreadContext context, IRubyObject arg) {
+        RubyString pathObject = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
+        return pathObject.getUnicodeValue();
+    }
 
     /** Returns a Java <code>File</code> object for the specified path.  If
      * <code>path</code> is not a directory, throws <code>IOError</code>.
@@ -569,11 +617,11 @@ public class RubyDir extends RubyObject {
          * TODO: /etc/passwd is also inadequate for MacOSX since it does not
          *       use /etc/passwd for regular user accounts
          */
+        Ruby runtime = context.getRuntime();
         
         try {
             // try to use POSIX for this first
-            String home = context.getRuntime().getPosix().getpwnam(user).getHome();
-            return context.getRuntime().newString(home);
+            return runtime.newString(runtime.getPosix().getpwnam(user).getHome());
         } catch (Exception e) {
             // otherwise fall back on the old way
             String passwd = null;
@@ -585,7 +633,7 @@ public class RubyDir extends RubyObject {
                 stream.close();
                 passwd = new String(bytes);
             } catch (IOException ioe) {
-                return context.getRuntime().getNil();
+                return runtime.getNil();
             }
 
             String[] rows = passwd.split("\n");
@@ -593,12 +641,12 @@ public class RubyDir extends RubyObject {
             for (int i = 0; i < rowCount; i++) {
                 String[] fields = rows[i].split(":");
                 if (fields[0].equals(user)) {
-                    return context.getRuntime().newString(fields[5]);
+                    return runtime.newString(fields[5]);
                 }
             }
         }
 
-        throw context.getRuntime().newArgumentError("user " + user + " doesn't exist");
+        throw runtime.newArgumentError("user " + user + " doesn't exist");
     }
 
     public static RubyString getHomeDirectoryPath(ThreadContext context) {
