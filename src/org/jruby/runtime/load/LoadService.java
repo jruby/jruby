@@ -54,6 +54,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
@@ -672,13 +673,40 @@ public class LoadService {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
     }
+
+    private void debugLogTry(String what, String msg) {
+        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            runtime.getErr().println( "LoadService: trying " + what + ": " + msg );
+        }
+    }
+
+    private void debugLogFound(String what, String msg) {
+        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            runtime.getErr().println( "LoadService: found " + what + ": " + msg );
+        }
+    }
+
+    private void debugLogFound( LoadServiceResource resource ) {
+        String resourceUrl;
+        try {
+            resourceUrl = resource.getURL().toString();
+        } catch (IOException e) {
+            resourceUrl = e.getMessage();
+        }
+        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            runtime.getErr().println( "LoadService: found: " + resourceUrl );
+        }
+    }
     
     private Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
+            debugLogTry( "builtinLib",  namePlusSuffix );
             if (builtinLibraries.containsKey(namePlusSuffix)) {
                 state.loadName = namePlusSuffix;
-                return builtinLibraries.get(namePlusSuffix);
+                Library lib = builtinLibraries.get(namePlusSuffix);
+                debugLogFound( "builtinLib", namePlusSuffix );
+                return lib;
             }
         }
         return null;
@@ -750,14 +778,15 @@ public class LoadService {
             // check current directory; if file exists, retrieve URL and return resource
             try {
                 JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
+                debugLogTry("resourceFromCWD", file.toString());
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
                     String s = namePlusSuffix;
                     if(!namePlusSuffix.startsWith("./")) {
                         s = "./" + s;
                     }
-
                     foundResource = new LoadServiceResource(file, s, absolute);
+                    debugLogFound(foundResource);
                     state.loadName = namePlusSuffix;
                     break;
                 }
@@ -777,8 +806,10 @@ public class LoadService {
                 String namePlusSuffix = baseName + suffix;
                 try {
                     URL url = new URL(namePlusSuffix);
+                    debugLogTry("resourceFromJarURL", url.toString());
                     if (url.openStream() != null) {
                         foundResource = new LoadServiceResource(url, namePlusSuffix);
+                        debugLogFound(foundResource);
                     }
                 } catch (FileNotFoundException e) {
                 } catch (MalformedURLException e) {
@@ -800,8 +831,10 @@ public class LoadService {
                     String filename = namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2);
                     String canonicalFilename = canonicalizePath(filename);
                     
+                    debugLogTry("resourceFromJarURL", canonicalFilename.toString());
                     if(file.getJarEntry(canonicalFilename) != null) {
                         foundResource = new LoadServiceResource(new URL("jar:file:" + jarFile + "!/" + canonicalFilename), namePlusSuffix);
+                        debugLogFound(foundResource);
                     }
                 } catch(Exception e) {}
                 if (foundResource != null) {
@@ -912,17 +945,21 @@ public class LoadService {
             }
         }
         String canonicalEntry = after+namePlusSuffix;
-        if (current != null && current.getJarEntry(canonicalEntry) != null) {
-            try {
-                if (loadPathEntry.endsWith(".jar")) {
-                    foundResource = new LoadServiceResource(new URL("jar:file:" + loadPathEntry + "!/" + canonicalEntry), "/" + namePlusSuffix);
-                } else if (loadPathEntry.startsWith("file:")) {
-                    foundResource = new LoadServiceResource(new URL("jar:" + before + "!/" + canonicalEntry), loadPathEntry + "/" + namePlusSuffix);
-                } else {
-                    foundResource =  new LoadServiceResource(new URL("jar:file:" + loadPathEntry.substring(4) + "!/" + namePlusSuffix), loadPathEntry + namePlusSuffix);
+        if (current != null ) {
+            debugLogTry("resourceFromJarURLWithLoadPath", current.getName() + "!/" + canonicalEntry);
+            if (current.getJarEntry(canonicalEntry) != null) {
+                try {
+                    if (loadPathEntry.endsWith(".jar")) {
+                        foundResource = new LoadServiceResource(new URL("jar:file:" + loadPathEntry + "!/" + canonicalEntry), "/" + namePlusSuffix);
+                    } else if (loadPathEntry.startsWith("file:")) {
+                        foundResource = new LoadServiceResource(new URL("jar:" + before + "!/" + canonicalEntry), loadPathEntry + "/" + namePlusSuffix);
+                    } else {
+                        foundResource =  new LoadServiceResource(new URL("jar:file:" + loadPathEntry.substring(4) + "!/" + namePlusSuffix), loadPathEntry + namePlusSuffix);
+                    }
+                    debugLogFound(foundResource);
+                } catch (MalformedURLException e) {
+                    throw runtime.newIOErrorFromException(e);
                 }
-            } catch (MalformedURLException e) {
-                throw runtime.newIOErrorFromException(e);
             }
         }
         
@@ -954,8 +991,10 @@ public class LoadService {
                     }
                     actualPath = JRubyFile.create(JRubyFile.create(runtime.getCurrentDirectory(), loadPathEntry).getAbsolutePath(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 }
+                debugLogTry("resourceFromLoadPath", actualPath.toString());
                 if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath, absolute);
+                    debugLogFound(foundResource);
                 }
             }
         } catch (SecurityException secEx) {
@@ -986,8 +1025,10 @@ public class LoadService {
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                     //                    actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), reportedPath));
                 }
+                debugLogTry("resourceAsIs", actualPath.toString());
                 if (actualPath.isFile() && actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath);
+                    debugLogFound(foundResource);
                 }
             }
         } catch (SecurityException secEx) {
@@ -1024,11 +1065,14 @@ public class LoadService {
             if (entry.charAt(0) == '/' || (entry.length() > 1 && entry.charAt(1) == ':')) continue;
             
             // otherwise, try to load from classpath (Note: Jar resources always uses '/')
+            debugLogTry("fileInClasspath", entry + "/" + name);
             URL loc = classLoader.getResource(entry + "/" + name);
 
             // Make sure this is not a directory or unavailable in some way
             if (isRequireable(loc)) {
-                return new LoadServiceResource(loc, loc.getPath());
+                LoadServiceResource foundResource = new LoadServiceResource(loc, loc.getPath());
+                debugLogFound(foundResource);
+                return foundResource;
             }
         }
 
@@ -1037,19 +1081,26 @@ public class LoadService {
         
         // Try to load from classpath without prefix. "A/b.rb" will not load as 
         // "./A/b.rb" in a jar file.
+        debugLogTry("fileInClasspath", name);
         URL loc = classLoader.getResource(name);
 
-        return isRequireable(loc) ? new LoadServiceResource(loc, loc.getPath()) : null;
+        if (isRequireable(loc)) {
+            LoadServiceResource foundResource = new LoadServiceResource(loc, loc.getPath());
+            debugLogFound(foundResource);
+            return foundResource;
+        }
+
+        return null;
     }
     
     /* Directories and unavailable resources are not able to open a stream. */
     private boolean isRequireable(URL loc) {
         if (loc != null) {
-        	if (loc.getProtocol().equals("file") && new java.io.File(loc.getFile()).isDirectory()) {
-        		return false;
-        	}
-        	
-        	try {
+                if (loc.getProtocol().equals("file") && new java.io.File(loc.getFile()).isDirectory()) {
+                        return false;
+                }
+                
+                try {
                 loc.openConnection();
                 return true;
             } catch (Exception e) {}

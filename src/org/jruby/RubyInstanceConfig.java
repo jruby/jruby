@@ -225,6 +225,9 @@ public class RubyInstanceConfig {
     public static final boolean USE_GENERATED_HANDLES
             = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
 
+    public static final boolean DEBUG_LOAD_SERVICE
+        = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 
@@ -500,7 +503,9 @@ public class RubyInstanceConfig {
                 .append("    jruby.management.enabled=true|false\n")
                 .append("       Set whether JMX management is enabled. Default is true.\n")
                 .append("    jruby.debug.fullTrace=true|false\n")
-                .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n");
+                .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n")
+                .append("    jruby.debug.loadService=true|false\n")
+                .append("       Log the process of locating and loading libraries. Default is false.\n");
 
         return sb.toString();
     }
