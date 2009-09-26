@@ -99,10 +99,6 @@ public class ArrayJavaProxy extends JavaProxy {
         }
     }
     
-    public IRubyObject at(int index) {
-        return getJavaArray().at(index);
-    }
-    
     @JRubyMethod(name = "+", backtrace = true)
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
@@ -120,7 +116,9 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject each(ThreadContext context, Block block) {
         int length = (int)getJavaArray().length().getLongValue();
         for (int i = 0; i < length; i++) {
-            block.yield(context, JavaUtil.java_to_ruby(context.getRuntime(), at(i)));
+
+            IRubyObject rubyObj = getJavaArray().arefDirect(i);
+            block.yield(context, rubyObj);
         }
         return this;
     }
@@ -212,5 +210,10 @@ public class ArrayJavaProxy extends JavaProxy {
                 throw runtime.newTypeError(arg0, runtime.getJavaSupport().getJavaArrayClass());
             }
         }
+    }
+
+    @Deprecated
+    public IRubyObject at(int index) {
+        return getJavaArray().at(index);
     }
 }
