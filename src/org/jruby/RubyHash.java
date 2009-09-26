@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -719,16 +720,20 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     public RubyArray to_a() {
         final Ruby runtime = getRuntime();
-        final RubyArray result = RubyArray.newArray(runtime, size);
+        try {
+            final RubyArray result = RubyArray.newArray(runtime, size);
 
-        visitAll(new Visitor() {
-            public void visit(IRubyObject key, IRubyObject value) {
-                result.append(RubyArray.newArray(runtime, key, value));
-            }
-        });
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    result.append(RubyArray.newArray(runtime, key, value));
+                }
+            });
 
-        result.setTaint(isTaint());
-        return result;
+            result.setTaint(isTaint());
+            return result;
+        } catch (NegativeArraySizeException nase) {
+            throw concurrentModification();
+        }
     }
 
     /** rb_hash_to_s & to_s_hash
@@ -1190,15 +1195,19 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "keys")
     public RubyArray keys() {
         final Ruby runtime = getRuntime();
-        final RubyArray keys = RubyArray.newArray(runtime, size);
+        try {
+            final RubyArray keys = RubyArray.newArray(runtime, size);
 
-        visitAll(new Visitor() {
-            public void visit(IRubyObject key, IRubyObject value) {
-                keys.append(key);
-            }
-        });
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    keys.append(key);
+                }
+            });
 
-        return keys;
+            return keys;
+        } catch (NegativeArraySizeException nase) {
+            throw concurrentModification();
+        }
     }
 
     /** rb_hash_values
@@ -1206,15 +1215,19 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "values")
     public RubyArray rb_values() {
-        final RubyArray values = RubyArray.newArray(getRuntime(), size);
+        try {
+            final RubyArray values = RubyArray.newArray(getRuntime(), size);
 
-        visitAll(new Visitor() {
-            public void visit(IRubyObject key, IRubyObject value) {
-                values.append(value);
-            }
-        });
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    values.append(value);
+                }
+            });
 
-        return values;
+            return values;
+        } catch (NegativeArraySizeException nase) {
+            throw concurrentModification();
+        }
     }
 
     /** rb_hash_equal
@@ -1641,6 +1654,11 @@ public class RubyHash extends RubyObject implements Map {
 
     public Set directEntrySet() {
         return new BaseSet(DIRECT_ENTRY_VIEW);
+    }
+
+    private final RaiseException concurrentModification() {
+        return getRuntime().newConcurrencyError(
+                "Detected invalid hash contents due to unsynchronized modifications with concurrent users");
     }
 
     private class BaseSet extends AbstractSet {
