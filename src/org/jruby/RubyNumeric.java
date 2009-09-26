@@ -918,6 +918,7 @@ public class RubyNumeric extends RubyObject {
         return this;
     }
 
+    @Override
     public Object toJava(Class target) {
         return JavaUtil.getNumericConverter(target).coerce(this, target);
     }
@@ -931,6 +932,7 @@ public class RubyNumeric extends RubyObject {
         public InvalidIntegerException(String message) {
             super(message);
         }
+        @Override
         public Throwable fillInStackTrace() {
             return this;
         }
@@ -944,6 +946,7 @@ public class RubyNumeric extends RubyObject {
         public NumberTooLargeException(String message) {
             super(message);
         }
+        @Override
         public Throwable fillInStackTrace() {
             return this;
         }
