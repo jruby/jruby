@@ -1,7 +1,7 @@
 #
 # date.rb - date and time library
 #
-# Author: Tadayoshi Funaba 1998-2008
+# Author: Tadayoshi Funaba 1998-2009
 #
 # Documentation: William Webber <william@williamwebber.com>
 #
@@ -194,6 +194,7 @@
 #     puts secs_to_new_year()
 
 require 'date/format'
+require 'date/delta'
 
 # Class representing a date.
 #
@@ -927,7 +928,7 @@ class Date
 	  elem[e] = d.__send__(e)
 	end
 	elem[:wnum1] ||= 0
-	elem[:wday]  ||= 0
+	elem[:wday]  ||= 1
       end
     end
 
@@ -1336,6 +1337,9 @@ class Date
   def + (n)
     case n
     when Numeric; return self.class.new!(@ajd + n, @of, @sg)
+    when Delta
+      d = n.__send__(:delta)
+      return (self >> d.imag) + d.real
     end
     raise TypeError, 'expected numeric'
   end
@@ -1352,8 +1356,11 @@ class Date
     case x
     when Numeric; return self.class.new!(@ajd - x, @of, @sg)
     when Date;    return @ajd - x.ajd
+    when Delta
+      d = x.__send__(:delta)
+      return (self << d.imag) - d.real
     end
-    raise TypeError, 'expected numeric or date'
+    raise TypeError, 'expected numeric'
   end
 
   # Compare this date with another date.
@@ -1371,6 +1378,12 @@ class Date
     case other
     when Numeric; return @ajd <=> other
     when Date;    return @ajd <=> other.ajd
+    else
+      begin
+        l, r = other.coerce(self)
+        return l <=> r
+      rescue NoMethodError
+      end
     end
     nil
   end
@@ -1385,6 +1398,9 @@ class Date
     case other
     when Numeric; return jd == other
     when Date;    return jd == other.jd
+    else
+      l, r = other.coerce(self)
+      return l === r
     end
     false
   end

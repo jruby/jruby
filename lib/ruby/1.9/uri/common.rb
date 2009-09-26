@@ -1,7 +1,7 @@
 # = uri/common.rb
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
-# Revision:: $Id: common.rb 22784 2009-03-06 03:56:38Z nobu $
+# Revision:: $Id: common.rb 24773 2009-09-06 18:24:53Z naruse $
 # License::
 #   You can redistribute it and/or modify it under the same term as Ruby.
 #
@@ -501,6 +501,7 @@ module URI
     #   # => "@%3F@%21"
     #
     def escape(*arg)
+      warn "#{caller(1)[0]}: warning: URI.escape is obsolete" if $VERBOSE
       DEFAULT_PARSER.escape(*arg)
     end
     alias encode escape
@@ -526,6 +527,7 @@ module URI
     #   # => "http://example.com/?a=\t\r"
     #
     def unescape(*arg)
+      warn "#{caller(1)[0]}: warning: URI.unescape is obsolete" if $VERBOSE
       DEFAULT_PARSER.unescape(*arg)
     end
     alias decode unescape

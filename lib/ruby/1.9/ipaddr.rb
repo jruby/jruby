@@ -7,7 +7,7 @@
 #
 # You can redistribute and/or modify it under the same terms as Ruby.
 #
-# $Id: ipaddr.rb 22784 2009-03-06 03:56:38Z nobu $
+# $Id: ipaddr.rb 24411 2009-08-05 15:13:07Z knu $
 #
 # Contact:
 #   - Akinori MUSHA <knu@iDaemons.org> (current maintainer)
@@ -330,6 +330,16 @@ class IPAddr
     return @addr <=> other.to_i
   end
   include Comparable
+
+  # Checks equality used by Hash.
+  def eql?(other)
+    return self.class == other.class && self.hash == other.hash && self == other
+  end
+
+  # Returns a hash value used by Hash, Set, and Array classes
+  def hash
+    return ([@addr, @mask_addr].hash << 1) | (ipv4? ? 0 : 1)
+  end
 
   # Creates a Range object for the network address.
   def to_range
@@ -810,4 +820,31 @@ class TC_Operator < Test::Unit::TestCase
 
   end
 
+  def test_hash
+    a1 = IPAddr.new('192.168.2.0')
+    a2 = IPAddr.new('192.168.2.0')
+    a3 = IPAddr.new('3ffe:505:2::1')
+    a4 = IPAddr.new('3ffe:505:2::1')
+    a5 = IPAddr.new('127.0.0.1')
+    a6 = IPAddr.new('::1')
+    a7 = IPAddr.new('192.168.2.0/25')
+    a8 = IPAddr.new('192.168.2.0/25')
+
+    h = { a1 => 'ipv4', a2 => 'ipv4', a3 => 'ipv6', a4 => 'ipv6', a5 => 'ipv4', a6 => 'ipv6', a7 => 'ipv4', a8 => 'ipv4'}
+    assert_equal(5, h.size)
+    assert_equal('ipv4', h[a1])
+    assert_equal('ipv4', h[a2])
+    assert_equal('ipv6', h[a3])
+    assert_equal('ipv6', h[a4])
+
+    require 'set'
+    s = Set[a1, a2, a3, a4, a5, a6, a7, a8]
+    assert_equal(5, s.size)
+    assert_equal(true, s.include?(a1))
+    assert_equal(true, s.include?(a2))
+    assert_equal(true, s.include?(a3))
+    assert_equal(true, s.include?(a4))
+    assert_equal(true, s.include?(a5))
+    assert_equal(true, s.include?(a6))
+  end
 end

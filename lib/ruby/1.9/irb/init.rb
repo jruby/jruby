@@ -1,7 +1,7 @@
 #
 #   irb/init.rb - irb initialize module
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision: 24229 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -112,7 +112,9 @@ module IRB
 
 #    @CONF[:LC_MESSAGES] = "en"
     @CONF[:LC_MESSAGES] = Locale.new
-
+    
+    @CONF[:AT_EXIT] = []
+    
     @CONF[:DEBUG_LEVEL] = 1
   end
 

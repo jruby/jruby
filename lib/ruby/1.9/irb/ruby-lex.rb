@@ -1,7 +1,7 @@
 #
 #   irb/ruby-lex.rb - ruby lexcal analyzer
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision: 24555 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -14,7 +14,7 @@ require "irb/slex"
 require "irb/ruby-token"
 
 class RubyLex
-  @RCS_ID='-$Id: ruby-lex.rb 23985 2009-07-07 11:36:20Z keiju $-'
+  @RCS_ID='-$Id: ruby-lex.rb 24555 2009-08-16 12:32:35Z naruse $-'
 
   extend Exception2MessageMapper
   def_exception(:AlreadyDefinedToken, "Already defined token(%s)")
@@ -407,7 +407,7 @@ class RubyLex
       if @lex_state != EXPR_END && @lex_state != EXPR_CLASS &&
 	  (@lex_state != EXPR_ARG || @space_seen)
 	c = peek(0)
-	if /\S/ =~ c && (/["'`]/ =~ c || /[\w_]/ =~ c || c == "-")
+	if /\S/ =~ c && (/["'`]/ =~ c || /\w/ =~ c || c == "-")
 	  tk = identify_here_document
 	end
       end
@@ -728,7 +728,7 @@ class RubyLex
       printf "MATCH: start %s: %s\n", op, io.inspect if RubyLex.debug?
       if peek(0) =~ /[0-9]/
 	t = identify_number
-      elsif peek(0) =~ /[\w_]/
+      elsif peek(0) =~ /\w/
 	t = identify_identifier
       end
       printf "MATCH: end %s: %s\n", op, io.inspect if RubyLex.debug?
@@ -1047,6 +1047,8 @@ class RubyLex
       while ch = getc
 	if @quoted == ch and nest == 0
 	  break
+	elsif ch == "#" and peek(0) == "{"
+	  identify_string_dvar
 	elsif @ltype != "'" && @ltype != "]" && @ltype != ":" and ch == "#"
 	  subtype = true
 	elsif ch == '\\' and @ltype == "'" #'
@@ -1083,6 +1085,42 @@ class RubyLex
     end
   end
 
+  def identify_string_dvar
+    begin
+      getc
+
+      reserve_continue = @continue
+      reserve_ltype = @ltype
+      reserve_indent = @indent
+      reserve_indent_stack = @indent_stack
+      reserve_state = @lex_state
+      reserve_quoted = @quoted
+
+      @ltype = nil
+      @quoted = nil
+      @indent = 0
+      @indent_stack = []
+      @lex_state = EXPR_BEG
+      
+      loop do
+	@continue = false
+	prompt
+	tk = token
+	if @ltype or @continue or @indent > 0
+	  next
+	end
+	break if tk.kind_of?(TkRBRACE)
+      end
+    ensure
+      @continue = reserve_continue
+      @ltype = reserve_ltype
+      @indent = reserve_indent
+      @indent_stack = reserve_indent_stack
+      @lex_state = reserve_state
+      @quoted = reserve_quoted
+    end
+  end
+  
   def identify_comment
     @ltype = "#"
 

@@ -1,7 +1,7 @@
 #
 #   irb.rb - irb main module
 #   	$Release Version: 0.9.6 $
-#   	$Revision: 23985 $
+#   	$Revision: 24233 $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -22,7 +22,7 @@ require "irb/locale"
 STDOUT.sync = true
 
 module IRB
-  @RCS_ID='-$Id: irb.rb 23985 2009-07-07 11:36:20Z keiju $-'
+  @RCS_ID='-$Id: irb.rb 24233 2009-07-21 17:35:24Z keiju $-'
 
   class Abort < Exception;end
 
@@ -65,10 +65,18 @@ module IRB
       irb.signal_handle
     end
 
-    catch(:IRB_EXIT) do
-      irb.eval_input
+    begin
+      catch(:IRB_EXIT) do
+	irb.eval_input
+      end
+    ensure
+      irb_at_exit
     end
 #    print "\n"
+  end
+
+  def IRB.irb_at_exit
+    @CONF[:AT_EXIT].each{|hook| hook.call}
   end
 
   def IRB.irb_exit(irb, ret)

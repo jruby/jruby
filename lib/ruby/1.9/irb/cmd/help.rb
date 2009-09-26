@@ -1,7 +1,7 @@
 #
 #   help.rb - helper using ri
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision: 24227 $
 #
 # --
 #
@@ -11,17 +11,19 @@
 require 'rdoc/ri/driver'
 require 'rdoc/ri/util'
 
+require "irb/cmd/nop.rb"
+
 module IRB
   module ExtendCommand
-    module Help
+    class Help<Nop
       begin
-        @ri = RDoc::RI::Driver.new
+        Ri = RDoc::RI::Driver.new
       rescue SystemExit
       else
-        def self.execute(context, *names)
+        def execute(*names)
           names.each do |name|
             begin
-              @ri.get_info_for(name.to_s)
+              Ri.get_info_for(name.to_s)
             rescue RDoc::RI::Error
               puts $!.message
             end
