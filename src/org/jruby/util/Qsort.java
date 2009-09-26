@@ -1,197 +1,99 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2008-2009 Joseph LaFata <joe@quibb.org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.util.Stack;
+import java.util.ArrayList;
 import java.util.Comparator;
 
-/**
- * 
- * @author Joseph LaFata (qbproger)
- */
 public class Qsort {
-    /*
-     * Class Variables
-     */
+private static final int SIZE_THRESHOLD = 16;
 
-    private static int SIZE_THRESHOLD = 16;
-    private static int[] INCREMENT = new int[]{1, 4, 10, 23, 57,
-        132, 301, 701, 1750, 4023, 9258, 21293, 48974, 112640
-    };
-
-    /**
-     * The public function for sorting an array that's Comparable.
-     * @param a
-     */
-    public static void sort(Comparable[] a) {
-        if(a.length < SIZE_THRESHOLD) {
-            insertionsort(a, 0, a.length);
-            return;
-        }
-            
-        if(!quicksort_loop(a, 0, a.length, 2 * floorLog2(a.length))) {
-            insertionsort(a, 0, a.length);
-        }
-    }
-    
     public static void sort(Object[] a, Comparator c) {
         if(a.length < SIZE_THRESHOLD) {
             insertionsort(a, 0, a.length, c);
             return;
         }
-    
-        if(!quicksort_loop(a, 0, a.length, 2 * floorLog2(a.length), c)) {
-            insertionsort(a, 0, a.length, c);
-        }
-    }
-    
 
-    /**
-     * Sort the items in the array passed in, in ascending order.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     */
-    public static void sort(Comparable[] a, int begin, int end) {
-        if (begin < end) {
-            if((end - begin) < SIZE_THRESHOLD) {
-                insertionsort(a, begin, end);
-                return;
-            }
-            
-            if(!quicksort_loop(a, begin, end, 2 * floorLog2(end - begin)))
-                insertionsort(a, begin, end);
-        }
+        quicksort_loop(a, 0, a.length, c);
     }
-    
+
     public static void sort(Object[] a, int begin, int end, Comparator c) {
         if (begin < end) {
             if((end - begin) < SIZE_THRESHOLD) {
                 insertionsort(a, begin, end, c);
                 return;
             }
-            
-            if(!quicksort_loop(a, begin, end, 2 * floorLog2(end - begin), c))
-                insertionsort(a, begin, end, c);
+
+            quicksort_loop(a, begin, end, c);
         }
     }
 
-    /**
-     * This function is used to test the ends of the array.  If the array
-     * is ordered, but the last element is out of order, this function catches
-     * that case.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     * @return
-     */
-    private static void endTest(Comparable[] a, int lo, int hi) {
-        int comp1 = a[lo].compareTo(a[lo + 1]);
-        int comp2 = a[hi - 2].compareTo(a[hi - 1]);
-
-
-        if (comp1 <= 0) {
-            if (comp2 > 0) {
-                bubbleUp(a, lo, hi);
-            }
-        } else {
-            if (comp2 <= 0) {
-                bubbleDown(a, lo, hi);
-            } else {
-                bubbleBoth(a, lo, hi);
-            }
-        }
-        
-    }
-    
     private static void endTest(Object[] a, int lo, int hi, Comparator c) {
-        int comp1 = c.compare(a[lo], a[lo + 1]);
-        int comp2 = c.compare(a[hi - 2], a[hi - 1]);
-
-
-        if (comp1 <= 0) {
-            if (comp2 > 0) {
-                bubbleUp(a, lo, hi, c);
+        if (c.compare(a[lo], a[lo + 1]) <= 0) {
+            if (c.compare(a[hi - 2], a[hi - 1]) > 0) {
+                bubbleUp(a, lo, hi-1, c);
             }
         } else {
-            if (comp2 <= 0) {
-                bubbleDown(a, lo, hi, c);
+            if (c.compare(a[hi - 2], a[hi - 1]) > 0) {
+                insertionsort(a, lo, hi, c);
             } else {
-                bubbleBoth(a, lo, hi, c);
+                bubbleDown(a, lo, hi-1, c);
             }
         }
-        
+
     }
 
-    /**
-     * Test to see if the array is in sequential order.  This array will test
-     * the elements from lo+1 to hi-2 leaving out the ends because those
-     * are tested separately.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     * @return true if the array is sorted for the given indices.
-     */
-    private static boolean seqtest(Comparable[] a, int lo, int hi) {
-
-        for (int i = lo + 1; i < hi - 2; ++i) {
-            if (a[i].compareTo(a[i + 1]) > 0) {
-                return false;
-            }
-        }
-        endTest(a, lo, hi);
-        return true;
-    }
-    
     private static boolean seqtest(Object[] a, int lo, int hi, Comparator c) {
+        int i = lo + 1, j = hi - 2;
+        //sequential
+        while (i < j && c.compare(a[i], a[i+1]) <= 0)
+            i++;
 
-        for (int i = lo + 1; i < hi - 2; ++i) {
-            if (c.compare(a[i], a[i + 1]) > 0) {
+        if (i != j)
+        {
                 return false;
-            }
         }
         endTest(a, lo, hi, c);
         return true;
     }
 
-    /**
-     * Test to see if the array is in reverse order.  This array will test
-     * the elements from lo+1 to hi-2 leaving out the ends because those
-     * are tested separately.
-     * 
-     * This function will reverse the array if it's found
-     * to be in reverse order.
-     * 
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     * @return true if the array is sorted for the given indices.
-     */
-    private static boolean revtest(Comparable[] a, int lo, int hi) {
-        for (int i = lo + 1; i < hi - 2; ++i) {
-            if (a[i].compareTo(a[i + 1]) < 0) {
-                return false;
-            }
-        }
-        // reverse the entire area of the array selected if it's reversed.
-        int i = lo;
-        int j = hi - 1;
-        while (i < j) {
-            swap(a, i, j);
-            i++;
-            j--;
-        }
-        endTest(a, lo, hi);
-        return true;
-    }
-    
     private static boolean revtest(Object[] a, int lo, int hi, Comparator c) {
-        for (int i = lo + 1; i < hi - 2; ++i) {
-            if (c.compare(a[i], a[i + 1]) < 0) {
-                return false;
-            }
+        int i = lo + 1, j = hi - 2;
+        while (i < j && c.compare(a[i], a[i+1]) >= 0)
+            i++;
+
+        if (i != j)
+        {
+            return false;
         }
+
         // reverse the entire area of the array selected if it's reversed.
-        int i = lo;
-        int j = hi - 1;
+        i = lo;
         while (i < j) {
             swap(a, i, j);
             i++;
@@ -201,137 +103,21 @@ public class Qsort {
         return true;
     }
 
-    /**
-     * The quicksort loop of the sorting function.  It uses a stack and does 
-     * the quicksort iteratively.
-     * 
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     * @param depth_limit1 the depth limit after which the algorithm changes
-     *                      strategy.
-     */
-    private static boolean quicksort_loop(Comparable[] a, int lo1, int hi1, int depth_limit1) {
-        boolean done = false;
-        Stack<int[]> stack = new Stack<int[]>();
 
-        int[] entry = new int[3];
-        entry[0] = lo1;
-        entry[1] = hi1;
-        entry[2] = depth_limit1;
-        stack.push(entry);
 
-        boolean checklim = true;
+    private static void quicksort_loop(Object[] a, int lo, int hi, Comparator c) {
+        final ArrayList<int[]> stack = new ArrayList<int[]>(16);
 
-        while (stack.size() > 0) {
-            entry = stack.pop();
-            int lo = entry[0];
-            int hi = entry[1];
-            int depth_limit = entry[2];
+        int[] entry = new int[2];
+        entry[0] = lo;
+        entry[1] = hi;
 
-            // if the depth hits 0 switch to shell sort
-            // and continue.
-            if (depth_limit == 0) {
-                shellsort(a, lo, hi);
-                continue;
-            }
+        while (!stack.isEmpty() || entry != null) {
 
-            depth_limit--;
-
-            int midi = lo + (hi - lo) / 2;
-            Comparable mid = a[midi];
-            Comparable m1;
-            Comparable m3;
-
-            // do median of 7 if the array is over 200 elements.
-            if ((hi - lo) >= 200) {
-                int t = (hi - lo) / 8;
-                m1 = med3(a[lo + t], a[lo + t * 2], a[lo + t * 3]);
-                m3 = med3(a[midi + t], a[midi + t * 2], a[midi + t * 3]);
-            } else {
-                // if it's less than 200 do median of 3
-                int t = (hi - lo) / 4;
-                m1 = a[lo + t];
-                m3 = a[midi + t];
-            }
-            mid = med3(m1, mid, m3);
-
-            // if checklim is true and the length is greater than
-            // 63.  63 seemed arbirary to me, but that's the number
-            // ruby was using.  Only run this check once.  This is designed
-            // to catch sorted/reversed arrays.
-            if (checklim && hi - lo >= 63) {
-                checklim = false;
-                int comp1 = m1.compareTo(mid);
-                int comp2 = mid.compareTo(m3);
-                if (comp1 <= 0 && comp2 <= 0) {
-                    if (seqtest(a, lo, hi)) {
-                        if(lo == lo1 && hi == hi1)
-                            done = true;
-                        continue;
-                    }
-                }
-
-                if (comp1 >= 0 && comp2 >= 0) {
-                    if (revtest(a, lo, hi)) {
-                        if(lo == lo1 && hi == hi1)
-                            done = true;
-                        continue;
-                    }
-                }
-            }
-
-            int p = partition(a, lo, hi, mid);
-
-            // If it's greater than the threshold push it on the stack.
-            boolean entryUsed = false;
-            if (hi - p > SIZE_THRESHOLD) {
-                entryUsed = true;
-                entry[0] = p;
-                entry[1] = hi;
-                entry[2] = depth_limit;
-                stack.push(entry);
-            }
-
-            // If it's greater than the threshold push it on the stack.
-            if (p - lo > SIZE_THRESHOLD) {
-                if(entryUsed) entry = new int[3];
-                entry[0] = lo;
-                entry[1] = p;
-                entry[2] = depth_limit;
-                stack.push(entry);
-            }
-        }
-        
-        return done;
-    }
-    
-    private static boolean quicksort_loop(Object[] a, int lo1, int hi1, int depth_limit1, Comparator c) {
-        boolean done = false;
-        Stack<int[]> stack = new Stack<int[]>();
-
-        int[] entry = new int[3];
-        entry[0] = lo1;
-        entry[1] = hi1;
-        entry[2] = depth_limit1;
-        stack.push(entry);
-
-        boolean checklim = true;
-
-        while (stack.size() > 0) {
-            entry = stack.pop();
-            int lo = entry[0];
-            int hi = entry[1];
-            int depth_limit = entry[2];
-
-            // if the depth hits 0 switch to shell sort
-            // and continue.
-            if (depth_limit == 0) {
-                shellsort(a, lo, hi, c);
-                continue;
-            }
-
-            depth_limit--;
+            if (entry == null)
+                entry = stack.remove(stack.size() - 1);
+            lo = entry[0];
+            hi = entry[1];
 
             int midi = lo + (hi - lo) / 2;
             Object mid = a[midi];
@@ -351,133 +137,117 @@ public class Qsort {
             }
             mid = med3(m1, mid, m3, c);
 
-            // if checklim is true and the length is greater than
-            // 63.  63 seemed arbirary to me, but that's the number
-            // ruby was using.  Only run this check once.  This is designed
-            // to catch sorted/reversed arrays.
-            if (checklim && hi - lo >= 63) {
-                checklim = false;
-                int comp1 = c.compare(m1, mid);
-                int comp2 = c.compare(mid, m3);
-                if (comp1 <= 0 && comp2 <= 0) {
+            if (hi - lo >= 63) {
+                if (c.compare(m1, mid) <= 0 && c.compare(mid, m3) <= 0) {
                     if (seqtest(a, lo, hi, c)) {
-                        if(lo == lo1 && hi == hi1)
-                            done = true;
+                        entry = null;
                         continue;
                     }
                 }
-
-                if (comp1 >= 0 && comp2 >= 0) {
+                else if (c.compare(m1, mid) >= 0 && c.compare(mid, m3) >= 0) {
                     if (revtest(a, lo, hi, c)) {
-                        if(lo == lo1 && hi == hi1)
-                            done = true;
+                        entry = null;
                         continue;
                     }
                 }
             }
 
-            int p = partition(a, lo, hi, mid, c);
+            int[] p = partition(a, lo, hi, mid, c);
 
-            // If it's greater than the threshold push it on the stack.
-            boolean entryUsed = false;
-            if (hi - p > SIZE_THRESHOLD) {
-                entryUsed = true;
-                entry[0] = p;
+            if(hi - p[1] > SIZE_THRESHOLD && p[0] - lo > SIZE_THRESHOLD) {
+                entry[0] = p[1];
                 entry[1] = hi;
-                entry[2] = depth_limit;
-                stack.push(entry);
-            }
+                stack.add(entry);
 
-            // If it's greater than the threshold push it on the stack.
-            if (p - lo > SIZE_THRESHOLD) {
-                if(entryUsed) entry = new int[3];
+                entry = new int[2];
                 entry[0] = lo;
-                entry[1] = p;
-                entry[2] = depth_limit;
-                stack.push(entry);
+                entry[1] = p[0];
+            } else if (hi - p[1] > SIZE_THRESHOLD) {
+                entry[0] = p[1];
+                entry[1] = hi;
+                insertionsort(a, lo, p[0], c);
+            } else if (p[0] - lo > SIZE_THRESHOLD) {
+                entry[0] = lo;
+                entry[1] = p[0];
+                insertionsort(a, p[1], hi, c);
+            } else {
+                insertionsort(a, lo, p[0], c);
+                insertionsort(a, p[1], hi, c);
+                entry = null;
             }
         }
-        
-        return done;
     }
 
-    /**
-     * Partition the array between the two indices into two groups based on
-     * the Comparable passed in x.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     * @param x - The comparable to use to parition the elements.
-     * @return The pivot index
-     */
-    private static int partition(Comparable[] a, int lo, int hi, Comparable x) {
-        int i = lo, j = hi;
+
+    private static int[] partition(Object[] a, int lo1, int hi, Object x, Comparator c) {
+        int lo = lo1;
+        int i = lo, j = hi, c1 = 0;
+
+        while (lo < hi && c.compare(x, a[lo]) == 0)
+            lo++;
+        i = lo;
+
         while (true) {
-            while (i < hi && a[i].compareTo(x) < 0) {
+            while (i < j && (c1 = c.compare(a[i], x)) <= 0) {
+                if (c1 == 0 && i != lo)
+                {
+                    while (c.compare(x, a[lo]) == 0)
+                        lo++;
+
+                    if (lo > i)
+                        i = lo - 1;
+                    else
+                        swap(a, lo++, i);
+                }
                 i++;
             }
             j--;
-            while (j >= lo && x.compareTo(a[j]) < 0) {
+
+            while (j >= i && (c1 = c.compare(x, a[j])) < 0) {
                 j--;
             }
-            if (!(i < j)) {
-                return i;
+
+            if (i > j) {
+                break;
             }
-            swap(a, i, j);
+
+            if (c1 == 0) {
+                while (c.compare(x, a[lo]) == 0)
+                    lo++;
+
+                swap(a, i, j);
+
+                if (lo != i) {
+                    swap(a, lo++, i);
+                } else {
+                    lo++;
+                }
+
+                if (lo > i)
+                    i = lo - 1;
+            } else {
+                swap(a, i, j);
+            }
             i++;
         }
-    }
 
-    private static int partition(Object[] a, int lo, int hi, Object x, Comparator c) {
-        int i = lo, j = hi;
-        while (true) {
-            while (i < hi && c.compare(a[i], x) < 0) {
-                i++;
-            }
-            j--;
-            while (j >= lo && c.compare(x, a[j]) < 0) {
-                j--;
-            }
-            if (!(i < j)) {
-                return i;
-            }
-            swap(a, i, j);
-            i++;
+        c1 = ((i >= hi) ? hi-1 : i);
+
+        while (c1 > lo1 && c.compare(x, a[c1]) < 0 ) {
+            c1--;
         }
+
+        while (lo < hi && c.compare(x, a[lo]) == 0)
+            lo++;
+        lo--;
+
+        while (lo >= lo1 && c1 > lo)
+            swap(a, lo1++, c1--);
+        return new int[]{(c1 > lo) ? c1 + 1 : lo1, i};
     }
 
 
-    /**
-     * Return the median of the 3 passed in elements.
-     * @param lo
-     * @param mid
-     * @param hi
-     * @return
-     */
-    private static Comparable med3(Comparable lo, Comparable mid, Comparable hi) {
-        if (mid.compareTo(lo) < 0) {
-            if (hi.compareTo(mid) < 0) {
-                return mid;
-            } else {
-                if (hi.compareTo(lo) < 0) {
-                    return hi;
-                } else {
-                    return lo;
-                }
-            }
-        } else {
-            if (hi.compareTo(mid) < 0) {
-                if (hi.compareTo(lo) < 0) {
-                    return lo;
-                } else {
-                    return hi;
-                }
-            } else {
-                return mid;
-            }
-        }
-    }
-    
+
     private static Object med3(Object lo, Object mid, Object hi, Comparator c) {
         if (c.compare(mid, lo) < 0) {
             if (c.compare(hi, mid) < 0) {
@@ -502,170 +272,45 @@ public class Qsort {
         }
     }
 
-    /**
-     * Perform a shell sort on array a from indices lo to hi
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     */
-    private static void shellsort(Comparable[] a, int lo, int hi) {
-        int size = hi - lo + 1;
-        int increm = -1;
-        for (int i = INCREMENT.length - 1; i > -1; i--) {
-            if (INCREMENT[i] < size) {
-                increm = i;
-                break;
-            }
-        }
-
-        while (increm > -1) {
-            int increment = INCREMENT[increm];
-            int loInc = lo + increment;
-            for (int i = loInc; i < hi; i++) {
-                int j = i;
-                Comparable tmp = a[i];
-                while (j >= (loInc) && tmp.compareTo(a[j - increment]) < 0) {
-                    a[j] = a[j - increment];
-                    j -= increment;
-                }
-                a[j] = tmp;
-            }
-            increm--;
-        }
-    }
-    
-    private static void shellsort(Object[] a, int lo, int hi, Comparator c) {
-        int size = hi - lo + 1;
-        int increm = -1;
-        for (int i = INCREMENT.length - 1; i > -1; i--) {
-            if (INCREMENT[i] < size) {
-                increm = i;
-                break;
-            }
-        }
-
-        while (increm > -1) {
-            int increment = INCREMENT[increm];
-            int loInc = lo + increment;
-            for (int i = loInc; i < hi; i++) {
-                int j = i;
-                Object tmp = a[i];
-                while (j >= (loInc) && c.compare(tmp, a[j - increment]) < 0) {
-                    a[j] = a[j - increment];
-                    j -= increment;
-                }
-                a[j] = tmp;
-            }
-            increm--;
-        }
-    }
-
-    /**
-     * Insertion sort.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     */
-    private static void insertionsort(Comparable[] a, int lo, int hi) {
-        int i, j;
-        Comparable t;
-        for (i = lo; i < hi; i++) {
-            j = i;
-            t = a[i];
-            while (j != lo && t.compareTo(a[j - 1]) < 0) {
-                a[j] = a[j - 1];
-                j--;
-            }
-            a[j] = t;
-        }
-    }
-    
     private static void insertionsort(Object[] a, int lo, int hi, Comparator c) {
-        int i, j;
-        Object t;
-        for (i = lo; i < hi; i++) {
-            j = i;
-            t = a[i];
-            while (j != lo && c.compare(t, a[j - 1]) < 0) {
-                a[j] = a[j - 1];
-                j--;
+        int i;
+        for (i = lo+1; i < hi; i++) {
+            if (c.compare(a[i], a[i-1]) < 0)
+            {
+                int j = i - 1;
+                Object t = a[i];
+                a[i] = a[j];
+                for ( ; j != lo && c.compare(t, a[j-1]) < 0; --j)
+                {
+                    a[j] = a[j - 1];
+                }
+                a[j] = t;
             }
-            a[j] = t;
         }
     }
 
-    /**
-     * 2 iterations of bubble sort.
-     * One starting at the end of the array and bubbling up.
-     * One starting at the beginning of the array and bubbling down.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     */
-    private static void bubbleBoth(Comparable[] a, int lo, int hi) {
-        bubbleDown(a, lo, hi);
-        bubbleUp(a, lo, hi);
-    }
-    
-    private static void bubbleBoth(Object[] a, int lo, int hi, Comparator c) {
-        bubbleDown(a, lo, hi, c);
-        bubbleUp(a, lo, hi, c);
-    }
-
-    /**
-     * Does one iteration of bubble sort starting at the beginning, and
-     * bubbles down until it doesn't do a swap.
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     */
-    private static void bubbleDown(Comparable[] a, int lo, int hi) {
-        int i = lo;
-        int end = hi - 2;
-        while (i < end && a[i].compareTo(a[i + 1]) > 0) {
-            swap(a, i, ++i);
-        }
-    }
-    
     private static void bubbleDown(Object[] a, int lo, int hi, Comparator c) {
-        int i = lo;
-        int end = hi - 2;
-        while (i < end && c.compare(a[i], a[i + 1]) > 0) {
-            swap(a, i, ++i);
+        Object x = a[lo];
+        a[lo] = a[++lo];
+        while (lo < hi && c.compare(x, a[lo+1]) > 0) {
+            a[lo] = a[++lo];
         }
+        a[lo] = x;
     }
 
-    /**
-     * Does one iteration of bubble sort starting at the end and bubbling up
-     * to the beginning
-     * @param a - the array
-     * @param lo - Starting element index inclusive
-     * @param hi - End element index exclusive
-     */
-    private static void bubbleUp(Comparable[] a, int lo, int hi) {
-        int i = hi - 1;
-        int start = lo;
-        while (i > start && a[i].compareTo(a[i - 1]) < 0) {
-            swap(a, i, --i);
-        }
-    }
-    
     private static void bubbleUp(Object[] a, int lo, int hi, Comparator c) {
-        int i = hi - 1;
-        int start = lo;
-        while (i > start && c.compare(a[i], a[i - 1]) < 0) {
-            swap(a, i, --i);
+        Object x = a[hi];
+        a[hi] = a[--hi];
+        while (hi > lo && c.compare(x, a[hi]) < 0) {
+            a[hi] = a[--hi];
         }
+        a[hi] = x;
     }
 
     private static void swap(Object[] a, int i, int j) {
         Object t = a[i];
         a[i] = a[j];
         a[j] = t;
-    }
-
-    private static int floorLog2(int a) {
-        return (int) (Math.floor(Math.log(a) / Math.log(2)));
     }
 }
 
