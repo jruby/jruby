@@ -1307,6 +1307,7 @@
     <include name="samples/**"/>
     <include name="docs/**"/>
     <include name="COPYING*"/>
+    <include name="LICENSE.RUBY"/>
     <include name="README"/>
     <exclude name="lib/ruby/**"/>
   </patternset>
