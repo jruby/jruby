@@ -67,26 +67,33 @@ module JRubyCompiler
         compiler.compile_root(node, asmCompiler, inspector)
 
         asmCompiler.write_class(JavaFile.new(target))
+        0
       rescue Exception
         puts "Failure during compilation of file #{filename}:\n#{$!}"
+        1
       ensure
         file.close unless file.nil?
       end
     end
 
+    errors = 0
     # Process all the file arguments
     filenames.each do |filename|
       unless File.exists? filename
         puts "Error -- file not found: #{filename}"
+        errors += 1
         next
       end
 
       if (File.directory?(filename))
         puts "Compiling all in '#{File.expand_path(filename)}'..."
-        Dir.glob(filename + "/**/*.rb").each(&compile_proc)
+        Dir.glob(filename + "/**/*.rb").each { |filename|
+          errors += compile_proc[filename]
+	}
       else
-        compile_proc[filename]
+        errors += compile_proc[filename]
       end
     end
+    errors
   end
 end
