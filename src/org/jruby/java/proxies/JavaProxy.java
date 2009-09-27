@@ -1,27 +1,35 @@
 package org.jruby.java.proxies;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyHash.Visitor;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 
 public class JavaProxy extends RubyObject {
     protected final RubyClass.VariableAccessor objectAccessor;
@@ -46,6 +54,10 @@ public class JavaProxy extends RubyObject {
         // this resulted in object being null after unmarshalling...
         if (object == null) object = ((JavaObject)dataGetStruct()).getValue();
         return object;
+    }
+
+    private JavaObject getJavaObject() {
+        return (JavaObject)dataGetStruct();
     }
     
     public static RubyClass createJavaProxy(ThreadContext context) {
@@ -214,6 +226,79 @@ public class JavaProxy extends RubyObject {
             return runtime.newBoolean(equal);
         }
         return runtime.getFalse();
+    }
+
+    @JRubyMethod
+    public IRubyObject java_send(ThreadContext context, IRubyObject rubyName) {
+        Class jclass = getJavaObject().getJavaClass();
+        String name = rubyName.asJavaString();
+        Ruby runtime = context.getRuntime();
+
+        try {
+            Method jmethod = jclass.getMethod(name);
+            JavaMethod method = new JavaMethod(runtime, jmethod);
+            return method.invokeDirect(getObject());
+        } catch (NoSuchMethodException nsme) {
+            throw runtime.newNameError("Java method not found", name + "()");
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject java_send(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes) {
+        throw context.getRuntime().newArgumentError(2, 3);
+    }
+
+    @JRubyMethod
+    public IRubyObject java_send(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
+        String name = rubyName.asJavaString();
+        RubyArray argTypesAry = argTypes.convertToArray();
+        Ruby runtime = context.getRuntime();
+
+        if (argTypesAry.size() != 1) {
+            throw runtime.newArgumentError("arg type count (" + argTypesAry.size() + ") != arg count (1)");
+        }
+
+        Class argTypeClass = (Class)argTypesAry.eltInternal(0).toJava(Class.class);
+        Class jclass = getJavaObject().getJavaClass();
+
+        try {
+            Method jmethod = jclass.getMethod(name, argTypeClass);
+            JavaMethod method = new JavaMethod(runtime, jmethod);
+            return method.invokeDirect(getObject(), arg0.toJava(argTypeClass));
+        } catch (NoSuchMethodException nsme) {
+            throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypeClass));
+        }
+    }
+
+    @JRubyMethod(required = 4, rest = true)
+    public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        Arity.checkArgumentCount(runtime, args, 3, -1);
+        
+        String name = args[0].asJavaString();
+        RubyArray argTypesAry = args[1].convertToArray();
+        int argsLen = args.length - 2;
+
+        if (argTypesAry.size() != argsLen) {
+            throw runtime.newArgumentError("arg type count (" + argTypesAry.size() + ") != arg count (" + argsLen + ")");
+        }
+
+        Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argsLen]);
+
+        Object[] argsAry = new Object[argsLen];
+        for (int i = 0; i < argsLen; i++) {
+            argsAry[i] = args[i + 2].toJava(argTypesClasses[i]);
+        }
+
+        Class jclass = getJavaObject().getJavaClass();
+
+        try {
+            Method jmethod = jclass.getMethod(name, argTypesClasses);
+            JavaMethod method = new JavaMethod(runtime, jmethod);
+            return method.invokeDirect(getObject(), argsAry);
+        } catch (NoSuchMethodException nsme) {
+            throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypesClasses));
+        }
     }
 
     public Object toJava(Class type) {
