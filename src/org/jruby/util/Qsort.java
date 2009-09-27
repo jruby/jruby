@@ -291,7 +291,6 @@ private static final int SIZE_THRESHOLD = 16;
 
     private static void bubbleDown(Object[] a, int lo, int hi, Comparator c) {
         Object x = a[lo];
-        a[lo] = a[++lo];
         while (lo < hi && c.compare(x, a[lo+1]) > 0) {
             a[lo] = a[++lo];
         }
@@ -300,8 +299,7 @@ private static final int SIZE_THRESHOLD = 16;
 
     private static void bubbleUp(Object[] a, int lo, int hi, Comparator c) {
         Object x = a[hi];
-        a[hi] = a[--hi];
-        while (hi > lo && c.compare(x, a[hi]) < 0) {
+        while (hi > lo && c.compare(x, a[hi-1]) < 0) {
             a[hi] = a[--hi];
         }
         a[hi] = x;
