@@ -59,7 +59,7 @@ public class TimeOutputFormatter {
     }
 
     public String format(String sequence) {
-        String paddedWith = " ";
+        char paddedWith = ' ';
         if (formatter != null) {
             for (int i = 0; i < formatter.length(); i++) {
                 switch (formatter.charAt(i)) {
@@ -67,10 +67,10 @@ public class TimeOutputFormatter {
                         sequence = sequence.toUpperCase();
                         break;
                     case '_':
-                        paddedWith = " ";
+                        paddedWith = ' ';
                         break;
                     case '0':
-                        paddedWith = "0";
+                        paddedWith = '0';
                         break;
                 }
             }
@@ -81,13 +81,16 @@ public class TimeOutputFormatter {
         return sequence;
     }
 
-    private String padding(String sequence, String padder) {
+    private String padding(String sequence, char padder) {
         if (formatter != null && formatter.contains("-")) return sequence;
 
         if (sequence != null && sequence.length() < totalPadding) {
+            StringBuilder seqBuf = new StringBuilder(totalPadding);
             for (int i = sequence.length(); i < totalPadding; i++) {
-                sequence = padder + sequence;
+                seqBuf.append(padder);
             }
+            seqBuf.append(sequence);
+            return seqBuf.toString();
         }
         return sequence;
     }
