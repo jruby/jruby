@@ -735,25 +735,8 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_cmp     
      * 
      */
-    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        final BigInteger otherValue;
-        if (other instanceof RubyFixnum) {
-            otherValue = fix2big((RubyFixnum) other);
-        } else if (other instanceof RubyBignum) {
-            otherValue = ((RubyBignum) other).value;
-        } else if (other instanceof RubyFloat) {
-            return dbl_cmp(getRuntime(), big2dbl(this), ((RubyFloat)other).getDoubleValue());
-        } else {
-            return coerceCmp(context, "<=>", other);
-        }
-
-        // wow, the only time we can use the java protocol ;)        
-        return RubyFixnum.newFixnum(getRuntime(), value.compareTo(otherValue));
-    }
-
-    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject op_cmp19(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
             otherValue = fix2big((RubyFixnum) other);

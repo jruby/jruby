@@ -421,21 +421,8 @@ public class RubyFloat extends RubyNumeric {
     /** flo_cmp
      * 
      */
-    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-        case ClassIndex.FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
-            return dbl_cmp(getRuntime(), value, b);
-        default:
-            return coerceCmp(context, "<=>", other);
-        }
-    }
-
-    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject op_cmp19(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().index) {
         case ClassIndex.FIXNUM:
         case ClassIndex.BIGNUM:
