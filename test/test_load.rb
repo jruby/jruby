@@ -173,4 +173,12 @@ DEPS
       File.dirname(__FILE__), 'jar_with_relative_require1.jar')
     require 'test/require_relative1'
   end
+
+  def test_loading_jar_with_dot_so
+    assert_nothing_raised {
+      require 'test/jruby-3977.so.jar'
+      load 'jruby-3977.rb'
+      assert $jruby3977
+    }
+  end
 end
