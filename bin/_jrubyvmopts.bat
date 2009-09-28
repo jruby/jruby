@@ -20,6 +20,16 @@ set _JRUBY_BOOTCP_OPTS=-Xbootclasspath/a:"%JRUBY_CP%"
 set SAFE_JAVA_HOME=%JAVA_HOME:(=^^(%
 set SAFE_JAVA_HOME=%SAFE_JAVA_HOME:)=^^)%
 
+if not exist "%SAFE_JAVA_HOME%\bin\java.exe" goto noJavaHome
+goto okJavaHome
+
+:noJavaHome
+echo The JAVA_HOME environment variable is not defined correctly.
+echo Please set JAVA_HOME to the path to your JDK installation.
+set JRUBY_BAT_ERROR=1
+goto :EOF
+:okJavaHome
+
 rem
 rem Can you believe I'm rewriting batch arg processing in batch files because batch
 rem file arg processing sucks so bad? Can you believe this is even possible?
