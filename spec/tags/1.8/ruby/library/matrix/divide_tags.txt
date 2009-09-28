@@ -1,0 +1,1 @@
+fails(JRUBY-3716):Matrix#/ returns the result of dividing self by another Matrix

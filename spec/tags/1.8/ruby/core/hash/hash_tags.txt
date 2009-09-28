@@ -1,0 +1,2 @@
+fails(JRUBY-4007):Hash#hash returns the same hash for recursive hashes
+fails(JRUBY-4007):Hash#hash returns the same hash for recursive hashes through arrays
