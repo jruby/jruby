@@ -1131,7 +1131,10 @@ public class RubyIO extends RubyObject {
     // This appears to be some windows-only mode.  On a java platform this is a no-op
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
-            return this;
+        if (isClosed()) {
+            throw getRuntime().newIOError("closed stream");
+        }
+        return this;
     }
 
     @JRubyMethod(name = "binmode?", compat = CompatVersion.RUBY1_9)
