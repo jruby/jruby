@@ -1,3 +1,7 @@
+# prelude is called early in bootstrap for 1.9 so we need to load native
+# thread bits too.
+require 'thread.jar'
+
 # Mutex
 
 class Mutex
