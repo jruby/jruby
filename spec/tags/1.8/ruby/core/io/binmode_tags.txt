@@ -1,1 +1,0 @@
-fails(JRUBY-4011):IO#binmode raises an IOError on closed stream
