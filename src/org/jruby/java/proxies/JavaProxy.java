@@ -12,12 +12,15 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyHash.Visitor;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
+import org.jruby.java.invokers.InstanceMethodInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
@@ -28,6 +31,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 
@@ -228,7 +232,7 @@ public class JavaProxy extends RubyObject {
         return runtime.getFalse();
     }
 
-    @JRubyMethod
+    @JRubyMethod(backtrace = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject rubyName) {
         Class jclass = getJavaObject().getJavaClass();
         String name = rubyName.asJavaString();
@@ -243,12 +247,12 @@ public class JavaProxy extends RubyObject {
         }
     }
 
-    @JRubyMethod
+    @JRubyMethod(backtrace = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes) {
         throw context.getRuntime().newArgumentError(2, 3);
     }
 
-    @JRubyMethod
+    @JRubyMethod(backtrace = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
         String name = rubyName.asJavaString();
         RubyArray argTypesAry = argTypes.convertToArray();
@@ -270,7 +274,7 @@ public class JavaProxy extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 4, rest = true)
+    @JRubyMethod(required = 4, rest = true, backtrace = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, 3, -1);
@@ -296,6 +300,24 @@ public class JavaProxy extends RubyObject {
             Method jmethod = jclass.getMethod(name, argTypesClasses);
             JavaMethod method = new JavaMethod(runtime, jmethod);
             return method.invokeDirect(getObject(), argsAry);
+        } catch (NoSuchMethodException nsme) {
+            throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypesClasses));
+        }
+    }
+
+    @JRubyMethod(backtrace = true)
+    public IRubyObject java_method(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes) {
+        String name = rubyName.asJavaString();
+        RubyArray argTypesAry = argTypes.convertToArray();
+        Ruby runtime = context.getRuntime();
+
+        Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+        Class jclass = getJavaObject().getJavaClass();
+
+        try {
+            Method jmethod = jclass.getMethod(name, argTypesClasses);
+            InstanceMethodInvoker invoker = new InstanceMethodInvoker(getMetaClass(), jmethod);
+            return RubyMethod.newMethod(metaClass, name + CodegenUtils.prettyParams(argTypesClasses), metaClass, name, invoker, this);
         } catch (NoSuchMethodException nsme) {
             throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypesClasses));
         }

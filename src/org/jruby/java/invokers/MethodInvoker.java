@@ -3,6 +3,8 @@ package org.jruby.java.invokers;
 import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -17,10 +19,19 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
     MethodInvoker(RubyModule host, List<Method> methods) {
         super(host);
         this.methods = methods.toArray(new Method[methods.size()]);
-        
+        trySetAccessible(this.methods);
+    }
+
+    MethodInvoker(RubyModule host, Method method) {
+        super(host);
+        this.methods = new Method[] {method};
+        trySetAccessible(methods);
+    }
+
+    private static void trySetAccessible(Method[] methods) {
         if (!Ruby.isSecurityRestricted()) {
             try {
-                Method.setAccessible(this.methods, true);
+                Method.setAccessible(methods, true);
             } catch(SecurityException e) {}
         }
     }

@@ -11,9 +11,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceMethodInvoker extends MethodInvoker {
-
     public InstanceMethodInvoker(RubyModule host, List<Method> methods) {
         super(host, methods);
+    }
+
+    public InstanceMethodInvoker(RubyModule host, Method method) {
+        super(host, method);
     }
 
     @Override
