@@ -344,6 +344,11 @@ public class RubyIO extends RubyObject {
         ioClass.fastSetConstant("SEEK_CUR", runtime.newFixnum(Stream.SEEK_CUR));
         ioClass.fastSetConstant("SEEK_END", runtime.newFixnum(Stream.SEEK_END));
 
+        if (runtime.is1_9()) {
+            ioClass.defineModuleUnder("WaitReadable");
+            ioClass.defineModuleUnder("WaitWritable");
+        }
+
         return ioClass;
     }
 
