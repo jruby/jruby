@@ -5,17 +5,18 @@ import java.util.List;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaMethod;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class StaticMethodInvoker extends MethodInvoker {
-
     public StaticMethodInvoker(RubyClass host, List<Method> methods) {
         super(host, methods);
+    }
+
+    public StaticMethodInvoker(RubyClass host, Method method) {
+        super(host, method);
     }
 
     @Override

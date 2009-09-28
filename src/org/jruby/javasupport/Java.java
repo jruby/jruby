@@ -59,9 +59,11 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyClassPathVariable;
 import org.jruby.RubyException;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubyUnboundMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -83,10 +85,14 @@ import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.dispatch.CallableSelector;
+import org.jruby.java.invokers.InstanceMethodInvoker;
+import org.jruby.java.invokers.MethodInvoker;
+import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name = "Java")
@@ -463,7 +469,44 @@ public class Java implements Library {
         }
         proxyClass.callMethod(runtime.getCurrentContext(), "java_class=", javaClass);
         javaClass.setupProxy(proxyClass);
+
+        // add java_method for unbound use
+        proxyClass.defineAnnotatedMethods(JavaProxyClassMethods.class);
         return proxyClass;
+    }
+
+    public static class JavaProxyClassMethods {
+        @JRubyMethod(backtrace = true, meta = true)
+        public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName, IRubyObject argTypes) {
+            String name = rubyName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            Ruby runtime = context.getRuntime();
+
+            RubyClass rubyClass;
+            if (proxyClass instanceof RubyClass) {
+                rubyClass = (RubyClass)proxyClass;
+            } else {
+                throw runtime.newTypeError(proxyClass, runtime.getModule());
+            }
+
+            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+            Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
+
+            try {
+                Method jmethod = jclass.getMethod(name, argTypesClasses);
+                MethodInvoker invoker;
+                if (Modifier.isStatic(jmethod.getModifiers())) {
+                    invoker = new StaticMethodInvoker(rubyClass, jmethod);
+                    return RubyMethod.newMethod(rubyClass, name + CodegenUtils.prettyParams(argTypesClasses), rubyClass, name, invoker, proxyClass);
+                } else {
+                    invoker = new InstanceMethodInvoker(rubyClass, jmethod);
+                    return RubyUnboundMethod.newUnboundMethod(rubyClass, name + CodegenUtils.prettyParams(argTypesClasses), rubyClass, name, invoker);
+                }
+            } catch (NoSuchMethodException nsme) {
+                String errorName = jclass.getName() + "." + name + CodegenUtils.prettyParams(argTypesClasses);
+                throw runtime.newNameError("Java method not found: " + errorName, name);
+            }
+        }
     }
 
     public static IRubyObject concrete_proxy_inherited(IRubyObject recv, IRubyObject subclass) {

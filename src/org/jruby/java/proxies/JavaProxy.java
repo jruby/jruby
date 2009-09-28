@@ -21,6 +21,8 @@ import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.java.invokers.InstanceMethodInvoker;
+import org.jruby.java.invokers.MethodInvoker;
+import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
@@ -243,7 +245,8 @@ public class JavaProxy extends RubyObject {
             JavaMethod method = new JavaMethod(runtime, jmethod);
             return method.invokeDirect(getObject());
         } catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("Java method not found", name + "()");
+            String errorName = jclass.getName() + "." + name + "()";
+            throw runtime.newNameError("Java method not found", errorName);
         }
     }
 
@@ -270,7 +273,8 @@ public class JavaProxy extends RubyObject {
             JavaMethod method = new JavaMethod(runtime, jmethod);
             return method.invokeDirect(getObject(), arg0.toJava(argTypeClass));
         } catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypeClass));
+                String errorName = jclass.getName() + "." + name + CodegenUtils.prettyParams(argTypeClass);
+            throw runtime.newNameError("Java method not found: " + errorName, name);
         }
     }
 
@@ -301,7 +305,8 @@ public class JavaProxy extends RubyObject {
             JavaMethod method = new JavaMethod(runtime, jmethod);
             return method.invokeDirect(getObject(), argsAry);
         } catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypesClasses));
+                String errorName = jclass.getName() + "." + name + CodegenUtils.prettyParams(argTypesClasses);
+            throw runtime.newNameError("Java method not found: " + errorName, name);
         }
     }
 
@@ -316,10 +321,17 @@ public class JavaProxy extends RubyObject {
 
         try {
             Method jmethod = jclass.getMethod(name, argTypesClasses);
-            InstanceMethodInvoker invoker = new InstanceMethodInvoker(getMetaClass(), jmethod);
-            return RubyMethod.newMethod(metaClass, name + CodegenUtils.prettyParams(argTypesClasses), metaClass, name, invoker, this);
+            MethodInvoker invoker;
+            if (Modifier.isStatic(jmethod.getModifiers())) {
+                invoker = new StaticMethodInvoker(metaClass, jmethod);
+                return RubyMethod.newMethod(metaClass, name + CodegenUtils.prettyParams(argTypesClasses), metaClass, name, invoker, getMetaClass());
+            } else {
+                invoker = new InstanceMethodInvoker(metaClass, jmethod);
+                return RubyMethod.newMethod(metaClass, name + CodegenUtils.prettyParams(argTypesClasses), metaClass, name, invoker, this);
+            }
         } catch (NoSuchMethodException nsme) {
-            throw runtime.newNameError("Java method not found", name + CodegenUtils.prettyParams(argTypesClasses));
+                String errorName = jclass.getName() + "." + name + CodegenUtils.prettyParams(argTypesClasses);
+            throw runtime.newNameError("Java method not found: " + errorName, name);
         }
     }
 
