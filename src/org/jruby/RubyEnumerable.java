@@ -655,11 +655,6 @@ public class RubyEnumerable {
             callEach(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
-
-                    if (larg instanceof RubyArray && !((RubyArray) larg).isEmpty()) {
-                        larg = ((RubyArray) larg).at(runtime.newFixnum(0));
-                    }
-                    
                     IRubyObject value = block.yield(ctx, larg);
                     synchronized (result) {
                         result.append(value);
