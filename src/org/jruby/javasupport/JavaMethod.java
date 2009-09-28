@@ -663,4 +663,12 @@ public class JavaMethod extends JavaCallable {
             return invokeDirectWithExceptionHandling(method, javaInvokee, arg0, arg1, arg2, arg3);
         }
     }
+
+    public static RaiseException newMethodNotFoundError(Ruby runtime, Class target, String prettyName, String simpleName) {
+        return runtime.newNameError("java method not found: " + target.getName() + "." + prettyName, simpleName);
+    }
+
+    public static RaiseException newArgSizeMismatchError(Ruby runtime, int typeCount, int argCount) {
+        return runtime.newArgumentError("arg type count (" + typeCount + ") != arg count (" + argCount + ")");
+    }
 }

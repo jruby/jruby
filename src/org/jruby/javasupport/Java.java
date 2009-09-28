@@ -479,65 +479,46 @@ public class Java implements Library {
         @JRubyMethod(backtrace = true, meta = true)
         public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName) {
             String name = rubyName.asJavaString();
-            Ruby runtime = context.getRuntime();
 
-            RubyClass rubyClass;
-            if (proxyClass instanceof RubyClass) {
-                rubyClass = (RubyClass)proxyClass;
-            } else {
-                throw runtime.newTypeError(proxyClass, runtime.getModule());
-            }
-
-            Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
-            String prettyName = name + "()";
-
-            try {
-                Method jmethod = jclass.getMethod(name);
-                MethodInvoker invoker;
-                if (Modifier.isStatic(jmethod.getModifiers())) {
-                    invoker = new StaticMethodInvoker(rubyClass, jmethod);
-                    return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
-                } else {
-                    invoker = new InstanceMethodInvoker(rubyClass, jmethod);
-                    return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
-                }
-            } catch (NoSuchMethodException nsme) {
-                String errorName = jclass.getName() + "." + prettyName;
-                throw runtime.newNameError("Java method not found: " + errorName, name);
-            }
+            return getRubyMethod(context, proxyClass, name);
         }
 
         @JRubyMethod(backtrace = true, meta = true)
         public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName, IRubyObject argTypes) {
             String name = rubyName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
-            Ruby runtime = context.getRuntime();
-
-            RubyClass rubyClass;
-            if (proxyClass instanceof RubyClass) {
-                rubyClass = (RubyClass)proxyClass;
-            } else {
-                throw runtime.newTypeError(proxyClass, runtime.getModule());
-            }
-
             Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
-            Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
-            String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 
-            try {
-                Method jmethod = jclass.getMethod(name, argTypesClasses);
-                MethodInvoker invoker;
-                if (Modifier.isStatic(jmethod.getModifiers())) {
-                    invoker = new StaticMethodInvoker(rubyClass, jmethod);
-                    return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
-                } else {
-                    invoker = new InstanceMethodInvoker(rubyClass, jmethod);
-                    return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
-                }
-            } catch (NoSuchMethodException nsme) {
-                String errorName = jclass.getName() + "." + prettyName;
-                throw runtime.newNameError("Java method not found: " + errorName, name);
+            return getRubyMethod(context, proxyClass, name, argTypesClasses);
+        }
+    }
+
+    private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject proxyClass, String name, Class... argTypesClasses) {
+        Ruby runtime = context.getRuntime();
+        RubyClass rubyClass;
+        
+        if (proxyClass instanceof RubyClass) {
+            rubyClass = (RubyClass)proxyClass;
+        } else {
+            throw runtime.newTypeError(proxyClass, runtime.getModule());
+        }
+
+        Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
+        String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
+        
+        try {
+            Method jmethod = jclass.getMethod(name, argTypesClasses);
+            MethodInvoker invoker;
+            if (Modifier.isStatic(jmethod.getModifiers())) {
+                invoker = new StaticMethodInvoker(rubyClass, jmethod);
+                return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
+            } else {
+                invoker = new InstanceMethodInvoker(rubyClass, jmethod);
+                return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
             }
+        } catch (NoSuchMethodException nsme) {
+            String errorName = jclass.getName() + "." + prettyName;
+            throw runtime.newNameError("Java method not found: " + errorName, name);
         }
     }
 
