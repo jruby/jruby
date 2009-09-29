@@ -1,8 +1,6 @@
 require 'rbconfig'
 raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['host_os'] =~ /mswin/
 
-warn "Win32API: This is only a partial implementation, and is likely broken"
-
 require 'ffi'
 
 class Win32API

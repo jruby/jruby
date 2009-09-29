@@ -186,6 +186,6 @@ unless defined?(OpenSSL)
       end
     end
     warn %{JRuby limited openssl loaded. gem install jruby-openssl for full support.
-http://wiki.jruby.org/wiki/JRuby_Builtin_OpenSSL}
+http://jruby.kenai.com/pages/JRuby_Builtin_OpenSSL}
   end
 end

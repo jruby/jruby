@@ -38,6 +38,7 @@ import java.io.IOException;
 import org.jruby.Ruby;
 
 import org.jruby.ext.posix.JavaSecuredFile;
+import org.jruby.platform.Platform;
 
 /**
  * <p>This file acts as an alternative to NormalizedFile, due to the problems with current working 
@@ -49,6 +50,14 @@ public class JRubyFile extends JavaSecuredFile {
 
     public static JRubyFile create(String cwd, String pathname) {
         return createNoUnicodeConversion(cwd, pathname);
+    }
+
+    public static String normalizeSeps(String path) {
+        if (Platform.IS_WINDOWS) {
+            return path.replace(File.separatorChar, '/');
+        } else {
+            return path;
+        }
     }
 
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
@@ -66,9 +75,7 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static String getFileProperty(String property) {
-        String value = SafePropertyAccessor.getProperty(property, "/");
-        
-        return value.replace(File.separatorChar, '/');
+        return normalizeSeps(SafePropertyAccessor.getProperty(property, "/"));
     }
 
     private JRubyFile(File file) {
@@ -81,22 +88,22 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public String getAbsolutePath() {
-        return new File(super.getPath()).getAbsolutePath().replace(File.separatorChar, '/'); 
+        return normalizeSeps(new File(super.getPath()).getAbsolutePath());
     }
 
     @Override
     public String getCanonicalPath() throws IOException {
-        return super.getCanonicalPath().replace(File.separatorChar, '/');
+        return normalizeSeps(super.getCanonicalPath());
     }
 
     @Override
     public String getPath() {
-        return super.getPath().replace(File.separatorChar, '/');
+        return normalizeSeps(super.getPath());
     }
 
     @Override
     public String toString() {
-        return super.toString().replace(File.separatorChar, '/');
+        return normalizeSeps(super.toString());
     }
 
     @Override
@@ -113,7 +120,7 @@ public class JRubyFile extends JavaSecuredFile {
     public String getParent() {
         String par = super.getParent();
         if (par != null) {
-            par = par.replace(File.separatorChar, '/');
+            par = normalizeSeps(par);
         }
         return par;
     }
@@ -154,7 +161,7 @@ public class JRubyFile extends JavaSecuredFile {
         
         String[] smartFiles = new String[files.length];
         for (int i = 0; i < files.length; i++) {
-            smartFiles[i] = files[i].replace(File.separatorChar, '/');
+            smartFiles[i] = normalizeSeps(files[i]);
         }
         return smartFiles;
     }
