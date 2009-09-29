@@ -415,6 +415,7 @@
           <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+        <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
         <arg value="--command"/>
         <arg value="maybe_install_gems"/>
@@ -503,6 +504,7 @@
           <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+        <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
         <arg value="--command"/>
         <arg value="maybe_install_gems"/>
