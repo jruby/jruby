@@ -256,8 +256,13 @@ public class RubyMethod extends RubyObject implements DataType {
         return str;
     }
 
-    @JRubyMethod(name = "name")
+    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_8)
     public IRubyObject name(ThreadContext context) {
+        return context.getRuntime().newString(methodName);
+    }
+
+    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    public IRubyObject name19(ThreadContext context) {
         return context.getRuntime().newSymbol(methodName);
     }
 
