@@ -161,6 +161,7 @@ public class RbConfigLibrary implements Library {
         String siteLibDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8").getPath();
         String siteArchDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath();
         String archDir = new NormalizedFile(libdir, "ruby/1.8/java").getPath();
+        String shareDir = new NormalizedFile(normalizedHome, "share").getPath();
 
         setConfig(configHash, "libdir", libdir);
         setConfig(configHash, "rubylibdir",     rubyLibDir);
@@ -170,7 +171,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "archdir",   archDir);
         setConfig(configHash, "topdir",   archDir);
         setConfig(configHash, "configure_args", "");
-        setConfig(configHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
+        setConfig(configHash, "datadir", shareDir);
         setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
         setConfig(configHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
         setConfig(configHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
@@ -180,6 +181,10 @@ public class RbConfigLibrary implements Library {
             setConfig(configHash, "EXEEXT", ".exe");
         } else {
             setConfig(configHash, "EXEEXT", "");
+        }
+
+        if (runtime.is1_9()) {
+            setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
         }
         
         RubyHash mkmfHash = RubyHash.newHash(runtime);
