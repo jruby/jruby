@@ -6,51 +6,52 @@
 
 require 'rbconfig'
 
-DIR = File.dirname(__FILE__)
+SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
+TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS__DIR)
 
 class MSpecScript
   # Language features specs
-  set :language, [ DIR + '/ruby/language' ]
+  set :language, [ SPEC_DIR + '/language' ]
 
   # Core library specs
   set :core, [
-    DIR + '/ruby/core',
+    SPEC_DIR + '/core',
 
-    '^' + DIR + '/ruby/core/continuation'
+    '^' + SPEC_DIR + '/core/continuation'
   ]
 
   # Standard library specs
   set :library, [
-    DIR + '/ruby/library',
+    SPEC_DIR + '/library',
 
     # obsolete libraries
-    '^' + DIR + '/ruby/library/cgi-lib',
-    '^' + DIR + '/ruby/library/date2',
-    '^' + DIR + '/ruby/library/enumerator',
-    '^' + DIR + '/ruby/library/eregex',
-    '^' + DIR + '/ruby/library/finalize',
-    '^' + DIR + '/ruby/library/ftools',
-    '^' + DIR + '/ruby/library/generator',
-    '^' + DIR + '/ruby/library/getopts',
-    '^' + DIR + '/ruby/library/importenv',
-    '^' + DIR + '/ruby/library/jcode',
-    '^' + DIR + '/ruby/library/mailread',
-    '^' + DIR + '/ruby/library/parsearg',
-    '^' + DIR + '/ruby/library/parsedate',
-    '^' + DIR + '/ruby/library/ping',
-    '^' + DIR + '/ruby/library/readbytes',
-    '^' + DIR + '/ruby/library/rubyunit',
-    '^' + DIR + '/ruby/library/runit',
-    '^' + DIR + '/ruby/library/soap',
-    '^' + DIR + '/ruby/library/wsdl',
-    '^' + DIR + '/ruby/library/xsd',
-    '^' + DIR + '/ruby/library/Win32API',
+    '^' + SPEC_DIR + '/library/cgi-lib',
+    '^' + SPEC_DIR + '/library/date2',
+    '^' + SPEC_DIR + '/library/enumerator',
+    '^' + SPEC_DIR + '/library/eregex',
+    '^' + SPEC_DIR + '/library/finalize',
+    '^' + SPEC_DIR + '/library/ftools',
+    '^' + SPEC_DIR + '/library/generator',
+    '^' + SPEC_DIR + '/library/getopts',
+    '^' + SPEC_DIR + '/library/importenv',
+    '^' + SPEC_DIR + '/library/jcode',
+    '^' + SPEC_DIR + '/library/mailread',
+    '^' + SPEC_DIR + '/library/parsearg',
+    '^' + SPEC_DIR + '/library/parsedate',
+    '^' + SPEC_DIR + '/library/ping',
+    '^' + SPEC_DIR + '/library/readbytes',
+    '^' + SPEC_DIR + '/library/rubyunit',
+    '^' + SPEC_DIR + '/library/runit',
+    '^' + SPEC_DIR + '/library/soap',
+    '^' + SPEC_DIR + '/library/wsdl',
+    '^' + SPEC_DIR + '/library/xsd',
+    '^' + SPEC_DIR + '/library/Win32API',
 
-    '^' + DIR + '/ruby/library/test/unit/collector',
-    '^' + DIR + '/ruby/library/test/unit/ui',
-    '^' + DIR + '/ruby/library/test/unit/util',
+    '^' + SPEC_DIR + '/library/test/unit/collector',
+    '^' + SPEC_DIR + '/library/test/unit/ui',
+    '^' + SPEC_DIR + '/library/test/unit/util',
 
-    '^' + DIR + '/ruby/library/dl',  # reimplemented and API changed
+    '^' + SPEC_DIR + '/library/dl',  # reimplemented and API changed
   ]
 
   # An ordered list of the directories containing specs to run
@@ -61,20 +62,20 @@ class MSpecScript
   set :ci_files, get(:files)
 
   # Optional library specs
-  set :ffi, DIR + '/ruby/optional/ffi'
+  set :ffi, SPEC_DIR + '/optional/ffi'
 
   # A list of _all_ optional library specs
   set :optional, [get(:ffi)]
 
-  set :target, DIR + '/../bin/' + Config::CONFIG['ruby_install_name']
+  set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name']
 
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
-                        [%r(ruby/language/),     'tags/1.9/ruby/language/'],
-                        [%r(ruby/core/),         'tags/1.9/ruby/core/'],
-                        [%r(ruby/command_line/), 'tags/1.9/ruby/command_line/'],
-                        [%r(ruby/library/),      'tags/1.9/ruby/library/'],
+                        [%r(^.*/language/),     TAGS_DIR + '/1.9/ruby/language/'],
+                        [%r(^.*/core/),         TAGS_DIR + '/1.9/ruby/core/'],
+                        [%r(^.*/command_line/), TAGS_DIR + '/1.9/ruby/command_line/'],
+                        [%r(^.*/library/),      TAGS_DIR + '/1.9/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 end
