@@ -43,7 +43,6 @@ import org.jruby.ast.Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.ClassCache;
 
 /**
@@ -199,20 +198,6 @@ public class JavaEmbedUtils {
             public EvalUnit parse(Ruby runtime, InputStream in, String filename, int lineNumber) {
                 return new InterpretedEvalUnit(runtime, runtime.parseFile(in, filename, null, lineNumber));
             }
-
-            /**
-             * Parse the script and return an object which can be run().  This allows the script
-             * to be parsed once and evaluated many times.
-             * @param runtime to parse the script under
-             * @param in the script as an inputstream to be parsed
-             * @param filename the filename to display for parse errors and backtraces
-             * @param scope the scope to be used for sharing variables between Java and Ruby
-             * @param lineNumber the linenumber to display for parse errors and backtraces
-             * @return an object which can be run
-             */
-            public EvalUnit parse(Ruby runtime, InputStream in, String filename, ManyVarsDynamicScope scope, int lineNumber) {
-                return new InterpretedEvalUnit(runtime, runtime.parseFile(in, filename, scope, lineNumber), scope);
-            }
         };
     }
 
@@ -220,21 +205,6 @@ public class JavaEmbedUtils {
      * All implementers can be run and will return the last value in the evaluation unit.
      */
     public static interface EvalUnit {
-        /**
-         * @return runtime, which has been used for parsing
-         */
-        public Ruby getRuntime();
-
-        /**
-         * @return parsed node
-         */
-        public Node getNode();
-
-        /**
-         * @return scope to refer local variables.
-         */
-        public ManyVarsDynamicScope getScope();
-
         /**
          * @return results of executing this evaluation unit.
          */
@@ -248,28 +218,10 @@ public class JavaEmbedUtils {
     public static class InterpretedEvalUnit implements EvalUnit {
         private Ruby runtime;
         private Node node;
-        private ManyVarsDynamicScope scope;
 
         protected InterpretedEvalUnit(Ruby runtime, Node node) {
-            this(runtime, node, null);
-        }
-
-        protected InterpretedEvalUnit(Ruby runtime, Node node, ManyVarsDynamicScope scope) {
             this.runtime = runtime;
             this.node = node;
-            this.scope = scope;
-        }
-
-        public Ruby getRuntime() {
-            return runtime;
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        public ManyVarsDynamicScope getScope() {
-            return scope;
         }
 
         public IRubyObject run() {
