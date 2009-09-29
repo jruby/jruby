@@ -170,3 +170,8 @@ namespace :maven do
     end
   end
 end
+
+task :installer do
+  ant "dist"
+  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 install/jruby_winjre.install4j"
+end

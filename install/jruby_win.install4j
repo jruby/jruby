@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="4.2.4" transformSequenceNumber="2">
-  <directoryPresets config="../../../../Documents" />
   <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="1.4.0RC1" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
@@ -150,7 +149,7 @@
                   </void>
                   <void property="bannerImageFile">
                     <object class="com.install4j.api.beans.ExternalFile">
-                      <string>../../../../Documents/jruby_logo_collage.png</string>
+                      <string>jruby_logo_collage.png</string>
                     </object>
                   </void>
                 </object>
