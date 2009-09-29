@@ -555,7 +555,7 @@ public final class Ruby {
         }
     }
     
-    private Script tryCompile(Node node) {
+    public Script tryCompile(Node node) {
         return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader()));
     }
     
@@ -621,7 +621,7 @@ public final class Ruby {
         return script;
     }
     
-    private IRubyObject runScript(Script script) {
+    public IRubyObject runScript(Script script) {
         ThreadContext context = getCurrentContext();
         
         try {

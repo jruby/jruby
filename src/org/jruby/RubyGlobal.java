@@ -588,7 +588,7 @@ public class RubyGlobal {
         }
     }
 
-    private static class InputGlobalVariable extends GlobalVariable {
+    public static class InputGlobalVariable extends GlobalVariable {
         public InputGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
@@ -603,7 +603,7 @@ public class RubyGlobal {
         }
     }
 
-    private static class OutputGlobalVariable extends GlobalVariable {
+    public static class OutputGlobalVariable extends GlobalVariable {
         public OutputGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
