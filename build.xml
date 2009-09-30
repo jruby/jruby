@@ -76,6 +76,7 @@
         <os arch="i386"/>
         <os arch="x86"/>
         <os arch="powerpc"/>
+        <os arch="ppc"/>
         <os arch="sparc"/>
       </or>
     </condition>
