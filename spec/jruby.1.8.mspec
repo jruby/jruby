@@ -40,7 +40,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/openssl',
     '^' + SPEC_DIR + '/library/ping',
     '^' + SPEC_DIR + '/library/readline',
-    '^' + SPEC_DIR + '/library/securerandom',
 
     # unstable
     '^' + SPEC_DIR + '/library/socket',

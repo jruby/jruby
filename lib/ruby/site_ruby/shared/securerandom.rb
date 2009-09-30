@@ -45,7 +45,8 @@ class SecureRandom
   # If secure random number generator is not available,
   # NotImplementedError is raised.
   def self.random_bytes(n=nil)
-    n ||= 16
+    n = (n.nil?) ? 16 : n.to_int
+
     raise ArgumentError, "non-integer argument: #{n}" unless n.is_a?(Fixnum)
     raise ArgumentError, "negative argument: #{n}" if n < 0
 
