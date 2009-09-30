@@ -48,21 +48,21 @@
           <entry location="gem" fileType="regular" />
           <entry location="install/jruby.install4j" fileType="regular" />
           <entry location="ivy" fileType="regular" />
-          <entry location="jruby-bin-1.4.0dev.tar.gz" fileType="regular" />
-          <entry location="jruby-bin-1.4.0dev.tar.gz.md5" fileType="regular" />
-          <entry location="jruby-bin-1.4.0dev.tar.gz.sha1" fileType="regular" />
-          <entry location="jruby-bin-1.4.0dev.zip" fileType="regular" />
-          <entry location="jruby-bin-1.4.0dev.zip.md5" fileType="regular" />
-          <entry location="jruby-bin-1.4.0dev.zip.sha1" fileType="regular" />
+          <entry location="jruby-bin-1.4.0RC1.tar.gz" fileType="regular" />
+          <entry location="jruby-bin-1.4.0RC1.tar.gz.md5" fileType="regular" />
+          <entry location="jruby-bin-1.4.0RC1.tar.gz.sha1" fileType="regular" />
+          <entry location="jruby-bin-1.4.0RC1.zip" fileType="regular" />
+          <entry location="jruby-bin-1.4.0RC1.zip.md5" fileType="regular" />
+          <entry location="jruby-bin-1.4.0RC1.zip.sha1" fileType="regular" />
           <entry location="jruby-complete.jar" fileType="regular" />
           <entry location="jruby-complete.jar.md5" fileType="regular" />
           <entry location="jruby-complete.jar.sha1" fileType="regular" />
-          <entry location="jruby-src-1.4.0dev.tar.gz" fileType="regular" />
-          <entry location="jruby-src-1.4.0dev.tar.gz.md5" fileType="regular" />
-          <entry location="jruby-src-1.4.0dev.tar.gz.sha1" fileType="regular" />
-          <entry location="jruby-src-1.4.0dev.zip" fileType="regular" />
-          <entry location="jruby-src-1.4.0dev.zip.md5" fileType="regular" />
-          <entry location="jruby-src-1.4.0dev.zip.sha1" fileType="regular" />
+          <entry location="jruby-src-1.4.0RC1.tar.gz" fileType="regular" />
+          <entry location="jruby-src-1.4.0RC1.tar.gz.md5" fileType="regular" />
+          <entry location="jruby-src-1.4.0RC1.tar.gz.sha1" fileType="regular" />
+          <entry location="jruby-src-1.4.0RC1.zip" fileType="regular" />
+          <entry location="jruby-src-1.4.0RC1.zip.md5" fileType="regular" />
+          <entry location="jruby-src-1.4.0RC1.zip.sha1" fileType="regular" />
           <entry location="jruby.bnd.template" fileType="regular" />
           <entry location="lib/.cvsignore" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
