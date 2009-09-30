@@ -353,10 +353,9 @@ public class RubyHash extends RubyObject implements Map {
         public boolean equals(Object other){
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
-            if(key == otherEntry.key || key.eql(otherEntry.key)){
-                if(value == otherEntry.value || value.equals(otherEntry.value)) return true;
-            }
-            return false;
+            
+            return (key == otherEntry.key || key.eql(otherEntry.key)) &&
+                    (value == otherEntry.value || value.equals(otherEntry.value));
         }
 
         @Override
@@ -468,8 +467,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (checkForExisting) {
             for (RubyHashEntry entry = table[i]; entry != null; entry = entry.next) {
-                IRubyObject k;
-                if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) {
+                if (internalKeyExist(entry, hash, key)) {
                     entry.value = value;
                     return;
                 }
@@ -489,10 +487,16 @@ public class RubyHash extends RubyObject implements Map {
     private final RubyHashEntry internalGetEntry(IRubyObject key) {
         final int hash = hashValue(key.hashCode());
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
-            IRubyObject k;
-            if (entry.hash == hash && ((k = entry.key) == key || key.eql(k))) return entry;
+            if (internalKeyExist(entry, hash, key)) {
+                return entry;
+            }
         }
         return NO_ENTRY;
+    }
+
+    private boolean internalKeyExist(RubyHashEntry entry, int hash, IRubyObject key) {
+        return (entry.hash == hash
+            && (entry.key == key || (!isComparedByIdentity() && key.eql(entry.key))));
     }
 
     // delete implementation
@@ -1443,20 +1447,38 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = "replace", required = 1)
+    @JRubyMethod(name = "replace", required = 1, compat = CompatVersion.RUBY1_8)
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
+        final RubyHash self = this;
+        return replaceCommon(context, other, new Visitor() {
+            public void visit(IRubyObject key, IRubyObject value) {
+                self.op_aset(context, key, value);
+            }
+        });
+    }
+
+    @JRubyMethod(name = "replace", required = 1, compat = CompatVersion.RUBY1_9)
+    public RubyHash replace19(final ThreadContext context, IRubyObject other) {
+        final RubyHash self = this;
+        return replaceCommon(context, other, new Visitor() {
+            public void visit(IRubyObject key, IRubyObject value) {
+                self.op_aset19(context, key, value);
+            }
+        });
+    }
+
+    private RubyHash replaceCommon(final ThreadContext context, IRubyObject other, Visitor visitor) {
         final RubyHash otherHash = other.convertToHash();
 
         if (this == otherHash) return this;
 
         rb_clear();
 
-        final RubyHash self = this;
-        otherHash.visitAll(new Visitor() {
-            public void visit(IRubyObject key, IRubyObject value) {
-                self.op_aset(context, key, value);
-            }
-        });
+        if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
+            setComparedByIdentity(true);
+        }
+
+        otherHash.visitAll(visitor);
 
         ifNone = otherHash.ifNone;
 
@@ -1525,6 +1547,32 @@ public class RubyHash extends RubyObject implements Map {
         RubyArray ary = to_a();
         ary.callMethod(context, "flatten!", level);
         return ary;
+    }
+
+    @JRubyMethod(name = "compare_by_identity", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject getCompareByIdentity(ThreadContext context) {
+        modify();
+        setComparedByIdentity(true);
+        return this;
+    }
+
+    @JRubyMethod(name = "compare_by_identity?", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject getCompareByIdentity_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(isComparedByIdentity());
+    }
+
+    @JRubyMethod(name = "dup", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject dup(ThreadContext context) {
+        RubyHash dup = (RubyHash) super.dup();
+        dup.setComparedByIdentity(isComparedByIdentity());
+        return dup;
+    }
+
+    @JRubyMethod(name = "clone", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rbClone(ThreadContext context) {
+        RubyHash clone = (RubyHash) super.rbClone();
+        clone.setComparedByIdentity(isComparedByIdentity());
+        return clone;
     }
 
     public boolean hasDefaultProc() {
@@ -1659,6 +1707,30 @@ public class RubyHash extends RubyObject implements Map {
     private final RaiseException concurrentModification() {
         return getRuntime().newConcurrencyError(
                 "Detected invalid hash contents due to unsynchronized modifications with concurrent users");
+    }
+
+    /**
+     * Is this object compared by identity or not? Shortcut for doing
+     * getFlag(COMPARE_BY_IDENTITY_F).
+     *
+     * @return true if this object is compared by identity, false otherwise
+     */
+    protected boolean isComparedByIdentity() {
+        return (flags & COMPARE_BY_IDENTITY_F) != 0;
+    }
+
+    /**
+     * Sets whether this object is compared by identity or not. Shortcut for doing
+     * setFlag(COMPARE_BY_IDENTITY_F, frozen).
+     *
+     * @param comparedByIdentity should this object be compared by identity?
+     */
+    public void setComparedByIdentity(boolean comparedByIdentity) {
+        if (comparedByIdentity) {
+            flags |= COMPARE_BY_IDENTITY_F;
+        } else {
+            flags &= ~COMPARE_BY_IDENTITY_F;
+        }
     }
 
     private class BaseSet extends AbstractSet {
