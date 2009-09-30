@@ -24,34 +24,16 @@ class MSpecScript
   set :library, [
     SPEC_DIR + '/library',
 
+    # unstable
+    '^' + SPEC_DIR + '/library/socket',
+    '^' + SPEC_DIR + '/library/syslog',
+
     # obsolete libraries
-    '^' + SPEC_DIR + '/library/cgi-lib',
-    '^' + SPEC_DIR + '/library/date2',
     '^' + SPEC_DIR + '/library/enumerator',
-    '^' + SPEC_DIR + '/library/eregex',
-    '^' + SPEC_DIR + '/library/finalize',
     '^' + SPEC_DIR + '/library/ftools',
     '^' + SPEC_DIR + '/library/generator',
-    '^' + SPEC_DIR + '/library/getopts',
-    '^' + SPEC_DIR + '/library/importenv',
-    '^' + SPEC_DIR + '/library/jcode',
-    '^' + SPEC_DIR + '/library/mailread',
-    '^' + SPEC_DIR + '/library/parsearg',
     '^' + SPEC_DIR + '/library/parsedate',
     '^' + SPEC_DIR + '/library/ping',
-    '^' + SPEC_DIR + '/library/readbytes',
-    '^' + SPEC_DIR + '/library/rubyunit',
-    '^' + SPEC_DIR + '/library/runit',
-    '^' + SPEC_DIR + '/library/soap',
-    '^' + SPEC_DIR + '/library/wsdl',
-    '^' + SPEC_DIR + '/library/xsd',
-    '^' + SPEC_DIR + '/library/Win32API',
-
-    '^' + SPEC_DIR + '/library/test/unit/collector',
-    '^' + SPEC_DIR + '/library/test/unit/ui',
-    '^' + SPEC_DIR + '/library/test/unit/util',
-
-    '^' + SPEC_DIR + '/library/dl',  # reimplemented and API changed
   ]
 
   # An ordered list of the directories containing specs to run
