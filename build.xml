@@ -1343,6 +1343,7 @@
     <include name="Rakefile"/>
     <include name="build.xml"/>
     <include name="build-config.xml"/>
+    <include name="ivy/build.xml"/>
     <include name="nbproject/*"/>
     <include name=".project"/>
     <include name=".classpath"/>
