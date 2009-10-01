@@ -15,8 +15,8 @@ describe "A Java package" do
     org.xml.sax.helpers.should == JavaUtilities.get_package_module_dot_format("org.xml.sax.helpers")
     org.xml.sax.helpers.ParserFactory.should respond_to 'makeParser'
 
-    com.sun.jna.should == JavaUtilities.get_package_module_dot_format("com.sun.jna")
-    com.sun.jna.Function.should respond_to "getFunction"
+    java.util.should == JavaUtilities.get_package_module_dot_format("java.util")
+    java.util.Arrays.should respond_to "asList"
   end
 
   it "can be imported using 'include_package package.module" do
