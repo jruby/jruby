@@ -1,1 +1,0 @@
-fails(JRUBY-2349):Constant lookup rule only searches a Module or Class

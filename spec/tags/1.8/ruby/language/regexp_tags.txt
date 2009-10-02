@@ -1,1 +1,0 @@
-fails(JRUBY-3471):Literal Regexps does not do thread synchronization for /o

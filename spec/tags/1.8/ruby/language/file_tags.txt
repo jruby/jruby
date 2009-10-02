@@ -1,2 +1,1 @@
 fails(JRUBY-3567):The __FILE__ constant equals a relative path when required using a relative path
-fails:The __FILE__ constant equals an absolute path when required using a relative path
