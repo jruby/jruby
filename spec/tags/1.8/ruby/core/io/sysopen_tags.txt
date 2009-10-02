@@ -1,0 +1,1 @@
+fails(JRUBY-4033):IO.sysopen works on directories
