@@ -275,7 +275,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
@@ -323,7 +323,7 @@
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <manifest>
@@ -349,7 +349,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
@@ -445,7 +445,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
@@ -535,7 +535,7 @@
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jna-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
         <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
