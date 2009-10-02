@@ -1,1 +1,0 @@
-fails(Bug compatible with 1.8.7):Kernel#load returns __FILE__ as an absolute path

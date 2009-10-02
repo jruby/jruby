@@ -1,1 +1,0 @@
-fails:Dir#pos= does nothing if given a position that was not previously returned by #pos/#tell

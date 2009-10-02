@@ -1,1 +1,0 @@
-fails:String#% supports negative bignums by prefixing the value with zeros

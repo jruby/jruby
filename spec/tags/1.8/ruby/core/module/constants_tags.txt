@@ -1,1 +1,0 @@
-fails(JRUBY-2279):Module#constants returns an array with the names of all accessible constants

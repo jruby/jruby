@@ -1,1 +1,0 @@
-fails(JRUBY-3336):Module#module_eval shares a scope across sibling evals
