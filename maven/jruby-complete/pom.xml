@@ -102,7 +102,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jaffl</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.2</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
