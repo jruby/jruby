@@ -1,4 +1,0 @@
-fails(JRUBY-3320):ERB#run print the result of compiled ruby code
-fails(JRUBY-3320):ERB#run share local variables
-fails(JRUBY-3320):ERB#run is able to h() or u() if ERB::Util is included
-fails(JRUBY-3320):ERB#run use TOPLEVEL_BINDING if binding is not passed

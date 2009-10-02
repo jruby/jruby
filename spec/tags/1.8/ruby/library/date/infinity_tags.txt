@@ -1,3 +1,0 @@
-fails(JRUBY-3319):Date::Infinity should be able to compare Infinity objects
-fails(JRUBY-3319):Date::Infinity should be able to return plus Infinity for abs
-fails(JRUBY-3319):Date::Infinity should be able to use -@ and +@ for Date::Infinity
