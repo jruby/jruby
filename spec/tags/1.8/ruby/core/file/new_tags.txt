@@ -1,1 +1,0 @@
-fails:File.new return a new File with modus num and permissions

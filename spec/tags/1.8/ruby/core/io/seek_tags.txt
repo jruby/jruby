@@ -1,2 +1,0 @@
-fails(JRUBY-3276):IO#seek moves the read position and clears EOF with SEEK_CUR
-fails(JRUBY-3276):IO#seek moves the read position and clears EOF with SEEK_END

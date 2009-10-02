@@ -1,1 +1,0 @@
-fails(JRUBY-2253):Kernel#exec raises a SystemCallError if cmd cannot execute

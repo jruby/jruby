@@ -1,1 +1,0 @@
-fails(Faulty spec, or MRI bug):ARGF.lineno returns the current line number on each file

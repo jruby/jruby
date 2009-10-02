@@ -1,1 +1,0 @@
-fails(JRUBY-2281):IO#write_nonblock on a file writes all of the string's bytes but does not buffer them

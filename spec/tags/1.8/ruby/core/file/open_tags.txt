@@ -1,1 +1,0 @@
-fails:File.open opens a file that no exists when use File::NOCTTY mode

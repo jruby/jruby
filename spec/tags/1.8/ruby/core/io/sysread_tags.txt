@@ -1,2 +1,0 @@
-fails:IO#sysread on a file reads the specified number of bytes from the file to the buffer
-fails:IO#sysread on a file coerces the second argument to string and uses it as a buffer
