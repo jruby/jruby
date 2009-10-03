@@ -276,7 +276,6 @@
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
@@ -324,7 +323,6 @@
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.5.1.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
@@ -350,7 +348,6 @@
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
@@ -446,7 +443,6 @@
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
@@ -536,7 +532,6 @@
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jna.jar"/>
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/jffi.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
@@ -1360,16 +1355,6 @@
       </fileset>
     </copy>
     <mkdir dir="dist/lib/native"/>
-    <unzip src="build_lib/jna.jar" dest="dist/lib/native">
-        <patternset>
-            <include name="**/libjnidispatch.*"/>
-        </patternset>
-        <mapper>
-            <filtermapper>
-                <replacestring from="com/sun/jna" to="."/>
-            </filtermapper>
-        </mapper>
-    </unzip>
     <unzip dest="dist/lib/native">
         <fileset dir="build_lib">
             <include name="jffi-*.jar"/>
