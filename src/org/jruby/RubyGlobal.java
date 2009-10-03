@@ -264,7 +264,7 @@ public class RubyGlobal {
         // On platforms without a c-library accessable through JNA, getpid will return hashCode 
         // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
         // $$ on getpid() where available, we have the same semantics as MRI.
-        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.getPosix().getpid())));
+        runtime.getGlobalVariables().defineReadonly("$$", new PidAccessor(runtime));
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
@@ -655,6 +655,27 @@ public class RubyGlobal {
         @Override
         public IRubyObject get() {
             return runtime.getLoadService().getLoadedFeatures();
+        }
+    }
+
+    /**
+     * A special accessor for getpid, to avoid loading the posix subsystem until
+     * it is needed.
+     */
+    private static final class PidAccessor implements IAccessor {
+        private final Ruby runtime;
+        private IRubyObject pid = null;
+
+        public PidAccessor(Ruby runtime) {
+            this.runtime = runtime;
+        }
+
+        public IRubyObject getValue() {
+            return pid != null ? pid : (pid = runtime.newFixnum(runtime.getPosix().getpid()));
+        }
+
+        public IRubyObject setValue(IRubyObject newValue) {
+            throw runtime.newRuntimeError("cannot assign to $$");
         }
     }
 }
