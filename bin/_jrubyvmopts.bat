@@ -166,7 +166,13 @@ set _CMP=
 goto vmoptsLoop
 
 :vmoptsDone
+
+rem substitute _P only if _RUBY_OPTS is defined,
+rem otherwise we'll get an error.
+if not defined _RUBY_OPTS goto rubyoptsDone
 set _RUBY_OPTS=%_RUBY_OPTS:_P=|%
+
+:rubyoptsDone
 set _VM_OPTS=%_VM_OPTS% %_JAVA_VM% %_MEM% %_STK% %_DFLT_VM_OPTS%
 set _DFLT_VM_OPTS=
 set _MEM=
