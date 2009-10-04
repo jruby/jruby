@@ -82,8 +82,7 @@ class UNIXSocketTests < Test::Unit::TestCase
   # this is intentional, otherwise test run fails on windows
   def test_dummy; end
 
-  # TODO: not working on solaris right now; see JRUBY-2232
-  if defined?(UNIXSocket) #&& !Java::org.jruby.ext.posix.util.Platform::IS_SOLARIS
+  if defined?(UNIXSocket)
     def test_unix_socket_path
       path = "/tmp/sample"
 
@@ -118,10 +117,11 @@ class UNIXSocketTests < Test::Unit::TestCase
       File.unlink(path) if File.exist?(path)
     end
 
-    # TODO: this test is excluded due to JRUBY-2219
-    def XXXtest_unix_socket_peeraddr_raises_enotconn
+    def test_unix_socket_peeraddr_raises_enotconn
       path = "/tmp/sample"
       File.unlink(path) if File.exist?(path)
+
+      server = UNIXServer.open(path)
       assert_raises(Errno::ENOTCONN) do
         server.peeraddr
       end
@@ -174,9 +174,7 @@ class UNIXSocketTests < Test::Unit::TestCase
       File.unlink(path) if File.exist?(path)
     end
 
-    # TODO: this test is currently excluded, since
-    # it hangs on Linux.
-    def XXXtest_can_create_socket_server_and_accept_nonblocking
+    def test_can_create_socket_server_and_accept_nonblocking
       path = "/tmp/sample"
 
       File.unlink(path) if File.exist?(path)
