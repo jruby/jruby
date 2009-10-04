@@ -124,6 +124,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             return true;
         }
 
+        if (Platform.IS_WINDOWS) {
+            return false; // no UNIXSockets on Windows
+        }
+
         try {
             synchronized(RubyUNIXSocket.class) {
                 if(INSTANCE != null) {
