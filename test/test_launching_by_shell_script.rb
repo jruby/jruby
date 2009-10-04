@@ -22,7 +22,7 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
 
   # JRUBY-4045
   def test_with_pipe_chars
-    out = jruby('-e "(1..3).each {|f| print f}"') # no space after each
+    out = jruby('-e "(1..3).each{|f| print f}"') # no space after each
     assert_equal 0, $?.exitstatus
     assert_equal "123", out
 
