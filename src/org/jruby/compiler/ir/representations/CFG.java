@@ -14,6 +14,7 @@ import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.operands.Label;
 
 import org.jgrapht.*;
@@ -21,15 +22,19 @@ import org.jgrapht.graph.*;
 
 public class CFG
 {
+    enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
+
     public static class CFG_Edge
     {
         final public BasicBlock _src;
         final public BasicBlock _dst;
+        CFG_Edge_Type _type;
 
         public CFG_Edge(BasicBlock s, BasicBlock d)
         {
             _src = s;
             _dst = d;
+            _type = CFG_Edge_Type.UNKNOWN;   // Unknown type to start with
         }
 
         public String toString()
@@ -48,8 +53,6 @@ public class CFG
     {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
-        _entryBB = new BasicBlock(this, getNewLabel());
-        _exitBB  = new BasicBlock(this, getNewLabel());
     }
 
     public DirectedGraph getGraph()
@@ -57,7 +60,12 @@ public class CFG
         return _cfg;
     }
 
-    public int getNextBBId()
+    public BasicBlock getRoot()
+    {
+        return _entryBB;
+    }
+
+    public int getNextBBID()
     {
        _nextBBId++;
        return _nextBBId;
@@ -88,6 +96,19 @@ public class CFG
         return _scope.getNewLabel();
     }
 
+    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap)
+    {
+        BasicBlock b = new BasicBlock(this, l);
+        bbMap.put(b._label, b);
+        g.addVertex(b);
+        return b;
+    }
+
+    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap)
+    {
+        return createNewBB(getNewLabel(), g, bbMap);
+    }
+
     public void build(List<IR_Instr> instrs)
     {
         // Map of label & basic blocks which are waiting for a bb with that label
@@ -95,49 +116,53 @@ public class CFG
 
         // Map of label & basic blocks with that label
         Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
-        bbMap.put(_entryBB._label, _entryBB);
-        bbMap.put(_exitBB._label, _exitBB);
 
         DirectedGraph<BasicBlock, CFG_Edge> g = new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
                                                     new EdgeFactory<BasicBlock, CFG_Edge>() {
                                                         public CFG_Edge createEdge(BasicBlock s, BasicBlock d) { return new CFG_Edge(s, d); }
                                                     });
-        g.addVertex(_entryBB);
-        g.addVertex(_exitBB);
 
-        BasicBlock currBB = _entryBB;
-        BasicBlock newBB  = null;
+        // Dummy entry basic block (see note at end to see why)
+        _entryBB = createNewBB(g, bbMap);
+
+        // First real bb
+        BasicBlock firstBB = new BasicBlock(this, getNewLabel());
+        g.addVertex(firstBB);
+
+        // Build the rest!
+        List<BasicBlock> retBBs = new ArrayList<BasicBlock>();  // This will be the list of bbs that have a 'return' instruction
+        BasicBlock currBB  = firstBB;
+        BasicBlock newBB   = null;
         boolean    bbEnded = false;
-        boolean    bbEndedWithJump = false;
+        boolean    bbEndedWithControlXfer = false;
         for (IR_Instr i: instrs) {
             Operation iop = i._op;
             if (iop.startsBasicBlock()) {
                 Label l = ((LABEL_Instr)i)._lbl;
-                newBB = new BasicBlock(this, l);
-                bbMap.put(l, newBB);
-                g.addVertex(newBB);
-                if (!bbEndedWithJump)  // Jump instruction bbs dont add an edge to the succeeding bb by default
+                newBB = createNewBB(l, g, bbMap);
+                if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
                    g.addEdge(currBB, newBB);
                 currBB = newBB;
-               
-                // Add forward ref. edges
+
+                // Add forward reference edges
                 List<BasicBlock> readers = forwardRefs.get(l);
                 if (readers != null) {
                     for (BasicBlock b: readers)
                         g.addEdge(b, newBB);
                 }
                 bbEnded = false;
-                bbEndedWithJump = false;
+                bbEndedWithControlXfer = false;
             }
             else if (bbEnded) {
-                newBB = new BasicBlock(this, getNewLabel());
-                g.addVertex(newBB);
+                newBB = createNewBB(g, bbMap);
                 g.addEdge(currBB, newBB); // currBB cannot be null!
                 currBB = newBB;
+                currBB.addInstr(i);
                 bbEnded = false;
-                bbEndedWithJump = false;
+                bbEndedWithControlXfer = false;
             }
             else if (iop.endsBasicBlock()) {
+                bbEnded = true;
                 currBB.addInstr(i);
                 Label tgt;
                 if (i instanceof BRANCH_Instr) {
@@ -145,7 +170,7 @@ public class CFG
                 }
                 else if (i instanceof JUMP_Instr) {
                     tgt = ((JUMP_Instr)i).getJumpTarget();
-                    bbEndedWithJump = true;
+                    bbEndedWithControlXfer = true;
                 }
                 // CASE IR instructions are dummy instructions 
                 // -- all when/then clauses have been converted into if-then-else blocks
@@ -155,6 +180,12 @@ public class CFG
                 // SSS FIXME: To be done
                 else if (i instanceof BREAK_Instr) {
                     tgt = null;
+                    bbEndedWithControlXfer = true;
+                }
+                else if (i instanceof RETURN_Instr) {
+                    tgt = null;
+                    retBBs.add(currBB);
+                    bbEndedWithControlXfer = true;
                 }
                 else {
                     tgt = null;
@@ -175,13 +206,29 @@ public class CFG
                         frefs.add(currBB);
                     }
                 }
-
-                bbEnded = true;
             }
             else {
                currBB.addInstr(i);
             }
         }
+
+        // Dummy entry and exit basic blocks and other dummy edges are needed to maintain the CFG 
+        // in a canonical form with certain invariants:
+        // 1. all control begins with a single entry bb (and it dominates all other bbs in the cfg)
+        // 2. all control ends with a single exit bb (and it post-dominates all other bbs in the cfg)
+        //
+        // So, add dummy edges from:
+        // * dummy entry -> dummy exit
+        // * dummy entry -> first basic block (real entry)
+        // * all return bbs to the exit bb
+        // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
+        _exitBB = createNewBB(g, bbMap);
+        g.addEdge(_entryBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
+        g.addEdge(_entryBB, firstBB)._type = CFG_Edge_Type.DUMMY_EDGE;
+        for (BasicBlock rb: retBBs)
+            g.addEdge(rb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
+        if (!bbEndedWithControlXfer)
+            g.addEdge(currBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
 
         _cfg = g;
     }

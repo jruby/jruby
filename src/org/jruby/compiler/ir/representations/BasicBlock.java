@@ -19,7 +19,7 @@ public class BasicBlock
         _label  = l;
         _isLive = true;
         _cfg = c;
-        _id = c.getNextBBId();
+        _id = c.getNextBBID();
     }
 
     public int getID() { return _id; }

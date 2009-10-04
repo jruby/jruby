@@ -521,7 +521,10 @@ public class IR_Builder
     }
 
     public Operand buildAlias(final AliasNode alias, IR_Scope s) {
-        Operand[] args = new Operand[] { new MetaObject(s), new MethAddr(alias.getNewName()), new MethAddr(alias.getOldName()) };
+        String newName = alias.getNewName();
+        String oldName = alias.getOldName();
+        Operand[] args = new Operand[] { new MetaObject(s), new MethAddr(newName), new MethAddr(oldName) };
+        s.recordMethodAlias(newName, oldName);
         s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, args));
 
             // SSS FIXME: Can this return anything other than nil?
@@ -1816,17 +1819,32 @@ public class IR_Builder
         Variable result     = s.getNewVariable();
         Label    falseLabel = s.getNewLabel();
         Label    doneLabel  = s.getNewLabel();
+        Operand  thenResult = null;
         s.addInstr(new BEQ_Instr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
-        if (ifNode.getThenBody() != null)
-            s.addInstr(new COPY_Instr(result, build(ifNode.getThenBody(), s)));
-        else
+
+        // Build the then part of the if-statement
+        if (ifNode.getThenBody() != null) {
+            thenResult = build(ifNode.getThenBody(), s);
+            if (thenResult != null) { // thenResult can be null if then-body ended with a return!
+                s.addInstr(new COPY_Instr(result, thenResult));
+                s.addInstr(new JUMP_Instr(doneLabel));
+            }
+        }
+        else {
             s.addInstr(new COPY_Instr(result, Nil.NIL));
-        s.addInstr(new JUMP_Instr(doneLabel));
+            s.addInstr(new JUMP_Instr(doneLabel));
+        }
+
+        // Build the else part of the if-statement
         s.addInstr(new LABEL_Instr(falseLabel));
-        if (ifNode.getElseBody() != null)
-            s.addInstr(new COPY_Instr(result, build(ifNode.getElseBody(), s)));
-        else
+        if (ifNode.getElseBody() != null) {
+            Operand elseResult = build(ifNode.getElseBody(), s);
+            if (elseResult != null) // elseResult can be null if then-body ended with a return!
+                s.addInstr(new COPY_Instr(result, elseResult));
+        }
+        else {
             s.addInstr(new COPY_Instr(result, Nil.NIL));
+        }
         s.addInstr(new LABEL_Instr(doneLabel));
         return result;
     }

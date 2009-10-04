@@ -50,6 +50,9 @@ public abstract class IR_ScopeImpl implements IR_Scope
         // Map keep track of the next available variable index for a particular prefix
     private Map<String, Integer> _nextVarIndex;
 
+        // Map recording method aliases oldName -> newName maps
+    private Map<String, String> _methodAliases;
+
         // NOTE: Since we are processing ASTs, loop bodies are processed in depth-first manner
         // with outer loops encountered before inner loops, and inner loops finished before outer ones.
         //
@@ -73,6 +76,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         _instrs = new ArrayList<IR_Instr>();
         _nextVarIndex = new HashMap<String, Integer>();
         _constMap = new HashMap<String, Operand>();
+        _methodAliases = new HashMap<String, String>();
         _loopStack = new Stack<IR_Loop>();
         _nextMethodIndex = 0;
 //        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
@@ -167,7 +171,31 @@ public abstract class IR_ScopeImpl implements IR_Scope
         }
     }
 
-    public void addInstr(IR_Instr i)   { _instrs.add(i); }
+    public void addInstr(IR_Instr i)
+    { 
+        _instrs.add(i); 
+    }
+
+        // Record that newName is a new method name for method with oldName
+        // This is for the 'alias' keyword which resolves method names in the static compile/parse-time context
+    public void recordMethodAlias(String newName, String oldName)
+    {
+        _methodAliases.put(oldName, newName);
+    }
+
+        // Unalias 'name' and return new name
+    public String unaliasMethodName(String name)
+    {
+        String n = name;
+        String a = null;
+        do {
+            a = _methodAliases.get(n);
+            if (a != null)
+                n = a;
+        } while (a != null);
+
+        return n;
+    }
 
     // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
     public List<IR_Instr> getInstrs() { return _instrs; }

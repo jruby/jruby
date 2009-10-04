@@ -63,11 +63,11 @@ public class LocalOptimizationPass implements CompilerPass
             }
 
             // Simplify instruction and record mapping between target variable and simplified value
-            //System.out.println("BEFORE: " + i);
+//            System.out.println("BEFORE: " + i);
             Operand  val = i.simplifyAndGetResult(valueMap);
             Variable res = i.getResult();
-            //System.out.println("For " + i + "; dst = " + res + "; val = " + val);
-            //System.out.println("AFTER: " + i);
+//            System.out.println("For " + i + "; dst = " + res + "; val = " + val);
+//            System.out.println("AFTER: " + i);
             if (val != null && res != null && res != val) {
                 valueMap.put(res, val);
             }
@@ -75,48 +75,51 @@ public class LocalOptimizationPass implements CompilerPass
             else if (iop.isCall()) {
                 val = null;
                 CALL_Instr call = ((CALL_Instr)i);
-                Operand    r    = call.getReceiver();
-
+                Operand    r    = call.getReceiver(); 
+                // SSS FIXME: r can be null for ruby/jruby internal call instructions!
+                // Cannot optimize them as of now.
+                if (r != null) {
                     // If 'r' is not a constant, it could actually be a compound value!
                     // Look in our value map to see if we have a simplified value for the receiver.
-                if (!r.isConstant()) {
-                    Operand v = valueMap.get(r);
-                    if (v != null)
-                        r = v;
-                }
-
-                // Check if we can optimize this call based on the receiving method and receiver type
-                // Use the simplified receiver!
-                IR_Method rm = call.getTargetMethodWithReceiver(r);
-                if (rm != null) {
-                    IR_Module rc = rm.getDefiningModule();
-                    if (rc == IR_Class.getCoreClass("Fixnum")) {
-                        Operand[] args = call.getCallArgs();
-                        if (args[1].isConstant()) {
-                            addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                            val = ((Fixnum)r).computeValue(rm._name, (Constant)args[1]);
-                        }
-                    }
-                    else if (rc == IR_Class.getCoreClass("Float")) {
-                        Operand[] args = call.getCallArgs();
-                        if (args[1].isConstant()) {
-                            addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                            val = ((Float)r).computeValue(rm._name, (Constant)args[1]);
-                        }
-                    }
-                    else if (rc == IR_Class.getCoreClass("Array")) {
-                        Operand[] args = call.getCallArgs();
-                        if (args[1] instanceof Fixnum && (rm._name == "[]")) {
-                            addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                            val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[1])._value.intValue(), false);
-                        }
+                    if (!r.isConstant()) {
+                        Operand v = valueMap.get(r);
+                        if (v != null)
+                            r = v;
                     }
 
-                    // If we got a simplified value, mark the call dead and insert a copy in its place!
-                    if (val != null) {
-                        i.markDead();
-                        instrs.add(new COPY_Instr(res, val));
-                        valueMap.put(res, val);
+                    // Check if we can optimize this call based on the receiving method and receiver type
+                    // Use the simplified receiver!
+                    IR_Method rm = call.getTargetMethodWithReceiver(r);
+                    if (rm != null) {
+                        IR_Module rc = rm.getDefiningModule();
+                        if (rc == IR_Class.getCoreClass("Fixnum")) {
+                            Operand[] args = call.getCallArgs();
+                            if (args[1].isConstant()) {
+                                addMethodGuard(rm, deoptLabel, versionMap, instrs);
+                                val = ((Fixnum)r).computeValue(rm._name, (Constant)args[1]);
+                            }
+                        }
+                        else if (rc == IR_Class.getCoreClass("Float")) {
+                            Operand[] args = call.getCallArgs();
+                            if (args[1].isConstant()) {
+                                addMethodGuard(rm, deoptLabel, versionMap, instrs);
+                                val = ((Float)r).computeValue(rm._name, (Constant)args[1]);
+                            }
+                        }
+                        else if (rc == IR_Class.getCoreClass("Array")) {
+                            Operand[] args = call.getCallArgs();
+                            if (args[1] instanceof Fixnum && (rm._name == "[]")) {
+                                addMethodGuard(rm, deoptLabel, versionMap, instrs);
+                                val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[1])._value.intValue(), false);
+                            }
+                        }
+
+                        // If we got a simplified value, mark the call dead and insert a copy in its place!
+                        if (val != null) {
+                            i.markDead();
+                            instrs.add(new COPY_Instr(res, val));
+                            valueMap.put(res, val);
+                        }
                     }
                 }
             } 

@@ -27,6 +27,7 @@ public class LiveVariableNode extends FlowGraphNode
     {
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
         Variable v = i.getResult();
+//        System.out.println("BV: Processing: " + i);
         if ((v != null) && (lvp.getDFVar(v) == null)) {
             lvp.addDFVar(v);
 //            System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v)._id);
@@ -60,6 +61,7 @@ public class LiveVariableNode extends FlowGraphNode
             IR_Instr i = it.previous();
 
             // v is defined => It is no longer live before 'i'
+//            System.out.println("TF: Processing: " + i);
             Variable v = i.getResult();
 //            System.out.println("will clear flag for: " + v);
             if (v != null) {

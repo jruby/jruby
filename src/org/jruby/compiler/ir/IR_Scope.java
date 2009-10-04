@@ -25,6 +25,13 @@ public interface IR_Scope
         // methods and closures
     public void addInstr(IR_Instr i);
 
+        // Record that newName is a new method name for method with oldName
+        // This is for the 'alias' keyword which resolves method names in the static compile/parse-time context
+    public void recordMethodAlias(String newName, String oldName);
+
+        // Unalias 'name' and return new name
+    public String unaliasMethodName(String name);
+
         // create a new variable using the prefix
     public Variable getNewVariable(String prefix);
 
