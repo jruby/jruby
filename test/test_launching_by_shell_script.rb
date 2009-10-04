@@ -14,6 +14,12 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   end
 
+  # JRUBY-4042
+  def test_jruby_without_args
+    jruby_with_pipe("echo puts 1")
+    assert_equal 0, $?.exitstatus
+  end
+
   if WINDOWS
     def test_system_call_without_stdin_data_doesnt_hang
       out = jruby(%q{-e "system 'dir test'"})
