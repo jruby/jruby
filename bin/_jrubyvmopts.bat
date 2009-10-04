@@ -35,7 +35,7 @@ rem Can you believe I'm rewriting batch arg processing in batch files because ba
 rem file arg processing sucks so bad? Can you believe this is even possible?
 rem http://support.microsoft.com/kb/71247
 
-rem Escape any quotes. Use _S for ', _D for ", _P for |,
+rem Escape any quotes. Use _S for ', _D for " and ++PiPe++ for |,
 rem and _U to escape _ itself. We have to escape _ itself, otherwise file names
 rem with _S and _D will be converted to to wrong ones, when we un-escape.
 rem See JRUBY-2821.
@@ -43,7 +43,8 @@ set _ARGS=%*
 if not defined _ARGS goto vmoptsDone
 set _ARGS=%_ARGS:_=_U%
 set _ARGS=%_ARGS:'=_S%
-set _ARGS=%_ARGS:|=_P%
+rem See JRUBY-4045 for reasons why _P for quoting the pipe is not good
+set _ARGS=%_ARGS:|=++PiPe++%
 set _ARGS=%_ARGS:"=_D%
 
 rem prequote all args for 'for' statement
@@ -170,7 +171,7 @@ goto vmoptsLoop
 rem substitute _P only if _RUBY_OPTS is defined,
 rem otherwise we'll get an error.
 if not defined _RUBY_OPTS goto rubyoptsDone
-set _RUBY_OPTS=%_RUBY_OPTS:_P=|%
+set _RUBY_OPTS=%_RUBY_OPTS:++PiPe++=|%
 
 :rubyoptsDone
 set _VM_OPTS=%_VM_OPTS% %_JAVA_VM% %_MEM% %_STK% %_DFLT_VM_OPTS%

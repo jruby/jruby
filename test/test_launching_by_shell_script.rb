@@ -20,6 +20,23 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   end
 
+  # JRUBY-4045
+  def test_with_pipe_chars
+    out = jruby('-e "(1..3).each {|f| print f}"') # no space after each
+    assert_equal 0, $?.exitstatus
+    assert_equal "123", out
+
+    out = jruby('-e "(1..3).each {|f| print f}"') # space after each
+    assert_equal 0, $?.exitstatus
+    assert_equal "123", out
+  end
+
+  # JRUBY-3159
+  def test_escaping_chars_in_vmopts_processing
+    out = jruby(%{-e "a = 'sq'; print a; (1..3).each {|f| print f}"})
+    assert_equal "sq123", out
+  end
+
   if WINDOWS
     def test_system_call_without_stdin_data_doesnt_hang
       out = jruby(%q{-e "system 'dir test'"})
@@ -29,11 +46,6 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     def test_system_call_with_stdin_data_doesnt_hang_on_windows
       out = jruby_with_pipe("echo echo 'one_two_three_test'", %q{-e "system 'cmd'"})
       assert(out =~ /one_two_three_test/)
-    end
-
-    def test_escaping_chars_in_vmopts_processing
-      out = jruby(%{-e "a = 'sq'; print a; (1..3).each {|f| print f}"})
-      assert_equal "sq123", out
     end
   else
     def test_system_call_with_stdin_data_doesnt_hang
