@@ -44,7 +44,8 @@ set _STARTJAVA=%JAVA_HOME%\bin\%JAVA_COMMAND%
 :gotTitle
 
 rem ----- Set up the VM options
-call "%~dp0_jrubyvmopts" %*
+set _VARS=%*
+call "%~dp0_jrubyvmopts" %%_VARS%%
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 
 rem ----- Set Up The Boot Classpath ----------------------------------------

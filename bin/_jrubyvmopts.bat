@@ -46,6 +46,7 @@ set _ARGS=!_ARGS:^>=_G!
 set _ARGS=!_ARGS:^<=_L!
 set _ARGS=!_ARGS:^|=_P!
 set _ARGS=!_ARGS:^?=_Q!
+set _ARGS=!_ARGS:%%=_R!
 rem WHOA, all I'm trying to do is to quote the damn ^ sign here!
 set _ARGS=!_ARGS:^^^^^^^^=_C!
 set _ARGS=!_ARGS:'=_S!
@@ -131,6 +132,7 @@ set _CMP=!_CMP:_S='!
 set _CMP=!_CMP:_E=^=!
 set _CMP=!_CMP:_Q=^?!
 set _CMP=!_CMP:_P=^|!
+set _CMP=!_CMP:_R=%%!
 set _CMP=!_CMP:_C=^^!
 set _CMP=!_CMP:_L=^<!
 set _CMP=!_CMP:_G=^>!

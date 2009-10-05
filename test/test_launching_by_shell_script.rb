@@ -51,6 +51,13 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
     assert_equal "true3", out
   end
+  
+  # JRUBY-4058
+  def test_with_percent
+    out = jruby(%{-e "print '%A%%B%%%C%%%%D'"})
+    assert_equal 0, $?.exitstatus
+    assert_equal "%A%%B%%%C%%%%D", out
+  end
 
   if WINDOWS
     def test_system_call_without_stdin_data_doesnt_hang
