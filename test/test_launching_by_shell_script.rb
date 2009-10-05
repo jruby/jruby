@@ -45,6 +45,13 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal "truetruefalse", out
   end
 
+  # JRUBY-4055
+  def test_with_question_and_caret
+    out = jruby('-e "print nil.nil?; print 1 ^ 2"')
+    assert_equal 0, $?.exitstatus
+    assert_equal "true3", out
+  end
+
   if WINDOWS
     def test_system_call_without_stdin_data_doesnt_hang
       out = jruby(%q{-e "system 'dir test'"})
