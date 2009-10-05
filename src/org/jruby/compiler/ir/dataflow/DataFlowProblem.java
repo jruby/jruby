@@ -3,14 +3,13 @@ package org.jruby.compiler.ir.dataflow;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 import java.util.Map;
 import java.util.Set;
 
 import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
@@ -52,53 +51,35 @@ public abstract class DataFlowProblem
             buildFlowGraph();
 
             // 2. Initialize work list based on flow direction to make processing efficient!
-            Tuple<LinkedList<FlowGraphNode>, BitSet> t = getInitialWorkList();
-            LinkedList<FlowGraphNode> workList = t._a;
-            BitSet bbSet = t._b;
+            LinkedList<FlowGraphNode> workList = getInitialWorkList();
 
-            // 3. Iteratively compute data flow info
+            // 3. Initialize a bitset with a flag set for all basic blocks
+            int numNodes = _cfg.getMaxNodeID();
+            BitSet bbSet = new BitSet(1+numNodes);
+            bbSet.flip(0, numNodes);
+
+            // 4. Iteratively compute data flow info
             while (!workList.isEmpty()) {
                 workList.removeFirst().computeDataFlowInfo(workList, bbSet);
             }
         }
     }
 
-    private Tuple<LinkedList<FlowGraphNode>, BitSet> getInitialWorkList()
+    private LinkedList<FlowGraphNode> getInitialWorkList()
     {
         LinkedList<FlowGraphNode> wl = new LinkedList<FlowGraphNode>();
-        Stack<BasicBlock> stack = new Stack<BasicBlock>();
-        BasicBlock root  = _cfg.getRoot();
-        stack.push(root);
-        BitSet bbSet = new BitSet(1+_cfg.getMaxNodeID());
-        bbSet.set(root.getID());
-
-        // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
-        while (!stack.empty()) {
-            // Check if all children of the top of the stack have been added
-            BasicBlock b = stack.peek();
-            boolean allChildrenDone = true;
-            for (CFG_Edge e: outgoingEdgesOf(b)) {
-                BasicBlock dst = e._dst;
-                int dstID = dst.getID();
-                if (!bbSet.get(dstID)) {
-                    allChildrenDone = false;
-                    stack.push(dst);
-                    bbSet.set(dstID);
-                }
-            }
-
-            // If all children have been added previously, we are ready with 'b' in this round!
-            if (allChildrenDone) {
-                stack.pop();
-                wl.add(_bbTofgMap.get(b.getID()));
-//                System.out.println("Added: " + b.getID()); 
-            }
+        if (_direction == DF_Direction.FORWARD) {
+           ListIterator<BasicBlock> it = _cfg.getReversePostOrderTraverser();
+           while (it.hasPrevious())
+              wl.add(getFlowGraphNode(it.previous()));
+        }
+        else {
+           ListIterator<BasicBlock> it = _cfg.getPostOrderTraverser();
+           while (it.hasNext())
+              wl.add(getFlowGraphNode(it.next()));
         }
 
-        if (_direction == DF_Direction.FORWARD) 
-            java.util.Collections.reverse(wl);
-
-        return new Tuple<LinkedList<FlowGraphNode>, BitSet>(wl, bbSet);
+        return wl;
     }
 
     public int getDFVarsCount() { return _dfVars.size(); }

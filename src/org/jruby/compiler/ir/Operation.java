@@ -69,7 +69,7 @@ public enum Operation
     public boolean isReturn() { return _type == OpType.ret_op; }
 
     public boolean startsBasicBlock() { return this == LABEL; }
-    public boolean endsBasicBlock() { return isBranch(); }
+    public boolean endsBasicBlock() { return isBranch() || isReturn(); }
 
         // By default, call instructions cannot be deleted even if their results aren't used by anyone
         // unless we know more about what the call is, what it does, etc.

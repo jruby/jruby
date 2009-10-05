@@ -213,6 +213,7 @@ public class IR_Builder
         System.out.println("################## After local optimization pass ##################");
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
         System.out.println("################## After dead code elimination pass ##################");
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());

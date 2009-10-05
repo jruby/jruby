@@ -1,10 +1,14 @@
 package org.jruby.compiler.ir.representations;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
+import java.util.ListIterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.Operation;
@@ -48,11 +52,13 @@ public class CFG
     BasicBlock _exitBB;    // Exit BB -- dummy
     DirectedGraph<BasicBlock, CFG_Edge> _cfg;  // The actual graph
     int        _nextBBId;  // Next available basic block id
+    LinkedList<BasicBlock> _postOrderList;
 
     public CFG(IR_Scope s)
     {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
+        _postOrderList = null;
     }
 
     public DirectedGraph getGraph()
@@ -137,7 +143,7 @@ public class CFG
         boolean    bbEndedWithControlXfer = false;
         for (IR_Instr i: instrs) {
             Operation iop = i._op;
-            if (iop.startsBasicBlock()) {
+            if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr)i)._lbl;
                 newBB = createNewBB(l, g, bbMap);
                 if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
@@ -155,13 +161,14 @@ public class CFG
             }
             else if (bbEnded) {
                 newBB = createNewBB(g, bbMap);
-                g.addEdge(currBB, newBB); // currBB cannot be null!
+                if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
+                    g.addEdge(currBB, newBB); // currBB cannot be null!
                 currBB = newBB;
-                currBB.addInstr(i);
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
             }
-            else if (iop.endsBasicBlock()) {
+
+            if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
                 Label tgt;
@@ -207,7 +214,7 @@ public class CFG
                     }
                 }
             }
-            else {
+            else if (iop != Operation.LABEL) {
                currBB.addInstr(i);
             }
         }
@@ -231,6 +238,157 @@ public class CFG
             g.addEdge(currBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
 
         _cfg = g;
+    }
+
+    private void buildPostOrderTraversal()
+    {
+        _postOrderList = new LinkedList<BasicBlock>();
+        BasicBlock root = getRoot();
+        Stack<BasicBlock> stack = new Stack<BasicBlock>();
+        stack.push(root);
+        BitSet bbSet = new BitSet(1+getMaxNodeID());
+        bbSet.set(root.getID());
+
+        // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
+        while (!stack.empty()) {
+            // Check if all children of the top of the stack have been added
+            BasicBlock b = stack.peek();
+            boolean allChildrenDone = true;
+            for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                BasicBlock dst = e._dst;
+                int dstID = dst.getID();
+                if (!bbSet.get(dstID)) {
+                    allChildrenDone = false;
+                    stack.push(dst);
+                    bbSet.set(dstID);
+                }
+            }
+
+            // If all children have been added previously, we are ready with 'b' in this round!
+            if (allChildrenDone) {
+                stack.pop();
+                _postOrderList.add(b);
+            }
+        }
+    }
+
+    public ListIterator<BasicBlock> getPostOrderTraverser()
+    {
+        if (_postOrderList == null)
+            buildPostOrderTraversal();
+
+        return _postOrderList.listIterator();
+    }
+
+    public ListIterator<BasicBlock> getReversePostOrderTraverser()
+    {
+        if (_postOrderList == null)
+            buildPostOrderTraversal();
+
+        return _postOrderList.listIterator(getMaxNodeID());
+    }
+
+    private Integer intersectDomSets(Integer[] idomMap, Integer nb1, Integer nb2)
+    {
+        while (nb1 != nb2) {
+            while (nb1 < nb2) {
+                nb1 = idomMap[nb1];
+            }
+            while (nb2 < nb1) {
+                nb2 = idomMap[nb2];
+            }
+        }
+
+        return nb1;
+    }
+
+    public void buildDominatorTree()
+    {
+        System.out.println("--- Building Dom Tree ---");
+        int maxNodeId = getMaxNodeID();  
+
+        // Set up a map of bbid -> post order numbering
+        Integer[]    bbToPoNumbers = new Integer[maxNodeId+1];
+        BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId+1];
+        ListIterator<BasicBlock> it = getPostOrderTraverser();
+        int n = 0;
+        while (it.hasNext()) {
+            BasicBlock b = it.next();
+            bbToPoNumbers[b.getID()] = n;
+            poNumbersToBB[n] = b;
+            n++;
+        }
+
+        // Construct the dominator sets using the fast dominance algorithm by
+        // Keith D. Cooper, Timothy J. Harvey, and Ken Kennedy.
+        // http://www.cs.rice.edu/~keith/EMBED/dom.pdf (tip courtesy Slava Pestov)
+        //
+        // Faster than the standard iterative data-flow algorithm
+        //
+        // This maps a bb's post-order number to the bb's idom post-order number.
+        // We convert this po-number -> po-number map to a bb -> bb map later on!
+        Integer[] idoms = new Integer[maxNodeId+1];
+
+        BasicBlock root = getRoot();
+        Integer    rootPoNumber = bbToPoNumbers[root.getID()];
+        idoms[rootPoNumber] = rootPoNumber;
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            it = getReversePostOrderTraverser();
+            while (it.hasPrevious()) {
+                BasicBlock b = it.previous();
+                if (b == root)
+                    continue;
+
+                // Non-root -- process it
+                Integer bPoNumber = bbToPoNumbers[b.getID()];
+                Integer oldBIdom = idoms[bPoNumber];
+                Integer newBIdom = null;
+
+                // newBIdom is initialized to be some (first-encountered, for ex.) processed predecessor of 'b'.
+                for (CFG_Edge e: _cfg.incomingEdgesOf(b)) {
+                    BasicBlock src = e._src;
+                    Integer srcPoNumber = bbToPoNumbers[src.getID()];
+                    if (idoms[srcPoNumber] != null) {
+//                        System.out.println("Initialized idom(" + bPoNumber + ")=" + srcPoNumber);
+                        newBIdom = srcPoNumber;
+                        break;
+                    }
+                }
+
+                // newBIdom should not be null
+                assert newBIdom != null;
+
+                // Now, intersect dom sets of all of b's predecessors 
+                Integer processedPred = newBIdom;
+                for (CFG_Edge e: _cfg.incomingEdgesOf(b)) {
+                    // Process b's predecessors except the initialized bidom value
+                    BasicBlock src = e._src;
+                    Integer srcPoNumber = bbToPoNumbers[src.getID()];
+                    Integer srcIdom = idoms[srcPoNumber];
+                    if ((srcIdom != null) && (srcPoNumber != processedPred)) {
+//                        Integer old = newBIdom;
+                        newBIdom = intersectDomSets(idoms, srcPoNumber, newBIdom);
+//                        System.out.println("Intersect " + srcIdom + " & " + old + " = " + newBIdom);
+                    }
+                }
+
+                // Has something changed?
+                if (oldBIdom != newBIdom) {
+                    changed = true;
+                    idoms[bPoNumber] = newBIdom;
+//                    System.out.println("Changed: idom(" + bPoNumber + ")= " + newBIdom);
+                }
+            }
+        }
+
+        // Convert the idom map based on post order numbers to one based on basic blocks
+        Map<BasicBlock, BasicBlock> idomMap = new HashMap<BasicBlock, BasicBlock>();
+        for (Integer i = 0; i < maxNodeId; i++) {
+            idomMap.put(poNumbersToBB[i], poNumbersToBB[idoms[i]]);
+            System.out.println("IDOM(" + poNumbersToBB[i].getID() + ") = " + poNumbersToBB[idoms[i]].getID());
+        }
     }
 
     public String toStringInstrs()
