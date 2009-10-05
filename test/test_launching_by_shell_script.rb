@@ -34,7 +34,15 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
   # JRUBY-3159
   def test_escaping_chars_in_vmopts_processing
     out = jruby(%{-e "a = 'sq'; print a; (1..3).each {|f| print f}"})
+    assert_equal 0, $?.exitstatus
     assert_equal "sq123", out
+  end
+
+  # JRUBY-3524
+  def test_with_less_and_more
+    out = jruby('-e "print 2 > 1; print 1<2; print 1== 2"')
+    assert_equal 0, $?.exitstatus
+    assert_equal "truetruefalse", out
   end
 
   if WINDOWS

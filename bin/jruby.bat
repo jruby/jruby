@@ -4,7 +4,7 @@ rem jruby.bat - Start Script for the JRuby Interpreter
 rem
 rem for info on environment variables, see internal batch script _jrubyvars.bat
 
-setlocal
+setlocal EnableDelayedExpansion
 
 rem Sometimes, when jruby.bat is being invoked from another BAT file,
 rem %~dp0 is incorrect and points to the current dir, not to JRuby's bin dir,
