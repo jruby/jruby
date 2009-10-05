@@ -1,2 +1,0 @@
-fails(JRUBY-3322):Mutex#locked? should return the status of the lock
-fails(JRUBY-3656):Mutex#locked? returns the status of the lock

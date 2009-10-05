@@ -394,6 +394,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return contextVariables;
     }
 
+    public boolean isAlive(){
+        return threadImpl.isAlive() && status != Status.ABORTING;
+    }
+
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(IRubyObject key) {
         IRubyObject value;
@@ -424,7 +428,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "alive?")
     public RubyBoolean alive_p() {
-        return threadImpl.isAlive() && status != Status.ABORTING ? getRuntime().getTrue() : getRuntime().getFalse();
+        return isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "join", optional = 1, backtrace = true)

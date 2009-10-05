@@ -1,2 +1,0 @@
-fails(JRUBY-3322):Mutex#try_lock should return false if lock can not be aquired immediately
-fails(JRUBY-3656):Mutex#try_lock returns false if lock can not be aquired immediately

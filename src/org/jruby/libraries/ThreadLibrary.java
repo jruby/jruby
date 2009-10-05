@@ -86,7 +86,12 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod(name = "locked?")
         public synchronized RubyBoolean locked_p(ThreadContext context) {
-            return context.getRuntime().newBoolean(owner != null);
+            return context.getRuntime().newBoolean(isLocked());
+        }
+
+        // should be called from properly synchronized context
+        private boolean isLocked() {
+            return owner != null && owner.isAlive();
         }
 
         @JRubyMethod
@@ -95,7 +100,7 @@ public class ThreadLibrary implements Library {
             //    throw new InterruptedException();
             //}
             synchronized (this) {
-                if ( owner != null ) {
+                if (isLocked()) {
                     return context.getRuntime().getFalse();
                 }
                 lock(context);
@@ -115,12 +120,12 @@ public class ThreadLibrary implements Library {
                         if (owner == context.getThread()) {
                             throw context.getRuntime().newThreadError("Mutex relocking by same thread");
                         }
-                        while ( owner != null ) {
+                        while (isLocked()) {
                             wait();
                         }
                         owner = context.getThread();
                     } catch (InterruptedException ex) {
-                        if ( owner == null ) {
+                        if (!isLocked()) {
                             notify();
                         }
                         throw ex;
@@ -134,12 +139,16 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod
         public synchronized RubyBoolean unlock(ThreadContext context) {
-            if ( owner != null ) {
+            if (isLocked()) {
+                if (owner != context.getThread()) {
+                    throw context.getRuntime().newThreadError(
+                            "Mutex is not owned by calling thread");
+                }
                 owner = null;
                 notify();
                 return context.getRuntime().getTrue();
             } else {
-                return context.getRuntime().getFalse();
+                throw context.getRuntime().newThreadError("Mutex is not locked");
             }
         }
 
