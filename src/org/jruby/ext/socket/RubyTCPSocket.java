@@ -42,6 +42,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 import org.jruby.Ruby;
@@ -103,7 +104,14 @@ public class RubyTCPSocket extends RubyIPSocket {
             if (localHost != null) {
                 socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
-            socket.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );           
+            try {
+                channel.configureBlocking(false);
+                channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
+                context.getThread().select(channel, this, SelectionKey.OP_CONNECT);
+                channel.finishConnect();
+            } finally {
+                channel.configureBlocking(true);
+            }
             initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
