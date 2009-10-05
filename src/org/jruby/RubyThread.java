@@ -853,8 +853,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
     
     public boolean select(RubyIO io, int ops) {
-        Channel channel = io.getChannel();
-        
+        return select(io.getChannel(), io, ops);
+    }
+
+    public boolean select(Channel channel, RubyIO io, int ops) {
         if (channel instanceof SelectableChannel) {
             SelectableChannel selectable = (SelectableChannel)channel;
             
@@ -865,7 +867,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 try {
                     selectable.configureBlocking(false);
                     
-                    io.addBlockingThread(this);
+                    if (io != null) io.addBlockingThread(this);
                     currentSelector = getSelector(selectable);
 
                     key = selectable.register(currentSelector, ops);
@@ -886,7 +888,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                     return false;
                 } catch (IOException ioe) {
-                    throw io.getRuntime().newRuntimeError("Error with selector: " + ioe);
+                    throw getRuntime().newRuntimeError("Error with selector: " + ioe);
                 } finally {
                     try {
                         if (key != null) {
@@ -895,7 +897,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                         }
                         afterBlockingCall();
                         currentSelector = null;
-                        io.removeBlockingThread(this);
+                        if (io != null) io.removeBlockingThread(this);
                         selectable.configureBlocking(oldBlocking);
                     } catch (IOException ioe) {
                         // ignore; I don't like doing it, but it seems like we

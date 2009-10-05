@@ -86,4 +86,13 @@ class TestTimeout < Test::Unit::TestCase
     assert ok, "Timeout::Error was not eventually delivered to caller"
     assert @in_foo.class.name == "", "Non-anonymous exception type raised in intervening stack"
   end
+
+  # JRUBY-3928: Net::HTTP doesn't timeout as expected when using timeout.rb
+  def test_timeout_socket_connect
+    assert_raises(Timeout::Error) do
+      timeout(0.1) do
+        TCPSocket.new('google.com', 12345)
+      end
+    end
+  end
 end
