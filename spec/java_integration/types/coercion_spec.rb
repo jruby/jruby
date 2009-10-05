@@ -95,13 +95,11 @@ describe "Java String and primitive-typed methods" do
   end
   
   it "should raise errors when passed values can not be precisely coerced" do
-    pending("precision failure does not raise error") do
-      lambda { CoreTypeMethods.setByte(1 << 8) }.should raise_error(TypeError)
-      lambda { CoreTypeMethods.setShort(1 << 16) }.should raise_error(TypeError)
-      lambda { CoreTypeMethods.setChar(1 << 16) }.should raise_error(TypeError)
-      lambda { CoreTypeMethods.setInt(1 << 32) }.should raise_error(TypeError)
-      lambda { CoreTypeMethods.setLong(1 << 64) }.should raise_error(TypeError)
-    end
+    lambda { CoreTypeMethods.setByte(1 << 8) }.should raise_error(RangeError)
+    lambda { CoreTypeMethods.setShort(1 << 16) }.should raise_error(RangeError)
+    lambda { CoreTypeMethods.setChar(1 << 16) }.should raise_error(RangeError)
+    lambda { CoreTypeMethods.setInt(1 << 32) }.should raise_error(RangeError)
+    lambda { CoreTypeMethods.setLong(1 << 64) }.should raise_error(RangeError)
   end
   
   it "should select the most narrow and precise overloaded method" do
@@ -129,17 +127,17 @@ describe "Java Object-typed methods" do
     CoreTypeMethods.getObjectType(0).should == "class java.lang.Byte"
     CoreTypeMethods.getObjectType(java::lang::Byte::MAX_VALUE).should == "class java.lang.Byte"
     CoreTypeMethods.getObjectType(java::lang::Byte::MIN_VALUE).should == "class java.lang.Byte"
-    CoreTypeMethods.getObjectType(java::lang::Byte::MAX_VALUE + 1).should == "class java.lang.Short"
+    CoreTypeMethods.getObjectType(java::lang::Byte::MAX_VALUE + 1).should == "class java.lang.Byte"
     CoreTypeMethods.getObjectType(java::lang::Byte::MIN_VALUE - 1).should == "class java.lang.Short"
 
     CoreTypeMethods.getObjectType(java::lang::Short::MAX_VALUE).should == "class java.lang.Short"
     CoreTypeMethods.getObjectType(java::lang::Short::MIN_VALUE).should == "class java.lang.Short"
-    CoreTypeMethods.getObjectType(java::lang::Short::MAX_VALUE + 1).should == "class java.lang.Integer"
+    CoreTypeMethods.getObjectType(java::lang::Short::MAX_VALUE + 1).should == "class java.lang.Short"
     CoreTypeMethods.getObjectType(java::lang::Short::MIN_VALUE - 1).should == "class java.lang.Integer"
 
     CoreTypeMethods.getObjectType(java::lang::Integer::MAX_VALUE).should == "class java.lang.Integer"
     CoreTypeMethods.getObjectType(java::lang::Integer::MIN_VALUE).should == "class java.lang.Integer"
-    CoreTypeMethods.getObjectType(java::lang::Integer::MAX_VALUE + 1).should == "class java.lang.Long"
+    CoreTypeMethods.getObjectType(java::lang::Integer::MAX_VALUE + 1).should == "class java.lang.Integer"
     CoreTypeMethods.getObjectType(java::lang::Integer::MIN_VALUE - 1).should == "class java.lang.Long"
 
     CoreTypeMethods.getObjectType(java::lang::Long::MAX_VALUE).should == "class java.lang.Long"

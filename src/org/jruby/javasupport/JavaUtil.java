@@ -672,7 +672,7 @@ public class JavaUtil {
             if (isLongByteable(value)) {
                 return Byte.valueOf((byte)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for signed byte: " + numeric);
+            throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
         }
     };
     private static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
@@ -681,7 +681,7 @@ public class JavaUtil {
             if (isLongShortable(value)) {
                 return Short.valueOf((short)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for signed short: " + numeric);
+            throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
         }
     };
     private static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
@@ -690,7 +690,7 @@ public class JavaUtil {
             if (isLongCharable(value)) {
                 return Character.valueOf((char)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for char: " + numeric);
+            throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
         }
     };
     private static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
@@ -699,7 +699,7 @@ public class JavaUtil {
             if (isLongIntable(value)) {
                 return Integer.valueOf((int)value);
             }
-            throw numeric.getRuntime().newTypeError("too big for signed int: " + numeric);
+            throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
         }
     };
     private static NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
@@ -771,16 +771,16 @@ public class JavaUtil {
                 value == Double.NEGATIVE_INFINITY; // -infinity
     }
     private static boolean isLongByteable(long value) {
-        return value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE;
+        return value >= Byte.MIN_VALUE && value <= 0xFF;
     }
     private static boolean isLongShortable(long value) {
-        return value >= Short.MIN_VALUE && value <= Short.MAX_VALUE;
+        return value >= Short.MIN_VALUE && value <= 0xFFFF;
     }
     private static boolean isLongCharable(long value) {
         return value >= Character.MIN_VALUE && value <= Character.MAX_VALUE;
     }
     private static boolean isLongIntable(long value) {
-        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+        return value >= Integer.MIN_VALUE && value <= 0xFFFFFFFFL;
     }
     
     private static Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
