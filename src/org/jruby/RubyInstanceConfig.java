@@ -226,7 +226,10 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
 
     public static final boolean DEBUG_LOAD_SERVICE
-        = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
+            = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
+
+    public static final boolean JUMPS_HAVE_BACKTRACE
+            = SafePropertyAccessor.getBoolean("jruby.jump.backtrace", false);
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -505,7 +508,9 @@ public class RubyInstanceConfig {
                 .append("    jruby.debug.fullTrace=true|false\n")
                 .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n")
                 .append("    jruby.debug.loadService=true|false\n")
-                .append("       Log the process of locating and loading libraries. Default is false.\n");
+                .append("       Log the process of locating and loading libraries. Default is false.\n")
+                .append("    jruby.jump.backtrace=true|false\n")
+                .append("       Make non-local flow jumps generate backtraces. Default is false.\n");
 
         return sb.toString();
     }
