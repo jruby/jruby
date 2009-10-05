@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.internal.runtime.JumpTarget;
 
 /**
@@ -91,6 +92,10 @@ public class JumpException extends RuntimeException {
      * @see Throwable#fillInStackTrace()
      */
     public Throwable fillInStackTrace() {
+        if (RubyInstanceConfig.JUMPS_HAVE_BACKTRACE) {
+            return originalFillInStackTrace();
+        }
+        
         return this;
     }
     
