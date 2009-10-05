@@ -36,15 +36,18 @@ rem file arg processing sucks so bad? Can you believe this is even possible?
 rem http://support.microsoft.com/kb/71247
 
 rem Escape any quotes. Use _S for ', _D for ", _P for |, _G for >, _L for <,
-rem and _U to escape _ itself. We have to escape _ itself, otherwise file names
-rem with _S and _D will be converted to to wrong ones, when we un-escape.
-rem See JRUBY-2821.
+rem _C to escape ^, and _U to escape _ itself. We have to escape _ itself,
+rem otherwise file names with _S and _D will be converted to to wrong ones,
+rem when we un-escape. See JRUBY-2821.
 set _ARGS=%*
 if not defined _ARGS goto vmoptsDone
 set _ARGS=!_ARGS:_=_U!
 set _ARGS=!_ARGS:^>=_G!
 set _ARGS=!_ARGS:^<=_L!
 set _ARGS=!_ARGS:^|=_P!
+set _ARGS=!_ARGS:^?=_Q!
+rem WHOA, all I'm trying to do is to quote the damn ^ sign here!
+set _ARGS=!_ARGS:^^^^^^^^=_C!
 set _ARGS=!_ARGS:'=_S!
 set _ARGS=!_ARGS:"=_D!
 
@@ -122,11 +125,13 @@ if ["%_CMP%"] == ["--ng"] (
   goto :vmoptsNext
 )
 
-rem now unescape _G, _L, _P, _E, _D, _S and _U
+rem now unescape _G, _L, _P, _E, _D, _S, _C and _U
 set _CMP=!_CMP:_D="!
 set _CMP=!_CMP:_S='!
 set _CMP=!_CMP:_E=^=!
+set _CMP=!_CMP:_Q=^?!
 set _CMP=!_CMP:_P=^|!
+set _CMP=!_CMP:_C=^^!
 set _CMP=!_CMP:_L=^<!
 set _CMP=!_CMP:_G=^>!
 set _CMP=!_CMP:_U=_!
