@@ -47,8 +47,7 @@ set _ARGS=!_ARGS:^<=_L!
 set _ARGS=!_ARGS:^|=_P!
 set _ARGS=!_ARGS:^?=_Q!
 set _ARGS=!_ARGS:%%=_R!
-rem WHOA, all I'm trying to do is to quote the damn ^ sign here!
-set _ARGS=!_ARGS:^^^^^^^^=_C!
+set _ARGS=!_ARGS:^^=_C!
 set _ARGS=!_ARGS:'=_S!
 set _ARGS=!_ARGS:"=_D!
 
