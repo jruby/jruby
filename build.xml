@@ -1482,6 +1482,7 @@
         <include name="jruby-*.tar.gz.sha1"/>
         <include name="jruby-*.zip.md5"/>
         <include name="jruby-*.zip.sha1"/>
+        <include name="jruby-complete.jar*"/>
       </fileset>
       <fileset dir="dist" includes="**/*"/>
     </delete>
@@ -1497,7 +1498,7 @@
     <delete dir="src_gen"/>
   </target>
 
-  <target name="clean-all" depends="clean, clear-specs" description="Cleans everything, including downloaded specs">
+  <target name="clean-all" depends="clean, clear-specs, dist-clean" description="Cleans everything, including dist files and specs">
   </target>
 
   <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
