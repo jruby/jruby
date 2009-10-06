@@ -876,11 +876,11 @@ public class LoadService {
         }
         
         Outer: for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
-            // TODO this is really ineffient, and potentially a problem everytime anyone require's something.
+            // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
             String loadPathEntry = ((IRubyObject)pathIter.next()).toString();
 
-            if (loadPathEntry.equals(".")) {
+            if (loadPathEntry.equals(".") || loadPathEntry.equals("")) {
                 foundResource = tryResourceFromCWD(state, baseName, suffixType);
 
                 if (foundResource != null) {

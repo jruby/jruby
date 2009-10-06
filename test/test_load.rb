@@ -35,7 +35,19 @@ class TestLoad < Test::Unit::TestCase
     assert require('test/foo.bar')
     assert $loaded_foo_bar
   end
-  
+
+  # JRUBY-3231
+  def test_load_with_empty_string_in_loadpath
+    begin
+      $:.unshift("")
+      $loaded_foo_bar = false
+      assert load('test/foo.bar.rb')
+      assert $loaded_foo_bar
+    ensure
+      $:.shift
+    end
+  end
+
   def test_require_bogus
     assert_raises(LoadError) { require 'foo/' }
     assert_raises(LoadError) { require '' }
