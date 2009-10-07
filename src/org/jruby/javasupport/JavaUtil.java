@@ -761,6 +761,11 @@ public class JavaUtil {
             throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
         }
     };
+    private static NumericConverter NUMERIC_TO_VOID = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
+            return null;
+        }
+    };
     private static boolean isDoubleFloatable(double value) {
         return
                 value == 0.0 || // 0.0 is ok
@@ -802,6 +807,7 @@ public class JavaUtil {
         NUMERIC_CONVERTERS.put(Double.class, NUMERIC_TO_DOUBLE);
         NUMERIC_CONVERTERS.put(BigInteger.class, NUMERIC_TO_BIGINTEGER);
         NUMERIC_CONVERTERS.put(Object.class, NUMERIC_TO_OBJECT);
+        NUMERIC_CONVERTERS.put(void.class, NUMERIC_TO_VOID);
     }
 
     @Deprecated
