@@ -15,17 +15,17 @@ public class CALL_Instr extends MultiOperandInstr
 {
     Operand _methAddr;
     Operand _closure;
-   
+
     public CALL_Instr(Variable result, Operand methAddr, Operand[] args, Operand closure)
     {
-        super(Operation.CALL, result, args);
+        super(Operation.CALL, result, buildAllArgs(methAddr, closure, args));
         _methAddr = methAddr;
         _closure = closure;
     }
    
     public CALL_Instr(Operation op, Variable result, Operand methAddr, Operand[] args, Operand closure)
     {
-        super(op, result, args);
+        super(op, result, buildAllArgs(methAddr, closure, args));
         _methAddr = methAddr;
         _closure = closure;
     }
@@ -37,10 +37,19 @@ public class CALL_Instr extends MultiOperandInstr
         // If we do know the target method, we ask the method itself whether it modifies ruby code
     public boolean canModifyCode()       { IR_Method m = getTargetMethod(); return (m == null) ? true : m.modifiesCode(); }
 
-    public Operand[] getCallArgs()   { return _args; }
     public Operand   getMethodAddr() { return _methAddr; }
     public Operand   getClosureArg() { return _closure; }
-    public Operand   getReceiver()   { return _args[0]; }
+    public Operand   getReceiver()   { return _args[1]; }
+
+    // Beware: Expensive call since a new array is allocated on each call.
+    public Operand[] getCallArgs()
+    {
+        Operand[] callArgs = new Operand[_args.length - 1 - ((_closure != null) ? 1 : 0)];
+        for (int i = 0; i < callArgs.length; i++)
+            callArgs[i] = _args[i+1];
+
+        return callArgs;
+    }
 
     public IR_Method getTargetMethodWithReceiver(Operand receiver)
     {
@@ -74,8 +83,8 @@ public class CALL_Instr extends MultiOperandInstr
     public String toString() {
         return   "\t" 
                + (_result == null ? "" : _result + " = ") 
-               + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(_args) + ")"
-               + (_closure == null ? "" : ", closure: " + _closure);
+               + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
+               + (_closure == null ? "" : ", &" + _closure) + ")";
     }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
@@ -84,5 +93,19 @@ public class CALL_Instr extends MultiOperandInstr
         _methAddr = _methAddr.getSimplifiedOperand(valueMap);
         if (_closure != null)
             _closure = _closure.getSimplifiedOperand(valueMap);
+    }
+
+// --------------- Private methods ---------------
+    private static Operand[] buildAllArgs(Operand methAddr, Operand closure, Operand[] callArgs)
+    {
+        Operand[] allArgs = new Operand[callArgs.length + 1 + ((closure != null) ? 1 : 0)];
+
+        allArgs[0] = methAddr;
+        for (int i = 0; i < callArgs.length; i++)
+            allArgs[i+1] = callArgs[i];
+        if (closure != null)
+            allArgs[callArgs.length+1] = closure;
+
+        return allArgs;
     }
 }

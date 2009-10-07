@@ -96,6 +96,7 @@ import org.jruby.compiler.ir.instructions.ALU_Instr;
 import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
@@ -191,7 +192,7 @@ import org.jruby.util.ByteList;
 // ----------------------------
 // - We should be returning null from the build methods where it is a normal "error" condition
 // - We should be returning Nil.NIL where the actual return value of a build is the ruby nil operand
-//   Look in buildIfNode for an example of this
+//   Look in buildIf for an example of this
 
 public class IR_Builder
 {
@@ -1748,7 +1749,7 @@ public class IR_Builder
     //
     public Operand buildForIter(final ForNode forNode, IR_Scope s) {
             // Create a new closure context
-        IR_Scope closure = new IR_Closure(s, s);
+        IR_Closure closure = new IR_Closure(s, s);
 
             // Build args
         NodeType argsNodeId = null;
@@ -1764,7 +1765,7 @@ public class IR_Builder
 
             // Assign the closure to the block variable in the parent scope and return it
         Variable blockVar = s.getNewVariable();
-        s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
+        s.addInstr(new BUILD_CLOSURE_Instr(blockVar, closure));
         return blockVar;
     }
 
@@ -1865,7 +1866,7 @@ public class IR_Builder
 
     public Operand buildIter(final IterNode iterNode, IR_Scope s) {
             // Create a new closure context
-        IR_Scope closure = new IR_Closure(s, s);
+        IR_Closure closure = new IR_Closure(s, s);
 
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -1878,7 +1879,7 @@ public class IR_Builder
 
             // Assign the closure to the block variable in the parent scope and return it
         Variable blockVar = s.getNewVariable();
-        s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
+        s.addInstr(new BUILD_CLOSURE_Instr(blockVar, closure));
         return blockVar;
     }
 

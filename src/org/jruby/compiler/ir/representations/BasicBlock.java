@@ -1,7 +1,9 @@
 package org.jruby.compiler.ir.representations;
 
+import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 
 import java.util.List;
 
@@ -32,13 +34,17 @@ public class BasicBlock
 
     public String toString() { return "BB [" + _id + ":" + _label + "]"; }
 
-    public String toStringInstrs()
+    public String toStringInstrs(List<IR_Closure> closures)
     {
         StringBuffer buf = new StringBuffer();
         buf.append(toString()).append("\n");
         for (IR_Instr instr : _instrs) {
             if (!instr.isDead())
                 buf.append('\t').append(instr).append('\n');
+
+            // Keep track of closures to print out at the end!
+            if (instr instanceof BUILD_CLOSURE_Instr)
+                closures.add(((BUILD_CLOSURE_Instr)instr).getClosure());
         }
         return buf.toString();
     }

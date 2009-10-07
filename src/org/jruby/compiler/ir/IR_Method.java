@@ -64,7 +64,7 @@ public class IR_Method extends IR_ScopeImpl
         if (isAClassRootMethod())
             ((MetaObject)_parent)._scope.setConstantValue(constRef, val);
         else
-		    throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a method!");
+            throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a method!");
     }
 
     public boolean isAClassRootMethod() { return IR_Class.isAClassRootMethod(this); }

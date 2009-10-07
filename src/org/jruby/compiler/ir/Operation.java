@@ -44,7 +44,7 @@ public enum Operation
     BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
 
 // others
-    LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
+    BUILD_CLOSURE(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks
     IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false

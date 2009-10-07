@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
@@ -235,8 +236,13 @@ public abstract class IR_ScopeImpl implements IR_Scope
         Operand cv = _constMap.get(constRef);
         Operand p  = _parent;
         // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the parent is a static scope
-        if ((cv == null) && (p != null) && (p instanceof MetaObject))
+        if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
+            // Can be null for IR_Script meta objects
+            // SSS FIXME: But why build it in that case?  Investigate!
+            if (((MetaObject)p)._scope == null)
+                return null;
             cv = ((MetaObject)p)._scope.getConstantValue(constRef);
+        }
 
         return cv;
     }
@@ -287,15 +293,29 @@ public abstract class IR_ScopeImpl implements IR_Scope
     }
 
     public String toStringInstrs() {
+        List<IR_Closure> closures = new ArrayList<IR_Closure>();
         StringBuilder b = new StringBuilder();
 
         int i = 0;
         for (IR_Instr instr : _instrs) {
             if (i > 0) b.append("\n");
-            b.append("  " + i++ + "\t");
-				if (instr.isDead())
-					b.append("[DEAD]");
+            b.append("  ").append(i).append('\t');
+            if (instr.isDead())
+                b.append("[DEAD]");
             b.append(instr);
+
+            // Keep track of closures to print out at the end!
+            if (instr instanceof BUILD_CLOSURE_Instr)
+                closures.add(((BUILD_CLOSURE_Instr)instr).getClosure());
+
+            i++;
+        }
+
+        if (!closures.isEmpty()) {
+            b.append("\n\n------ Closures encountered in this scope ------\n");
+            for (IR_Closure c: closures)
+                b.append(c.toStringBody());
+            b.append("------------------------------------------------\n");
         }
 
         return b.toString();
