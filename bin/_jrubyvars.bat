@@ -43,19 +43,20 @@ rem set _STARTJAVA=start "%JAVA_HOME%\bin\java"
 set _STARTJAVA=%JAVA_HOME%\bin\%JAVA_COMMAND%
 :gotTitle
 
-rem ----- Set up the VM options
-set _VARS=%*
-call "%~dp0_jrubyvmopts" %%_VARS%%
-set _RUNJAVA="%JAVA_HOME%\bin\java"
-
 rem ----- Set Up The Boot Classpath ----------------------------------------
 
 for %%i in ("%JRUBY_HOME%\lib\jruby*.jar") do @call :setjrubycp %%i
-for %%i in ("%JRUBY_HOME%\lib\bsf*.jar") do @call :setjrubycp %%i
 
 rem ----- Set Up The System Classpath ----------------------------------------
 
-for %%i in ("%JRUBY_HOME%\lib\*.jar") do @call :setcp %%i
+for %%i in ("%JRUBY_HOME%\lib\profile.jar") do @call :setcp %%i
+
+rem ----- Set up the VM options
+rem This needs to be done *AFTER* classpath is set,
+rem since JRUBY_CP value is used in _jrubyvmopts.bat.
+set _VARS=%*
+call "%~dp0_jrubyvmopts" %%_VARS%%
+set _RUNJAVA="%JAVA_HOME%\bin\java"
 
 goto :EOF
 

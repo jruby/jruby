@@ -1,4 +1,8 @@
 @echo off
+rem Environment Variable Prequisites:
+rem
+rem   JRUBY_CP    JRuby's bootclasspath.
+rem
 
 set _MEM=-Xmx500m
 if not defined JAVA_MEM goto memOptDone
