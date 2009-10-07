@@ -82,8 +82,8 @@ public abstract class LexerSource {
         this.line = line;
         positionFactory = new SimplePositionFactory(this, line);
         this.list = list;
-        lineBuffer = new StringBuilder();
-        sourceLine = new StringBuilder();
+        lineBuffer = new StringBuilder(160);
+        sourceLine = new StringBuilder(160);
     }
 
     /**
