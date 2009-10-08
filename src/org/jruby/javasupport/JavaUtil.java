@@ -733,21 +733,9 @@ public class JavaUtil {
             // for Object, default to natural wrapper type
             if (numeric instanceof RubyFixnum) {
                 long value = numeric.getLongValue();
-                if (isLongByteable(value)) {
-                    return Byte.valueOf((byte)value);
-                } else if (isLongShortable(value)) {
-                    return Short.valueOf((short)value);
-                } else if (isLongIntable(value)) {
-                    return Integer.valueOf((int)value);
-                }
-
                 return Long.valueOf(value);
             } else if (numeric instanceof RubyFloat) {
                 double value = numeric.getDoubleValue();
-                if (isDoubleFloatable(value)) {
-                    return Float.valueOf((float)value);
-                }
-
                 return Double.valueOf(value);
             } else if (numeric instanceof RubyBignum) {
                 return ((RubyBignum)numeric).getValue();
