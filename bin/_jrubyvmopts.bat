@@ -121,6 +121,7 @@ if ["%_CMP%"] == ["--ng-server"] (
   rem returns null, which is not handled, crashing the server. Removing
   rem -Xbootclasspath for some reason fixes the getResourceAsStream() call.
   set _JRUBY_BOOTCP_OPTS=
+  set CP=%JRUBY_CP%;%CP%
   goto :vmoptsNext
 )
 
