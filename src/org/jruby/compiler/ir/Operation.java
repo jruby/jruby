@@ -51,7 +51,7 @@ public enum Operation
     EQQ(OpType.dont_care), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
 
 // a case/when branch
-    CASE(OpType.branch_op),
+    CASE(OpType.dont_care),
     
 // optimization guards
     ASSERT_METHOD_VERSION(OpType.guard_op);

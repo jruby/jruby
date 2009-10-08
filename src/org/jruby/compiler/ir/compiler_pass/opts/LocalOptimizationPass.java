@@ -12,9 +12,11 @@ import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
 import org.jruby.compiler.ir.operands.Array;
+import org.jruby.compiler.ir.operands.BreakResult;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Float;
 import org.jruby.compiler.ir.operands.Label;
@@ -70,6 +72,12 @@ public class LocalOptimizationPass implements CompilerPass
 //            System.out.println("AFTER: " + i);
             if (val != null && res != null && res != val) {
                 valueMap.put(res, val);
+                if (val instanceof BreakResult) {
+                    BreakResult br = (BreakResult)val;
+                    i.markDead();
+                    instrs.add(new COPY_Instr(res, br._result));
+                    instrs.add(new JUMP_Instr(br._jumpTarget));
+                }
             }
             // Optimize some core class method calls for constant values
             else if (iop.isCall()) {

@@ -263,7 +263,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
 
-    public IR_Loop getCurrentLoop() { return _loopStack.peek(); }
+    public IR_Loop getCurrentLoop() { return _loopStack.isEmpty() ? null : _loopStack.peek(); }
 
     public String toString() {
         return (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap);
