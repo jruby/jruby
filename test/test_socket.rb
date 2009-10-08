@@ -1,8 +1,11 @@
 require 'test/unit'
 require 'socket'
 require 'thread'
+require 'test/test_helper'
 
 class SocketTest < Test::Unit::TestCase
+  include TestHelper
+
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
       server = TCPServer.new(nil, 7789)
@@ -30,8 +33,14 @@ class SocketTest < Test::Unit::TestCase
     assert_nothing_raised do
       addrs = Socket::getaddrinfo(nil, 7789, Socket::AF_UNSPEC, Socket::SOCK_STREAM, 0)
       assert_equal(1, addrs.size)
-      assert_equal("localhost", addrs[0][2])
-      assert_equal("127.0.0.1", addrs[0][3])
+      
+      # FIXME, behaves differently on Windows, both JRuby and MRI.
+      # JRuby returns "127.0.0.1", "127.0.0.1"
+      # MRI returns  "<actual_hostname>", "127.0.0.1"
+      unless WINDOWS
+        assert_equal("localhost", addrs[0][2])
+        assert_equal("127.0.0.1", addrs[0][3])
+      end
     end
   end
 
