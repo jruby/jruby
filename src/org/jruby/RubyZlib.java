@@ -607,9 +607,7 @@ public class RubyZlib {
                 Block block) throws IOException {
             if (block.isGiven()) {
                 try {
-                    block.yield(context, instance);
-                    
-                    return instance.getRuntime().getNil();
+                    return block.yield(context, instance);
                 } finally {
                     if (!instance.isClosed()) instance.close();
                 }
@@ -1141,7 +1139,7 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "append", required = 1)
+        @JRubyMethod(name = {"append", "<<"}, required = 1)
         public IRubyObject append(IRubyObject p1) throws IOException {
             this.write(p1);
             return this;
@@ -1241,7 +1239,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "write", required = 1)
         public IRubyObject write(IRubyObject p1) throws IOException {
-            ByteList bytes = p1.convertToString().getByteList();
+            ByteList bytes = p1.asString().getByteList();
             io.write(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return getRuntime().newFixnum(bytes.length());
         }
