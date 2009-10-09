@@ -4,11 +4,13 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Module;
+import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IR_ScopeImpl;
 import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
@@ -35,9 +37,11 @@ public class LocalOptimizationPass implements CompilerPass
 
     public void run(IR_Scope s)
     {
-        if (!(s instanceof IR_Method))
-            return;
+        runLocalOpts(s);
+    }
 
+    private static void runLocalOpts(IR_Scope s)
+    {
         // Reset value map if this instruction is the start/end of a basic block
         //
         // Right now, calls are considered hard boundaries for optimization and
@@ -51,11 +55,10 @@ public class LocalOptimizationPass implements CompilerPass
         //   - etc.
         //
         // This information is probably already present in the AST Inspector
-        IR_Method m = (IR_Method)s;
-        Label     deoptLabel = m.getNewLabel();
+        Label     deoptLabel = s.getNewLabel();
         Map<Operand,Operand> valueMap   = new HashMap<Operand,Operand>();
         Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();
-        ListIterator<IR_Instr> instrs = m.getInstrs().listIterator();
+        ListIterator<IR_Instr> instrs = ((IR_ScopeImpl)s).getInstrs().listIterator();    // SSS: UGLY to cast it to scope impl .. but, hack for now.
         while (instrs.hasNext()) {
             IR_Instr i = instrs.next();
             Operation iop = i._op;
@@ -137,10 +140,14 @@ public class LocalOptimizationPass implements CompilerPass
                 valueMap = new HashMap<Operand,Operand>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
+
+            // Run local optimizations on any constructed closures
+            if (i instanceof BUILD_CLOSURE_Instr)
+                runLocalOpts(((BUILD_CLOSURE_Instr)i).getClosure());
         }
     }
 
-    private void addMethodGuard(IR_Method m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
+    private static void addMethodGuard(IR_Method m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
     {
         String      fullName     = m.getFullyQualifiedName();
         CodeVersion knownVersion = versionMap.get(fullName);

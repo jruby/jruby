@@ -18,7 +18,7 @@ public class BUILD_CLOSURE_Instr extends OneOperandInstr
         super(Operation.BUILD_CLOSURE, d, new MetaObject(c));
     }
 
-    public String toString() { return "\t" + _result + " = " + _arg + " [CLOSURE]"; }
+    public String toString() { return "\t" + _result + " = " + _arg + " [BUILD_CLOSURE]"; }
 
     public IR_Closure getClosure() { return (IR_Closure)(((MetaObject)_arg)._scope); }
 

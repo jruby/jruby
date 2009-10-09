@@ -13,17 +13,26 @@ public class IR_Closure extends IR_ScopeImpl
 {
     public final Label _startLabel; // Label for the start of the closure (used to implement redo)
     public final Label _endLabel;   // Label for the end of the closure (used to implement retry)
+    public final int   _closureId;   // Unique id for this closure within the nearest ancestor method.
     public final String _name;      // Name useful for debugging and reading ir output
 
-    private static int _closureCounter = 0;
-
     public IR_Closure(IR_Scope parent, IR_Scope lexicalParent)
-    { 
+    {
         super(parent, lexicalParent);
         _startLabel = getNewLabel("_CLOSURE_START_");
         _endLabel   = getNewLabel("_CLOSURE_END_");
-        _name = "_CL_" + _closureCounter;
-        _closureCounter++;
+        _closureId  = getNextClosureId();
+        _name       = "_CLOSURE_" + _closureId;
+    }
+
+    public int getNextClosureId()
+    {
+        return _lexicalParent.getNextClosureId();
+    }
+
+    public Variable getNewVariable()
+    {
+        return getNewVariable("%cl" + _closureId + "_v_");
     }
 
     public void setConstantValue(String constRef, Operand val) 
@@ -35,7 +44,7 @@ public class IR_Closure extends IR_ScopeImpl
 
     public String toStringBody() {
        StringBuffer buf = new StringBuffer();
-       buf.append("CLOSURE: ").append(_name).append(" = { \n");
+       buf.append(_name).append(" = { \n");
        org.jruby.compiler.ir.representations.CFG c = getCFG();
        if (c != null) {
             buf.append("\nCFG:\n").append(c.getGraph().toString());

@@ -27,6 +27,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 {
     Operand        _parent;   // Parent container for this context (can be dynamic!!)
                               // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
+    IR_Scope       _lexicalParent;   // Lexical parent scope
     List<IR_Instr> _instrs;   // List of IR instructions for this method
 
 // SSS FIXME: Maybe this is not really a concern after all ...
@@ -65,6 +66,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
     private CFG _cfg;
 
     private int _nextMethodIndex;
+    private int _nextClosureIndex;
     
         // List of modules, classes, and methods defined in this scope!
     final public List<IR_Module> _modules = new ArrayList<IR_Module>();
@@ -74,12 +76,14 @@ public abstract class IR_ScopeImpl implements IR_Scope
     private void init(Operand parent, IR_Scope lexicalParent)
     {
         _parent = parent;
+		  _lexicalParent = lexicalParent;
         _instrs = new ArrayList<IR_Instr>();
         _nextVarIndex = new HashMap<String, Integer>();
         _constMap = new HashMap<String, Operand>();
         _methodAliases = new HashMap<String, String>();
         _loopStack = new Stack<IR_Loop>();
         _nextMethodIndex = 0;
+        _nextClosureIndex = 0;
 //        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
     }
 
@@ -97,6 +101,12 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public Operand getParent()
     {
         return _parent;
+    }
+
+    public int getNextClosureId()
+    {
+        _nextClosureIndex++;
+        return _nextClosureIndex;
     }
 
     public Variable getNewVariable(String prefix)

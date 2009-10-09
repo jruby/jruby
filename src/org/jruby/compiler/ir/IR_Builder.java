@@ -2667,7 +2667,7 @@ public class IR_Builder
     public Operand buildZSuper(ZSuperNode zsuperNode, IR_Scope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, ((IR_Method)s).getCallArgs(), block));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, ((IR_Method)s).getCallArgs(), block));
         return ret;
     }
 

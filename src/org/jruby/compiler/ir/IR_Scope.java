@@ -32,6 +32,9 @@ public interface IR_Scope
         // Unalias 'name' and return new name
     public String unaliasMethodName(String name);
 
+        // Get the next available unique closure id for closures in this scope
+    public int getNextClosureId();
+
         // create a new variable using the prefix
     public Variable getNewVariable(String prefix);
 
