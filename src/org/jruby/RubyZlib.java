@@ -482,12 +482,18 @@ public class RubyZlib {
             }
         };
 
-        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true)
+        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true, backtrace = true)
         public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) throws Exception {
-            args = Arity.scanArgs(recv.getRuntime(),args,1,1);
-            int level = -1;
+            Ruby runtime = recv.getRuntime();
+            args = Arity.scanArgs(runtime,args,1,1);
+            int level = Deflater.DEFAULT_COMPRESSION;
             if(!args[1].isNil()) {
                 level = RubyNumeric.fix2int(args[1]);
+                if (level < 0 || level > 9) {
+                    RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                    throw new RaiseException(RubyException.newException(
+                            runtime, errorClass, "stream error: invalid level"), true);
+                }
             }
             return ZlibDeflate.s_deflate(recv,args[0].convertToString().getByteList(),level);
         }
