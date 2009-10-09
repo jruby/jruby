@@ -504,6 +504,11 @@ public class RubyZlib {
 
         private ZlibDeflate defl;
 
+        @JRubyMethod(name = "dup")
+        public IRubyObject op_dup() {
+            throw getRuntime().newNotImplementedError("Zlib::Deflate#dup is not yet implemented");
+        }
+
         @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,0,4);
