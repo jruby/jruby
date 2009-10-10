@@ -418,9 +418,15 @@ public class RubyZlib {
             return infl.sync_point();
         }
 
-        @JRubyMethod(name = "set_dictionary", required = 1)
-        public IRubyObject set_dictionary(IRubyObject arg) throws Exception {
-            return infl.set_dictionary(arg);
+        @JRubyMethod(name = "set_dictionary", required = 1, backtrace = true)
+        public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) throws Exception {
+            try {
+                return infl.set_dictionary(arg);
+            } catch (IllegalArgumentException iae) {
+                Ruby runtime = context.getRuntime();
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                throw new RaiseException(RubyException.newException(runtime, errorClass, iae.getMessage()), true);
+            }
         }
 
         @JRubyMethod(name = "inflate", required = 1, backtrace = true)
@@ -569,9 +575,15 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "set_dictionary", required = 1)
-        public IRubyObject set_dictionary(IRubyObject arg) throws Exception {
-            return defl.set_dictionary(arg);
+        @JRubyMethod(name = "set_dictionary", required = 1, backtrace = true)
+        public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) throws Exception {
+            try {
+                return defl.set_dictionary(arg);
+            } catch (IllegalArgumentException iae) {
+                Ruby runtime = context.getRuntime();
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                throw new RaiseException(RubyException.newException(runtime, errorClass, iae.getMessage()), true);
+            }
         }
         
         @JRubyMethod(name = "flush", optional = 1)
@@ -1160,8 +1172,7 @@ public class RubyZlib {
         @JRubyMethod(name = "initialize", required = 1, rest = true, frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize2(IRubyObject[] args, Block unusedBlock) throws IOException {
             realIo = (RubyObject) args[0];
-            io = new HeaderModifyableGZIPOutputStream(new IOOutputStream(args[0]));
-            
+            io = new HeaderModifyableGZIPOutputStream(new IOOutputStream(realIo, false, false));
             return this;
         }
 
