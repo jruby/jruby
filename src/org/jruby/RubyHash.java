@@ -1648,7 +1648,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public Object get(Object key) {
-        return internalGet(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key)).toJava(Object.class);
+        IRubyObject gotten = internalGet(JavaUtil.convertJavaToUsableRubyObject(getRuntime(), key));
+        return gotten == null ? null : gotten.toJava(Object.class);
     }
 
     public Object put(Object key, Object value) {

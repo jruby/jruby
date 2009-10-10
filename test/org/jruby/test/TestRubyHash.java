@@ -31,6 +31,7 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 
 /**
  * @author chadfowler
@@ -183,5 +184,10 @@ public class TestRubyHash extends TestRubyBase {
 	eval("$h_invert = {\"n\"=>100,\"y\"=>300,\"d\"=>200,\"a\"=>0}");
 	assertEquals("[[0, \"a\"], [100, \"n\"], [200, \"d\"], [300, \"y\"]]",
 		     eval("p $h_invert.invert.sort"));
+    }
+    
+    public void testGet() {
+        RubyHash rubyHash = new RubyHash(Ruby.getGlobalRuntime());
+        assertEquals(null, rubyHash.get("Non matching key"));
     }
 }
