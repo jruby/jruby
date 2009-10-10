@@ -474,6 +474,27 @@ public class RubyZlib {
         }
     }
 
+    static void checkLevel(Ruby runtime, int level) {
+        if ((level < 0 || level > 9) && level != Deflater.DEFAULT_COMPRESSION) {
+            RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+            throw new RaiseException(RubyException.newException(
+                    runtime, errorClass, "stream error: invalid level"), true);
+        }
+    }
+
+    static void checkStrategy(Ruby runtime, int strategy) {
+        switch (strategy) {
+            case Deflater.DEFAULT_STRATEGY:
+            case Deflater.FILTERED:
+            case Deflater.HUFFMAN_ONLY:
+                break;
+            default:
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                throw new RaiseException(RubyException.newException(
+                        runtime, errorClass, "stream error: invalid strategy"), true);
+        }
+    }
+
     @JRubyClass(name="Zlib::Deflate", parent="Zlib::ZStream")
     public static class Deflate extends ZStream {
         protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
@@ -489,11 +510,7 @@ public class RubyZlib {
             int level = Deflater.DEFAULT_COMPRESSION;
             if(!args[1].isNil()) {
                 level = RubyNumeric.fix2int(args[1]);
-                if (level < 0 || level > 9) {
-                    RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
-                    throw new RaiseException(RubyException.newException(
-                            runtime, errorClass, "stream error: invalid level"), true);
-                }
+                checkLevel(runtime, level);
             }
             return ZlibDeflate.s_deflate(recv,args[0].convertToString().getByteList(),level);
         }
@@ -539,8 +556,16 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "params", required = 2)
-        public IRubyObject params(IRubyObject level, IRubyObject strategy) {
-            defl.params(RubyNumeric.fix2int(level),RubyNumeric.fix2int(strategy));
+        public IRubyObject params(ThreadContext context, IRubyObject level, IRubyObject strategy) {
+            Ruby runtime = context.getRuntime();
+
+            int l = RubyNumeric.fix2int(level);
+            checkLevel(runtime, l);
+
+            int s = RubyNumeric.fix2int(strategy);
+            checkStrategy(runtime, s);
+
+            defl.params(l, s);
             return getRuntime().getNil();
         }
 
