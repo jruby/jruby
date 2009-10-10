@@ -1321,7 +1321,6 @@
     <exclude name="docs/rdocs.tar.gz"/>
     <exclude name="bench/**"/>
     <include name="share/**"/>
-    <include name="tool/nailgun/**"/>
   </patternset>
 
   <patternset id="dist.src.files">
@@ -1332,6 +1331,7 @@
     <include name="test/**"/>
     <include name="spec/**"/>
     <include name="tool/**"/>
+    <exclude name="tool/nailgun/**"/>
     <include name="build_lib/**"/>
     <include name="Rakefile"/>
     <include name="build.xml"/>
@@ -1344,6 +1344,15 @@
     <include name="jruby.bnd.template"/>
     <exclude name="lib/jruby.jar"/>
   </patternset>
+
+  <!-- note: tool/nailgun/configure must be added separately -->
+  <patternset id="dist.nailgun.files">
+    <include name="tool/nailgun/Makefile.in"/>
+    <include name="tool/nailgun/README.txt"/>
+    <include name="tool/nailgun/ng.exe"/>
+    <include name="tool/nailgun/src/**"/>
+  </patternset>
+
   <target name="dist-bin" depends="jar-dist">
     <mkdir dir="dist"/>
     <copy todir="dist">
@@ -1382,6 +1391,12 @@
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.bin.files"/>
       </tarfileset>
+      <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.nailgun.files"/>
+      </tarfileset>
+      <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
+        <include name="tool/nailgun/configure"/>
+      </tarfileset>
     </tar>
     <zip destfile="jruby-bin-${version.jruby}.zip">
       <zipfileset dir="dist" filemode="755" prefix="jruby-${version.jruby}">
@@ -1392,6 +1407,12 @@
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.bin.files"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.nailgun.files"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
+        <include name="tool/nailgun/configure"/>
       </zipfileset>
     </zip>
 
@@ -1423,6 +1444,12 @@
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.src.files"/>
       </tarfileset>
+      <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.nailgun.files"/>
+      </tarfileset>
+      <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
+        <include name="tool/nailgun/configure"/>
+      </tarfileset>
     </tar>
     <zip destfile="jruby-src-${version.jruby}.zip">
       <zipfileset dir="dist" filemode="755" prefix="jruby-${version.jruby}">
@@ -1433,6 +1460,12 @@
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.src.files"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
+        <patternset refid="dist.nailgun.files"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
+        <include name="tool/nailgun/configure"/>
       </zipfileset>
     </zip>
 
@@ -1496,6 +1529,7 @@
     </delete>
     <delete dir="${api.docs.dir}"/>
     <delete dir="src_gen"/>
+    <antcall target="clean-ng"/>
   </target>
 
   <target name="clean-all" depends="clean, clear-specs, dist-clean" description="Cleans everything, including dist files and specs">
@@ -1517,6 +1551,18 @@
       <exec executable="./configure" dir="${nailgun.home}" failonerror="true" output="/dev/null"/>
       <echo message="Building ng client in ${nailgun.home}"/>
     <exec executable="make" dir="${nailgun.home}" output="/dev/null"/>
+  </target>
+
+  <target name="clean-ng">
+    <condition property="should-clean-ng">
+      <and>
+        <available file="${nailgun.home}/Makefile"/>
+        <available file="${nailgun.home}/ng"/>
+      </and>
+    </condition>
+    <exec executable="make" dir="${nailgun.home}" failifexecutionfails="false" output="/dev/null">
+        <arg value="clean"/>
+    </exec>
   </target>
 
   <target name="jruby-nailgun" depends="generate-method-classes,build-ng"
