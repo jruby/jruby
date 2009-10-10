@@ -101,11 +101,17 @@ public class ZlibInflate {
                     throw new RaiseException(RubyException.newException(runtime, errorClass, "need dictionary"));
                 }
             } catch (DataFormatException ex) {
-                flater= new Inflater(true);
-                flater.setInput(appended.unsafeBytes(), appended.begin, appended.realSize);
-                appended= new ByteList();
-                run();
-                return;
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("DataError");
+                throw new RaiseException(RubyException.newException(runtime, errorClass, ex.getMessage()), true);
+
+                // FIXME: when commented out, we fail
+                // test_inflate_should_be_finished_after_decompressing_full_unwrapped_stream from
+                // test/test_zlib.rb: Zlib::DataError: unknown compression method
+//                flater= new Inflater(true);
+//                flater.setInput(appended.unsafeBytes(), appended.begin, appended.realSize);
+//                appended= new ByteList();
+//                run();
+//                return;
             }
             collected.append(outp, 0, resultLength);
             if (resultLength == outp.length) {

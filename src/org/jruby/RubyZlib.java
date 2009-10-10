@@ -384,7 +384,7 @@ public class RubyZlib {
             }
         };
 
-        @JRubyMethod(name = "inflate", required = 1, meta = true)
+        @JRubyMethod(name = "inflate", required = 1, meta = true, backtrace = true)
         public static IRubyObject s_inflate(IRubyObject recv, IRubyObject string) throws Exception {
             return ZlibInflate.s_inflate(recv,string.convertToString().getByteList());
         }
@@ -423,7 +423,7 @@ public class RubyZlib {
             return infl.set_dictionary(arg);
         }
 
-        @JRubyMethod(name = "inflate", required = 1)
+        @JRubyMethod(name = "inflate", required = 1, backtrace = true)
         public IRubyObject inflate(IRubyObject string) throws Exception {
             return infl.inflate(string.convertToString().getByteList());
         }
