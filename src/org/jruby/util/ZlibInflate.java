@@ -30,7 +30,6 @@
 package org.jruby.util;
 
 import java.io.UnsupportedEncodingException;
-
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -153,7 +152,12 @@ public class ZlibInflate {
         run();
         finished = true;
         flater.end();
-        return RubyString.newString(runtime, collected);
+        IRubyObject res = RubyString.newString(runtime, collected);
+
+        // reset the buffer
+        collected = new ByteList(BASE_SIZE);
+
+        return res;
     }
     
     public void close() {

@@ -436,8 +436,12 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "inflate", required = 1, backtrace = true)
-        public IRubyObject inflate(IRubyObject string) throws Exception {
-            return infl.inflate(string.convertToString().getByteList());
+        public IRubyObject inflate(IRubyObject string) {
+            ByteList data = null;
+            if (!string.isNil()) {
+                data = string.convertToString().getByteList();
+            }
+            return infl.inflate(data);
         }
 
         @JRubyMethod(name = "sync", required = 1)
