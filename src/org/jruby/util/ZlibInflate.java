@@ -43,18 +43,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZlibInflate {
     private final Ruby runtime;
-    private Inflater flater;    
+    private Inflater flater;
     private ByteList collected;
     private ByteList appended;
+    private boolean finished = false;
     
     public static final int BASE_SIZE = 100;
 
-    public ZlibInflate(IRubyObject caller) {
+    public ZlibInflate(IRubyObject caller, int win_bits) {
         super();
-        flater = new Inflater(false);
+        flater = new Inflater(win_bits < 0);
         collected = new ByteList(BASE_SIZE);
         runtime = caller.getRuntime();
-        appended= new ByteList();
+        appended = new ByteList();
+    }
+
+    public ZlibInflate(IRubyObject caller) {
+        this(caller, 15);
     }
 
     public static IRubyObject s_inflate(IRubyObject caller, ByteList str) 
@@ -93,7 +98,7 @@ public class ZlibInflate {
         byte[] outp = new byte[1024];
         int resultLength = -1;
 
-        while (!flater.finished() && resultLength != 0) {
+        while (!finished && !flater.finished() && resultLength != 0) {
             try {
                 resultLength = flater.inflate(outp);
                 if(flater.needsDictionary()) {
@@ -103,15 +108,6 @@ public class ZlibInflate {
             } catch (DataFormatException ex) {
                 RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("DataError");
                 throw new RaiseException(RubyException.newException(runtime, errorClass, ex.getMessage()), true);
-
-                // FIXME: when commented out, we fail
-                // test_inflate_should_be_finished_after_decompressing_full_unwrapped_stream from
-                // test/test_zlib.rb: Zlib::DataError: unknown compression method
-//                flater= new Inflater(true);
-//                flater.setInput(appended.unsafeBytes(), appended.begin, appended.realSize);
-//                appended= new ByteList();
-//                run();
-//                return;
             }
             collected.append(outp, 0, resultLength);
             if (resultLength == outp.length) {
@@ -154,8 +150,9 @@ public class ZlibInflate {
     }
 
     public IRubyObject finish() {
-        flater.end();
         run();
+        finished = true;
+        flater.end();
         return RubyString.newString(runtime, collected);
     }
     

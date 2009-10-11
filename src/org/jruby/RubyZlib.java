@@ -66,6 +66,8 @@ import org.jruby.util.ByteList;
 
 @JRubyModule(name="Zlib")
 public class RubyZlib {
+    private final static int MAX_WBITS = 15;
+
     /** Create the Zlib module and add it to the Ruby runtime.
      * 
      */
@@ -127,7 +129,7 @@ public class RubyZlib {
         result.defineConstant("DEFAULT_COMPRESSION",runtime.newFixnum(-1));
         result.defineConstant("BEST_COMPRESSION",runtime.newFixnum(9));
 
-        result.defineConstant("MAX_WBITS",runtime.newFixnum(15));
+        result.defineConstant("MAX_WBITS",runtime.newFixnum(MAX_WBITS));
 
         result.defineAnnotatedMethods(RubyZlib.class);
 
@@ -395,9 +397,15 @@ public class RubyZlib {
 
         private ZlibInflate infl;
 
-        @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "initialize", optional = 1, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
-            infl = new ZlibInflate(this);
+            int window_bits = MAX_WBITS;
+
+            if(args.length > 0 && !args[0].isNil()) {
+                window_bits = RubyNumeric.fix2int(args[0]);
+            }
+
+            infl = new ZlibInflate(this, window_bits);
             return this;
         }
 
@@ -536,7 +544,7 @@ public class RubyZlib {
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,0,4);
             int level = -1;
-            int window_bits = 15;
+            int window_bits = MAX_WBITS;
             int memlevel = 8;
             int strategy = 0;
             if(!args[0].isNil()) {
