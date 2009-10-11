@@ -181,12 +181,10 @@ public class RubyZlib {
 
     @JRubyMethod(name = "zlib_version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
-        return ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
-    }
-
-    @JRubyMethod(name = "version", module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject version(IRubyObject recv) {
-        return ((RubyModule)recv).fastGetConstant("VERSION");
+        RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
+        // MRI behavior, enforced by tests
+        res.taint(recv.getRuntime());
+        return res;
     }
 
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = Visibility.PRIVATE)
