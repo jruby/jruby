@@ -538,7 +538,7 @@ public class RubyZlib {
             throw getRuntime().newNotImplementedError("Zlib::Deflate#dup is not yet implemented");
         }
 
-        @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE, backtrace = true)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,0,4);
             int level = -1;
@@ -547,6 +547,7 @@ public class RubyZlib {
             int strategy = 0;
             if(!args[0].isNil()) {
                 level = RubyNumeric.fix2int(args[0]);
+                checkLevel(getRuntime(), level);
             }
             if(!args[1].isNil()) {
                 window_bits = RubyNumeric.fix2int(args[1]);
@@ -606,11 +607,17 @@ public class RubyZlib {
         @JRubyMethod(name = "deflate", required = 1, optional = 1)
         public IRubyObject deflate(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,1,1);
-            int flush = 0; // NO_FLUSH
+
+            ByteList data = null;
+            if (!args[0].isNil()) {
+                data = args[0].convertToString().getByteList();
+            }
+
+            int flush = 0; // By default, NO_FLUSH
             if(!args[1].isNil()) {
                 flush = RubyNumeric.fix2int(args[1]);
             }
-            return defl.deflate(args[0].convertToString().getByteList(),flush);
+            return defl.deflate(data, flush);
         }
 
         protected int internalTotalOut() {
