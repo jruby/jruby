@@ -491,6 +491,41 @@ public class Java implements Library {
 
             return getRubyMethod(context, proxyClass, name, argTypesClasses);
         }
+
+        @JRubyMethod(backtrace = true, meta = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName) {
+            return java_alias(context, proxyClass, newName, rubyName, context.getRuntime().newEmptyArray());
+        }
+
+        @JRubyMethod(backtrace = true, meta = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
+            String name = rubyName.asJavaString();
+            String newNameStr = newName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+            Ruby runtime = context.getRuntime();
+            RubyClass rubyClass;
+
+            if (proxyClass instanceof RubyClass) {
+                rubyClass = (RubyClass)proxyClass;
+            } else {
+                throw runtime.newTypeError(proxyClass, runtime.getModule());
+            }
+
+            Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
+
+            Method method = getMethodFromClass(runtime, jclass, name, argTypesClasses);
+            MethodInvoker invoker = getMethodInvokerForMethod(rubyClass, method);
+
+            if (Modifier.isStatic(method.getModifiers())) {
+                // add alias to meta
+                rubyClass.getSingletonClass().addMethod(newNameStr, invoker);
+            } else {
+                rubyClass.addMethod(newNameStr, invoker);
+            }
+
+            return runtime.getNil();
+        }
     }
 
     private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject proxyClass, String name, Class... argTypesClasses) {
@@ -519,6 +554,22 @@ public class Java implements Library {
         } catch (NoSuchMethodException nsme) {
             String errorName = jclass.getName() + "." + prettyName;
             throw runtime.newNameError("Java method not found: " + errorName, name);
+        }
+    }
+
+    public static Method getMethodFromClass(Ruby runtime, Class jclass, String name, Class... argTypes) {
+        try {
+            return jclass.getMethod(name, argTypes);
+        } catch (NoSuchMethodException nsme) {
+            throw JavaMethod.newMethodNotFoundError(runtime, jclass, name + CodegenUtils.prettyParams(argTypes), name);
+        }
+    }
+
+    private static MethodInvoker getMethodInvokerForMethod(RubyClass metaClass, Method method) {
+        if (Modifier.isStatic(method.getModifiers())) {
+            return new StaticMethodInvoker(metaClass.getMetaClass(), method);
+        } else {
+            return new InstanceMethodInvoker(metaClass, method);
         }
     }
 
