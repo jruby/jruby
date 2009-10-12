@@ -96,6 +96,7 @@ import org.jruby.compiler.ir.instructions.ALU_Instr;
 import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
@@ -128,6 +129,7 @@ import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
+import org.jruby.compiler.ir.operands.BreakResult;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
 import org.jruby.compiler.ir.operands.DynamicSymbol;
@@ -191,7 +193,7 @@ import org.jruby.util.ByteList;
 // ----------------------------
 // - We should be returning null from the build methods where it is a normal "error" condition
 // - We should be returning Nil.NIL where the actual return value of a build is the ruby nil operand
-//   Look in buildIfNode for an example of this
+//   Look in buildIf for an example of this
 
 public class IR_Builder
 {
@@ -622,11 +624,16 @@ public class IR_Builder
 
     public Operand buildBreak(BreakNode breakNode, IR_Scope s) {
         Operand rv = build(breakNode.getValueNode(), s);
+        if (s instanceof IR_Closure) {
+            s.addInstr(new BREAK_Instr(rv));
+            return rv;
+        }
+        else {
             // If this is not a closure, the break is equivalent to jumping to the loop end label
-        s.addInstr((s instanceof IR_Closure) ? new BREAK_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._loopEndLabel));
-
-            // SSS FIXME: Should I be returning the operand constructed here?
-        return Nil.NIL;
+            // But, since break can return a result even in loops, we need to pass back both
+            // the return value as well as the jump target -- so, create a special-purpose operand just for that purpose!
+            return new BreakResult(rv, s.getCurrentLoop()._loopEndLabel);
+        }
     }
 
     public Operand buildCall(CallNode callNode, IR_Scope s) {
@@ -702,8 +709,16 @@ public class IR_Builder
         for (Map.Entry<Label, Node> entry : bodies.entrySet()) {
             m.addInstr(new LABEL_Instr(entry.getKey()));
             Operand bodyValue = build(entry.getValue(), m);
+            // Local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
+            // rather than wait to do it during an optimization pass when a dead jump needs to be removed.
+            Label tgt = endLabel;
+            if (bodyValue instanceof BreakResult) {
+                BreakResult br = (BreakResult)bodyValue;
+                bodyValue = br._result;
+                tgt = br._jumpTarget;
+            }
             m.addInstr(new COPY_Instr(result, bodyValue));
-            m.addInstr(new JUMP_Instr(endLabel));
+            m.addInstr(new JUMP_Instr(tgt));
         }
 
         // close it out
@@ -1748,7 +1763,7 @@ public class IR_Builder
     //
     public Operand buildForIter(final ForNode forNode, IR_Scope s) {
             // Create a new closure context
-        IR_Scope closure = new IR_Closure(s, s);
+        IR_Closure closure = new IR_Closure(s, s);
 
             // Build args
         NodeType argsNodeId = null;
@@ -1764,7 +1779,7 @@ public class IR_Builder
 
             // Assign the closure to the block variable in the parent scope and return it
         Variable blockVar = s.getNewVariable();
-        s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
+        s.addInstr(new BUILD_CLOSURE_Instr(blockVar, closure));
         return blockVar;
     }
 
@@ -1827,8 +1842,16 @@ public class IR_Builder
         if (ifNode.getThenBody() != null) {
             thenResult = build(ifNode.getThenBody(), s);
             if (thenResult != null) { // thenResult can be null if then-body ended with a return!
+                // Local optimization of break results to short-circuit the jump right away
+                // rather than wait to do it during an optimization pass.
+                Label tgt = doneLabel;
+                if (thenResult instanceof BreakResult) {
+                    BreakResult br = (BreakResult)thenResult;
+                    thenResult = br._result;
+                    tgt = br._jumpTarget;
+                }
                 s.addInstr(new COPY_Instr(result, thenResult));
-                s.addInstr(new JUMP_Instr(doneLabel));
+                s.addInstr(new JUMP_Instr(tgt));
             }
         }
         else {
@@ -1865,7 +1888,7 @@ public class IR_Builder
 
     public Operand buildIter(final IterNode iterNode, IR_Scope s) {
             // Create a new closure context
-        IR_Scope closure = new IR_Closure(s, s);
+        IR_Closure closure = new IR_Closure(s, s);
 
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -1878,7 +1901,7 @@ public class IR_Builder
 
             // Assign the closure to the block variable in the parent scope and return it
         Variable blockVar = s.getNewVariable();
-        s.addInstr(new COPY_Instr(blockVar, new MetaObject(closure)));
+        s.addInstr(new BUILD_CLOSURE_Instr(blockVar, closure));
         return blockVar;
     }
 
@@ -2563,6 +2586,7 @@ public class IR_Builder
         {
             // we won't enter the loop -- just build the condition node
             build(conditionNode, s);
+            return Nil.NIL;
         } 
         else {
             IR_Loop loop = new IR_Loop(s);
@@ -2575,8 +2599,16 @@ public class IR_Builder
             }
             s.addInstr(new LABEL_Instr(loop._iterStartLabel));
 
-            if (bodyNode != null)
-                build(bodyNode, s);
+            // Looks like while can be treated as an expression!
+            // So, capture the result of the body so that it can be returned.
+            Variable whileResult = null;
+            if (bodyNode != null) {
+                Operand v = build(bodyNode, s);
+                if (v != null) {
+                    whileResult = s.getNewVariable();
+                    s.addInstr(new COPY_Instr(whileResult, v));
+                }
+            }
 
                 // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
             s.addInstr(new THREAD_POLL_Instr());
@@ -2589,8 +2621,9 @@ public class IR_Builder
 
             s.addInstr(new LABEL_Instr(loop._loopEndLabel));
             s.endLoop(loop);
+
+            return whileResult;
         }
-        return Nil.NIL;
     }
 
     public Operand buildUntil(final UntilNode untilNode, IR_Scope s) {
@@ -2634,7 +2667,7 @@ public class IR_Builder
     public Operand buildZSuper(ZSuperNode zsuperNode, IR_Scope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, ((IR_Method)s).getCallArgs(), block));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, ((IR_Method)s).getCallArgs(), block));
         return ret;
     }
 

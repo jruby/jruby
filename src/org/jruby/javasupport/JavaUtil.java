@@ -733,21 +733,9 @@ public class JavaUtil {
             // for Object, default to natural wrapper type
             if (numeric instanceof RubyFixnum) {
                 long value = numeric.getLongValue();
-                if (isLongByteable(value)) {
-                    return Byte.valueOf((byte)value);
-                } else if (isLongShortable(value)) {
-                    return Short.valueOf((short)value);
-                } else if (isLongIntable(value)) {
-                    return Integer.valueOf((int)value);
-                }
-
                 return Long.valueOf(value);
             } else if (numeric instanceof RubyFloat) {
                 double value = numeric.getDoubleValue();
-                if (isDoubleFloatable(value)) {
-                    return Float.valueOf((float)value);
-                }
-
                 return Double.valueOf(value);
             } else if (numeric instanceof RubyBignum) {
                 return ((RubyBignum)numeric).getValue();
@@ -759,6 +747,11 @@ public class JavaUtil {
     private static NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
+        }
+    };
+    private static NumericConverter NUMERIC_TO_VOID = new NumericConverter() {
+        public Object coerce(RubyNumeric numeric, Class target) {
+            return null;
         }
     };
     private static boolean isDoubleFloatable(double value) {
@@ -802,6 +795,7 @@ public class JavaUtil {
         NUMERIC_CONVERTERS.put(Double.class, NUMERIC_TO_DOUBLE);
         NUMERIC_CONVERTERS.put(BigInteger.class, NUMERIC_TO_BIGINTEGER);
         NUMERIC_CONVERTERS.put(Object.class, NUMERIC_TO_OBJECT);
+        NUMERIC_CONVERTERS.put(void.class, NUMERIC_TO_VOID);
     }
 
     @Deprecated

@@ -4,17 +4,21 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Module;
+import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IR_ScopeImpl;
 import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
 import org.jruby.compiler.ir.operands.Array;
+import org.jruby.compiler.ir.operands.BreakResult;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Float;
 import org.jruby.compiler.ir.operands.Label;
@@ -33,9 +37,11 @@ public class LocalOptimizationPass implements CompilerPass
 
     public void run(IR_Scope s)
     {
-        if (!(s instanceof IR_Method))
-            return;
+        runLocalOpts(s);
+    }
 
+    private static void runLocalOpts(IR_Scope s)
+    {
         // Reset value map if this instruction is the start/end of a basic block
         //
         // Right now, calls are considered hard boundaries for optimization and
@@ -49,11 +55,10 @@ public class LocalOptimizationPass implements CompilerPass
         //   - etc.
         //
         // This information is probably already present in the AST Inspector
-        IR_Method m = (IR_Method)s;
-        Label     deoptLabel = m.getNewLabel();
+        Label     deoptLabel = s.getNewLabel();
         Map<Operand,Operand> valueMap   = new HashMap<Operand,Operand>();
         Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();
-        ListIterator<IR_Instr> instrs = m.getInstrs().listIterator();
+        ListIterator<IR_Instr> instrs = ((IR_ScopeImpl)s).getInstrs().listIterator();    // SSS: UGLY to cast it to scope impl .. but, hack for now.
         while (instrs.hasNext()) {
             IR_Instr i = instrs.next();
             Operation iop = i._op;
@@ -70,6 +75,12 @@ public class LocalOptimizationPass implements CompilerPass
 //            System.out.println("AFTER: " + i);
             if (val != null && res != null && res != val) {
                 valueMap.put(res, val);
+                if (val instanceof BreakResult) {
+                    BreakResult br = (BreakResult)val;
+                    i.markDead();
+                    instrs.add(new COPY_Instr(res, br._result));
+                    instrs.add(new JUMP_Instr(br._jumpTarget));
+                }
             }
             // Optimize some core class method calls for constant values
             else if (iop.isCall()) {
@@ -93,22 +104,22 @@ public class LocalOptimizationPass implements CompilerPass
                     if (rm != null) {
                         IR_Module rc = rm.getDefiningModule();
                         if (rc == IR_Class.getCoreClass("Fixnum")) {
-                            Operand[] args = call.getCallArgs();
-                            if (args[1].isConstant()) {
+                            Operand[] args = call.getOperands();
+                            if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                 val = ((Fixnum)r).computeValue(rm._name, (Constant)args[1]);
                             }
                         }
                         else if (rc == IR_Class.getCoreClass("Float")) {
-                            Operand[] args = call.getCallArgs();
-                            if (args[1].isConstant()) {
+                            Operand[] args = call.getOperands();
+                            if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                 val = ((Float)r).computeValue(rm._name, (Constant)args[1]);
                             }
                         }
                         else if (rc == IR_Class.getCoreClass("Array")) {
-                            Operand[] args = call.getCallArgs();
-                            if (args[1] instanceof Fixnum && (rm._name == "[]")) {
+                            Operand[] args = call.getOperands();
+                            if (args[2] instanceof Fixnum && (rm._name == "[]")) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                 val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[1])._value.intValue(), false);
                             }
@@ -129,10 +140,14 @@ public class LocalOptimizationPass implements CompilerPass
                 valueMap = new HashMap<Operand,Operand>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
+
+            // Run local optimizations on any constructed closures
+            if (i instanceof BUILD_CLOSURE_Instr)
+                runLocalOpts(((BUILD_CLOSURE_Instr)i).getClosure());
         }
     }
 
-    private void addMethodGuard(IR_Method m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
+    private static void addMethodGuard(IR_Method m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
     {
         String      fullName     = m.getFullyQualifiedName();
         CodeVersion knownVersion = versionMap.get(fullName);

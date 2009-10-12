@@ -95,7 +95,7 @@ end
 
 describe "File.expand_path in a jar" do
   before do
-    Dir.mkdir 'spaces test'
+    Dir.mkdir 'spaces test' unless File.exist? 'spaces test'
     File.open('spaces_file.rb', 'w') do |file|
       file << <<-CODE
       $foo_dir = File.expand_path(File.dirname(__FILE__))
@@ -108,8 +108,12 @@ CODE
   end
 
   after do
-    File.delete('spaces test/test.jar')
-    Dir.rmdir 'spaces test'
+    begin
+      File.delete('spaces test/test.jar')
+      Dir.rmdir 'spaces test'
+    rescue Errno::EACCES => e
+      puts "Couldn't delete 'spaces test/test.jar' - Windows bug with JarFile holding write-lock after closed"
+    end
     $foo_dir = nil
   end
 

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
@@ -26,6 +27,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 {
     Operand        _parent;   // Parent container for this context (can be dynamic!!)
                               // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
+    IR_Scope       _lexicalParent;   // Lexical parent scope
     List<IR_Instr> _instrs;   // List of IR instructions for this method
 
 // SSS FIXME: Maybe this is not really a concern after all ...
@@ -64,6 +66,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
     private CFG _cfg;
 
     private int _nextMethodIndex;
+    private int _nextClosureIndex;
     
         // List of modules, classes, and methods defined in this scope!
     final public List<IR_Module> _modules = new ArrayList<IR_Module>();
@@ -73,12 +76,14 @@ public abstract class IR_ScopeImpl implements IR_Scope
     private void init(Operand parent, IR_Scope lexicalParent)
     {
         _parent = parent;
+		  _lexicalParent = lexicalParent;
         _instrs = new ArrayList<IR_Instr>();
         _nextVarIndex = new HashMap<String, Integer>();
         _constMap = new HashMap<String, Operand>();
         _methodAliases = new HashMap<String, String>();
         _loopStack = new Stack<IR_Loop>();
         _nextMethodIndex = 0;
+        _nextClosureIndex = 0;
 //        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
     }
 
@@ -96,6 +101,12 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public Operand getParent()
     {
         return _parent;
+    }
+
+    public int getNextClosureId()
+    {
+        _nextClosureIndex++;
+        return _nextClosureIndex;
     }
 
     public Variable getNewVariable(String prefix)
@@ -235,8 +246,13 @@ public abstract class IR_ScopeImpl implements IR_Scope
         Operand cv = _constMap.get(constRef);
         Operand p  = _parent;
         // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the parent is a static scope
-        if ((cv == null) && (p != null) && (p instanceof MetaObject))
+        if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
+            // Can be null for IR_Script meta objects
+            // SSS FIXME: But why build it in that case?  Investigate!
+            if (((MetaObject)p)._scope == null)
+                return null;
             cv = ((MetaObject)p)._scope.getConstantValue(constRef);
+        }
 
         return cv;
     }
@@ -257,7 +273,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
 
-    public IR_Loop getCurrentLoop() { return _loopStack.peek(); }
+    public IR_Loop getCurrentLoop() { return _loopStack.isEmpty() ? null : _loopStack.peek(); }
 
     public String toString() {
         return (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap);
@@ -287,15 +303,29 @@ public abstract class IR_ScopeImpl implements IR_Scope
     }
 
     public String toStringInstrs() {
+        List<IR_Closure> closures = new ArrayList<IR_Closure>();
         StringBuilder b = new StringBuilder();
 
         int i = 0;
         for (IR_Instr instr : _instrs) {
             if (i > 0) b.append("\n");
-            b.append("  " + i++ + "\t");
-				if (instr.isDead())
-					b.append("[DEAD]");
+            b.append("  ").append(i).append('\t');
+            if (instr.isDead())
+                b.append("[DEAD]");
             b.append(instr);
+
+            // Keep track of closures to print out at the end!
+            if (instr instanceof BUILD_CLOSURE_Instr)
+                closures.add(((BUILD_CLOSURE_Instr)instr).getClosure());
+
+            i++;
+        }
+
+        if (!closures.isEmpty()) {
+            b.append("\n\n------ Closures encountered in this scope ------\n");
+            for (IR_Closure c: closures)
+                b.append(c.toStringBody());
+            b.append("------------------------------------------------\n");
         }
 
         return b.toString();

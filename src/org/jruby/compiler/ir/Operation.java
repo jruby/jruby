@@ -44,14 +44,14 @@ public enum Operation
     BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
 
 // others
-    LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
+    BUILD_CLOSURE(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks
     IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false
     EQQ(OpType.dont_care), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
 
 // a case/when branch
-    CASE(OpType.branch_op),
+    CASE(OpType.dont_care),
     
 // optimization guards
     ASSERT_METHOD_VERSION(OpType.guard_op);

@@ -8,6 +8,7 @@ public class MethAddr extends Reference
     public final static MethAddr RETRIEVE_CONSTANT = new MethAddr("retrieveConstant");
     public final static MethAddr FOR_EACH          = new MethAddr("each");
     public final static MethAddr SUPER             = new MethAddr("super");
+    public final static MethAddr ZSUPER            = new MethAddr("super");
 
     // The following constants capture pre-known static call sites -- JRuby implementations of methods of ruby classes
     // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2 ... Is this a bug there?

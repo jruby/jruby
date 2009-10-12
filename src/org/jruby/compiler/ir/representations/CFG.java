@@ -11,9 +11,11 @@ import java.util.Set;
 import java.util.Stack;
 
 import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
@@ -217,6 +219,11 @@ public class CFG
             else if (iop != Operation.LABEL) {
                currBB.addInstr(i);
             }
+
+            // Build CFG for the closure!
+            if (i instanceof BUILD_CLOSURE_Instr) {
+                ((BUILD_CLOSURE_Instr)i).getClosure().buildCFG();
+            }
         }
 
         // Dummy entry and exit basic blocks and other dummy edges are needed to maintain the CFG 
@@ -393,9 +400,17 @@ public class CFG
 
     public String toStringInstrs()
     {
+        List<IR_Closure> closures = new ArrayList<IR_Closure>();
         StringBuffer buf = new StringBuffer();
         for (BasicBlock b: getNodes())
-            buf.append(b.toStringInstrs());
+            buf.append(b.toStringInstrs(closures));
+
+        if (!closures.isEmpty()) {
+            buf.append("\n\n------ Closures encountered in this scope ------\n");
+            for (IR_Closure c: closures)
+                buf.append(c.toStringBody());
+            buf.append("------------------------------------------------\n");
+        }
 
         return buf.toString();
     }

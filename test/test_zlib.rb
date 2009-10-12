@@ -168,4 +168,9 @@ class TestZlib < Test::Unit::TestCase
     end
     assert_equal(4, lines.size, lines.inspect)
   end
+
+  # FIXME: currently fails
+  def XXX_test_inflate_empty_string
+    assert_raise(Zlib::BufError) { Zlib::Inflate.inflate('') }
+  end
 end

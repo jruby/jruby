@@ -66,6 +66,8 @@ import org.jruby.util.ByteList;
 
 @JRubyModule(name="Zlib")
 public class RubyZlib {
+    private final static int MAX_WBITS = 15;
+
     /** Create the Zlib module and add it to the Ruby runtime.
      * 
      */
@@ -127,7 +129,7 @@ public class RubyZlib {
         result.defineConstant("DEFAULT_COMPRESSION",runtime.newFixnum(-1));
         result.defineConstant("BEST_COMPRESSION",runtime.newFixnum(9));
 
-        result.defineConstant("MAX_WBITS",runtime.newFixnum(15));
+        result.defineConstant("MAX_WBITS",runtime.newFixnum(MAX_WBITS));
 
         result.defineAnnotatedMethods(RubyZlib.class);
 
@@ -179,12 +181,10 @@ public class RubyZlib {
 
     @JRubyMethod(name = "zlib_version", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
-        return ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
-    }
-
-    @JRubyMethod(name = "version", module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject version(IRubyObject recv) {
-        return ((RubyModule)recv).fastGetConstant("VERSION");
+        RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
+        // MRI behavior, enforced by tests
+        res.taint(recv.getRuntime());
+        return res;
     }
 
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = Visibility.PRIVATE)
@@ -384,7 +384,7 @@ public class RubyZlib {
             }
         };
 
-        @JRubyMethod(name = "inflate", required = 1, meta = true)
+        @JRubyMethod(name = "inflate", required = 1, meta = true, backtrace = true)
         public static IRubyObject s_inflate(IRubyObject recv, IRubyObject string) throws Exception {
             return ZlibInflate.s_inflate(recv,string.convertToString().getByteList());
         }
@@ -395,9 +395,15 @@ public class RubyZlib {
 
         private ZlibInflate infl;
 
-        @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "initialize", optional = 1, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
-            infl = new ZlibInflate(this);
+            int window_bits = MAX_WBITS;
+
+            if(args.length > 0 && !args[0].isNil()) {
+                window_bits = RubyNumeric.fix2int(args[0]);
+            }
+
+            infl = new ZlibInflate(this, window_bits);
             return this;
         }
 
@@ -418,14 +424,24 @@ public class RubyZlib {
             return infl.sync_point();
         }
 
-        @JRubyMethod(name = "set_dictionary", required = 1)
-        public IRubyObject set_dictionary(IRubyObject arg) throws Exception {
-            return infl.set_dictionary(arg);
+        @JRubyMethod(name = "set_dictionary", required = 1, backtrace = true)
+        public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) throws Exception {
+            try {
+                return infl.set_dictionary(arg);
+            } catch (IllegalArgumentException iae) {
+                Ruby runtime = context.getRuntime();
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                throw new RaiseException(RubyException.newException(runtime, errorClass, iae.getMessage()), true);
+            }
         }
 
-        @JRubyMethod(name = "inflate", required = 1)
-        public IRubyObject inflate(IRubyObject string) throws Exception {
-            return infl.inflate(string.convertToString().getByteList());
+        @JRubyMethod(name = "inflate", required = 1, backtrace = true)
+        public IRubyObject inflate(IRubyObject string) {
+            ByteList data = null;
+            if (!string.isNil()) {
+                data = string.convertToString().getByteList();
+            }
+            return infl.inflate(data);
         }
 
         @JRubyMethod(name = "sync", required = 1)
@@ -474,6 +490,27 @@ public class RubyZlib {
         }
     }
 
+    static void checkLevel(Ruby runtime, int level) {
+        if ((level < 0 || level > 9) && level != Deflater.DEFAULT_COMPRESSION) {
+            RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+            throw new RaiseException(RubyException.newException(
+                    runtime, errorClass, "stream error: invalid level"), true);
+        }
+    }
+
+    static void checkStrategy(Ruby runtime, int strategy) {
+        switch (strategy) {
+            case Deflater.DEFAULT_STRATEGY:
+            case Deflater.FILTERED:
+            case Deflater.HUFFMAN_ONLY:
+                break;
+            default:
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                throw new RaiseException(RubyException.newException(
+                        runtime, errorClass, "stream error: invalid strategy"), true);
+        }
+    }
+
     @JRubyClass(name="Zlib::Deflate", parent="Zlib::ZStream")
     public static class Deflate extends ZStream {
         protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
@@ -482,12 +519,14 @@ public class RubyZlib {
             }
         };
 
-        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true)
+        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true, backtrace = true)
         public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) throws Exception {
-            args = Arity.scanArgs(recv.getRuntime(),args,1,1);
-            int level = -1;
+            Ruby runtime = recv.getRuntime();
+            args = Arity.scanArgs(runtime,args,1,1);
+            int level = Deflater.DEFAULT_COMPRESSION;
             if(!args[1].isNil()) {
                 level = RubyNumeric.fix2int(args[1]);
+                checkLevel(runtime, level);
             }
             return ZlibDeflate.s_deflate(recv,args[0].convertToString().getByteList(),level);
         }
@@ -498,15 +537,21 @@ public class RubyZlib {
 
         private ZlibDeflate defl;
 
-        @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "dup")
+        public IRubyObject op_dup() {
+            throw getRuntime().newNotImplementedError("Zlib::Deflate#dup is not yet implemented");
+        }
+
+        @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE, backtrace = true)
         public IRubyObject _initialize(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,0,4);
             int level = -1;
-            int window_bits = 15;
+            int window_bits = MAX_WBITS;
             int memlevel = 8;
             int strategy = 0;
             if(!args[0].isNil()) {
                 level = RubyNumeric.fix2int(args[0]);
+                checkLevel(getRuntime(), level);
             }
             if(!args[1].isNil()) {
                 window_bits = RubyNumeric.fix2int(args[1]);
@@ -528,14 +573,28 @@ public class RubyZlib {
         }
 
         @JRubyMethod(name = "params", required = 2)
-        public IRubyObject params(IRubyObject level, IRubyObject strategy) {
-            defl.params(RubyNumeric.fix2int(level),RubyNumeric.fix2int(strategy));
+        public IRubyObject params(ThreadContext context, IRubyObject level, IRubyObject strategy) {
+            Ruby runtime = context.getRuntime();
+
+            int l = RubyNumeric.fix2int(level);
+            checkLevel(runtime, l);
+
+            int s = RubyNumeric.fix2int(strategy);
+            checkStrategy(runtime, s);
+
+            defl.params(l, s);
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "set_dictionary", required = 1)
-        public IRubyObject set_dictionary(IRubyObject arg) throws Exception {
-            return defl.set_dictionary(arg);
+        @JRubyMethod(name = "set_dictionary", required = 1, backtrace = true)
+        public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) throws Exception {
+            try {
+                return defl.set_dictionary(arg);
+            } catch (IllegalArgumentException iae) {
+                Ruby runtime = context.getRuntime();
+                RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("StreamError");
+                throw new RaiseException(RubyException.newException(runtime, errorClass, iae.getMessage()), true);
+            }
         }
         
         @JRubyMethod(name = "flush", optional = 1)
@@ -552,11 +611,17 @@ public class RubyZlib {
         @JRubyMethod(name = "deflate", required = 1, optional = 1)
         public IRubyObject deflate(IRubyObject[] args) throws Exception {
             args = Arity.scanArgs(getRuntime(),args,1,1);
-            int flush = 0; // NO_FLUSH
+
+            ByteList data = null;
+            if (!args[0].isNil()) {
+                data = args[0].convertToString().getByteList();
+            }
+
+            int flush = 0; // By default, NO_FLUSH
             if(!args[1].isNil()) {
                 flush = RubyNumeric.fix2int(args[1]);
             }
-            return defl.deflate(args[0].convertToString().getByteList(),flush);
+            return defl.deflate(data, flush);
         }
 
         protected int internalTotalOut() {
@@ -607,9 +672,7 @@ public class RubyZlib {
                 Block block) throws IOException {
             if (block.isGiven()) {
                 try {
-                    block.yield(context, instance);
-                    
-                    return instance.getRuntime().getNil();
+                    return block.yield(context, instance);
                 } finally {
                     if (!instance.isClosed()) instance.close();
                 }
@@ -1126,8 +1189,7 @@ public class RubyZlib {
         @JRubyMethod(name = "initialize", required = 1, rest = true, frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize2(IRubyObject[] args, Block unusedBlock) throws IOException {
             realIo = (RubyObject) args[0];
-            io = new HeaderModifyableGZIPOutputStream(new IOOutputStream(args[0]));
-            
+            io = new HeaderModifyableGZIPOutputStream(new IOOutputStream(realIo, false, false));
             return this;
         }
 
@@ -1141,7 +1203,7 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "append", required = 1)
+        @JRubyMethod(name = {"append", "<<"}, required = 1)
         public IRubyObject append(IRubyObject p1) throws IOException {
             this.write(p1);
             return this;
@@ -1241,7 +1303,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "write", required = 1)
         public IRubyObject write(IRubyObject p1) throws IOException {
-            ByteList bytes = p1.convertToString().getByteList();
+            ByteList bytes = p1.asString().getByteList();
             io.write(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return getRuntime().newFixnum(bytes.length());
         }

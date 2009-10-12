@@ -1,7 +1,10 @@
 require 'test/unit'
+require 'test/test_helper'
 
 class TestEnv < Test::Unit::TestCase
-  IGNORE_CASE = /djgpp|bccwin|mswin|mingw/ =~ RUBY_PLATFORM
+  include TestHelper
+
+  IGNORE_CASE = (/djgpp|bccwin|mswin|mingw/ =~ RUBY_PLATFORM) || WINDOWS
 
   def setup
     @backup = ENV.delete('test')
