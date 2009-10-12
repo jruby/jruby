@@ -57,7 +57,11 @@ import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.MalformedInputException;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -6817,28 +6821,191 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "encode!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode_bang(ThreadContext context) {
+        modify19();
+        IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(context.getRuntime());
+        if (!defaultInternal.isNil()) {
+            encode_bang(context, defaultInternal);
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = "encode!", compat = CompatVersion.RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject enc) {
         modify19();
 
-        // from encoding, special-casing ASCII* to ASCII
-        Charset from = value.encoding.toString().startsWith("ASCII") ?
-            Charset.forName("ASCII") :
-            Charset.forName(value.encoding.toString());
-
-        // to encoding, same special-casing
-        Encoding encoding = RubyEncoding.getEncodingFromObject(context.getRuntime(), enc);
-        Charset to = encoding.toString().startsWith("ASCII") ?
-            Charset.forName("ASCII") :
-            Charset.forName(encoding.toString());
-
-        // decode from "from" and encode to "to"
-        ByteBuffer fromBytes = ByteBuffer.wrap(value.unsafeBytes(), value.begin(), value.length());
-        ByteBuffer toBytes = to.encode(from.decode(fromBytes));
-        value = new ByteList(toBytes.array(), encoding);
+        Ruby runtime = context.getRuntime();
+        this.value = encodeCommon(context, runtime, this.value, enc, runtime.getNil(),
+            runtime.getNil());
 
         return this;
     }
+
+    @JRubyMethod(name = "encode!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc, IRubyObject arg) {
+        modify19();
+
+        Ruby runtime = context.getRuntime();
+        IRubyObject fromEnc = arg;
+        IRubyObject opts = runtime.getNil();
+        if (arg instanceof RubyHash) {
+            fromEnc = runtime.getNil();
+            opts = arg;
+        }
+        this.value = encodeCommon(context, runtime, this.value, enc, fromEnc, opts);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "encode!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc, IRubyObject fromEnc, IRubyObject opts) {
+        modify19();
+        this.value = encodeCommon(context, context.getRuntime(), this.value, enc, fromEnc, opts);
+        return this;
+    }
+
+    @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode(ThreadContext context) {
+        modify19();
+        Ruby runtime = context.getRuntime();
+        IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(runtime);
+        RubyString stringDup = runtime.newString(this.value);
+
+        if (!defaultInternal.isNil()) {
+            stringDup.value = encodeCommon(context, runtime, stringDup.value, defaultInternal, runtime.getNil(),
+                runtime.getNil());
+        }
+
+        return stringDup;
+    }
     
+    @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode(ThreadContext context, IRubyObject enc) {
+        modify19();
+        Ruby runtime = context.getRuntime();
+        RubyString stringDup = runtime.newString(this.value);
+
+        stringDup.value = encodeCommon(context, runtime, stringDup.value, enc, runtime.getNil(),
+            runtime.getNil());
+        return stringDup;
+    }
+
+    @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject arg) {
+        modify19();
+        Ruby runtime = context.getRuntime();
+        RubyString stringDup = runtime.newString(this.value);
+
+        IRubyObject fromEnc = arg;
+        IRubyObject opts = runtime.getNil();
+        if (arg instanceof RubyHash) {
+            fromEnc = runtime.getNil();
+            opts = arg;
+        }
+        stringDup.value = encodeCommon(context, runtime, stringDup.value, enc, fromEnc, opts);
+        return stringDup;
+    }
+
+    @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
+    public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject fromEnc, IRubyObject opts) {
+        modify19();
+        Ruby runtime = context.getRuntime();
+        RubyString stringDup = runtime.newString(this.value);
+
+        stringDup.value = encodeCommon(context, runtime, stringDup.value, enc, fromEnc, opts);
+        return stringDup;
+    }
+
+    private ByteList encodeCommon(ThreadContext context, Ruby runtime, ByteList value,
+            IRubyObject toEnc, IRubyObject fromEnc, IRubyObject opts) {
+        Charset from = fromEnc.isNil() ? getCharset(runtime, value.encoding) : getCharset(runtime, fromEnc);
+
+        Encoding encoding = getEncoding(runtime, toEnc);
+        Charset to = getCharset(runtime, encoding);
+
+        CharsetEncoder encoder = getEncoder(context, runtime, to, opts);
+
+        // decode from "from" and encode to "to"
+        ByteBuffer fromBytes = ByteBuffer.wrap(value.unsafeBytes(), value.begin(), value.length());
+        ByteBuffer toBytes;
+        try {
+            toBytes = encoder.encode(from.decode(fromBytes));
+        } catch (CharacterCodingException e) {
+            throw runtime.newInvalidByteSequenceError("");
+        }
+        return new ByteList(toBytes.array(), encoding);
+    }
+
+    private CharsetEncoder getEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
+        CharsetEncoder encoder = charset.newEncoder();
+
+        if (!opts.isNil()) {
+            RubyHash hash = (RubyHash) opts;
+            CodingErrorAction action = CodingErrorAction.REPLACE;
+            
+            IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
+            if (replace != null && !replace.isNil()) {
+                String replaceWith = replace.toString();
+                if (replaceWith.length() > 0) {
+                    encoder.replaceWith(replaceWith.getBytes());
+                } else {
+                    action = CodingErrorAction.IGNORE;
+                }
+            }
+            
+            IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
+            if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
+                encoder.onMalformedInput(action);
+            }
+
+            IRubyObject undef = hash.fastARef(runtime.newSymbol("undef"));
+            if (undef != null && undef.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
+                encoder.onUnmappableCharacter(action);
+            }
+
+//            FIXME: Parse the option :xml
+//            The value must be +:text+ or +:attr+. If the
+//            value is +:text+ +#encode+ replaces undefined
+//            characters with their (upper-case hexadecimal)
+//            numeric character references. '&', '<', and
+//            '>' are converted to "&amp;", "&lt;", and
+//            "&gt;", respectively. If the value is +:attr+,
+//            +#encode+ also quotes the replacement result
+//            (using '"'), and replaces '"' with "&quot;".
+        }
+
+        return encoder;
+    }
+
+    private Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
+        try {
+            return RubyEncoding.getEncodingFromObject(runtime, toEnc);
+        } catch (Exception e) {
+            throw runtime.newConverterNotFoundError("code converter not found (" + toEnc.toString() + ")");
+        }
+    }
+
+    private Charset getCharset(Ruby runtime, IRubyObject toEnc) {
+        try {
+            Encoding encoding = RubyEncoding.getEncodingFromObject(runtime, toEnc);
+
+            return getCharset(runtime, encoding);
+        } catch (Exception e) {
+            throw runtime.newConverterNotFoundError("code converter not found (" + toEnc.toString() + ")");
+        }
+    }
+
+    private Charset getCharset(Ruby runtime, Encoding encoding) {
+        try {
+            // special-casing ASCII* to ASCII
+            return encoding.toString().startsWith("ASCII") ?
+                Charset.forName("ASCII") :
+                Charset.forName(encoding.toString());
+        } catch (Exception e) {
+            throw runtime.newConverterNotFoundError("code converter not found (" + encoding.toString() + ")");
+        }
+    }
+
     @JRubyMethod(name = "force_encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
         modify19();

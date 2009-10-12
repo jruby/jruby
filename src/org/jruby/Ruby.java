@@ -1277,6 +1277,9 @@ public final class Ruby {
             if (profile.allowClass("EncodingError")) {
                 encodingError = defineClass("EncodingError", standardError, standardError.getAllocator()); 
                 encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
+                invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
+                undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
+                converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
             }
         }
 
@@ -2031,6 +2034,18 @@ public final class Ruby {
 
     public RubyClass getEncodingCompatibilityError() {
         return encodingCompatibilityError;
+    }
+
+    public RubyClass getConverterNotFoundError() {
+        return converterNotFoundError;
+    }
+
+    public RubyClass getUndefinedConversionError() {
+        return undefinedConversionError;
+    }
+
+    public RubyClass getInvalidByteSequenceError() {
+        return invalidByteSequenceError;
     }
 
     private RubyHash charsetMap;
@@ -3070,6 +3085,18 @@ public final class Ruby {
         return newRaiseException(getEncodingCompatibilityError(), message);
     }
 
+    public RaiseException newConverterNotFoundError(String message) {
+        return newRaiseException(getConverterNotFoundError(), message);
+    }
+
+    public RaiseException newUndefinedConversionError(String message) {
+        return newRaiseException(getUndefinedConversionError(), message);
+    }
+
+    public RaiseException newInvalidByteSequenceError(String message) {
+        return newRaiseException(getInvalidByteSequenceError(), message);
+    }
+
     /**
      * @param exceptionClass
      * @param message
@@ -3409,7 +3436,8 @@ public final class Ruby {
             systemCallError, fatal, interrupt, typeError, argumentError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError,
-            encodingError, encodingCompatibilityError;
+            encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
+            invalidByteSequenceError;
 
     /**
      * All the core modules we keep direct references to, for quick access and
