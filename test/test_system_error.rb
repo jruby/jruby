@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'rbconfig'
 
 class TestSystemError < Test::Unit::TestCase
   def setup
@@ -73,7 +74,7 @@ class TestSystemError < Test::Unit::TestCase
       assert_raise_msg(err,m) do 
         raise err
       end
-    end    
+    end if Config::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/ 
   end
 
   def assert_raise_msg(error, message)
@@ -95,7 +96,7 @@ class TestSystemError < Test::Unit::TestCase
       else
         puts "     int    #{e} = #{c};"
       end
-    end
+    end if Config::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/ 
   end
 
 end
