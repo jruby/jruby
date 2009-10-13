@@ -5,7 +5,6 @@ import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.Library;
-import com.kenai.jffi.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -13,9 +12,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Util;
+import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -27,7 +25,7 @@ public class VariadicInvoker extends RubyObject {
     private final Library library;
     private final long address;
     private final FunctionInvoker functionInvoker;
-    private final Type returnType;
+    private final com.kenai.jffi.Type returnType;
 
     public static RubyClass createVariadicInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("VariadicInvoker",
@@ -43,7 +41,7 @@ public class VariadicInvoker extends RubyObject {
      * @param arity
      */
     private VariadicInvoker(Ruby runtime, IRubyObject klazz, Library library, long address,
-            FunctionInvoker functionInvoker, Type returnType,
+            FunctionInvoker functionInvoker, com.kenai.jffi.Type returnType,
             CallingConvention convention) {
         super(runtime, (RubyClass) klazz);
         this.library = library;
@@ -78,87 +76,55 @@ public class VariadicInvoker extends RubyObject {
         } catch (UnsatisfiedLinkError ex) {
             throw context.getRuntime().newLoadError(ex.getMessage());
         }
-        NativeType returnType = NativeType.valueOf(args[2]);
+        if (!(args[2] instanceof Type)) {
+            throw context.getRuntime().newTypeError("invalid return type");
+        }
+        Type returnType = (Type) args[2];
+        
         FunctionInvoker functionInvoker = DefaultMethodFactory.getFunctionInvoker(returnType);
         return new VariadicInvoker(recv.getRuntime(), recv, library, address,
-                functionInvoker, getFFIType(returnType), conv);
+                functionInvoker, FFIUtil.getFFIType(returnType), conv);
     }
 
     @JRubyMethod(name = { "invoke" })
     public IRubyObject invoke(ThreadContext context, IRubyObject typesArg, IRubyObject paramsArg) {
         IRubyObject[] types = ((RubyArray) typesArg).toJavaArrayMaybeUnsafe();
         IRubyObject[] params = ((RubyArray) paramsArg).toJavaArrayMaybeUnsafe();
-        Type[] ffiParamTypes = new Type[types.length];
-        NativeType[] paramTypes = new NativeType[types.length];
+        com.kenai.jffi.Type[] ffiParamTypes = new com.kenai.jffi.Type[types.length];
+        
         for (int i = 0; i < types.length; ++i) {
-            NativeType t = NativeType.valueOf(types[i]);
-            switch (t) {
+            Type type = (Type) types[i];
+            switch (NativeType.valueOf(type)) {
                 case CHAR:
                 case SHORT:
                 case INT:
-                    paramTypes[i] = NativeType.INT;
+                    ffiParamTypes[i] = com.kenai.jffi.Type.SINT32;
                     break;
                 case UCHAR:
                 case USHORT:
                 case UINT:
-                    paramTypes[i] = NativeType.UINT;
+                    ffiParamTypes[i] = com.kenai.jffi.Type.UINT32;
                     break;
                 case FLOAT:
                 case DOUBLE:
-                    paramTypes[i] = NativeType.DOUBLE;
+                    ffiParamTypes[i] = com.kenai.jffi.Type.DOUBLE;
                     break;
                 default:
-                    paramTypes[i] = t;
+                    ffiParamTypes[i] = FFIUtil.getFFIType(type);
             }
-            ffiParamTypes[i] = getFFIType(paramTypes[i]);
         }
+
         Invocation invocation = new Invocation(context);
         try {
             Function function = new Function(address, returnType, ffiParamTypes, convention);
             HeapInvocationBuffer args = new HeapInvocationBuffer(function);
             for (int i = 0; i < types.length; ++i) {
-                DefaultMethodFactory.getMarshaller(paramTypes[i]).marshal(invocation, args, params[i]);
+                DefaultMethodFactory.getMarshaller((Type) types[i], CallingConvention.DEFAULT, null).marshal(invocation, args, params[i]);
             }
 
             return functionInvoker.invoke(context.getRuntime(), function, args);
         } finally {
             invocation.finish();
-        }
-    }
-    private static final Type getFFIType(NativeParam type) {
-        if (type instanceof NativeType) switch ((NativeType) type) {
-            case VOID: return com.kenai.jffi.Type.VOID;
-            case BOOL: return com.kenai.jffi.Type.UINT32;
-            case CHAR: return com.kenai.jffi.Type.SINT8;
-            case UCHAR: return com.kenai.jffi.Type.UINT8;
-            case SHORT: return com.kenai.jffi.Type.SINT16;
-            case USHORT: return com.kenai.jffi.Type.UINT16;
-            case INT: return com.kenai.jffi.Type.SINT32;
-            case UINT: return com.kenai.jffi.Type.UINT32;
-            case LONG_LONG: return com.kenai.jffi.Type.SINT64;
-            case ULONG_LONG: return com.kenai.jffi.Type.UINT64;
-            case LONG:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32
-                        ? com.kenai.jffi.Type.SINT32
-                        : com.kenai.jffi.Type.SINT64;
-            case ULONG:
-                return com.kenai.jffi.Platform.getPlatform().addressSize() == 32
-                        ? com.kenai.jffi.Type.UINT32
-                        : com.kenai.jffi.Type.UINT64;
-            case FLOAT: return com.kenai.jffi.Type.FLOAT;
-            case DOUBLE: return com.kenai.jffi.Type.DOUBLE;
-            case POINTER: return com.kenai.jffi.Type.POINTER;
-            case BUFFER_IN:
-            case BUFFER_OUT:
-            case BUFFER_INOUT:
-                return com.kenai.jffi.Type.POINTER;
-            case STRING: return com.kenai.jffi.Type.POINTER;
-            default:
-                throw new IllegalArgumentException("Unknown type " + type);
-//        } else if (type instanceof CallbackInfo) {
-//            return com.kenai.jffi.Type.POINTER;
-        } else {
-            throw new IllegalArgumentException("Unknown type " + type);
         }
     }
 }
