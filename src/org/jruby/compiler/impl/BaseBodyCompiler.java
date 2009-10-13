@@ -576,6 +576,15 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
+        createNewHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+    }
+    
+    public void createNewHash19(Object elements, ArrayCallback callback, int keyCount) {
+        createNewHashCommon(elements, callback, keyCount, "constructHash19", "fastASetCheckString19");
+    }
+    
+    private void createNewHashCommon(Object elements, ArrayCallback callback, int keyCount,
+            String constructorName, String methodName) {
         loadRuntime();
 
         // use specific-arity for as much as possible
@@ -584,12 +593,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             callback.nextValue(this, elements, i);
         }
 
-        invokeUtilityMethod("constructHash", sig(RubyHash.class, params(Ruby.class, IRubyObject.class, i * 2)));
+        invokeUtilityMethod(constructorName, sig(RubyHash.class, params(Ruby.class, IRubyObject.class, i * 2)));
 
         for (; i < keyCount; i++) {
             method.dup();
+            loadRuntime();
             callback.nextValue(this, elements, i);
-            method.invokevirtual(p(RubyHash.class), "fastASet", sig(void.class, params(IRubyObject.class, IRubyObject.class)));
+            method.invokevirtual(p(RubyHash.class), methodName, sig(void.class, params(Ruby.class, IRubyObject.class, IRubyObject.class)));
         }
     }
 

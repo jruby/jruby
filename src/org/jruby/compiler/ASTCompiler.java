@@ -2450,8 +2450,10 @@ public class ASTCompiler {
     }
 
     public void compileHash(Node node, BodyCompiler context, boolean expr) {
-        HashNode hashNode = (HashNode) node;
-
+        compileHashCommon((HashNode) node, context, expr);
+    }
+    
+    protected void compileHashCommon(HashNode hashNode, BodyCompiler context, boolean expr) {
         boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
         boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
 
@@ -2472,13 +2474,17 @@ public class ASTCompiler {
                         }
                     };
 
-            context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+            createNewHash(context, hashNode, hashCallback);
             if (popit) context.consumeCurrentValue();
         } else {
             for (Node nextNode : hashNode.getListNode().childNodes()) {
                 compile(nextNode, context, false);
             }
         }
+    }
+    
+    protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
+        context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
 
     public void compileIf(Node node, BodyCompiler context, final boolean expr) {

@@ -66,7 +66,7 @@ import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.HashNode;
+import org.jruby.ast.Hash19Node;
 import org.jruby.ast.IfNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
@@ -2440,7 +2440,7 @@ public Object case298_line1144(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case233_line928(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new Hash19Node(getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
 }
 public Object case254_line1004(Object yyVal, Object[] yyVals, int yyTop) {
@@ -2976,7 +2976,7 @@ public Object case221_line890(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case232_line925(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(getPosition(), ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
 }
 public Object case510_line1963(Object yyVal, Object[] yyVals, int yyTop) {
@@ -3134,7 +3134,7 @@ public Object case331_line1261(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case273_line1069(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new HashNode(getPosition(((Token)yyVals[-2+yyTop])), ((ListNode)yyVals[-1+yyTop]));
+                    yyVal = new Hash19Node(getPosition(((Token)yyVals[-2+yyTop])), ((ListNode)yyVals[-1+yyTop]));
     return yyVal;
 }
 public Object case266_line1038(Object yyVal, Object[] yyVals, int yyTop) {
@@ -3635,7 +3635,7 @@ public Object case296_line1138(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case241_line947(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new Hash19Node(getPosition(), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
@@ -3696,7 +3696,7 @@ public Object case55_line503(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case242_line951(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                    yyVal = support.arg_append(((Node)yyVals[-3+yyTop]), new Hash19Node(getPosition(), ((ListNode)yyVals[-1+yyTop])));
                     yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }

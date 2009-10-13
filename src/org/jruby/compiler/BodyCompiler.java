@@ -188,6 +188,13 @@ public interface BodyCompiler {
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount);
     
     /**
+    * @see createNewHash
+    *
+    * Create new hash running in ruby 1.9 compat version.
+    */
+    public void createNewHash19(Object elements, ArrayCallback callback, int keyCount);
+    
+    /**
      * Create a new range. It is expected that the stack will contain the end and begin values for the range as
      * its topmost and second topmost elements.
      * 
