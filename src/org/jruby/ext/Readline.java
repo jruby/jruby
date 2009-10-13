@@ -567,8 +567,8 @@ public class Readline {
 
             Ruby runtime = procCompletor.getRuntime();
             ThreadContext context = runtime.getCurrentContext();
-            IRubyObject array = runtime.newString(buffer).callMethod(context, "to_a");
-            IRubyObject comps = RuntimeHelpers.invoke(context, procCompletor, "call", array);
+            IRubyObject result = procCompletor.callMethod(context, "call", runtime.newString(buffer));
+            IRubyObject comps = result.callMethod(context, "to_a");
             
             if (comps instanceof List) {
                 for (Iterator i = ((List) comps).iterator(); i.hasNext();) {
