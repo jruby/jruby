@@ -43,7 +43,7 @@ class Object
     end
     
     # else, pull in the class
-    class_names = include_class.to_a
+    class_names = [*include_class]
 
     class_names.each do |full_class_name|
       package_name, class_name = full_class_name.match(/((.*)\.)?([^\.]*)/)[2,3]
