@@ -809,6 +809,22 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value);
         return this;
     }
+    
+    public final void fastASetCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
+      if (key instanceof RubyString) {
+          op_asetForString(runtime, (RubyString) key, value);
+      } else {
+          internalPut(key, value);
+      }
+    }
+
+    public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
+      if (key.getMetaClass().getRealClass() == runtime.getString()) {
+          op_asetForString(runtime, (RubyString) key, value);
+      } else {
+          internalPut(key, value);
+      }
+    }
 
     @Deprecated
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
@@ -821,13 +837,8 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = {"[]=", "store"}, required = 2, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         modify();
-
-        if (key instanceof RubyString) {
-            op_asetForString(context.getRuntime(), (RubyString)key, value);
-        } else {
-            internalPut(key, value);
-        }
-
+        
+        fastASetCheckString(context.getRuntime(), key, value);
         return value;
     }
 
@@ -835,13 +846,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         modify();
 
-        Ruby runtime = context.getRuntime();
-        if (key.getMetaClass().getRealClass() == runtime.getString()) {
-            op_asetForString(runtime, (RubyString)key, value);
-        } else {
-            internalPut(key, value);
-        }
-
+        fastASetCheckString19(context.getRuntime(), key, value);
         return value;
     }
 

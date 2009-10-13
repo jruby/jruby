@@ -1153,22 +1153,43 @@ public class RuntimeHelpers {
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1) {
         RubyHash hash = RubyHash.newHash(runtime);
-        hash.fastASet(key1, value1);
+        hash.fastASetCheckString(runtime, key1, value1);
         return hash;
     }
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2) {
         RubyHash hash = RubyHash.newHash(runtime);
-        hash.fastASet(key1, value1);
-        hash.fastASet(key2, value2);
+        hash.fastASetCheckString(runtime, key1, value1);
+        hash.fastASetCheckString(runtime, key2, value2);
         return hash;
     }
     
     public static RubyHash constructHash(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2, IRubyObject key3, IRubyObject value3) {
         RubyHash hash = RubyHash.newHash(runtime);
-        hash.fastASet(key1, value1);
-        hash.fastASet(key2, value2);
-        hash.fastASet(key3, value3);
+        hash.fastASetCheckString(runtime, key1, value1);
+        hash.fastASetCheckString(runtime, key2, value2);
+        hash.fastASetCheckString(runtime, key3, value3);
+        return hash;
+    }
+    
+    public static RubyHash constructHash19(Ruby runtime, IRubyObject key1, IRubyObject value1) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.fastASetCheckString19(runtime, key1, value1);
+        return hash;
+    }
+    
+    public static RubyHash constructHash19(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.fastASetCheckString19(runtime, key1, value1);
+        hash.fastASetCheckString19(runtime, key2, value2);
+        return hash;
+    }
+    
+    public static RubyHash constructHash19(Ruby runtime, IRubyObject key1, IRubyObject value1, IRubyObject key2, IRubyObject value2, IRubyObject key3, IRubyObject value3) {
+        RubyHash hash = RubyHash.newHash(runtime);
+        hash.fastASetCheckString19(runtime, key1, value1);
+        hash.fastASetCheckString19(runtime, key2, value2);
+        hash.fastASetCheckString19(runtime, key3, value3);
         return hash;
     }
     

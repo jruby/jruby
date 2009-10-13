@@ -34,6 +34,8 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.Hash19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
@@ -348,5 +350,15 @@ public class ASTCompiler19 extends ASTCompiler {
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+    
+    @Override
+    public void compileHash(Node node, BodyCompiler context, boolean expr) {
+        compileHashCommon((Hash19Node) node, context, expr);
+    }
+    
+    @Override
+    protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
+        context.createNewHash19(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
 }

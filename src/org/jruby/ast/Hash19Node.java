@@ -31,74 +31,23 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.util.List;
-
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
-import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 
  * of default values in a method call.
  */
-public class HashNode extends Node {
-    private final ListNode listNode;
+public class Hash19Node extends HashNode {
     
-    public HashNode(ISourcePosition position, ListNode listNode) {
-        super(position);
-        this.listNode = listNode;
+    public Hash19Node(ISourcePosition position, ListNode listNode) {
+        super(position, listNode);
     }
 
-    public NodeType getNodeType() {
-        return NodeType.HASHNODE;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public Object accept(NodeVisitor iVisitor) {
-        return iVisitor.visitHashNode(this);
-    }
-
-    /**
-     * Gets the listNode.
-     * @return Returns a IListNode
-     */
-    public ListNode getListNode() {
-        return listNode;
-    }
-    
-    public List<Node> childNodes() {
-        return createList(listNode);
-    }
-    
     @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyHash hash = RubyHash.newHash(runtime);
-        
-        ListNode list = this.listNode;
-        if (list != null) {
-            int size = list.size();
-   
-            for (int i = 0; i < size;) {
-                // insert all nodes in sequence, hash them in the final instruction
-                // KEY
-                IRubyObject key = list.get(i++).interpret(runtime, context, self, aBlock);
-                IRubyObject value = list.get(i++).interpret(runtime, context, self, aBlock);
-   
-                aset(runtime, hash, key, value);
-            }
-        }
-      
-        return hash;
-    }
-    
     protected void aset(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
-        hash.fastASetCheckString(runtime, key, value);
+        hash.fastASetCheckString19(runtime, key, value);
     }
 }
