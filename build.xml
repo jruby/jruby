@@ -1564,14 +1564,17 @@
     <exec executable="make" dir="${nailgun.home}" output="/dev/null"/>
   </target>
 
-  <target name="clean-ng">
+  <target name="need-clean-ng">
     <condition property="should-clean-ng">
       <and>
         <available file="${nailgun.home}/Makefile"/>
         <available file="${nailgun.home}/ng"/>
       </and>
     </condition>
-    <exec executable="make" dir="${nailgun.home}" failifexecutionfails="false" output="/dev/null">
+  </target>
+
+  <target name="clean-ng" depends="need-clean-ng" if="should-clean-ng">
+    <exec executable="make" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="/dev/null">
         <arg value="clean"/>
     </exec>
   </target>
