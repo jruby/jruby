@@ -133,8 +133,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private final Callback newCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
         ClosureInfo info = getClosureInfo(runtime, cbInfo);
         WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
-        Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
-                info.ffiReturnType, info.ffiParameterTypes, info.convention);
+        Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
         return new Callback(runtime, handle, cbInfo);
     }
 
@@ -158,8 +157,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         ClosureInfo info = new ClosureInfo(runtime, returnType, parameterTypes, convention);
 
         final CallbackProxy cbProxy = new CallbackProxy(runtime, info, proc);
-        final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy,
-                info.ffiReturnType, info.ffiParameterTypes, info.convention);
+        final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
         
         return new CallbackMemoryIO(runtime, handle);
     }
@@ -171,13 +169,12 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         final CallingConvention convention;
         final Type returnType;
         final Type[] parameterTypes;
-        final com.kenai.jffi.Type[] ffiParameterTypes;
-        final com.kenai.jffi.Type ffiReturnType;
+        final com.kenai.jffi.CallContext callContext;
         
         public ClosureInfo(Ruby runtime, Type returnType, Type[] paramTypes, CallingConvention convention) {
             this.convention = convention;
 
-            ffiParameterTypes = new com.kenai.jffi.Type[paramTypes.length];
+            com.kenai.jffi.Type[] ffiParameterTypes = new com.kenai.jffi.Type[paramTypes.length];
 
             for (int i = 0; i < paramTypes.length; ++i) {
                 if (!isParameterTypeValid(paramTypes[i])) {
@@ -190,10 +187,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 runtime.newArgumentError("Invalid callback return type: " + returnType);
             }
 
+            this.callContext = new com.kenai.jffi.CallContext(FFIUtil.getFFIType(returnType.getNativeType()), ffiParameterTypes, convention);
             this.returnType = returnType;
             this.parameterTypes = (Type[]) paramTypes.clone();
-            this.ffiReturnType = FFIUtil.getFFIType(returnType.getNativeType());
-            
         }
     }
 
