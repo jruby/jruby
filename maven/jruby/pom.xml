@@ -28,12 +28,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby.embed</groupId>
-      <artifactId>jruby-embed</artifactId>
-      <version>0.1.2</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>3.2</version>
