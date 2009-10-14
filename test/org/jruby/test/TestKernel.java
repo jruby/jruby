@@ -79,7 +79,8 @@ public class TestKernel extends TestRubyBase {
     public void testExit() throws Exception {
         verifyExit(RubyFixnum.zero(runtime),   "true");
         verifyExit(RubyFixnum.one(runtime),    "false");
-        verifyExit(RubyFixnum.one(runtime),    "");
+        verifyExit(RubyFixnum.zero(runtime),    "");
+        verifyExit(RubyFixnum.zero(runtime),    "0.1");
         verifyExit(new RubyFixnum(runtime, 7), "7");
     }
         
