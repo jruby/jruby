@@ -59,6 +59,12 @@ describe "A Ruby subclass of a Java class" do
     end
     lambda {subtype.new.go}.should raise_error
   end
+  it "can override methods that return void and return non-void value" do
+    subtype = Class.new(PackageInstanceMethod) do
+      def voidMethod; 123; end
+    end
+    subtype.new.invokeVoidMethod.should == nil
+  end
   it "can not invoke private methods of the superclass" do
     subtype = Class.new(PrivateInstanceMethod) do
       def go; thePrivateMethod; end
