@@ -761,17 +761,19 @@ public class RubyKernel {
         exit(recv.getRuntime(), args, true);
         return recv.getRuntime().getNil(); // not reached
     }
-    
+
     private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
         runtime.secure(4);
 
+        // FIXME: the default value should be actually 0.
         int status = 1;
+
         if (args.length > 0) {
-            RubyObject argument = (RubyObject)args[0];
-            if (argument instanceof RubyFixnum) {
-                status = RubyNumeric.fix2int(argument);
-            } else {
+            RubyObject argument = (RubyObject) args[0];
+            if (argument instanceof RubyBoolean) {
                 status = argument.isFalse() ? 1 : 0;
+            } else {
+                status = RubyNumeric.fix2int(argument);
             }
         }
 
