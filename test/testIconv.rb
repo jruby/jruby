@@ -3,8 +3,9 @@ test_check "Iconv:"
 
 require 'iconv'
 
-# FIXME: Not implemented yet (though core work done to support it) [JRUBY-309]
-#test_exception(Iconv::IllegalSequence) { p Iconv.conv("ASCII", "UTF-8", "ol\303\251") }
+test_exception(Iconv::IllegalSequence) { p Iconv.conv("ASCII", "UTF-8", "ol\303\251") }
+test_exception(Iconv::IllegalSequence) { p Iconv.conv("UTF-8", "UTF-8", "\xa4") }
+test_exception(Iconv::IllegalSequence) { p Iconv.conv("UTF-8", "UTF-8//IGNORE", "\xa4") }
 
 # FIXME: Java does not support transliteration in core jdk?
 #Iconv.iconv("ASCII//TRANSLIT", "UTF-8", "ol\303\251")
@@ -18,10 +19,5 @@ test_equal("ol\351", result)
 result = Iconv.conv("ISO-8859-1//IGNORE//TRANSLIT", "UTF-8", "ol\303\251")
 test_equal("ol\351", result)
 
-result = Iconv.conv("ISO-8859-1", "UTF-8//TRANSLIT", "ol\303\251")
-test_equal("ol\351", result)
-result = Iconv.conv("ISO-8859-1", "UTF-8//IGNORE", "ol\303\251")
-test_equal("ol\351", result)
-result = Iconv.conv("ISO-8859-1", "UTF-8//IGNORE//TRANSLIT", "ol\303\251")
-test_equal("ol\351", result)
-
+result = Iconv.conv("UTF-8//IGNORE", "UTF-8", "\xa4")
+test_equal("", result)

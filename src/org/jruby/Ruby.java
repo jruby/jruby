@@ -2964,6 +2964,10 @@ public final class Ruby {
     public RaiseException newInvalidEncoding(String message) {
         return newRaiseException(fastGetClass("Iconv").fastGetClass("InvalidEncoding"), message);
     }
+    
+    public RaiseException newIllegalSequence(String message) {
+        return newRaiseException(fastGetClass("Iconv").fastGetClass("IllegalSequence"), message);
+    }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
         return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);

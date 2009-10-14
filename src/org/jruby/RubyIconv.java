@@ -212,8 +212,17 @@ public class RubyIconv extends RubyObject {
             fromEncoding = Charset.forName(getCharset(from)).newDecoder();
             toEncoding = Charset.forName(getCharset(to)).newEncoder();
 
-            if (!isIgnore(from)) fromEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
-            if (!isIgnore(to)) toEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
+            if (isIgnore(to)) {
+                fromEncoding.onUnmappableCharacter(CodingErrorAction.IGNORE);
+                fromEncoding.onMalformedInput(CodingErrorAction.IGNORE);
+                toEncoding.onUnmappableCharacter(CodingErrorAction.IGNORE);
+                toEncoding.onMalformedInput(CodingErrorAction.IGNORE);
+            } else {
+                fromEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
+                fromEncoding.onMalformedInput(CodingErrorAction.REPORT);
+                toEncoding.onUnmappableCharacter(CodingErrorAction.REPORT);
+                toEncoding.onMalformedInput(CodingErrorAction.REPORT);
+            }
         } catch (IllegalCharsetNameException e) {
             throw runtime.newInvalidEncoding("invalid encoding");
         } catch (UnsupportedCharsetException e) {
@@ -313,10 +322,13 @@ public class RubyIconv extends RubyObject {
             CharBuffer cbuf = fromEncoding.decode(buf);
             buf = toEncoding.encode(cbuf);
         } catch (MalformedInputException e) {
+            throw getRuntime().newIllegalSequence(str.toString());
         } catch (UnmappableCharacterException e) {
+            throw getRuntime().newIllegalSequence(str.toString());
         } catch (CharacterCodingException e) {
             throw getRuntime().newInvalidEncoding("invalid sequence");
         } catch (IllegalStateException e) {
+            throw getRuntime().newIllegalSequence(str.toString());
         }
         byte[] arr = buf.array();
         
