@@ -59,7 +59,7 @@ abstract public class FlowGraphNode
     public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet)
     {
         bbSet.clear(_bb.getID());
-   
+
         // Compute meet over all "sources" and compute "destination" basic blocks that should then be processed. 
         // sources & targets depends on direction of the data flow problem
         List<BasicBlock> dsts = new ArrayList<BasicBlock>();
@@ -98,5 +98,5 @@ abstract public class FlowGraphNode
 
 /* --------- Protected fields/methods below --------- */
     protected DataFlowProblem _prob;   // Dataflow problem with which this node is associated
-    protected BasicBlock _bb;   			// CFG node for which this node contains info.
+    protected BasicBlock _bb;          // CFG node for which this node contains info.
 }

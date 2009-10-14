@@ -8,6 +8,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Method;
 
@@ -51,6 +52,17 @@ public class CALL_Instr extends MultiOperandInstr
         return callArgs;
     }
 
+    public void simplifyOperands(Map<Operand, Operand> valueMap)
+    {
+        super.simplifyOperands(valueMap);
+        _methAddr = _args[0];
+        _closure  = (_closure == null) ? null : _args[_args.length-1];
+        System.out.println("simplified closure is: " + _closure);
+    }
+
+    // SSS FIXME: Right now, this code is not very smart!
+    // In a JIT context, we might be compiling this call in the context of a surrounding PIC (or a monomorphic IC).
+    // If so, the receiver type and hence the target method will be known.
     public IR_Method getTargetMethodWithReceiver(Operand receiver)
     {
         if (!(_methAddr instanceof MethAddr))
@@ -80,19 +92,30 @@ public class CALL_Instr extends MultiOperandInstr
         return getTargetMethodWithReceiver(getReceiver());
     }
 
+    public boolean isLVADataflowBarrier()
+    {
+        if (getClosureArg() == null) {
+            return false;
+        }
+        else {
+            Operand    r  = getReceiver(); 
+            IR_Method  rm = getTargetMethodWithReceiver(r);
+            if ((rm == null) || rm.canAccessAllOfCallersLocalVariables()) {
+                // We are in deep doo-doo -- we have to store/load all of this method's local variables onto a heap frame
+                // (which means we need to allocate sufficient space for all of them on the heap frame).
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+    }
+
     public String toString() {
         return   "\t" 
                + (_result == null ? "" : _result + " = ") 
                + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
                + (_closure == null ? "" : ", &" + _closure) + ")";
-    }
-
-    public void simplifyOperands(Map<Operand, Operand> valueMap)
-    {
-        super.simplifyOperands(valueMap);
-        _methAddr = _methAddr.getSimplifiedOperand(valueMap);
-        if (_closure != null)
-            _closure = _closure.getSimplifiedOperand(valueMap);
     }
 
 // --------------- Private methods ---------------

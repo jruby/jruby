@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.representations.CFG;
 
 // Script, Module, Class, Method, Closure
 public interface IR_Scope
@@ -50,12 +49,6 @@ public interface IR_Scope
         // get "self"
     public Variable getSelf();
 
-        // Build the CFG for this scope -- supported only by methods & closures
-    public CFG buildCFG();
-
-        // Get the control flow graph for this scope -- only valid for methods & closures
-    public CFG getCFG(); 
-
         // Tries to load at compile-time the constant referred to by 'constRef'.
         // This might be possible if the constant is defined and is not a forward reference
         // to a value that will be defined later in the class.
@@ -65,15 +58,6 @@ public interface IR_Scope
         // This might be possible if the constant is defined and is not a forward reference
         // to a value that will be defined later in the class.
     public void setConstantValue(String constRef, Operand value);
-
-        // While processing loops, this returns the loop that we are processing.
-    public IR_Loop getCurrentLoop();
-
-        // Record the loop we are beginning to process
-    public void startLoop(IR_Loop l);
-
-        // Indicate that we are done processing the loop
-    public void endLoop(IR_Loop l);
 
         // Run the passed in compiler pass on this scope!
     public void runCompilerPass(CompilerPass opt);

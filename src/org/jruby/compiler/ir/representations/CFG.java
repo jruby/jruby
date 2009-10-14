@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
@@ -22,6 +22,8 @@ import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.operands.Label;
+
+import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
@@ -49,14 +51,15 @@ public class CFG
         }
     }
 
-    IR_Scope   _scope;     // Scope (method/closure) to which this cfg belongs
-    BasicBlock _entryBB;   // Entry BB -- dummy
-    BasicBlock _exitBB;    // Exit BB -- dummy
-    DirectedGraph<BasicBlock, CFG_Edge> _cfg;  // The actual graph
-    int        _nextBBId;  // Next available basic block id
-    LinkedList<BasicBlock> _postOrderList;
+    IR_ExecutionScope _scope;   // Scope (method/closure) to which this cfg belongs
+    BasicBlock _entryBB;        // Entry BB -- dummy
+    BasicBlock _exitBB;         // Exit BB -- dummy
+    int        _nextBBId;       // Next available basic block id
+    DirectedGraph<BasicBlock, CFG_Edge> _cfg;   // The actual graph
+    LinkedList<BasicBlock> _postOrderList;      // Post order traversal list of the cfg
+    LiveVariablesProblem _lvp;  // Live Variable Analysis info for the cfg
 
-    public CFG(IR_Scope s)
+    public CFG(IR_ExecutionScope s)
     {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
@@ -68,9 +71,14 @@ public class CFG
         return _cfg;
     }
 
-    public BasicBlock getRoot()
+    public BasicBlock getEntryBB()
     {
         return _entryBB;
+    }
+
+    public BasicBlock getExitBB()
+    {
+        return _exitBB;
     }
 
     public int getNextBBID()
@@ -250,7 +258,7 @@ public class CFG
     private void buildPostOrderTraversal()
     {
         _postOrderList = new LinkedList<BasicBlock>();
-        BasicBlock root = getRoot();
+        BasicBlock root = getEntryBB();
         Stack<BasicBlock> stack = new Stack<BasicBlock>();
         stack.push(root);
         BitSet bbSet = new BitSet(1+getMaxNodeID());
@@ -336,7 +344,7 @@ public class CFG
         // We convert this po-number -> po-number map to a bb -> bb map later on!
         Integer[] idoms = new Integer[maxNodeId+1];
 
-        BasicBlock root = getRoot();
+        BasicBlock root = getEntryBB();
         Integer    rootPoNumber = bbToPoNumbers[root.getID()];
         idoms[rootPoNumber] = rootPoNumber;
         boolean changed = true;
@@ -400,11 +408,11 @@ public class CFG
 
     public String toStringInstrs()
     {
-        List<IR_Closure> closures = new ArrayList<IR_Closure>();
         StringBuffer buf = new StringBuffer();
         for (BasicBlock b: getNodes())
-            buf.append(b.toStringInstrs(closures));
+            buf.append(b.toStringInstrs());
 
+        List<IR_Closure> closures = _scope.getClosures();
         if (!closures.isEmpty()) {
             buf.append("\n\n------ Closures encountered in this scope ------\n");
             for (IR_Closure c: closures)
@@ -414,4 +422,8 @@ public class CFG
 
         return buf.toString();
     }
+
+    public void setLVP(LiveVariablesProblem lvp) { _lvp = lvp; }
+
+    public LiveVariablesProblem getLVP() { return _lvp; }
 }

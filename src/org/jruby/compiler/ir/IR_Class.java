@@ -7,9 +7,6 @@ import org.jruby.compiler.ir.operands.Operand;
 
 public class IR_Class extends IR_Module
 {
-    // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
-    final private static String ROOT_METHOD_PREFIX = ":_ROOT_:";
-
     private static Map<String, IR_Class> _coreClasses;
 
     static {
@@ -46,27 +43,16 @@ public class IR_Class extends IR_Module
         addCoreClass("Hash", obj, null);
     }
 
-    public static boolean isAClassRootMethod(IR_Method m) { return m._name.startsWith(ROOT_METHOD_PREFIX); }
     public static IR_Class getCoreClass(String n) { return _coreClasses.get(n); }
 
     final public  Operand _superClass;
     final public  boolean _isSingleton;
-          private IR_Method _rootMethod; // Dummy top-level method for the class
 
-    private void addRootMethod()
-    {
-        // Build a dummy static method for the class -- the scope in which all definitions, and class code executes, equivalent to java clinit
-        String n = ROOT_METHOD_PREFIX + _name;
-        _rootMethod = new IR_Method(this, this, n, n, false);
-        addMethod(_rootMethod);
-    }
-    
     public IR_Class(IR_Scope parent, IR_Scope lexicalParent, Operand superClass, String className, boolean isSingleton)
     {
         super(parent, lexicalParent, className);
         _superClass = superClass;
         _isSingleton = isSingleton;
-        addRootMethod();
     }
 
     public IR_Class(Operand parent, IR_Scope lexicalParent, Operand superClass, String className, boolean isSingleton)
@@ -74,10 +60,7 @@ public class IR_Class extends IR_Module
         super(parent, lexicalParent, className);
         _superClass = superClass;
         _isSingleton = isSingleton;
-        addRootMethod();
     }
-
-    public IR_Method getRootMethod() { return _rootMethod; }
 
     public String toString() {
         return "Class: " + _name + super.toString();

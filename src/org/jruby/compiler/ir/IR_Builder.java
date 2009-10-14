@@ -259,7 +259,7 @@ public class IR_Builder
             case BEGINNODE: return buildBegin((BeginNode) node, m); // done
             case BIGNUMNODE: return buildBignum((BignumNode) node, m); // done
             case BLOCKNODE: return buildBlock((BlockNode) node, m); // done
-            case BREAKNODE: return buildBreak((BreakNode) node, m); // done?
+            case BREAKNODE: return buildBreak((BreakNode) node, (IR_ExecutionScope)m); // done?
             case CALLNODE: return buildCall((CallNode) node, m); // done
             case CASENODE: return buildCase((CaseNode) node, m); // done
             case CLASSNODE: return buildClass((ClassNode) node, m); // done
@@ -287,14 +287,14 @@ public class IR_Builder
             case FIXNUMNODE: return buildFixnum((FixnumNode) node, m); // done
 //            case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
             case FLOATNODE: return buildFloat((FloatNode) node, m); // done
-            case FORNODE: return buildFor((ForNode) node, m); // done
+            case FORNODE: return buildFor((ForNode) node, (IR_ExecutionScope)m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node, m); // done
             case GLOBALVARNODE: return buildGlobalVar((GlobalVarNode) node, m); // done
             case HASHNODE: return buildHash((HashNode) node, m); // done
             case IFNODE: return buildIf((IfNode) node, m); // done
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node, m); // done
             case INSTVARNODE: return buildInstVar((InstVarNode) node, m); // done
-            case ITERNODE: return buildIter((IterNode) node, m); // done
+            case ITERNODE: return buildIter((IterNode) node, (IR_ExecutionScope)m); // done
             case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node, m); // done
             case LOCALVARNODE: return buildLocalVar((LocalVarNode) node, m); // done
             case MATCH2NODE: return buildMatch2((Match2Node) node, m); // done
@@ -303,7 +303,7 @@ public class IR_Builder
             case MODULENODE: return buildModule((ModuleNode) node, m); // done
             case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, m); // done
             case NEWLINENODE: return buildNewline((NewlineNode) node, m); // done
-            case NEXTNODE: return buildNext((NextNode) node, m); // done?
+            case NEXTNODE: return buildNext((NextNode) node, (IR_ExecutionScope)m); // done?
             case NTHREFNODE: return buildNthRef((NthRefNode) node, m); // done
             case NILNODE: return buildNil(node, m); // done
             case NOTNODE: return buildNot((NotNode) node, m); // done
@@ -314,7 +314,7 @@ public class IR_Builder
             case ORNODE: return buildOr((OrNode) node, m); // done
 //            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
 //            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
-            case REDONODE: return buildRedo(node, m); // done??
+            case REDONODE: return buildRedo(node, (IR_ExecutionScope)m); // done??
             case REGEXPNODE: return buildRegexp((RegexpNode) node, m); // done
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
@@ -333,10 +333,10 @@ public class IR_Builder
             case TOARYNODE: return buildToAry((ToAryNode) node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
 //            case UNDEFNODE: return buildUndef(node, m); // DEFERRED
-            case UNTILNODE: return buildUntil((UntilNode) node, m); // done
+            case UNTILNODE: return buildUntil((UntilNode) node, (IR_ExecutionScope)m); // done
 //            case VALIASNODE: return buildVAlias(node, m); // DEFERRED
             case VCALLNODE: return buildVCall((VCallNode) node, m); // done
-            case WHILENODE: return buildWhile((WhileNode) node, m); // done
+            case WHILENODE: return buildWhile((WhileNode) node, (IR_ExecutionScope)m); // done
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
             case XSTRNODE: return buildXStr((XStrNode) node, m); // done
             case YIELDNODE: return buildYield((YieldNode) node, m); // done
@@ -622,7 +622,7 @@ public class IR_Builder
         return retVal;
     }
 
-    public Operand buildBreak(BreakNode breakNode, IR_Scope s) {
+    public Operand buildBreak(BreakNode breakNode, IR_ExecutionScope s) {
         Operand rv = build(breakNode.getValueNode(), s);
         if (s instanceof IR_Closure) {
             s.addInstr(new BREAK_Instr(rv));
@@ -1746,7 +1746,7 @@ public class IR_Builder
         return new Float(node.getValue());
     }
 
-    public Operand buildFor(ForNode forNode, IR_Scope m) {
+    public Operand buildFor(ForNode forNode, IR_ExecutionScope m) {
         Variable ret      = m.getNewVariable();
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
@@ -1761,9 +1761,10 @@ public class IR_Builder
     // from the each should become a normal loop without any closures.  But, in this implementation
     // of for, we replace one closure with another!
     //
-    public Operand buildForIter(final ForNode forNode, IR_Scope s) {
+    public Operand buildForIter(final ForNode forNode, IR_ExecutionScope s) {
             // Create a new closure context
         IR_Closure closure = new IR_Closure(s, s);
+        s.addClosure(closure);
 
             // Build args
         NodeType argsNodeId = null;
@@ -1886,9 +1887,10 @@ public class IR_Builder
         return ret;
     }
 
-    public Operand buildIter(final IterNode iterNode, IR_Scope s) {
+    public Operand buildIter(final IterNode iterNode, IR_ExecutionScope s) {
             // Create a new closure context
         IR_Closure closure = new IR_Closure(s, s);
+        s.addClosure(closure);
 
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -2029,7 +2031,7 @@ public class IR_Builder
         return build(node.getNextNode(), s);
     }
 
-    public Operand buildNext(final NextNode nextNode, IR_Scope s) {
+    public Operand buildNext(final NextNode nextNode, IR_ExecutionScope s) {
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
         // SSS FIXME: 1. Is the ordering correct? (poll before next)
         s.addInstr(new THREAD_POLL_Instr());
@@ -2391,7 +2393,7 @@ public class IR_Builder
     }
 **/
 
-    public Operand buildRedo(Node node, IR_Scope s) {
+    public Operand buildRedo(Node node, IR_ExecutionScope s) {
         // For closures, a redo is a jump to the beginning of the closure
         // For non-closures, a redo is a jump to the beginning of the loop
         s.addInstr(new JUMP_Instr((s instanceof IR_Closure) ? ((IR_Closure)s)._startLabel : s.getCurrentLoop()._iterStartLabel));
@@ -2579,7 +2581,7 @@ public class IR_Builder
     }
 **/
 
-    private Operand buildConditionalLoop(IR_Scope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
+    private Operand buildConditionalLoop(IR_ExecutionScope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
     {
         if (isLoopHeadCondition && (   (isWhile && conditionNode.getNodeType().alwaysFalse()) 
                                     || (!isWhile && conditionNode.getNodeType().alwaysTrue())))
@@ -2626,7 +2628,7 @@ public class IR_Builder
         }
     }
 
-    public Operand buildUntil(final UntilNode untilNode, IR_Scope s) {
+    public Operand buildUntil(final UntilNode untilNode, IR_ExecutionScope s) {
         return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, !untilNode.evaluateAtStart());
     }
 
@@ -2645,7 +2647,7 @@ public class IR_Builder
         return callResult;
     }
 
-    public Operand buildWhile(final WhileNode whileNode, IR_Scope s) {
+    public Operand buildWhile(final WhileNode whileNode, IR_ExecutionScope s) {
         return buildConditionalLoop(s, whileNode.getConditionNode(), whileNode.getBodyNode(), true, !whileNode.evaluateAtStart());
     }
 

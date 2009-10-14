@@ -14,7 +14,7 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
-public class IR_Method extends IR_ScopeImpl
+public class IR_Method extends IR_ExecutionScope
 {
     public final String  _name;     // Ruby name 
     public final boolean _isInstanceMethod;
@@ -47,9 +47,12 @@ public class IR_Method extends IR_ScopeImpl
      * 1. This method receives an explicit block argument (in this case, the block can be stored, passed around,
      *    eval'ed against, called, etc.)
      * 2. This method has a 'super' call (ZSuper AST node -- RUBY_INTERNALS_CALL_Instr(MethAddr.ZSUPER, ..) IR instr)
-     *    In this case, the parent (in the inheritance hierarchy) can access the block and store it, etc.  So, in reality
-     *    rather than assume that parent will always do this, we can query the parent, if we can precisely identify
+     *    In this case, the parent (in the inheritance hierarchy) can access the block and store it, etc.  So, in reality,
+     *    rather than assume that the parent will always do this, we can query the parent, if we can precisely identify
      *    the parent method (which in the face of Ruby's dynamic hierarchy, we cannot).  So, be pessimistic.
+     *
+     * This logic was extracted from an email thread on the JRuby mailing list -- Yehuda Katz & Charles Nutter
+     * contributed this analysis above.
      * ********************************************************************************************************/
     private boolean _canCaptureCallersClosure;
 
@@ -106,7 +109,7 @@ public class IR_Method extends IR_ScopeImpl
     }
 
     public boolean isAClassRootMethod() { 
-        return IR_Class.isAClassRootMethod(this);
+        return IR_Module.isAClassRootMethod(this);
     }
 
     public void setCodeModificationFlag(boolean f) { 

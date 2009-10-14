@@ -1,4 +1,4 @@
-package org.jruby.compiler.ir.compiler_pass.opts;
+package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Method;
@@ -6,9 +6,9 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
-public class DeadCodeElimination implements CompilerPass
+public class LiveVariableAnalysis implements CompilerPass
 {
-    public DeadCodeElimination() { }
+    public LiveVariableAnalysis() { }
 
     public boolean isPreOrder() { return false; }
 
@@ -18,13 +18,9 @@ public class DeadCodeElimination implements CompilerPass
             return;
 
         CFG c = ((IR_Method)s).getCFG();
-        LiveVariablesProblem lvp = c.getLVP();
-        if (lvp == null) {
-            lvp = new LiveVariablesProblem();
-            lvp.setup(c);
-            lvp.compute_MOP_Solution();
-            c.setLVP(lvp);
-        }
-        lvp.markDeadInstructions();
+        LiveVariablesProblem lvp = new LiveVariablesProblem();
+		  lvp.setup(c);
+        lvp.compute_MOP_Solution();
+        c.setLVP(lvp);
     }
 }

@@ -34,17 +34,13 @@ public class BasicBlock
 
     public String toString() { return "BB [" + _id + ":" + _label + "]"; }
 
-    public String toStringInstrs(List<IR_Closure> closures)
+    public String toStringInstrs()
     {
         StringBuffer buf = new StringBuffer();
         buf.append(toString()).append("\n");
         for (IR_Instr instr : _instrs) {
             if (!instr.isDead())
                 buf.append('\t').append(instr).append('\n');
-
-            // Keep track of closures to print out at the end!
-            if (instr instanceof BUILD_CLOSURE_Instr)
-                closures.add(((BUILD_CLOSURE_Instr)instr).getClosure());
         }
         return buf.toString();
     }

@@ -6,9 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-import java.util.Stack;
 import java.util.TreeSet;
-import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
@@ -21,14 +19,38 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.representations.CFG;
 
+/* Right now, this class abstracts 5 different scopes: Script, Module, Class, Method, and Closure
+ *
+ * Script, Module, and Class are containers and "non-execution" scopes.
+ * Method and Clsoure are the only two "execution" scopes.
+ *
+ * In the compiler-land, IR_* versions of these scopes encapsulate only as much information
+ * as is required to convert Ruby code into equivalent Java code.
+ *
+ * But, in the non-compiler land, there will be a corresponding java object for each of these
+ * scopes which encapsulates the runtime semantics and data needed for implementing them.
+ * In the case of Module, Class, and Method, they also happen to be instances of the corresponding
+ * Ruby classes -- so, in addition to providing code that help with this specific ruby implementation,
+ * they also have code that let them behave as ruby instances of their corresponding classes.
+ * Script and Closure have no such Ruby companions, as far as I can tell.
+ *
+ * Examples:
+ * - the runtime class object might have refs. to the runtime method objects.
+ * - the runtime method object might have a slot for a heap frame (for when it has closures that need access to the
+ *   method's local variables), it might have version information, it might have references to other methods
+ *   that were optimized with the current version number, etc.
+ * - the runtime closure object will have a slot for a heap frame (for when it has closures within) and might
+ *   get reified as a method in the java land (but inaccessible in ruby land).  So, passing closures in Java land
+ *   might be equivalent to passing around the method handles.
+ *
+ * and so on ...
+ */
 public abstract class IR_ScopeImpl implements IR_Scope
 {
     Operand        _parent;   // Parent container for this context (can be dynamic!!)
                               // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
     IR_Scope       _lexicalParent;   // Lexical parent scope
-    List<IR_Instr> _instrs;   // List of IR instructions for this method
 
 // SSS FIXME: Maybe this is not really a concern after all ...
         // Nesting level of this scope in the lexical nesting of scopes in the current file -- this is not to be confused
@@ -55,33 +77,21 @@ public abstract class IR_ScopeImpl implements IR_Scope
         // Map recording method aliases oldName -> newName maps
     private Map<String, String> _methodAliases;
 
-        // NOTE: Since we are processing ASTs, loop bodies are processed in depth-first manner
-        // with outer loops encountered before inner loops, and inner loops finished before outer ones.
-        //
-        // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
-        // This lets us implement next/redo/break/retry easily for the non-closure cases
-    private Stack<IR_Loop> _loopStack;
-
-        // Control flow graph for this scope
-    private CFG _cfg;
-
     private int _nextMethodIndex;
     private int _nextClosureIndex;
-    
+
         // List of modules, classes, and methods defined in this scope!
-    final public List<IR_Module> _modules = new ArrayList<IR_Module>();
-    final public List<IR_Class>  _classes = new ArrayList<IR_Class>();
-    final public List<IR_Method> _methods = new ArrayList<IR_Method>();
+    final public List<IR_Module>  _modules  = new ArrayList<IR_Module>();
+    final public List<IR_Class>   _classes  = new ArrayList<IR_Class>();
+    final public List<IR_Method>  _methods  = new ArrayList<IR_Method>();
 
     private void init(Operand parent, IR_Scope lexicalParent)
     {
         _parent = parent;
-		  _lexicalParent = lexicalParent;
-        _instrs = new ArrayList<IR_Instr>();
+        _lexicalParent = lexicalParent;
         _nextVarIndex = new HashMap<String, Integer>();
         _constMap = new HashMap<String, Operand>();
         _methodAliases = new HashMap<String, String>();
-        _loopStack = new Stack<IR_Loop>();
         _nextMethodIndex = 0;
         _nextClosureIndex = 0;
 //        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
@@ -165,17 +175,20 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addMethod(IR_Method m) {
         _methods.add(m);
+        if (IR_Module.isAClassRootMethod(m))
+           return;
+
         if ((this instanceof IR_Method) && ((IR_Method)this).isAClassRootMethod()) {
             IR_Class c = (IR_Class)(((MetaObject)this._parent)._scope);
-            addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
+            c.getRootMethod().addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
         }
         else if (m._isInstanceMethod && (this instanceof IR_Class)) {
             IR_Class c = (IR_Class)this;
-            addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
+            c.getRootMethod().addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
         }
         else if (!m._isInstanceMethod && (this instanceof IR_Module)) {
             IR_Module c = (IR_Module)this;
-            addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
+            c.getRootMethod().addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
         }
         else {
             throw new RuntimeException("Encountered method add in a non-class scope!");
@@ -184,7 +197,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
 
     public void addInstr(IR_Instr i)
     { 
-        _instrs.add(i); 
+        throw new RuntimeException("Encountered instruction add in a non-execution scope!");
     }
 
         // Record that newName is a new method name for method with oldName
@@ -208,20 +221,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return n;
     }
 
-    // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
-    public List<IR_Instr> getInstrs() { return _instrs; }
-
-    public CFG buildCFG()
-    {
-        _cfg = new CFG(this);
-        _cfg.build(_instrs);
-        return _cfg;
-    }
-
-    public CFG getCFG()
-    {
-        return _cfg;
-    }
+    public List<IR_Instr> getInstrs() { return null; }
 
         // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!  
         // We might not .. for the following reasons:
@@ -262,30 +262,20 @@ public abstract class IR_ScopeImpl implements IR_Scope
         if (val.isConstant())
             _constMap.put(constRef, val); 
 
-        addInstr(new PUT_CONST_Instr(this, constRef, val));
+        if (this instanceof IR_Module)
+            ((IR_Module)this).getRootMethod().addInstr(new PUT_CONST_Instr(this, constRef, val));
     }
 
     public Map getConstants() {
         return Collections.unmodifiableMap(_constMap);
     }
 
-    public void startLoop(IR_Loop l) { _loopStack.push(l); }
-
-    public void endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
-
-    public IR_Loop getCurrentLoop() { return _loopStack.isEmpty() ? null : _loopStack.peek(); }
-
     public String toString() {
         return (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap);
     }
 
-    public void runCompilerPass(CompilerPass p)
+    protected void runCompilerPassOnNestedScopes(CompilerPass p)
     {
-        boolean isPreOrder =  p.isPreOrder();
-
-        if (isPreOrder)
-            p.run(this);
-
         if (!_modules.isEmpty())
             for (IR_Scope m: _modules)
                 m.runCompilerPass(p);
@@ -297,75 +287,22 @@ public abstract class IR_ScopeImpl implements IR_Scope
         if (!_methods.isEmpty())
             for (IR_Scope meth: _methods)
                 meth.runCompilerPass(p);
+    }
+
+    public void runCompilerPass(CompilerPass p)
+    {
+        boolean isPreOrder =  p.isPreOrder();
+        if (isPreOrder)
+            p.run(this);
+
+			
+        runCompilerPassOnNestedScopes(p);
 
         if (!isPreOrder)
             p.run(this);
     }
 
-    public String toStringInstrs() {
-        List<IR_Closure> closures = new ArrayList<IR_Closure>();
-        StringBuilder b = new StringBuilder();
+    public String toStringInstrs() { return ""; }
 
-        int i = 0;
-        for (IR_Instr instr : _instrs) {
-            if (i > 0) b.append("\n");
-            b.append("  ").append(i).append('\t');
-            if (instr.isDead())
-                b.append("[DEAD]");
-            b.append(instr);
-
-            // Keep track of closures to print out at the end!
-            if (instr instanceof BUILD_CLOSURE_Instr)
-                closures.add(((BUILD_CLOSURE_Instr)instr).getClosure());
-
-            i++;
-        }
-
-        if (!closures.isEmpty()) {
-            b.append("\n\n------ Closures encountered in this scope ------\n");
-            for (IR_Closure c: closures)
-                b.append(c.toStringBody());
-            b.append("------------------------------------------------\n");
-        }
-
-        return b.toString();
-    }
-
-    public String toStringVariables() {
-        StringBuilder sb = new StringBuilder();
-        Map<Variable, Integer> ends = new HashMap<Variable, Integer>();
-        Map<Variable, Integer> starts = new HashMap<Variable, Integer>();
-        SortedSet<Variable> variables = new TreeSet<Variable>();
-        
-        for (int i = _instrs.size() - 1; i >= 0; i--) {
-            IR_Instr instr = _instrs.get(i);
-            Variable var = instr._result;
-
-            if (var != null) {
-                variables.add(var);
-                starts.put(var, i);
-            }
-
-            for (Operand operand : instr.getOperands()) {
-                if (operand != null && operand instanceof Variable && ends.get((Variable)operand) == null) {
-                    ends.put((Variable)operand, i);
-                    variables.add((Variable)operand);
-                }
-            }
-        }
-
-        int i = 0;
-        for (Variable var : variables) {
-            Integer end = ends.get(var);
-            if (end == null) {
-                // variable is never read, variable is never live
-            } else {
-                if (i > 0) sb.append("\n");
-                i++;
-                sb.append("    " + var + ": " + starts.get(var) + "-" + end);
-            }
-        }
-
-        return sb.toString();
-    }
+    public String toStringVariables() { return ""; }
 }

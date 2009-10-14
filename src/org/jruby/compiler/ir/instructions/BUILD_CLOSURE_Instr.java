@@ -22,5 +22,8 @@ public class BUILD_CLOSURE_Instr extends OneOperandInstr
 
     public IR_Closure getClosure() { return (IR_Closure)(((MetaObject)_arg)._scope); }
 
+    // Return the closure so that it is accessible at the call site that uses this closure
+    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) { return _arg; }
+
     // SSS FIXME: Later on, we would probably implement simplifyOperands here and simplify the body of the closure .. something to think about.
 }

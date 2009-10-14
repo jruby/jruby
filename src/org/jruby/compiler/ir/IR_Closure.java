@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir;
 
-// Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accummulate instructions
+// Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
+// that don't merge into the flow of the containing scope.  They are manipulated as an unit.
+// Their parents are always execution scopes.
 
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -8,13 +10,12 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
-// that don't merge into the flow of the containing scope.  They are manipulated as an unit.
-public class IR_Closure extends IR_ScopeImpl
+public class IR_Closure extends IR_ExecutionScope
 {
-    public final Label _startLabel; // Label for the start of the closure (used to implement redo)
-    public final Label _endLabel;   // Label for the end of the closure (used to implement retry)
-    public final int   _closureId;   // Unique id for this closure within the nearest ancestor method.
-    public final String _name;      // Name useful for debugging and reading ir output
+    public final Label  _startLabel; // Label for the start of the closure (used to implement redo)
+    public final Label  _endLabel;   // Label for the end of the closure (used to implement retry)
+    public final int    _closureId;  // Unique id for this closure within the nearest ancestor method.
+    public final String _name;       // Name useful for debugging and reading ir output
 
     public IR_Closure(IR_Scope parent, IR_Scope lexicalParent)
     {

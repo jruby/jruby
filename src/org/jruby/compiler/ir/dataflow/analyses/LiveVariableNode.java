@@ -1,13 +1,19 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
+import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.CALL_Instr;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -23,15 +29,21 @@ public class LiveVariableNode extends FlowGraphNode
         _in = new BitSet(_setSize);
     }
 
-    public void buildDataFlowVars(IR_Instr i) 
+    private void addDFVar(Variable v)
     {
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
-        Variable v = i.getResult();
-//        System.out.println("BV: Processing: " + i);
         if ((v != null) && (lvp.getDFVar(v) == null)) {
             lvp.addDFVar(v);
 //            System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v)._id);
         }
+    }
+
+    public void buildDataFlowVars(IR_Instr i) 
+    {
+//        System.out.println("BV: Processing: " + i);
+        addDFVar(i.getResult());
+        for (Variable x: i.getUsedVariables())
+           addDFVar(x);
     }
 
     public void initSolnForNode()
@@ -76,6 +88,57 @@ public class LiveVariableNode extends FlowGraphNode
                 // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                 if (dv != null)
                     _tmp.set(dv._id);
+            } 
+
+            // Check if 'i' is a call and uses a closure!
+            // If so, we need to process the closure for live variable info.
+            if (i instanceof CALL_Instr) {
+                CALL_Instr c = (CALL_Instr)i;
+                if (c.isLVADataflowBarrier()) {
+//                    System.out.println(".. call is a data flow barrier ..");
+                    // Mark all variables live if 'c' is a dataflow barrier!
+                    for (int j = 0; j < _setSize; j++)
+                        _tmp.set(j);
+                }
+                else {
+                    // SSS FIXME: This relies on the local opt. pass having run already
+                    // so that the built closure from the previous istnr. is propagated to the call site here.
+                    // Formalize this dependency somewhere?
+                    Operand o = c.getClosureArg();
+//                    System.out.println(" .. processing closure .. o is " + o);
+                    if ((o != null) && (o instanceof MetaObject)) {
+                        // Propagate current LVA state through the closure
+                        // SSS FIXME: Think through this .. Is there any way out of having
+                        // to recompute the entire lva for the closure each time through?
+
+                        // 1. Collect variables live at this point.
+                        IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
+                        List<Variable> liveVars = new ArrayList<Variable>();
+                        for (int j = 0; j < _tmp.size(); j++) {
+                            if (_tmp.get(j) == true)
+                                liveVars.add(lvp.getVariable(j));
+                        }
+//                    System.out.println(" .. collected live on exit ..");
+
+                        // 2. Run LVA on the closure
+                        CFG x = cl.getCFG();
+                        LiveVariablesProblem xlvp = new LiveVariablesProblem();
+                        xlvp.initVarsLiveOnExit(liveVars);
+                        xlvp.setup(x);
+                        xlvp.compute_MOP_Solution();
+                        x.setLVP(xlvp);
+
+//                    System.out.println(" .. done with mop ..");
+
+                        // 3. Collect variables live on entry and merge that info into the current problem.
+                        for (Variable y: xlvp.getVarsLiveOnEntry()) {
+                            DataFlowVar dv = lvp.getDFVar(y);
+                            // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
+                            if (dv != null)
+                                _tmp.set(dv._id);
+                        } 
+                    }
+                }
             }
         }
 
@@ -157,6 +220,31 @@ public class LiveVariableNode extends FlowGraphNode
 //                System.out.println("IGNORING! No result!");
             }
 
+            if (i instanceof CALL_Instr) {
+                CALL_Instr c = (CALL_Instr)i;
+                if (c.isLVADataflowBarrier()) {
+                    // Mark all variables live if 'c' is a dataflow barrier!
+                    for (int j = 0; j < _setSize; j++)
+                        _tmp.set(j);
+                }
+                else {
+                    Operand o = c.getClosureArg();
+                    if ((o != null) && (o instanceof MetaObject)) {
+                        // 2. Run LVA on the closure
+                        IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
+                        CFG x = cl.getCFG();
+                        LiveVariablesProblem xlvp = x.getLVP();
+                        // 3. Collect variables live on entry and merge that info into the current problem.
+                        for (Variable y: xlvp.getVarsLiveOnEntry()) {
+                            DataFlowVar dv = lvp.getDFVar(y);
+                            // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
+                            if (dv != null)
+                                _tmp.set(dv._id);
+                        } 
+                    }
+                }
+            }
+
             // Do not mark this instruction's operands live if the instruction itself is dead!
             if (!i.isDead()) {
                for (Variable x: i.getUsedVariables()) {
@@ -167,6 +255,10 @@ public class LiveVariableNode extends FlowGraphNode
             }
         }
     }
+
+    BitSet getLiveInBitSet()  { return _in; }
+
+    BitSet getLiveOutBitSet() { return _out; }
 
 /* ---------- Private fields, methods --------- */
     private BitSet _in;         // Variables live at entry of this node

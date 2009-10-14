@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 
@@ -12,9 +13,8 @@ public class DominatorTreeBuilder implements CompilerPass
 
     public void run(IR_Scope s)
     {
-        if (!(s instanceof IR_Method))
-            return;
-
-        s.getCFG().buildDominatorTree();
+        if (s instanceof IR_ExecutionScope) {
+            ((IR_ExecutionScope)s).getCFG().buildDominatorTree();
+        }
     }
 }

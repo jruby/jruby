@@ -39,16 +39,20 @@ public abstract class DataFlowProblem
 
     public DF_Direction getFlowDirection() { return _direction; }
 
-    /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
-     * This implements a standard worklist algorithm. */
-    public void compute_MOP_Solution(CFG c)
+    public void setup(CFG c)
     {
         _cfg = c;
+        buildFlowGraph();
+    }
 
+    /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
+     * This implements a standard worklist algorithm. */
+    public void compute_MOP_Solution()
+    {
         /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
         if (!isEmpty()) {
-            // 1. Build Flow Graph
-            buildFlowGraph();
+            for (FlowGraphNode fg: _fgNodes)
+                fg.init();
 
             // 2. Initialize work list based on flow direction to make processing efficient!
             LinkedList<FlowGraphNode> workList = getInitialWorkList();
@@ -115,14 +119,14 @@ public abstract class DataFlowProblem
         return _nextDFVarId;
     }
 
-    FlowGraphNode getFlowGraphNode(BasicBlock b)
-    {
-        return _bbTofgMap.get(b.getID());
-    }
-
 /* -------------- Protected fields and methods below ---------------- */
     protected CFG                    _cfg;
     protected List<FlowGraphNode>    _fgNodes;
+
+    protected FlowGraphNode getFlowGraphNode(BasicBlock b)
+    {
+        return _bbTofgMap.get(b.getID());
+    }
 
 /* -------------- Private fields and methods below ---------------- */
     private int     _nextDFVarId;
@@ -140,9 +144,5 @@ public abstract class DataFlowProblem
             _fgNodes.add(fgNode);
             _bbTofgMap.put(bb.getID(), fgNode);
         }
-
-        // Initialize all flow graph nodes 
-        for (FlowGraphNode fg: _fgNodes)
-            fg.init();
     }
 }

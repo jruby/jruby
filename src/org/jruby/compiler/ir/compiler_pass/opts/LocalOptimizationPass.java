@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.ListIterator;
 
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Scope;
@@ -37,10 +38,11 @@ public class LocalOptimizationPass implements CompilerPass
 
     public void run(IR_Scope s)
     {
-        runLocalOpts(s);
+        if (s instanceof IR_ExecutionScope)
+            runLocalOpts((IR_ExecutionScope)s);
     }
 
-    private static void runLocalOpts(IR_Scope s)
+    private static void runLocalOpts(IR_ExecutionScope s)
     {
         // Reset value map if this instruction is the start/end of a basic block
         //
@@ -107,21 +109,21 @@ public class LocalOptimizationPass implements CompilerPass
                             Operand[] args = call.getOperands();
                             if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                val = ((Fixnum)r).computeValue(rm._name, (Constant)args[1]);
+                                val = ((Fixnum)r).computeValue(rm._name, (Constant)args[2]);
                             }
                         }
                         else if (rc == IR_Class.getCoreClass("Float")) {
                             Operand[] args = call.getOperands();
                             if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                val = ((Float)r).computeValue(rm._name, (Constant)args[1]);
+                                val = ((Float)r).computeValue(rm._name, (Constant)args[2]);
                             }
                         }
                         else if (rc == IR_Class.getCoreClass("Array")) {
                             Operand[] args = call.getOperands();
                             if (args[2] instanceof Fixnum && (rm._name == "[]")) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[1])._value.intValue(), false);
+                                val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[2])._value.intValue(), false);
                             }
                         }
 
