@@ -9,7 +9,7 @@ setlocal EnableDelayedExpansion
 rem Sometimes, when jruby.bat is being invoked from another BAT file,
 rem %~dp0 is incorrect and points to the current dir, not to JRuby's bin dir,
 rem so we look on the PATH in such cases.
-IF EXIST "%~dp0_jrubyvars.bat" (set "FULL_PATH=%~dp0") ELSE (set "FULL_PATH=%~dp$PATH:0")
+IF EXIST "%~dp0_jrubyvars.bat" (set FULL_PATH=%~dp0) ELSE (set FULL_PATH=%~dp$PATH:0)
 
 set _FULL_ARGS=%*
 call "%FULL_PATH%_jrubyvars.bat" %%_FULL_ARGS%%
