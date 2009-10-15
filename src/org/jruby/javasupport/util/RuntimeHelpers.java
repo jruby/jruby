@@ -1634,4 +1634,18 @@ public class RuntimeHelpers {
     public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Node node, Block aBlock) {
         return RuntimeHelpers.getBlockFromBlockPassBody(runtime, node.interpret(runtime, context, self, aBlock), aBlock);
     }
+
+    /**
+     * Equivalent to rb_equal in MRI
+     *
+     * @param context
+     * @param a
+     * @param b
+     * @return
+     */
+    public static IRubyObject rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
+        Ruby runtime = context.getRuntime();
+        if (a == b) return runtime.getTrue();
+        return a.callMethod(context, "==", b);
+    }
 }

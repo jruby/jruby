@@ -27,6 +27,7 @@ test_cvars_in_odd_scopes
 test_date_time
 test_defined
 test_default_constants
+test_delegated_array_equals
 test_dir
 #test_digest2
 test_dup_clone_taint_freeze
