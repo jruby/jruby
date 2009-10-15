@@ -146,23 +146,21 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         method.loadThis();
         method.method.getfield(scriptCompiler.getClassname(), "runtimeCache", ci(AbstractScript.RuntimeCache.class));
-        method.method.dup();
         method.method.pushInt(index);
         method.method.invokevirtual(p(AbstractScript.RuntimeCache.class), "getRegexp", sig(RubyRegexp.class, int.class));
+        method.method.dup();
 
         method.ifNotNull(alreadyCompiled);
 
-        method.method.dup();
-        method.loadRuntime();
+        method.method.pop();
+        method.loadThis();
+        method.method.getfield(scriptCompiler.getClassname(), "runtimeCache", ci(AbstractScript.RuntimeCache.class));
         method.method.pushInt(index);
         createStringCallback.call(method);
-        method.method.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
         method.method.ldc(options);
-        method.method.invokevirtual(p(AbstractScript.RuntimeCache.class), "cacheRegexp", sig(void.class, Ruby.class, int.class, ByteList.class, int.class));
+        method.method.invokevirtual(p(AbstractScript.RuntimeCache.class), "cacheRegexp", sig(RubyRegexp.class, int.class, RubyString.class, int.class));
 
         method.method.label(alreadyCompiled);
-        method.method.pushInt(index);
-        method.method.invokevirtual(p(AbstractScript.RuntimeCache.class), "getRegexp", sig(RubyRegexp.class, int.class));
     }
     
     public void cacheFixnum(BaseBodyCompiler method, long value) {
