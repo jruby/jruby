@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
+import org.jruby.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -739,6 +740,8 @@ public class JavaUtil {
                 return Double.valueOf(value);
             } else if (numeric instanceof RubyBignum) {
                 return ((RubyBignum)numeric).getValue();
+            } else if (numeric instanceof RubyBigDecimal) {
+                return ((RubyBigDecimal)numeric).getValue();
             } else {
                 return NUMERIC_TO_OTHER.coerce(numeric, target);
             }

@@ -117,6 +117,8 @@ describe "Java String and primitive-typed methods" do
     pending "passing null to overloaded methods randomly selects from them" do
       CoreTypeMethods.getType(nil).should == "CharSequence"
     end
+
+    CoreTypeMethods.getType(BigDecimal.new('1.1')).should == "BigDecimal"
   end
 end
 
