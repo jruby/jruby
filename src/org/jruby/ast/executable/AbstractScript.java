@@ -169,12 +169,13 @@ public abstract class AbstractScript implements Script {
             return regexps[index];
         }
 
-        public final void cacheRegexp(Ruby runtime, int index, ByteList pattern, int options) {
+        public final RubyRegexp cacheRegexp(int index, RubyString pattern, int options) {
             RubyRegexp regexp = regexps[index];
             if (regexp == null) {
-                regexp = RubyRegexp.newRegexp(runtime, pattern, options);
+                regexp = RubyRegexp.newRegexp(pattern.getRuntime(), pattern.getByteList(), options);
                 regexps[index] = regexp;
             }
+            return regexp;
         }
 
         public final BigInteger getBigInteger(Ruby runtime, int index, String pattern) {

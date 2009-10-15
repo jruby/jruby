@@ -261,7 +261,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp(Ruby runtime, ByteList str, int options) {
         this(runtime);
-        setKCode(runtime, options);
+        setKCode(runtime, options & 0x7f); // mask off "once" flag
         this.str = str;
         this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
     }
