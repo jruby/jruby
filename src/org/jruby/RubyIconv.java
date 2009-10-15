@@ -241,19 +241,19 @@ public class RubyIconv extends RubyObject {
         return RubyString.newEmptyString(getRuntime());
     }
 
-    @JRubyMethod
+    @JRubyMethod(backtrace = true)
     public IRubyObject iconv(IRubyObject str) {
         return iconv(str, 0, -1);
     }
 
-    @JRubyMethod
+    @JRubyMethod(backtrace = true)
     public IRubyObject iconv(IRubyObject str, IRubyObject startArg) {
         int start = 0;
         if (!startArg.isNil()) start = RubyNumeric.fix2int(startArg);
         return iconv(str, start, -1);
     }
 
-    @JRubyMethod
+    @JRubyMethod(backtrace = true)
     public IRubyObject iconv(IRubyObject str, IRubyObject startArg, IRubyObject endArg) {
         int start = 0;
         int end = -1;
@@ -335,12 +335,12 @@ public class RubyIconv extends RubyObject {
         return getRuntime().newString(new ByteList(arr, 0, buf.limit()));
     }
 
-    @JRubyMethod(name = "iconv", required = 2, rest = true, meta = true)
+    @JRubyMethod(name = "iconv", required = 2, rest = true, meta = true, backtrace = true)
     public static IRubyObject iconv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(context, recv, args, "iconv");
     }
     
-    @JRubyMethod(name = "conv", required = 3, rest = true, meta = true)
+    @JRubyMethod(name = "conv", required = 3, rest = true, meta = true, backtrace = true)
     public static IRubyObject conv(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return convertWithArgs(context, recv, args, "conv").join(context, RubyString.newEmptyString(recv.getRuntime()));
     }
