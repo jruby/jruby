@@ -203,11 +203,21 @@ public class RubyNil extends RubyObject {
         if (target.isPrimitive()) {
             if (target == Boolean.TYPE) {
                 return Boolean.FALSE;
-            } else {
+            } else if (target == Byte.TYPE) {
+                return (byte)0;
+            } else if (target == Short.TYPE) {
+                return (short)0;
+            } else if (target == Character.TYPE) {
+                return (char)0;
+            } else if (target == Integer.TYPE) {
                 return 0;
+            } else if (target == Long.TYPE) {
+                return (long)0;
+            } else if (target == Float.TYPE) {
+                return (float)0;
+            } else if (target == Double.TYPE) {
+                return (double)0;
             }
-        } else if (Number.class.isAssignableFrom(target)) {
-            return 0;
         }
         return null;
     }
