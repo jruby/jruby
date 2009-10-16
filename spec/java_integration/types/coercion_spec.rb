@@ -67,6 +67,18 @@ describe "Java String and primitive-typed methods" do
     CoreTypeMethods.setBooleanTrue(true).should == "true"
     CoreTypeMethods.setBooleanFalse(false).should == "false"
 
+    CoreTypeMethods.setByte(nil).should == "0"
+    CoreTypeMethods.setShort(nil).should == "0"
+    CoreTypeMethods.setChar(nil).should == "\000"
+    CoreTypeMethods.setInt(nil).should == "0"
+    CoreTypeMethods.setLong(nil).should == "0"
+
+    CoreTypeMethods.setFloat(nil).should == "0.0"
+    CoreTypeMethods.setDouble(nil).should == "0.0"
+
+    CoreTypeMethods.setBooleanTrue(nil).should == "false"
+    CoreTypeMethods.setBooleanFalse(nil).should == "false"
+
     CoreTypeMethods.setBigInteger(1234567890123456789012345678901234567890).should ==
       "1234567890123456789012345678901234567890"
 
@@ -90,6 +102,18 @@ describe "Java String and primitive-typed methods" do
 
     CoreTypeMethods.setBooleanTrueObj(true).should == "true"
     CoreTypeMethods.setBooleanFalseObj(false).should == "false"
+
+    CoreTypeMethods.setByteObj(nil).should == "null"
+    CoreTypeMethods.setShortObj(nil).should == "null"
+    CoreTypeMethods.setCharObj(nil).should == "null"
+    CoreTypeMethods.setIntObj(nil).should == "null"
+    CoreTypeMethods.setLongObj(nil).should == "null"
+
+    CoreTypeMethods.setFloatObj(nil).should == "null"
+    CoreTypeMethods.setDoubleObj(nil).should == "null"
+
+    CoreTypeMethods.setBooleanTrueObj(nil).should == "null"
+    CoreTypeMethods.setBooleanFalseObj(nil).should == "null"
     
     CoreTypeMethods.setNull(nil).should == "null"
   end
