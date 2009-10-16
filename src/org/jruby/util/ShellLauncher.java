@@ -236,7 +236,7 @@ public class ShellLauncher {
         InputStream input = runtime.getInputStream();
         try {
             Process aProcess = run(runtime, rawArgs);
-            handleStreams(aProcess,input,output,error);
+            handleStreams(runtime, aProcess, input, output, error);
             return aProcess.waitFor();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
@@ -614,9 +614,9 @@ public class ShellLauncher {
                 parentOutChannel = ((FileOutputStream) parentOut).getChannel();
             }
             if (childInChannel != null && parentOutChannel != null) {
-                inputPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN, this);
+                inputPumper = new ChannelPumper(runtime, childInChannel, parentOutChannel, Pumper.Slave.IN, this);
             } else {
-                inputPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN, this);
+                inputPumper = new StreamPumper(runtime, childIn, parentOut, false, Pumper.Slave.IN, this);
             }
             inputPumper.start();
             input = null;
@@ -636,9 +636,9 @@ public class ShellLauncher {
                 parentOutChannel = ((FileOutputStream) parentOut).getChannel();
             }
             if (childInChannel != null && parentOutChannel != null) {
-                inerrPumper = new ChannelPumper(childInChannel, parentOutChannel, Pumper.Slave.IN, this);
+                inerrPumper = new ChannelPumper(runtime, childInChannel, parentOutChannel, Pumper.Slave.IN, this);
             } else {
-                inerrPumper = new StreamPumper(childIn, parentOut, false, Pumper.Slave.IN, this);
+                inerrPumper = new StreamPumper(runtime, childIn, parentOut, false, Pumper.Slave.IN, this);
             }
             inerrPumper.start();
             inerr = null;
@@ -695,17 +695,20 @@ public class ShellLauncher {
         private final Object sync;
         private final Slave slave;
         private volatile boolean quit;
+        private final Ruby runtime;
         
-        StreamPumper(InputStream in, OutputStream out, boolean avail, Slave slave, Object sync) {
+        StreamPumper(Ruby runtime, InputStream in, OutputStream out, boolean avail, Slave slave, Object sync) {
             this.in = in;
             this.out = out;
             this.onlyIfAvailable = avail;
             this.slave = slave;
             this.sync = sync;
+            this.runtime = runtime;
             setDaemon(true);
         }
         @Override
         public void run() {
+            runtime.getCurrentContext().setEventHooksEnabled(false);
             byte[] buf = new byte[1024];
             int numRead;
             boolean hasReadSomething = false;
@@ -768,17 +771,20 @@ public class ShellLauncher {
         private final Slave slave;
         private final Object sync;
         private volatile boolean quit;
+        private final Ruby runtime;
         
-        ChannelPumper(FileChannel inChannel, FileChannel outChannel, Slave slave, Object sync) {
+        ChannelPumper(Ruby runtime, FileChannel inChannel, FileChannel outChannel, Slave slave, Object sync) {
             if (DEBUG) out.println("using channel pumper");
             this.inChannel = inChannel;
             this.outChannel = outChannel;
             this.slave = slave;
             this.sync = sync;
+            this.runtime = runtime;
             setDaemon(true);
         }
         @Override
         public void run() {
+            runtime.getCurrentContext().setEventHooksEnabled(false);
             ByteBuffer buf = ByteBuffer.allocateDirect(1024);
             buf.clear();
             try {
@@ -810,18 +816,18 @@ public class ShellLauncher {
         }
     }
 
-    private static void handleStreams(Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
+    private static void handleStreams(Ruby runtime, Process p, InputStream in, OutputStream out, OutputStream err) throws IOException {
         InputStream pOut = p.getInputStream();
         InputStream pErr = p.getErrorStream();
         OutputStream pIn = p.getOutputStream();
 
-        StreamPumper t1 = new StreamPumper(pOut, out, false, Pumper.Slave.IN, p);
-        StreamPumper t2 = new StreamPumper(pErr, err, false, Pumper.Slave.IN, p);
+        StreamPumper t1 = new StreamPumper(runtime, pOut, out, false, Pumper.Slave.IN, p);
+        StreamPumper t2 = new StreamPumper(runtime, pErr, err, false, Pumper.Slave.IN, p);
 
         // The assumption here is that the 'in' stream provides
         // proper available() support. If available() always
         // returns 0, we'll hang!
-        StreamPumper t3 = new StreamPumper(in, pIn, true, Pumper.Slave.OUT, p);
+        StreamPumper t3 = new StreamPumper(runtime, in, pIn, true, Pumper.Slave.OUT, p);
 
         t1.start();
         t2.start();

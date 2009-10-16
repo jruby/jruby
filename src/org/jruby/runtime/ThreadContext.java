@@ -109,6 +109,7 @@ public final class ThreadContext {
     // the grep is running in so that the backref will be set in an
     // appropriate place.
     private int rubyFrameDelta = 0;
+    private boolean eventHooksEnabled = true;
     
     /**
      * Constructor for Context.
@@ -766,6 +767,14 @@ public final class ThreadContext {
         System.arraycopy(frameStack, 0, traceFrames, 0, traceSize);
         
         return traceFrames;
+    }
+
+    public boolean isEventHooksEnabled() {
+        return eventHooksEnabled;
+    }
+
+    public void setEventHooksEnabled(boolean flag) {
+        eventHooksEnabled = flag;
     }
 
     public static class RubyStackTraceElement {

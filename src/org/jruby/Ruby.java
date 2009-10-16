@@ -2536,9 +2536,11 @@ public final class Ruby {
     }
     
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
-        for (EventHook eventHook : eventHooks) {
-            if (eventHook.isInterestedInEvent(event)) {
-                eventHook.event(context, event, file, line, name, type);
+        if (context.isEventHooksEnabled()) {
+            for (EventHook eventHook : eventHooks) {
+                if (eventHook.isInterestedInEvent(event)) {
+                    eventHook.event(context, event, file, line, name, type);
+                }
             }
         }
     }
