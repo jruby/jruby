@@ -557,7 +557,7 @@ public class RubyInstanceConfig {
                     rubyoptArgs[i] = "-" + rubyoptArgs[i];
                 }
             }
-            new ArgumentProcessor(rubyoptArgs).processArguments();
+            new ArgumentProcessor(rubyoptArgs, false).processArguments();
         }
     }
 
@@ -749,9 +749,15 @@ public class RubyInstanceConfig {
     private class ArgumentProcessor {
         private String[] arguments;
         private int argumentIndex = 0;
+        private boolean processArgv;
 
         public ArgumentProcessor(String[] arguments) {
+            this(arguments, true);
+        }
+
+        public ArgumentProcessor(String[] arguments, boolean processArgv) {
             this.arguments = arguments;
+            this.processArgv = processArgv;
         }
 
         public void processArguments() {
@@ -767,7 +773,7 @@ public class RubyInstanceConfig {
                 }
             }
 
-            processArgv();
+            if (processArgv) processArgv();
         }
 
         private void processArgv() {
