@@ -10,6 +10,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   if (!WINDOWS)
     def test_dash_0_splits_records
       output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 -n -e 'puts $_ + " "'})
+      assert_equal 0, $?.exitstatus
       assert_equal "1, ,2, ,3\n ,", output
     end
   end
@@ -18,6 +19,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     with_jruby_shell_spawning do
       with_temp_script("bad : code") do |s|
         assert_match /SyntaxError/, jruby("-c #{s.path} 2>&1")
+        assert_not_equal 0, $?.exitstatus
       end
     end
   end
@@ -26,6 +28,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     with_jruby_shell_spawning do
       with_temp_script(%q{ puts "a" }) do |s|
         assert_match /Syntax OK/, jruby(" -c #{s.path} 2>&1").chomp
+        assert_equal 0, $?.exitstatus
       end
     end
   end
@@ -36,6 +39,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     unless WINDOWS || IBM_JVM
       with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
         output = IO.popen("echo \"a\nb\" | #{RUBY} -n #{s.path}", "r") { |p| p.read }
+        assert_equal 0, $?.exitstatus
         assert_equal "a\na\nb\nb\n", output
       end
     end
@@ -46,6 +50,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     unless WINDOWS || IBM_JVM
       with_temp_script(%q{ puts "#{$_}#{$_}" }) do |s|
         output = IO.popen("echo \"a\nb\" | #{RUBY} -p #{s.path}", "r") { |p| p.read }
+        assert_equal 0, $?.exitstatus
         assert_equal "a\na\na\nb\nb\nb\n", output
       end
     end
@@ -57,12 +62,14 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_little_s
     with_temp_script(%q{puts $g, $v, $foo, *ARGV}) do |s|
       assert_equal "nil\n123\nbar\n4\n5\n6", `#{RUBY} -s #{s.path} -g-a=123 -v=123 -foo=bar 4 5 6`.chomp
+      assert_equal 0, $?.exitstatus
     end
   end
 
   def test_dash_little_s_options_must_come_after_script
     with_temp_script(%q{puts $v, *ARGV}) do |s|
       assert_equal "nil\na\n-v=123\nb\nc", `#{RUBY} -s #{s.path} a -v=123 b c`.chomp
+      assert_equal 0, $?.exitstatus
     end
   end
 
@@ -75,6 +82,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
         FileUtils.cp(s.path, path)
         assert_equal("#{path}\n#{path}\n#{path}\n#{path}\n",
                      jruby("-r#{path} #{path}"))
+        assert_equal 0, $?.exitstatus
       ensure
         File.unlink(path) rescue nil
       end
@@ -85,12 +93,14 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # jgem, as it should not exist outside the jruby.bin directory.
   def test_dash_big_S_executes_script_in_jruby_bin_dir
     assert_match /^\d+\.\d+\.\d+/, `#{RUBY} -S jgem --version`
+    assert_equal 0, $?.exitstatus
   end
 
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, $KCODE, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
     args = " -J-Dfoo=bar -v -T3 -d -Ku -b -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
     lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
+    assert_equal 0, $?.exitstatus
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
     assert_match /ruby \d+\.\d+\.\d+/, lines[0]
@@ -108,6 +118,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     e_line = 'puts Gem'
     args = " -rrubygems -e #{q + e_line + q}"
     lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
+    assert_equal 0, $?.exitstatus
 
     assert_equal "Gem", lines[0]
   end
@@ -115,6 +126,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_dash_little_w_turns_warnings_on
     with_jruby_shell_spawning do
       assert_match /warning/, `#{RUBY} -v -e "defined? true" 2>&1`
+      assert_equal 0, $?.exitstatus
     end
   end
 
@@ -122,7 +134,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     with_jruby_shell_spawning do
       with_temp_script("defined? true") do |s|
         assert_equal "", jruby("-W1 #{s.path} 2>&1")
+        assert_equal 0, $?.exitstatus
         assert_match /warning/, jruby("-W2 #{s.path} 2>&1")
+        assert_equal 0, $?.exitstatus
       end
     end    
   end
@@ -131,11 +145,13 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # turn on ObjectSpace
     with_temp_script("ObjectSpace.each_object(Fixnum) {|o| puts o.inspect}") do |s|
       assert_no_match /ObjectSpace is disabled/, jruby("-X+O #{s.path} 2>&1")
+      assert_equal 0, $?.exitstatus
     end
   end
 
   def test_dash_dash_copyright_displays_copyright
      assert_match /Copyright \(C\) 2001-2.../, `#{RUBY} --copyright`
+     assert_equal 0, $?.exitstatus
   end
 
   # TODO --debug: cannot figure out how to test
@@ -144,10 +160,12 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   def test_dash_dash_properties_shows_list_of_properties
     assert_match /^These properties can be used/, `#{RUBY} --properties`
+    assert_equal 0, $?.exitstatus
   end
 
   def test_dash_dash_version_shows_version
     version_string = `#{RUBY} --version`
+    assert_equal 0, $?.exitstatus
     assert_match /ruby \d+\.\d+\.\d+/, version_string
     assert_match /jruby \d+\.\d+\.\d+/, version_string
   end
@@ -157,6 +175,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # server VM when explicitly set --server
     result = jruby(%Q{--server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
+    assert_equal 0, $?.exitstatus
     assert_match /(tiered|server|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler)/, result.downcase
   end
 
@@ -175,6 +194,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     # client VM when explicitly set via --client
     result = jruby(%Q{--client -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
+    assert_equal 0, $?.exitstatus
     assert_match /client|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler/, result.downcase
   end
   
@@ -189,6 +209,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       with_jruby_shell_spawning do
         with_temp_script('print __FILE__', name) do |s|
           assert_match rgxes[idx], jruby("#{s.path}")
+          assert_equal 0, $?.exitstatus
         end
       end
     end
