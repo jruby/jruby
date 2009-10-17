@@ -663,7 +663,7 @@ public class RubyIO extends RubyObject {
                 incrementLineno(runtime, myOpenFile);
                 return str;
             } else if (limit == 0) {
-                return runtime.newString("");
+                return RubyString.newEmptyString(runtime);
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0));
             } else {
