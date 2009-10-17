@@ -11,7 +11,6 @@ class TestLoadingBuiltinLibraries < Test::Unit::TestCase
       require 'strscan.so'
       require 'zlib.so'
       require 'enumerator.so'
-      require 'generator_internal.rb'
       require 'readline.so'
       require 'thread.so'
       require 'digest.so'

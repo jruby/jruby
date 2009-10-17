@@ -29,7 +29,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.ext.Generator;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -71,7 +70,7 @@ public class RubyEnumerator extends RubyObject {
         runtime.setEnumerator(enmr);
 
         if (runtime.is1_9()) {
-            Generator.createGenerator(runtime);
+            runtime.getLoadService().lockAndRequire("generator");
             RubyYielder.createYielderClass(runtime);
         }
     }
@@ -361,107 +360,15 @@ public class RubyEnumerator extends RubyObject {
         return with_index_common(context, self, block, "with_index");
     }
 
-    @JRubyMethod(name = "next", frame = true, compat = CompatVersion.RUBY1_8)
-    public static IRubyObject next(ThreadContext context, IRubyObject self, Block block) {
+    @JRubyMethod(name = "next", frame = true)
+    public static IRubyObject next(ThreadContext context, IRubyObject self) {
         context.getRuntime().getLoadService().lockAndRequire("generator");
-        return self.callMethod(context, "next", IRubyObject.NULL_ARRAY, block);
+        return self.callMethod(context, "next");
     }
 
-    @JRubyMethod(name = "rewind", frame = true, compat = CompatVersion.RUBY1_8)
-    public static IRubyObject rewind(ThreadContext context, IRubyObject self, Block block) {
+    @JRubyMethod(name = "rewind", frame = true)
+    public static IRubyObject rewind(ThreadContext context, IRubyObject self) {
         context.getRuntime().getLoadService().lockAndRequire("generator");
-        return self.callMethod(context, "rewind", IRubyObject.NULL_ARRAY, block);
-    }
-
-    private static final ByteList ITER_END_MESSAGE = ByteList.create("iteration reached at end");
-
-    @JRubyMethod(name = "next", frame = true, compat = CompatVersion.RUBY1_9)
-    public synchronized IRubyObject next19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        ensureGenerator();
-
-        if (!generator.hasNext()) {
-            generator.rewind();
-            return this.callMethod(context, "raise",
-                    new IRubyObject[] {runtime.getStopIteration(), RubyString.newStringShared(runtime, ITER_END_MESSAGE)},
-                    Block.NULL_BLOCK);
-        }
-        return generator.next();
-    }
-
-    @JRubyMethod(name = "rewind", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject rewind19(ThreadContext context) {
-        ensureGenerator();
-        
-        generator.rewind();
-        return this;
-    }
-
-    private abstract class EnumeratorGenerator {
-        public abstract IRubyObject next();
-        public abstract boolean hasNext();
-        public abstract void rewind();
-    }
-
-    private EnumeratorGenerator generator;
-
-    private class DefaultGenerator extends EnumeratorGenerator {
-        private final IRubyObject currentGen;
-        private final Ruby runtime;
-        public DefaultGenerator() {
-            runtime = getRuntime();
-            currentGen = runtime.getGenerator().callMethod(runtime.getCurrentContext(), "new", RubyEnumerator.this);
-        }
-        
-        public IRubyObject next() {
-            return currentGen.callMethod(runtime.getCurrentContext(), "next");
-        }
-
-        public boolean hasNext() {
-            return !currentGen.callMethod(runtime.getCurrentContext(), "end?").isTrue();
-        }
-
-        public void rewind() {
-            currentGen.callMethod(runtime.getCurrentContext(), "rewind");
-        }
-    }
-
-    private class ArrayEachGenerator extends EnumeratorGenerator {
-        private final RubyArray array;
-        private int index;
-
-        public ArrayEachGenerator(RubyArray array) {
-            this.array = array;
-            this.index = 0;
-        }
-
-        public synchronized IRubyObject next() {
-            if (index < array.size()) {
-                return array.eltInternal(index++);
-            }
-            return array.getRuntime().getNil();
-        }
-
-        public synchronized boolean hasNext() {
-            return index < array.size();
-        }
-
-        public synchronized void rewind() {
-            index = 0;
-        }
-    }
-
-    private synchronized void ensureGenerator() {
-        if (generator == null) {
-            generator = constructGenerator(object, method);
-        }
-    }
-
-    private EnumeratorGenerator constructGenerator(IRubyObject object, String method) {
-        if (object instanceof RubyArray && method.equals("each")) {
-            return new ArrayEachGenerator((RubyArray)object);
-        } else {
-            return new DefaultGenerator();
-        }
+        return self.callMethod(context, "rewind");
     }
 }
