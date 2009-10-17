@@ -9,7 +9,7 @@ describe "A jar with dependecies" do
 
       Fixtures::ThrowExceptionOnCreate.new
     rescue
-      $!.message.should == 'cannot link Java class java_integration.fixtures.ThrowExceptionOnCreate, probable missing dependency: junit/framework/Test'
+      $!.message.should match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
     end
   end
 
@@ -21,7 +21,7 @@ describe "A jar with dependecies" do
 
       Fixtures::ThrowExceptionOnCreate.new
     rescue
-      $!.message.should == 'cannot link Java class java_integration.fixtures.ThrowExceptionOnCreate, probable missing dependency: junit/framework/Test'
+      $!.message.should match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
     end
   end
 end
