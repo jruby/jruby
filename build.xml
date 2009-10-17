@@ -613,6 +613,8 @@
 
   <target name="install-gems">
     <property name="jruby.home" value="${basedir}"/>
+    <property name="install.ri" value="--no-ri"/>
+    <property name="install.rdoc" value="--no-rdoc"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
@@ -621,6 +623,8 @@
       <arg value="maybe_install_gems"/>
       <arg value="${build.lib.dir}/${rspec.gem}"/>
       <arg value="${build.lib.dir}/${rake.gem}"/>
+      <arg value="${install.ri}"/>
+      <arg value="${install.rdoc}"/>
       <arg value="--env-shebang"/>
     </java>
   </target>
@@ -635,6 +639,8 @@
       <arg value="maybe_install_gems"/>
       <arg value="mocha"/>
       <arg value="jruby-openssl"/>
+      <arg value="--no-ri"/>
+      <arg value="--no-rdoc"/>
       <arg value="--env-shebang"/>
     </java>
   </target>
@@ -1386,6 +1392,8 @@
     <fixEOLs/>
     <antcall target="install-gems">
       <param name="jruby.home" value="dist"/>
+      <param name="install.ri" value=""/>
+      <param name="install.rdoc" value=""/>
     </antcall>
     <tar destfile="jruby-bin-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="dist" mode="755" prefix="jruby-${version.jruby}">
@@ -1438,6 +1446,8 @@
     </copy>
     <antcall target="install-gems">
       <param name="jruby.home" value="dist"/>
+      <param name="install.ri" value=""/>
+      <param name="install.rdoc" value=""/>
     </antcall>
     <fixEOLs/>
     <tar destfile="jruby-src-${version.jruby}.tar.gz" compression="gzip">
