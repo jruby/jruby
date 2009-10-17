@@ -91,7 +91,8 @@ public class VariadicInvoker extends RubyObject {
         IRubyObject[] types = ((RubyArray) typesArg).toJavaArrayMaybeUnsafe();
         IRubyObject[] params = ((RubyArray) paramsArg).toJavaArrayMaybeUnsafe();
         com.kenai.jffi.Type[] ffiParamTypes = new com.kenai.jffi.Type[types.length];
-        
+        ParameterMarshaller[] marshallers = new ParameterMarshaller[types.length];
+
         for (int i = 0; i < types.length; ++i) {
             Type type = (Type) types[i];
             switch (NativeType.valueOf(type)) {
@@ -99,18 +100,23 @@ public class VariadicInvoker extends RubyObject {
                 case SHORT:
                 case INT:
                     ffiParamTypes[i] = com.kenai.jffi.Type.SINT32;
+                    marshallers[i] = DefaultMethodFactory.getMarshaller(NativeType.INT);
                     break;
                 case UCHAR:
                 case USHORT:
                 case UINT:
                     ffiParamTypes[i] = com.kenai.jffi.Type.UINT32;
+                    marshallers[i] = DefaultMethodFactory.getMarshaller(NativeType.UINT);
                     break;
                 case FLOAT:
                 case DOUBLE:
                     ffiParamTypes[i] = com.kenai.jffi.Type.DOUBLE;
+                    marshallers[i] = DefaultMethodFactory.getMarshaller(NativeType.DOUBLE);
                     break;
                 default:
                     ffiParamTypes[i] = FFIUtil.getFFIType(type);
+                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type) types[i], CallingConvention.DEFAULT, null);
+                    break;
             }
         }
 
@@ -118,8 +124,8 @@ public class VariadicInvoker extends RubyObject {
         try {
             Function function = new Function(address, returnType, ffiParamTypes, convention);
             HeapInvocationBuffer args = new HeapInvocationBuffer(function);
-            for (int i = 0; i < types.length; ++i) {
-                DefaultMethodFactory.getMarshaller((Type) types[i], CallingConvention.DEFAULT, null).marshal(invocation, args, params[i]);
+            for (int i = 0; i < marshallers.length; ++i) {
+                marshallers[i].marshal(invocation, args, params[i]);
             }
 
             return functionInvoker.invoke(context.getRuntime(), function, args);
