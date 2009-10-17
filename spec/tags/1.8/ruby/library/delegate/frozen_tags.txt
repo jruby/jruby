@@ -1,0 +1,2 @@
+fails(JRUBY-4105):SimpleDelegator when frozen is not writeable
+fails(JRUBY-4105):SimpleDelegator when frozen creates a frozen clone
