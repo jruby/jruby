@@ -149,4 +149,12 @@ public class SystemPropertyCatcher {
             return false;
         }
     }
+
+    public static String getBaseDir() {
+        String baseDir = System.getenv("PWD");
+        if (baseDir == null || "/".equals(baseDir)) {
+            baseDir = System.getProperty("user.dir");
+        }
+        return baseDir;
+    }
 }

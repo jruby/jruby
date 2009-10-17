@@ -297,6 +297,9 @@
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${build.lib.dir}/emma.jar"/>
+        <metainf dir="${base.dir}/spi">
+          <include name="services/**"/>
+        </metainf>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -314,6 +317,7 @@
             <exclude name="**/AnnotationBinder*.class"/>
             <exclude name="**/InvokerGenerator.class"/>
             <exclude name="org/jruby/ext/ffi/**/*"/>
+            <exclude name="org/jruby/embed/**/*"/>
         </fileset>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
@@ -367,6 +371,9 @@
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <metainf dir="${base.dir}/spi">
+          <include name="services/**"/>
+        </metainf>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -461,6 +468,9 @@
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
+        <metainf dir="${base.dir}/spi">
+          <include name="services/**"/>
+        </metainf>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>
@@ -548,6 +558,9 @@
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
+        <metainf dir="${base.dir}/spi">
+          <include name="services/**"/>
+        </metainf>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="${mainclass}"/>

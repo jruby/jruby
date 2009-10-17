@@ -49,6 +49,7 @@ import org.jruby.embed.EmbedRubyRuntimeAdapter;
 import org.jruby.embed.PathType;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.io.ReaderInputStream;
+import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
@@ -102,6 +103,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     break;
                 case RELATIVE:
                     String basedir = (String) container.getAttribute(AttributeName.BASE_DIR);
+                    if (basedir == null) {
+                        basedir = SystemPropertyCatcher.getBaseDir();
+                    }
                     String absolutePath = basedir + File.separator + filename;
                     istream = new FileInputStream(absolutePath);
                     break;

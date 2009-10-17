@@ -47,7 +47,7 @@ public enum PathType {
      *
      * <pre>
      *     ScriptingContainer container = new ScriptingContainer();
-     *     container.setAttribute(Attribute.BASE_DIR, System.getProperty("user.dir"));
+     *     container.setAttribute(AttributeName.BASE_DIR, System.getProperty("user.dir"));
      *     String filename =  "test/ruby/iteration.rb";
      *     Object receiver = container.runScriptlet(PathType.RELATIVE, filename);</pre>
      */

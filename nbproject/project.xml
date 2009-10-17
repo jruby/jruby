@@ -210,5 +210,32 @@
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
+        <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">
+            <module name="org-netbeans-modules-editor-indent">
+                <node name="CodeStyle">
+                    <node name="project">
+                        <property name="spaces-per-tab" value="2"/>
+                        <property name="expand-tabs" value="true"/>
+                        <property name="text-limit-width" value="80"/>
+                        <property name="indent-shift-width" value="2"/>
+                        <property name="tab-size" value="2"/>
+                    </node>
+                    <property name="usedProfile" value="project"/>
+                </node>
+                <node name="text">
+                    <node name="x-java">
+                        <node name="CodeStyle">
+                            <node name="project">
+                                <property name="spaces-per-tab" value="4"/>
+                                <property name="expand-tabs" value="true"/>
+                                <property name="text-limit-width" value="80"/>
+                                <property name="indent-shift-width" value="4"/>
+                                <property name="tab-size" value="4"/>
+                            </node>
+                        </node>
+                    </node>
+                </node>
+            </module>
+        </preferences>
     </configuration>
 </project>
