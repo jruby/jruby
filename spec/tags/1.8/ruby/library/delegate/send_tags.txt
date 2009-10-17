@@ -1,0 +1,1 @@
+fails(JRUBY-4105):SimpleDelegator.new forwards private method calls made via send or __send__
