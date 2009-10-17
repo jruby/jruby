@@ -29,6 +29,7 @@ test_defined
 test_default_constants
 test_delegated_array_equals
 test_dir
+test_digest_lazy_load
 #test_digest2
 test_dup_clone_taint_freeze
 test_env

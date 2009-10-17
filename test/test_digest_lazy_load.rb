@@ -23,5 +23,4 @@ class TestDigestLazyLoad < Test::Unit::TestCase
     assert Digest.const_defined?(:SHA384)
     assert Digest.const_defined?(:SHA512)
   end
-
 end

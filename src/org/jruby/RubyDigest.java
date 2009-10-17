@@ -31,18 +31,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.math.BigInteger;
-import java.security.Provider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.util.Arrays;
+
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.anno.JRubyClass;
-
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
@@ -62,8 +62,8 @@ public class RubyDigest {
         }
 
         RubyModule mDigest = runtime.defineModule("Digest");
+        mDigest.defineAnnotatedMethods(RubyDigest.class);
         RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject(), Base.BASE_ALLOCATOR);
-
         cDigestBase.defineAnnotatedMethods(Base.class);
     }
 
@@ -77,6 +77,27 @@ public class RubyDigest {
         }
         // fall back to system JCA providers
         return MessageDigest.getInstance(providerName);
+    }
+
+
+    @JRubyMethod(name = "const_missing", required = 1, module = true)
+    public static IRubyObject const_missing(ThreadContext ctx, IRubyObject recv, IRubyObject symbol) {
+        Ruby runtime = ctx.getRuntime();
+        String sym = ((RubySymbol)symbol).asJavaString();
+        String libName;
+        if("SHA256".equals(sym) || "SHA384".equals(sym) || "SHA512".equals(sym)) {
+            libName = "digest/sha2.jar";
+        }
+        else {
+            libName = "digest/" + sym.toLowerCase();
+        }
+
+        runtime.getLoadService().require(libName);
+        RubyModule digest = runtime.getModule("Digest");
+        if(!digest.hasConstant(sym)) {
+            throw runtime.newNameError("unitialized constant Digest::" + sym, "Digest::" + sym);
+        }
+        return digest.getConstant(sym);
     }
 
     @JRubyClass(name="Digest::MD5", parent="Digest::Base")
