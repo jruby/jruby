@@ -8,6 +8,7 @@
 # = generator.rb: convert an internal iterator to an external one
 #
 # Copyright (c) 2001,2003 Akinori MUSHA <knu@iDaemons.org>
+# Copyright (c) 2009 MenTaLguY <mental@rydia.net>
 #
 # All rights reserved.  You can redistribute and/or modify it under
 # the same terms as Ruby.
@@ -27,9 +28,6 @@
 #
 # Generator converts an internal iterator (i.e. an Enumerable object)
 # to an external iterator.
-#
-# Note that it is not very fast since it is implemented using
-# continuations, which are currently slow.
 #
 # == Example
 #
@@ -61,6 +59,34 @@ require 'thread'
 class Generator
   include Enumerable
 
+  # marks the end of enumeration
+  END_MARKER = Object.new
+  def END_MARKER.inspect ; "END_MARKER" ; end
+
+  # a queue which emulates the producer-side interface of a generator
+  class ProducerQueue < SizedQueue
+    def initialize
+      super(1)
+    end
+
+    alias yield push
+
+    def _run_enum(enum)
+      _run { enum.each { |x| self.yield(x) } }
+    end
+
+    def _run
+      # caller manages thread, to avoid circularity
+      Thread.new do
+        begin
+          yield self
+        ensure
+          self.yield(END_MARKER)
+        end
+      end
+    end
+  end
+
   # Creates a new generator either from an Enumerable object or from a
   # block.
   #
@@ -70,32 +96,18 @@ class Generator
   # itself, and expected to call the +yield+ method for each element.
   def initialize(enum = nil, &block)
     @thread.kill if @thread
-    @end = false
 
-    if enum
-      @block = proc do |g|
-        enum.each do |x|
-          g.yield x
-        end
-      end
-    else
-      @block = block
-    end
-
+    @queue = ProducerQueue.new
+    @got_next_element = false
+    @next_element = nil
     @index = 0
-    @mutex = Mutex.new
-    @cond = ConditionVariable.new
-    @queue = []
     
-    @mutex.synchronize do
-      @thread = Thread.new do
-        @mutex.synchronize do
-          @cond.signal # signal parent we're started
-          @block.call(self)
-          @end = true
-        end
-      end
-      @cond.wait(@mutex) # wait until thread is started
+    @enum = enum
+    @block = block
+    if enum
+      @thread = @queue._run_enum(enum)
+    else
+      @thread = @queue._run(&block)
     end
 
     self
@@ -103,15 +115,22 @@ class Generator
 
   # Yields an element to the generator.
   def yield(value)
-    @cond.wait(@mutex)
-    @queue << value
-    @cond.signal
+    @queue.yield(value)
     self
+  end
+
+  # gets the next element; may block
+  def _next_element
+    unless @got_next_element
+      @next_element = @queue.pop
+      @got_next_element = true
+    end
+    @next_element
   end
 
   # Returns true if the generator has reached the end.
   def end?()
-    @end
+    END_MARKER.equal? _next_element
   end
 
   # Returns true if the generator has not reached the end yet.
@@ -123,42 +142,26 @@ class Generator
   def index()
     @index
   end
-
-  # Returns the current index (position) counting from zero.
-  def pos()
-    @index
-  end
+  alias pos index
 
   # Returns the element at the current position and moves forward.
   def next()
-    result = nil
-    @mutex.synchronize do
-      if end?
-        raise EOFError, "no more elements available"
-      end
-
-      @index += 1
-
-      @cond.signal
-      @cond.wait(@mutex)
-      result = @queue.shift
-    end
+    result = current
+    @index += 1
+    @got_next_element = false
+    @next_element = nil
     result
   end
 
   # Returns the element at the current position.
   def current()
-    if @queue.empty?
-      raise EOFError, "no more elements available"
-    end
-
-    @queue.first
+    raise EOFError, "no more elements available" if end?
+    _next_element
   end
 
   # Rewinds the generator.
   def rewind()
-    initialize(nil, &@block) if @index.nonzero?
-
+    initialize(@enum, &@block) if @index.nonzero?
     self
   end
 
@@ -189,22 +192,19 @@ class Generator
     #   e.next   => object
     #
     # Returns the next object in the enumerator, and move the internal
-    # position forward.  When the position reached at the end, internal
-    # position is rewinded then StopIteration is raised.
+    # position forward.  When the position reached at the end,
+    # StopIteration is raised until the enumerator is rewound.
     #
     # Note that enumeration sequence by next method does not affect other
     # non-external enumeration methods, unless underlying iteration
     # methods itself has side-effect, e.g. IO#each_line.
-    #
-    # Caution: This feature internally uses Generator, which uses callcc
-    # to stop and resume enumeration to fetch each value.  Use with care
-    # and be aware of the performance loss.
     def next
       g = __generator
-      return g.next unless g.end?
-
-      g.rewind
-      raise StopIteration, 'iteration reached at end'
+      begin
+        g.next
+      rescue EOFError
+        raise StopIteration, 'iteration reached at end'
+      end
     end
 
     # call-seq:
