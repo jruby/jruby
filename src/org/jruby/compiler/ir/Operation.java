@@ -19,7 +19,7 @@ public enum Operation
     GET_METHOD(OpType.dont_care),
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
     RECV_ARG(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
-    CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op), ATTR_ASSIGN(OpType.call_op),
+    CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op), 
     DECLARE_TYPE(OpType.declare_type_op),
 
 // closure instructions
@@ -46,6 +46,7 @@ public enum Operation
     BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
 
 // others
+	 ATTR_ASSIGN(OpType.dont_care),
     BUILD_CLOSURE(OpType.dont_care), GET_FRAME(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks

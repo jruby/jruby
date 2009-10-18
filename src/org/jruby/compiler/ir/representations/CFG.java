@@ -319,7 +319,6 @@ public class CFG
 
     public void buildDominatorTree()
     {
-        System.out.println("--- Building Dom Tree ---");
         int maxNodeId = getMaxNodeID();  
 
         // Set up a map of bbid -> post order numbering

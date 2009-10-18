@@ -57,7 +57,6 @@ public class CALL_Instr extends MultiOperandInstr
         super.simplifyOperands(valueMap);
         _methAddr = _args[0];
         _closure  = (_closure == null) ? null : _args[_args.length-1];
-        System.out.println("simplified closure is: " + _closure);
     }
 
     // SSS FIXME: Right now, this code is not very smart!

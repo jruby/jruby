@@ -83,6 +83,7 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -310,7 +311,7 @@ public class IR_Builder
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, m); // done
             case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, m); // done
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done -- partially
-//            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // DEFERRED SSS FIXME: What code generates this AST?
+            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // done
             case ORNODE: return buildOr((OrNode) node, m); // done
 //            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
 //            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
@@ -1798,7 +1799,7 @@ public class IR_Builder
 
     public Operand buildHash(HashNode hashNode, IR_Scope m) {
         if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
-            return new Hash(null);
+            return new Hash(new ArrayList<KeyValuePair>());
         }
         else {
             int     i     = 0;
@@ -1839,6 +1840,9 @@ public class IR_Builder
         Operand  thenResult = null;
         s.addInstr(new BEQ_Instr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
 
+        boolean thenNull = false;
+        boolean elseNull = false;
+
         // Build the then part of the if-statement
         if (ifNode.getThenBody() != null) {
             thenResult = build(ifNode.getThenBody(), s);
@@ -1854,6 +1858,9 @@ public class IR_Builder
                 s.addInstr(new COPY_Instr(result, thenResult));
                 s.addInstr(new JUMP_Instr(tgt));
             }
+            else {
+                thenNull = true;
+            }
         }
         else {
             s.addInstr(new COPY_Instr(result, Nil.NIL));
@@ -1866,12 +1873,20 @@ public class IR_Builder
             Operand elseResult = build(ifNode.getElseBody(), s);
             if (elseResult != null) // elseResult can be null if then-body ended with a return!
                 s.addInstr(new COPY_Instr(result, elseResult));
+            else
+                elseNull = true;
         }
         else {
             s.addInstr(new COPY_Instr(result, Nil.NIL));
         }
-        s.addInstr(new LABEL_Instr(doneLabel));
-        return result;
+
+        if (thenNull && elseNull) {
+            return null;
+        }
+        else {
+            s.addInstr(new LABEL_Instr(doneLabel));
+            return result;
+        }
     }
 
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode, IR_Scope s) {
@@ -1973,7 +1988,7 @@ public class IR_Builder
 
         // Build the module body
         if (moduleNode.getBodyNode() != null)
-            build(moduleNode.getBodyNode(), m);
+            build(moduleNode.getBodyNode(), m.getRootMethod());
 
         return mMetaObj;
     }
@@ -2208,7 +2223,6 @@ public class IR_Builder
     }
 **/
 
-/**
     public Operand buildOpElementAsgn(Node node, IR_Scope m) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
@@ -2220,7 +2234,6 @@ public class IR_Builder
             return buildOpElementAsgnWithMethod(node, m);
         }
     }
-**/
     
     /**
     private class OpElementAsgnArgumentsCallback implements ArgumentsCallback  {
@@ -2260,69 +2273,60 @@ public class IR_Builder
             }
         }
     };
+*/
 
-    public Operand buildOpElementAsgnWithOr(Node node, IR_Scope m) {
+    // Translate "a[x] ||= n" --> "a[x] = n if !is_true(a[x])"
+    // 
+    //    tmp = build(a) <-- receiver
+    //    arg = build(x) <-- args
+    //    val = buildCall([], tmp, arg)
+    //    f = is_true(val)
+    //    beq(f, true, L)
+    //    val = build(n) <-- val
+    //    buildCall([]= tmp, arg, val)
+    // L:
+    //
+    public Operand buildOpElementAsgnWithOr(Node node, IR_Scope s) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
-
-        CompilerCallback receiverCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(opElementAsgnNode.getReceiverNode(), m);
-            }
-        };
-
-        ArgumentsCallback argsCallback = new OpElementAsgnArgumentsCallback(opElementAsgnNode.getArgsNode());
-
-        CompilerCallback valueCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(opElementAsgnNode.getValueNode(), m, true);
-            }
-        };
-
-        m.getInvocationCompiler().opElementAsgnWithOr(receiverCallback, argsCallback, valueCallback);
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        Operand array = build(opElementAsgnNode.getReceiverNode(), s);
+        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        Label    l     = s.getNewLabel();
+        Variable elt   = s.getNewVariable();
+        Variable f     = s.getNewVariable();
+        Operand[] allArgs = new Operand[args.size()+1];
+        int i = 1;
+        allArgs[0] = array;
+        for (Operand x: args) {
+            allArgs[i] = x;
+            i++;
+        }
+        s.addInstr(new CALL_Instr(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new IS_TRUE_Instr(f, elt));
+        s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l));
+        Operand value = build(opElementAsgnNode.getValueNode(), s);
+        allArgs = new Operand[args.size()+2];
+        i = 1;
+        allArgs[0] = array;
+        for (Operand x: args) {
+            allArgs[i] = x;
+            i++;
+        }
+        allArgs[i] = value;
+        s.addInstr(new CALL_Instr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new COPY_Instr(elt, value));
+        s.addInstr(new LABEL_Instr(l));
+        return elt;
     }
 
-    public Operand buildOpElementAsgnWithAnd(Node node, IR_Scope m) {
-        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
-
-        CompilerCallback receiverCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(opElementAsgnNode.getReceiverNode(), m);
-            }
-        };
-
-        ArgumentsCallback argsCallback = new OpElementAsgnArgumentsCallback(opElementAsgnNode.getArgsNode()); 
-
-        CompilerCallback valueCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(opElementAsgnNode.getValueNode(), m);
-            }
-        };
-
-        m.getInvocationCompiler().opElementAsgnWithAnd(receiverCallback, argsCallback, valueCallback);
+    // SSS FIXME: Incorrect -- this is just a copy of the OR case
+    public Operand buildOpElementAsgnWithAnd(Node node, IR_Scope s) {
+        return buildOpElementAsgnWithOr(node, s);
     }
 
-    public Operand buildOpElementAsgnWithMethod(Node node, IR_Scope m) {
-        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
-
-        CompilerCallback receiverCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(opElementAsgnNode.getReceiverNode(), m);
-            }
-        };
-
-        ArgumentsCallback argsCallback = setupCallArgs(opElementAsgnNode.getArgsNode());
-
-        CompilerCallback valueCallback = new CompilerCallback() {
-            public void call(IR_Scope m) {
-                build(opElementAsgnNode.getValueNode(), m);
-            }
-        };
-
-        m.getInvocationCompiler().opElementAsgnWithMethod(receiverCallback, argsCallback, valueCallback, opElementAsgnNode.getOperatorName());
+    // SSS FIXME: Incorrect -- this is just a copy of the OR case
+    public Operand buildOpElementAsgnWithMethod(Node node, IR_Scope s) {
+        return buildOpElementAsgnWithOr(node, s);
     }
-**/
 
     // Translate ret = (a || b) to ret = (a ? true : b) as follows
     // 
@@ -2658,7 +2662,7 @@ public class IR_Builder
     public Operand buildYield(YieldNode node, IR_Scope s) {
         List<Operand> args = setupCallArgs(node.getArgsNode(), s);
         Variable      ret  = s.getNewVariable();
-        s.addInstr(new YIELD_Instr(ret, (Operand[])args.toArray()));
+        s.addInstr(new YIELD_Instr(ret, args.toArray(new Operand[args.size()])));
         return ret;
     }
 

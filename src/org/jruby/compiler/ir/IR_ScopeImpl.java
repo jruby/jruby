@@ -179,11 +179,11 @@ public abstract class IR_ScopeImpl implements IR_Scope
            return;
 
         if ((this instanceof IR_Method) && ((IR_Method)this).isAClassRootMethod()) {
-            IR_Class c = (IR_Class)(((MetaObject)this._parent)._scope);
+            IR_Module c = (IR_Module)(((MetaObject)this._parent)._scope);
             c.getRootMethod().addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
         }
-        else if (m._isInstanceMethod && (this instanceof IR_Class)) {
-            IR_Class c = (IR_Class)this;
+        else if (m._isInstanceMethod && (this instanceof IR_Module)) {
+            IR_Module c = (IR_Module)this;
             c.getRootMethod().addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
         }
         else if (!m._isInstanceMethod && (this instanceof IR_Module)) {
@@ -191,7 +191,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
             c.getRootMethod().addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
         }
         else {
-            throw new RuntimeException("Encountered method add in a non-class scope!");
+            // SSS FIXME: Do I have to generate a define method instruction here??
+            // throw new RuntimeException("Encountered method add in a non-class scope!");
         }
     }
 
