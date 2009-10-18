@@ -19,7 +19,9 @@ describe "A Java object's java_method method" do
   
   it "produces Method for static methods against an instance" do
     m = @integer.java_method :valueOf, [Java::int]
-    m.call(1).should == @integer
+    # JRUBY-4107
+    #m.call(1).should == @integer
+    m.call(1).should == 1
   end
   
   it "produces UnboundMethod for instance methods against a class" do
@@ -30,7 +32,9 @@ describe "A Java object's java_method method" do
   
   it "produces Method for static methods against a class" do
     m = java.lang.Integer.java_method :valueOf, [Java::int]
-    m.call(1).should == @integer
+    # JRUBY-4107
+    #m.call(1).should == @integer
+    m.call(1).should == 1
   end
 
   it "raises NameError if the method can't be found" do
