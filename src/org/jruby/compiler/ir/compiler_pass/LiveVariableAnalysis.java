@@ -19,7 +19,7 @@ public class LiveVariableAnalysis implements CompilerPass
 
         CFG c = ((IR_Method)s).getCFG();
         LiveVariablesProblem lvp = new LiveVariablesProblem();
-		  lvp.setup(c);
+        lvp.setup(c);
         lvp.compute_MOP_Solution();
         c.setLVP(lvp);
     }

@@ -296,7 +296,6 @@ public abstract class IR_ScopeImpl implements IR_Scope
         if (isPreOrder)
             p.run(this);
 
-			
         runCompilerPassOnNestedScopes(p);
 
         if (!isPreOrder)

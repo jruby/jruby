@@ -10,7 +10,7 @@ public class Label extends Operand
 
     public String toString() { return _label; }
 
-	 public int hashCode() { return _label.hashCode(); }
+    public int hashCode() { return _label.hashCode(); }
 
-	 public boolean equals(Object o) { return (o instanceof Label) && _label.equals(((Label)o)._label); }
+    public boolean equals(Object o) { return (o instanceof Label) && _label.equals(((Label)o)._label); }
 }

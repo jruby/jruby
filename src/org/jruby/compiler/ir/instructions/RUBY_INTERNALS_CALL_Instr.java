@@ -22,9 +22,9 @@ public class RUBY_INTERNALS_CALL_Instr extends CALL_Instr
     public boolean isRubyInternalsCall() { return true; }
     public boolean isStaticCallTarget()  { return true; }
 
-	 // SSS FIXME: Who is the receiver in these cases??
+    // SSS FIXME: Who is the receiver in these cases??
     public Operand getReceiver() { return null; }
 
-	 // SSS FIXME: Dont optimize these yet!
+    // SSS FIXME: Dont optimize these yet!
     public IR_Method getTargetMethodWithReceiver(Operand receiver) { return null; }
 }

@@ -13,7 +13,7 @@ public class IR_Script extends IR_ScopeImpl
         super((IR_Scope)null, null);
         _fileName = sourceName;
         _dummyClass = new IR_Class(this, this, null, "__SCRIPT_ROOT__", false);
-		  addClass(_dummyClass);
+        addClass(_dummyClass);
     }
 
     public Operand getFileName() { return new StringLiteral(_fileName); }

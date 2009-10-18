@@ -36,17 +36,17 @@ public enum Operation
 
 // Loads
     GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op),
-	 FRAME_LOAD(OpType.load_op), 
+    FRAME_LOAD(OpType.load_op), 
 
 // Stores
     PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
-	 FRAME_STORE(OpType.store_op),
+    FRAME_STORE(OpType.store_op),
 
 // jump and branch operations
     BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
 
 // others
-	 ATTR_ASSIGN(OpType.dont_care),
+    ATTR_ASSIGN(OpType.dont_care),
     BUILD_CLOSURE(OpType.dont_care), GET_FRAME(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks

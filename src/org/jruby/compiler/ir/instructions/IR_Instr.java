@@ -76,7 +76,7 @@ public abstract class IR_Instr
             o.addUsedVariables(vars);
         }
 
-		  return vars;
+        return vars;
     }
 
     /* 
