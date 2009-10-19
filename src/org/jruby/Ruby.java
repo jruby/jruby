@@ -1411,7 +1411,7 @@ public final class Ruby {
     }
 
     private void addLazyBuiltin(String name, String shortName, String className) {
-        addBuiltinIfAllowed(name, new LateLoadingLibrary(shortName, className, getJRubyClassLoader()));
+        addBuiltinIfAllowed(name, new LateLoadingLibrary(shortName, className, getClassLoader()));
     }
 
     private void addBuiltinIfAllowed(String name, Library lib) {
