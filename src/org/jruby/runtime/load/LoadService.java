@@ -124,7 +124,7 @@ import org.jruby.util.JRubyFile;
  * @author jpetersen
  */
 public class LoadService {
-    private enum SuffixType {
+    public enum SuffixType {
         Source, Extension, Both, Neither;
         
         public static final String[] sourceSuffixes = { ".class", ".rb" };
