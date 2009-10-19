@@ -397,6 +397,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @param taint should this object be tainted or not?
      */
     public void setTaint(boolean taint) {
+        // JRUBY-4113: callers should not call setTaint on immediate objects
+        if (isImmediate()) return;
+        
         if (taint) {
             flags |= TAINTED_F;
         } else {
