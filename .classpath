@@ -24,5 +24,5 @@
 	<classpathentry kind="lib" path="build_lib/jnr-posix.jar"/>
 	<classpathentry kind="lib" path="build_lib/joda-time-1.6.jar"/>
 	<classpathentry kind="lib" path="build_lib/jgrapht-jdk1.5.jar"/>
-	<classpathentry kind="output" path="build/classes/jruby"/>
+	<classpathentry kind="output" path="build.eclipse"/>
 </classpath>

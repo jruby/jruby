@@ -1549,6 +1549,7 @@
   </target>
 
   <target name="clean-all" depends="clean, clear-specs, dist-clean" description="Cleans everything, including dist files and specs">
+      <delete dir="${base.dir}/build.eclipse"/>
   </target>
 
   <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
