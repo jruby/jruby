@@ -9,6 +9,7 @@ bin/*
 !bin/update_rubygems
 build
 build.eclipse
+build.properties
 target
 dist
 lib/jruby*.jar

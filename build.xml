@@ -234,15 +234,16 @@
 
   <target name="_update_scm_revision_">
       <condition property="ruby.available">
-          <available file="/usr/bin/ruby"/>
+          <available file="${RUBY}"/>
       </condition>
       <antcall target="_update_scm_revision_with_ruby_"/>
       <antcall target="_update_scm_revision_with_jruby_"/>
   </target>
 
   <target name="_update_scm_revision_with_ruby_" if="ruby.available">
-      <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" executable="/usr/bin/ruby">
-          <arg line="tool/snapshot.rb ${jruby.classes.dir}/org/jruby/jruby.properties"/>
+      <echo message="Using '${RUBY}' to calculate revision"/>
+      <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" dir="${base.dir}" executable="${RUBY}">
+          <arg line="${base.dir}/tool/snapshot.rb ${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </exec>
       <condition property="ruby.failed">
           <istrue value="${ruby.command.failed}"/>
@@ -250,13 +251,16 @@
   </target>
 
   <target name="_update_scm_revision_with_jruby_" unless="ruby.available">
+      <echo message="Using JRuby to calculate revision..."/>
+      <echo message="Adjust RUBY value in build.properties to speed things up!"/>
+      <property name="jruby.home" value="${basedir}"/>
       <java classname="org.jruby.Main" resultproperty="snapshot.result" errorproperty="snapshot.error" failonerror="false">
         <classpath refid="build.classpath"/>
         <classpath path="${jruby.classes.dir}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg value="tool/snapshot.rb"/>
-        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
+        <arg line="${base.dir}/tool/snapshot.rb"/>
+        <arg line="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </java>
   </target>
 
