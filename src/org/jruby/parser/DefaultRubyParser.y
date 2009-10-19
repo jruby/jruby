@@ -1039,8 +1039,10 @@ primary       : literal
                   if ($2 != null) {
                       // compstmt position includes both parens around it
                       ((ISourcePositionHolder) $2).setPosition(getPosition($1));
+                      $$ = $2;
+                  } else {
+                      $$ = new NilNode(getPosition($1));
                   }
-		  $$ = $2;
               }
               | primary_value tCOLON2 tCONSTANT {
                   $$ = support.new_colon2(getPosition($1), $1, (String) $3.getValue());
