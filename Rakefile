@@ -172,12 +172,14 @@ namespace :maven do
 end
 
 task :installer do
-  ant "dist"
-  conf = ENV['CONF'] || 'winjre'
-  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 install/jruby_#{conf}.install4j" do |ok,res|
-    if !ok
-      $stderr.puts "** Did you specify an invalid install configuration? " +
-        "values are: #{Dir['install/*.install4j'].map {|f| File.basename(f, '.install4j').sub(/jruby_/,'')}.join(' ')}"
-    end
+  confs = Dir['install/*.install4j'].map {|f| File.basename(f, '.install4j').sub(/jruby_/,'')}
+  if conf = ENV['CONF']
+    fail "** Invalid install configuration - values are: #{confs.join(' ')}" unless confs.include?(conf)
+    confs = [conf]
+  end
+  puts "Be sure to run 'ant dist' before creating installers. Press RET to continue"
+  $stdin.gets
+  confs.each do |conf|
+    sh "/Applications/install4j\\ 4/bin/install4jc -m win32 install/jruby_#{conf}.install4j"
   end
 end
