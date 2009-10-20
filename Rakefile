@@ -9,7 +9,6 @@ File.open("default.build.properties") do |props|
     
     # build const name
     name, value = line.split("=")
-    p name
     name.gsub!(".", "_")
     name.upcase!
     Object.const_set(name.to_sym, value)
