@@ -273,7 +273,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String jrubyScript() {
-        return System.getProperty("jruby.script", Platform.IS_WINDOWS ? "jruby.bat" : "jruby").replace('\\', '/');
+        return System.getProperty("jruby.script", "jruby").replace('\\', '/');
     }
 
     // TODO: note lack of command.com support for Win 9x...
