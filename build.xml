@@ -243,7 +243,8 @@
   <target name="_update_scm_revision_with_ruby_" if="ruby.available">
       <echo message="Using '${ruby.executable}' to calculate revision"/>
       <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" dir="${base.dir}" executable="${ruby.executable}">
-          <arg line="${base.dir}/tool/snapshot.rb ${jruby.classes.dir}/org/jruby/jruby.properties"/>
+          <arg value="${base.dir}/tool/snapshot.rb"/>
+          <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </exec>
       <condition property="ruby.failed">
           <istrue value="${ruby.command.failed}"/>
@@ -259,8 +260,8 @@
         <classpath path="${jruby.classes.dir}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg line="${base.dir}/tool/snapshot.rb"/>
-        <arg line="${jruby.classes.dir}/org/jruby/jruby.properties"/>
+        <arg value="${base.dir}/tool/snapshot.rb"/>
+        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
       </java>
   </target>
 
@@ -965,7 +966,7 @@
         <sysproperty key="emma.verbosity.level" value="silent" />
 
         <arg line="@{jruby.args}"/>
-        <arg line="${base.dir}/bin/rake"/>
+        <arg value="${base.dir}/bin/rake"/>
         <arg line="@{rake.targets}"/>
       </java>
     </sequential>
