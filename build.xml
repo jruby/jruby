@@ -1264,7 +1264,7 @@
 
   <macrodef name="fixEOLs">
     <sequential>
-      <fixcrlf srcdir="dist/bin" excludes="*.bat" eol="lf"/>
+      <fixcrlf srcdir="dist/bin" excludes="*.bat,*.exe,*.dll" eol="lf"/>
       <fixcrlf srcdir="dist/bin" includes="*.bat" eol="crlf"/>
     </sequential>
   </macrodef>
