@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.4.0RC1</version>
+    <version>1.4.0RC2</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.0RC1</version>
+  <version>1.4.0RC2</version>
   <name>JRuby</name>
 
   <dependencies>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.jruby.embed</groupId>
       <artifactId>jruby-embed</artifactId>
-      <version>0.1.2</version>
+      <version>1.4.0RC2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
