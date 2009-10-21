@@ -84,13 +84,12 @@ public class RubyEnumerator extends RubyObject {
     private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
         object = runtime.getNil();
+        initialize(runtime.getNil(), RubyString.newEmptyString(runtime), IRubyObject.NULL_ARRAY);
     }
 
     private RubyEnumerator(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[]args) {
         super(runtime, runtime.getEnumerator());
-        this.object = object;
-        this.method = method.asJavaString();
-        this.methodArgs = args;
+        initialize(object, method, args);
     }
 
     static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
@@ -124,6 +123,9 @@ public class RubyEnumerator extends RubyObject {
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
+        setInstanceVariable("@__object__", object);
+        setInstanceVariable("@__method__", method);
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
         return this;
     }
 

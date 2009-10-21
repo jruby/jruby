@@ -273,19 +273,35 @@ public class ThreadLibrary implements Library {
             cQueue.defineAnnotatedMethods(Queue.class);
         }
 
+        @JRubyMethod(name = "shutdown!")
+        public synchronized IRubyObject shutdown(ThreadContext context) {
+            entries = null;
+            notifyAll();
+            return context.getRuntime().getNil();
+        }
+
+        public synchronized void checkShutdown(ThreadContext context) {
+            if (entries == null) {
+                throw new RaiseException(context.getRuntime(), context.getRuntime().getThreadError(), "queue shut down", false);
+            }
+        }
+
         @JRubyMethod
         public synchronized IRubyObject clear(ThreadContext context) {
+            checkShutdown(context);
             entries.clear();
             return context.getRuntime().getNil();
         }
 
         @JRubyMethod(name = "empty?")
         public synchronized RubyBoolean empty_p(ThreadContext context) {
+            checkShutdown(context);
             return context.getRuntime().newBoolean(entries.size() == 0);
         }
 
         @JRubyMethod(name = {"length", "size"})
         public synchronized RubyNumeric length(ThreadContext context) {
+            checkShutdown(context);
             return RubyNumeric.int2fix(context.getRuntime(), entries.size());
         }
 
@@ -298,6 +314,7 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
         public synchronized IRubyObject pop(ThreadContext context, IRubyObject[] args) {
+            checkShutdown(context);
             boolean should_block = true;
             if ( Arity.checkArgumentCount(context.getRuntime(), args, 0, 1) == 1 ) {
                 should_block = !args[0].isTrue();
@@ -306,22 +323,23 @@ public class ThreadLibrary implements Library {
                 throw new RaiseException(context.getRuntime(), context.getRuntime().getThreadError(), "queue empty", false);
             }
             numWaiting++;
-            while ( entries.size() == 0 ) {
-                try {
-                    // TODO: No, this isn't atomic; we need to improve it
-                    context.getThread().enterSleep();
-                    wait();
-                } catch (InterruptedException e) {
-                } finally {
-                    context.getThread().exitSleep();
+            try {
+                while ( java_length() == 0 ) {
+                    try {
+                        context.getThread().wait_timeout(this, null);
+                    } catch (InterruptedException e) {
+                    }
+                    checkShutdown(context);
                 }
+            } finally {
+                numWaiting--;
             }
-            numWaiting--;
             return (IRubyObject)entries.removeFirst();
         }
 
         @JRubyMethod(name = {"push", "<<", "enq"})
         public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
+            checkShutdown(context);
             entries.addLast(value);
             notify();
             return context.getRuntime().getNil();
@@ -398,15 +416,20 @@ public class ThreadLibrary implements Library {
         @JRubyMethod(name = {"push", "<<"})
         @Override
         public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
+            checkShutdown(context);
             if ( java_length() >= capacity ) {
                 numWaiting++;
-                while ( java_length() >= capacity ) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
+                try {
+                    while ( java_length() >= capacity ) {
+                        try {
+                            context.getThread().wait_timeout(this, null);
+                        } catch (InterruptedException e) {
+                        }
+                        checkShutdown(context);
                     }
+                } finally {
+                    numWaiting--;
                 }
-                numWaiting--;
             }
             super.push(context, value);
             notifyAll();
