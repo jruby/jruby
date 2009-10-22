@@ -45,6 +45,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.StructLayout.Storage;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -513,9 +514,12 @@ public final class StructLayoutBuilder extends RubyObject {
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             IRubyObject s = cache.getCachedValue(this);
             if (s == null) {
-                s = Struct.newStruct(runtime, klass, ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)));
+                s = klass.newInstance(runtime.getCurrentContext(),
+                        new IRubyObject[] { ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)) },
+                        Block.NULL_BLOCK);
                 cache.putCachedValue(this, s);
             }
+
             return s;
         }
 
