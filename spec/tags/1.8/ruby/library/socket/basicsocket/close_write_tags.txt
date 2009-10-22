@@ -1,2 +1,0 @@
-fails(JRUBY-2672):Socket::BasicSocket#close_write does not work on sockets with closed write ends
-fails(JRUBY-2672):Socket::BasicSocket#close_write closes the writing end of the socket

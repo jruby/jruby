@@ -107,7 +107,11 @@ public class RubyBasicSocket extends RubyIO {
         if (context.getRuntime().getSafeLevel() >= 4 && isTaint()) {
             throw context.getRuntime().newSecurityError("Insecure: can't close");
         }
-        
+
+        if (!openFile.isWritable()) {
+            return context.getRuntime().getNil();
+        }
+
         if (openFile.getPipeStream() == null && openFile.isReadable()) {
             throw context.getRuntime().newIOError("closing non-duplex IO for writing");
         }
@@ -135,6 +139,10 @@ public class RubyBasicSocket extends RubyIO {
         Ruby runtime = context.getRuntime();
         if (runtime.getSafeLevel() >= 4 && isTaint()) {
             throw runtime.newSecurityError("Insecure: can't close");
+        }
+
+        if (!openFile.isOpen()) {
+            throw context.getRuntime().newIOError("not opened for reading");
         }
 
         if (!openFile.isWritable()) {
@@ -569,7 +577,7 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject getsockname(ThreadContext context) {
         SocketAddress sock = getLocalSocket();
         if(null == sock) {
-            throw context.getRuntime().newIOError("Not Supported");
+            return RubySocket.pack_sockaddr_in(context, null, 0, "0.0.0.0");
         }
         return context.getRuntime().newString(sock.toString());
     }
