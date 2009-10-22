@@ -1,0 +1,2 @@
+fails(JRUBY-3716):Matrix#row returns self when called with a block
+fails(JRUBY-3716):Matrix#row returns nil when out of bounds

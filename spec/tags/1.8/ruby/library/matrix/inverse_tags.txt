@@ -1,1 +1,0 @@
-fails(JRUBY-3716):Matrix#inverse returns the inverse of the Matrix

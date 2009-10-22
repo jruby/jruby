@@ -1,0 +1,3 @@
+fails(JRUBY-3716):Matrix#minor with start_row, nrows, start_col, ncols returns an empty Matrix unless nrows and ncols are greater than 0
+fails(JRUBY-3716):Matrix#minor with start_row, nrows, start_col, ncols returns nil for out-of-bounds start_row/col
+fails(JRUBY-3716):Matrix#minor with col_range, row_range returns an empty Matrix if col_range or row_range don't select any elements
