@@ -42,6 +42,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
@@ -116,6 +117,8 @@ public class RubyTCPSocket extends RubyIPSocket {
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch(ConnectException e) {
+            throw context.getRuntime().newErrnoECONNREFUSEDError();
+        } catch (ClosedChannelException cce) {
             throw context.getRuntime().newErrnoECONNREFUSEDError();
         } catch(UnknownHostException e) {
             throw sockerr(context.getRuntime(), "initialize: name or service not known");
