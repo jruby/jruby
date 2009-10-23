@@ -1,7 +1,41 @@
+# FIXME: Move into helper file somewhere for checksum methods
+require 'digest'
+
+class HashTask < Struct.new(:hash, :file)
+  BUF = 100 * 1024 
+
+  def calculate_hash
+    open(file) do |io|
+      while !io.eof
+        hash.update io.readpartial(BUF)
+      end
+    end
+    hash.hexdigest
+  end
+
+  def self.hash_for(filename, method=Digest::MD5)
+    File.open(filename + "."+ method.name.split('::').last.downcase, 'w') do |f|
+      f.puts HashTask.new(method.new, filename).calculate_hash
+    end
+  end
+end
+
+# Calculate a md5 checksum and save the file as same name + ".md5"
+def md5_checksum(filename)
+  HashTask.hash_for(filename)
+end
+
+# Calculate a sha1 checksum and save the file as same name + ".sha1"
+def sha1_checksum(filename)
+  HashTask.hash_for(filename, Digest::SHA1)
+end
+
+
 task :default => [:build]
 
 Object.const_set(:BASE_DIR, Dir.pwd)
 
+# FIXME: Move into helper method and call it
 File.open("default.build.properties") do |props|
   props.each_line do |line|
     # skip comments
@@ -173,7 +207,12 @@ end
 
 task :installer do
   ant "dist"
-  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 -D jruby.version=#{VERSION_JRUBY} install/jruby.install4j" do |ok,res|
-    $stderr.puts "** Something went wrong: #{res}" unless ok
+  sh "#{INSTALL4J_EXECUTABLE} -m win32 -D jruby.version=#{VERSION_JRUBY} " \
+     "install/jruby.install4j" do |ok, result|
+    $stderr.puts "** Something went wrong: #{result}" unless ok
   end
+  Dir["#{BUILD_DIR}/installers/*.exe"].each do |file|
+    md5_checksum file
+    sha1_checksum file
+  end 
 end
