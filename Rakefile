@@ -173,12 +173,9 @@ namespace :maven do
 end
 
 task :installer do
-  ant "dist"
-  conf = ENV['CONF'] || 'winjre'
-  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 install/jruby_#{conf}.install4j" do |ok,res|
-    if !ok
-      $stderr.puts "** Did you specify an invalid install configuration? " +
-        "values are: #{Dir['install/*.install4j'].map {|f| File.basename(f, '.install4j').sub(/jruby_/,'')}.join(' ')}"
-    end
+  version = ENV['VERSION'] || abort("Pass the version in with VERSION={version}")
+#  ant "dist"
+  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 -D jruby.version=1.5.0dev install/jruby_win.install4j" do |ok,res|
+    $stderr.puts "** Something went wrong: #{res}" unless ok
   end
 end
