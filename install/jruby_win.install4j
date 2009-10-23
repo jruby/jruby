@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="4.2.4" transformSequenceNumber="2">
   <directoryPresets config="" />
-  <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="1.4.0RC1" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
+  <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
       <additionalLanguages />
@@ -11,7 +11,9 @@
       <envVar name="JAVA_HOME" />
       <envVar name="JDK_HOME" />
     </searchSequence>
-    <variables />
+    <variables>
+      <variable name="jruby.version" value="error" />
+    </variables>
   </application>
   <files>
     <filesets>
@@ -49,21 +51,21 @@
           <entry location="gem" fileType="regular" />
           <entry location="install/jruby.install4j" fileType="regular" />
           <entry location="ivy" fileType="regular" />
-          <entry location="jruby-bin-1.4.0RC1.tar.gz" fileType="regular" />
-          <entry location="jruby-bin-1.4.0RC1.tar.gz.md5" fileType="regular" />
-          <entry location="jruby-bin-1.4.0RC1.tar.gz.sha1" fileType="regular" />
-          <entry location="jruby-bin-1.4.0RC1.zip" fileType="regular" />
-          <entry location="jruby-bin-1.4.0RC1.zip.md5" fileType="regular" />
-          <entry location="jruby-bin-1.4.0RC1.zip.sha1" fileType="regular" />
+          <entry location="jruby-bin-${compiler:jruby.version}.tar.gz" fileType="regular" />
+          <entry location="jruby-bin-${compiler:jruby.version}.tar.gz.md5" fileType="regular" />
+          <entry location="jruby-bin-${compiler:jruby.version}.tar.gz.sha1" fileType="regular" />
+          <entry location="jruby-bin-${compiler:jruby.version}.zip" fileType="regular" />
+          <entry location="jruby-bin-${compiler:jruby.version}.zip.md5" fileType="regular" />
+          <entry location="jruby-bin-${compiler:jruby.version}.zip.sha1" fileType="regular" />
           <entry location="jruby-complete.jar" fileType="regular" />
           <entry location="jruby-complete.jar.md5" fileType="regular" />
           <entry location="jruby-complete.jar.sha1" fileType="regular" />
-          <entry location="jruby-src-1.4.0RC1.tar.gz" fileType="regular" />
-          <entry location="jruby-src-1.4.0RC1.tar.gz.md5" fileType="regular" />
-          <entry location="jruby-src-1.4.0RC1.tar.gz.sha1" fileType="regular" />
-          <entry location="jruby-src-1.4.0RC1.zip" fileType="regular" />
-          <entry location="jruby-src-1.4.0RC1.zip.md5" fileType="regular" />
-          <entry location="jruby-src-1.4.0RC1.zip.sha1" fileType="regular" />
+          <entry location="jruby-src-${compiler:jruby.version}.tar.gz" fileType="regular" />
+          <entry location="jruby-src-${compiler:jruby.version}.tar.gz.md5" fileType="regular" />
+          <entry location="jruby-src-${compiler:jruby.version}.tar.gz.sha1" fileType="regular" />
+          <entry location="jruby-src-${compiler:jruby.version}.zip" fileType="regular" />
+          <entry location="jruby-src-${compiler:jruby.version}.zip.md5" fileType="regular" />
+          <entry location="jruby-src-${compiler:jruby.version}.zip.sha1" fileType="regular" />
           <entry location="jruby.bnd.template" fileType="regular" />
           <entry location="lib/.cvsignore" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
@@ -429,7 +431,17 @@
     </applications>
   </installerGui>
   <mediaSets>
-    <win32 name="Windows" id="20" mediaFileName="" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+      <excludedLaunchers />
+      <excludedComponents />
+      <excludedBeans>
+        <bean refId="26" />
+      </excludedBeans>
+      <overriddenPrincipalLanguage id="en" customLocalizationFile="" />
+      <exclude />
+      <variables />
+    </win32>
+    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.6.0_16" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>

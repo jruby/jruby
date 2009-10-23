@@ -172,14 +172,9 @@ namespace :maven do
 end
 
 task :installer do
-  confs = Dir['install/*.install4j'].map {|f| File.basename(f, '.install4j').sub(/jruby_/,'')}
-  if conf = ENV['CONF']
-    fail "** Invalid install configuration - values are: #{confs.join(' ')}" unless confs.include?(conf)
-    confs = [conf]
-  end
-  puts "Be sure to run 'ant dist' before creating installers. Press RET to continue"
-  $stdin.gets
-  confs.each do |conf|
-    sh "/Applications/install4j\\ 4/bin/install4jc -m win32 install/jruby_#{conf}.install4j"
+  version = ENV['VERSION'] || abort("Pass the version in with VERSION={version}")
+#  ant "dist"
+  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 -D jruby.version=1.5.0dev install/jruby_win.install4j" do |ok,res|
+    $stderr.puts "** Something went wrong: #{res}" unless ok
   end
 end
