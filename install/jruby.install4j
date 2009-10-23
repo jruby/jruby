@@ -41,7 +41,6 @@
           <entry location="bench" fileType="regular" />
           <entry location="bin" fileType="regular" />
           <entry location="build" fileType="regular" />
-          <entry location="build-config.xml" fileType="regular" />
           <entry location="build.xml" fileType="regular" />
           <entry location="build_lib" fileType="regular" />
           <entry location="default.build.properties" fileType="regular" />
