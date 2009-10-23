@@ -52,7 +52,6 @@
 
   <!-- Initializes the build -->
   <target name="init">
-    <xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
     <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
     <property environment="env"/>
     <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
@@ -1352,7 +1351,6 @@
     <include name="build_lib/**"/>
     <include name="Rakefile"/>
     <include name="build.xml"/>
-    <include name="build-config.xml"/>
     <include name="ivy/**"/>
     <include name="nbproject/*"/>
     <include name=".project"/>

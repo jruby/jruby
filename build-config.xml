@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-
-<jruby>
-  <version>
-  	 <jruby>1.5.0dev</jruby>
-  	 <ruby major="1.8" minor="7"/>
-  </version>
-</jruby>

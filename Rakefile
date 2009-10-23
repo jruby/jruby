@@ -173,9 +173,8 @@ namespace :maven do
 end
 
 task :installer do
-  version = ENV['VERSION'] || abort("Pass the version in with VERSION={version}")
   ant "dist"
-  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 -D jruby.version=1.5.0dev install/jruby.install4j" do |ok,res|
+  sh "/Applications/install4j\\ 4/bin/install4jc -m win32 -D jruby.version=#{VERSION_JRUBY} install/jruby.install4j" do |ok,res|
     $stderr.puts "** Something went wrong: #{res}" unless ok
   end
 end
