@@ -48,9 +48,9 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
  */
 public abstract class IR_ScopeImpl implements IR_Scope
 {
-    Operand        _parent;   // Parent container for this context (can be dynamic!!)
+    Operand  _parent;         // Parent container for this context (can be dynamic!!)
                               // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
-    IR_Scope       _lexicalParent;   // Lexical parent scope
+    IR_Scope _lexicalParent;  // Lexical parent scope
 
 // SSS FIXME: Maybe this is not really a concern after all ...
         // Nesting level of this scope in the lexical nesting of scopes in the current file -- this is not to be confused
@@ -111,6 +111,11 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public Operand getParent()
     {
         return _parent;
+    }
+
+    public IR_Scope getLexicalParent()
+    {
+        return _lexicalParent;
     }
 
     public int getNextClosureId()

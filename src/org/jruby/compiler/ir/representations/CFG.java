@@ -23,7 +23,7 @@ import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.operands.Label;
 
-import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
+import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
@@ -57,18 +57,24 @@ public class CFG
     int        _nextBBId;       // Next available basic block id
     DirectedGraph<BasicBlock, CFG_Edge> _cfg;   // The actual graph
     LinkedList<BasicBlock> _postOrderList;      // Post order traversal list of the cfg
-    LiveVariablesProblem _lvp;  // Live Variable Analysis info for the cfg
+    HashMap<String, DataFlowProblem> _dfProbs;  // Map of name -> dataflow problem
 
     public CFG(IR_ExecutionScope s)
     {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
         _postOrderList = null;
+        _dfProbs = new HashMap<String, DataFlowProblem>();
     }
 
     public DirectedGraph getGraph()
     {
         return _cfg;
+    }
+
+    public IR_ExecutionScope getScope()
+    {
+        return _scope;
     }
 
     public BasicBlock getEntryBB()
@@ -422,7 +428,7 @@ public class CFG
         return buf.toString();
     }
 
-    public void setLVP(LiveVariablesProblem lvp) { _lvp = lvp; }
+    public void setDataFlowSolution(String name, DataFlowProblem p) { _dfProbs.put(name, p); }
 
-    public LiveVariablesProblem getLVP() { return _lvp; }
+    public DataFlowProblem getDataFlowSolution(String name) { return _dfProbs.get(name); }
 }

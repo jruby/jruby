@@ -10,18 +10,29 @@ import org.jruby.compiler.ir.representations.CFG;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class LiveVariablesProblem extends DataFlowProblem
 {
 /* ----------- Public Interface ------------ */
-    public LiveVariablesProblem()              { super(DataFlowProblem.DF_Direction.BACKWARD); }
-    public String        getProblemName()      { return "Live Variables Analysis"; }
-    public void          addDFVar(Variable v)  { DataFlowVar dfv = new DataFlowVar(this); _dfVarMap.put(v, dfv); _varDfVarMap.put(dfv._id, v); }
+    public String getName()                    { return "Live Variables Analysis"; }
+    public LiveVariablesProblem()              { super(DataFlowProblem.DF_Direction.BACKWARD); _udVars = new HashSet<Variable>(); }
     public DataFlowVar   getDFVar(Variable v)  { return _dfVarMap.get(v); }
-    public Variable      getVariable(int id){ return _varDfVarMap.get(id); }
+    public Variable      getVariable(int id)   { return _varDfVarMap.get(id); }
     public FlowGraphNode buildFlowGraphNode(BasicBlock bb) { return new LiveVariableNode(this, bb);  }
+
+    private void addDFVar(Variable v, boolean recordVar)  {
+        DataFlowVar dfv = new DataFlowVar(this); 
+        _dfVarMap.put(v, dfv); 
+        _varDfVarMap.put(dfv._id, v);
+        if (recordVar)
+            _udVars.add(v);
+    }
+
+    public void addDFVar(Variable v) { addDFVar(v, true); }
 
     /**
      * Initialize the exit cfg with variables that are live on exit
@@ -61,13 +72,11 @@ public class LiveVariablesProblem extends DataFlowProblem
         super.setup(c);
 
         // Update setup with info. about variables live on exit.
-        BasicBlock b = c.getExitBB();
         if ((_varsLiveOnExit != null) && !_varsLiveOnExit.isEmpty()) {
-            LiveVariableNode lvn = (LiveVariableNode)getFlowGraphNode(b);
             for (Variable v: _varsLiveOnExit) {
 //                System.out.println("variable " + v + " is live on exit of closure!");
                 if (getDFVar(v) == null)
-                    addDFVar(v);
+                    addDFVar(v, false); // We aren't recording these vars
             }
         }
     }
@@ -87,8 +96,24 @@ public class LiveVariablesProblem extends DataFlowProblem
             ((LiveVariableNode)n).markDeadInstructions();
     }
 
+    public List<Variable> getVarsLiveOnExit()
+    {
+        return _varsLiveOnExit;
+    }
+
+    public boolean isDefinedOrUsed(Variable v)
+    {
+        return _udVars.contains(v);
+    }
+
+    public Set<Variable> allDefinedOrUsedVariables()
+    {
+        return _udVars;
+    }
+
 /* ----------- Private Interface ------------ */
     private HashMap<Variable, DataFlowVar> _dfVarMap    = new HashMap<Variable, DataFlowVar>();
     private HashMap<Integer, Variable> _varDfVarMap = new HashMap<Integer, Variable>();
     private List<Variable> _varsLiveOnExit;
+    private Set<Variable> _udVars;
 }

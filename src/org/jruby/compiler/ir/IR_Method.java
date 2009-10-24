@@ -120,6 +120,11 @@ public class IR_Method extends IR_ExecutionScope
         return _canModifyCode; 
     }
 
+    public boolean requiresFrame() {
+        // SSS FIXME: Wrong!  Temporary hack to get code to compile
+        return canAccessAllOfCallersLocalVariables();
+    }
+
     public boolean canAccessAllOfCallersLocalVariables() {
         return _canCaptureCallersClosure;
     }

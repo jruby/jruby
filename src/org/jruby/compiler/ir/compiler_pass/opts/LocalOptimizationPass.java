@@ -58,9 +58,9 @@ public class LocalOptimizationPass implements CompilerPass
         //
         // This information is probably already present in the AST Inspector
         Label     deoptLabel = s.getNewLabel();
-        Map<Operand,Operand> valueMap   = new HashMap<Operand,Operand>();
+        Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
         Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();
-        ListIterator<IR_Instr> instrs = ((IR_ScopeImpl)s).getInstrs().listIterator();    // SSS: UGLY to cast it to scope impl .. but, hack for now.
+        ListIterator<IR_Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
             IR_Instr i = instrs.next();
             Operation iop = i._op;

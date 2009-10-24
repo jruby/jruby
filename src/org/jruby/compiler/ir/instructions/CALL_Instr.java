@@ -91,10 +91,16 @@ public class CALL_Instr extends MultiOperandInstr
         return getTargetMethodWithReceiver(getReceiver());
     }
 
+    public boolean usesCallersFrame()
+    {
+        // SSS FIXME: Wrong!  Temporary hack to get code to compile
+        return isLVADataflowBarrier();
+    }
+
     public boolean isLVADataflowBarrier()
     {
         if (getClosureArg() == null) {
-            return false;
+            return (!(_methAddr instanceof MethAddr) || ((MethAddr)_methAddr).getName().equals("call"));
         }
         else {
             Operand    r  = getReceiver(); 

@@ -18,12 +18,12 @@ public class DeadCodeElimination implements CompilerPass
             return;
 
         CFG c = ((IR_Method)s).getCFG();
-        LiveVariablesProblem lvp = c.getLVP();
+        LiveVariablesProblem lvp = (LiveVariablesProblem)c.getDataFlowSolution((new LiveVariablesProblem()).getName());
         if (lvp == null) {
             lvp = new LiveVariablesProblem();
             lvp.setup(c);
             lvp.compute_MOP_Solution();
-            c.setLVP(lvp);
+            c.setDataFlowSolution(lvp.getName(), lvp);
         }
         lvp.markDeadInstructions();
     }

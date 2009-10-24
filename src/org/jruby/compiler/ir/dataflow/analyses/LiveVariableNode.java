@@ -43,12 +43,20 @@ public class LiveVariableNode extends FlowGraphNode
 //        System.out.println("BV: Processing: " + i);
         addDFVar(i.getResult());
         for (Variable x: i.getUsedVariables())
-           addDFVar(x);
+            addDFVar(x);
     }
 
     public void initSolnForNode()
     {
+        LiveVariablesProblem p = (LiveVariablesProblem)_prob;
         _tmp = new BitSet(_setSize);
+        if (_bb == p.getCFG().getExitBB()) {
+            List<Variable> lv = p.getVarsLiveOnExit();
+            if ((lv != null) && !lv.isEmpty()) {
+                for (Variable v: lv)
+                    _tmp.set(p.getDFVar(v)._id);
+            }
+        }
     }
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
@@ -58,86 +66,106 @@ public class LiveVariableNode extends FlowGraphNode
         _tmp.or(((LiveVariableNode)pred)._in);
     }
 
+    private LiveVariablesProblem processClosure(IR_Closure cl, List<Variable> liveOnEntry)
+    {
+        CFG c = cl.getCFG();
+        LiveVariablesProblem lvp = new LiveVariablesProblem();
+        lvp.initVarsLiveOnExit(liveOnEntry);
+        lvp.setup(c);
+        lvp.compute_MOP_Solution();
+        c.setDataFlowSolution(lvp.getName(), lvp);
+
+        return lvp;
+    }
+
     public boolean applyTransferFunction()
     {
-//        System.out.println("Apply TF for BB " + _bb.getID());
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
 
-        // OUT = UNION(IN(succs))
         _out = (BitSet)_tmp.clone();
+//        System.out.println("Apply TF for BB " + _bb.getID());
+//        System.out.println("After MEET, df state is:\n" + toString());
 
         // Traverse the instructions in this basic block in reverse order!
         List<IR_Instr> instrs = _bb.getInstrs();
         ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             IR_Instr i = it.previous();
+//            System.out.println("TF: Processing: " + i);
 
             // v is defined => It is no longer live before 'i'
-//            System.out.println("TF: Processing: " + i);
             Variable v = i.getResult();
-//            System.out.println("will clear flag for: " + v);
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                 _tmp.clear(dv._id);
+//                System.out.println("cleared live flag for: " + v);
             }
-
-            // Now, for all variables used by 'i' mark them live before 'i'
-            for (Variable x: i.getUsedVariables()) {
-                DataFlowVar dv = lvp.getDFVar(x);
-//                System.out.println("will set flag for: " + x);
-                // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                if (dv != null)
-                    _tmp.set(dv._id);
-            } 
 
             // Check if 'i' is a call and uses a closure!
             // If so, we need to process the closure for live variable info.
             if (i instanceof CALL_Instr) {
                 CALL_Instr c = (CALL_Instr)i;
-                if (c.isLVADataflowBarrier()) {
-//                    System.out.println(".. call is a data flow barrier ..");
-                    // Mark all variables live if 'c' is a dataflow barrier!
-                    for (int j = 0; j < _setSize; j++)
-                        _tmp.set(j);
-                }
-                else {
-                    // SSS FIXME: This relies on the local opt. pass having run already
-                    // so that the built closure from the previous istnr. is propagated to the call site here.
-                    // Formalize this dependency somewhere?
-                    Operand o = c.getClosureArg();
-//                    System.out.println(" .. processing closure .. o is " + o);
-                    if ((o != null) && (o instanceof MetaObject)) {
+                // SSS FIXME: This relies on the local opt. pass having run already
+                // so that the built closure from the previous istnr. is propagated to the call site here.
+                // Formalize this dependency somewhere?
+                Operand o = c.getClosureArg();
+//                   System.out.println("Processing closure: " + o + "-------");
+                if ((o != null) && (o instanceof MetaObject)) {
+                    IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
+                    if (c.isLVADataflowBarrier()) {
+                        processClosure(cl, new ArrayList<Variable>());
+
+                        // Mark all variables live if 'c' is a dataflow barrier!
+    //                    System.out.println(".. call is a data flow barrier ..");
+                        for (int j = 0; j < _setSize; j++)
+                            _tmp.set(j);
+                    }
+                    else {
                         // Propagate current LVA state through the closure
                         // SSS FIXME: Think through this .. Is there any way out of having
                         // to recompute the entire lva for the closure each time through?
 
                         // 1. Collect variables live at this point.
-                        IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
                         List<Variable> liveVars = new ArrayList<Variable>();
                         for (int j = 0; j < _tmp.size(); j++) {
-                            if (_tmp.get(j) == true)
+                            if (_tmp.get(j) == true) {
+//                                System.out.println(lvp.getVariable(j) + " is live on exit of closure!");
                                 liveVars.add(lvp.getVariable(j));
+                            }
                         }
-//                    System.out.println(" .. collected live on exit ..");
+//                        System.out.println(" .. collected live on exit ..");
 
                         // 2. Run LVA on the closure
-                        CFG x = cl.getCFG();
-                        LiveVariablesProblem xlvp = new LiveVariablesProblem();
-                        xlvp.initVarsLiveOnExit(liveVars);
-                        xlvp.setup(x);
-                        xlvp.compute_MOP_Solution();
-                        x.setLVP(xlvp);
+                        LiveVariablesProblem xlvp = processClosure(cl, liveVars);
 
-//                    System.out.println(" .. done with mop ..");
+//                        System.out.println("------- done with closure" + o);
 
-                        // 3. Collect variables live on entry and merge that info into the current problem.
+                        // 3. Collect variables live on entry of the closure and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {
                             DataFlowVar dv = lvp.getDFVar(y);
                             // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                            if (dv != null)
+                            if (dv != null) {
+//                                System.out.println(y + " is live on entry of the closure!");
                                 _tmp.set(dv._id);
+                            }
                         } 
                     }
+                }
+                else if (c.isLVADataflowBarrier()) {
+                    // Mark all variables live if 'c' is a dataflow barrier!
+//                    System.out.println(".. call is a data flow barrier ..");
+                    for (int j = 0; j < _setSize; j++)
+                        _tmp.set(j);
+                }
+            }
+
+            // Now, for all variables used by 'i' mark them live before 'i'
+            for (Variable x: i.getUsedVariables()) {
+                DataFlowVar dv = lvp.getDFVar(x);
+                // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
+                if (dv != null) {
+                    _tmp.set(dv._id);
+//                    System.out.println("set live flag for: " + x);
                 }
             }
         }
@@ -233,7 +261,7 @@ public class LiveVariableNode extends FlowGraphNode
                         // 2. Run LVA on the closure
                         IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
                         CFG x = cl.getCFG();
-                        LiveVariablesProblem xlvp = x.getLVP();
+                        LiveVariablesProblem xlvp = (LiveVariablesProblem)x.getDataFlowSolution(lvp.getName());
                         // 3. Collect variables live on entry and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {
                             DataFlowVar dv = lvp.getDFVar(y);

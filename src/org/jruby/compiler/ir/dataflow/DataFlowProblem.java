@@ -30,8 +30,8 @@ public abstract class DataFlowProblem
     }
 
 // ------- Abstract methods without a default implementation -------
-    public abstract FlowGraphNode buildFlowGraphNode(BasicBlock bb);
-    public abstract String getProblemName();
+    abstract public FlowGraphNode buildFlowGraphNode(BasicBlock bb);
+    abstract public String getName();
 
 // ------- Default implementation methods below -------
     /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
@@ -44,6 +44,8 @@ public abstract class DataFlowProblem
         _cfg = c;
         buildFlowGraph();
     }
+
+    public CFG getCFG() { return _cfg; }
 
     /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
      * This implements a standard worklist algorithm. */
@@ -98,7 +100,7 @@ public abstract class DataFlowProblem
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
-        buf.append("----").append(getProblemName()).append("----\n");
+        buf.append("----").append(getName()).append("----\n");
   
         buf.append("---- Data Flow Vars: ----\n");
         buf.append(getDataFlowVarsForOutput());

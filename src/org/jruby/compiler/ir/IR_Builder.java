@@ -214,11 +214,13 @@ public class IR_Builder
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
         System.out.println("################## After local optimization pass ##################");
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+//        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
         System.out.println("################## After dead code elimination pass ##################");
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
+        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddFrameInstructions());
         scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
     }
 
@@ -1777,7 +1779,8 @@ public class IR_Builder
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
-        closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
+        if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
+            closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
             // Assign the closure to the block variable in the parent scope and return it
         Variable blockVar = s.getNewVariable();
@@ -1914,7 +1917,8 @@ public class IR_Builder
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
-        closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
+        if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
+            closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
             // Assign the closure to the block variable in the parent scope and return it
         Variable blockVar = s.getNewVariable();

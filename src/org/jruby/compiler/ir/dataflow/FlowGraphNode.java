@@ -56,25 +56,29 @@ abstract public class FlowGraphNode
             buildDataFlowVars(i);
     }
 
+    private void processDestBB(List<FlowGraphNode> workList, BitSet bbSet, BasicBlock d)
+    {
+        int id = d.getID();
+        if (bbSet.get(id) == false) {
+            bbSet.set(id);
+            workList.add(_prob.getFlowGraphNode(d));
+        }
+    }
+
     public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet)
     {
         bbSet.clear(_bb.getID());
 
         // Compute meet over all "sources" and compute "destination" basic blocks that should then be processed. 
         // sources & targets depends on direction of the data flow problem
-        List<BasicBlock> dsts = new ArrayList<BasicBlock>();
         initSolnForNode();
         if (_prob.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
             for (CFG_Edge e: _prob.incomingEdgesOf(_bb))
                 compute_MEET(e, _prob.getFlowGraphNode(e._src));
-            for (CFG_Edge e: _prob.outgoingEdgesOf(_bb))
-                dsts.add(e._dst);
         }
         else if (_prob.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
             for (CFG_Edge e: _prob.outgoingEdgesOf(_bb))
                 compute_MEET(e, _prob.getFlowGraphNode(e._dst));
-            for (CFG_Edge e: _prob.incomingEdgesOf(_bb))
-                dsts.add(e._src);
         }
         else {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
@@ -86,12 +90,13 @@ abstract public class FlowGraphNode
        // No duplicates please which is why we have bbset.
         boolean changed = applyTransferFunction();
         if (changed) {
-            for (BasicBlock d: dsts) {
-                int id = d.getID();
-                if (bbSet.get(id) == false) {
-                    bbSet.set(id);
-                    workList.add(_prob.getFlowGraphNode(d));
-                }
+            if (_prob.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
+                for (CFG_Edge e: _prob.outgoingEdgesOf(_bb))
+                    processDestBB(workList, bbSet, e._dst);
+            }
+            else if (_prob.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
+                for (CFG_Edge e: _prob.incomingEdgesOf(_bb))
+                    processDestBB(workList, bbSet, e._src);
             }
         }
     }
