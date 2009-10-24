@@ -41,6 +41,7 @@
           <entry location="bench" fileType="regular" />
           <entry location="bin" fileType="regular" />
           <entry location="build" fileType="regular" />
+          <entry location="build-config.xml" fileType="regular" />
           <entry location="build.xml" fileType="regular" />
           <entry location="build_lib" fileType="regular" />
           <entry location="default.build.properties" fileType="regular" />
@@ -186,6 +187,61 @@
             </actions>
             <formComponents />
           </screen>
+          <screen name="" id="149" beanClass="com.install4j.runtime.beans.screens.FormScreen" enabled="true" commentSet="false" comment="" rollbackBarrier="false" backButton="2" finishScreen="false">
+            <serializedBean>
+              <java class="java.beans.XMLDecoder">
+                <object class="com.install4j.runtime.beans.screens.FormScreen" />
+              </java>
+            </serializedBean>
+            <condition />
+            <validation />
+            <preActivation />
+            <postActivation />
+            <actions />
+            <formComponents>
+              <formComponent name="" id="153" beanClass="com.install4j.runtime.beans.formcomponents.MultilineHtmlLabelComponent" enabled="true" commentSet="false" comment="" insetTop="" insetLeft="" insetBottom="" insetRight="" resetInitOnPrevious="false">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.formcomponents.MultilineHtmlLabelComponent">
+                      <void property="labelHtml">
+                        <string>The installer will by default set up your PATH so you can run JRuby easily.  Some users have special needs and want to do this step manually.  Unless you are one of those users just press next.</string>
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <initScript />
+                <visibiltyScript />
+              </formComponent>
+              <formComponent name="" id="152" beanClass="com.install4j.runtime.beans.formcomponents.SpacerComponent" enabled="true" commentSet="false" comment="" insetTop="" insetLeft="" insetBottom="" insetRight="" resetInitOnPrevious="false">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.formcomponents.SpacerComponent" />
+                  </java>
+                </serializedBean>
+                <initScript />
+                <visibiltyScript />
+              </formComponent>
+              <formComponent name="" id="151" beanClass="com.install4j.runtime.beans.formcomponents.CheckboxComponent" enabled="true" commentSet="false" comment="" insetTop="" insetLeft="" insetBottom="" insetRight="" resetInitOnPrevious="false">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.formcomponents.CheckboxComponent">
+                      <void property="checkboxText">
+                        <string>Configure Path for me (recommended)</string>
+                      </void>
+                      <void property="initiallySelected">
+                        <boolean>true</boolean>
+                      </void>
+                      <void property="variableName">
+                        <string>configure.path</string>
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <initScript />
+                <visibiltyScript />
+              </formComponent>
+            </formComponents>
+          </screen>
           <screen name="" id="5" beanClass="com.install4j.runtime.beans.screens.ComponentsScreen" enabled="true" commentSet="false" comment="" rollbackBarrier="false" backButton="2" finishScreen="false">
             <serializedBean>
               <java class="java.beans.XMLDecoder">
@@ -237,7 +293,7 @@
                     </object>
                   </java>
                 </serializedBean>
-                <condition />
+                <condition>context.getBooleanVariable("configure.path")</condition>
               </action>
               <action name="Set Windows JAVA_HOME" id="63" beanClass="com.install4j.runtime.beans.actions.misc.ModifyEnvironmentVariableAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
                 <serializedBean>
