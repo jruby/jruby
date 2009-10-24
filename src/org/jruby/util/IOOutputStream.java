@@ -55,17 +55,31 @@ public class IOOutputStream extends OutputStream {
      *
      * @param io the ruby object
      */
-    public IOOutputStream(final IRubyObject io) {
-        if(io.respondsTo("write")) {
-            writeAdapter = MethodIndex.getFunctionalCallSite("write");
-        } else if (io.respondsTo("<<")) {
-            writeAdapter = MethodIndex.getFunctionalCallSite("<<");
-        } else {
-            throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"write\".");
-        }
+    public IOOutputStream(final IRubyObject io, boolean checkAppend, boolean verifyCanWrite) {
         this.io = io;
+        CallSite writeSite = MethodIndex.getFunctionalCallSite("write");
+        if (io.respondsTo("write")) {
+            writeAdapter = writeSite;
+        } else if (checkAppend && io.respondsTo("<<")) {
+            writeAdapter = MethodIndex.getFunctionalCallSite("<<");
+        } else if (verifyCanWrite) {
+            throw new IllegalArgumentException(
+                    "Object: " + io + " is not a legal argument to this wrapper, " +
+                        "cause it doesn't respond to \"write\".");
+        } else {
+            writeAdapter = writeSite;
+        }
     }
-    
+
+    /**
+     * Creates a new OutputStream with the object provided.
+     *
+     * @param io the ruby object
+     */
+    public IOOutputStream(final IRubyObject io) {
+        this(io, true, true);
+    }
+
     public void write(final int bite) throws IOException {
         writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
     }

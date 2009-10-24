@@ -168,4 +168,90 @@ class TestZlib < Test::Unit::TestCase
     end
     assert_equal(4, lines.size, lines.inspect)
   end
+
+  def test_inflate_empty_string
+    assert_raise(Zlib::BufError) { Zlib::Inflate.inflate('') }
+  end
+
+  def test_inflate_bad_data
+    assert_raise(Zlib::DataError) { Zlib::Inflate.inflate('        ')}
+  end
+
+  def test_inflate_finish
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')
+    assert_equal('foo', z.finish)
+
+    assert(z.finished?)
+    assert(!z.closed?)
+    assert(!z.ended?)
+  end
+
+  def test_inflate_close
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')
+    z.close
+
+    assert (z.closed?)
+    assert (z.ended?)
+
+    assert_raise(Zlib::Error) { z.finish }
+    assert_raise(Zlib::Error) { z.finished? }
+  end
+
+  def test_inflate_end
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')
+    z.end
+
+    assert (z.closed?)
+    assert (z.ended?)
+
+    assert_raise(Zlib::Error) { z.finish }
+    assert_raise(Zlib::Error) { z.finished? }
+  end
+
+  def test_inflate_incomplete
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')[0, 1]
+    assert_raise(Zlib::BufError) { z.finish }
+
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')[0, 1]
+    assert_raise(Zlib::BufError) { z.inflate(nil) }
+  end
+
+  def test_inflate_finished
+    z = Zlib::Inflate.new
+    assert(!z.finished?)
+    z << Zlib::Deflate.deflate('foo')
+    assert(z.finished?)
+
+    # on incomplete data
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')[0, 1]
+    assert(!z.finished?)
+  end
+
+  def test_inflate_flush_next_in
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')
+    assert_equal("", z.flush_next_in)
+    assert_equal("foo", z.finish)
+    assert_equal("", z.flush_next_in)
+  end
+
+  # TODO: JRuby doesn't fully support this
+  # very low-level Inflate#sync method, so
+  # we just always return false.
+  def test_inflate_sync
+    z = Zlib::Inflate.new
+    z << Zlib::Deflate.deflate('foo')
+    assert (!z.sync(''))
+    assert (!z.sync_point?)
+    assert_equal("foo", z.finish)
+    assert (!z.sync(''))
+    assert (!z.sync_point?)
+  end
+
 end

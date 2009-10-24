@@ -110,3 +110,5 @@ externals/ruby1.8/xmlrpc/test_marshal
 #externals/ruby1.8/xsd/test_noencoding
 #externals/ruby1.8/xsd/test_xmlschemaparser
 #externals/ruby1.8/xsd/test_xsd
+
+externals/ruby1.8/zlib/test_zlib

@@ -113,7 +113,7 @@ public class ZlibDeflate {
         }
     }
     
-    public IRubyObject finish() throws IOException {
+    public IRubyObject finish() {
         flater.finish();
         run();
         return RubyString.newString(runtime, collected);
