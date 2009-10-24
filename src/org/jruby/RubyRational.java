@@ -202,12 +202,12 @@ public class RubyRational extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject num) {
         return newInstanceBang(context, recv, num, RubyFixnum.one(context.getRuntime()));
     }
 
-    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject num, IRubyObject den) {
         if (!(num instanceof RubyInteger)) num = f_to_i(context, num);
         if (!(den instanceof RubyInteger)) den = f_to_i(context, den);
