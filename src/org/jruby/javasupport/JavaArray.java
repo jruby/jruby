@@ -73,7 +73,8 @@ public class JavaArray extends JavaObject {
         return other instanceof JavaArray &&
             this.getValue() == ((JavaArray)other).getValue();
     }
-    
+
+    @Deprecated
     public IRubyObject aref(IRubyObject index) {
         if (! (index instanceof RubyInteger)) {
             throw getRuntime().newTypeError(index, getRuntime().getInteger());
@@ -99,7 +100,8 @@ public class JavaArray extends JavaObject {
         }
         return JavaUtil.convertJavaArrayElementToRuby(getRuntime(), javaConverter, getValue(), intIndex);
     }
-    
+
+    @Deprecated
     public IRubyObject at(int index) {
         Object result = Array.get(getValue(), index);
         if (result == null) {

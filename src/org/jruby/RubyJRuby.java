@@ -274,7 +274,7 @@ public class RubyJRuby {
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
 
-        return Java.wrap(runtime, JavaObject.wrap(runtime, obj));
+        return Java.getInstance(runtime, obj);
     }
 
     @JRubyMethod(name = "dereference", required = 1, module = true)

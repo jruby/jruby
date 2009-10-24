@@ -1,5 +1,11 @@
 package org.jruby.java.proxies;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -36,35 +42,53 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
 public class JavaProxy extends RubyObject {
-    protected final RubyClass.VariableAccessor objectAccessor;
+    private JavaObject javaObject;
     private Object object;
     
     public JavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
-        objectAccessor = klazz.getVariableAccessorForWrite("__wrap_struct__");
     }
 
     public Object dataGetStruct() {
-        return objectAccessor.get(this);
+        lazyJavaObject();
+        return javaObject;
     }
 
     public void dataWrapStruct(Object object) {
-        objectAccessor.set(this, object);
-        this.object = ((JavaObject)object).getValue();
+        this.javaObject = (JavaObject)object;
+        this.object = javaObject.getValue();
     }
 
     public Object getObject() {
         // FIXME: Added this because marshal_spec seemed to reconstitute objects without calling dataWrapStruct
         // this resulted in object being null after unmarshalling...
-        if (object == null) object = ((JavaObject)dataGetStruct()).getValue();
+        if (object == null) {
+            if (javaObject == null) {
+                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this);
+            } else {
+                object = javaObject.getValue();
+            }
+        }
         return object;
     }
 
+    public void setObject(Object object) {
+        this.object = object;
+    }
+
     private JavaObject getJavaObject() {
+        lazyJavaObject();
         return (JavaObject)dataGetStruct();
+    }
+
+    private void lazyJavaObject() {
+        if (javaObject == null) {
+            javaObject = JavaObject.wrap(getRuntime(), object);
+        }
     }
     
     public static RubyClass createJavaProxy(ThreadContext context) {
@@ -113,6 +137,14 @@ public class JavaProxy extends RubyObject {
         } else {
             return Java.get_proxy_class(javaClass, RuntimeHelpers.invoke(context, javaClass, "array_class"));
         }
+    }
+
+    @Override
+    public IRubyObject initialize_copy(IRubyObject original) {
+        super.initialize_copy(original);
+        // because we lazily init JavaObject in the data-wrapped slot, explicitly copy over the object
+        setObject(((JavaProxy)original).object);
+        return this;
     }
 
     private static Class<?> getJavaClass(ThreadContext context, RubyModule module) {
@@ -302,6 +334,41 @@ public class JavaProxy extends RubyObject {
         Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
 
         return getRubyMethod(name, argTypesClasses);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject marshal_dump() {
+        if (Serializable.class.isAssignableFrom(object.getClass())) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+
+                oos.writeObject(object);
+
+                return getRuntime().newString(new ByteList(baos.toByteArray()));
+            } catch (IOException ioe) {
+                throw getRuntime().newIOErrorFromException(ioe);
+            }
+        } else {
+            throw getRuntime().newTypeError("no marshal_dump is defined for class " + getJavaClass());
+        }
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject marshal_load(ThreadContext context, IRubyObject str) {
+        try {
+            ByteList byteList = str.convertToString().getByteList();
+            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.bytes, byteList.begin, byteList.realSize);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+
+            object = ois.readObject();
+
+            return this;
+        } catch (IOException ioe) {
+            throw context.getRuntime().newIOErrorFromException(ioe);
+        } catch (ClassNotFoundException cnfe) {
+            throw context.getRuntime().newTypeError("Class not found unmarshaling Java type: " + cnfe.getLocalizedMessage());
+        }
     }
 
     private Method getMethod(String name, Class... argTypes) {

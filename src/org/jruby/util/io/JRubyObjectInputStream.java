@@ -11,6 +11,7 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Visibility;
 import org.jruby.javasupport.JavaUtil;
@@ -49,7 +50,7 @@ public class JRubyObjectInputStream extends RubyObject {
 
     @JRubyMethod(name="read_object", alias="readObject")
 	public IRubyObject readObject() throws IOException, ClassNotFoundException {
-	return JavaObject.wrap(getRuntime(),impl.readObject());
+	return Java.getInstance(getRuntime(),impl.readObject());
     }
 
 

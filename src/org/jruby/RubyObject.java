@@ -585,15 +585,17 @@ public class RubyObject extends RubyBasicObject {
      */
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject original) {
-	    if (this == original) return this;
-	    checkFrozen();
+        if (this == original) {
+            return this;
+        }
+        checkFrozen();
 
         if (getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
             throw getRuntime().newTypeError("initialize_copy should take same class object");
-	    }
+        }
 
-	    return this;
-	}
+        return this;
+    }
 
     /** obj_respond_to
      *

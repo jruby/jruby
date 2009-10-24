@@ -372,6 +372,10 @@ public class Java implements Library {
         return getInterfaceModule(runtime, javaClass);
     }
 
+    public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
+        return (RubyClass)getProxyClass(runtime, JavaClass.get(runtime, object.getClass()));
+    }
+
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         RubyClass proxyClass;
         final Class<?> c = javaClass.javaClass();
@@ -1079,6 +1083,22 @@ public class Java implements Library {
                 }
             }));
         }
+    }
+    
+    public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+        IRubyObject proxy = clazz.allocate();
+        if (proxy instanceof JavaProxy) {
+            ((JavaProxy)proxy).setObject(javaObject);
+        } else {
+            JavaObject wrappedObject = JavaObject.wrap(clazz.getRuntime(), javaObject);
+            proxy.dataWrapStruct(wrappedObject);
+        }
+
+        return proxy;
+    }
+
+    public static IRubyObject wrapJavaObject(Ruby runtime, Object object) {
+        return allocateProxy(object, getProxyClassForObject(runtime, object));
     }
     
     private static int interfacesHashCode(Class[] a) {

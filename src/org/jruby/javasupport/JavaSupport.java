@@ -43,6 +43,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -72,11 +73,7 @@ public class JavaSupport {
         new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
 
         public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
-            IRubyObject proxy = clazz.allocate();
-            JavaObject wrappedObject = JavaObject.wrap(clazz.getRuntime(), javaObject);
-            proxy.dataWrapStruct(wrappedObject);
-            
-            return proxy;
+            return Java.allocateProxy(javaObject, clazz);
         }
     };
     

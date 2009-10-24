@@ -82,7 +82,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             convertedArgs[i] = convertArg(context, args[i], constructor, i);
         }
         
-        proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(convertedArgs)));
+        proxy.setObject(constructor.newInstanceDirect(convertedArgs));
         
         return self;
     }
@@ -94,7 +94,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityZero(self, name);
 
-        proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect()));
+        proxy.setObject(constructor.newInstanceDirect());
         
         return self;
     }
@@ -107,7 +107,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         JavaConstructor constructor = (JavaConstructor)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(context, arg0, constructor, 0);
 
-        proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0)));
+        proxy.setObject(constructor.newInstanceDirect(cArg0));
         
         return self;
     }
@@ -121,7 +121,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         Object cArg0 = convertArg(context, arg0, constructor, 0);
         Object cArg1 = convertArg(context, arg1, constructor, 1);
 
-        proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0, cArg1)));
+        proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1));
 
         return self;
     }
@@ -136,7 +136,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         Object cArg1 = convertArg(context, arg1, constructor, 1);
         Object cArg2 = convertArg(context, arg2, constructor, 2);
 
-        proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0, cArg1, cArg2)));
+        proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1, cArg2));
 
         return self;
     }
@@ -158,7 +158,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
                 convertedArgs[i] = convertArg(context, intermediate[i], constructor, i);
             }
 
-            proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(convertedArgs)));
+            proxy.setObject(constructor.newInstanceDirect(convertedArgs));
 
             return self;
         } else {
@@ -177,7 +177,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             JavaConstructor constructor = (JavaConstructor)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(context, proc, constructor, 0);
 
-            proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0)));
+            proxy.setObject(constructor.newInstanceDirect(cArg0));
 
             return self;
         } else {
@@ -197,7 +197,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg0 = convertArg(context, arg0, constructor, 0);
             Object cArg1 = convertArg(context, proc, constructor, 1);
 
-            proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0, cArg1)));
+            proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1));
 
             return self;
         } else {
@@ -218,7 +218,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg1 = convertArg(context, arg1, constructor, 1);
             Object cArg2 = convertArg(context, proc, constructor, 2);
 
-            proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0, cArg1, cArg2)));
+            proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1, cArg2));
 
             return self;
         } else {
@@ -240,7 +240,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg2 = convertArg(context, arg2, constructor, 2);
             Object cArg3 = convertArg(context, proc, constructor, 3);
 
-            proxy.dataWrapStruct(JavaObject.wrap(runtime, constructor.newInstanceDirect(cArg0, cArg1, cArg2, cArg3)));
+            proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1, cArg2, cArg3));
 
             return self;
         } else {
