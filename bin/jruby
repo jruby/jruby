@@ -143,10 +143,6 @@ fi
 
 # ----- Execute The Requested Command -----------------------------------------
 
-if [ -z "$JAVA_MEM" ] ; then
-  JAVA_MEM=-Xmx500m
-fi
-
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss1024k
 fi
@@ -261,7 +257,10 @@ if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
 fi
 
 # Add a property to report memory max
-JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
+JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.stack.max=${JAVA_STACK:4}"
+if [ "$JAVA_MEM" ]; then
+    JAVA_OPTS="$JAVA_OPTS -Djruby.memory.max=${JAVA_MEM:4}"
+fi
 
 # Append the rest of the arguments
 ruby_args=("${ruby_args[@]}" "$@")
