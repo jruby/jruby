@@ -48,6 +48,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNil;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.embed.internal.EmbedRubyInterfaceAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyRuntimeAdapterImpl;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
@@ -159,6 +160,7 @@ public class ScriptingContainer {
     private LocalContextProvider provider = null;
     private EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
     private EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
+    private EmbedRubyInterfaceAdapter interfaceAdapter = new EmbedRubyInterfaceAdapterImpl(this);
 
     /**
      * Constructs a ScriptingContainer with a default values.
@@ -718,26 +720,7 @@ public class ScriptingContainer {
      * @return an instance of a requested interface type
      */
     public <T> T getInstance(Object receiver, Class<T> clazz) {
-        if (clazz == null || !clazz.isInterface()) {
-            return null;
-        }
-        Ruby runtime = getRuntime();
-        Object o;
-        if (receiver == null || receiver instanceof RubyNil) {
-            o = JavaEmbedUtils.rubyToJava(runtime, runtime.getTopSelf(), clazz);
-        } else if (receiver instanceof IRubyObject) {
-            o = JavaEmbedUtils.rubyToJava(runtime, (IRubyObject) receiver, clazz);
-        } else {
-            IRubyObject rubyReceiver = JavaUtil.convertJavaToRuby(runtime, receiver);
-            o = JavaEmbedUtils.rubyToJava(runtime, rubyReceiver, clazz);
-        }
-        String name = clazz.getName();
-        try {
-            Class<T> c = (Class<T>) Class.forName(name, true, o.getClass().getClassLoader());
-            return c.cast(o);
-        } catch (ClassNotFoundException ex) {
-            throw new RuntimeException(ex);
-        }
+        return interfaceAdapter.getInstance(receiver, clazz);
     }
 
     /**
