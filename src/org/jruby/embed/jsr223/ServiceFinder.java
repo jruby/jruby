@@ -40,7 +40,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- *
+ * Finds SPI based services from classpath.
+ * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
 class ServiceFinder {

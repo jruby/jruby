@@ -46,17 +46,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
- * Hash table base implementation of the java.util.Map internface. Keys of this map
+ * Ruby-Java bi-directional variable map implementation. Keys of this map
  * should be String, and values should be {@link BiVariable} type object.
  * This map does not permit null or empty key. Each operation of this class is not
- * synchronized; however, {@link ScriptingContainer} creates a map for every thread.
- * Thus, operations are thread-safe unless users use this map by methods in
- * {@link ScriptingContainer}:
+ * synchronized; however, concurrent access to values are synchronized. When
+ * {@link ScriptingContainer} is shared by multiple threads, specify thread safe
+ * for a local context scope, which makes a map thread local.
+ *
+ * Usage example:
  * <pre>
  *         ScriptingContainer container = new ScriptingContainer();
  *         Map map = container.getVarMap();
  *         map.put("@coefficient", new Float(3.14));</pre>
- * 
+ * or, using a shortcut method:
+ * * <pre>
+ *         ScriptingContainer container = new ScriptingContainer();
+ *         container.put("@coefficient", new Float(3.14));</pre>
+ *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class BiVariableMap<K, V> implements Map<K, V> {

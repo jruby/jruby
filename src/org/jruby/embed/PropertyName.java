@@ -30,27 +30,68 @@
 package org.jruby.embed;
 
 /**
+ * Predefined keys of System properties to get configurations
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public enum PropertyName {
-
+    /**
+     * A key used to get/set classpath setting.
+     */
     CLASSPATH("org.jruby.embed.class.path"),
+
+    /**
+     * A key to get/set local context scope. The assigned value is one of
+     * threadsafe, singlethread, or singleton
+     */
     LOCALCONTEXT_SCOPE("org.jruby.embed.localcontext.scope"),
+
+    /**
+     * A key to get/set local variable behavior. The assigned value is one of
+     * transient, persistent, or global for Embed Core and JSR223. BSF can choose
+     * bsf only.
+     */
     LOCALVARIABLE_BEHAVIOR("org.jruby.embed.localvariable.behavior"),
+
+    /**
+     * A key to get/set compile mode. The assigend value is one of jit or force.
+     */
     COMPILEMODE("org.jruby.embed.compilemode"),
+
+    /**
+     * A key to get/set compatible version to Ruby. If the assigend value matches
+     * "[jJ]?(r|R)(u|U)(b|B)(y|Y)1[\\._]?9", then Ruby 1.9 will be chosen.
+     */
     COMPATVERSION("org.jruby.embed.compat.version");
 
     private final String fqpn;
+
+    /**
+     * Creates an PropertyName Enum type instance.
+     *
+     * @param fqan a fully qualified property name
+     */
     PropertyName(String fqpn) {
         this.fqpn = fqpn;
     }
 
+    /**
+     * Returns the fully qualified property name of this enum constant.
+     *
+     * @return a fully qualified property name
+     */
     @Override
     public String toString() {
         return fqpn;
     }
 
+    /**
+     * Returns a fully qualified property name that corresponds to a given
+     * enumerated type identifier.
+     *
+     * @param fqan fully qualified property name
+     * @return a matched enumerated type identifier
+     */
     public static PropertyName getType(String fqpn) {
         PropertyName[] names = PropertyName.values();
         for (int i=0; i<names.length; i++) {

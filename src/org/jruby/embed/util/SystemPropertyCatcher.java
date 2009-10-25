@@ -43,10 +43,20 @@ import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
 
 /**
+ * Utility methods to retrieve System properties or environment variables to
+ * get configuration parameters.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class SystemPropertyCatcher {
+
+    /**
+     * Gets a local context scope from System property. If no value is assigned to
+     * PropertyName.LOCALCONTEXT_SCOPE, given default value is applied.
+     *
+     * @param defaultScope a default scope.
+     * @return one of three local context scopes.
+     */
     public static LocalContextScope getScope(LocalContextScope defaultScope) {
         LocalContextScope scope = defaultScope;
         String s = System.getProperty(PropertyName.LOCALCONTEXT_SCOPE.toString());
@@ -63,6 +73,13 @@ public class SystemPropertyCatcher {
         return scope;
     }
 
+    /**
+     * Gets a local variable behavior from System property. If no value is assigned to
+     * PropertyName.LOCALVARIABLE_BEHAVIOR, given default value is applied.
+     *
+     * @param defaultBehavior a default local variable behavior
+     * @return a local variable behavior
+     */
     public static LocalVariableBehavior getBehavior(LocalVariableBehavior defaultBehavior) {
         LocalVariableBehavior behavior = defaultBehavior;
         String s = System.getProperty(PropertyName.LOCALVARIABLE_BEHAVIOR.toString());
@@ -81,6 +98,12 @@ public class SystemPropertyCatcher {
         return behavior;
     }
 
+    /**
+     * Sets configuration parameters given by System properties. Compile mode and
+     * Compat version can be set.
+     *
+     * @param container ScriptingContainer to be set configurations.
+     */
     public static void setConfiguration(ScriptingContainer container) {
         LocalContextProvider provider = container.getProvider();
         RubyInstanceConfig config = provider.getRubyInstanceConfig();
@@ -102,6 +125,13 @@ public class SystemPropertyCatcher {
         }
     }
 
+    /**
+     * Sets JRuby home if it is given by a JRUBY_HOME environment variable,
+     * jruby.home system property, or jury.home in jruby-complete.jar
+     *
+     * @param container ScriptingContainer to be set jruby home.
+     * @throws URISyntaxException exceptions thrown while inspecting jruby-complete.jar
+     */
     public static void setJRubyHome(ScriptingContainer container) throws URISyntaxException {
         String jrubyhome = findJRubyHome(container);
         if (jrubyhome != null) {
@@ -140,6 +170,14 @@ public class SystemPropertyCatcher {
         return null;
     }
 
+    /**
+     * Checks that a given name is an appropriate configuration parameter to
+     * choose Ruby 1.9 mode.
+     *
+     * @param name a possible name that expresses Ruby 1.9.
+     * @return true is the given name is correct to choose Ruby 1.9 version. Otherwise,
+     *         returns false.
+     */
     public static boolean isRuby19(String name) {
         Pattern p = Pattern.compile("[jJ]?(r|R)(u|U)(b|B)(y|Y)1[\\._]?9");
         Matcher m = p.matcher(name);
@@ -150,6 +188,13 @@ public class SystemPropertyCatcher {
         }
     }
 
+    /**
+     * Returns a possible base directory. PWD environment variables is looked up first,
+     * then user.dir System property second. This directory is used as a default value
+     * when base directory is not given.
+     *
+     * @return a base directory.
+     */
     public static String getBaseDir() {
         String baseDir = System.getenv("PWD");
         if (baseDir == null || "/".equals(baseDir)) {

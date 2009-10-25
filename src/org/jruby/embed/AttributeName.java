@@ -27,11 +27,6 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  * **** END LICENSE BLOCK *****
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.embed;
 
 /**
@@ -40,7 +35,7 @@ package org.jruby.embed;
  * Usage example:
  * <pre>
  *     ScriptingContainer container = new ScriptingContainer();
- *     container.setAttribute(Attribute.BASE_DIR, System.getProperty("user.dir");</pre>
+ *     container.setAttribute(AttributeName.BASE_DIR, System.getProperty("user.dir");</pre>
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -83,16 +78,33 @@ public enum AttributeName {
     UNICODE_ESCAPE("org.jruby.embed.unicode.escpe");
 
     private final String fqpn;
-    
+
+    /**
+     * Creates an AttributeName Enum type instance.
+     *
+     * @param fqan a fully qualified attriute name
+     */
     AttributeName(String fqpn) {
         this.fqpn = fqpn;
     }
 
+    /**
+     * Returns the fully qualified attriute name of this enum constant.
+     *
+     * @return a fully qualified attriute name
+     */
     @Override
     public String toString() {
         return fqpn;
     }
 
+    /**
+     * Returns a fully qualified attriute name that corresponds to a given
+     * enumerated type identifier.
+     *
+     * @param fqan fully qualified attriute name
+     * @return a matched enumerated type identifier
+     */
     public static AttributeName getType(String fqpn) {
         AttributeName[] names = AttributeName.values();
         for (int i=0; i<names.length; i++) {

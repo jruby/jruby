@@ -43,6 +43,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * A ReaderInputStream converts java.io.Reader to java.io.InputStream. The
+ * ReaderInputStream reads data in a given Reader object into its internal buffer
+ * so that users of this class can access the file that Reader read by using methods
+ * defined in java.io.InputStream.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -60,10 +64,21 @@ public class ReaderInputStream extends InputStream {
     private CharsetEncoder encoder;
     private final Object lock = new Object();
 
+    /**
+     * Creates ReaderInputStream from a given Reader type object with a default encoding.
+     *
+     * @param reader java.io.Reader object to be read data from.
+     */
     public ReaderInputStream(Reader reader) {
         this(reader, null);
     }
 
+    /**
+     * Creates ReaderInputStream from a given Reader type object with a specifed encoding.
+     *
+     * @param reader java.io.Reader object to be read data from.
+     * @param encoding an encoding of the created stream.
+     */
     public ReaderInputStream(Reader reader, String encoding) {
         this.reader = reader;
         if (encoding == null) {

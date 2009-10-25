@@ -34,16 +34,24 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
+ * Wrapper interface of {@link JavaEmbedUtils.EvalUnit} for embedding.
+ * This interface defines an evaluation unit for a parsed or compiled script,
+ * which are executable.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public interface EmbedEvalUnit extends JavaEmbedUtils.EvalUnit {
     /**
+     * Returns a root node of parsed Ruby script.
+     *
      * @return parsed node.
      */
     public Node getNode();
 
     /**
+     * Returns a scope used to parse a script. For example,
+     * org.jruby.runtime.scope.ManyVarsDynamicScope.
+     *
      * @return scope to refer local variables.
      */
     public ManyVarsDynamicScope getScope();

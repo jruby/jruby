@@ -34,10 +34,17 @@ import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
 
 /**
+ * A collection of JSR223 specific utility methods.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class Utils {
+    /**
+     * Gets line number value from engine's attribute map.
+     *
+     * @param engine JSR223 JRuby Engine
+     * @return line number
+     */
     static int getLineNumber(ScriptEngine engine) {
         Object obj = engine.getContext().getAttribute(AttributeName.LINENUMBER.toString(), ScriptContext.ENGINE_SCOPE);
         if (obj instanceof Integer) {

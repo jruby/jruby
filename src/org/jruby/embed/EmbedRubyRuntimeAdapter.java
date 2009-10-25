@@ -34,8 +34,10 @@ import java.io.Reader;
 import org.jruby.RubyRuntimeAdapter;
 
 /**
+ * Wrapper interface of {@link RubyRuntimeAdapter} for embedding.
+ * This interface defines Java friendly parse methods.
  *
- * @author Yoko Harada
+ * @author Yoko Harada <yokolet@gmail.com>
  */
 public interface EmbedRubyRuntimeAdapter extends RubyRuntimeAdapter {
     /**

@@ -41,6 +41,7 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
 /**
+ * A WriterOutputStream converts java.io.Writer to java.io.OutputStream.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -50,10 +51,20 @@ public class WriterOutputStream extends OutputStream {
     private boolean isOpen = true;
     private CharsetDecoder decoder;
 
+    /**
+     * Creates WriterOutputStream from given java.io.Writer object with a default encoding.
+     *
+     * @param writer java.io.Writer object to be converted to.
+     */
     public WriterOutputStream(Writer writer) {
         this(writer, null);
     }
 
+    /**
+     * Creates WriterOutputStream from given java.io.Writer object with a specified encoding.
+     *
+     * @param writer java.io.Writer object to be converted to.
+     */
     public WriterOutputStream(Writer writer, String encoding) {
         this.writer = writer;       
         if (encoding == null && writer instanceof OutputStreamWriter) {
