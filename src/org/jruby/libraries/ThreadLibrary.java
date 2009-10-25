@@ -33,6 +33,7 @@ package org.jruby.libraries;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
@@ -42,6 +43,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -54,10 +56,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ThreadLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
+        runtime.getThread().defineAnnotatedMethods(ThreadMethods.class);
         Mutex.setup(runtime);
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);
         SizedQueue.setup(runtime);
+    }
+
+    public static class ThreadMethods {
+        @JRubyMethod(name = "exclusive", meta = true, compat = CompatVersion.RUBY1_8)
+        public static IRubyObject exclusive(ThreadContext context, IRubyObject receiver, Block block) {
+            ThreadService service  = context.getRuntime().getThreadService();
+            boolean old = service.getCritical();
+            try {
+                service.setCritical(true);
+                return block.yield(receiver.getRuntime().getCurrentContext(), (IRubyObject) null);
+            } finally {
+                service.setCritical(old);
+            }
+        }
     }
 
     @JRubyClass(name="Mutex")

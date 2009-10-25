@@ -310,4 +310,12 @@ class TestThread < Test::Unit::TestCase
     t.wakeup.join
     assert (end_time - start_time) < 1
   end
+
+  # JRUBY-4154
+  if RUBY_VERSION < "1.9"
+    def test_thread_exclusive
+      out = Thread.exclusive { :result }
+      assert_equal(:result, out)
+    end
+  end
 end
