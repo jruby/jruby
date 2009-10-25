@@ -2495,7 +2495,7 @@ public class RubyArray extends RubyObject implements List {
             return runtime.newEmptyArray();
         }
 
-        arg1 = makeShared((int)pos, (int)len, getMetaClass());
+        arg1 = makeShared(begin + (int)pos, (int)len, getMetaClass());
         splice(pos, len, null);
 
         return arg1;
