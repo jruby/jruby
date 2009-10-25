@@ -18,4 +18,9 @@ class TestArray < Test::Unit::TestCase
       [1, 2, 3].freeze.instance_eval { initialize }
     }
   end
+
+  # JRUBY-4157
+  def test_shared_ary_slice
+    assert_equal [4,5,6], [1,2,3,4,5,6].slice(1,5).slice!(2,3)
+  end
 end
