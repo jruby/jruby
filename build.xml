@@ -762,6 +762,7 @@
   <target name="run-junit-interpreted-threadpool"><run-junit-1.8 thread.pooling="true"/></target>
   <target name="run-junit-compiled-threadpool"><run-junit-1.8 compile.mode="JIT" jit.threshold="0" thread.pooling="true"/></target>
   <target name="run-junit-precompiled-threadpool"><run-junit-1.8 compile.mode="FORCE" jit.threshold="0" thread.pooling="true"/></target>
+  <target name="run-junit-embed" depends="copy-test-files" description="Runs unit embedding API tests."><run-junit-embed-all/></target>
 
   <path id="test.class.path">
     <fileset dir="${build.lib.dir}" includes="*.jar">
@@ -903,6 +904,22 @@
 	  <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}"  unless="test"/>
 	</junit-tests>
       </run-junit>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="run-junit-embed-all">
+    <sequential>
+      <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit-4.7.jar"/>
+      <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1800000">
+        <classpath refid="test.class.path"/>
+        <formatter type="xml"/>
+        <formatter type="brief" usefile="false" />
+        <batchtest fork="yes" todir="${test.results.dir}">
+          <fileset dir="${test.dir}">
+            <include name="org/jruby/embed/**/*Test*.java"/>
+          </fileset>
+        </batchtest>
+      </junit>
     </sequential>
   </macrodef>
 

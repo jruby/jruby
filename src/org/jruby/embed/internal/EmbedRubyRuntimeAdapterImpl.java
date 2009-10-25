@@ -72,6 +72,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     public EmbedEvalUnit parse(String script, int... lines) {
+        if (script == null) {
+            return null;
+        }
         boolean unicode_escape = false;
         Object obj = container.getAttribute(AttributeName.UNICODE_ESCAPE);
         if (obj != null && obj instanceof Boolean) {
@@ -95,6 +98,12 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     public EmbedEvalUnit parse(PathType type, String filename, int... lines) {
+        if (filename == null) {
+            return null;
+        }
+        if (type == null) {
+            type = PathType.ABSOLUTE;
+        }
         try {
             InputStream istream = null;
             switch (type) {
@@ -140,7 +149,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             filename = "<script>";
         }
         int line = 0;
-        if (lines.length > 0) {
+        if (lines != null && lines.length > 0) {
             line = lines[0];
         }
         try {

@@ -313,7 +313,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             runtime.getCurrentContext().pushScope(scope);
             IRubyObject result = callEachType(method, rubyReceiver, methodName, block, args);
             container.getVarMap().retrieve(rubyReceiver);
-            if (!(result instanceof RubyNil)) {
+            if (!(result instanceof RubyNil) && returnType != null) {
                 Object ret = JavaEmbedUtils.rubyToJava(runtime, result, returnType);
                 return ret != null ? returnType.cast(ret) : null;
             }

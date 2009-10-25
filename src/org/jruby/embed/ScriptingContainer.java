@@ -330,6 +330,19 @@ public class ScriptingContainer {
     }
 
     /**
+     * Removes the specified value with the specified key in a
+     * attribute map. If the map previously contained a mapping for the key,
+     * the old value is returned. This is a short cut method of
+     * ScriptingContainer#getAttributeMap().remove(key).
+     *
+     * @param key is a key that the specified value is to be removed from
+     * @return the previous value associated with key, or null if there was no mapping for key.
+     */
+    public Object removeAttribute(Object key) {
+        return provider.getAttributeMap().remove(key);
+    }
+
+    /**
      * Returns a value to which the specified key is mapped in a
      * variable map, or null if this map contains no mapping for the key. The key
      * must be a valid Ruby variable name. This is a short cut method of
@@ -431,8 +444,15 @@ public class ScriptingContainer {
      * @return an evaluated result converted to a Java object
      */
     public Object runScriptlet(String script) {
-        EvalUnit node = parse(script);
-        IRubyObject ret = node.run();
+        EmbedEvalUnit unit = parse(script);
+        return runUnit(unit);
+    }
+
+    private Object runUnit(EmbedEvalUnit unit) {
+        if (unit == null) {
+            return null;
+        }
+        IRubyObject ret = unit.run();
         return JavaEmbedUtils.rubyToJava(ret);
     }
 
@@ -447,9 +467,8 @@ public class ScriptingContainer {
      * @return an evaluated result converted to a Java object
      */
     public Object runScriptlet(Reader reader, String filename) {
-        EvalUnit node = parse(reader, filename);
-        IRubyObject ret = node.run();
-        return JavaEmbedUtils.rubyToJava(ret);
+        EmbedEvalUnit unit = parse(reader, filename);
+        return runUnit(unit);
     }
 
     /**
@@ -463,9 +482,8 @@ public class ScriptingContainer {
      * @return an evaluated result converted to a Java object
      */
     public Object runScriptlet(InputStream istream, String filename) {
-        EvalUnit node = parse(istream, filename);
-        IRubyObject ret = node.run();
-        return JavaEmbedUtils.rubyToJava(ret);
+        EmbedEvalUnit unit = parse(istream, filename);
+        return runUnit(unit);
     }
 
     /**
@@ -478,9 +496,8 @@ public class ScriptingContainer {
      * @return an evaluated result converted to a Java object
      */
     public Object runScriptlet(PathType type, String filename) {
-        EvalUnit node = parse(type, filename);
-        IRubyObject ret = node.run();
-        return JavaEmbedUtils.rubyToJava(ret);
+        EmbedEvalUnit unit = parse(type, filename);
+        return runUnit(unit);
     }
 
     /**
@@ -701,7 +718,7 @@ public class ScriptingContainer {
      * @return an instance of a requested interface type
      */
     public <T> T getInstance(Object receiver, Class<T> clazz) {
-        if (!clazz.isInterface()) {
+        if (clazz == null || !clazz.isInterface()) {
             return null;
         }
         Ruby runtime = getRuntime();
@@ -729,6 +746,9 @@ public class ScriptingContainer {
      * @param reader is a reader to be set
      */
     public void setReader(Reader reader) {
+        if (reader == null) {
+            return;
+        }
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.READER)) {
             Reader old = (Reader) map.get(AttributeName.READER);
@@ -774,6 +794,9 @@ public class ScriptingContainer {
      * @param writer is a wrtier to be set
      */
     public void setWriter(Writer writer) {
+        if (writer == null) {
+            return;
+        }
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.WRITER)) {
             Writer old = (Writer) map.get(AttributeName.WRITER);
@@ -787,6 +810,9 @@ public class ScriptingContainer {
     }
 
     private void setOutputStream(PrintStream pstream) {
+        if (pstream == null) {
+            return;
+        }
         Ruby runtime = getRuntime();
         RubyIO io = new RubyIO(runtime, pstream);
         io.getOpenFile().getMainStream().setSync(true);
@@ -832,6 +858,9 @@ public class ScriptingContainer {
      * @param errorWriter is a wrtier to be set
      */
     public void setErrorWriter(Writer errorWriter) {
+        if (errorWriter == null) {
+            return;
+        }
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.ERROR_WRITER)) {
             Writer old = (Writer) map.get(AttributeName.ERROR_WRITER);
@@ -845,6 +874,9 @@ public class ScriptingContainer {
     }
 
     private void setErrorStream(PrintStream error) {
+        if (error == null) {
+            return;
+        }
         Ruby runtime = getRuntime();
         RubyIO io = new RubyIO(runtime, error);
         io.getOpenFile().getMainStream().setSync(true);
