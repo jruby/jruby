@@ -317,6 +317,9 @@
                 <serializedBean>
                   <java class="java.beans.XMLDecoder">
                     <object class="com.install4j.runtime.beans.actions.desktop.CreateProgramGroupAction">
+                      <void property="allUsers">
+                        <boolean>false</boolean>
+                      </void>
                       <void property="programGroupName">
                         <string>${compiler:sys.fullName} ${compiler:sys.version}</string>
                       </void>
