@@ -3,8 +3,6 @@ package org.jruby.java.proxies;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -27,12 +25,6 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return new ConcreteJavaProxy(runtime, klazz);
             }
         });
-        
-        RubyClass singleton = concreteJavaProxy.getSingletonClass();
-        
-        final DynamicMethod oldNew = singleton.searchMethod("new");
-        
-        singleton.addMethod("new", new ConcreteNewMethod(singleton, Visibility.PUBLIC, oldNew));
         
         concreteJavaProxy.addMethod("initialize", new org.jruby.internal.runtime.methods.JavaMethod(concreteJavaProxy, Visibility.PUBLIC) {
             @Override
@@ -78,84 +70,5 @@ public class ConcreteJavaProxy extends JavaProxy {
         });
         
         return concreteJavaProxy;
-    }
-    
-    public static class ConcreteNewMethod extends org.jruby.internal.runtime.methods.JavaMethod {
-        private DynamicMethod oldNew;
-            
-        public ConcreteNewMethod(RubyModule implClass, Visibility visibility, DynamicMethod oldNew) {
-            super(implClass, visibility);
-            this.oldNew = oldNew;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", args, block);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", block);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, block);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1, block);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1, arg2, block);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", args);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy");
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1);
-
-            return proxy;
-        }
-        
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy", arg0, arg1, arg2);
-
-            return proxy;
-        }
     }
 }

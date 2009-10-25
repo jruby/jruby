@@ -37,6 +37,6 @@ describe "The 'new' method for an imported Java type" do
   it "should be inspectable" do
     method = MethodNames.method("new")
     
-    method.inspect.should == "#<Method: Java::Java_integrationFixtures::MethodNames(ConcreteJavaProxy).new>"
+    method.inspect.should == "#<Method: Class#new>"
   end
 end
