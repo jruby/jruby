@@ -6605,7 +6605,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         ByteList val = value.shallowDup();
         while (p < end) {
             int n = StringSupport.length(enc, bytes, p, end);
-            block.yield(context, makeShared19(runtime, val, p, n));
+            block.yield(context, makeShared19(runtime, val, p-val.begin, n));
             p += n;
         }
         return this;
@@ -6631,7 +6631,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         ByteList val = value.shallowDup();
         while (p < end) {
             int n = StringSupport.length(enc, bytes, p, end);
-            block.yield(context, makeShared19(runtime, val, p, n));
+            block.yield(context, makeShared19(runtime, val, p-value.begin, n));
             p += n;
         }
         return this;
