@@ -345,8 +345,8 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, required = 1, rest = true)
-    public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[]args) {
+    @JRubyMethod(name = {"to_a", "entries"}, rest = true)
+    public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
         RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
