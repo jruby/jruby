@@ -769,9 +769,8 @@ public class RubyIO extends RubyObject {
     private void incrementLineno(Ruby runtime, OpenFile myOpenFile) {
         int lineno = myOpenFile.getLineNumber() + 1;
         myOpenFile.setLineNumber(lineno);
-        runtime.getGlobalVariables().set("$.", runtime.newFixnum(lineno));
-        // this is for a range check, near as I can tell
-        RubyNumeric.int2fix(runtime, myOpenFile.getLineNumber());
+        runtime.setCurrentLine(lineno);
+        RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), lineno);
     }
 
     protected boolean swallow(int term) throws IOException, BadDescriptorException {

@@ -1442,6 +1442,22 @@ public final class Ruby {
     public String getCurrentDirectory() {
         return currentDirectory;
     }
+
+    public void setCurrentLine(int line) {
+        currentLine = line;
+    }
+
+    public int getCurrentLine() {
+        return currentLine;
+    }
+
+    public void setArgsFile(IRubyObject argsFile) {
+        this.argsFile = argsFile;
+    }
+
+    public IRubyObject getArgsFile() {
+        return argsFile;
+    }
     
     public RubyModule getEtc() {
         return etcModule;
@@ -3457,6 +3473,11 @@ public final class Ruby {
 
     // former java.lang.System concepts now internalized for MVM
     private String currentDirectory;
+
+    // The "current line" global variable
+    private int currentLine = 0;
+
+    private IRubyObject argsFile;
 
     private long startTime = System.currentTimeMillis();
 

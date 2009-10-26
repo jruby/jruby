@@ -41,6 +41,9 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.posix.FileStat;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -170,24 +173,29 @@ public class RubyArgsFile {
         }
     }    
     
-    public static void setCurrentLineNumber(IRubyObject recv, IRubyObject newLineNumber) {
+    public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
 
         if (data != null) {
-            int lineno = RubyNumeric.fix2int(newLineNumber);
-            data.currentLineNumber = lineno;
-            if (data.currentFile != null && !data.currentFile.isNil() && !(((RubyIO)data.currentFile).isClosed())) {
-                data.currentFile.callMethod(recv.getRuntime().getCurrentContext(), "lineno=", newLineNumber);
-            }
+            data.currentLineNumber = newLineNumber;
         }
     }
 
-    public static void initArgsFile(Ruby runtime) {
+    public static void initArgsFile(final Ruby runtime) {
         RubyObject argsFile = new RubyObject(runtime, runtime.getObject());
 
         runtime.getEnumerable().extend_object(argsFile);
-        
-        runtime.defineReadonlyVariable("$<", argsFile);
+
+        runtime.setArgsFile(argsFile);
+        runtime.getGlobalVariables().defineReadonly("$<", new IAccessor() {
+            public IRubyObject getValue() {
+                return runtime.getArgsFile();
+            }
+
+            public IRubyObject setValue(IRubyObject newValue) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        });
         runtime.defineGlobalConstant("ARGF", argsFile);
         
         RubyClass argfClass = argsFile.getMetaClass();
@@ -226,7 +234,7 @@ public class RubyArgsFile {
         }
 
         if (!line.isNil()) {
-            context.getRuntime().getGlobalVariables().set("$.", context.getRuntime().newFixnum(data.currentLineNumber));
+            context.getRuntime().setCurrentLine(data.currentLineNumber);
         }
 
         return line;
@@ -495,8 +503,7 @@ public class RubyArgsFile {
     public static IRubyObject lineno_set(ThreadContext context, IRubyObject recv, IRubyObject line) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
         data.currentLineNumber = RubyNumeric.fix2int(line);
-//         data.currentFile.callMethod(context, "lineno=", line);
-        context.getRuntime().getGlobalVariables().set("$.", line);
+        context.getRuntime().setCurrentLine(data.currentLineNumber);
         return recv.getRuntime().getNil();
     }
 

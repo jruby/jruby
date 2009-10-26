@@ -199,7 +199,7 @@ public class RubyGlobal {
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()));
 
-        runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$.", RubyFixnum.one(runtime)));
+        runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."));
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"));
         runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"));
 
@@ -409,14 +409,21 @@ public class RubyGlobal {
     // Accessor methods.
 
     private static class LineNumberGlobalVariable extends GlobalVariable {
-        public LineNumberGlobalVariable(Ruby runtime, String name, RubyFixnum value) {
-            super(runtime, name, value);
+        public LineNumberGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, null);
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            RubyArgsFile.setCurrentLineNumber(runtime.getGlobalVariables().get("$<"), value);
-            return super.set(value);
+            int line = (int)value.convertToInteger().getLongValue();
+            runtime.setCurrentLine(line);
+            RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), line);
+            return value;
+        }
+
+        @Override
+        public IRubyObject get() {
+            return runtime.newFixnum(runtime.getCurrentLine());
         }
     }
 
