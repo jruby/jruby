@@ -126,13 +126,13 @@ class JRubyContext implements ScriptContext {
     }
 
     public Bindings getBindings(int priority) {
-         if (priority == Scope.ENGINE.getPriority()) {
-             return engineMap;
-         } else if (priority == Scope.GLOBAL.getPriority()) {
-             return globalMap;
-         } else {
-             throw new IllegalArgumentException("invalid scope" );
-         }
+        if (priority == Scope.ENGINE.getPriority()) {
+            return engineMap;
+        } else if (priority == Scope.GLOBAL.getPriority()) {
+            return globalMap;
+        } else {
+            throw new IllegalArgumentException("invalid scope");
+        }
     }
 
     public Writer getErrorWriter() {
