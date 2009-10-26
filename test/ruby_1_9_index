@@ -9,3 +9,4 @@ test_loop_1_9
 test_assignment_1_9
 test_regexp_1_9
 test_io_1_9
+test_jruby_4084
