@@ -10,6 +10,6 @@
     <artifact name="jruby-sources" />
   </publications>
   <dependencies>
-    <dependency org="com.google.code.findbugs" name="findbugs" rev="1.3.8" conf="check->*" />
+    <dependency org="com.google.code.findbugs" name="findbugs" rev="1.3.9" conf="check->*" />
   </dependencies>
 </ivy-module>
