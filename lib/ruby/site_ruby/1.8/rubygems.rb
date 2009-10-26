@@ -1123,9 +1123,9 @@ end
 
 require 'rubygems/config_file'
 
-if RUBY_VERSION < '1.9' then
+#if RUBY_VERSION < '1.9' then
   require 'rubygems/custom_require'
-end
+#end
 
 Gem.clear_paths
 
