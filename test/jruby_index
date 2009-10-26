@@ -23,6 +23,7 @@ test_command_line_switches
 test_comparable
 test_core_arities
 test_crazy_blocks
+test_custom_enumerable
 test_cvars_in_odd_scopes
 test_date_time
 test_defined
