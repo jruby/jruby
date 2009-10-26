@@ -2,8 +2,8 @@ require 'benchmark'
 
 MAX  = 1000
 BLOCKSIZE = 16 * 1024
-LINE_SIZE = 10
-LINES = 10000
+LINE_SIZE = 10000
+LINES = 10
 FILE = 'io_test_bench_file.txt'
 
 File.open(FILE, 'w'){ |fh|

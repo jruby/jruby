@@ -635,15 +635,27 @@ public class RubyIO extends RubyObject {
         return getSeparatorFromArgs(runtime, args, 0);
     }
 
-    public IRubyObject getline(Ruby runtime, ByteList separator) {
-        return getline(runtime, separator, -1);
+    public IRubyObject getline(Ruby runtime, ByteList separator, ByteListCache cache) {
+        return getline(runtime, separator, -1, cache);
     }
+
+    public IRubyObject getline(Ruby runtime, ByteList separator) {
+        return getline(runtime, separator, -1, null);
+    }
+
 
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      *
      */
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
+        return getline(runtime, separator, limit, null);
+    }
+    /**
+     * getline using logic of gets.  If limit is -1 then read unlimited amount.
+     *
+     */
+    public IRubyObject getline(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
 
@@ -665,73 +677,80 @@ public class RubyIO extends RubyObject {
             } else if (limit == 0) {
                 return RubyString.newEmptyString(runtime);
             } else if (separator.length() == 1 && limit < 0) {
-                return getlineFast(runtime, separator.get(0));
+                return getlineFast(runtime, separator.get(0), cache);
             } else {
                 Stream readStream = myOpenFile.getMainStream();
                 int c = -1;
                 int n = -1;
                 int newline = separator.get(separator.length() - 1) & 0xFF;
 
-                ByteList buf = new ByteList(0);
-                boolean update = false;
-                boolean limitReached = false;
-                
-                while (true) {
-                    do {
-                        readCheck(readStream);
-                        readStream.clearerr();
-                        
-                        try {
-                            if (limit == -1) {
-                                n = readStream.getline(buf, (byte) newline);
-                            } else {
-                                n = readStream.getline(buf, (byte) newline, limit);
-                                limit -= n;
-                                if (limit <= 0) {
-                                    update = limitReached = true;
+                ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
+                try {
+                    boolean update = false;
+                    boolean limitReached = false;
+
+                    while (true) {
+                        do {
+                            readCheck(readStream);
+                            readStream.clearerr();
+
+                            try {
+                                if (limit == -1) {
+                                    n = readStream.getline(buf, (byte) newline);
+                                } else {
+                                    n = readStream.getline(buf, (byte) newline, limit);
+                                    limit -= n;
+                                    if (limit <= 0) {
+                                        update = limitReached = true;
+                                        break;
+                                    }
+                                }
+
+                                c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
+                            } catch (EOFException e) {
+                                n = -1;
+                            }
+
+                            if (n == -1) {
+                                if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
+                                    checkDescriptor(runtime, ((ChannelStream) readStream).getDescriptor());
+                                    continue;
+                                } else {
                                     break;
                                 }
                             }
 
-                            c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
-                        } catch (EOFException e) {
-                            n = -1;
-                        }
+                            update = true;
+                        } while (c != newline); // loop until we see the nth separator char
 
-                        if (n == -1) {
-                            if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                                checkDescriptor(runtime, ((ChannelStream) readStream).getDescriptor());
-                                continue;
-                            } else {
-                                break;
-                            }
+                        // if we hit EOF or reached limit then we're done
+                        if (n == -1 || limitReached) break;
+
+                        // if we've found the last char of the separator,
+                        // and we've found at least as many characters as separator length,
+                        // and the last n characters of our buffer match the separator, we're done
+                        if (c == newline && buf.length() >= separator.length() &&
+                                0 == ByteList.memcmp(buf.unsafeBytes(), buf.begin + buf.realSize - separator.length(), separator.unsafeBytes(), separator.begin, separator.realSize)) {
+                            break;
                         }
-            
-                        update = true;
-                    } while (c != newline); // loop until we see the nth separator char
+                    }
                     
-                    // if we hit EOF or reached limit then we're done
-                    if (n == -1 || limitReached) break;
+                    if (isParagraph && c != -1) swallow('\n');
                     
-                    // if we've found the last char of the separator,
-                    // and we've found at least as many characters as separator length,
-                    // and the last n characters of our buffer match the separator, we're done
-                    if (c == newline && buf.length() >= separator.length() &&
-                            0 == ByteList.memcmp(buf.unsafeBytes(), buf.begin + buf.realSize - separator.length(), separator.unsafeBytes(), separator.begin, separator.realSize)) {
-                        break;
+                    if (!update) {
+                        return runtime.getNil();
+                    } else {
+                        incrementLineno(runtime, myOpenFile);
+                        RubyString str = RubyString.newString(runtime, cache != null ? new ByteList(buf) : buf);
+                        str.setTaint(true);
+
+                        return str;
                     }
                 }
-                
-                if (isParagraph && c != -1) swallow('\n');
-                
-                if (!update) {
-                    return runtime.getNil();
-                } else {
-                    incrementLineno(runtime, myOpenFile);
-                    RubyString str = RubyString.newString(runtime, buf);
-                    str.setTaint(true);
-
-                    return str;
+                finally {
+                    if(cache != null) {
+                        cache.release(buf);
+                    }
                 }
             }
         } catch (PipeException ex) {
@@ -785,42 +804,49 @@ public class RubyIO extends RubyObject {
         return vendor.startsWith("Apple") && e.getMessage().equals(msgEINTR);
     }
     
-    public IRubyObject getlineFast(Ruby runtime, int delim) throws IOException, BadDescriptorException {
+    public IRubyObject getlineFast(Ruby runtime, int delim, ByteListCache cache) throws IOException, BadDescriptorException {
         Stream readStream = openFile.getMainStream();
         int c = -1;
 
-        ByteList buf = new ByteList(0);
-        boolean update = false;
-        do {
-            readCheck(readStream);
-            readStream.clearerr();
-            int n;
-            try {
-                n = readStream.getline(buf, (byte) delim);
-                c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
-            } catch (EOFException e) {
-                n = -1;
-            }
-            
-            if (n == -1) {
-                if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                    checkDescriptor(runtime, ((ChannelStream)readStream).getDescriptor());
-                    continue;
-                } else {
-                    break;
+        ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
+        try {
+            boolean update = false;
+            do {
+                readCheck(readStream);
+                readStream.clearerr();
+                int n;
+                try {
+                    n = readStream.getline(buf, (byte) delim);
+                    c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
+                } catch (EOFException e) {
+                    n = -1;
                 }
-            }
-            
-            update = true;
-        } while (c != delim);
 
-        if (!update) {
-            return runtime.getNil();
-        } else {
-            incrementLineno(runtime, openFile);
-            RubyString str = RubyString.newString(runtime, buf);
-            str.setTaint(true);
-            return str;
+                if (n == -1) {
+                    if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
+                        checkDescriptor(runtime, ((ChannelStream)readStream).getDescriptor());
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+
+                update = true;
+            } while (c != delim);
+
+            if (!update) {
+                return runtime.getNil();
+            } else {
+                incrementLineno(runtime, openFile);
+                RubyString str = RubyString.newString(runtime, cache != null ? new ByteList(buf) : buf);
+                str.setTaint(true);
+                return str;
+            }
+        }
+        finally {
+            if(cache != null) {
+                cache.release(buf);
+            }
         }
     }
     // IO class methods.
@@ -2982,8 +3008,9 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         ByteList separator = getSeparatorForGets(runtime, args);
         
+        ByteListCache cache = new ByteListCache();
         for (IRubyObject line = getline(runtime, separator); !line.isNil(); 
-        	line = getline(runtime, separator)) {
+		line = getline(runtime, separator, cache)) {
             block.yield(context, line);
         }
         
@@ -3039,12 +3066,13 @@ public class RubyIO extends RubyObject {
 
         RubyIO io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
         
+        ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
             try {
-                IRubyObject str = io.getline(runtime, separator);
+                IRubyObject str = io.getline(runtime, separator, cache);
                 while (!str.isNil()) {
                     block.yield(context, str);
-                    str = io.getline(runtime, separator);
+                    str = io.getline(runtime, separator, cache);
                 }
             } finally {
                 io.close();
@@ -3553,6 +3581,26 @@ public class RubyIO extends RubyObject {
             
             // raise will also wake the thread from selection
             thread.raise(new IRubyObject[] {getRuntime().newIOError("stream closed").getException()}, Block.NULL_BLOCK);
+        }
+    }
+
+    /**
+     * Caching reference to allocated byte-lists, allowing for internal byte[] to be
+     * reused, rather than reallocated.
+     *
+     * Predominately used on {@link RubyIO#getline(Ruby, ByteList)} and variants.
+     *
+     * @author realjenius
+     */
+    private static class ByteListCache {
+        private byte[] buffer = new byte[0];
+        public void release(ByteList l) {
+            buffer = l.bytes;
+        }
+
+        public ByteList allocate(int size) {
+            ByteList l = new ByteList(buffer, 0, size, false);
+            return l;
         }
     }
 
