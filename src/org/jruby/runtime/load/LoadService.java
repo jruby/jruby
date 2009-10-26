@@ -649,7 +649,7 @@ public class LoadService {
         }
     }
     
-    private final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
+    protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
     {
         searchers.add(new BailoutSearcher());
         searchers.add(new NormalSearcher());
@@ -698,7 +698,7 @@ public class LoadService {
         }
     }
     
-    private Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
+    protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
             debugLogTry( "builtinLib",  namePlusSuffix );
@@ -712,7 +712,7 @@ public class LoadService {
         return null;
     }
 
-    private Library findLibraryWithoutCWD(SearchState state, String baseName, SuffixType suffixType) {
+    protected Library findLibraryWithoutCWD(SearchState state, String baseName, SuffixType suffixType) {
         Library library = null;
         
         switch (suffixType) {
@@ -742,7 +742,7 @@ public class LoadService {
         return library;
     }
 
-    private Library findLibraryWithClassloaders(SearchState state, String baseName, SuffixType suffixType) {
+    protected Library findLibraryWithClassloaders(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String file = baseName + suffix;
             LoadServiceResource resource = findFileInClasspath(file);
@@ -754,7 +754,7 @@ public class LoadService {
         return null;
     }
 
-    private Library createLibrary(SearchState state, LoadServiceResource resource) {
+    protected Library createLibrary(SearchState state, LoadServiceResource resource) {
         if (resource == null) {
             return null;
         }
@@ -770,7 +770,7 @@ public class LoadService {
         }      
     }
 
-    private LoadServiceResource tryResourceFromCWD(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
+    protected LoadServiceResource tryResourceFromCWD(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
         
         for (String suffix : suffixType.getSuffixes()) {
@@ -798,7 +798,7 @@ public class LoadService {
         return foundResource;
     }
     
-    private LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
+    protected LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
         // if a jar or file URL, return load service resource directly without further searching
         LoadServiceResource foundResource = null;
         if (baseName.startsWith("jar:")) {
@@ -847,7 +847,7 @@ public class LoadService {
         return foundResource;
     }
     
-    private LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
+    protected LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
         LoadServiceResource foundResource = null;
 
         // if it's a ./ baseName, use CWD logic
@@ -916,7 +916,7 @@ public class LoadService {
         return foundResource;
     }
     
-    private LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
+    protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
         LoadServiceResource foundResource = null;
         
         JarFile current = jarFiles.get(loadPathEntry);
@@ -966,11 +966,11 @@ public class LoadService {
         return foundResource;
     }
 
-    private boolean loadPathLooksLikeJarURL(String loadPathEntry) {
+    protected boolean loadPathLooksLikeJarURL(String loadPathEntry) {
         return loadPathEntry.startsWith("jar:") || loadPathEntry.endsWith(".jar") || (loadPathEntry.startsWith("file:") && loadPathEntry.indexOf("!/") != -1);
     }
 
-    private LoadServiceResource tryResourceFromLoadPath( String namePlusSuffix,String loadPathEntry) throws RaiseException {
+    protected LoadServiceResource tryResourceFromLoadPath( String namePlusSuffix,String loadPathEntry) throws RaiseException {
         LoadServiceResource foundResource = null;
 
         try {
@@ -1003,7 +1003,7 @@ public class LoadService {
         return foundResource;
     }
 
-    private LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
+    protected LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
         LoadServiceResource foundResource = null;
 
         try {
@@ -1045,7 +1045,7 @@ public class LoadService {
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private LoadServiceResource findFileInClasspath(String name) {
+    protected LoadServiceResource findFileInClasspath(String name) {
         // Look in classpath next (we do not use File as a test since UNC names will match)
         // Note: Jar resources must NEVER begin with an '/'. (previous code said "always begin with a /")
         ClassLoader classLoader = runtime.getJRubyClassLoader();
