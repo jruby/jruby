@@ -152,7 +152,6 @@ public class LoadService {
     protected RubyArray loadPath;
     protected RubyArray loadedFeatures;
     protected List loadedFeaturesInternal;
-//    protected final Set firstLineLoadedFeatures = Collections.synchronizedSet(new HashSet());
     protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
@@ -216,11 +215,11 @@ public class LoadService {
         }
     }
 
-    private void addLoadedFeature(RubyString loadNameRubyString) {
+    protected void addLoadedFeature(RubyString loadNameRubyString) {
         loadedFeaturesInternal.add(loadNameRubyString);
     }
 
-    private void addPath(String path) {
+    protected void addPath(String path) {
         // Empty paths do not need to be added
         if (path == null || path.length() == 0) return;
         
@@ -290,7 +289,7 @@ public class LoadService {
         }
     }
 
-    private Map requireLocks = new Hashtable();
+    protected Map requireLocks = new Hashtable();
 
     public boolean smartLoad(String file) {
         checkEmptyLoad(file);
@@ -389,21 +388,20 @@ public class LoadService {
         loadedFeaturesInternal.remove(name);
     }
 
-    private boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
+    protected boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
         return loadedFeaturesInternal.contains(loadNameRubyString);
     }
 
-    private boolean isJarfileLibrary(SearchState state, final String file) {
+    protected boolean isJarfileLibrary(SearchState state, final String file) {
         return state.library instanceof JarredScript && file.endsWith(".jar");
     }
 
-    private void removeLoadedFeature(RubyString loadNameRubyString) {
+    protected void removeLoadedFeature(RubyString loadNameRubyString) {
 
         loadedFeaturesInternal.remove(loadNameRubyString);
     }
 
-    private void reraiseRaiseExceptions(Throwable e) throws RaiseException {
-
+    protected void reraiseRaiseExceptions(Throwable e) throws RaiseException {
         if (e instanceof RaiseException) {
             throw (RaiseException) e;
         }
@@ -556,7 +554,7 @@ public class LoadService {
     
     public class SearchState {
         public Library library;
-        private String loadName;
+        public String loadName;
         public SuffixType suffixType;
         public String searchFile;
         
@@ -615,7 +613,7 @@ public class LoadService {
         }
     }
     
-    private boolean tryLoadingLibraryOrScript(Ruby runtime, SearchState state) {
+    protected boolean tryLoadingLibraryOrScript(Ruby runtime, SearchState state) {
         // attempt to load the found library
         RubyString loadNameRubyString = RubyString.newString(runtime, state.loadName);
         try {
@@ -658,7 +656,7 @@ public class LoadService {
         searchers.add(new ScriptClassSearcher());
     }
 
-    private String buildClassName(String className) {
+    protected String buildClassName(String className) {
         // Remove any relative prefix, e.g. "./foo/bar" becomes "foo/bar".
         className = className.replaceFirst("^\\.\\/", "");
         if (className.lastIndexOf(".") != -1) {
@@ -668,25 +666,25 @@ public class LoadService {
         return className;
     }
 
-    private void checkEmptyLoad(String file) throws RaiseException {
+    protected void checkEmptyLoad(String file) throws RaiseException {
         if (file.equals("")) {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
     }
 
-    private void debugLogTry(String what, String msg) {
+    protected void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             runtime.getErr().println( "LoadService: trying " + what + ": " + msg );
         }
     }
 
-    private void debugLogFound(String what, String msg) {
+    protected void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             runtime.getErr().println( "LoadService: found " + what + ": " + msg );
         }
     }
 
-    private void debugLogFound( LoadServiceResource resource ) {
+    protected void debugLogFound( LoadServiceResource resource ) {
         String resourceUrl;
         try {
             resourceUrl = resource.getURL().toString();
@@ -1094,7 +1092,7 @@ public class LoadService {
     }
     
     /* Directories and unavailable resources are not able to open a stream. */
-    private boolean isRequireable(URL loc) {
+    protected boolean isRequireable(URL loc) {
         if (loc != null) {
                 if (loc.getProtocol().equals("file") && new java.io.File(loc.getFile()).isDirectory()) {
                         return false;
@@ -1108,7 +1106,7 @@ public class LoadService {
         return false;
     }
     
-    private String canonicalizePath(String path) {
+    protected String canonicalizePath(String path) {
         try {
             String cwd = new File(runtime.getCurrentDirectory()).getCanonicalPath();
             return new File(path).getCanonicalPath()
