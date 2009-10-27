@@ -595,7 +595,7 @@
   </target>
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
-    <javac destdir="${test.classes.dir}" deprecation="true" debug="true"
+    <javac destdir="${test.classes.dir}" deprecation="true" encoding="UTF-8" debug="true"
            source="${javac.version}">
       <classpath>
         <path refid="build.classpath"/>
