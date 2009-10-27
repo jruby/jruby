@@ -223,7 +223,15 @@ public class RubyRational extends RubyNumeric {
 
         return new RubyRational(runtime, recv, num, den);
     }
-    
+
+    /** nurat_canonicalization
+     *
+     */
+    private static boolean canonicalization = false;
+    public static void setCanonicalization(boolean canonical) {
+        canonicalization = canonical;
+    }
+
     /** nurat_int_check
      * 
      */
@@ -246,7 +254,6 @@ public class RubyRational extends RubyNumeric {
     /** nurat_s_canonicalize_internal
      * 
      */
-    private static boolean canonicalization = false;
     private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
         Ruby runtime = context.getRuntime();
         IRubyObject res = f_cmp(context, den, RubyFixnum.zero(runtime));

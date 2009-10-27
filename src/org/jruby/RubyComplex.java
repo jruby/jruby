@@ -270,6 +270,14 @@ public class RubyComplex extends RubyNumeric {
         return new RubyComplex(context.getRuntime(), recv, real, image);
     }
 
+    /** nucomp_canonicalization
+     * 
+     */
+    private static boolean canonicalization = false;
+    public static void setCanonicalization(boolean canonical) {
+        canonicalization = canonical;
+    }
+
     /** nucomp_real_check (might go to bimorphic)
      * 
      */
@@ -291,7 +299,6 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     private static final boolean CL_CANON = Numeric.CANON;
-    private static boolean canonicalization = false;
     private static IRubyObject canonicalizeInternal(ThreadContext context, IRubyObject clazz, IRubyObject real, IRubyObject image) {
         if (Numeric.CANON) {
             if (f_zero_p(context, image) &&
