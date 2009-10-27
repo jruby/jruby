@@ -89,6 +89,10 @@ module TestDigest
       Data1 => "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
       Data2 => "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
     }
+
+    def test_sha2 
+      assert_equal(Digest::SHA256.new,Digest::SHA2.new)
+    end
   end
 
   class TestSHA384 < Test::Unit::TestCase
