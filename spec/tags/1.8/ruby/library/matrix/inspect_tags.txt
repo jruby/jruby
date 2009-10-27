@@ -1,0 +1,1 @@
+fails(JRUBY-4176):Matrix#inspect returns 'Matrix.empty(...)' for empty matrices

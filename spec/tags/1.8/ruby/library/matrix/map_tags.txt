@@ -1,0 +1,1 @@
+fails(JRUBY-4176):Matrix#map returns an enumerator if no block is given

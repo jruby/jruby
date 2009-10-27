@@ -1,1 +1,3 @@
 fails(JRUBY-3716):Matrix#column returns nil when out of bounds
+fails(JRUBY-4176):Matrix#column returns self when called with a block
+fails(JRUBY-4176):Matrix#column never yields when out of bounds
