@@ -56,7 +56,7 @@ import org.jruby.util.ByteList;
  *
  * @author  jvoegele
  */
-@JRubyClass(name="Dir", include="Enumerable")
+@JRubyClass(name = "Dir", include = "Enumerable")
 public class RubyDir extends RubyObject {
     private RubyString path;       // What we passed to the constructor for method 'path'
     protected JRubyFile dir;
@@ -67,7 +67,7 @@ public class RubyDir extends RubyObject {
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
-    
+
     private static final ObjectAllocator DIR_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyDir(runtime, klass);
@@ -83,14 +83,14 @@ public class RubyDir extends RubyObject {
 
         return dirClass;
     }
-    
+
     private final void checkDir() {
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: operation on untainted Dir");
-     
+        if (!isTaint() && getRuntime().getSafeLevel() >= 4)throw getRuntime().newSecurityError("Insecure: operation on untainted Dir");
+
         testFrozen("Dir");
-        
+
         if (!isOpen) throw getRuntime().newIOError("closed directory");
-    }    
+    }
 
     /**
      * Creates a new <code>Dir</code>.  This method takes a snapshot of the
@@ -112,7 +112,7 @@ public class RubyDir extends RubyObject {
 
         List<String> snapshotList = RubyDir.getEntries(getRuntime(), adjustedPath);
         snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
-	
+
         return this;
     }
 
@@ -120,37 +120,37 @@ public class RubyDir extends RubyObject {
     
     private static List<ByteList> dirGlobs(String cwd, IRubyObject[] args, int flags) {
         List<ByteList> dirs = new ArrayList<ByteList>();
-        
+
         for (int i = 0; i < args.length; i++) {
             ByteList globPattern = args[i].convertToString().getByteList();
             dirs.addAll(Dir.push_glob(cwd, globPattern, flags));
         }
-        
+
         return dirs;
     }
-    
+
     private static IRubyObject asRubyStringList(Ruby runtime, List<ByteList> dirs) {
         List<RubyString> allFiles = new ArrayList<RubyString>();
 
-        for (ByteList dir: dirs) {
+        for (ByteList dir : dirs) {
             allFiles.add(RubyString.newString(runtime, dir));
-        }            
+        }
 
         IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
         allFiles.toArray(tempFileList);
-         
+
         return runtime.newArrayNoCopy(tempFileList);
     }
-    
+
     private static String getCWD(Ruby runtime) {
         try {
             return new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
-        } catch(Exception e) {
+        } catch (Exception e) {
             return runtime.getCurrentDirectory();
         }
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest=true, meta = true)
+    @JRubyMethod(name = "[]", required = 1, rest = true, meta = true)
     public static IRubyObject aref(IRubyObject recv, IRubyObject[] args) {
         List<ByteList> dirs;
         if (args.length == 1) {
@@ -162,7 +162,7 @@ public class RubyDir extends RubyObject {
 
         return asRubyStringList(recv.getRuntime(), dirs);
     }
-    
+
     /**
      * Returns an array of filenames matching the specified wildcard pattern
      * <code>pat</code>. If a block is given, the array is iterated internally
@@ -172,7 +172,7 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "glob", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
-        int flags = args.length == 2 ?  RubyNumeric.num2int(args[1]) : 0;
+        int flags = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;
 
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
@@ -182,12 +182,12 @@ public class RubyDir extends RubyObject {
         } else {
             dirs = dirGlobs(getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
         }
-        
+
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
                 block.yield(context, RubyString.newString(runtime, dirs.get(i)));
             }
-        
+
             return runtime.getNil();
         }
 
@@ -201,7 +201,7 @@ public class RubyDir extends RubyObject {
     public RubyArray entries() {
         return getRuntime().newArrayNoCopy(JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
     }
-    
+
     /**
      * Returns an array containing all of the filenames in the given directory.
      */
@@ -227,7 +227,7 @@ public class RubyDir extends RubyObject {
         if (!RubyFileTest.directory_p(runtime, RubyString.newString(runtime, path)).isTrue()) {
             throw runtime.newErrnoENOENTError("No such directory");
         }
-        
+
         if (path.startsWith("file:")) return entriesIntoAJarFile(runtime, path);
 
         return entriesIntoADirectory(runtime, path);
@@ -249,12 +249,12 @@ public class RubyDir extends RubyObject {
         List<String> fileList = new ArrayList<String>();
         for (ByteList file : dirs) {
             String[] split = file.toString().split("/");
-            fileList.add(split[split.length -1]);
-         }
+            fileList.add(split[split.length - 1]);
+        }
 
         return fileList;
     }
-    
+
     // MRI behavior: just plain '//' or '\\\\' are considered illegal on Windows.
     private static void checkDirIsTwoSlashesOnWindows(Ruby runtime, String path) {
         if (Platform.IS_WINDOWS && ("//".equals(path) || "\\\\".equals(path))) {
@@ -273,7 +273,7 @@ public class RubyDir extends RubyObject {
         JRubyFile dir = getDir(runtime, adjustedPath, true);
         String realPath = null;
         String oldCwd = runtime.getCurrentDirectory();
-        
+
         // We get canonical path to try and flatten the path out.
         // a dir '/subdir/..' should return as '/'
         // cnutter: Do we want to flatten path out?
@@ -282,10 +282,10 @@ public class RubyDir extends RubyObject {
         } catch (IOException e) {
             realPath = dir.getAbsolutePath();
         }
-        
+
         IRubyObject result = null;
         if (block.isGiven()) {
-        	// FIXME: Don't allow multiple threads to do this at once
+            // FIXME: Don't allow multiple threads to do this at once
             runtime.setCurrentDirectory(realPath);
             try {
                 result = block.yield(context, path);
@@ -294,10 +294,10 @@ public class RubyDir extends RubyObject {
                 runtime.setCurrentDirectory(oldCwd);
             }
         } else {
-        	runtime.setCurrentDirectory(realPath);
-        	result = runtime.newFixnum(0);
+            runtime.setCurrentDirectory(realPath);
+            result = runtime.newFixnum(0);
         }
-        
+
         return result;
     }
 
@@ -318,7 +318,7 @@ public class RubyDir extends RubyObject {
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
         return rmdirCommon(recv.getRuntime(), path.convertToString().getUnicodeValue());
     }
-    
+
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
         return rmdirCommon(context.getRuntime(), getPath19(context, path));
@@ -341,14 +341,14 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "foreach", frame = true, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject foreach(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
         RubyString pathString = _path.convertToString();
-        
+
         return foreachCommon(context, recv, context.getRuntime(), pathString, block);
     }
 
     @JRubyMethod(name = "foreach", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
         RubyString pathString = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
-            
+
         return foreachCommon(context, recv, context.getRuntime(), pathString, block);
     }
 
@@ -357,11 +357,11 @@ public class RubyDir extends RubyObject {
             runtime.checkSafeString(_path);
 
             RubyClass dirClass = runtime.getDir();
-            RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[] { _path }, block);
+            RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[]{_path}, block);
 
             dir.each(context, block);
             return runtime.getNil();
-        } 
+        }
 
         return enumeratorize(runtime, recv, "foreach", _path);
     }
@@ -375,6 +375,16 @@ public class RubyDir extends RubyObject {
     }
 
     /**
+     * Returns the home directory of the current user or the named user if given.
+     */
+    @JRubyMethod(name = "home", optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        if (args.length > 0) return getHomeDirectoryPath(context, args[0].toString());
+
+        return getHomeDirectoryPath(context);
+    }
+
+    /**
      * Creates the directory specified by <code>path</code>.  Note that the
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
@@ -383,8 +393,8 @@ public class RubyDir extends RubyObject {
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         runtime.checkSafeString(args[0]);
-        
-        String path= args[0].convertToString().getUnicodeValue();
+
+        String path = args[0].convertToString().getUnicodeValue();
 
         return mkdirCommon(runtime, path, args);
     }
@@ -419,8 +429,8 @@ public class RubyDir extends RubyObject {
         RubyDir directory = (RubyDir) context.getRuntime().getDir().newInstance(context,
                 new IRubyObject[]{path}, Block.NULL_BLOCK);
 
-        if (!block.isGiven()) return directory;
-        
+        if (!block.isGiven())return directory;
+
         try {
             return block.yield(context, directory);
         } finally {
@@ -435,7 +445,6 @@ public class RubyDir extends RubyObject {
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
-
     /**
      * Closes the directory stream.
      */
@@ -443,7 +452,7 @@ public class RubyDir extends RubyObject {
     public IRubyObject close() {
         // Make sure any read()s after close fail.
         checkDir();
-        
+
         isOpen = false;
 
         return getRuntime().getNil();
@@ -454,12 +463,12 @@ public class RubyDir extends RubyObject {
      */
     public IRubyObject each(ThreadContext context, Block block) {
         checkDir();
-        
+
         String[] contents = snapshot;
-        for (pos=0; pos<contents.length; pos++) {
+        for (pos = 0; pos < contents.length; pos++) {
             block.yield(context, getRuntime().newString(contents[pos]));
         }
-        
+
         return this;
     }
 
@@ -495,11 +504,11 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "seek", required = 1)
     public IRubyObject seek(IRubyObject newPos) {
         checkDir();
-        
+
         set_pos(newPos);
         return this;
     }
-    
+
     @JRubyMethod(name = "pos=", required = 1)
     public IRubyObject set_pos(IRubyObject newPos) {
         this.pos = RubyNumeric.fix2int(newPos);
@@ -543,7 +552,6 @@ public class RubyDir extends RubyObject {
     }
 
 // ----- Helper Methods --------------------------------------------------------
-
     protected static String getPath19(ThreadContext context, IRubyObject arg) {
         RubyString pathObject = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
         return pathObject.getUnicodeValue();
@@ -557,7 +565,7 @@ public class RubyDir extends RubyObject {
      * @throws  IOError if <code>path</code> is not a directory.
      */
     protected static JRubyFile getDir(final Ruby runtime, final String path, final boolean mustExist) {
-        JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(),path);
+        JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(), path);
         if (mustExist && !result.exists()) {
             throw runtime.newErrnoENOENTError("No such file or directory - " + path);
         }
@@ -583,7 +591,7 @@ public class RubyDir extends RubyObject {
         // If an IO exception occurs (something odd, but possible)
         // A directory may return null.
         if (contents != null) {
-            for (int i=0; i<contents.length; i++) {
+            for (int i = 0; i < contents.length; i++) {
                 result.add(contents[i]);
             }
         }
@@ -597,13 +605,13 @@ public class RubyDir extends RubyObject {
     protected static List<RubyString> getContents(File directory, Ruby runtime) {
         List<RubyString> result = new ArrayList<RubyString>();
         String[] contents = directory.list();
-        
+
         for (int i = 0; i < contents.length; i++) {
             result.add(runtime.newString(contents[i]));
         }
         return result;
     }
-	
+
     /**
      * Returns the home directory of the specified <code>user</code> on the
      * system. If the home directory of the specified user cannot be found,
@@ -618,7 +626,7 @@ public class RubyDir extends RubyObject {
          *       use /etc/passwd for regular user accounts
          */
         Ruby runtime = context.getRuntime();
-        
+
         try {
             // try to use POSIX for this first
             return runtime.newString(runtime.getPosix().getpwnam(user).getHome());
