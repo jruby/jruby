@@ -39,7 +39,7 @@ Object.const_set(:BASE_DIR, Dir.pwd)
 File.open("default.build.properties") do |props|
   props.each_line do |line|
     # skip comments
-    next if line =~ /^\W*#/
+    next if line =~ /(^\W*#|^$)/
     
     # build const name
     name, value = line.split("=")
