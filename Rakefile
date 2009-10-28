@@ -1,5 +1,6 @@
 # FIXME: Move into helper file somewhere for checksum methods
-require 'digest'
+require 'digest/md5'
+require 'digest/sha1'
 
 class HashTask < Struct.new(:hash, :file)
   BUF = 100 * 1024 
