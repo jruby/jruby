@@ -49,6 +49,7 @@ import static org.junit.Assert.*;
  */
 public class MultipleScriptsRunnerTest {
     List<String> loadPaths;
+    List<String> ruby19loadPaths;
     String basedir = System.getProperty("user.dir");
 
     public MultipleScriptsRunnerTest() {
@@ -75,6 +76,14 @@ public class MultipleScriptsRunnerTest {
             basedir
         };
         loadPaths = Arrays.asList(paths);
+        paths = new String[] {
+            basedir + "/lib/ruby/1.9",
+            basedir + "/lib/ruby/site_ruby/shared",
+            basedir + "/lib/ruby/1.9/rdoc",
+            basedir + "/test",
+            basedir
+        };
+        ruby19loadPaths = Arrays.asList(paths);
     }
 
     @After
@@ -158,6 +167,12 @@ public class MultipleScriptsRunnerTest {
         for (File file : files) {
             if (file.isFile()) {
                 String filename = file.getName();
+                if (!filename.endsWith("rb")) {
+                    continue;
+                }
+                if (!is19Testable(filename)) {
+                    continue;
+                }
                 if (filename.contains("1_9")) {
                     list.add(filename);
                 }
@@ -169,18 +184,22 @@ public class MultipleScriptsRunnerTest {
         return list;
     }
 
+    private boolean is19Testable(String filename) {
+        String[] skipList = {
+            "test_io_1_9.rb",
+        };
+        for (int i = 0; i < skipList.length; i++) {
+            if (filename.equals(skipList[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     
     @Test
     public void testRuby19Script() throws FileNotFoundException {
         System.out.println("[ruby 1.9 script]");
-        String[] paths = {
-            basedir + "/lib/ruby/1.9",
-            basedir + "/lib/ruby/site_ruby/shared",
-            basedir + "/lib/ruby/1.9/rdoc",
-            basedir + "/test",
-            basedir
-        };
-        List<String> ruby19Paths = Arrays.asList(paths);
         ScriptingContainer instance = null;
         List<String> ruby19names = getRuby19Names(basedir + "/test");
         Iterator itr = ruby19names.iterator();
@@ -189,7 +208,7 @@ public class MultipleScriptsRunnerTest {
             System.out.println("\n[" + testname + "]");
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-                instance.getProvider().setLoadPaths(ruby19Paths);
+                instance.getProvider().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.runScriptlet(PathType.CLASSPATH, testname);
             } catch (Throwable t) {
@@ -219,6 +238,28 @@ public class MultipleScriptsRunnerTest {
 
             instance.getVarMap().clear();
             instance = null;
+        }
+    }
+
+    @Test
+    public void test19ByAbsolutePath() throws FileNotFoundException {
+        String[] testnames = {
+            "test_io_1_9.rb"
+        };
+        for (int i=0; i<testnames.length; i++) {
+            System.out.println("[" + testnames[i] + "]");
+            String testname = basedir + "/test/" + testnames[i];
+            ScriptingContainer instance;
+            try {
+                instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+                instance.getProvider().setLoadPaths(ruby19loadPaths);
+                instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
+                instance.runScriptlet(PathType.ABSOLUTE, testname);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            } finally {
+                instance = null;
+            }
         }
     }
 }
