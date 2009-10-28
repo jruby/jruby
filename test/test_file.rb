@@ -880,7 +880,37 @@ class TestFile < Test::Unit::TestCase
       }
       assert_equal(100, File.size(filename))
       assert_equal(100, File.stat(filename).size)
+      assert_equal(100, File.stat(filename).size?)
+      assert_match(/\ssize=100,/, File.stat(filename).inspect)
       assert_equal(100, File::Stat.new(filename).size)
+      assert_equal(100, File::Stat.new(filename).size?)
+      assert_match(/\ssize=100,/, File::Stat.new(filename).inspect)
+    ensure
+      File.unlink(filename)
+    end
+  end
+
+  # JRUBY-4149
+  def test_open_file_sizes
+    filename = '100_bytes.bin'
+    begin
+      File.open(filename, 'wb+') { |f|
+        f.write('0' * 100)
+        f.flush; f.flush
+
+        assert_equal(100, f.stat.size)
+        assert_equal(100, f.stat.size?)
+        assert_match(/\ssize=100,/, f.stat.inspect)
+
+        assert_equal(100, File.size(filename))
+        assert_equal(100, File.stat(filename).size)
+        assert_equal(100, File.stat(filename).size?)
+        assert_match(/\ssize=100,/, File.stat(filename).inspect)
+
+        assert_equal(100, File::Stat.new(filename).size)
+        assert_equal(100, File::Stat.new(filename).size?)
+        assert_match(/\ssize=100,/, File::Stat.new(filename).inspect)
+      }
     ensure
       File.unlink(filename)
     end

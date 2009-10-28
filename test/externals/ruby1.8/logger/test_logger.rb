@@ -307,8 +307,6 @@ class TestLogDevice < Test::Unit::TestCase
     r.close
   end
 
-  # FIXME, fails under Windows due to JRUBY-4073
-  unless WINDOWS
   def test_shifting_size
     logfile = File.basename(__FILE__) + '_1.log'
     logfile0 = logfile + '.0'
@@ -377,6 +375,5 @@ class TestLogDevice < Test::Unit::TestCase
     File.unlink(logfile0)
     File.unlink(logfile1)
     File.unlink(logfile2)
-  end
   end
 end
