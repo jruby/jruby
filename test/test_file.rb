@@ -878,6 +878,51 @@ class TestFile < Test::Unit::TestCase
     assert_equal(size, File.size(File.new('build.xml')))
   end
 
+  # JRUBY-4073
+  def test_file_sizes
+    filename = '100_bytes.bin'
+    begin
+      File.open(filename, 'wb+') { |f|
+        f.write('0' * 100)
+      }
+      assert_equal(100, File.size(filename))
+      assert_equal(100, File.stat(filename).size)
+      assert_equal(100, File.stat(filename).size?)
+      assert_match(/\ssize=100,/, File.stat(filename).inspect)
+      assert_equal(100, File::Stat.new(filename).size)
+      assert_equal(100, File::Stat.new(filename).size?)
+      assert_match(/\ssize=100,/, File::Stat.new(filename).inspect)
+    ensure
+      File.unlink(filename)
+    end
+  end
+
+  # JRUBY-4149
+  def test_open_file_sizes
+    filename = '100_bytes.bin'
+    begin
+      File.open(filename, 'wb+') { |f|
+        f.write('0' * 100)
+        f.flush; f.flush
+
+        assert_equal(100, f.stat.size)
+        assert_equal(100, f.stat.size?)
+        assert_match(/\ssize=100,/, f.stat.inspect)
+
+        assert_equal(100, File.size(filename))
+        assert_equal(100, File.stat(filename).size)
+        assert_equal(100, File.stat(filename).size?)
+        assert_match(/\ssize=100,/, File.stat(filename).inspect)
+
+        assert_equal(100, File::Stat.new(filename).size)
+        assert_equal(100, File::Stat.new(filename).size?)
+        assert_match(/\ssize=100,/, File::Stat.new(filename).inspect)
+      }
+    ensure
+      File.unlink(filename)
+    end
+  end
+
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception
   def test_file_url
     path = File.expand_path(__FILE__)

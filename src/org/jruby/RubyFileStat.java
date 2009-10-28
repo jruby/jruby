@@ -35,8 +35,8 @@ package org.jruby;
 
 import java.io.FileDescriptor;
 
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.posix.FileStat;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
@@ -249,7 +249,7 @@ public class RubyFileStat extends RubyObject {
         try { buf.append("uid=").append(stat.uid()).append(", "); } catch (Exception e) {}
         try { buf.append("gid=").append(stat.gid()).append(", "); } catch (Exception e) {}
         try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())).append(", "); } catch (Exception e) {}
-        buf.append("size=").append(stat.st_size()).append(", ");
+        buf.append("size=").append(sizeInternal()).append(", ");
         try { buf.append("blksize=").append(stat.blockSize()).append(", "); } catch (Exception e) {}
         try { buf.append("blocks=").append(stat.blocks()).append(", "); } catch (Exception e) {}
         
@@ -338,14 +338,27 @@ public class RubyFileStat extends RubyObject {
         return getRuntime().newBoolean(stat.isSetuid());
     }
 
+    private long sizeInternal() {
+        // Workaround for JRUBY-4149
+        if (Platform.IS_WINDOWS && file != null) {
+            try {
+                return file.length();
+            } catch (SecurityException ex) {
+                return 0L;
+            }
+        } else {
+            return stat.st_size();
+        }
+    }
+
     @JRubyMethod(name = "size")
     public IRubyObject size() {
-        return getRuntime().newFixnum(stat.st_size());
+        return getRuntime().newFixnum(sizeInternal());
     }
     
     @JRubyMethod(name = "size?")
     public IRubyObject size_p() {
-        long size = stat.st_size();
+        long size = sizeInternal();
         
         if (size == 0) return getRuntime().getNil();
         
