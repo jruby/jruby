@@ -32,9 +32,13 @@ public class FrameLoadPlacementNode extends FlowGraphNode
 
     public void buildDataFlowVars(IR_Instr i)
     {
+        FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem)_prob;
+        for (Variable v: i.getUsedVariables())
+            flp.recordUsedVar(v);
+
         Variable v = i.getResult();
         if (v != null)
-            ((FrameLoadPlacementProblem)_prob).recordDefVar(v);
+            flp.recordDefVar(v);
     }
 
     public void initSolnForNode() 
@@ -45,7 +49,11 @@ public class FrameLoadPlacementNode extends FlowGraphNode
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
     {
-        // Intersection of predecessor load sets
+        // We have to take a union of all load sets of flow graph predecessors -- but that can lead
+        // to useless loads on *all* paths based on loads being required on *some* paths.
+        //
+        // So, take an intersection instead -- but, while adding loads, we have to add the missing
+        // loads on individual execution paths -- see addLoads in FrameLoadPlacementProblem 
         _inReqdLoads.retainAll(((FrameLoadPlacementNode)pred)._outReqdLoads);
     }
 
@@ -112,10 +120,11 @@ public class FrameLoadPlacementNode extends FlowGraphNode
     {
         FrameLoadPlacementProblem flp    = (FrameLoadPlacementProblem)_prob;
         IR_ExecutionScope         s      = flp.getCFG().getScope();
-        ListIterator<IR_Instr>    instrs = _bb.getInstrs().listIterator();
+        List<IR_Instr>            instrs = _bb.getInstrs();
+        ListIterator<IR_Instr>    it     = instrs.listIterator(instrs.size());
         Set<Variable>             reqdLoads = new HashSet<Variable>(_inReqdLoads);
-        while (instrs.hasNext()) {
-            IR_Instr i = instrs.next();
+        while (it.hasPrevious()) {
+            IR_Instr i = it.previous();
             if (i instanceof CALL_Instr) {
                 CALL_Instr call = (CALL_Instr)i;
                 Operand o = call.getClosureArg();
@@ -126,12 +135,15 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                         // Only those variables that are defined in the closure, and are in the required loads set 
                         // will need to be loaded from the frame after the call!
                         Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
+                        it.next();
                         for (Variable v: reqdLoads) {
                             if (cl_flp.scopeDefinesVariable(v)) {
-                                instrs.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                                it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                                it.previous();
                                 newReqdLoads.remove(v);
                             }
                         }
+                        it.previous();
                         reqdLoads = newReqdLoads;
                     }
 
@@ -139,8 +151,12 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                     ((FrameLoadPlacementProblem)cl_cfg.getDataFlowSolution(flp.getName())).addLoads();
                 }
                 else if (call.usesCallersFrame()) {
-                    for (Variable v: reqdLoads)
-                        instrs.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                    it.next();
+                    for (Variable v: reqdLoads) {
+                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                        it.previous();
+                    }
+                    it.previous();
                     reqdLoads.clear();
                 }
             }
@@ -148,10 +164,23 @@ public class FrameLoadPlacementNode extends FlowGraphNode
             Variable v = i.getResult();
             if (v != null)
                 reqdLoads.add(v);
+
+            // The variables used as arguments will need to be loaded
+            for (Variable x: i.getUsedVariables())
+                reqdLoads.add(x);
+        }
+
+        // Load first use of variables in closures
+        if ((s instanceof IR_Closure) && (_bb == _prob.getCFG().getEntryBB())) {
+            for (Variable v: _outReqdLoads) {
+                if (flp.scopeUsesVariable(v)) {
+                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                }
+            }
         }
     }
 
 /* ---------- Private fields, methods --------- */
-    private Set<Variable> _inReqdLoads;     // On entry to flow graph node:  Variables that need to be loaded from the heap frame
-    private Set<Variable> _outReqdLoads;    // On exit from flow graph node: Variables that need to be loaded from the heap frame
+    Set<Variable> _inReqdLoads;     // On entry to flow graph node:  Variables that need to be loaded from the heap frame
+    Set<Variable> _outReqdLoads;    // On exit from flow graph node: Variables that need to be loaded from the heap frame
 }

@@ -5,8 +5,8 @@ import org.jruby.compiler.ir.operands.StringLiteral;
 
 public class IR_Script extends IR_ScopeImpl
 {
-    public final String    _fileName;    // SSS FIXME: Should this be a string literal or a string?
-    public final IR_Class  _dummyClass;  // Dummy class for the script
+    public final String   _fileName;    // SSS FIXME: Should this be a string literal or a string?
+    public final IR_Class _dummyClass;  // Dummy class for the script
 
     public IR_Script(String className, String sourceName)
     {

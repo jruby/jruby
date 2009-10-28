@@ -103,8 +103,8 @@ public class CALL_Instr extends MultiOperandInstr
             return (!(_methAddr instanceof MethAddr) || ((MethAddr)_methAddr).getName().equals("call"));
         }
         else {
-            Operand    r  = getReceiver(); 
-            IR_Method  rm = getTargetMethodWithReceiver(r);
+            Operand   r  = getReceiver(); 
+            IR_Method rm = getTargetMethodWithReceiver(r);
             if ((rm == null) || rm.canAccessAllOfCallersLocalVariables()) {
                 // We are in deep doo-doo -- we have to store/load all of this method's local variables onto a heap frame
                 // (which means we need to allocate sufficient space for all of them on the heap frame).

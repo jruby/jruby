@@ -46,6 +46,8 @@ abstract public class FlowGraphNode
     /** After meet has been performed, do some more logic. */
     public void finalizeSolnForNode() {};
 
+    public BasicBlock getBB() { return _bb; }
+
     /** Builds the data-flow variables (or facts) for a particular node.
         Need only create the DF_Var for them to be added to the  problem. 
         Goes over the instructions in this basic block and collect 
@@ -101,7 +103,7 @@ abstract public class FlowGraphNode
         }
     }
 
-/* --------- Protected fields/methods below --------- */
+/* --------- protected fields/methods below --------- */
     protected DataFlowProblem _prob;   // Dataflow problem with which this node is associated
     protected BasicBlock _bb;          // CFG node for which this node contains info.
 }

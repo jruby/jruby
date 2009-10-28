@@ -248,15 +248,19 @@ public abstract class IR_ScopeImpl implements IR_Scope
         //
     public Operand getConstantValue(String constRef)
     {
-        // System.out.println("Looking in " + this + " for constant: " + constRef);
+//        System.out.println("Looking in " + this + " for constant: " + constRef);
         Operand cv = _constMap.get(constRef);
         Operand p  = _parent;
         // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the parent is a static scope
         if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
             // Can be null for IR_Script meta objects
-            // SSS FIXME: But why build it in that case?  Investigate!
-            if (((MetaObject)p)._scope == null)
+            if (((MetaObject)p)._scope == null) {
+//                System.out.println("Looking for core class: " + constRef);
+                IR_Class coreClass = IR_Module.getCoreClass(constRef);
+                if (coreClass != null)
+                    return new MetaObject(coreClass);
                 return null;
+            }
             cv = ((MetaObject)p)._scope.getConstantValue(constRef);
         }
 

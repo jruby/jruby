@@ -10,10 +10,11 @@ import org.jruby.compiler.ir.representations.CFG;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Set;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class LiveVariablesProblem extends DataFlowProblem
 {
@@ -43,7 +44,7 @@ public class LiveVariablesProblem extends DataFlowProblem
      *
      * In the code snippet above, 'sum' is live on exit from the closure.
      **/
-    public void initVarsLiveOnExit(List<Variable> vars) { _varsLiveOnExit = vars; }
+    public void initVarsLiveOnExit(Collection<Variable> vars) { _varsLiveOnExit = vars; }
 
     /**
      * Get variables that are live on entry to the cfg.
@@ -96,7 +97,7 @@ public class LiveVariablesProblem extends DataFlowProblem
             ((LiveVariableNode)n).markDeadInstructions();
     }
 
-    public List<Variable> getVarsLiveOnExit()
+    public Collection<Variable> getVarsLiveOnExit()
     {
         return _varsLiveOnExit;
     }
@@ -111,9 +112,14 @@ public class LiveVariablesProblem extends DataFlowProblem
         return _udVars;
     }
 
+    public Set<Variable> getAllVars()
+    {
+        return _dfVarMap.keySet();
+    }
+
 /* ----------- Private Interface ------------ */
     private HashMap<Variable, DataFlowVar> _dfVarMap    = new HashMap<Variable, DataFlowVar>();
     private HashMap<Integer, Variable> _varDfVarMap = new HashMap<Integer, Variable>();
-    private List<Variable> _varsLiveOnExit;
+    private Collection<Variable> _varsLiveOnExit;
     private Set<Variable> _udVars;
 }

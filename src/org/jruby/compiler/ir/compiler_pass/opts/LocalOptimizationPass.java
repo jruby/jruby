@@ -40,6 +40,10 @@ public class LocalOptimizationPass implements CompilerPass
     {
         if (s instanceof IR_ExecutionScope)
             runLocalOpts((IR_ExecutionScope)s);
+
+        // After running local opts, set various method flags!
+        if (s instanceof IR_Method)
+            ((IR_Method)s).computeMethodFlags();
     }
 
     private static void runLocalOpts(IR_ExecutionScope s)

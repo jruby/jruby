@@ -64,6 +64,16 @@ public class IR_Method extends IR_ExecutionScope
      * **************************************************************************** */
     private boolean _canModifyCode;
 
+    /* ****************************************************************************
+     * Does this method require a heap frame?  This is yes if:
+     * - calls 'Proc.new'
+     * - calls 'eval' method
+     * - calls the 'call' method (could be a call on a stored block which could be local!)
+     * - calls methods that can access the callers heap frame
+     * - calls a method which we cannot resolve now!
+     * **************************************************************************** */
+    private boolean _requiresFrame;
+
     public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, boolean isInstanceMethod) {
         super(parent, lexicalParent);
         _name = name;
@@ -74,6 +84,61 @@ public class IR_Method extends IR_ExecutionScope
         _token = CodeVersion.getVersionToken();
         _canModifyCode = true;
         _canCaptureCallersClosure = false;
+        _requiresFrame = false;
+    }
+
+    public void computeMethodFlags()
+    {
+        // init
+        _canModifyCode = true;
+        _canCaptureCallersClosure = false;
+        _requiresFrame = false;
+
+        // recompute
+        for (IR_Instr i: getInstrs()) {
+            if (i instanceof RECV_CLOSURE_Instr)
+                _canCaptureCallersClosure = true;
+
+            // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
+            if (i instanceof RUBY_INTERNALS_CALL_Instr) {
+                if (((CALL_Instr)i).getMethodAddr() == MethAddr.ZSUPER)
+                    _canCaptureCallersClosure = true;
+            }
+
+            if (i instanceof CALL_Instr) {
+                CALL_Instr call = (CALL_Instr)i;
+                if (call.usesCallersFrame()) {
+                    _requiresFrame = true;
+                }
+                else {
+                    Operand ma = call.getMethodAddr();
+                    if (ma instanceof MethAddr) {
+                        String mname = ((MethAddr)ma).getName();
+                        // Calls to 'call' and 'eval'
+                        if (mname.equals("call") || mname.equals("eval")) {
+                            _requiresFrame = true;
+                        }
+                        // Proc.new
+                        else if (mname.equals("new")) {
+                            Operand receiver = call.getReceiver();
+                            if (receiver instanceof MetaObject) {
+                                IR_Scope c = ((MetaObject)receiver)._scope;
+                                if ((c instanceof IR_Class) && (((IR_Class)c)._name.equals("Proc")))
+                                    _requiresFrame = true;
+                            }
+                            // Unknown receiver -- could be Proc!!
+                            else {
+                                _requiresFrame = true;
+                            }
+                        }
+                    }
+                    // Unknown method -- could be send, eval, call, new ...
+                    else {
+                        _requiresFrame = true;
+                    }
+                }
+            }
+        }
     }
 
     public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, String javaName, boolean isInstanceMethod) {
@@ -84,15 +149,6 @@ public class IR_Method extends IR_ExecutionScope
         // Accumulate call arguments
         if (i instanceof RECV_ARG_Instr)
             _callArgs.add(i._result);
-
-        if (i instanceof RECV_CLOSURE_Instr)
-            _canCaptureCallersClosure = true;
-
-        // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
-        if (i instanceof RUBY_INTERNALS_CALL_Instr) {
-            if (((CALL_Instr)i).getMethodAddr() == MethAddr.ZSUPER)
-                _canCaptureCallersClosure = true;
-        }
 
         super.addInstr(i);
     }
@@ -121,8 +177,7 @@ public class IR_Method extends IR_ExecutionScope
     }
 
     public boolean requiresFrame() {
-        // SSS FIXME: Wrong!  Temporary hack to get code to compile
-        return canAccessAllOfCallersLocalVariables();
+        return _requiresFrame;
     }
 
     public boolean canAccessAllOfCallersLocalVariables() {

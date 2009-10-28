@@ -63,13 +63,14 @@ public enum Operation
 
     Operation(OpType t) { _type = t; }
 
-    public boolean isALU()    { return _type == OpType.alu_op; }
-    public boolean isBranch() { return _type == OpType.branch_op; }
-    public boolean isLoad()   { return _type == OpType.load_op; }
-    public boolean isStore()  { return _type == OpType.store_op; }
-    public boolean isCall()   { return _type == OpType.call_op; }
-    public boolean isEval()   { return _type == OpType.eval_op; }
-    public boolean isReturn() { return _type == OpType.ret_op; }
+    public boolean isALU()        { return _type == OpType.alu_op; }
+    public boolean isBranch()     { return _type == OpType.branch_op; }
+    public boolean isLoad()       { return _type == OpType.load_op; }
+    public boolean isStore()      { return _type == OpType.store_op; }
+    public boolean isCall()       { return _type == OpType.call_op; }
+    public boolean isEval()       { return _type == OpType.eval_op; }
+    public boolean isReturn()     { return _type == OpType.ret_op; }
+    public boolean isArgReceive() { return _type == OpType.recv_arg_op; }
 
     public boolean startsBasicBlock() { return this == LABEL; }
     public boolean endsBasicBlock() { return isBranch() || isReturn(); }

@@ -8,6 +8,7 @@ import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.ALLOC_FRAME_Instr;
 import org.jruby.compiler.ir.instructions.STORE_TO_FRAME_Instr;
+import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -34,11 +35,11 @@ public class FrameStorePlacementNode extends FlowGraphNode
     { 
         FrameStorePlacementProblem fsp = (FrameStorePlacementProblem)_prob;
         for (Variable v: i.getUsedVariables())
-            fsp.recordUseDefVar(v);
+            fsp.recordUsedVar(v);
 
         Variable v = i.getResult();
         if (v != null)
-            fsp.recordUseDefVar(v);
+            fsp.recordDefVar(v);
     }
 
     public void initSolnForNode() 
@@ -50,6 +51,11 @@ public class FrameStorePlacementNode extends FlowGraphNode
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
     {
         // Intersection of predecessor store sets
+        // We have to take a union of all store sets of flow graph predecessors -- but that can lead
+        // to useless stores on *all* paths based on stores being required on *some* paths.
+        //
+        // So, take an intersection instead -- but, while adding stores, we have to add the missing
+        // loads on individual execution paths -- see addStores in FrameStorePlacementProblem 
         _inDirtyVars.retainAll(((FrameStorePlacementNode)pred)._outDirtyVars);
     }
 
@@ -72,10 +78,11 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     cl_fsp.compute_MOP_Solution();
                     cl_cfg.setDataFlowSolution(cl_fsp.getName(), cl_fsp);
                     if (call.usesCallersFrame()) {
-                        // Only those variables that are used/defined in the closure, and are in the required stores set 
+                        // Only those variables that are:
+                        // (a) dirty, and
+                        // (b) used/defined in the closure
+                        //     (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                         // will need to be stored into the frame before the call!
-                        // FIXME: Strictly only those vars that are used before being defined need to be stored ... but, that is
-                        // a minor detail!
                         Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                         for (Variable v: dirtyVars) {
                             if (cl_fsp.scopeDefinesOrUsesVariable(v))
@@ -93,6 +100,9 @@ public class FrameStorePlacementNode extends FlowGraphNode
             Variable v = i.getResult();
             if (v != null)
                 dirtyVars.add(v);
+
+            if (i._op.isReturn())
+                dirtyVars.clear();
         }
 
         if (_outDirtyVars.equals(dirtyVars)) {
@@ -124,10 +134,11 @@ public class FrameStorePlacementNode extends FlowGraphNode
                         instrs.previous();
                         instrs.add(new ALLOC_FRAME_Instr(s));
 
-                        // Only those variables that are used/defined in the closure, and are in the required stores set 
+                        // Only those variables that are:
+                        // (a) dirty, and
+                        // (b) used/defined in the closure
+                        //     (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                         // will need to be stored into the frame before the call!
-                        // FIXME: Strictly only those vars that are used before being defined need to be stored ... but, that is
-                        // a minor detail!
                         Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                         for (Variable v: dirtyVars) {
                             if (cl_fsp.scopeDefinesOrUsesVariable(v)) {
@@ -152,6 +163,26 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     dirtyVars.clear();
                 }
             }
+            else if (i instanceof CLOSURE_RETURN_Instr) {
+                // At closure return instructions (which are closure exits), for all variables which are:
+                //
+                //   (a) dirty,
+                //   (b) live on exit from the closure
+                //       condition reqd. because the variable could be dirty but not used outside.
+                //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
+                //       i,j are dirty inside the block, but not used outside
+                //
+                // add a frame store
+
+                LiveVariablesProblem lvp = (LiveVariablesProblem)fsp.getCFG().getDataFlowSolution((new LiveVariablesProblem()).getName());
+                dirtyVars.retainAll(lvp.getVarsLiveOnExit()); // Intersection with variables live on exit from the scope
+
+                instrs.previous();
+                for (Variable v: dirtyVars) {
+                    instrs.add(new STORE_TO_FRAME_Instr(s, v._name, v));
+                }
+                instrs.next();
+            }
 
             Variable v = i.getResult();
             if (v != null)
@@ -159,7 +190,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
         }
     }
 
-/* ---------- Private fields, methods --------- */
-    private Set<Variable> _inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap frame
-    private Set<Variable> _outDirtyVars;    // On exit from flow graph node: Variables that need to be stored to the heap frame
+/* ---------- Package fields, methods --------- */
+    Set<Variable> _inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap frame
+    Set<Variable> _outDirtyVars;    // On exit from flow graph node: Variables that need to be stored to the heap frame
 }

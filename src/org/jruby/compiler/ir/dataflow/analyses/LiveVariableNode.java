@@ -15,6 +15,7 @@ import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -51,7 +52,7 @@ public class LiveVariableNode extends FlowGraphNode
         LiveVariablesProblem p = (LiveVariablesProblem)_prob;
         _tmp = new BitSet(_setSize);
         if (_bb == p.getCFG().getExitBB()) {
-            List<Variable> lv = p.getVarsLiveOnExit();
+            Collection<Variable> lv = p.getVarsLiveOnExit();
             if ((lv != null) && !lv.isEmpty()) {
                 for (Variable v: lv)
                     _tmp.set(p.getDFVar(v)._id);
@@ -66,7 +67,7 @@ public class LiveVariableNode extends FlowGraphNode
         _tmp.or(((LiveVariableNode)pred)._in);
     }
 
-    private LiveVariablesProblem processClosure(IR_Closure cl, List<Variable> liveOnEntry)
+    private LiveVariablesProblem processClosure(IR_Closure cl, Collection<Variable> liveOnEntry)
     {
         CFG c = cl.getCFG();
         LiveVariablesProblem lvp = new LiveVariablesProblem();
@@ -113,7 +114,7 @@ public class LiveVariableNode extends FlowGraphNode
                 if ((o != null) && (o instanceof MetaObject)) {
                     IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
                     if (c.isLVADataflowBarrier()) {
-                        processClosure(cl, new ArrayList<Variable>());
+                        processClosure(cl, lvp.getAllVars());
 
                         // Mark all variables live if 'c' is a dataflow barrier!
     //                    System.out.println(".. call is a data flow barrier ..");
