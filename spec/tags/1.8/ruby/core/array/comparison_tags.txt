@@ -1,1 +1,0 @@
-fails(JRUBY-4175):Array#<=> returns nil when the argument is not array-like

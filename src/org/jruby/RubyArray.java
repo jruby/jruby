@@ -2432,9 +2432,22 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.getRuntime(); 
-        RubyArray ary2 = obj.convertToArray();
+        Ruby runtime = context.getRuntime();
+        IRubyObject ary2 = runtime.getNil();
+        boolean isAnArray = (obj instanceof RubyArray) || obj.getMetaClass().getSuperClass() == runtime.getArray();
 
+        if (!isAnArray && !obj.respondsTo("to_ary")) {
+            return ary2;
+        } else if (!isAnArray) {
+            ary2 = obj.callMethod(context, "to_ary");
+        } else {
+            ary2 = obj.convertToArray();
+        }
+        
+        return cmpCommon(context, runtime, (RubyArray) ary2);
+    }
+
+    private IRubyObject cmpCommon(ThreadContext context, Ruby runtime, RubyArray ary2) {
         if (this == ary2 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
 
         try {
