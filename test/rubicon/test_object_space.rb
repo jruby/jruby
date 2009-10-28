@@ -67,7 +67,7 @@ class TestObjectSpace < Test::Unit::TestCase
 	assert_equal("OK", p.gets.chomp)
       end
     ensure
-      tf.close(true)
+      tf.close(true) rescue nil
     end
   end
 
