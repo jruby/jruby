@@ -846,8 +846,12 @@ class TestFile < Test::Unit::TestCase
       Tempfile.class_eval { alias_method :make_tmpname, :save_make_tmpname }
     end
 
-    t = Tempfile.new "tcttac.jpg", File.dirname(__FILE__)
-    assert t.path =~ /\.jpg$/
+    begin
+      t = Tempfile.new "tcttac.jpg", File.dirname(__FILE__)
+      assert t.path =~ /\.jpg$/
+    ensure
+      t.close
+    end
   end
 
   unless WINDOWS
