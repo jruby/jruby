@@ -382,11 +382,10 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
-        runtime.checkSafeString(args[0]);
-        
-        String path= args[0].convertToString().getUnicodeValue();
+        RubyString stringArg = args[0].convertToString();
+        runtime.checkSafeString(stringArg);
 
-        return mkdirCommon(runtime, path, args);
+        return mkdirCommon(runtime, stringArg.getUnicodeValue(), args);
     }
 
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
