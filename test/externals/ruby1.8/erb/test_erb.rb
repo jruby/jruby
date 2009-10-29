@@ -209,11 +209,13 @@ EOS
 n.times do |i|%>
 %% %%><%%<%= i%><%
 end%>
+%%%
 EOS
     ans = <<EOS
 % 
 % %%><%0
 % %%><%1
+%%
 EOS
     assert_equal(ans, ERB.new(src, nil, '%').result)
   end
@@ -351,29 +353,29 @@ EOS
       assert_equal("(erb):5", $@[0].to_s)
     end
 
-#     src = <<EOS
-# % y = 'Hello'
-# <%- x = "World%%>
-# "-%>
-# <%= x %><%- x = nil -%> 
-# <% raise("lineno") %>
-# EOS
+    src = <<EOS
+% y = 'Hello'
+<%- x = "World%%>
+"-%>
+<%= x %><%- x = nil -%> 
+<% raise("lineno") %>
+EOS
 
-#     erb = ERB.new(src, nil, '-')
-#     begin
-#       erb.result
-#       assert(false)
-#     rescue
-#       assert_equal("(erb):5", $@[0].to_s)
-#     end
+    erb = ERB.new(src, nil, '-')
+    begin
+      erb.result
+      assert(false)
+    rescue
+      assert_equal("(erb):5", $@[0].to_s)
+    end
 
-#     erb = ERB.new(src, nil, '%-')
-#     begin
-#       erb.result
-#       assert(false)
-#     rescue
-#       assert_equal("(erb):5", $@[0].to_s)
-#     end
+    erb = ERB.new(src, nil, '%-')
+    begin
+      erb.result
+      assert(false)
+    rescue
+      assert_equal("(erb):5", $@[0].to_s)
+    end
   end
 
   def test_explicit
@@ -407,6 +409,10 @@ KeepNewLine
 EOS
    assert_equal(ans, ERB.new(src, nil, '-').result)
    assert_equal(ans, ERB.new(src, nil, '-%').result)
+  end
+
+  def test_percent_after_etag
+    assert_equal("1%", @erb.new("<%= 1 %>%", nil, "%").result)
   end
 end
 

@@ -2638,7 +2638,7 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject flatten_bang(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         int level = RubyNumeric.num2int(arg);
-        if (level == 0) return this;
+        if (level == 0) return runtime.getNil();
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten(context, level, result)) {
@@ -3114,7 +3114,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_product
      * 
      */
-    @JRubyMethod(name = "product", rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "product", rest = true)
     public IRubyObject product(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
 
@@ -3183,7 +3183,7 @@ public class RubyArray extends RubyObject implements List {
             block.yield(context, newEmptyArray(runtime));
         } else if (n == 1) {
             for (int i = 0; i < realLength; i++) {
-                block.yield(context, values[begin + i]);
+                block.yield(context, newArray(runtime, values[begin + i]));
             }
         } else if (n >= 0 && realLength >= n) {
             int stack[] = new int[n + 1];

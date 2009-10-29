@@ -72,7 +72,6 @@ class TestTime < Test::Unit::TestCase
     end
   end
 
-  # JRUBY-3498
   def test_at
     assert_equal(100000, Time.at(0.1).usec)
     assert_equal(10000, Time.at(0.01).usec)

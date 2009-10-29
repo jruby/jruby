@@ -245,7 +245,6 @@ class TestHash < Test::Unit::TestCase
     assert_equal('default 99', h1.delete(99) {|i| "default #{i}" })
   end
 
-  # Part of this is broken, see JRUBY-3496
   def test_delete_if
     base = @cls[ 1 => 'one', 2 => false, true => 'true', 'cat' => 99 ]
     h1   = @cls[ 1 => 'one', 2 => false, true => 'true' ]
@@ -636,4 +635,7 @@ class TestHash < Test::Unit::TestCase
     assert_equal([], expected - vals)
   end
 
+  def test_hash_hash
+    assert_equal({0=>2,11=>1}.hash, {11=>1,0=>2}.hash)
+  end
 end

@@ -1,7 +1,6 @@
 require 'test/unit'
 require 'logger'
 require 'tempfile'
-require 'test/test_helper'
 
 
 class TestLoggerSeverity < Test::Unit::TestCase
@@ -22,6 +21,10 @@ class TestLogger < Test::Unit::TestCase
 
   def setup
     @logger = Logger.new(nil)
+  end
+
+  def test_const_progname
+    assert %r!\Alogger\.rb/\S+\z! === Logger::ProgName
   end
 
   class Log
@@ -259,8 +262,6 @@ class TestLogger < Test::Unit::TestCase
 end
 
 class TestLogDevice < Test::Unit::TestCase
-  include TestHelper
-
   def d(log)
     Logger::LogDevice.new(log)
   end

@@ -12,11 +12,18 @@ class TestMarshal < Test::Unit::TestCase
   include MarshalTestLib
 
   def encode(o)
+    # JRuby does not provide GC.stress= or GC.stress methods
+    #stress, GC.stress = GC.stress, true
     Marshal.dump(o)
+  ensure
+    #GC.stress = stress
   end
 
   def decode(s)
+    #stress, GC.stress = GC.stress, true
     Marshal.load(s)
+  ensure
+    #GC.stress = stress
   end
 
   def fact(n)

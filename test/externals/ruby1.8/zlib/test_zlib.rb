@@ -1,4 +1,5 @@
-require 'test/unit'
+require 'test/unit/testsuite'
+require 'test/unit/testcase'
 require 'stringio'
 
 begin

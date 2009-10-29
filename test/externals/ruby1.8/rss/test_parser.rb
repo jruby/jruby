@@ -1,14 +1,4 @@
-begin
-  require "fileutils"
-rescue LoadError
-  module FileUtils
-    module_function
-    def rm_f(target)
-      File.unlink(target)
-    rescue Errno::ENOENT
-    end
-  end
-end
+require "fileutils"
 
 require "rss-testcase"
 
@@ -28,7 +18,7 @@ EOR
       @rss_file = "rss10.rdf"
       File.open(@rss_file, "w") {|f| f.print(@rss10)}
     end
-    
+
     def teardown
       Parser.default_parser = @_default_parser
       FileUtils.rm_f(@rss_file)
@@ -54,6 +44,18 @@ EOR
         end
       else
         assert_nil(RSS::Parser.parse(garbage_rss_file))
+      end
+    end
+
+    def test_parse_tag_includes_hyphen
+      assert_nothing_raised do
+        RSS::Parser.parse(make_RDF(<<-EOR))
+<xCal:x-calconnect-venue xmlns:xCal="urn:ietf:params:xml:ns:xcal" />
+#{make_channel}
+#{make_item}
+#{make_textinput}
+#{make_image}
+EOR
       end
     end
   end

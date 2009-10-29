@@ -105,20 +105,18 @@ class TestIterator < Test::Unit::TestCase
     assert_equal(7, $x.size)
     assert_equal([1, 2, 3, 4, 5, 6, 7], $x)
 
-    # JRuby does not support retry outside of a rescue block
-=begin
-    $done = false
-    $x = []
-    for i in 1 .. 7			# see how retry works in iterator loop
-      if i == 4 and not $done
-	$done = true
-	retry
-      end
-      $x.push(i)
-    end
-    assert_equal(10, $x.size)
-    assert_equal([1, 2, 3, 1, 2, 3, 4, 5, 6, 7], $x)
-=end
+  # JRuby does not support retry outside of rescue
+  #     $done = false
+  #     $x = []
+  #     for i in 1 .. 7     # see how retry works in iterator loop
+  #       if i == 4 and not $done
+  # $done = true
+  # retry
+  #       end
+  #       $x.push(i)
+  #     end
+  #     assert_equal(10, $x.size)
+  #     assert_equal([1, 2, 3, 1, 2, 3, 4, 5, 6, 7], $x)
   end
 
   def test_append_method_to_built_in_class

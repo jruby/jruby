@@ -11,13 +11,8 @@ class TestMethod < Test::Unit::TestCase
 
   class Base
     def foo() :base end
-    def bar() :bar end
-  end
-  module SuperBar
-    def bar() super end
   end
   class Derived < Base
-    include SuperBar
     def foo() :derived end
   end
 
@@ -45,9 +40,14 @@ class TestMethod < Test::Unit::TestCase
     end
   end
 
-  def test_method_super
-    assert_nothing_raised do
-      assert_equal(:bar, Derived.new.method(:bar).call)
-    end
+  def test_receiver_name_owner
+    o = Object.new
+    def o.foo; end
+    m = o.method(:foo)
+    assert_equal(o, m.receiver)
+    assert_equal("foo", m.name)
+    assert_equal(class << o; self; end, m.owner)
+    assert_equal("foo", m.unbind.name)
+    assert_equal(class << o; self; end, m.unbind.owner)
   end
 end
