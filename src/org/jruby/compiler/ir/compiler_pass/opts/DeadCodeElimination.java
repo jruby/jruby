@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
 public class DeadCodeElimination implements CompilerPass
@@ -18,7 +19,7 @@ public class DeadCodeElimination implements CompilerPass
             return;
 
         CFG c = ((IR_Method)s).getCFG();
-        LiveVariablesProblem lvp = (LiveVariablesProblem)c.getDataFlowSolution((new LiveVariablesProblem()).getName());
+        LiveVariablesProblem lvp = (LiveVariablesProblem)c.getDataFlowSolution(DataFlowConstants.LVP_NAME);
         if (lvp == null) {
             lvp = new LiveVariablesProblem();
             lvp.setup(c);

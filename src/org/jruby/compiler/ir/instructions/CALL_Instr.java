@@ -103,6 +103,15 @@ public class CALL_Instr extends MultiOperandInstr
             return (!(_methAddr instanceof MethAddr) || ((MethAddr)_methAddr).getName().equals("call"));
         }
         else {
+/**
+ * TESTING
+ *
+            if (_methAddr instanceof MethAddr) {
+               String n = ((MethAddr)_methAddr).getName();
+               return !n.equals("each") && !n.equals("inject") && !n.equals("+") && !n.equals("*") && !n.equals("+=") && !n.equals("*=");
+            }
+**/
+
             Operand   r  = getReceiver(); 
             IR_Method rm = getTargetMethodWithReceiver(r);
             if ((rm == null) || rm.canAccessAllOfCallersLocalVariables()) {

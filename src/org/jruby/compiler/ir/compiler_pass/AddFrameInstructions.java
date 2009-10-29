@@ -24,7 +24,7 @@ public class AddFrameInstructions implements CompilerPass
             FrameStorePlacementProblem fsp = new FrameStorePlacementProblem();
             fsp.setup(c);
             fsp.compute_MOP_Solution();
-            fsp.addStores();
+            fsp.addStoreAndFrameAllocInstructions();
 
             FrameLoadPlacementProblem frp = new FrameLoadPlacementProblem();
             frp.setup(c);
