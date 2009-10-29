@@ -29,9 +29,13 @@
  */
 package org.jruby.embed.internal;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.embed.EmbedRubyInterfaceAdapter;
+import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -75,8 +79,18 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
         try {
             Class<T> c = (Class<T>) Class.forName(name, true, o.getClass().getClassLoader());
             return c.cast(o);
-        } catch (ClassNotFoundException ex) {
-            throw new RuntimeException(ex);
+        } catch (ClassNotFoundException e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
+            }
+            throw new InvokeFailedException(e);
         }
     }
 

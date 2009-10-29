@@ -29,8 +29,11 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import org.jruby.embed.ScriptingContainer;
 import java.io.Reader;
+import java.io.Writer;
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
@@ -41,7 +44,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import org.jruby.embed.EmbedEvalUnit;
-import org.jruby.embed.EmbedRubyObjectAdapter;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -85,7 +87,25 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
-            throw new ScriptException(e);
+            throw wrapException(e);
+        }
+    }
+
+    private ScriptException wrapException(Exception e) {
+        if (e.getCause() instanceof Exception) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter) w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    return new ScriptException(ex);
+                }
+            }
+            return new ScriptException((Exception) e.getCause());
+        } else {
+            return new ScriptException(e);
         }
     }
 
@@ -100,7 +120,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
-            throw new ScriptException(e);
+            throw wrapException(e);
         }
     }
 
@@ -113,7 +133,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
-            throw new ScriptException(e);
+            throw wrapException(e);
         }
     }
 
@@ -127,7 +147,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
-            throw new ScriptException(e);
+            throw wrapException(e);
         }
     }
 
@@ -141,7 +161,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
-            throw new ScriptException(e);
+            throw wrapException(e);
         }
     }
 
@@ -156,7 +176,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
-            throw new ScriptException(e);
+            throw wrapException(e);
         }
     }
 
@@ -219,11 +239,31 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (receiver == null) {
             throw new NullPointerException("receiver is null");
         }
-        EmbedRubyObjectAdapter adapter = container.newObjectAdapter();
-        if (args == null || args.length == 0) {
-            return adapter.callMethod(receiver, method, Object.class);
+        try {
+            if (args == null || args.length == 0) {
+                return container.callMethod(receiver, method, Object.class);
+            }
+            return container.callMethod(receiver, method, args, Object.class);
+        } catch (Exception e) {
+            if (e.getCause().getMessage().contains("undefined method")) {
+                throw wrapMethodException(e);
+            }
+            throw wrapException(e);
         }
-        return adapter.callMethod(receiver, method, args, Object.class);
+    }
+
+    private NoSuchMethodException wrapMethodException(Exception e) {
+        Writer w = container.getErrorWriter();
+        if (w instanceof PrintWriter) {
+            e.printStackTrace((PrintWriter) w);
+        } else {
+            try {
+                w.write(e.getMessage());
+            } catch (IOException ex) {
+                return new NoSuchMethodException(ex.getMessage());
+            }
+        }
+        return new NoSuchMethodException(e.getCause().getMessage());
     }
 
     public Object invokeFunction(String method, Object... args)
@@ -231,11 +271,17 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (method == null) {
             throw new NullPointerException("method is null");
         }
-        EmbedRubyObjectAdapter adapter = container.newObjectAdapter();
-        if (args == null || args.length == 0) {
-            return adapter.callMethod(null, method, Object.class);
+        try {
+            if (args == null || args.length == 0) {
+                return container.callMethod(null, method, Object.class);
+            }
+            return container.callMethod(null, method, args, Object.class);
+        } catch (Exception e) {
+            if (e.getCause().getMessage().contains("undefined method")) {
+                throw wrapMethodException(e);
+            }
+            throw wrapException(e);
         }
-        return adapter.callMethod(null, method, args, Object.class);
     }
 
     public <T> T getInterface(Class<T> returnType) {

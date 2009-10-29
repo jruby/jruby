@@ -210,6 +210,7 @@ public class MultipleScriptsRunnerTest {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
+                instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.runScriptlet(PathType.CLASSPATH, testname);
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -254,6 +255,7 @@ public class MultipleScriptsRunnerTest {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
+                instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.runScriptlet(PathType.ABSOLUTE, testname);
             } catch (Throwable t) {
                 t.printStackTrace();

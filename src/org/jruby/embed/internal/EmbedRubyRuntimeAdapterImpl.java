@@ -34,11 +34,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.ast.Node;
@@ -46,6 +46,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyRuntimeAdapter;
+import org.jruby.embed.ParseFailedException;
 import org.jruby.embed.PathType;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.io.ReaderInputStream;
@@ -124,12 +125,17 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return parse(istream, filename, lines);
         } catch (FileNotFoundException e) {
-            try {
-                ((Writer) container.getAttributeMap().get(AttributeName.ERROR_WRITER)).write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new ParseFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new ParseFailedException(e);
         }
     }
 
@@ -168,23 +174,27 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return new EmbedEvalUnitImpl(container, node, scope);
         } catch (RaiseException e) {
-            RubyException re = e.getException();
-            container.getRuntime().printError(re);
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            try {
-                ((Writer) container.getAttributeMap().get(AttributeName.ERROR_WRITER)).write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+            container.getRuntime().printError(e.getException());
+            throw new ParseFailedException(e.getMessage(), e);
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new ParseFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new ParseFailedException(e);
         } finally {
             try {
                 if (input instanceof InputStream) {
                     ((InputStream)input).close();
                 }
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                throw new ParseFailedException(ex);
             }
         }
     }

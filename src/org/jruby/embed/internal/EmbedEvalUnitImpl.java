@@ -29,12 +29,14 @@
  */
 package org.jruby.embed.internal;
 
+import java.io.IOException;
 import java.io.PrintWriter;
-import org.jruby.RubyException;
+import java.io.Writer;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.embed.EmbedEvalUnit;
+import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -110,17 +112,22 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             vars.retrieve(ret);
             return ret;
         } catch (RaiseException e) {
-            e.printStackTrace();
-            RubyException re =  e.getException();
-            container.getRuntime().printError(re);
-            throw new RuntimeException(e);
+            container.getRuntime().printError(e.getException());
+            throw new EvalFailedException(e.getMessage(), e);
         } catch (StackOverflowError soe) {
             throw container.getRuntime().newSystemStackError("stack level too deep", soe);
-        } catch (Exception e) {
-            PrintWriter w = (PrintWriter)container.getErrorWriter();
-            e.printStackTrace(w);
-            w.write(e.getMessage());
-            throw new RuntimeException(e);
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new EvalFailedException(ex);
+                }
+            }
+            throw new EvalFailedException(e);
         } finally {
             container.getRuntime().getCurrentContext().popScope();
             JavaEmbedUtils.terminate(container.getRuntime());

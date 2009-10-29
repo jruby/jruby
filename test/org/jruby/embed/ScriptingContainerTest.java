@@ -846,7 +846,7 @@ public class ScriptingContainerTest {
         try {
             solutions = instance.callMethod(receiver, methodName, args, List.class);
         } catch (RuntimeException e) {
-            Throwable t = e.getCause().getCause();
+            Throwable t = e.getCause();
             assertTrue(t.getMessage().contains("RangeError"));
         }
 

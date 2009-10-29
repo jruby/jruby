@@ -29,12 +29,16 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.Writer;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.jruby.RubyNil;
+import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
@@ -71,8 +75,22 @@ public class JRubyCompiledScript extends CompiledScript {
                 return JavaEmbedUtils.rubyToJava(ret);
             }
             return null;
-        } catch (RuntimeException e) {
-            throw new ScriptException(e);
+        } catch (Exception e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new ScriptException(ex);
+                }
+            }
+            if (e.getCause() instanceof Exception) {
+                throw new ScriptException((Exception)e.getCause());
+            } else {
+                throw new ScriptException(e);
+            }
         }
     }
 

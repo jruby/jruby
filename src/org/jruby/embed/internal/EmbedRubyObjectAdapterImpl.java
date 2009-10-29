@@ -31,9 +31,9 @@ package org.jruby.embed.internal;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
@@ -42,6 +42,7 @@ import org.jruby.RubyString;
 import org.jruby.embed.BiVariable;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyObjectAdapter;
+import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.variable.InstanceVariable;
 import org.jruby.exceptions.RaiseException;
@@ -137,15 +138,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, null, null, new Object[]{});
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -156,15 +162,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, null, null, singleArg);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -175,15 +186,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, null, null, args);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -194,15 +210,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, block, null, args);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -213,15 +234,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, null, unit, new Object[]{});
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
     
@@ -232,15 +258,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, null, unit, args);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -251,15 +282,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callMethod", params);
             return call(returnType, method, receiver, methodName, block, unit, args);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -270,15 +306,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callSuper", params);
             return call(returnType, method, receiver, null, null, null, args);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -289,15 +330,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         try {
             method = getClass().getMethod("callSuper", params);
             return call(returnType, method, receiver, null, block, null, args);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         }
     }
 
@@ -319,18 +365,20 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             }
             return null;
         } catch (RaiseException e) {
-            RubyException re = e.getException();
-            runtime.printError(re);
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            try {
-                PrintWriter w = (PrintWriter)container.getErrorWriter();
-                e.printStackTrace(w);
-                container.getErrorWriter().write(e.getMessage());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+            runtime.printError(e.getException());
+            throw new InvokeFailedException(e.getMessage(), e);
+        } catch (Throwable e) {
+            Writer w = container.getErrorWriter();
+            if (w instanceof PrintWriter) {
+                e.printStackTrace((PrintWriter)w);
+            } else {
+                try {
+                    w.write(e.getMessage());
+                } catch (IOException ex) {
+                    throw new InvokeFailedException(ex);
+                }
             }
-            throw new RuntimeException(e);
+            throw new InvokeFailedException(e);
         } finally {
             runtime.getCurrentContext().popScope();
             JavaEmbedUtils.terminate(runtime);
