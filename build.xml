@@ -934,7 +934,7 @@
     </sequential>
   </macrodef>
 
-  <target name="test-security-manager">
+  <target name="test-security-manager" depends="jar-jruby">
     <java classname="org.jruby.Main" fork="true" failonerror="false">
       <classpath refid="test.class.path"/>
 

@@ -549,15 +549,19 @@ public class RubyInstanceConfig {
 
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();
-        String rubyopt = System.getenv("RUBYOPT");
-        if (rubyopt != null) {
-            String[] rubyoptArgs = rubyopt.split("\\s+");
-            for (int i = 0; i < rubyoptArgs.length; i++) {
-                if (!rubyoptArgs[i].startsWith("-")) {
-                    rubyoptArgs[i] = "-" + rubyoptArgs[i];
+        try {
+            String rubyopt = System.getenv("RUBYOPT");
+            if (rubyopt != null) {
+                String[] rubyoptArgs = rubyopt.split("\\s+");
+                for (int i = 0; i < rubyoptArgs.length; i++) {
+                    if (!rubyoptArgs[i].startsWith("-")) {
+                        rubyoptArgs[i] = "-" + rubyoptArgs[i];
+                    }
                 }
+                new ArgumentProcessor(rubyoptArgs, false).processArguments();
             }
-            new ArgumentProcessor(rubyoptArgs, false).processArguments();
+        } catch (SecurityException se) {
+            // ignore and do nothing
         }
     }
 
@@ -1097,15 +1101,19 @@ public class RubyInstanceConfig {
                     return fullName.getAbsolutePath();
                 }
 
-                String path = System.getenv("PATH");
-                if (path != null) {
-                    String[] paths = path.split(System.getProperty("path.separator"));
-                    for (int i = 0; i < paths.length; i++) {
-                        fullName = JRubyFile.create(paths[i], scriptName);
-                        if (fullName.exists() && fullName.isFile()) {
-                            return fullName.getAbsolutePath();
+                try {
+                    String path = System.getenv("PATH");
+                    if (path != null) {
+                        String[] paths = path.split(System.getProperty("path.separator"));
+                        for (int i = 0; i < paths.length; i++) {
+                            fullName = JRubyFile.create(paths[i], scriptName);
+                            if (fullName.exists() && fullName.isFile()) {
+                                return fullName.getAbsolutePath();
+                            }
                         }
                     }
+                } catch (SecurityException se) {
+                    // ignore and do nothing
                 }
             } catch (IllegalArgumentException iae) {
                 if (debug) System.err.println("warning: could not resolve -S script on filesystem: " + scriptName);
