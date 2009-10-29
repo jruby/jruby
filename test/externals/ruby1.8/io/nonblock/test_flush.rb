@@ -12,17 +12,18 @@ class TestIONonblock < Test::Unit::TestCase
     w << "b"
     w.flush
     w << "a" * 4096
-    Thread.new {
+    t0 = Thread.new {
       Thread.pass
       w.close
     }
     result = ""
-    t = Thread.new {
+    t1 = Thread.new {
       while (Thread.pass; s = r.read(4096))
         result << s
       end
     }
+    t0.join
     assert_raise(IOError) {w.flush}
-    assert_nothing_raised {t.join}
+    assert_nothing_raised {t1.join}
   end
 end if IO.method_defined?(:nonblock)
