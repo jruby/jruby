@@ -123,7 +123,7 @@ class TestFloat < Test::Unit::TestCase
     assert_equal("-Infinity", (-inf).to_s)
     assert_equal("NaN", (inf / inf).to_s)
 
-    assert_equal("1.0e+14", 10000_00000_00000.0.to_s)
+    assert_equal("1.0e+18", 1000_00000_00000_00000.0.to_s)
   end
 
   def test_coerce
@@ -172,9 +172,7 @@ class TestFloat < Test::Unit::TestCase
     assert_raise(TypeError) { 2.0.divmod(nil) }
 
     inf = 1.0 / 0.0
-    a, b = inf.divmod(0)
-    assert(a.infinite?)
-    assert(b.nan?)
+    assert_raise(ZeroDivisionError) {inf.divmod(0)}
 
     a, b = (2.0**32).divmod(1.0)
     assert_equal(2**32, a)
@@ -216,6 +214,11 @@ class TestFloat < Test::Unit::TestCase
     assert_equal(-1, 1.0 <=> 2)
 
     assert_equal(-1, 1.0 <=> 2**32)
+
+    assert_equal(1, inf <=> (Float::MAX.to_i*2))
+    assert_equal(-1, -inf <=> (-Float::MAX.to_i*2))
+    assert_equal(-1, (Float::MAX.to_i*2) <=> inf)
+    assert_equal(1, (-Float::MAX.to_i*2) <=> -inf)
 
     assert_raise(ArgumentError) { 1.0 > nil }
     assert_raise(ArgumentError) { 1.0 >= nil }
@@ -423,4 +426,9 @@ class TestFloat < Test::Unit::TestCase
     end
   end
 
+  def test_sleep_with_Float
+    assert_nothing_raised("[ruby-core:23282]") do
+      sleep(0.1+0.1+0.1+0.1+0.1+0.1+0.1+0.1+0.1+0.1)
+    end
+  end
 end

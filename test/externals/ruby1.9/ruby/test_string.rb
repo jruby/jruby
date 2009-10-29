@@ -22,7 +22,7 @@ class TestString < Test::Unit::TestCase
   def test_s_new
     assert_equal("RUBY", S("RUBY"))
   end
-    
+
   def test_AREF # '[]'
     assert_equal("A",  S("AooBar")[0])
     assert_equal("B",  S("FooBaB")[-1])
@@ -224,7 +224,7 @@ class TestString < Test::Unit::TestCase
     assert_equal(10,  S("FeeFieFoo-Fum") =~ /Fum$/)
     assert_equal(nil, S("FeeFieFoo-Fum") =~ /FUM$/)
 
-    pre_1_7_1 do 
+    pre_1_7_1 do
       $= = true
       assert_equal(10,  S("FeeFieFoo-Fum") =~ /FUM$/)
       $= = false
@@ -279,7 +279,7 @@ class TestString < Test::Unit::TestCase
   def test_VERY_EQUAL # '==='
     # assert_equal(true, S("foo") === :foo)
     casetest(S("abcdef"), S("abcdef"))
-    
+
     pre_1_7_1 do
       $= = true
       casetest(S("CAT"), S('cat'))
@@ -317,7 +317,7 @@ class TestString < Test::Unit::TestCase
     b = a.dup
     assert_equal(S("Hello"), a.capitalize!)
     assert_equal(S("hello"), b)
-   
+
   end
 
   def test_center
@@ -339,6 +339,8 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("hello"), S("hello").chomp)
     assert_equal(S("hello"), S("hello!").chomp)
     $/ = save
+
+    assert_equal(S("a").hash, S("a\u0101").chomp(S("\u0101")).hash, '[ruby-core:22414]')
   end
 
   def test_chomp!
@@ -393,6 +395,8 @@ class TestString < Test::Unit::TestCase
     s = "foo\r"
     s.chomp!("")
     assert_equal("foo\r", s)
+
+    assert_equal(S("a").hash, S("a\u0101").chomp!(S("\u0101")).hash, '[ruby-core:22414]')
   end
 
   def test_chop
@@ -401,6 +405,7 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("hello\n"), S("hello\n\r").chop)
     assert_equal(S(""),        S("\r\n").chop)
     assert_equal(S(""),        S("").chop)
+    assert_equal(S("a").hash,  S("a\u00d8").chop.hash)
   end
 
   def test_chop!
@@ -418,6 +423,10 @@ class TestString < Test::Unit::TestCase
 
     a = S("").chop!
     assert_nil(a)
+
+    a = S("a\u00d8")
+    a.chop!
+    assert_equal(S("a").hash, a.hash)
 
     a = S("hello\n")
     b = a.dup
@@ -474,6 +483,11 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("he"),   S("hello").delete(S("lo")))
     assert_equal(S("hell"), S("hello").delete(S("aeiou"), S("^e")))
     assert_equal(S("ho"),   S("hello").delete(S("ej-m")))
+
+    assert_equal("a".hash, "a\u0101".delete("\u0101").hash, '[ruby-talk:329267]')
+    assert_equal(true, "a\u0101".delete("\u0101").ascii_only?)
+    assert_equal(true, "a\u3041".delete("\u3041").ascii_only?)
+    assert_equal(false, "a\u3041\u3042".tr("\u3041", "a").ascii_only?)
   end
 
   def test_delete!
@@ -542,7 +556,7 @@ class TestString < Test::Unit::TestCase
           a.taint  if taint
           a.untrust  if untrust
           a.freeze if frozen
-          b = a.dup 
+          b = a.dup
 
           assert_equal(a, b)
           assert(a.__id__ != b.__id__)
@@ -551,7 +565,7 @@ class TestString < Test::Unit::TestCase
           assert_equal(a.untrusted?, b.untrusted?)
         end
       end
-    end     
+    end
   end
 
   def test_each
@@ -561,12 +575,12 @@ class TestString < Test::Unit::TestCase
     S("hello\nworld").lines.each {|x| res << x}
     assert_equal(S("hello\n"), res[0])
     assert_equal(S("world"),   res[1])
-    
+
     res=[]
     S("hello\n\n\nworld").lines(S('')).each {|x| res << x}
     assert_equal(S("hello\n\n\n"), res[0])
     assert_equal(S("world"),       res[1])
-    
+
     $/ = "!"
     res=[]
     S("hello!world").lines.each {|x| res << x}
@@ -595,14 +609,14 @@ class TestString < Test::Unit::TestCase
     S("hello\n\n\nworld").lines(S('')).each {|x| res << x}
     assert_equal(S("hello\n\n\n"), res[0])
     assert_equal(S("world"),       res[1])
-    
+
     $/ = "!"
 
     res=[]
     S("hello!world").lines.each {|x| res << x}
     assert_equal(S("hello!"), res[0])
     assert_equal(S("world"),  res[1])
-    
+
     $/ = save
 
     s = nil
@@ -626,7 +640,7 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("h<e>ll<o>"), S("hello").gsub(/([aeiou])/, S('<\1>')))
     assert_equal(S("h e l l o "),
                  S("hello").gsub(/./) { |s| s[0].to_s + S(' ')})
-    assert_equal(S("HELL-o"), 
+    assert_equal(S("HELL-o"),
                  S("hello").gsub(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 })
 
     a = S("hello")
@@ -663,8 +677,8 @@ class TestString < Test::Unit::TestCase
     r.taint
     r.untrust
     a.gsub!(/./, r)
-    assert(a.tainted?) 
-    assert(a.untrusted?) 
+    assert(a.tainted?)
+    assert(a.untrusted?)
 
     a = S("hello")
     assert_nil(a.sub!(S('X'), S('Y')))
@@ -974,12 +988,12 @@ class TestString < Test::Unit::TestCase
       assert_nil( a.slice!(6) )
     else
       assert_raise(IndexError) { a.slice!(6) }
-    end 
+    end
     assert_equal(S("FooBar"), a)
 
     if @aref_slicebang_silent
-      assert_nil( a.slice!(-7) ) 
-    else 
+      assert_nil( a.slice!(-7) )
+    else
       assert_raise(IndexError) { a.slice!(-7) }
     end
     assert_equal(S("FooBar"), a)
@@ -1125,6 +1139,11 @@ class TestString < Test::Unit::TestCase
   def test_strip
     assert_equal(S("x"), S("      x        ").strip)
     assert_equal(S("x"), S(" \n\r\t     x  \t\r\n\n      ").strip)
+
+    assert_equal("0b0 ".force_encoding("UTF-16BE"),
+                 "\x00 0b0 ".force_encoding("UTF-16BE").strip)
+    assert_equal("0\x000b0 ".force_encoding("UTF-16BE"),
+                 "0\x000b0 ".force_encoding("UTF-16BE").strip)
   end
 
   def test_strip!
@@ -1230,8 +1249,8 @@ class TestString < Test::Unit::TestCase
     r.taint
     r.untrust
     a.sub!(/./, r)
-    assert(a.tainted?) 
-    assert(a.untrusted?) 
+    assert(a.tainted?)
+    assert(a.untrusted?)
   end
 
   def test_succ
@@ -1395,6 +1414,14 @@ class TestString < Test::Unit::TestCase
     assert_equal(S("hippo"), S("hello").tr(S("el"), S("ip")))
     assert_equal(S("*e**o"), S("hello").tr(S("^aeiou"), S("*")))
     assert_equal(S("hal"),   S("ibm").tr(S("b-z"), S("a-z")))
+
+    a = "abc".force_encoding(Encoding::US_ASCII)
+    assert_equal(Encoding::US_ASCII, a.tr(S("z"), S("\u0101")).encoding, '[ruby-core:22326]')
+
+    assert_equal("a".hash, "a".tr("a", "\u0101").tr("\u0101", "a").hash, '[ruby-core:22328]')
+    assert_equal(true, "\u0101".tr("\u0101", "a").ascii_only?)
+    assert_equal(true, "\u3041".tr("\u3041", "a").ascii_only?)
+    assert_equal(false, "\u3041\u3042".tr("\u3041", "a").ascii_only?)
   end
 
   def test_tr!
@@ -1415,11 +1442,17 @@ class TestString < Test::Unit::TestCase
     a = S("ibm")
     assert_nil(a.tr!(S("B-Z"), S("A-Z")))
     assert_equal(S("ibm"), a)
+
+    a = "abc".force_encoding(Encoding::US_ASCII)
+    assert_nil(a.tr!(S("z"), S("\u0101")), '[ruby-core:22326]')
+    assert_equal(Encoding::US_ASCII, a.encoding, '[ruby-core:22326]')
   end
 
   def test_tr_s
     assert_equal(S("hypo"), S("hello").tr_s(S("el"), S("yp")))
     assert_equal(S("h*o"),  S("hello").tr_s(S("el"), S("*")))
+    assert_equal("a".hash, "\u0101\u0101".tr_s("\u0101", "a").hash)
+    assert_equal(true, "\u3041\u3041".tr("\u3041", "a").ascii_only?)
   end
 
   def test_tr_s!
@@ -1471,7 +1504,7 @@ class TestString < Test::Unit::TestCase
     assert_equal([ 65, 66, 67 ],  S("ABC").unpack("c3"))
     assert_equal([ -1, 66, 67 ],  S("\377BC").unpack("c*"))
 
-    
+
     assert_equal([S("4142"), S("0a"), S("1")], S("AB\n\x10").unpack(S("H4H2H1")))
     assert_equal([S("1424"), S("a0"), S("2")], S("AB\n\x02").unpack(S("h4h2h1")))
 
@@ -1542,6 +1575,19 @@ class TestString < Test::Unit::TestCase
                    count += 1
                    })
     assert_equal(676, count)
+  end
+
+  def test_upto_numeric
+    a     = S("00")
+    start = S("00")
+    count = 0
+    assert_equal(S("00"), a.upto(S("23")) {|s|
+                   assert_equal(start, s, "[ruby-dev:39361]")
+                   assert_equal(Encoding::US_ASCII, s.encoding)
+                   start.succ!
+                   count += 1
+                   })
+    assert_equal(24, count, "[ruby-dev:39361]")
   end
 
   def test_mod_check
@@ -1636,7 +1682,7 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_respond_to
-    o = Object.new 
+    o = Object.new
     def o.respond_to?(arg) [:to_str].include?(arg) ? nil : super end
     def o.to_str() "" end
     def o.==(other) "" == other end
@@ -1674,12 +1720,16 @@ class TestString < Test::Unit::TestCase
     assert_equal(%w(he l lo), "hello".partition(/l/))
     assert_equal(%w(he l lo), "hello".partition("l"))
     assert_raise(TypeError) { "hello".partition(1) }
+    def (hyphen = Object.new).to_str; "-"; end
+    assert_equal(%w(foo - bar), "foo-bar".partition(hyphen), '[ruby-core:23540]')
   end
 
   def test_rpartition
     assert_equal(%w(hel l o), "hello".rpartition(/l/))
     assert_equal(%w(hel l o), "hello".rpartition("l"))
     assert_raise(TypeError) { "hello".rpartition(1) }
+    def (hyphen = Object.new).to_str; "-"; end
+    assert_equal(%w(foo - bar), "foo-bar".rpartition(hyphen), '[ruby-core:23540]')
   end
 
   def test_setter
@@ -1756,5 +1806,18 @@ class TestString < Test::Unit::TestCase
     assert_in_out_err([], <<-INPUT, [], /symbol table overflow \(symbol [a-z]{8}\) \(RuntimeError\)/)
       ("aaaaaaaa".."zzzzzzzz").each {|s| s.to_sym }
     INPUT
+  end
+
+  def test_shared_force_encoding
+    s = "\u{3066}\u{3059}\u{3068}".gsub(//, '')
+    h = {}
+    h[s] = nil
+    k = h.keys[0]
+    assert_equal(s, k, '[ruby-dev:39068]')
+    assert_equal(Encoding::UTF_8, k.encoding, '[ruby-dev:39068]')
+    s.dup.force_encoding(Encoding::ASCII_8BIT).gsub(//, '')
+    k = h.keys[0]
+    assert_equal(s, k, '[ruby-dev:39068]')
+    assert_equal(Encoding::UTF_8, k.encoding, '[ruby-dev:39068]')
   end
 end

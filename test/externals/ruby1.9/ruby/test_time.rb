@@ -1,6 +1,8 @@
 require 'test/unit'
 require 'rational'
+require 'delegate'
 require 'timeout'
+require 'delegate'
 
 class TestTime < Test::Unit::TestCase
   def setup
@@ -10,6 +12,13 @@ class TestTime < Test::Unit::TestCase
 
   def teardown
     $VERBOSE = @verbose
+  end
+
+  def test_new
+    assert_equal(Time.utc(2000,2,10), Time.new(2000,2,10, 11,0,0, 3600*11))
+    assert_equal(Time.utc(2000,2,10), Time.new(2000,2,9, 13,0,0, -3600*11))
+    assert_equal(Time.utc(2000,2,10), Time.new(2000,2,10, 11,0,0, "+11:00"))
+    assert_equal(Rational(1,2), Time.new(2000,2,10, 11,0,5.5, "+11:00").subsec)
   end
 
   def test_time_add()
@@ -100,31 +109,47 @@ class TestTime < Test::Unit::TestCase
   end
 
   def test_at
+    assert_equal(100000, Time.at("0.1".to_r).usec)
+    assert_equal(10000, Time.at("0.01".to_r).usec)
+    assert_equal(1000, Time.at("0.001".to_r).usec)
+    assert_equal(100, Time.at("0.0001".to_r).usec)
+    assert_equal(10, Time.at("0.00001".to_r).usec)
+    assert_equal(1, Time.at("0.000001".to_r).usec)
+    assert_equal(100000000, Time.at("0.1".to_r).nsec)
+    assert_equal(10000000, Time.at("0.01".to_r).nsec)
+    assert_equal(1000000, Time.at("0.001".to_r).nsec)
+    assert_equal(100000, Time.at("0.0001".to_r).nsec)
+    assert_equal(10000, Time.at("0.00001".to_r).nsec)
+    assert_equal(1000, Time.at("0.000001".to_r).nsec)
+    assert_equal(100, Time.at("0.0000001".to_r).nsec)
+    assert_equal(10, Time.at("0.00000001".to_r).nsec)
+    assert_equal(1, Time.at("0.000000001".to_r).nsec)
     assert_equal(100000, Time.at(0.1).usec)
     assert_equal(10000, Time.at(0.01).usec)
     assert_equal(1000, Time.at(0.001).usec)
     assert_equal(100, Time.at(0.0001).usec)
     assert_equal(10, Time.at(0.00001).usec)
-    assert_equal(1, Time.at(0.000001).usec)
+    assert_equal(3, Time.at(0.000003).usec)
     assert_equal(100000000, Time.at(0.1).nsec)
     assert_equal(10000000, Time.at(0.01).nsec)
     assert_equal(1000000, Time.at(0.001).nsec)
     assert_equal(100000, Time.at(0.0001).nsec)
     assert_equal(10000, Time.at(0.00001).nsec)
-    assert_equal(1000, Time.at(0.000001).nsec)
-    assert_equal(100, Time.at(0.0000001).nsec)
+    assert_equal(3000, Time.at(0.000003).nsec)
+    assert_equal(199, Time.at(0.0000002).nsec)
     assert_equal(10, Time.at(0.00000001).nsec)
     assert_equal(1, Time.at(0.000000001).nsec)
+
     assert_equal(0, Time.at(1e-10).nsec)
     assert_equal(0, Time.at(4e-10).nsec)
-    assert_equal(1, Time.at(6e-10).nsec)
+    assert_equal(0, Time.at(6e-10).nsec)
     assert_equal(1, Time.at(14e-10).nsec)
-    assert_equal(2, Time.at(16e-10).nsec)
+    assert_equal(1, Time.at(16e-10).nsec)
     if negative_time_t?
-      assert_equal(0, Time.at(-1e-10).nsec)
-      assert_equal(0, Time.at(-4e-10).nsec)
+      assert_equal(999999999, Time.at(-1e-10).nsec)
+      assert_equal(999999999, Time.at(-4e-10).nsec)
       assert_equal(999999999, Time.at(-6e-10).nsec)
-      assert_equal(999999999, Time.at(-14e-10).nsec)
+      assert_equal(999999998, Time.at(-14e-10).nsec)
       assert_equal(999999998, Time.at(-16e-10).nsec)
     end
   end
@@ -141,7 +166,7 @@ class TestTime < Test::Unit::TestCase
   end
 
   def test_utc_subsecond
-    assert_equal(100000, Time.utc(2007,1,1,0,0,1.1).usec)
+    assert_equal(500000, Time.utc(2007,1,1,0,0,1.5).usec)
     assert_equal(100000, Time.utc(2007,1,1,0,0,Rational(11,10)).usec)
   end
 
@@ -188,21 +213,19 @@ class TestTime < Test::Unit::TestCase
 
   def test_at3
     assert_equal(T2000, Time.at(T2000))
-    assert_raise(RangeError) do
-      Time.at(2**31-1, 1_000_000)
-      Time.at(2**63-1, 1_000_000)
-    end
-    assert_raise(RangeError) do
-      Time.at(-2**31, -1_000_000)
-      Time.at(-2**63, -1_000_000)
-    end
+#    assert_raise(RangeError) do
+#      Time.at(2**31-1, 1_000_000)
+#      Time.at(2**63-1, 1_000_000)
+#    end
+#    assert_raise(RangeError) do
+#      Time.at(-2**31, -1_000_000)
+#      Time.at(-2**63, -1_000_000)
+#    end
   end
 
   def test_utc_or_local
     assert_equal(T2000, Time.gm(2000))
     assert_equal(T2000, Time.gm(0, 0, 0, 1, 1, 2000, :foo, :bar, false, :baz))
-    assert_equal(T2000, Time.gm(0))
-    assert_equal(T2000, Time.gm(100))
     assert_equal(T2000, Time.gm(2000, "jan"))
     assert_equal(T2000, Time.gm(2000, "1"))
     assert_equal(T2000, Time.gm(2000, 1, 1, 0, 0, 0, 0))
@@ -215,10 +238,15 @@ class TestTime < Test::Unit::TestCase
     end
     assert_raise(ArgumentError) { Time.gm(2000, 1, 1, 0, 0, -(2**31), :foo, :foo) }
     o = Object.new
-    def o.divmod(x); nil; end
+    def o.to_r; nil; end
     assert_raise(TypeError) { Time.gm(2000, 1, 1, 0, 0, o, :foo, :foo) }
-    def o.divmod(x); [-1, 0]; end
-    assert_raise(ArgumentError) { Time.gm(2000, 1, 1, 0, 0, o, :foo, :foo) }
+    def o.to_r; ""; end
+    assert_raise(TypeError) { Time.gm(2000, 1, 1, 0, 0, o, :foo, :foo) }
+    def o.to_r; Rational(11); end
+    assert_equal(11, Time.gm(2000, 1, 1, 0, 0, o).sec)
+    o = Object.new
+    def o.to_int; 10; end
+    assert_equal(10, Time.gm(2000, 1, 1, 0, 0, o).sec)
     assert_raise(ArgumentError) { Time.gm(2000, 13) }
 
     t = Time.local(2000)
@@ -284,16 +312,24 @@ class TestTime < Test::Unit::TestCase
     t1 = Time.gm(2000)
     t2 = t1.getlocal
     assert_equal(t1, t2)
+    t3 = t1.getlocal("-02:00")
+    assert_equal(t1, t3)
+    assert_equal(-7200, t3.utc_offset)
     t1.localtime
     assert_equal(t1, t2)
     assert_equal(t1.gmt?, t2.gmt?)
+    assert_equal(t1, t3)
 
     t1 = Time.local(2000)
     t2 = t1.getgm
     assert_equal(t1, t2)
+    t3 = t1.getlocal("-02:00")
+    assert_equal(t1, t3)
+    assert_equal(-7200, t3.utc_offset)
     t1.gmtime
     assert_equal(t1, t2)
     assert_equal(t1.gmt?, t2.gmt?)
+    assert_equal(t1, t3)
   end
 
   def test_asctime
@@ -469,5 +505,14 @@ class TestTime < Test::Unit::TestCase
     assert_equal("JANUARY", T2000.strftime("%#B"))
     assert_equal("JAN", T2000.strftime("%#h"))
     assert_equal("FRIDAY", Time.local(2008,1,4).strftime("%#A"))
+  end
+
+  def test_delegate
+    d1 = SimpleDelegator.new(t1 = Time.utc(2000))
+    d2 = SimpleDelegator.new(t2 = Time.utc(2001))
+    assert_equal(-1, t1 <=> t2)
+    assert_equal(1, t2 <=> t1)
+    assert_equal(-1, d1 <=> d2)
+    assert_equal(1, d2 <=> d1)
   end
 end

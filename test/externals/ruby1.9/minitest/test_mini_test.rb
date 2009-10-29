@@ -325,7 +325,8 @@ Finished in 0.00
     output.sub!(/^(\s+)(?:#{Regexp.union(__FILE__, File.expand_path(__FILE__))}):\d+:/o, '\1FILE:LINE:')
     output.sub!(/\[(?:#{Regexp.union(__FILE__, File.expand_path(__FILE__))}):\d+\]/o, '[FILE:LINE]')
     assert_equal(expected, output)
- end
+  end
+
   def test_run_failing_filtered
     tc = Class.new(MiniTest::Unit::TestCase) do
       def test_something

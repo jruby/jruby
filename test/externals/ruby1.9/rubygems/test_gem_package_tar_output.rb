@@ -4,8 +4,7 @@
 # See LICENSE.txt for permissions.
 #++
 
-require File.join(File.expand_path(File.dirname(__FILE__)),
-                  'gem_package_tar_test_case')
+require_relative 'gem_package_tar_test_case'
 require 'rubygems/package/tar_output'
 
 class TestGemPackageTarOutput < TarTestCase
@@ -49,7 +48,7 @@ class TestGemPackageTarOutput < TarTestCase
     gz = Zlib::GzipReader.new StringIO.new(data)
     assert_equal "This is some metadata\n", gz.read
 
-    assert files.empty?
+    assert_empty files
   ensure
     gz.close if gz
   end
@@ -82,7 +81,7 @@ class TestGemPackageTarOutput < TarTestCase
       name, data = files.shift
       assert_equal 'metadata.gz.sig', name
 
-      assert files.empty?
+      assert_empty files
     end
   end
 

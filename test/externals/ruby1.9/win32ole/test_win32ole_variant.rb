@@ -67,7 +67,7 @@ if defined?(WIN32OLE_VARIANT)
       assert_equal(WIN32OLE::VARIANT::VT_CY, obj.vartype)
 
       obj = WIN32OLE_VARIANT.new(nil, WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1899/12/30 00:00:00", obj.value)
+      assert_equal(Time.new(1899,12,30), obj.value)
       assert_equal(WIN32OLE::VARIANT::VT_DATE, obj.vartype)
 
       obj = WIN32OLE_VARIANT.new(nil, WIN32OLE::VARIANT::VT_BSTR)
@@ -102,7 +102,7 @@ if defined?(WIN32OLE_VARIANT)
       assert_equal(0, obj.value)
       assert_equal(WIN32OLE::VARIANT::VT_UI4, obj.vartype)
 
-      
+
       if defined?(WIN32OLE::VARIANT::VT_I8)
         obj = WIN32OLE_VARIANT.new(nil, WIN32OLE::VARIANT::VT_I8)
         assert_equal(0, obj.value)
@@ -114,7 +114,7 @@ if defined?(WIN32OLE_VARIANT)
         assert_equal(0, obj.value)
         assert_equal(WIN32OLE::VARIANT::VT_UI8, obj.vartype)
       end
-      
+
       obj = WIN32OLE_VARIANT.new(nil, WIN32OLE::VARIANT::VT_INT)
       assert_equal(0, obj.value)
       assert_equal(WIN32OLE::VARIANT::VT_INT, obj.vartype)
@@ -146,7 +146,7 @@ if defined?(WIN32OLE_VARIANT)
       assert_equal(WIN32OLE::VARIANT::VT_CY, obj.vartype)
 
       obj = WIN32OLE_VARIANT.new("2001-06-15 12:17:34", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("2001/06/15 12:17:34", obj.value)
+      assert_equal(Time.new(2001,06,15,12,17,34), obj.value)
       assert_equal(WIN32OLE::VARIANT::VT_DATE, obj.vartype)
 
       obj = WIN32OLE_VARIANT.new("foo", WIN32OLE::VARIANT::VT_BSTR)
@@ -216,7 +216,7 @@ if defined?(WIN32OLE_VARIANT)
       assert_equal(WIN32OLE::VARIANT::VT_CY|WIN32OLE::VARIANT::VT_BYREF, obj.vartype)
 
       obj = WIN32OLE_VARIANT.new("2001-06-15 12:17:34", WIN32OLE::VARIANT::VT_DATE|WIN32OLE::VARIANT::VT_BYREF)
-      assert_equal("2001/06/15 12:17:34", obj.value)
+      assert_equal(Time.new(2001,06,15,12,17,34), obj.value)
       assert_equal(WIN32OLE::VARIANT::VT_DATE|WIN32OLE::VARIANT::VT_BYREF, obj.vartype)
 
       obj = WIN32OLE_VARIANT.new("foo", WIN32OLE::VARIANT::VT_BSTR|WIN32OLE::VARIANT::VT_BYREF)
@@ -251,7 +251,7 @@ if defined?(WIN32OLE_VARIANT)
       assert_equal(5, obj.value)
       assert_equal(WIN32OLE::VARIANT::VT_UINT|WIN32OLE::VARIANT::VT_BYREF, obj.vartype)
     end
-    
+
     # This test is failed in cygwin.
     # The tagVARIANT definition has no union member pllVal in cygwin.
     def test_s_new_with_i8_byref
@@ -263,7 +263,7 @@ if defined?(WIN32OLE_VARIANT)
         STDERR.puts("\n#{__FILE__}:#{__LINE__}:#{self.class.name}.test_s_new_with_i8_byref is skipped")
       end
     end
-    
+
     # This test is failed in cygwin.
     # The tagVARIANT definition has no union member pullVal in cygwin.
     def test_s_new_with_ui8_byref
@@ -319,7 +319,7 @@ if defined?(WIN32OLE_VARIANT)
       obj = WIN32OLE_VARIANT.array([2,3], WIN32OLE::VARIANT::VT_I4|WIN32OLE::VARIANT::VT_BYREF)
       assert_equal(WIN32OLE::VARIANT::VT_I4|WIN32OLE::VARIANT::VT_BYREF|WIN32OLE::VARIANT::VT_ARRAY, obj.vartype)
       assert_equal([[0, 0, 0],[0, 0, 0]], obj.value)
-      
+
       obj = WIN32OLE_VARIANT.array([2,3], WIN32OLE::VARIANT::VT_I4|WIN32OLE::VARIANT::VT_ARRAY)
       assert_instance_of(WIN32OLE_VARIANT, obj)
       assert_equal(WIN32OLE::VARIANT::VT_I4|WIN32OLE::VARIANT::VT_ARRAY, obj.vartype)
@@ -373,20 +373,37 @@ if defined?(WIN32OLE_VARIANT)
 
     def test_conversion_str2date
       obj = WIN32OLE_VARIANT.new("2004-12-24 12:24:45", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("2004/12/24 12:24:45", obj.value)
+      assert_equal(Time.new(2004,12,24,12,24,45), obj.value)
     end
 
     def test_conversion_time2date
       dt = Time.mktime(2004, 12, 24, 12, 24, 45)
       obj = WIN32OLE_VARIANT.new(dt, WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("2004/12/24 12:24:45", obj.value)
+      assert_equal(dt, obj.value)
     end
 
+    # this test failed because of VariantTimeToSystemTime
+    # and SystemTimeToVariantTime API ignores wMilliseconds 
+    # member of SYSTEMTIME  struct.
+    #
+    # def test_conversion_time_nsec2date
+    #   dt = Time.new(2004, 12,24, 12, 24, 45)
+    #   dt += 0.1
+    #   obj = WIN32OLE_VARIANT.new(dt, WIN32OLE::VARIANT::VT_DATE)
+    #   assert_equal(dt, obj.value)
+    # end
+
     def test_conversion_str2cy
-      begin 
-        WIN32OLE.locale = 0x0411 # set locale Japanese
-        obj = WIN32OLE_VARIANT.new("\\10,000", WIN32OLE::VARIANT::VT_CY)
-        assert_equal("10000", obj.value)
+      begin
+        begin
+          WIN32OLE.locale = 0x0411 # set locale Japanese
+        rescue WIN32OLERuntimeError
+          STDERR.puts("\n#{__FILE__}:#{__LINE__}:#{self.class.name}.test_conversion_str2cy is skipped(Japanese locale is not installed)")
+        end
+        if WIN32OLE.locale == 0x0411
+          obj = WIN32OLE_VARIANT.new("\\10,000", WIN32OLE::VARIANT::VT_CY)
+          assert_equal("10000", obj.value)
+        end
       ensure
         WIN32OLE.locale = WIN32OLE::LOCALE_SYSTEM_DEFAULT
       end
@@ -464,7 +481,7 @@ if defined?(WIN32OLE_VARIANT)
       obj = WIN32OLE_VARIANT.new(["abc", "123"], vartype)
       assert_equal(vartype, obj.vartype)
       assert_equal(["abc", "123"], obj.value)
-      
+
       vartype = WIN32OLE::VARIANT::VT_ARRAY|WIN32OLE::VARIANT::VT_BYREF|WIN32OLE::VARIANT::VT_BSTR
       obj = WIN32OLE_VARIANT.new(["abc", "123"], vartype)
       assert_equal(vartype, obj.vartype)
@@ -548,40 +565,40 @@ if defined?(WIN32OLE_VARIANT)
 
     def test_conversion_vt_date
       obj = WIN32OLE_VARIANT.new(-657434, WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("0100/01/01 00:00:00", obj.value)
+      assert_equal(Time.new(100,1,1), obj.value)
 
       obj = WIN32OLE_VARIANT.new("1500/12/29 23:59:59", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1500/12/29 23:59:59", obj.value)
+      assert_equal(Time.new(1500,12,29,23,59,59), obj.value)
 
       obj = WIN32OLE_VARIANT.new("1500/12/30 00:00:00", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1500/12/30 00:00:00", obj.value)
+      assert_equal(Time.new(1500,12,30), obj.value)
 
       obj = WIN32OLE_VARIANT.new("1500/12/30 00:00:01", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1500/12/30 00:00:01", obj.value)
+      assert_equal(Time.new(1500,12,30,0,0,1), obj.value)
 
       obj = WIN32OLE_VARIANT.new("1899/12/29 23:59:59", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1899/12/29 23:59:59", obj.value)
+      assert_equal(Time.new(1899,12,29,23,59,59), obj.value)
 
       obj = WIN32OLE_VARIANT.new("1899/12/30 00:00:00", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1899/12/30 00:00:00", obj.value)
+      assert_equal(Time.new(1899,12,30), obj.value)
 
       obj = WIN32OLE_VARIANT.new("1899/12/30 00:00:01", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1899/12/30 00:00:01", obj.value)
+      assert_equal(Time.new(1899,12,30,0,0,1), obj.value)
 
       obj = WIN32OLE_VARIANT.new(0, WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("1899/12/30 00:00:00", obj.value)
+      assert_equal(Time.new(1899,12,30), obj.value)
 
       obj = WIN32OLE_VARIANT.new("2008/12/29 23:59:59", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("2008/12/29 23:59:59", obj.value)
+      assert_equal(Time.new(2008,12,29,23,59,59), obj.value)
 
       obj = WIN32OLE_VARIANT.new("2008/12/30 00:00:00", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("2008/12/30 00:00:00", obj.value)
+      assert_equal(Time.new(2008,12,30,0,0,0), obj.value)
 
       obj = WIN32OLE_VARIANT.new("2008/12/30 00:00:01", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("2008/12/30 00:00:01", obj.value)
+      assert_equal(Time.new(2008,12,30,0,0,1), obj.value)
 
       obj = WIN32OLE_VARIANT.new("9999/12/31 23:59:59", WIN32OLE::VARIANT::VT_DATE)
-      assert_equal("9999/12/31 23:59:59", obj.value)
+      assert_equal(Time.new(9999,12,31,23,59,59), obj.value)
     end
 
     def test_create_nil_dispatch
@@ -620,11 +637,11 @@ if defined?(WIN32OLE_VARIANT)
       assert_raise(WIN32OLERuntimeError) {
         obj.value = "hogehoge"
       }
-      assert_equal("2007/01/01 00:00:00", obj.value)
+      assert_equal(Time.new(2007,1,1), obj.value)
 
       obj2 = WIN32OLE_VARIANT.new("2006/01/01", WIN32OLE::VARIANT::VT_DATE)
       obj.value = obj2
-      assert_equal("2006/01/01 00:00:00", obj.value)
+      assert_equal(Time.new(2006,01,01), obj.value)
     end
 
     def test_c_nothing

@@ -2,13 +2,7 @@ require 'test/unit'
 require 'drb/drb'
 require 'drb/extservm'
 require 'timeout'
-begin
-  loadpath = $:.dup
-  $:.replace($: | [File.expand_path("../ruby", File.dirname(__FILE__))])
-  require 'envutil'
-ensure
-  $:.replace(loadpath)
-end
+require_relative '../ruby/envutil'
 
 class DRbService
   @@manager = DRb::ExtServManager.new
@@ -98,7 +92,7 @@ module DRbCore
     assert_equal(6, @there.sample(onecky, 1, 2))
     ary = @there.to_a
     assert_kind_of(DRb::DRbObject, ary)
-    
+
     assert(@there.respond_to?(:to_a, true))
     assert(@there.respond_to?(:eval, true))
     assert(! @there.respond_to?(:eval, false))

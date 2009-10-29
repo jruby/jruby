@@ -122,7 +122,7 @@ class TestStruct < Test::Unit::TestCase
     o = klass.new(1)
     assert_equal("#<struct a=1>", o.inspect)
     o.a = o
-    assert(o.inspect =~ /^#<struct a=#<struct #<.*?>:...>>$/)
+    assert_match(/^#<struct a=#<struct #<.*?>:...>>$/, o.inspect)
 
     Struct.new("Foo", :a)
     o = Struct::Foo.new(1)
@@ -211,5 +211,12 @@ class TestStruct < Test::Unit::TestCase
     assert_raise(TypeError){
       Struct.new(0)
     }
+  end
+
+  def test_nonascii
+    struct_test = Struct.new("R\u{e9}sum\u{e9}", :"r\u{e9}sum\u{e9}")
+    assert_equal(Struct.const_get("R\u{e9}sum\u{e9}"), struct_test, '[ruby-core:24849]')
+    a = struct_test.new(42)
+    assert_equal("#<struct Struct::R\u{e9}sum\u{e9} r\u{e9}sum\u{e9}=42>", a.inspect, '[ruby-core:24849]')
   end
 end

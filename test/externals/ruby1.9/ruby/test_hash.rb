@@ -113,7 +113,7 @@ class TestHash < Test::Unit::TestCase
     assert_instance_of(@cls, h)
     assert_equal('default', h.default)
     assert_equal('default', h['spurious'])
-    
+
   end
 
   def test_AREF # '[]'
@@ -539,7 +539,7 @@ class TestHash < Test::Unit::TestCase
 
   def test_shift
     h = @h.dup
-    
+
     @h.length.times {
       k, v = h.shift
       assert(@h.key?(k))
@@ -767,10 +767,6 @@ class TestHash < Test::Unit::TestCase
     assert(h1 != h2)
     h1 = {1=>2}; h2 = {1=>4}
     assert(h1 != h2)
-
-    h1 = {}; h1[h1] = h1; h1.rehash
-    h2 = {}; h2[h2] = h2; h2.rehash
-    assert(h1 != h2)
   end
 
   def test_eql
@@ -846,7 +842,33 @@ class TestHash < Test::Unit::TestCase
     assert_nil(h["foo"])
   end
 
+  class ObjWithHash
+    def initialize(value, hash)
+      @value = value
+      @hash = hash
+    end
+    attr_reader :value, :hash
+
+    def eql?(other)
+      @value == other.value
+    end
+  end
+
   def test_hash_hash
     assert_equal({0=>2,11=>1}.hash, {11=>1,0=>2}.hash)
+    o1 = ObjWithHash.new(0,1)
+    o2 = ObjWithHash.new(11,1)
+    assert_equal({o1=>1,o2=>2}.hash, {o2=>2,o1=>1}.hash)
+  end
+
+  def test_hash_bignum_hash
+    x = 2<<(32-3)-1
+    assert_equal({x=>1}.hash, {x=>1}.hash)
+    x = 2<<(64-3)-1
+    assert_equal({x=>1}.hash, {x=>1}.hash)
+
+    o = Object.new
+    def o.hash; 2<<100; end
+    assert_equal({x=>1}.hash, {x=>1}.hash)
   end
 end

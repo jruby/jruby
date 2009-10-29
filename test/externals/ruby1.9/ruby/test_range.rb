@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'delegate'
 
 class TestRange < Test::Unit::TestCase
   def test_range_string
@@ -7,6 +8,19 @@ class TestRange < Test::Unit::TestCase
     assert_equal(["a"], ("a" .. "a").to_a)
     assert_equal(["a"], ("a" ... "b").to_a)
     assert_equal(["a", "b"], ("a" .. "b").to_a)
+  end
+
+  def test_range_numeric_string
+    assert_equal(["6", "7", "8"], ("6".."8").to_a, "[ruby-talk:343187]")
+    assert_equal(["6", "7"], ("6"..."8").to_a)
+    assert_equal(["9", "10"], ("9".."10").to_a)
+    assert_equal(["09", "10"], ("09".."10").to_a, "[ruby-dev:39361]")
+    assert_equal(["9", "10"], (SimpleDelegator.new("9").."10").to_a)
+    assert_equal(["9", "10"], ("9"..SimpleDelegator.new("10")).to_a)
+  end
+
+  def test_range_symbol
+    assert_equal([:a, :b], (:a .. :b).to_a)
   end
 
   def test_evaluation_order
@@ -89,6 +103,8 @@ class TestRange < Test::Unit::TestCase
     assert(r != (1..2))
     assert(r != (0..2))
     assert(r != (0...1))
+    subclass = Class.new(Range)
+    assert(r == subclass.new(0,1))
   end
 
   def test_eql
@@ -99,6 +115,8 @@ class TestRange < Test::Unit::TestCase
     assert(!r.eql?(1..2))
     assert(!r.eql?(0..2))
     assert(!r.eql?(0...1))
+    subclass = Class.new(Range)
+    assert(r.eql?(subclass.new(0,1)))
   end
 
   def test_hash

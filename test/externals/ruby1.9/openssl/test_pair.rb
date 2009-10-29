@@ -7,10 +7,7 @@ require 'test/unit'
 if defined?(OpenSSL)
 
 require 'socket'
-dir = File.expand_path(__FILE__)
-2.times {dir = File.dirname(dir)}
-$:.replace([File.join(dir, "ruby")] | $:)
-require 'ut_eof'
+require_relative '../ruby/ut_eof'
 
 module SSLPair
   def server
@@ -57,7 +54,7 @@ module SSLPair
   ensure
     if th && th.alive?
       th.kill
-      th.join 
+      th.join
     end
   end
 end
@@ -142,6 +139,110 @@ class OpenSSL::TestPair < Test::Unit::TestCase
       s1.close
       assert_equal("\n", s2.read)
     }
+  end
+
+  def test_read_nonblock
+    ssl_pair {|s1, s2|
+      err = nil
+      assert_raise(OpenSSL::SSL::SSLError) {
+        begin
+          s2.read_nonblock(10)
+        ensure
+          err = $!
+        end
+      }
+      assert_kind_of(IO::WaitReadable, err)
+      s1.write "abc\ndef\n"
+      IO.select([s2])
+      assert_equal("ab", s2.read_nonblock(2))
+      assert_equal("c\n", s2.gets)
+      ret = nil
+      assert_nothing_raised("[ruby-core:20298]") { ret = s2.read_nonblock(10) }
+      assert_equal("def\n", ret)
+    }
+  end
+
+  def test_write_nonblock
+    ssl_pair {|s1, s2|
+      n = 0
+      begin
+        n += s1.write_nonblock("a" * 100000)
+        n += s1.write_nonblock("b" * 100000)
+        n += s1.write_nonblock("c" * 100000)
+        n += s1.write_nonblock("d" * 100000)
+        n += s1.write_nonblock("e" * 100000)
+        n += s1.write_nonblock("f" * 100000)
+      rescue IO::WaitWritable
+      end
+      s1.close
+      assert_equal(n, s2.read.length)
+    }
+  end
+
+  def test_write_nonblock_with_buffered_data
+    ssl_pair {|s1, s2|
+      s1.write "foo"
+      s1.write_nonblock("bar")
+      s1.write "baz"
+      s1.close
+      assert_equal("foobarbaz", s2.read)
+    }
+  end
+
+  def test_connect_accept_nonblock
+    host = "127.0.0.1"
+    port = 0
+    ctx = OpenSSL::SSL::SSLContext.new()
+    ctx.ciphers = "ADH"
+    serv = TCPServer.new(host, port)
+    ssls = OpenSSL::SSL::SSLServer.new(serv, ctx)
+
+    port = serv.connect_address.ip_port
+
+    sock1 = TCPSocket.new(host, port)
+    sock2 = serv.accept
+    serv.close
+
+    th = Thread.new {
+      s2 = OpenSSL::SSL::SSLSocket.new(sock2, ctx)
+      s2.sync_close = true
+      begin
+        sleep 0.2
+        s2.accept_nonblock
+      rescue IO::WaitReadable
+        IO.select([s2])
+        retry
+      rescue IO::WaitWritable
+        IO.select(nil, [s2])
+        retry
+      end
+      s2
+    }
+
+    sleep 0.1
+    ctx = OpenSSL::SSL::SSLContext.new()
+    ctx.ciphers = "ADH"
+    s1 = OpenSSL::SSL::SSLSocket.new(sock1, ctx)
+    begin
+      sleep 0.2
+      s1.connect_nonblock
+    rescue IO::WaitReadable
+      IO.select([s1])
+      retry
+    rescue IO::WaitWritable
+      IO.select(nil, [s1])
+      retry
+    end
+    s1.sync_close = true
+
+    s2 = th.value
+
+    s1.print "a\ndef"
+    assert_equal("a\n", s2.gets)
+  ensure
+    serv.close if serv && !serv.closed?
+    sock1.close if sock1 && !sock1.closed?
+    sock2.close if sock2 && !sock2.closed?
   end
 
 end

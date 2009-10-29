@@ -1,4 +1,4 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), 'gemutilities')
+require_relative 'gemutilities'
 require 'rubygems/commands/sources_command'
 
 class TestGemCommandsSourcesCommand < RubyGemTestCase
@@ -9,6 +9,10 @@ class TestGemCommandsSourcesCommand < RubyGemTestCase
     @cmd = Gem::Commands::SourcesCommand.new
 
     @new_repo = "http://beta-gems.example.com"
+  end
+
+  def test_initialize_proxy
+    assert @cmd.handles?(['--http-proxy', 'http://proxy.example.com'])
   end
 
   def test_execute
@@ -175,12 +179,12 @@ Will cause RubyGems to revert to legacy indexes, degrading performance.
     assert_equal expected, @ui.output
     assert_equal '', @ui.error
 
-    assert !File.exist?(cache.system_cache_file),
+    refute File.exist?(cache.system_cache_file),
            'system cache file'
-    assert !File.exist?(cache.latest_system_cache_file),
+    refute File.exist?(cache.latest_system_cache_file),
            'latest system cache file'
 
-    assert !File.exist?(fetcher.dir), 'cache dir removed'
+    refute File.exist?(fetcher.dir), 'cache dir removed'
   end
 
   def test_execute_remove
@@ -244,7 +248,7 @@ Will cause RubyGems to revert to legacy indexes, degrading performance.
     assert_equal "source cache successfully updated\n", @ui.output
     assert_equal '', @ui.error
   end
- 
+
   def test_execute_update_legacy
     @cmd.handle_options %w[--update]
 
@@ -269,6 +273,6 @@ source cache successfully updated
     assert_equal expected, @ui.output
     assert_equal '', @ui.error
   end
- 
+
 end
 

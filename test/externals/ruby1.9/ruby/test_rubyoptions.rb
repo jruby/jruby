@@ -60,7 +60,7 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_verbose
     assert_in_out_err(%w(-vve) + [""]) do |r, e|
-      assert_match(/^ruby #{RUBY_VERSION}[p ].*? \[#{RUBY_PLATFORM}\]$/, r.join)
+      assert_match(/^ruby #{RUBY_VERSION}(?:[p ]|dev).*? \[#{RUBY_PLATFORM}\]$/, r.join)
       assert_equal RUBY_DESCRIPTION, r.join.chomp
       assert_equal([], e)
     end
@@ -106,7 +106,7 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_version
     assert_in_out_err(%w(--version)) do |r, e|
-      assert_match(/^ruby #{RUBY_VERSION}[p ].*? \[#{RUBY_PLATFORM}\]$/, r.join)
+      assert_match(/^ruby #{RUBY_VERSION}(?:[p ]|dev).*? \[#{RUBY_PLATFORM}\]$/, r.join)
       assert_equal RUBY_DESCRIPTION, r.join.chomp
       assert_equal([], e)
     end
@@ -199,15 +199,11 @@ class TestRubyOptions < Test::Unit::TestCase
     ENV['RUBYOPT'] = ' - -'
     assert_in_out_err([], "", [], [])
 
-    assert_in_out_err(['-e', 'p $:.include?(".")'], "", ["true"], [])
-
     ENV['RUBYOPT'] = '-e "p 1"'
     assert_in_out_err([], "", [], /invalid switch in RUBYOPT: -e \(RuntimeError\)/)
 
     ENV['RUBYOPT'] = '-T1'
     assert_in_out_err([], "", [], /no program input from stdin allowed in tainted mode \(SecurityError\)/)
-
-    assert_in_out_err(['-e', 'p $:.include?(".")'], "", ["false"], [])
 
     ENV['RUBYOPT'] = '-T4'
     assert_in_out_err([], "", [], /no program input from stdin allowed in tainted mode \(SecurityError\)/)
@@ -262,10 +258,10 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_shebang
     assert_in_out_err([], "#! /test_r_u_b_y_test_r_u_b_y_options_foobarbazqux\r\np 1\r\n",
-                      [], /Can't exec [\/\\]test_r_u_b_y_test_r_u_b_y_options_foobarbazqux \(fatal\)/)
+                      [], /: no Ruby script found in input/)
 
     assert_in_out_err([], "#! /test_r_u_b_y_test_r_u_b_y_options_foobarbazqux -foo -bar\r\np 1\r\n",
-                      [], /Can't exec [\/\\]test_r_u_b_y_test_r_u_b_y_options_foobarbazqux \(fatal\)/)
+                      [], /: no Ruby script found in input/)
 
     assert_in_out_err([], "#!ruby -KU -Eutf-8\r\np \"\u3042\"\r\n") do |r, e|
       assert_equal("\"\u3042\"", r.join.force_encoding(Encoding::UTF_8))
@@ -283,5 +279,45 @@ class TestRubyOptions < Test::Unit::TestCase
 
     assert_in_out_err(%w(- -#=foo), "#!ruby -s\n", [],
                       /invalid name for global variable - -# \(NameError\)/)
+  end
+
+  def test_assignment_in_conditional
+    t = Tempfile.new(["test_ruby_test_rubyoption", ".rb"])
+    t.puts "if a = 1"
+    t.puts "end"
+    t.puts "0.times do"
+    t.puts "  if b = 2"
+    t.puts "  end"
+    t.puts "end"
+    t.close
+    err = ["#{t.path}:1: warning: found = in conditional, should be ==",
+           "#{t.path}:4: warning: found = in conditional, should be =="]
+    err = /\A(#{Regexp.quote(t.path)}):1(: warning: found = in conditional, should be ==)\n\1:4\2\Z/
+    bug2136 = '[ruby-dev:39363]'
+    assert_in_out_err(["-w", t.path], "", [], err, bug2136)
+    assert_in_out_err(["-wr", t.path, "-e", ""], "", [], err, bug2136)
+  ensure
+    t.close(true) if t
+  end
+
+  def test_indentation_check
+    t = Tempfile.new(["test_ruby_test_rubyoption", ".rb"])
+    t.puts "begin"
+    t.puts " end"
+    t.close
+    err = ["#{t.path}:2: warning: mismatched indentations at 'end' with 'begin' at 1"]
+    assert_in_out_err(["-w", t.path], "", [], err)
+    assert_in_out_err(["-wr", t.path, "-e", ""], "", [], err)
+  ensure
+    t.close(true) if t
+  end
+
+  def test_notfound
+    notexist = "./notexist.rb"
+    rubybin = Regexp.quote(EnvUtil.rubybin)
+    pat = /\A#{rubybin}:.* -- #{Regexp.quote(notexist)} \(LoadError\)\Z/
+    assert_equal(false, File.exist?(notexist))
+    assert_in_out_err(["-r", notexist, "-ep"], [], [], pat)
+    assert_in_out_err([notexist], [], [], pat)
   end
 end

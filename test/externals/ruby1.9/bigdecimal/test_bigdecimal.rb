@@ -419,9 +419,7 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal([0, 0], BigDecimal.new("0").divmod(2))
 
     BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
-    a, b = BigDecimal.new("0").divmod(0)
-    assert_equal(true, a.nan?)
-    assert_equal(true, b.nan?)
+    assert_raise(ZeroDivisionError){BigDecimal.new("0").divmod(0)}
   end
 
   def test_add_bigdecimal
@@ -692,5 +690,9 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(BigDecimal::SIGN_NEGATIVE_INFINITE, BigDecimal.new("-1E1" + "0" * 10000).sign)
     assert_equal(BigDecimal::SIGN_POSITIVE_ZERO, BigDecimal.new("1E-1" + "0" * 10000).sign)
     assert_equal(BigDecimal::SIGN_NEGATIVE_ZERO, BigDecimal.new("-1E-1" + "0" * 10000).sign)
+  end
+
+  def test_coerce
+    assert_equal(2, 1 + BigDecimal.new("1"), '[ruby-core:25697]')
   end
 end

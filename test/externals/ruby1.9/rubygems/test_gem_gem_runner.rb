@@ -1,4 +1,4 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), 'gemutilities')
+require_relative 'gemutilities'
 require 'rubygems/gem_runner'
 
 class TestGemGemRunner < RubyGemTestCase
@@ -28,6 +28,17 @@ class TestGemGemRunner < RubyGemTestCase
     assert_equal [other_gem_path, other_gem_home], Gem.path
     assert_equal %w[--commands], Gem::Command.extra_args
     assert_equal %w[--all], Gem::DocManager.configured_args
+  end
+
+  def test_build_args__are_handled
+    Gem.clear_paths
+
+    gr = Gem::GemRunner.new
+    assert_raises(Gem::SystemExitException) do
+      gr.run(%W[--help -- --build_arg1 --build_arg2])
+    end
+
+    assert_equal %w[--build_arg1 --build_arg2], Gem::Command.build_args
   end
 
 end

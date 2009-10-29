@@ -22,7 +22,7 @@ class TestEncodingConverter < Test::Unit::TestCase
 
   def assert_errinfo(e_res, e_enc1, e_enc2, e_error_bytes, e_readagain_bytes, ec)
     assert_equal([e_res, e_enc1, e_enc2,
-                  e_error_bytes && e_error_bytes.dup.force_encoding("ASCII-8BIT"), 
+                  e_error_bytes && e_error_bytes.dup.force_encoding("ASCII-8BIT"),
                   e_readagain_bytes && e_readagain_bytes.dup.force_encoding("ASCII-8BIT")],
                  ec.primitive_errinfo)
   end
@@ -450,13 +450,13 @@ class TestEncodingConverter < Test::Unit::TestCase
 
   def test_errinfo_invalid_euc_jp
     ec = Encoding::Converter.new("EUC-JP", "Shift_JIS")
-    ec.primitive_convert(src="\xff", dst="", nil, 10)                       
+    ec.primitive_convert(src="\xff", dst="", nil, 10)
     assert_errinfo(:invalid_byte_sequence, "EUC-JP", "Shift_JIS", "\xFF", "", ec)
   end
 
   def test_errinfo_invalid_euc_jp2
     ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
-    ec.primitive_convert(src="\xff", dst="", nil, 10)                       
+    ec.primitive_convert(src="\xff", dst="", nil, 10)
     assert_errinfo(:invalid_byte_sequence, "EUC-JP", "UTF-8", "\xFF", "", ec)
   end
 
@@ -504,7 +504,7 @@ class TestEncodingConverter < Test::Unit::TestCase
 
     assert_equal(nil, ec.insert_output("\xA1\xA1".force_encoding("EUC-JP")))
     ec.primitive_convert("", dst, nil, 10, :partial_input=>true)
-    assert_equal("\e$B!!\e(B???\e$B!\"!!".force_encoding("ISO-2022-JP"), dst) 
+    assert_equal("\e$B!!\e(B???\e$B!\"!!".force_encoding("ISO-2022-JP"), dst)
 
     ec.primitive_convert(src="\xa1\xa3", dst, nil, 10, :partial_input=>true)
     assert_equal("\e$B!!\e(B???\e$B!\"!!!\#".force_encoding("ISO-2022-JP"), dst)
@@ -722,9 +722,9 @@ class TestEncodingConverter < Test::Unit::TestCase
   end
 
   def test_econv_new_hash
-    ec = Encoding::Converter.new("utf-8", "us-ascii", :undef => :replace)  
+    ec = Encoding::Converter.new("utf-8", "us-ascii", :undef => :replace)
     assert_equal("a ? b", ec.convert("a \u3042 b"))
-    ec = Encoding::Converter.new("utf-8", "us-ascii", :undef => :replace, :replace => "X")  
+    ec = Encoding::Converter.new("utf-8", "us-ascii", :undef => :replace, :replace => "X")
     assert_equal("a X b", ec.convert("a \u3042 b"))
   end
 
@@ -877,5 +877,13 @@ class TestEncodingConverter < Test::Unit::TestCase
       broken = "\x80".force_encoding("euc-jp")
       "".encode("euc-jp", :undef => :replace, :replace => broken)
     }
+  end
+
+  def test_utf8_mac
+    assert_equal("\u{fb4d}", "\u05DB\u05BF".encode("UTF-8", "UTF8-MAC"))
+    assert_equal("\u{1ff7}", "\u03C9\u0345\u0342".encode("UTF-8", "UTF8-MAC"))
+
+    assert_equal("\u05DB\u05BF", "\u{fb4d}".encode("UTF8-MAC").force_encoding("UTF-8"))
+    assert_equal("\u03C9\u0345\u0342", "\u{1ff7}".encode("UTF8-MAC").force_encoding("UTF-8"))
   end
 end

@@ -20,7 +20,7 @@ class TC_OpenStruct < Test::Unit::TestCase
     o2.instance_eval{@table = {:a => 'b'}}
     assert_not_equal(o1, o2)
   end
-  
+
   def test_inspect
     foo = OpenStruct.new
     assert_equal("#<OpenStruct>", foo.inspect)
@@ -33,5 +33,19 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert_equal('#<OpenStruct bar=#<OpenStruct>>', foo.inspect)
     foo.bar.foo = foo
     assert_equal('#<OpenStruct bar=#<OpenStruct foo=#<OpenStruct ...>>>', foo.inspect)
+  end
+
+  def test_frozen
+    o = OpenStruct.new
+    o.a = 'a'
+    o.freeze
+    assert_raise(TypeError) {o.b = 'b'}
+    assert_not_respond_to(o, :b)
+    assert_raise(TypeError) {o.a = 'z'}
+    assert_equal('a', o.a)
+    o = OpenStruct.new :a => 42
+    def o.frozen?; nil end
+    o.freeze
+    assert_raise(TypeError, '[ruby-core:22559]') {o.a = 1764}
   end
 end

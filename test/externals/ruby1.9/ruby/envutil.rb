@@ -4,7 +4,7 @@ require "timeout"
 module EnvUtil
   def rubybin
     unless ENV["RUBYOPT"]
-      
+
     end
     if ruby = ENV["RUBY"]
       return ruby
@@ -65,6 +65,19 @@ module EnvUtil
     stderr.close unless !stderr || stderr.closed?
   end
   module_function :rubyexec
+
+
+  def verbose_warning
+    class << (stderr = "")
+      alias write <<
+    end
+    stderr, $stderr, verbose, $VERBOSE = $stderr, stderr, $VERBOSE, true
+    yield stderr
+  ensure
+    stderr, $stderr, $VERBOSE = $stderr, stderr, verbose
+    return stderr
+  end
+  module_function :verbose_warning
 end
 
 module Test
@@ -94,16 +107,15 @@ module Test
           if status.coredump?
             sigdesc << " (core dumped)"
           end
+          full_message = ''
+          if !message.empty?
+            full_message << message << "\n"
+          end
           if msg.empty?
-            full_message = build_message(message, "pid ? killed by ?",
-                                         pid,
-                                         AssertionMessage::Literal.new(sigdesc))
+            full_message << "pid #{pid} killed by #{sigdesc}"
           else
             msg << "\n" if /\n\z/ !~ msg
-            full_message = build_message(message, "pid ? killed by ?\n?",
-                                         pid,
-                                         AssertionMessage::Literal.new(sigdesc),
-                                         AssertionMessage::Literal.new(msg.gsub(/^/, '| ')))
+            full_message << "pid #{pid} killed by #{sigdesc}\n#{msg.gsub(/^/, '| ')}"
           end
         end
         assert_block(full_message) { !status.signaled? }

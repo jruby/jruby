@@ -220,33 +220,27 @@ EOT
   end
 
   def test_s_pipe_invalid
-    r, w = IO.pipe("utf-8", "euc-jp", :invalid=>:replace)
-    w << "\x80"
-    w.close
-    assert_equal("?", r.read)
-  ensure
-    r.close if r && !r.closed?
-    w.close if w && !w.closed?
+    with_pipe("utf-8", "euc-jp", :invalid=>:replace) {|r, w|
+      w << "\x80"
+      w.close
+      assert_equal("?", r.read)
+    }
   end
 
   def test_s_pipe_undef
-    r, w = IO.pipe("utf-8:euc-jp", :undef=>:replace)
-    w << "\ufffd"
-    w.close
-    assert_equal("?", r.read)
-  ensure
-    r.close if r && !r.closed?
-    w.close if w && !w.closed?
+    with_pipe("utf-8:euc-jp", :undef=>:replace) {|r, w|
+      w << "\ufffd"
+      w.close
+      assert_equal("?", r.read)
+    }
   end
 
   def test_s_pipe_undef_replace_string
-    r, w = IO.pipe("utf-8:euc-jp", :undef=>:replace, :replace=>"X")
-    w << "\ufffd"
-    w.close
-    assert_equal("X", r.read)
-  ensure
-    r.close if r && !r.closed?
-    w.close if w && !w.closed?
+    with_pipe("utf-8:euc-jp", :undef=>:replace, :replace=>"X") {|r, w|
+      w << "\ufffd"
+      w.close
+      assert_equal("X", r.read)
+    }
   end
 
   def test_dup
@@ -572,11 +566,16 @@ EOT
       assert_equal(eucjp, r.read)
     }
 
+    e = assert_raise(ArgumentError) {with_pipe("UTF-8", "UTF-8".encode("UTF-32BE")) {}}
+    assert_match(/invalid name encoding/, e.message)
+    e = assert_raise(ArgumentError) {with_pipe("UTF-8".encode("UTF-32BE")) {}}
+    assert_match(/invalid name encoding/, e.message)
+
     ENCS.each {|enc|
       with_pipe(enc) {|r, w|
         w << "\xc2\xa1"
         w.close
-        s = r.getc 
+        s = r.getc
         assert_equal(enc, s.encoding)
       }
     }
@@ -897,7 +896,7 @@ EOT
           STDIN.reopen(io)
           STDIN.external_encoding
           STDIN.write "\u3042"
-          STDIN.flush 
+          STDIN.flush
         End
         Process.wait pid
         f.rewind
@@ -1360,7 +1359,7 @@ EOT
       }
       content = File.read("t", :mode=>"rb:ascii-8bit")
       assert_equal(expected.dup.force_encoding("ascii-8bit"),
-                   content.force_encoding("ascii-8bit")) 
+                   content.force_encoding("ascii-8bit"))
     }
   end
 
@@ -1689,6 +1688,20 @@ EOT
       }
       content = File.read("iso-2022-jp.txt", :mode=>"rb:ascii-8bit")
       assert_equal("\"&#x4E02;\"".force_encoding("ascii-8bit"), content)
+    }
+  end
+
+  def test_strip_bom
+    with_tmpdir {
+      text = "\uFEFFa"
+      %w/UTF-8 UTF-16BE UTF-16LE UTF-32BE UTF-32LE/.each do |name|
+        path = '%s-bom.txt' % name
+        content = text.encode(name)
+        generate_file(path, content)
+        result = File.read(path, mode: 'rb:BOM|UTF-8')
+        assert_equal(content[1].force_encoding("ascii-8bit"),
+                     result.force_encoding("ascii-8bit"))
+      end
     }
   end
 end

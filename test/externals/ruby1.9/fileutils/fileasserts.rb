@@ -1,4 +1,4 @@
-# $Id: fileasserts.rb 19504 2008-09-23 21:39:21Z ryan $
+# $Id$
 
 module Test
   module Unit
@@ -94,7 +94,7 @@ EOT
 <#{expected_str}> expected but was
 <#{actual_str}>.
 EOT
-          # subsecond timestamp is not portable. 
+          # subsecond timestamp is not portable.
 	  assert_block(full_message) { expected.tv_sec == actual.tv_sec }
         }
       end

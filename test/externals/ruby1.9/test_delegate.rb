@@ -13,11 +13,10 @@ class TestDelegateClass < Test::Unit::TestCase
     assert_equal(:m, obj.m, "[ruby-dev:33116]")
   end
 
-  # became pending by [ruby-dev:36950].
-  # def test_systemcallerror_eq
-  #   e = SystemCallError.new(0)
-  #   assert((SimpleDelegator.new(e) == e) == (e == SimpleDelegator.new(e)), "[ruby-dev:34808]")
-  # end
+  def test_systemcallerror_eq
+    e = SystemCallError.new(0)
+    assert((SimpleDelegator.new(e) == e) == (e == SimpleDelegator.new(e)), "[ruby-dev:34808]")
+  end
 
   class Myclass < DelegateClass(Array);end
 
@@ -29,5 +28,27 @@ class TestDelegateClass < Test::Unit::TestCase
   def test_simpledelegator_class
     simple=SimpleDelegator.new([])
     assert_equal(SimpleDelegator,simple.class)
+  end
+
+  class Object
+    def m
+      :o
+    end
+  end
+
+  class Foo
+    def m
+      :m
+    end
+  end
+
+  class Bar < DelegateClass(Foo)
+  end
+
+  def test_override
+    assert_equal(:o, Object.new.m)
+    assert_equal(:m, Foo.new.m)
+    assert_equal(:m, SimpleDelegator.new(Foo.new).m)
+    assert_equal(:m, Bar.new(Foo.new).m)
   end
 end

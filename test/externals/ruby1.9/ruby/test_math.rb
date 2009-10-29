@@ -1,6 +1,11 @@
 require 'test/unit'
 
 class TestMath < Test::Unit::TestCase
+  def assert_infinity(a, *rest)
+    rest = ["not infinity"] if rest.empty?
+    assert(!a.finite?, *rest)
+  end
+
   def check(a, b)
     err = [Float::EPSILON * 4, [a.abs, b.abs].max * Float::EPSILON * 256].max
     assert_in_delta(a, b, err)
@@ -189,6 +194,13 @@ class TestMath < Test::Unit::TestCase
     check(2, Math.gamma(3))
     check(15 * sqrt_pi / 8, Math.gamma(3.5))
     check(6, Math.gamma(4))
+
+    # no SEGV [ruby-core:25257]
+    31.upto(65) do |i|
+      i = 1 << i
+      assert_infinity(Math.gamma(i), "Math.gamma(#{i}) should be INF")
+      assert_infinity(Math.gamma(i-1), "Math.gamma(#{i-1}) should be INF")
+    end
   end
 
   def test_lgamma

@@ -6,17 +6,17 @@ require_relative 'envutil'
 
 class TestArgf < Test::Unit::TestCase
   def setup
-    @t1 = Tempfile.new("foo")
+    @t1 = Tempfile.new("argf-foo")
     @t1.binmode
     @t1.puts "1"
     @t1.puts "2"
     @t1.close
-    @t2 = Tempfile.new("bar")
+    @t2 = Tempfile.new("argf-bar")
     @t2.binmode
     @t2.puts "3"
     @t2.puts "4"
     @t2.close
-    @t3 = Tempfile.new("baz")
+    @t3 = Tempfile.new("argf-baz")
     @t3.binmode
     @t3.puts "5"
     @t3.puts "6"
@@ -28,11 +28,12 @@ class TestArgf < Test::Unit::TestCase
     @tmps.each {|t|
       bak = t.path + ".bak"
       File.unlink bak if File.file? bak
+      t.close(true)
     }
   end
 
   def make_tempfile
-    t = Tempfile.new("foo")
+    t = Tempfile.new("argf-qux")
     t.puts "foo"
     t.puts "bar"
     t.puts "baz"
@@ -54,8 +55,21 @@ class TestArgf < Test::Unit::TestCase
     /cygwin|mswin|mingw|bccwin/ =~ RUBY_PLATFORM
   end
 
+  def assert_src_expected(line, src, args = nil)
+    args ||= [@t1.path, @t2.path, @t3.path]
+    expected = src.split(/^/)
+    ruby('-e', src, *args) do |f|
+      expected.each_with_index do |e, i|
+        /#=> *(.*)/ =~ e or next
+        a = f.gets
+        assert_not_nil(a, "[ruby-dev:34445]: remained")
+        assert_equal($1, a.chomp, "[ruby-dev:34445]: line #{line+i}")
+      end
+    end
+  end
+
   def test_argf
-    src = <<-SRC
+    assert_src_expected(__LINE__+1, <<-'SRC')
       a = ARGF
       b = a.dup
       p [a.gets.chomp, a.lineno, b.gets.chomp, b.lineno] #=> ["1", 1, "1", 1]
@@ -72,20 +86,10 @@ class TestArgf < Test::Unit::TestCase
       p [a.gets.chomp, a.lineno, b.gets.chomp, b.lineno] #=> ["5", 5, "5", 8]
       p [a.gets.chomp, a.lineno, b.gets.chomp, b.lineno] #=> ["6", 6, "6", 9]
     SRC
-    expected = src.scan(/\#=> *(.*+)/).flatten
-    ruby('-e', src, @t1.path, @t2.path, @t3.path) do |f|
-      f.each_with_index do |a, i|
-        assert_equal(expected.shift, a.chomp, "[ruby-dev:34445]: line #{i}")
-      end
-
-      assert_empty(expected, "[ruby-dev:34445]: remained")
-
-      # is this test OK? [ruby-dev:34445]
-    end
   end
 
   def test_lineno
-    src = <<-SRC
+    assert_src_expected(__LINE__+1, <<-'SRC')
       a = ARGF
       a.gets; p $.  #=> 1
       a.gets; p $.  #=> 2
@@ -102,14 +106,10 @@ class TestArgf < Test::Unit::TestCase
       a.gets; p $.  #=> 2001
       a.gets; p $.  #=> 2001
     SRC
-    expected = src.scan(/\#=> *(.*+)/).join(",")
-    ruby('-e', src, @t1.path, @t2.path, @t3.path) do |f|
-      assert_equal(expected, f.read.chomp.gsub("\n", ","))
-    end
   end
 
   def test_lineno2
-    src = <<-SRC
+    assert_src_expected(__LINE__+1, <<-'SRC')
       a = ARGF.dup
       a.gets; p $.  #=> 1
       a.gets; p $.  #=> 2
@@ -125,10 +125,6 @@ class TestArgf < Test::Unit::TestCase
       a.gets; p $.  #=> 2000
       a.gets; p $.  #=> 2000
     SRC
-    expected = src.scan(/\#=> *(.*+)/).join(",")
-    ruby('-e', src, @t1.path, @t2.path, @t3.path) do |f|
-      assert_equal(expected, f.read.chomp.gsub("\n", ","))
-    end
   end
 
   def test_inplace
@@ -304,73 +300,54 @@ class TestArgf < Test::Unit::TestCase
   end
 
   def test_seek
-    ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
+    assert_src_expected(__LINE__+1, <<-'SRC')
       ARGF.seek(4)
-      p ARGF.gets #=> "3"
+      p ARGF.gets #=> "3\n"
       ARGF.seek(0, IO::SEEK_END)
-      p ARGF.gets #=> "5"
+      p ARGF.gets #=> "5\n"
       ARGF.seek(4)
       p ARGF.gets #=> nil
       begin
         ARGF.seek(0)
       rescue
-        puts "end"
+        puts "end" #=> end
       end
     SRC
-      a = f.read.split("\n")
-      assert_equal('"3\n"', a.shift)
-      assert_equal('"5\n"', a.shift)
-      assert_equal('nil', a.shift)
-      assert_equal('end', a.shift)
-    end
   end
 
   def test_set_pos
-    ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
+    assert_src_expected(__LINE__+1, <<-'SRC')
       ARGF.pos = 4
-      p ARGF.gets #=> "3"
+      p ARGF.gets #=> "3\n"
       ARGF.pos = 4
-      p ARGF.gets #=> "5"
+      p ARGF.gets #=> "5\n"
       ARGF.pos = 4
       p ARGF.gets #=> nil
       begin
         ARGF.pos = 4
       rescue
-        puts "end"
+        puts "end" #=> end
       end
     SRC
-      a = f.read.split("\n")
-      assert_equal('"3\n"', a.shift)
-      assert_equal('"5\n"', a.shift)
-      assert_equal('nil', a.shift)
-      assert_equal('end', a.shift)
-    end
   end
 
   def test_rewind
-    ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
+    assert_src_expected(__LINE__+1, <<-'SRC')
       ARGF.pos = 4
       ARGF.rewind
-      p ARGF.gets #=> "1"
+      p ARGF.gets #=> "1\n"
       ARGF.pos = 4
-      p ARGF.gets #=> "3"
+      p ARGF.gets #=> "3\n"
       ARGF.pos = 4
-      p ARGF.gets #=> "5"
+      p ARGF.gets #=> "5\n"
       ARGF.pos = 4
       p ARGF.gets #=> nil
       begin
         ARGF.rewind
       rescue
-        puts "end"
+        puts "end" #=> end
       end
     SRC
-      a = f.read.split("\n")
-      assert_equal('"1\n"', a.shift)
-      assert_equal('"3\n"', a.shift)
-      assert_equal('"5\n"', a.shift)
-      assert_equal('nil', a.shift)
-      assert_equal('end', a.shift)
-    end
   end
 
   def test_fileno
@@ -433,9 +410,21 @@ class TestArgf < Test::Unit::TestCase
       end
     SRC
       a = f.read.split("\n")
-      ((%w(true false) * 4).take(7) + %w(end)).each do |x|
+      (%w(false) + (%w(false true) * 3) + %w(end)).each do |x|
         assert_equal(x, a.shift)
       end
+    end
+
+    t1 = Tempfile.new("argf-foo")
+    t1.binmode
+    t1.puts "foo"
+    t1.close
+    t2 = Tempfile.new("argf-bar")
+    t2.binmode
+    t2.puts "bar"
+    t2.close
+    ruby('-e', 'STDERR.reopen(STDOUT); ARGF.gets; ARGF.skip; p ARGF.eof?', t1.path, t2.path) do |f|
+      assert_equal(%w(false), f.read.split(/\n/))
     end
   end
 
@@ -658,16 +647,12 @@ class TestArgf < Test::Unit::TestCase
 
   def test_skip
     ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
-      begin
-        ARGF.skip
-      rescue
-        puts "cannot skip" # ???
-      end
+      ARGF.skip
       puts ARGF.gets
       ARGF.skip
       puts ARGF.read
     SRC
-      assert_equal("cannot skip\n1\n3\n4\n5\n6\n", f.read)
+      assert_equal("1\n3\n4\n5\n6\n", f.read)
     end
   end
 

@@ -4,15 +4,15 @@
 # See LICENSE.txt for permissions.
 #++
 
-require File.join(File.expand_path(File.dirname(__FILE__)), 'gemutilities')
+require_relative 'gemutilities'
 require 'rbconfig'
 require 'rubygems'
 
 class TestConfig < RubyGemTestCase
 
   def test_datadir
-    datadir = Config::CONFIG['datadir']
-    assert_equal "#{datadir}/xyz", Config.datadir('xyz')
+    datadir = RbConfig::CONFIG['datadir']
+    assert_equal "#{datadir}/xyz", RbConfig.datadir('xyz')
   end
 
 end

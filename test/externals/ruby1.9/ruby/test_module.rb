@@ -55,7 +55,7 @@ class TestModule < Test::Unit::TestCase
   end
 
   def test_CMP_0
-    assert_equal -1, (String <=> Object)
+    assert_equal(-1, (String <=> Object))
     assert_equal 1, (Object <=> String)
     assert_nil(Array <=> String)
   end
@@ -70,6 +70,12 @@ class TestModule < Test::Unit::TestCase
 
   def remove_json_mixins(list)
     list.reject {|c| c.to_s.start_with?("JSON") }
+  end
+
+  def remove_rake_mixins(list)
+    list.
+      reject {|c| c.to_s == "RakeFileUtils" }.
+      reject {|c| c.to_s.start_with?("FileUtils") }
   end
 
   module Mixin
@@ -100,16 +106,19 @@ class TestModule < Test::Unit::TestCase
     def AClass.cm3
       "cm3"
     end
-    
+
     private_class_method :cm1, "cm3"
 
     def aClass
+      :aClass
     end
 
     def aClass1
+      :aClass1
     end
 
     def aClass2
+      :aClass2
     end
 
     private :aClass1
@@ -118,15 +127,18 @@ class TestModule < Test::Unit::TestCase
 
   class BClass < AClass
     def bClass1
+      :bClass1
     end
 
     private
 
     def bClass2
+      :bClass2
     end
 
     protected
     def bClass3
+      :bClass3
     end
   end
 
@@ -199,9 +211,9 @@ class TestModule < Test::Unit::TestCase
     assert_equal([Mixin],            Mixin.ancestors)
 
     assert_equal([Object, Kernel, BasicObject],
-                 remove_json_mixins(remove_pp_mixins(Object.ancestors)))
+                 remove_rake_mixins(remove_json_mixins(remove_pp_mixins(Object.ancestors))))
     assert_equal([String, Comparable, Object, Kernel, BasicObject],
-                 remove_json_mixins(remove_pp_mixins(String.ancestors)))
+                 remove_rake_mixins(remove_json_mixins(remove_pp_mixins(String.ancestors))))
   end
 
   def test_class_eval
@@ -240,9 +252,9 @@ class TestModule < Test::Unit::TestCase
     assert_equal([], Mixin.included_modules)
     assert_equal([Mixin], User.included_modules)
     assert_equal([Kernel],
-                 remove_json_mixins(remove_pp_mixins(Object.included_modules)))
+                 remove_rake_mixins(remove_json_mixins(remove_pp_mixins(Object.included_modules))))
     assert_equal([Comparable, Kernel],
-                 remove_json_mixins(remove_pp_mixins(String.included_modules)))
+                 remove_rake_mixins(remove_json_mixins(remove_pp_mixins(String.included_modules))))
   end
 
   def test_instance_methods
@@ -489,7 +501,7 @@ class TestModule < Test::Unit::TestCase
 
     c = Class.new
     assert_raise(NameError) do
-      c.instance_eval { attr_reader :"$" }
+      c.instance_eval { attr_reader :"." }
     end
   end
 
@@ -516,10 +528,10 @@ class TestModule < Test::Unit::TestCase
       class << o; self; end.instance_eval { undef_method(:foo) }
     end
 
-    %w(object_id __send__ initialize).each do |m|
-      assert_in_out_err([], <<-INPUT, [], /warning: undefining `#{m}' may cause serious problem$/)
+    %w(object_id __send__ initialize).each do |n|
+      assert_in_out_err([], <<-INPUT, [], /warning: undefining `#{n}' may cause serious problems$/)
         $VERBOSE = false
-        Class.new.instance_eval { undef_method(:#{m}) }
+        Class.new.instance_eval { undef_method(:#{n}) }
       INPUT
     end
   end
@@ -530,7 +542,7 @@ class TestModule < Test::Unit::TestCase
       m.class_eval { alias foo bar }
     end
 
-    assert_in_out_err([], <<-INPUT, %w(2), /warning: discarding old foo$/)
+    assert_in_out_err([], <<-INPUT, %w(2), /discarding old foo$/)
       $VERBOSE = true
       c = Class.new
       c.class_eval do
@@ -720,5 +732,126 @@ class TestModule < Test::Unit::TestCase
         c2.instance_eval { include(m) }
       }.call
     end
+  end
+
+  def test_send
+    a = AClass.new
+    assert_equal(:aClass, a.__send__(:aClass))
+    assert_equal(:aClass1, a.__send__(:aClass1))
+    assert_equal(:aClass2, a.__send__(:aClass2))
+    b = BClass.new
+    assert_equal(:aClass, b.__send__(:aClass))
+    assert_equal(:aClass1, b.__send__(:aClass1))
+    assert_equal(:aClass2, b.__send__(:aClass2))
+    assert_equal(:bClass1, b.__send__(:bClass1))
+    assert_equal(:bClass2, b.__send__(:bClass2))
+    assert_equal(:bClass3, b.__send__(:bClass3))
+  end
+
+
+  def test_nonascii_name
+    c = eval("class ::C\u{df}; self; end")
+    assert_equal("C\u{df}", c.name, '[ruby-core:24600]')
+    c = eval("class C\u{df}; self; end")
+    assert_equal("TestModule::C\u{df}", c.name, '[ruby-core:24600]')
+  end
+
+  def test_method_added
+    memo = []
+    mod = Module.new do
+      mod = self
+      (class << self ; self ; end).class_eval do
+        define_method :method_added do |sym|
+          memo << sym
+          memo << mod.instance_methods(false)
+          memo << (mod.instance_method(sym) rescue nil)
+        end
+      end
+      def f
+      end
+      alias g f
+      attr_reader :a
+      attr_writer :a
+    end
+    assert_equal :f, memo.shift
+    assert_equal [:f], memo.shift, '[ruby-core:25536]'
+    assert_equal mod.instance_method(:f), memo.shift
+    assert_equal :g, memo.shift
+    assert_equal [:f, :g], memo.shift
+    assert_equal mod.instance_method(:f), memo.shift
+    assert_equal :a, memo.shift
+    assert_equal [:f, :g, :a], memo.shift
+    assert_equal mod.instance_method(:a), memo.shift
+    assert_equal :a=, memo.shift
+    assert_equal [:f, :g, :a, :a=], memo.shift
+    assert_equal mod.instance_method(:a=), memo.shift
+  end
+
+  def test_method_redefinition
+    feature2155 = '[ruby-dev:39400]'
+
+    line = __LINE__+4
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        def foo; end
+        def foo; end
+      end
+    end
+    assert_match(/:#{line}: warning: method redefined; discarding old foo/, stderr)
+    assert_match(/:#{line-1}: warning: previous definition of foo/, stderr, feature2155)
+
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        def foo; end
+        alias bar foo
+        def foo; end
+      end
+    end
+    assert_equal("", stderr)
+
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        def foo; end
+        alias bar foo
+        alias bar foo
+      end
+    end
+    assert_equal("", stderr)
+
+    line = __LINE__+4
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        define_method(:foo) do end
+        def foo; end
+      end
+    end
+    assert_match(/:#{line}: warning: method redefined; discarding old foo/, stderr)
+    assert_match(/:#{line-1}: warning: previous definition of foo/, stderr, feature2155)
+
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        define_method(:foo) do end
+        alias bar foo
+        alias barf oo
+      end
+    end
+    assert_equal("", stderr)
+
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        module_function
+        def foo; end
+        module_function :foo
+      end
+    end
+    assert_equal("", stderr, '[ruby-dev:39397]')
+
+    stderr = EnvUtil.verbose_warning do
+      Module.new do
+        def foo; end
+        undef foo
+      end
+    end
+    assert_equal("", stderr)
   end
 end

@@ -4,7 +4,7 @@
 # See LICENSE.txt for permissions.
 #++
 
-require File.join(File.expand_path(File.dirname(__FILE__)), 'gemutilities')
+require_relative 'gemutilities'
 require 'rubygems/source_info_cache'
 
 class Gem::SourceIndex
@@ -294,7 +294,7 @@ class TestGemSourceInfoCache < RubyGemTestCase
 
     gem_names = @sic.search(//, false, true).map { |spec| spec.full_name }
 
-    assert_equal %w[a-1 a-2 a_evil-9 c-1.2], gem_names
+    assert_equal %w[a-1 a-2 a-3.a a_evil-9 c-1.2], gem_names
   end
 
   def test_search_dependency

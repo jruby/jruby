@@ -311,11 +311,9 @@ class TestThread < Test::Unit::TestCase
     assert(c.stop?)
 
     d.kill
-    assert_equal("aborting", d.status)
-    assert(!d.stop?)
+    assert_equal(["aborting", false], [d.status, d.stop?])
 
-    assert_equal("run", e.status)
-    assert(!e.stop?)
+    assert_equal(["run", false], [e.status, e.stop?])
 
   ensure
     a.kill if a
@@ -450,13 +448,17 @@ class TestThread < Test::Unit::TestCase
     m.unlock
   end
 
-  def test_recursive_error
-    o = Object.new
-    def o.inspect
-      Thread.current[:__recursive_key__][:inspect] = nil
+  def test_recursive_outer
+    arr = []
+    obj = Struct.new(:foo, :visited).new(arr, false)
+    arr << obj
+    def obj.hash
+      self[:visited] = true
       super
+      raise "recursive_outer should short circuit intermediate calls"
     end
-    assert_raise(TypeError) { [o].inspect }
+    assert_nothing_raised {arr.hash}
+    assert(obj[:visited])
   end
 end
 
@@ -515,5 +517,15 @@ class TestThreadGroup < Test::Unit::TestCase
     c = Class.new(Thread)
     c.class_eval { def initialize; end }
     assert_raise(ThreadError) { c.new.start }
+  end
+
+  def test_backtrace
+    Thread.new{
+      assert_equal(Array, Thread.main.backtrace.class)
+    }.join
+
+    t = Thread.new{}
+    t.join
+    assert_equal(nil, t.backtrace)
   end
 end

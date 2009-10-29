@@ -47,6 +47,7 @@ class TestNumeric < Test::Unit::TestCase
   def test_numeric
     a = Numeric.new
     assert_raise(TypeError) { def a.foo; end }
+    assert_raise(TypeError) { eval("def a.\u3042; end") }
     assert_raise(TypeError) { a.dup }
   end
 
@@ -55,6 +56,7 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_divmod
+=begin
     DummyNumeric.class_eval do
       def /(x); 42.0; end
       def %(x); :mod; end
@@ -63,13 +65,16 @@ class TestNumeric < Test::Unit::TestCase
     assert_equal(42, DummyNumeric.new.div(1))
     assert_equal(:mod, DummyNumeric.new.modulo(1))
     assert_equal([42, :mod], DummyNumeric.new.divmod(1))
+=end
 
     assert_kind_of(Integer, 11.divmod(3.5).first, '[ruby-dev:34006]')
 
+=begin
   ensure
     DummyNumeric.class_eval do
       remove_method :/, :%
     end
+=end
   end
 
   def test_real_p

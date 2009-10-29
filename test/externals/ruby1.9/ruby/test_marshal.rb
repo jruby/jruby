@@ -116,6 +116,7 @@ class TestMarshal < Test::Unit::TestCase
   def test_limit
     assert_equal([[[]]], Marshal.load(Marshal.dump([[[]]], 3)))
     assert_raise(ArgumentError) { Marshal.dump([[[]]], 2) }
+    assert_nothing_raised(ArgumentError, '[ruby-core:24100]') { Marshal.dump("\u3042", 1) }
   end
 
   def test_userdef_invalid
@@ -190,5 +191,113 @@ class TestMarshal < Test::Unit::TestCase
     y = Marshal.load(s)
     assert_equal(true, y.tainted?)
     assert_equal(true, y.untrusted?)
+  end
+
+  def test_symbol
+    [:ruby, :"\u{7d05}\u{7389}"].each do |sym|
+      assert_equal(sym, Marshal.load(Marshal.dump(sym)), '[ruby-core:24788]')
+    end
+  end
+
+  ClassUTF8 = eval("class R\u{e9}sum\u{e9}; self; end")
+
+  iso_8859_1 = Encoding::ISO_8859_1
+
+  structISO8859_1 = Struct.new("r\xe9sum\xe9".force_encoding(iso_8859_1).intern)
+  const_set("R\xe9sum\xe9".force_encoding(iso_8859_1), structISO8859_1)
+  structISO8859_1.name
+  StructISO8859_1 = structISO8859_1
+  classISO8859_1 = Class.new do
+    attr_accessor "r\xe9sum\xe9".force_encoding(iso_8859_1)
+    eval("def initialize(x) @r\xe9sum\xe9 = x; end".force_encoding(iso_8859_1))
+  end
+  const_set("R\xe9sum\xe92".force_encoding(iso_8859_1), classISO8859_1)
+  classISO8859_1.name
+  ClassISO8859_1 = classISO8859_1
+
+  def test_class_nonascii
+    a = ClassUTF8.new
+    assert_instance_of(ClassUTF8, Marshal.load(Marshal.dump(a)), '[ruby-core:24790]')
+
+    bug1932 = '[ruby-core:24882]'
+
+    a = StructISO8859_1.new(10)
+    assert_nothing_raised(bug1932) do
+      assert_equal(a, Marshal.load(Marshal.dump(a)), bug1932)
+    end
+    a.__send__("#{StructISO8859_1.members[0]}=", a)
+    assert_nothing_raised(bug1932) do
+      assert_equal(a, Marshal.load(Marshal.dump(a)), bug1932)
+    end
+
+    a = ClassISO8859_1.new(10)
+    assert_nothing_raised(bug1932) do
+      b = Marshal.load(Marshal.dump(a))
+      assert_equal(ClassISO8859_1, b.class, bug1932)
+      assert_equal(a.instance_variables, b.instance_variables, bug1932)
+      a.instance_variables.each do |i|
+        assert_equal(a.instance_variable_get(i), b.instance_variable_get(i), bug1932)
+      end
+    end
+    a.__send__(a.methods(true).grep(/=\z/)[0], a)
+    assert_nothing_raised(bug1932) do
+      b = Marshal.load(Marshal.dump(a))
+      assert_equal(ClassISO8859_1, b.class, bug1932)
+      assert_equal(a.instance_variables, b.instance_variables, bug1932)
+      assert_equal(b, b.instance_variable_get(a.instance_variables[0]), bug1932)
+    end
+  end
+
+  def test_regexp
+    assert_equal(/\\u/, Marshal.load("\004\b/\b\\\\u\000"))
+    assert_equal(/u/, Marshal.load("\004\b/\a\\u\000"))
+    assert_equal(/u/, Marshal.load("\004\bI/\a\\u\000\006:\016@encoding\"\vEUC-JP"))
+
+    bug2109 = '[ruby-core:25625]'
+    a = "\x82\xa0".force_encoding(Encoding::Windows_31J)
+    b = "\x82\xa2".force_encoding(Encoding::Windows_31J)
+    c = [/#{a}/, /#{b}/]
+    assert_equal(c, Marshal.load(Marshal.dump(c)), bug2109)
+  end
+
+  class DumpTest
+    def marshal_dump
+      @@block.call(:marshal_dump)
+    end
+
+    def dump_each(&block)
+      @@block = block
+      Marshal.dump(self)
+    end
+  end
+
+  class LoadTest
+    def marshal_dump
+      nil
+    end
+    def marshal_load(obj)
+      @@block.call(:marshal_load)
+    end
+    def self.load_each(m, &block)
+      @@block = block
+      Marshal.load(m)
+    end
+  end
+
+  def test_context_switch
+    o = DumpTest.new
+    e = o.enum_for(:dump_each)
+    assert_equal(:marshal_dump, e.next)
+    GC.start
+    assert(true, '[ruby-dev:39425]')
+    assert_raise(StopIteration) {e.next}
+
+    o = LoadTest.new
+    m = Marshal.dump(o)
+    e = LoadTest.enum_for(:load_each, m)
+    assert_equal(:marshal_load, e.next)
+    GC.start
+    assert(true, '[ruby-dev:39425]')
+    assert_raise(StopIteration) {e.next}
   end
 end

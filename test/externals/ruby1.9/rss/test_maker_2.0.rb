@@ -4,20 +4,31 @@ require "rss/maker"
 
 module RSS
   class TestMaker20 < TestCase
+    def test_supported?
+      assert(RSS::Maker.supported?("2.0"))
+      assert(RSS::Maker.supported?("rss2.0"))
+      assert(!RSS::Maker.supported?("2.2"))
+      assert(!RSS::Maker.supported?("rss2.2"))
+    end
+
+    def test_find_class
+      assert_equal(RSS::Maker::RSS20, RSS::Maker["2.0"])
+      assert_equal(RSS::Maker::RSS20, RSS::Maker["rss2.0"])
+    end
 
     def test_rss
       assert_raise(LocalJumpError) do
         RSS::Maker.make("2.0")
       end
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
       end
       assert_equal("2.0", rss.rss_version)
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         maker.encoding = "EUC-JP"
       end
       assert_equal("2.0", rss.rss_version)
@@ -25,7 +36,7 @@ module RSS
 
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         maker.standalone = "yes"
       end
       assert_equal("2.0", rss.rss_version)
@@ -33,7 +44,7 @@ module RSS
 
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         maker.encoding = "EUC-JP"
         maker.standalone = "yes"
       end
@@ -68,7 +79,7 @@ module RSS
       ]
       generator = "RSS Maker"
       ttl = "60"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         maker.channel.title = title
         maker.channel.link = link
@@ -92,18 +103,18 @@ module RSS
             new_hour.content = hour
           end
         end
-        
+
         categories.each do |category|
           maker.channel.categories.new_category do |new_category|
             new_category.content = category
           end
         end
-        
+
         maker.channel.generator = generator
         maker.channel.ttl = ttl
       end
       channel = rss.channel
-      
+
       assert_equal(title, channel.title)
       assert_equal(link, channel.link)
       assert_equal(description, channel.description)
@@ -123,11 +134,11 @@ module RSS
       skipHours.each_with_index do |hour, i|
         assert_equal(hour.to_i, channel.skipHours.hours[i].content)
       end
-      
+
       channel.categories.each_with_index do |category, i|
         assert_equal(categories[i], category.content)
       end
-      
+
       assert_equal(generator, channel.generator)
       assert_equal(ttl.to_i, channel.ttl)
 
@@ -141,7 +152,7 @@ module RSS
       link = "http://hoge.com"
       description = "fugafugafugafuga"
       language = "ja"
-      
+
       assert_not_set_error("maker.channel", %w(title)) do
         RSS::Maker.make("2.0") do |maker|
           # maker.channel.title = title
@@ -178,7 +189,7 @@ module RSS
       assert_not_nil(rss)
     end
 
-    
+
     def test_cloud
       domain = "rpc.sys.com"
       port = "80"
@@ -202,7 +213,7 @@ module RSS
       assert_equal(registerProcedure, cloud.registerProcedure)
       assert_equal(protocol, cloud.protocol)
     end
-    
+
     def test_not_valid_cloud
       domain = "rpc.sys.com"
       port = "80"
@@ -265,7 +276,7 @@ module RSS
       end
       assert_nil(rss.channel.cloud)
     end
-    
+
 
     def test_image
       title = "fugafuga"
@@ -278,7 +289,7 @@ module RSS
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         maker.channel.link = link
-        
+
         maker.image.title = title
         maker.image.url = url
         maker.image.width = width
@@ -297,7 +308,7 @@ module RSS
         RSS::Maker.make("2.0") do |maker|
           # setup_dummy_channel(maker)
           maker.channel.link = link
-        
+
           maker.image.title = title
           maker.image.url = url
           maker.image.width = width
@@ -318,7 +329,7 @@ module RSS
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         maker.channel.link = link
-        
+
         # maker.image.title = title
         maker.image.url = url
         maker.image.width = width
@@ -332,7 +343,7 @@ module RSS
           setup_dummy_channel(maker)
           # maker.channel.link = link
           maker.channel.link = nil
-        
+
           maker.image.title = title
           maker.image.url = url
           maker.image.width = width
@@ -344,7 +355,7 @@ module RSS
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         maker.channel.link = link
-        
+
         maker.image.title = title
         # maker.image.url = url
         maker.image.width = width
@@ -353,7 +364,7 @@ module RSS
       end
       assert_nil(rss.image)
     end
-    
+
     def test_items(with_convenience_way=true)
       title = "TITLE"
       link = "http://hoge.com/"
@@ -370,7 +381,7 @@ module RSS
       item_size = 5
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         item_size.times do |i|
           maker.items.new_item do |item|
             item.title = "#{title}#{i}"
@@ -396,7 +407,7 @@ module RSS
 
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         item_size.times do |i|
           maker.items.new_item do |item|
             item.title = "#{title}#{i}"
@@ -463,7 +474,7 @@ module RSS
     def test_guid
       isPermaLink = "true"
       content = "http://inessential.com/2002/09/01.php#a2"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -477,9 +488,49 @@ module RSS
       assert_equal(content, guid.content)
     end
 
+    def test_guid_permanent_link
+      content = "http://inessential.com/2002/09/01.php#a2"
+
+      rss = RSS::Maker.make("2.0") do |maker|
+        setup_dummy_channel(maker)
+        setup_dummy_item(maker)
+
+        guid = maker.items.last.guid
+        assert_equal(nil, guid.permanent_link?)
+        assert_equal(guid.isPermaLink, guid.permanent_link?)
+        guid.permanent_link = true
+        assert_equal(true, guid.permanent_link?)
+        assert_equal(guid.isPermaLink, guid.permanent_link?)
+        guid.content = content
+      end
+      guid = rss.channel.items.last.guid
+      assert_equal(true, guid.isPermaLink)
+      assert_equal(content, guid.content)
+    end
+
+    def test_guid_permanent_link_false
+      content = "http://inessential.com/2002/09/01.php#a2"
+
+      rss = RSS::Maker.make("2.0") do |maker|
+        setup_dummy_channel(maker)
+        setup_dummy_item(maker)
+
+        guid = maker.items.last.guid
+        assert_equal(nil, guid.permanent_link?)
+        assert_equal(guid.isPermaLink, guid.permanent_link?)
+        guid.permanent_link = false
+        assert_equal(false, guid.permanent_link?)
+        assert_equal(guid.isPermaLink, guid.permanent_link?)
+        guid.content = content
+      end
+      guid = rss.channel.items.last.guid
+      assert_equal(false, guid.isPermaLink)
+      assert_equal(content, guid.content)
+    end
+
     def test_not_valid_guid
       content = "http://inessential.com/2002/09/01.php#a2"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -489,12 +540,12 @@ module RSS
       end
       assert_nil(rss.channel.items.last.guid)
     end
-    
+
     def test_enclosure
       url = "http://www.scripting.com/mp3s/weatherReportSuite.mp3"
       length = "12216320"
       type = "audio/mpeg"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -514,7 +565,7 @@ module RSS
       url = "http://www.scripting.com/mp3s/weatherReportSuite.mp3"
       length = "12216320"
       type = "audio/mpeg"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -525,7 +576,7 @@ module RSS
         enclosure.type = type
       end
       assert_nil(rss.channel.items.last.enclosure)
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -536,7 +587,7 @@ module RSS
         enclosure.type = type
       end
       assert_nil(rss.channel.items.last.enclosure)
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -553,7 +604,7 @@ module RSS
     def test_source
       url = "http://static.userland.com/tomalak/links2.xml"
       content = "Tomalak's Realm"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -570,7 +621,7 @@ module RSS
     def test_not_valid_source
       url = "http://static.userland.com/tomalak/links2.xml"
       content = "Tomalak's Realm"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -580,7 +631,7 @@ module RSS
         source.content = content
       end
       assert_nil(rss.channel.items.last.source)
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -591,11 +642,11 @@ module RSS
       end
       assert_nil(rss.channel.items.last.source)
     end
-    
+
     def test_category
       domain = "http://www.fool.com/cusips"
       content = "MSFT"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -612,7 +663,7 @@ module RSS
 
     def test_not_valid_category
       content = "Grateful Dead"
-      
+
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
         setup_dummy_item(maker)
@@ -623,7 +674,7 @@ module RSS
       end
       assert(rss.channel.items.last.categories.empty?)
     end
-    
+
     def test_textInput
       title = "fugafuga"
       description = "text hoge fuga"
@@ -655,7 +706,7 @@ module RSS
         end
       end
     end
-    
+
     def test_not_valid_textInput
       title = "fugafuga"
       description = "text hoge fuga"
@@ -674,7 +725,7 @@ module RSS
 
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         maker.textinput.title = title
         # maker.textinput.description = description
         maker.textinput.name = name
@@ -684,7 +735,7 @@ module RSS
 
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         maker.textinput.title = title
         maker.textinput.description = description
         # maker.textinput.name = name
@@ -694,7 +745,7 @@ module RSS
 
       rss = RSS::Maker.make("2.0") do |maker|
         setup_dummy_channel(maker)
-        
+
         maker.textinput.title = title
         maker.textinput.description = description
         maker.textinput.name = name

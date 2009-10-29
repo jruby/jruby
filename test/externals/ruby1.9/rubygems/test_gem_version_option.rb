@@ -1,4 +1,4 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), 'gemutilities')
+require_relative 'gemutilities'
 require 'rubygems/command'
 require 'rubygems/version_option'
 
@@ -21,6 +21,19 @@ class TestGemVersionOption < RubyGemTestCase
     @cmd.add_version_option
 
     assert @cmd.handles?(%w[--version >1])
+  end
+
+  def test_enables_prerelease
+    @cmd.add_version_option
+
+    @cmd.handle_options %w[mygem -v 0.2.0.a]
+    assert @cmd.options[:prerelease]
+
+    @cmd.handle_options %w[mygem -v 0.2.0]
+    refute @cmd.options[:prerelease]
+
+    @cmd.handle_options %w[mygem]
+    refute @cmd.options[:prerelease]
   end
 
   def test_platform_option

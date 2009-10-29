@@ -48,6 +48,7 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(1, @obj.find_index {|x| x % 2 == 0 })
     assert_equal(nil, @obj.find_index {|x| false })
     assert_raise(ArgumentError) { @obj.find_index(0, 1) }
+    assert_equal(1, @obj.find_index(2) {|x| x == 1 })
   end
 
   def test_find_all
@@ -212,6 +213,10 @@ class TestEnumerable < Test::Unit::TestCase
     @obj.zip([:a, :b, :c]) {|x,y| a << [x, y] }
     assert_equal([[1,:a],[2,:b],[3,:c],[1,nil],[2,nil]], a)
 
+    a = []
+    @obj.zip({a: "A", b: "B", c: "C"}) {|x,y| a << [x, y] }
+    assert_equal([[1,[:a,"A"]],[2,[:b,"B"]],[3,[:c,"C"]],[1,nil],[2,nil]], a)
+
     ary = Object.new
     def ary.to_a;   [1, 2]; end
     assert_raise(NoMethodError){ %w(a b).zip(ary) }
@@ -274,4 +279,114 @@ class TestEnumerable < Test::Unit::TestCase
       c.call
     end
   end
+
+  def test_reverse_each
+    assert_equal([2,1,3,2,1], @obj.reverse_each.to_a)
+  end
+
+  def test_join
+    ofs = $,
+    assert_equal("abc", ("a".."c").join(""))
+    assert_equal("a-b-c", ("a".."c").join("-"))
+    $, = "-"
+    assert_equal("a-b-c", ("a".."c").join())
+    $, = nil
+    assert_equal("abc", ("a".."c").join())
+    assert_equal("123", (1..3).join())
+    assert_raise(TypeError, '[ruby-core:24172]') {("a".."c").join(1)}
+    class << (e = Object.new.extend(Enumerable))
+      def each
+        yield self
+      end
+    end
+    assert_raise(ArgumentError){e.join("")}
+    assert_raise(ArgumentError){[e].join("")}
+    e = Class.new {
+      include Enumerable
+      def initialize(*args)
+        @e = args
+      end
+      def each
+        @e.each {|e| yield e}
+      end
+    }
+    e = e.new(1, e.new(2, e.new(3, e.new(4, 5))))
+    assert_equal("1:2:3:4:5", e.join(':'), '[ruby-core:24196]')
+  ensure
+    $, = ofs
+  end
+
+  def test_chunk
+    e = [].chunk {|elt| true }
+    assert_equal([], e.to_a)
+
+    e = @obj.chunk {|elt| elt & 2 == 0 ? false : true }
+    assert_equal([[false, [1]], [true, [2, 3]], [false, [1]], [true, [2]]], e.to_a)
+
+    e = @obj.chunk(acc: 0) {|elt, h| h[:acc] += elt; h[:acc].even? }
+    assert_equal([[false, [1,2]], [true, [3]], [false, [1,2]]], e.to_a)
+    assert_equal([[false, [1,2]], [true, [3]], [false, [1,2]]], e.to_a) # this tests h is duplicated.
+
+    hs = [{}]
+    e = [:foo].chunk(hs[0]) {|elt, h|
+      hs << h
+      true
+    }
+    assert_equal([[true, [:foo]]], e.to_a)
+    assert_equal([[true, [:foo]]], e.to_a)
+    assert_equal([{}, {}, {}], hs)
+    assert_not_same(hs[0], hs[1])
+    assert_not_same(hs[0], hs[2])
+    assert_not_same(hs[1], hs[2])
+
+    e = @obj.chunk {|elt| elt < 3 ? :_alone : true }
+    assert_equal([[:_alone, [1]],
+                  [:_alone, [2]],
+                  [true, [3]],
+                  [:_alone, [1]],
+                  [:_alone, [2]]], e.to_a)
+
+    e = @obj.chunk {|elt| elt == 3 ? :_separator : true }
+    assert_equal([[true, [1, 2]],
+                  [true, [1, 2]]], e.to_a)
+
+    e = @obj.chunk {|elt| elt == 3 ? nil : true }
+    assert_equal([[true, [1, 2]],
+                  [true, [1, 2]]], e.to_a)
+
+    e = @obj.chunk {|elt| :_foo }
+    assert_raise(RuntimeError) { e.to_a }
+  end
+
+  def test_slice_before
+    e = [].slice_before {|elt| true }
+    assert_equal([], e.to_a)
+
+    e = @obj.slice_before {|elt| elt.even? }
+    assert_equal([[1], [2,3,1], [2]], e.to_a)
+
+    e = @obj.slice_before {|elt| elt.odd? }
+    assert_equal([[1,2], [3], [1,2]], e.to_a)
+
+    e = @obj.slice_before(acc: 0) {|elt, h| h[:acc] += elt; h[:acc].even? }
+    assert_equal([[1,2], [3,1,2]], e.to_a)
+    assert_equal([[1,2], [3,1,2]], e.to_a) # this tests h is duplicated.
+
+    hs = [{}]
+    e = [:foo].slice_before(hs[0]) {|elt, h|
+      hs << h
+      true
+    }
+    assert_equal([[:foo]], e.to_a)
+    assert_equal([[:foo]], e.to_a)
+    assert_equal([{}, {}, {}], hs)
+    assert_not_same(hs[0], hs[1])
+    assert_not_same(hs[0], hs[2])
+    assert_not_same(hs[1], hs[2])
+
+    ss = %w[abc defg h ijk l mno pqr st u vw xy z]
+    assert_equal([%w[abc defg h], %w[ijk l], %w[mno], %w[pqr st u vw xy z]],
+                 ss.slice_before(/\A...\z/).to_a)
+  end
+
 end

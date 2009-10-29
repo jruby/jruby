@@ -16,7 +16,7 @@ if defined?(WIN32OLE)
     def test_convert_bignum
       @dict1.add("a", 9999999999)
       @dict1.add("b", 999999999)
-      @dict1.add("c", @dict1.item("b") * 10 + 9) 
+      @dict1.add("c", @dict1.item("b") * 10 + 9)
       assert_equal(9999999999, @dict1.item("a"))
       assert_equal(9999999999, @dict1.item("c"))
     end
@@ -134,11 +134,11 @@ if defined?(WIN32OLE)
       @dict1.add("ary2", [[1,2,"a"], [3,4,"b"]])
       assert_equal([[1,2,"a"], [3,4,"b"]], @dict1["ary2"])
 
-      @dict1.add("ary3", [[[1]]]) 
-      assert_equal([[[1]]], @dict1["ary3"]) 
+      @dict1.add("ary3", [[[1]]])
+      assert_equal([[[1]]], @dict1["ary3"])
 
-      @dict1.add("ary4", [[[1], [2], [3]], [[4], [5], [6]]]) 
-      assert_equal([[[1],[2], [3]], [[4], [5], [6]]], @dict1["ary4"]) 
+      @dict1.add("ary4", [[[1], [2], [3]], [[4], [5], [6]]])
+      assert_equal([[[1],[2], [3]], [[4], [5], [6]]], @dict1["ary4"])
     end
   end
 
@@ -303,7 +303,7 @@ if defined?(WIN32OLE)
                    guid)
     end
 
-    # 
+    #
     # WIN32OLE.codepage is initialized according to Encoding.default_external.
     #
     # def test_s_codepage
@@ -342,10 +342,13 @@ if defined?(WIN32OLE)
           assert_equal("\xA4\xA2".force_encoding("CP20932"), obj.value)
         end
 
-        WIN32OLE.codepage = cp 
+        WIN32OLE.codepage = cp
         file = fso.opentextfile(fname, 2, true)
-        file.write [0x3042].pack("U*").force_encoding("UTF-8")
-        file.close
+        begin
+          file.write [0x3042].pack("U*").force_encoding("UTF-8")
+        ensure
+          file.close
+        end
         str = ""
         open(fname, "r:ascii-8bit") {|ifs|
           str = ifs.read
@@ -353,15 +356,18 @@ if defined?(WIN32OLE)
         assert_equal("\202\240", str)
 
         # This test fail if codepage 20932 (euc) is not installed.
-        begin 
+        begin
           WIN32OLE.codepage = 20932
         rescue WIN32OLERuntimeError
         end
         if (WIN32OLE.codepage == 20932)
           WIN32OLE.codepage = cp
           file = fso.opentextfile(fname, 2, true)
-          file.write [164, 162].pack("c*").force_encoding("EUC-JP")
-          file.close
+          begin
+            file.write [164, 162].pack("c*").force_encoding("EUC-JP")
+          ensure
+            file.close
+          end
           open(fname, "r:ascii-8bit") {|ifs|
             str = ifs.read
           }
@@ -398,7 +404,12 @@ if defined?(WIN32OLE)
 
     def test_s_locale_set
       begin
-        WIN32OLE.locale = 1041
+        begin
+          WIN32OLE.locale = 1041
+        rescue WIN32OLERuntimeError
+          STDERR.puts("\n#{__FILE__}:#{__LINE__}:#{self.class.name}.test_s_locale_set is skipped(Japanese locale is not installed)")
+          return
+        end
         assert_equal(1041, WIN32OLE.locale)
         WIN32OLE.locale = WIN32OLE::LOCALE_SYSTEM_DEFAULT
         assert_raise(WIN32OLERuntimeError) {
@@ -412,16 +423,30 @@ if defined?(WIN32OLE)
 
     def test_s_locale_change
       begin
-        WIN32OLE.locale = 0x0411
-        obj = WIN32OLE_VARIANT.new("\\100,000", WIN32OLE::VARIANT::VT_CY)
-        assert_equal("100000", obj.value)
-        assert_raise(WIN32OLERuntimeError) {
-          obj = WIN32OLE_VARIANT.new("$100.000", WIN32OLE::VARIANT::VT_CY)
-        }
+        begin
+          WIN32OLE.locale = 0x0411
+        rescue WIN32OLERuntimeError
+        end
+        if WIN32OLE.locale == 0x0411
+          obj = WIN32OLE_VARIANT.new("\\100,000", WIN32OLE::VARIANT::VT_CY)
+          assert_equal("100000", obj.value)
+          assert_raise(WIN32OLERuntimeError) {
+            obj = WIN32OLE_VARIANT.new("$100.000", WIN32OLE::VARIANT::VT_CY)
+          }
+        else
+          STDERR.puts("\n#{__FILE__}:#{__LINE__}:#{self.class.name}.test_s_locale_change is skipped(Japanese locale is not installed)")
+        end
 
-        WIN32OLE.locale = 1033
-        obj = WIN32OLE_VARIANT.new("$100,000", WIN32OLE::VARIANT::VT_CY)
-        assert_equal("100000", obj.value)
+        begin
+          WIN32OLE.locale = 1033
+        rescue WIN32OLERuntimeError
+        end
+        if WIN32OLE.locale == 1033
+          obj = WIN32OLE_VARIANT.new("$100,000", WIN32OLE::VARIANT::VT_CY)
+          assert_equal("100000", obj.value)
+        else
+          STDERR.puts("\n#{__FILE__}:#{__LINE__}:#{self.class.name}.test_s_locale_change is skipped(US English locale is not installed)")
+        end
       ensure
         WIN32OLE.locale = WIN32OLE::LOCALE_SYSTEM_DEFAULT
       end

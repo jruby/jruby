@@ -4,6 +4,22 @@ require "rss/maker"
 
 module RSS
   class TestMakerAtomFeed < TestCase
+    def test_supported?
+      assert(RSS::Maker.supported?("atom"))
+      assert(RSS::Maker.supported?("atom:feed"))
+      assert(RSS::Maker.supported?("atom1.0"))
+      assert(RSS::Maker.supported?("atom1.0:feed"))
+      assert(!RSS::Maker.supported?("atom2.0"))
+      assert(!RSS::Maker.supported?("atom2.0:feed"))
+    end
+
+    def test_find_class
+      assert_equal(RSS::Maker::Atom::Feed, RSS::Maker["atom"])
+      assert_equal(RSS::Maker::Atom::Feed, RSS::Maker["atom:feed"])
+      assert_equal(RSS::Maker::Atom::Feed, RSS::Maker["atom1.0"])
+      assert_equal(RSS::Maker::Atom::Feed, RSS::Maker["atom1.0:feed"])
+    end
+
     def test_root_element
       feed = Maker.make("atom") do |maker|
         setup_dummy_channel_atom(maker)
@@ -384,6 +400,55 @@ module RSS
         setup_dummy_channel_atom(maker)
         setup_dummy_item_atom(maker)
       end
+    end
+
+    def test_language
+      language = "ja"
+      feed = Maker.make("atom") do |maker|
+        setup_dummy_channel_atom(maker)
+        maker.channel.language = "ja"
+      end
+      assert_equal(language, feed.dc_language)
+    end
+
+    def test_date
+      date = Time.parse("2004/11/1 10:10")
+      feed = Maker.make("atom") do |maker|
+        setup_dummy_channel_atom(maker)
+        maker.items.new_item do |item|
+          item.link = "http://example.com/article.html"
+          item.title = "sample article"
+          item.date = date
+        end
+      end
+      assert_equal(date, feed.items[0].updated.content)
+      assert_equal([date], feed.items[0].dc_dates.collect {|_date| _date.value})
+    end
+
+    def test_channel_dc_date
+      date = Time.parse("2004/11/1 10:10")
+      feed = Maker.make("atom") do |maker|
+        setup_dummy_channel_atom(maker)
+        maker.channel.updated = nil
+        maker.channel.dc_date = date
+        setup_dummy_item_atom(maker)
+      end
+      assert_equal(date, feed.updated.content)
+      assert_equal([date], feed.dc_dates.collect {|_date| _date.value})
+    end
+
+    def test_item_dc_date
+      date = Time.parse("2004/11/1 10:10")
+      feed = Maker.make("atom") do |maker|
+        setup_dummy_channel_atom(maker)
+        maker.items.new_item do |item|
+          item.link = "http://example.com/article.html"
+          item.title = "sample article"
+          item.dc_date = date
+        end
+      end
+      assert_equal(date, feed.items[0].updated.content)
+      assert_equal([date], feed.items[0].dc_dates.collect {|_date| _date.value})
     end
   end
 end

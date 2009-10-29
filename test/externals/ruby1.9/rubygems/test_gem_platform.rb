@@ -1,4 +1,4 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), 'gemutilities')
+require_relative 'gemutilities'
 require 'rubygems/platform'
 require 'rbconfig'
 
@@ -100,8 +100,8 @@ class TestGemPlatform < RubyGemTestCase
   end
 
   def test_initialize_mswin32_vc6
-    orig_RUBY_SO_NAME = Config::CONFIG['RUBY_SO_NAME']
-    Config::CONFIG['RUBY_SO_NAME'] = 'msvcrt-ruby18'
+    orig_RUBY_SO_NAME = RbConfig::CONFIG['RUBY_SO_NAME']
+    RbConfig::CONFIG['RUBY_SO_NAME'] = 'msvcrt-ruby18'
 
     expected = ['x86', 'mswin32', nil]
 
@@ -109,7 +109,7 @@ class TestGemPlatform < RubyGemTestCase
 
     assert_equal expected, platform.to_a, 'i386-mswin32 VC6'
   ensure
-    Config::CONFIG['RUBY_SO_NAME'] = orig_RUBY_SO_NAME
+    RbConfig::CONFIG['RUBY_SO_NAME'] = orig_RUBY_SO_NAME
   end
 
   def test_initialize_platform
@@ -131,6 +131,12 @@ class TestGemPlatform < RubyGemTestCase
     assert_equal 'cpu', platform.cpu
     assert_equal 'other_platform', platform.os
     assert_equal '1', platform.version
+  end
+
+  def test_empty
+    platform = Gem::Platform.new 'cpu-other_platform1'
+    assert_respond_to platform, :empty?
+    assert_equal false, platform.empty?
   end
 
   def test_to_s
@@ -155,8 +161,8 @@ class TestGemPlatform < RubyGemTestCase
     other = Gem::Platform.new %w[cpu other_platform 1]
 
     assert(my === my)
-    assert !(other === my)
-    assert !(my === other)
+    refute(other === my)
+    refute(my === other)
   end
 
   def test_equals3_cpu
@@ -167,10 +173,10 @@ class TestGemPlatform < RubyGemTestCase
     util_set_arch 'powerpc-darwin8'
     assert((ppc_darwin8 === Gem::Platform.local), 'powerpc =~ universal')
     assert((uni_darwin8 === Gem::Platform.local), 'powerpc =~ universal')
-    assert !(x86_darwin8 === Gem::Platform.local), 'powerpc =~ universal'
+    refute((x86_darwin8 === Gem::Platform.local), 'powerpc =~ universal')
 
     util_set_arch 'i686-darwin8'
-    assert !(ppc_darwin8 === Gem::Platform.local), 'powerpc =~ universal'
+    refute((ppc_darwin8 === Gem::Platform.local), 'powerpc =~ universal')
     assert((uni_darwin8 === Gem::Platform.local), 'x86 =~ universal')
     assert((x86_darwin8 === Gem::Platform.local), 'powerpc =~ universal')
 
@@ -191,8 +197,8 @@ class TestGemPlatform < RubyGemTestCase
     assert((x86_darwin  === Gem::Platform.local), 'x86_darwin === x86_darwin8')
     assert((x86_darwin8 === Gem::Platform.local), 'x86_darwin8 === x86_darwin8')
 
-    assert !(x86_darwin7 === Gem::Platform.local), 'x86_darwin7 === x86_darwin8'
-    assert !(x86_darwin9 === Gem::Platform.local), 'x86_darwin9 === x86_darwin8'
+    refute((x86_darwin7 === Gem::Platform.local), 'x86_darwin7 === x86_darwin8')
+    refute((x86_darwin9 === Gem::Platform.local), 'x86_darwin9 === x86_darwin8')
   end
 
   def test_equals_tilde

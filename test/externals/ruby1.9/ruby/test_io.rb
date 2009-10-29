@@ -22,6 +22,47 @@ class TestIO < Test::Unit::TestCase
     IO.instance_methods.index(:"nonblock=")
   end
 
+  def test_pipe
+    r, w = IO.pipe
+    assert_instance_of(IO, r)
+    assert_instance_of(IO, w)
+    w.print "abc"
+    w.close
+    assert_equal("abc", r.read)
+    r.close
+  end
+
+  def test_pipe_block
+    x = nil
+    ret = IO.pipe {|r, w|
+      x = [r,w]
+      assert_instance_of(IO, r)
+      assert_instance_of(IO, w)
+      w.print "abc"
+      w.close
+      assert_equal("abc", r.read)
+      assert(!r.closed?)
+      assert(w.closed?)
+      :foooo
+    }
+    assert_equal(:foooo, ret)
+    assert(x[0].closed?)
+    assert(x[1].closed?)
+  end
+
+  def test_pipe_block_close
+    4.times {|i|
+      x = nil
+      IO.pipe {|r, w|
+        x = [r,w]
+        r.close if (i&1) == 0
+        w.close if (i&2) == 0
+      }
+      assert(x[0].closed?)
+      assert(x[1].closed?)
+    }
+  end
+
   def test_gets_rs
     # default_rs
     r, w = IO.pipe
@@ -61,8 +102,9 @@ class TestIO < Test::Unit::TestCase
   def test_gets_limit_extra_arg
     with_pipe {|r, w|
       r, w = IO.pipe
-      w << "0123456789"
+      w << "0123456789\n0123456789"
       w.close
+      assert_equal("0123456789\n0", r.gets(nil, 12))
       assert_raise(TypeError) { r.gets(3,nil) }
     }
   end
@@ -74,6 +116,28 @@ class TestIO < Test::Unit::TestCase
     assert_raise(IOError, "[ruby-dev:31650]") { 20000.times { r.ungetc "a" } }
   ensure
     r.close
+  end
+
+  def test_ungetbyte
+    t = make_tempfile
+    t.open
+    t.binmode
+    t.ungetbyte(0x41)
+    assert_equal(-1, t.pos)
+    assert_equal(0x41, t.getbyte)
+    t.rewind
+    assert_equal(0, t.pos)
+    t.ungetbyte("qux")
+    assert_equal(-3, t.pos)
+    assert_equal("quxfoo\n", t.gets)
+    assert_equal(4, t.pos)
+    t.set_encoding("utf-8")
+    t.ungetbyte(0x89)
+    t.ungetbyte(0x8e)
+    t.ungetbyte("\xe7")
+    t.ungetbyte("\xe7\xb4\x85")
+    assert_equal(-2, t.pos)
+    assert_equal("\u7d05\u7389bar\n", t.gets)
   end
 
   def test_each_byte
@@ -740,7 +804,7 @@ class TestIO < Test::Unit::TestCase
 
   def test_inspect
     with_pipe do |r, w|
-      assert(r.inspect =~ /^#<IO:0x[0-9a-f]+>$/)
+      assert(r.inspect =~ /^#<IO:fd \d+>$/)
       assert_raise(SecurityError) do
         safe_4 { r.inspect }
       end
@@ -769,6 +833,17 @@ class TestIO < Test::Unit::TestCase
       w.close
       assert_raise(RuntimeError) { t.join }
     end
+  end
+
+  def test_readpartial_pos
+    mkcdtmpdir {
+      open("foo", "w") {|f| f << "abc" }
+      open("foo") {|f|
+        f.seek(0)
+        assert_equal("ab", f.readpartial(2))
+        assert_equal(2, f.pos)
+      }
+    }
   end
 
   def test_read
@@ -803,6 +878,30 @@ class TestIO < Test::Unit::TestCase
     end, proc do |r|
       assert_equal("1", r.read)
     end)
+  end
+
+  def test_read_nonblock_error
+    return if !have_nonblock?
+    with_pipe {|r, w|
+      begin
+        r.read_nonblock 4096
+      rescue Errno::EWOULDBLOCK
+        assert_kind_of(IO::WaitReadable, $!)
+      end
+    }
+  end
+
+  def test_write_nonblock_error
+    return if !have_nonblock?
+    with_pipe {|r, w|
+      begin
+        loop {
+          w.write_nonblock "a"*100000
+        }
+      rescue Errno::EWOULDBLOCK
+        assert_kind_of(IO::WaitWritable, $!)
+      end
+    }
   end
 
   def test_gets
@@ -1118,13 +1217,13 @@ class TestIO < Test::Unit::TestCase
 
   def test_sysopen
     t = make_tempfile
-    
+
     fd = IO.sysopen(t.path)
     assert_kind_of(Integer, fd)
     f = IO.for_fd(fd)
     assert_equal("foo\nbar\nbaz\n", f.read)
     f.close
-    
+
     fd = IO.sysopen(t.path, "w", 0666)
     assert_kind_of(Integer, fd)
     if defined?(Fcntl::F_GETFL)
@@ -1134,7 +1233,7 @@ class TestIO < Test::Unit::TestCase
     end
     f.write("FOO\n")
     f.close
-    
+
     fd = IO.sysopen(t.path, "r")
     assert_kind_of(Integer, fd)
     f = IO.for_fd(fd)
@@ -1176,6 +1275,25 @@ class TestIO < Test::Unit::TestCase
         f.reopen(t.path)
         assert_equal("foo\n", f.gets)
       }
+    end
+
+    open(__FILE__) do |f|
+      f.gets
+      f2 = open(t.path)
+      f2.gets
+      assert_nothing_raised {
+        f.reopen(f2)
+        assert_equal("bar\n", f.gets, '[ruby-core:24240]')
+      }
+    end
+
+    open(__FILE__) do |f|
+      f2 = open(t.path)
+      f.reopen(f2)
+      assert_equal("foo\n", f.gets)
+      assert_equal("bar\n", f.gets)
+      f.reopen(f2)
+      assert_equal("baz\n", f.gets, '[ruby-dev:39479]')
     end
   end
 
@@ -1283,9 +1401,12 @@ class TestIO < Test::Unit::TestCase
 
   def test_initialize
     t = make_tempfile
-    
+
     fd = IO.sysopen(t.path, "w")
     assert_kind_of(Integer, fd)
+    %w[r r+ w+ a+].each do |mode|
+      assert_raise(Errno::EINVAL, '[ruby-dev:38571]') {IO.new(fd, mode)}
+    end
     f = IO.new(fd, "w")
     f.write("FOO\n")
     f.close
@@ -1297,7 +1418,7 @@ class TestIO < Test::Unit::TestCase
       f.instance_eval { initialize }
     end
   end
-  
+
   def test_new_with_block
     assert_in_out_err([], "r, w = IO.pipe; IO.new(r) {}", [], /^.+$/)
   end
@@ -1350,5 +1471,17 @@ class TestIO < Test::Unit::TestCase
         File.foreach("slnk", :open_args=>[File::RDONLY|File::NOFOLLOW]) {}
       }
     }
+  end
+
+  def test_tainted
+    t = make_tempfile
+    assert(File.read(t.path, 4).tainted?, '[ruby-dev:38826]')
+    assert(File.open(t.path) {|f| f.read(4)}.tainted?, '[ruby-dev:38826]')
+  end
+
+  def test_binmode_after_closed
+    t = make_tempfile
+    t.close
+    assert_raise(IOError) {t.binmode}
   end
 end

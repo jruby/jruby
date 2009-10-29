@@ -110,7 +110,7 @@ class TestDateParse < Test::Unit::TestCase
 
      # broken iso 8601 (?)
 #     [['1999-05-23T235521Z',false],[1999,5,23,23,55,21,'Z',0,nil]], # cp
-     [['19990523T23:55:21Z',false],[1999,5,23,23,55,21,'Z',0,nil]], 
+     [['19990523T23:55:21Z',false],[1999,5,23,23,55,21,'Z',0,nil]],
      [['19990523235521.1234-100',true],[1999,5,23,23,55,21,'-100',-1*3600,nil]],
      [['19990523235521.1234-10',true],[1999,5,23,23,55,21,'-10',-10*3600,nil]],
 
@@ -637,6 +637,21 @@ class TestDateParse < Test::Unit::TestCase
 
     d = DateTime.new(2002,3,14,11,22,33, 9.to_r/24)
     assert_equal(d, DateTime.parse(d.to_s))
+  end
+
+  def test_parse_utf8
+    h = DateTime._parse(
+"Sun\xe3\x80\x80Aug 16 01:02:03 \xe6\x97\xa5\xe6\x9c\xac 2009".
+			force_encoding('utf-8'))
+    assert_equal(2009, h[:year])
+    assert_equal(8, h[:mon])
+    assert_equal(16, h[:mday])
+    assert_equal(0, h[:wday])
+    assert_equal(1, h[:hour])
+    assert_equal(2, h[:min])
+    assert_equal(3, h[:sec])
+    assert_equal("\xe6\x97\xa5\xe6\x9c\xac".
+		 force_encoding('utf-8'), h[:zone])
   end
 
   def test_parse__ex

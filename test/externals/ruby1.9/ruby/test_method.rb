@@ -20,6 +20,8 @@ class TestMethod < Test::Unit::TestCase
   def mo4(a, *b, &c) end
   def mo5(a, *b, c) end
   def mo6(a, *b, c, &d) end
+  def mo7(a, b = nil, *c, d, &e) end
+  def ma1((a), &b) end
 
   class Base
     def foo() :base end
@@ -27,7 +29,6 @@ class TestMethod < Test::Unit::TestCase
   class Derived < Base
     def foo() :derived end
   end
-
   class T
     def initialize; end
     def normal_method; end
@@ -48,6 +49,10 @@ class TestMethod < Test::Unit::TestCase
     assert_equal(-2, method(:mo4).arity)
     assert_equal(-3, method(:mo5).arity)
     assert_equal(-3, method(:mo6).arity)
+  end
+
+  def test_arity_special
+    assert_equal(-1, method(:__send__).arity)
   end
 
   def test_unbind
@@ -237,5 +242,73 @@ class TestMethod < Test::Unit::TestCase
     assert !T.public_instance_methods.include?(:initialize), '#initialize is private'
     assert !M.public_instance_methods.include?(:func), 'module methods are private by default'
     assert M.public_instance_methods.include?(:meth), 'normal methods are public by default'
+  end
+
+  define_method(:pm0) {||}
+  define_method(:pm1) {|a|}
+  define_method(:pm2) {|a, b|}
+  define_method(:pmo1) {|a = nil, &b|}
+  define_method(:pmo2) {|a, b = nil|}
+  define_method(:pmo3) {|*a|}
+  define_method(:pmo4) {|a, *b, &c|}
+  define_method(:pmo5) {|a, *b, c|}
+  define_method(:pmo6) {|a, *b, c, &d|}
+  define_method(:pmo7) {|a, b = nil, *c, d, &e|}
+  define_method(:pma1) {|(a), &b|}
+
+  def test_bound_parameters
+    assert_equal([], method(:m0).parameters)
+    assert_equal([[:req, :a]], method(:m1).parameters)
+    assert_equal([[:req, :a], [:req, :b]], method(:m2).parameters)
+    assert_equal([[:opt, :a], [:block, :b]], method(:mo1).parameters)
+    assert_equal([[:req, :a], [:opt, :b]], method(:mo2).parameters)
+    assert_equal([[:rest, :a]], method(:mo3).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:block, :c]], method(:mo4).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c]], method(:mo5).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c], [:block, :d]], method(:mo6).parameters)
+    assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:block, :e]], method(:mo7).parameters)
+    assert_equal([[:req], [:block, :b]], method(:ma1).parameters)
+  end
+
+  def test_unbound_parameters
+    assert_equal([], self.class.instance_method(:m0).parameters)
+    assert_equal([[:req, :a]], self.class.instance_method(:m1).parameters)
+    assert_equal([[:req, :a], [:req, :b]], self.class.instance_method(:m2).parameters)
+    assert_equal([[:opt, :a], [:block, :b]], self.class.instance_method(:mo1).parameters)
+    assert_equal([[:req, :a], [:opt, :b]], self.class.instance_method(:mo2).parameters)
+    assert_equal([[:rest, :a]], self.class.instance_method(:mo3).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:block, :c]], self.class.instance_method(:mo4).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c]], self.class.instance_method(:mo5).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c], [:block, :d]], self.class.instance_method(:mo6).parameters)
+    assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:block, :e]], self.class.instance_method(:mo7).parameters)
+    assert_equal([[:req], [:block, :b]], self.class.instance_method(:ma1).parameters)
+  end
+
+  def test_bmethod_bound_parameters
+    assert_equal([], method(:pm0).parameters)
+    assert_equal([[:req, :a]], method(:pm1).parameters)
+    assert_equal([[:req, :a], [:req, :b]], method(:pm2).parameters)
+    assert_equal([[:opt, :a], [:block, :b]], method(:pmo1).parameters)
+    assert_equal([[:req, :a], [:opt, :b]], method(:pmo2).parameters)
+    assert_equal([[:rest, :a]], method(:pmo3).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:block, :c]], method(:pmo4).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c]], method(:pmo5).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c], [:block, :d]], method(:pmo6).parameters)
+    assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:block, :e]], method(:pmo7).parameters)
+    assert_equal([[:req], [:block, :b]], method(:pma1).parameters)
+  end
+
+  def test_bmethod_unbound_parameters
+    assert_equal([], self.class.instance_method(:pm0).parameters)
+    assert_equal([[:req, :a]], self.class.instance_method(:pm1).parameters)
+    assert_equal([[:req, :a], [:req, :b]], self.class.instance_method(:pm2).parameters)
+    assert_equal([[:opt, :a], [:block, :b]], self.class.instance_method(:pmo1).parameters)
+    assert_equal([[:req, :a], [:opt, :b]], self.class.instance_method(:pmo2).parameters)
+    assert_equal([[:rest, :a]], self.class.instance_method(:pmo3).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:block, :c]], self.class.instance_method(:pmo4).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c]], self.class.instance_method(:pmo5).parameters)
+    assert_equal([[:req, :a], [:rest, :b], [:req, :c], [:block, :d]], self.class.instance_method(:pmo6).parameters)
+    assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:block, :e]], self.class.instance_method(:pmo7).parameters)
+    assert_equal([[:req], [:block, :b]], self.class.instance_method(:pma1).parameters)
   end
 end

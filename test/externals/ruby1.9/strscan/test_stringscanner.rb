@@ -168,6 +168,26 @@ class TestStringScanner < Test::Unit::TestCase
     assert_equal 0, s.pos
   end
 
+  def test_string_set_is_equal
+    name = 'tenderlove'
+
+    s = StringScanner.new(name)
+    assert_equal name.object_id, s.string.object_id
+
+    s.string = name
+    assert_equal name.object_id, s.string.object_id
+  end
+
+  def test_string_append
+    s = StringScanner.new('tender')
+    s << 'love'
+    assert_equal 'tenderlove', s.string
+
+    s.string = 'tender'
+    s << 'love'
+    assert_equal 'tenderlove', s.string
+  end
+
   def test_pos
     s = StringScanner.new('test string')
     assert_equal 0, s.pos
@@ -528,9 +548,8 @@ class TestStringScanner < Test::Unit::TestCase
     s.terminate
     assert_nil s.matched_size
 
-    # obsolete
     s = StringScanner.new('test string')
-    assert_nil s.matchedsize
+    assert_nil s.matched_size
     s.scan(/test/)
     assert_equal 4, s.matched_size
     s.terminate

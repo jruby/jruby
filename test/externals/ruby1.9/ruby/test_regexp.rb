@@ -104,6 +104,12 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal({}, /(.)(.)/.named_captures)
 
     assert_equal("a[b]c", "abc".sub(/(?<x>[bc])/, "[\\k<x>]"))
+
+    assert_equal("o", "foo"[/(?<bar>o)/, "bar"])
+
+    s = "foo"
+    s[/(?<bar>o)/, "bar"] = "baz"
+    assert_equal("fbazo", s)
   end
 
   def test_assign_named_capture
@@ -281,6 +287,7 @@ class TestRegexp < Test::Unit::TestCase
 
   def test_unescape
     assert_raise(ArgumentError) { s = '\\'; /#{ s }/ }
+    assert_equal(/\xFF/n, /#{ s="\\xFF" }/n)
     assert_equal(/\177/, (s = '\177'; /#{ s }/))
     assert_raise(ArgumentError) { s = '\u'; /#{ s }/ }
     assert_raise(ArgumentError) { s = '\u{ ffffffff }'; /#{ s }/ }
@@ -298,7 +305,7 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal(/a/, eval(%q(s="\u0061";/#{s}/n)))
     assert_raise(RegexpError) { s = "\u3042"; eval(%q(/#{s}/n)) }
     assert_raise(RegexpError) { s = "\u0061"; eval(%q(/\u3042#{s}/n)) }
-    assert_raise(ArgumentError) { s1=[0xff].pack("C"); s2="\u3042"; eval(%q(/#{s1}#{s2}/)) }
+    assert_raise(RegexpError) { s1=[0xff].pack("C"); s2="\u3042"; eval(%q(/#{s1}#{s2}/)) }
 
     assert_raise(ArgumentError) { s = '\x'; /#{ s }/ }
 
@@ -465,6 +472,10 @@ class TestRegexp < Test::Unit::TestCase
       /foo/.match("foo")
     end.value
     assert(m.tainted?)
+    assert_nothing_raised('[ruby-core:26137]') {
+      m = proc {$SAFE = 4; /#{}/o}.call
+    }
+    assert(m.tainted?)
   end
 
   def check(re, ss, fs = [])
@@ -579,7 +590,7 @@ class TestRegexp < Test::Unit::TestCase
     failcheck('()\g<-2>')
     check(/\A(?<x>.)(?<x>.)\k<x>\z/, %w(aba abb), %w(abc .. ....))
     check(/\A(?<x>.)(?<x>.)\k<x>\z/i, %w(aba ABa abb ABb), %w(abc .. ....))
-    check(/\k\g/, "kg")
+    check('\k\g', "kg")
     failcheck('(.\g<1>)')
     failcheck('(.\g<2>)')
     failcheck('(?=\g<1>)')
@@ -659,6 +670,13 @@ class TestRegexp < Test::Unit::TestCase
     check(/\A[[^b-c]&&[^e]&&a-f]\z/, %w(a d f), %w(b c e g 0))
     check(/\A[\n\r\t]\z/, ["\n", "\r", "\t"])
     failcheck('[9-1]')
+
+    assert_match(/\A\d+\z/, "0123456789")
+    assert_no_match(/\d/, "\uff10\uff11\uff12\uff13\uff14\uff15\uff16\uff17\uff18\uff19")
+    assert_match(/\A\w+\z/, "09azAZ_")
+    assert_no_match(/\w/, "\uff10\uff19\uff41\uff5a\uff21\uff3a")
+    assert_match(/\A\s+\z/, "\r\n\v\f\r\s")
+    assert_no_match(/\s/, "\u0085")
   end
 
   def test_posix_bracket
@@ -671,6 +689,12 @@ class TestRegexp < Test::Unit::TestCase
     failcheck('[[:alpha')
     failcheck('[[:alpha:')
     failcheck('[[:alp:]]')
+
+    assert_match(/\A[[:digit:]]+\z/, "\uff10\uff11\uff12\uff13\uff14\uff15\uff16\uff17\uff18\uff19")
+    assert_match(/\A[[:alnum:]]+\z/, "\uff10\uff19\uff41\uff5a\uff21\uff3a")
+    assert_match(/\A[[:space:]]+\z/, "\r\n\v\f\r\s\u0085")
+    assert_match(/\A[[:ascii:]]+\z/, "\x00\x7F")
+    assert_no_match(/[[:ascii:]]/, "\x80\xFF")
   end
 
   def test_backward
@@ -725,6 +749,7 @@ class TestRegexp < Test::Unit::TestCase
     assert_match(/^\u3042{0}\p{Any}$/, "a")
     assert_match(/^\u3042{0}\p{Any}$/, "\u3041")
     assert_match(/^\u3042{0}\p{Any}$/, "\0")
+    assert_match(/^\p{Lo}{4}$/u, "\u3401\u4E01\u{20001}\u{2A701}")
     assert_no_match(/^\u3042{0}\p{Any}$/, "\0\0")
     assert_no_match(/^\u3042{0}\p{Any}$/, "")
     assert_raise(SyntaxError) { eval('/^\u3042{0}\p{' + "\u3042" + '}$/') }
@@ -757,5 +782,13 @@ class TestRegexp < Test::Unit::TestCase
     assert_match(/^\u03b9\u0308\u0301$/i, "\u0390")
     assert_nothing_raised { 0x03ffffff.chr("utf-8").size }
     assert_nothing_raised { 0x7fffffff.chr("utf-8").size }
+  end
+
+  def test_matchdata
+    a = "haystack".match(/hay/)
+    b = "haystack".match(/hay/)
+    assert_equal(a, b, '[ruby-core:24748]')
+    h = {a => 42}
+    assert_equal(42, h[b], '[ruby-core:24748]')
   end
 end

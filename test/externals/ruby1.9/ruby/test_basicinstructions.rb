@@ -7,7 +7,7 @@ class Class
 end
 
 class TestBasicInstructions < Test::Unit::TestCase
-  
+
   def test_immediates
     assert_equal((1==1), true)
     assert_equal((1==2), false)
@@ -30,7 +30,7 @@ class TestBasicInstructions < Test::Unit::TestCase
     assert_equal false, (self == nil)
     assert_equal false, (self == 0)
   end
-  
+
   def test_string
     expected = "str" + "ing"
     assert_equal expected, 'string'
@@ -55,14 +55,14 @@ class TestBasicInstructions < Test::Unit::TestCase
     assert_equal :sym, :"#{s}"
     assert_equal :sym, :"#{"#{"#{s}"}"}"
   end
-  
+
   def test_xstr
     assert_equal 'hoge', `echo hoge`.chomp
     assert_equal '3', `echo #{1 + 2}`.chomp
     hoge = 'huga'
     assert_equal 'huga', `echo #{hoge}`.chomp
   end
-  
+
   def test_regexp
     assert_equal /test/, /test/
     assert_equal 'test', /test/.source
@@ -108,7 +108,7 @@ class TestBasicInstructions < Test::Unit::TestCase
     assert_equal 'c', a[2]
     assert_nil a[3]
   end
-  
+
   def test_hash
     assert_equal({}, {})
     assert_equal({1=>2}, {1=>2})
@@ -127,7 +127,7 @@ class TestBasicInstructions < Test::Unit::TestCase
     assert_equal((1...3), (1...2+1))
     assert_equal(('a'..'z'), ('a'..'z'))
   end
-  
+
   def test_not
     assert_equal true, !nil
     assert_equal true, !false
@@ -499,53 +499,105 @@ class TestBasicInstructions < Test::Unit::TestCase
   end
 
   class OP
-    attr_accessor :x
+    attr_reader :x
+    def x=(x)
+      @x = x
+      :Bug1996
+    end
+    Bug1996 = '[ruby-dev:39163], [ruby-core:25143]'
+    def [](i)
+      @x
+    end
+    def []=(i, x)
+      @x = x
+      :Bug2050
+    end
+    Bug2050 = '[ruby-core:25387]'
   end
 
-  def test_opassign
+  def test_opassign2_1
     x = nil
-    x ||= 1
+    assert_equal 1, x ||= 1
     assert_equal 1, x
-    x &&= 2
+    assert_equal 2, x &&= 2
     assert_equal 2, x
-    x ||= 3
+    assert_equal 2, x ||= 3
     assert_equal 2, x
-    x &&= 4
+    assert_equal 4, x &&= 4
     assert_equal 4, x
+    assert_equal 5, x += 1
+    assert_equal 5, x
+    assert_equal 4, x -= 1
+    assert_equal 4, x
+  end
 
+  def test_opassign2_2
     y = OP.new
     y.x = nil
-    y.x ||= 1
+    assert_equal 1, y.x ||= 1, OP::Bug1996
     assert_equal 1, y.x
-    y.x &&= 2
+    assert_equal 2, y.x &&= 2, OP::Bug1996
     assert_equal 2, y.x
-    y.x ||= 3
+    assert_equal 2, y.x ||= 3
     assert_equal 2, y.x
-    y.x &&= 4
+    assert_equal 4, y.x &&= 4, OP::Bug1996
     assert_equal 4, y.x
+    assert_equal 5, y.x += 1, OP::Bug1996
+    assert_equal 5, y.x
+    assert_equal 4, y.x -= 1, OP::Bug1996
+    assert_equal 4, y.x
+  end
 
+  def test_opassign2_3
     z = OP.new
-    z.x = y
+    z.x = OP.new
     z.x.x = nil
-    z.x.x ||= 1
+    assert_equal 1, z.x.x ||= 1, OP::Bug1996
     assert_equal 1, z.x.x
-    z.x.x &&= 2
+    assert_equal 2, z.x.x &&= 2, OP::Bug1996
     assert_equal 2, z.x.x
-    z.x.x ||= 3
+    assert_equal 2, z.x.x ||= 3
     assert_equal 2, z.x.x
-    z.x.x &&= 4
+    assert_equal 4, z.x.x &&= 4, OP::Bug1996
     assert_equal 4, z.x.x
+    assert_equal 5, z.x.x += 1, OP::Bug1996
+    assert_equal 5, z.x.x
+    assert_equal 4, z.x.x -= 1, OP::Bug1996
+    assert_equal 4, z.x.x
+  end
 
+  def test_opassign1_1
     a = []
     a[0] = nil
-    a[0] ||= 1
+    assert_equal 1, a[0] ||= 1
     assert_equal 1, a[0]
-    a[0] &&= 2
+    assert_equal 2, a[0] &&= 2
     assert_equal 2, a[0]
-    a[0] ||= 3
+    assert_equal 2, a[0] ||= 3
     assert_equal 2, a[0]
-    a[0] &&= 4
+    assert_equal 4, a[0] &&= 4
     assert_equal 4, a[0]
+    assert_equal 5, a[0] += 1
+    assert_equal 5, a[0]
+    assert_equal 4, a[0] -= 1
+    assert_equal 4, a[0]
+  end
+
+  def test_opassign1_2
+    x = OP.new
+    x[0] = nil
+    assert_equal 1, x[0] ||= 1, OP::Bug2050
+    assert_equal 1, x[0]
+    assert_equal 2, x[0] &&= 2, OP::Bug2050
+    assert_equal 2, x[0]
+    assert_equal 2, x[0] ||= 3, OP::Bug2050
+    assert_equal 2, x[0]
+    assert_equal 4, x[0] &&= 4, OP::Bug2050
+    assert_equal 4, x[0]
+    assert_equal 5, x[0] += 1, OP::Bug2050
+    assert_equal 5, x[0]
+    assert_equal 4, x[0] -= 1, OP::Bug2050
+    assert_equal 4, x[0]
   end
 
   def test_backref

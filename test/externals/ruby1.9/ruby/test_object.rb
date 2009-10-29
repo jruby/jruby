@@ -233,12 +233,12 @@ class TestObject < Test::Unit::TestCase
   end
 
   def test_redefine_method_which_may_case_serious_problem
-    assert_in_out_err([], <<-INPUT, [], /warning: redefining `object_id' may cause serious problem$/)
+    assert_in_out_err([], <<-INPUT, [], /warning: redefining `object_id' may cause serious problems$/)
       $VERBOSE = false
       def (Object.new).object_id; end
     INPUT
 
-    assert_in_out_err([], <<-INPUT, [], /warning: redefining `__send__' may cause serious problem$/)
+    assert_in_out_err([], <<-INPUT, [], /warning: redefining `__send__' may cause serious problems$/)
       $VERBOSE = false
       def (Object.new).__send__; end
     INPUT
@@ -265,8 +265,28 @@ class TestObject < Test::Unit::TestCase
       c.instance_eval { remove_method(:foo) }
     end
 
+    c = Class.new do
+      def meth1; "meth" end
+    end
+    d = Class.new(c) do
+      alias meth2 meth1
+    end
+    o1 = c.new
+    assert_respond_to(o1, :meth1)
+    assert_equal("meth", o1.meth1)
+    o2 = d.new
+    assert_respond_to(o2, :meth1)
+    assert_equal("meth", o2.meth1)
+    assert_respond_to(o2, :meth2)
+    assert_equal("meth", o2.meth2)
+    d.class_eval do
+      remove_method :meth2
+    end
+    bug2202 = '[ruby-core:26074]'
+    assert_raise(NoMethodError, bug2202) {o2.meth2}
+
     %w(object_id __send__ initialize).each do |m|
-      assert_in_out_err([], <<-INPUT, %w(:ok), /warning: removing `#{m}' may cause serious problem$/)
+      assert_in_out_err([], <<-INPUT, %w(:ok), /warning: removing `#{m}' may cause serious problems$/)
         $VERBOSE = false
         begin
           Class.new.instance_eval { remove_method(:#{m}) }
@@ -293,6 +313,63 @@ class TestObject < Test::Unit::TestCase
 
     assert_raise(NoMethodError) do
       1.instance_eval { method_missing(:method_missing) }
+    end
+
+    c.class_eval do
+      undef_method(:method_missing)
+    end
+
+    assert_raise(ArgumentError) do
+      c.new.method_missing
+    end
+  end
+
+  def test_respond_to_missing
+    c = Class.new do
+      def respond_to_missing?(id, priv=false)
+        if id == :foobar
+          true
+        else
+          false
+        end
+      end
+      def method_missing(id,*args)
+        if id == :foobar
+          return [:foo, *args]
+        else
+          super
+        end
+      end
+    end
+
+    foo = c.new
+    assert_equal([:foo], foo.foobar);
+    assert_equal([:foo, 1], foo.foobar(1));
+    assert_equal([:foo, 1, 2, 3, 4, 5], foo.foobar(1, 2, 3, 4, 5));
+    assert(foo.respond_to?(:foobar))
+    assert_equal(false, foo.respond_to?(:foobarbaz))
+    assert_raise(NoMethodError) do
+      foo.foobarbaz
+    end
+
+    foobar = foo.method(:foobar)
+    assert_equal(-1, foobar.arity);
+    assert_equal([:foo], foobar.call);
+    assert_equal([:foo, 1], foobar.call(1));
+    assert_equal([:foo, 1, 2, 3, 4, 5], foobar.call(1, 2, 3, 4, 5));
+    assert_equal(foobar, foo.method(:foobar))
+    assert_not_equal(foobar, c.new.method(:foobar))
+
+    c = Class.new(c)
+    assert_equal(false, c.method_defined?(:foobar))
+    assert_raise(NameError, '[ruby-core:25748]') do
+      c.instance_method(:foobar)
+    end
+
+    m = Module.new
+    assert_equal(false, m.method_defined?(:foobar))
+    assert_raise(NameError, '[ruby-core:25748]') do
+      m.instance_method(:foobar)
     end
   end
 
@@ -404,5 +481,41 @@ class TestObject < Test::Unit::TestCase
     s = x.to_s
     assert_equal(true, s.untrusted?)
     assert_equal(true, s.tainted?)
+  end
+
+  def test_exec_recursive
+    Thread.current[:__recursive_key__] = nil
+    a = [[]]
+    a.inspect
+
+    assert_nothing_raised do
+      -> do
+        $SAFE = 4
+        begin
+          a.hash
+        rescue ArgumentError
+        end
+      end.call
+    end
+
+    -> do
+      assert_nothing_raised do
+        $SAFE = 4
+        a.inspect
+      end
+    end.call
+
+    -> do
+      o = Object.new
+      def o.to_ary(x); end
+      def o.==(x); $SAFE = 4; false; end
+      a = [[o]]
+      b = []
+      b << b
+
+      assert_nothing_raised do
+        b == a
+      end
+    end.call
   end
 end

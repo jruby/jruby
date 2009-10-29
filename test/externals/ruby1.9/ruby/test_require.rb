@@ -195,4 +195,77 @@ class TestRequire < Test::Unit::TestCase
 
     assert_raise(ArgumentError) { at_exit }
   end
+
+  def test_tainted_loadpath
+    t = Tempfile.new(["test_ruby_test_require", ".rb"])
+    abs_dir, file = File.split(t.path)
+    abs_dir = File.expand_path(abs_dir).untaint
+
+    assert_in_out_err([], <<-INPUT, %w(:ok), [])
+      abs_dir = "#{ abs_dir }"
+      $: << abs_dir
+      require "#{ file }"
+      p :ok
+    INPUT
+
+    assert_in_out_err([], <<-INPUT, %w(:ok), [])
+      abs_dir = "#{ abs_dir }"
+      $: << abs_dir.taint
+      require "#{ file }"
+      p :ok
+    INPUT
+
+    assert_in_out_err([], <<-INPUT, %w(:ok), [])
+      abs_dir = "#{ abs_dir }"
+      $: << abs_dir.taint
+      $SAFE = 1
+      begin
+        require "#{ file }"
+      rescue SecurityError
+        p :ok
+      end
+    INPUT
+
+    assert_in_out_err([], <<-INPUT, %w(:ok), [])
+      abs_dir = "#{ abs_dir }"
+      $: << abs_dir.taint
+      $SAFE = 1
+      begin
+        require "#{ file }"
+      rescue SecurityError
+        p :ok
+      end
+    INPUT
+
+    assert_in_out_err([], <<-INPUT, %w(:ok), [])
+      abs_dir = "#{ abs_dir }"
+      $: << abs_dir << 'elsewhere'.taint
+      require "#{ file }"
+      p :ok
+    INPUT
+  end
+
+  def test_relative
+    require 'tmpdir'
+    load_path = $:.dup
+    $:.delete(".")
+    Dir.mktmpdir do |tmp|
+      Dir.chdir(tmp) do
+        Dir.mkdir('x')
+        File.open('x/t.rb', 'wb') {}
+        File.open('x/a.rb', 'wb') {|f| f.puts("require_relative('t.rb')")}
+        assert require('./x/t.rb')
+        assert !require(File.expand_path('x/t.rb'))
+        assert_nothing_raised(LoadError) {require('./x/a.rb')}
+        assert_raise(LoadError) {require('x/t.rb')}
+        File.unlink(*Dir.glob('x/*'))
+        Dir.rmdir("#{tmp}/x")
+        $:.replace(load_path)
+        load_path = nil
+        assert(!require('tmpdir'))
+      end
+    end
+  ensure
+    $:.replace(load_path) if load_path
+  end
 end

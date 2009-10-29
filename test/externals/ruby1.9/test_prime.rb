@@ -1,20 +1,21 @@
 require 'test/unit'
 require 'prime'
 require 'stringio'
+require 'timeout'
 
 class TestPrime < Test::Unit::TestCase
   # The first 100 prime numbers
   PRIMES = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37,
-    41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 
-    89, 97, 101, 103, 107, 109, 113, 127, 131, 
-    137, 139, 149, 151, 157, 163, 167, 173, 179, 
-    181, 191, 193, 197, 199, 211, 223, 227, 229, 
-    233, 239, 241, 251, 257, 263, 269, 271, 277, 
-    281, 283, 293, 307, 311, 313, 317, 331, 337, 
-    347, 349, 353, 359, 367, 373, 379, 383, 389, 
-    397, 401, 409, 419, 421, 431, 433, 439, 443, 
-    449, 457, 461, 463, 467, 479, 487, 491, 499, 
+    41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+    89, 97, 101, 103, 107, 109, 113, 127, 131,
+    137, 139, 149, 151, 157, 163, 167, 173, 179,
+    181, 191, 193, 197, 199, 211, 223, 227, 229,
+    233, 239, 241, 251, 257, 263, 269, 271, 277,
+    281, 283, 293, 307, 311, 313, 317, 331, 337,
+    347, 349, 353, 359, 367, 373, 379, 383, 389,
+    397, 401, 409, 419, 421, 431, 433, 439, 443,
+    449, 457, 461, 463, 467, 479, 487, 491, 499,
     503, 509, 521, 523, 541,
   ]
   def test_each
@@ -36,7 +37,7 @@ class TestPrime < Test::Unit::TestCase
       end
 
       # Prime number theorem
-      assert primes.length >= max/Math.log(max)  
+      assert primes.length >= max/Math.log(max)
       delta = 0.05
       li = (2..max).step(delta).inject(0){|sum,x| sum + delta/Math.log(x)}
       assert primes.length <= li
@@ -89,17 +90,31 @@ class TestPrime < Test::Unit::TestCase
     end
   end
 
+  def test_default_instance_does_not_have_compatibility_methods
+    assert !Prime.instance.respond_to?(:succ)
+    assert !Prime.instance.respond_to?(:next)
+  end
+
   class TestInteger < Test::Unit::TestCase
     def test_prime_division
       pd = PRIMES.inject(&:*).prime_division
       assert_equal PRIMES.map{|p| [p, 1]}, pd
+
+      pd = (-PRIMES.inject(&:*)).prime_division
+      assert_equal [-1, *PRIMES].map{|p| [p, 1]}, pd
     end
 
     def test_from_prime_division
       assert_equal PRIMES.inject(&:*), Integer.from_prime_division(PRIMES.map{|p| [p,1]})
+
+      assert_equal -PRIMES.inject(&:*), Integer.from_prime_division([[-1, 1]] + PRIMES.map{|p| [p,1]})
     end
 
     def test_prime?
+      # zero and unit
+      assert !0.prime?
+      assert !1.prime?
+
       # small primes
       assert 2.prime?
       assert 3.prime?
@@ -121,6 +136,37 @@ class TestPrime < Test::Unit::TestCase
 
       # factorial
       assert !(2...100).inject(&:*).prime?
+
+      # negative
+      assert !-1.prime?
+      assert -2.prime?
+      assert -3.prime?
+      assert !-4.prime?
     end
+  end
+
+  def test_eratosthenes_works_fine_after_timeout
+    sieve = Prime::EratosthenesSieve.instance
+    sieve.send(:initialize)
+    begin
+      # simulates that Timeout.timeout interrupts Prime::EratosthenesSieve#extend_table
+      def sieve.Integer(n)
+        n = super(n)
+        sleep 10 if /extend_table/ =~ caller.first
+        return n
+      end
+
+      begin
+	Timeout.timeout(0.5) { Prime.each(7*37){} }
+	flunk("timeout expected")
+      rescue Timeout::Error
+      end
+    ensure
+      class << sieve
+        remove_method :Integer
+      end
+    end
+
+    refute_includes Prime.each(7*37).to_a, 7*37, "[ruby-dev:39465]"
   end
 end

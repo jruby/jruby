@@ -363,6 +363,34 @@ if defined? Zlib
         assert_equal(3, gz.tell)
       end
     end
+
+    def test_path
+      t = Tempfile.new("test_zlib_gzip_file")
+      t.close
+
+      gz = Zlib::GzipWriter.open(t.path)
+      gz.print("foo")
+      assert_equal(t.path, gz.path)
+      gz.close
+      assert_equal(t.path, gz.path)
+
+      f = Zlib::GzipReader.open(t.path)
+      assert_equal(t.path, f.path)
+      f.close
+      assert_equal(t.path, f.path)
+
+      s = ""
+      sio = StringIO.new(s)
+      gz = Zlib::GzipWriter.new(sio)
+      gz.print("foo")
+      assert_raise(NoMethodError) { gz.path }
+      gz.close
+
+      sio = StringIO.new(s)
+      f = Zlib::GzipReader.new(sio)
+      assert_raise(NoMethodError) { f.path }
+      f.close
+    end
   end
 
   class TestZlibGzipReader < Test::Unit::TestCase
@@ -442,10 +470,12 @@ if defined? Zlib
     def test_read
       t = Tempfile.new("test_zlib_gzip_reader")
       t.close
-      Zlib::GzipWriter.open(t.path) {|gz| gz.print("foobar") }
+      str = "\u3042\u3044\u3046"
+      Zlib::GzipWriter.open(t.path) {|gz| gz.print(str) }
 
-      f = Zlib::GzipReader.open(t.path)
+      f = Zlib::GzipReader.open(t.path, encoding: "UTF-8")
       assert_raise(ArgumentError) { f.read(-1) }
+      assert_equal(str, f.read)
     end
 
     def test_readpartial

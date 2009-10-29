@@ -484,7 +484,7 @@ EOR
       assert_not_expected_tag(name, uri, "image") do
         Parser.parse(rss, true, false)
       end
-      
+
       uri = CONTENT_URI
       name = "encoded"
       elem = "<#{name} xmlns='#{uri}'/>"
@@ -505,6 +505,22 @@ EOR
         #{make_channel("<test:string/>")}
         #{make_item}
         #{make_image}
+      EOR
+    end
+
+    def test_unknown_case_insensitive_duplicated_element
+      xmlns = {
+        "foaf" => "http://xmlns.com/foaf/0.1/",
+        "dc" => "http://purl.org/dc/elements/1.1/",
+      }
+      assert_parse(make_RDF(<<-EOR, xmlns), :nothing_raised)
+        #{make_channel}
+        #{make_item}
+        #{make_image}
+        <foaf:Image rdf:about="http://example.com/myself.png">
+          <dc:title>Myself</dc:title>
+          <dc:link>http://example.com/</dc:link>
+        </foaf:Image>
       EOR
     end
   end

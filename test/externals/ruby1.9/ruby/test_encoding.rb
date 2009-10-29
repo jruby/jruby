@@ -14,7 +14,7 @@ class TestEncoding < Test::Unit::TestCase
       assert_equal(e, Encoding.find(e.name.downcase))
     end
   end
-  
+
   def test_enc_names
     aliases = Encoding.aliases
     aliases.each do |a, en|
@@ -32,7 +32,7 @@ class TestEncoding < Test::Unit::TestCase
       assert_raise(TypeError) { e.dup }
       assert_raise(TypeError) { e.clone }
       assert_equal(e.object_id, Marshal.load(Marshal.dump(e)).object_id)
-    end    
+    end
   end
 
   def test_find
@@ -42,6 +42,13 @@ class TestEncoding < Test::Unit::TestCase
   def test_dummy_p
     assert_equal(true, Encoding::ISO_2022_JP.dummy?)
     assert_equal(false, Encoding::UTF_8.dummy?)
+  end
+
+  def test_ascii_compatible_p
+    assert_equal(true, Encoding::ASCII_8BIT.ascii_compatible?)
+    assert_equal(true, Encoding::UTF_8.ascii_compatible?)
+    assert_equal(false, Encoding::UTF_16BE.ascii_compatible?)
+    assert_equal(false, Encoding::ISO_2022_JP.ascii_compatible?)
   end
 
   def test_name_list
@@ -59,5 +66,13 @@ class TestEncoding < Test::Unit::TestCase
       assert_instance_of(String, k)
       assert_instance_of(String, v)
     end
+  end
+
+  def test_marshal
+    str = "".force_encoding("EUC-JP")
+    str2 = Marshal.load(Marshal.dump(str))
+    assert_equal(str, str2)
+    str2 = Marshal.load(Marshal.dump(str2))
+    assert_equal(str, str2, '[ruby-dev:38596]')
   end
 end

@@ -68,7 +68,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
                  events.shift)
     assert_equal(["c-return", 5, :+, Fixnum],
                  events.shift)
-    assert_equal(["return", 4, :add, self.class],
+    assert_equal(["return", 6, :add, self.class],
                  events.shift)
     assert_equal(["line", 8, __method__, self.class],
                  events.shift)
@@ -98,7 +98,7 @@ class TestSetTraceFunc < Test::Unit::TestCase
                  events.shift)
     assert_equal(["c-return", 4, :inherited, Class],
                  events.shift)
-    assert_equal(["class", 7, nil, nil],
+    assert_equal(["class", 4, nil, nil],
                  events.shift)
     assert_equal(["line", 5, nil, nil],
                  events.shift)
@@ -120,9 +120,92 @@ class TestSetTraceFunc < Test::Unit::TestCase
                  events.shift)
     assert_equal(["call", 5, :bar, Foo],
                  events.shift)
-    assert_equal(["return", 5, :bar, Foo],
+    assert_equal(["return", 6, :bar, Foo],
                  events.shift)
     assert_equal(["line", 9, __method__, self.class],
+                 events.shift)
+    assert_equal(["c-call", 9, :set_trace_func, Kernel],
+                 events.shift)
+    assert_equal([], events)
+  end
+
+  def test_return # [ruby-dev:38701]
+    events = []
+    eval <<-EOF.gsub(/^.*?: /, "")
+     1: set_trace_func(Proc.new { |event, file, lineno, mid, binding, klass|
+     2:   events << [event, lineno, mid, klass]
+     3: })
+     4: def foo(a)
+     5:   return if a
+     6:   return
+     7: end
+     8: foo(true)
+     9: foo(false)
+    10: set_trace_func(nil)
+    EOF
+    assert_equal(["c-return", 3, :set_trace_func, Kernel],
+                 events.shift)
+    assert_equal(["line", 4, __method__, self.class],
+                 events.shift)
+    assert_equal(["c-call", 4, :method_added, Module],
+                 events.shift)
+    assert_equal(["c-return", 4, :method_added, Module],
+                 events.shift)
+    assert_equal(["line", 8, __method__, self.class],
+                 events.shift)
+    assert_equal(["call", 4, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 5, :foo, self.class],
+                 events.shift)
+    assert_equal(["return", 5, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 9, :test_return, self.class],
+                 events.shift)
+    assert_equal(["call", 4, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 5, :foo, self.class],
+                 events.shift)
+    assert_equal(["return", 7, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 10, :test_return, self.class],
+                 events.shift)
+    assert_equal(["c-call", 10, :set_trace_func, Kernel],
+                 events.shift)
+    assert_equal([], events)
+  end
+
+  def test_return2 # [ruby-core:24463]
+    events = []
+    eval <<-EOF.gsub(/^.*?: /, "")
+     1: set_trace_func(Proc.new { |event, file, lineno, mid, binding, klass|
+     2:   events << [event, lineno, mid, klass]
+     3: })
+     4: def foo
+     5:   a = 5
+     6:   return a
+     7: end
+     8: foo
+     9: set_trace_func(nil)
+    EOF
+    assert_equal(["c-return", 3, :set_trace_func, Kernel],
+                 events.shift)
+    assert_equal(["line", 4, __method__, self.class],
+                 events.shift)
+    assert_equal(["c-call", 4, :method_added, Module],
+                 events.shift)
+    assert_equal(["c-return", 4, :method_added, Module],
+                 events.shift)
+    assert_equal(["line", 8, __method__, self.class],
+                 events.shift)
+    assert_equal(["call", 4, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 5, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 6, :foo, self.class],
+                 events.shift)
+    assert_equal(["return", 7, :foo, self.class],
+                 events.shift)
+    assert_equal(["line", 9, :test_return2, self.class],
                  events.shift)
     assert_equal(["c-call", 9, :set_trace_func, Kernel],
                  events.shift)
@@ -167,6 +250,8 @@ class TestSetTraceFunc < Test::Unit::TestCase
                  events.shift)
     assert_equal(["raise", 5, :test_raise, TestSetTraceFunc],
                  events.shift)
+    assert_equal(["c-return", 5, :raise, Kernel],
+                 events.shift)
     assert_equal(["c-call", 6, :===, Module],
                  events.shift)
     assert_equal(["c-return", 6, :===, Module],
@@ -180,5 +265,10 @@ class TestSetTraceFunc < Test::Unit::TestCase
 
   def test_invalid_proc
     assert_raise(TypeError) { set_trace_func(1) }
+  end
+
+  def test_raise_in_trace
+    set_trace_func proc {raise rescue nil}
+    assert_equal(42, (raise rescue 42), '[ruby-core:24118]')
   end
 end

@@ -1,18 +1,12 @@
 begin
   require "openssl"
-  require File.join(File.dirname(__FILE__), "utils.rb")
+  require_relative "utils.rb"
 rescue LoadError
 end
 require "rbconfig"
 require "socket"
 require "test/unit"
-begin
-  loadpath = $:.dup
-  $:.replace($: | [File.expand_path("../ruby", File.dirname(__FILE__))])
-  require 'envutil'
-ensure
-  $:.replace(loadpath)
-end
+require_relative '../ruby/envutil'
 
 if defined?(OpenSSL)
 
@@ -82,7 +76,7 @@ class OpenSSL::TestSSL < Test::Unit::TestCase
       end
 
       Thread.start do
-        Thread.current.abort_on_exception = true  
+        Thread.current.abort_on_exception = true
         server_proc.call(ctx, ssl)
       end
     end
@@ -93,7 +87,7 @@ class OpenSSL::TestSSL < Test::Unit::TestCase
     ctx_proc = args[:ctx_proc]
     server_proc = args[:server_proc]
     server_proc ||= method(:readwrite_loop)
-  
+
     store = OpenSSL::X509::Store.new
     store.add_cert(@ca_cert)
     store.purpose = OpenSSL::X509::PURPOSE_SSL_CLIENT
@@ -120,7 +114,7 @@ class OpenSSL::TestSSL < Test::Unit::TestCase
 
     begin
       server = Thread.new do
-        Thread.current.abort_on_exception = true  
+        Thread.current.abort_on_exception = true
         server_loop(ctx, ssls, server_proc)
       end
 
@@ -164,6 +158,21 @@ class OpenSSL::TestSSL < Test::Unit::TestCase
     ctx = OpenSSL::SSL::SSLContext.new
     assert_equal(ctx.setup, true)
     assert_equal(ctx.setup, nil)
+  end
+
+  def test_ssl_read_nonblock
+    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
+      sock = TCPSocket.new("127.0.0.1", port)
+      ssl = OpenSSL::SSL::SSLSocket.new(sock)
+      ssl.sync_close = true
+      ssl.connect
+      assert_raise(IO::WaitReadable) { ssl.read_nonblock(100) }
+      ssl.write("abc\n")
+      IO.select [ssl]
+      assert_equal('a', ssl.read_nonblock(1))
+      assert_equal("bc\n", ssl.read_nonblock(100))
+      assert_raise(IO::WaitReadable) { ssl.read_nonblock(100) }
+    }
   end
 
   def test_connect_and_close
@@ -517,7 +526,7 @@ class OpenSSL::TestSSL < Test::Unit::TestCase
         ctx.session_add(saved_session)
       end
       connections += 1
-      
+
       readwrite_loop(ctx, ssl)
     end
 
@@ -546,6 +555,50 @@ class OpenSSL::TestSSL < Test::Unit::TestCase
           end
         end
         first_session ||= session
+
+        str = "x" * 100 + "\n"
+        ssl.puts(str)
+        assert_equal(str, ssl.gets)
+
+        ssl.close
+      end
+    end
+  end
+
+  def test_tlsext_hostname
+    return unless OpenSSL::SSL::SSLSocket.instance_methods.include?(:hostname)
+
+    ctx_proc = Proc.new do |ctx, ssl|
+      foo_ctx = ctx.dup
+
+      ctx.servername_cb = Proc.new do |ssl, hostname|
+        case hostname
+        when 'foo.example.com'
+          foo_ctx
+        when 'bar.example.com'
+          nil
+        else
+          raise "unknown hostname #{hostname.inspect}"
+        end
+      end
+    end
+
+    server_proc = Proc.new do |ctx, ssl|
+      readwrite_loop(ctx, ssl)
+    end
+
+    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true, :ctx_proc => ctx_proc, :server_proc => server_proc) do |server, port|
+      2.times do |i|
+        sock = TCPSocket.new("127.0.0.1", port)
+        ctx = OpenSSL::SSL::SSLContext.new
+        if defined?(OpenSSL::SSL::OP_NO_TICKET)
+          # disable RFC4507 support
+          ctx.options = OpenSSL::SSL::OP_NO_TICKET
+        end
+        ssl = OpenSSL::SSL::SSLSocket.new(sock, ctx)
+        ssl.sync_close = true
+        ssl.hostname = (i & 1 == 0) ? 'foo.example.com' : 'bar.example.com'
+        ssl.connect
 
         str = "x" * 100 + "\n"
         ssl.puts(str)

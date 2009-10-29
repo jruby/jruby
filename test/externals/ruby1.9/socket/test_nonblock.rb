@@ -7,15 +7,20 @@ require "test/unit"
 require "tempfile"
 require "timeout"
 
-class TestNonblockSocket < Test::Unit::TestCase
+class TestSocketNonblock < Test::Unit::TestCase
   def test_accept_nonblock
     serv = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
     serv.bind(Socket.sockaddr_in(0, "127.0.0.1"))
     serv.listen(5)
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { serv.accept_nonblock }
+    assert_raise(IO::WaitReadable) { serv.accept_nonblock }
     c = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
     c.connect(serv.getsockname)
-    s, sockaddr = serv.accept_nonblock
+    begin
+      s, sockaddr = serv.accept_nonblock
+    rescue IO::WaitReadable
+      IO.select [serv]
+      s, sockaddr = serv.accept_nonblock
+    end
     assert_equal(Socket.unpack_sockaddr_in(c.getsockname), Socket.unpack_sockaddr_in(sockaddr))
   ensure
     serv.close if serv
@@ -31,7 +36,7 @@ class TestNonblockSocket < Test::Unit::TestCase
     servaddr = serv.getsockname
     begin
       c.connect_nonblock(servaddr)
-    rescue Errno::EINPROGRESS
+    rescue IO::WaitWritable
       IO.select nil, [c]
       assert_nothing_raised {
         begin
@@ -52,8 +57,8 @@ class TestNonblockSocket < Test::Unit::TestCase
     u1 = UDPSocket.new
     u2 = UDPSocket.new
     u1.bind("127.0.0.1", 0)
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { u1.recvfrom_nonblock(100) }
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK, Errno::EINVAL) { u2.recvfrom_nonblock(100) }
+    assert_raise(IO::WaitReadable) { u1.recvfrom_nonblock(100) }
+    assert_raise(IO::WaitReadable, Errno::EINVAL) { u2.recvfrom_nonblock(100) }
     u2.send("aaa", 0, u1.getsockname)
     IO.select [u1]
     mesg, inet_addr = u1.recvfrom_nonblock(100)
@@ -62,7 +67,7 @@ class TestNonblockSocket < Test::Unit::TestCase
     af, port, host, addr = inet_addr
     u2_port, u2_addr = Socket.unpack_sockaddr_in(u2.getsockname)
     assert_equal(u2_port, port)
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { u1.recvfrom_nonblock(100) }
+    assert_raise(IO::WaitReadable) { u1.recvfrom_nonblock(100) }
     u2.send("", 0, u1.getsockname)
     assert_nothing_raised("cygwin 1.5.19 has a problem to send an empty UDP packet. [ruby-dev:28915]") {
       timeout(1) { IO.select [u1] }
@@ -78,13 +83,13 @@ class TestNonblockSocket < Test::Unit::TestCase
     u1 = UDPSocket.new
     u2 = UDPSocket.new
     u1.bind("127.0.0.1", 0)
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { u1.recv_nonblock(100) }
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK, Errno::EINVAL) { u2.recv_nonblock(100) }
+    assert_raise(IO::WaitReadable) { u1.recv_nonblock(100) }
+    assert_raise(IO::WaitReadable, Errno::EINVAL) { u2.recv_nonblock(100) }
     u2.send("aaa", 0, u1.getsockname)
     IO.select [u1]
     mesg = u1.recv_nonblock(100)
     assert_equal("aaa", mesg)
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { u1.recv_nonblock(100) }
+    assert_raise(IO::WaitReadable) { u1.recv_nonblock(100) }
     u2.send("", 0, u1.getsockname)
     assert_nothing_raised("cygwin 1.5.19 has a problem to send an empty UDP packet. [ruby-dev:28915]") {
       timeout(1) { IO.select [u1] }
@@ -100,11 +105,11 @@ class TestNonblockSocket < Test::Unit::TestCase
     s1 = Socket.new(Socket::AF_INET, Socket::SOCK_DGRAM, 0)
     s1.bind(Socket.sockaddr_in(0, "127.0.0.1"))
     s2 = Socket.new(Socket::AF_INET, Socket::SOCK_DGRAM, 0)
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { s1.recvfrom_nonblock(100) }
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK, Errno::EINVAL) { s2.recvfrom_nonblock(100) }
+    assert_raise(IO::WaitReadable) { s1.recvfrom_nonblock(100) }
+    assert_raise(IO::WaitReadable, Errno::EINVAL) { s2.recvfrom_nonblock(100) }
     s2.send("aaa", 0, s1.getsockname)
     IO.select [s1]
-    mesg, sockaddr = s1.recvfrom_nonblock(100) 
+    mesg, sockaddr = s1.recvfrom_nonblock(100)
     assert_equal("aaa", mesg)
     port, addr = Socket.unpack_sockaddr_in(sockaddr)
     s2_port, s2_addr = Socket.unpack_sockaddr_in(s2.getsockname)
@@ -119,20 +124,53 @@ class TestNonblockSocket < Test::Unit::TestCase
     af, port, host, addr = serv.addr
     c = TCPSocket.new(addr, port)
     s = serv.accept
-    return c, s
+    if block_given?
+      begin
+        yield c, s
+      ensure
+        c.close if !c.closed?
+        s.close if !s.closed?
+      end
+    else
+      return c, s
+    end
   ensure
-    serv.close if serv
+    serv.close if serv && !serv.closed?
+  end
+
+  def udp_pair
+    s1 = UDPSocket.new
+    s1.bind('127.0.0.1', 0)
+    af, port1, host, addr1 = s1.addr
+
+    s2 = UDPSocket.new
+    s2.bind('127.0.0.1', 0)
+    af, port2, host, addr2 = s2.addr
+
+    s1.connect(addr2, port2)
+    s2.connect(addr1, port1)
+
+    if block_given?
+      begin
+        yield s1, s2
+      ensure
+        s1.close if !s1.closed?
+        s2.close if !s2.closed?
+      end
+    else
+      return s1, s2
+    end
   end
 
   def test_tcp_recv_nonblock
     c, s = tcp_pair
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { c.recv_nonblock(100) }
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { s.recv_nonblock(100) }
+    assert_raise(IO::WaitReadable) { c.recv_nonblock(100) }
+    assert_raise(IO::WaitReadable) { s.recv_nonblock(100) }
     c.write("abc")
     IO.select [s]
     assert_equal("a", s.recv_nonblock(1))
     assert_equal("bc", s.recv_nonblock(100))
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { s.recv_nonblock(100) }
+    assert_raise(IO::WaitReadable) { s.recv_nonblock(100) }
   ensure
     c.close if c
     s.close if s
@@ -140,13 +178,13 @@ class TestNonblockSocket < Test::Unit::TestCase
 
   def test_read_nonblock
     c, s = tcp_pair
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { c.read_nonblock(100) }
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { s.read_nonblock(100) }
+    assert_raise(IO::WaitReadable) { c.read_nonblock(100) }
+    assert_raise(IO::WaitReadable) { s.read_nonblock(100) }
     c.write("abc")
     IO.select [s]
     assert_equal("a", s.read_nonblock(1))
     assert_equal("bc", s.read_nonblock(100))
-    assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) { s.read_nonblock(100) }
+    assert_raise(IO::WaitReadable) { s.read_nonblock(100) }
   ensure
     c.close if c
     s.close if s
@@ -161,7 +199,7 @@ class TestNonblockSocket < Test::Unit::TestCase
     ret = c.write_nonblock(str)
     assert_operator(ret, :>, 0)
     loop {
-      assert_raise(Errno::EAGAIN, Errno::EWOULDBLOCK) {
+      assert_raise(IO::WaitWritable) {
         loop {
           ret = c.write_nonblock(str)
           assert_operator(ret, :>, 0)
@@ -175,5 +213,72 @@ class TestNonblockSocket < Test::Unit::TestCase
     s.close if s
   end
 =end
+
+  def test_sendmsg_nonblock_error
+    udp_pair {|s1, s2|
+      begin
+        loop {
+          s1.sendmsg_nonblock("a" * 100000)
+        }
+      rescue NotImplementedError
+        skip "sendmsg not implemented on this platform."
+      rescue Errno::EMSGSIZE
+        # UDP has 64K limit (if no Jumbograms).  No problem.
+      rescue Errno::EWOULDBLOCK
+        assert_kind_of(IO::WaitWritable, $!)
+      end
+    }
+  end
+
+  def test_recvmsg_nonblock_error
+    udp_pair {|s1, s2|
+      begin
+        s1.recvmsg_nonblock(4096)
+      rescue NotImplementedError
+        skip "recvmsg not implemented on this platform."
+      rescue Errno::EWOULDBLOCK
+        assert_kind_of(IO::WaitReadable, $!)
+      end
+    }
+  end
+
+  def test_recv_nonblock_error
+    tcp_pair {|c, s|
+      begin
+        c.recv_nonblock(4096)
+      rescue Errno::EWOULDBLOCK
+        assert_kind_of(IO::WaitReadable, $!)
+      end
+    }
+  end
+
+  def test_connect_nonblock_error
+    serv = TCPServer.new("127.0.0.1", 0)
+    af, port, host, addr = serv.addr
+    c = Socket.new(:INET, :STREAM)
+    begin
+      c.connect_nonblock(Socket.sockaddr_in(port, "127.0.0.1"))
+    rescue Errno::EINPROGRESS
+      assert_kind_of(IO::WaitWritable, $!)
+    end
+  ensure
+    serv.close if serv && !serv.closed?
+    c.close if c && !c.closed?
+  end
+
+  def test_accept_nonblock_error
+    serv = Socket.new(:INET, :STREAM)
+    serv.bind(Socket.sockaddr_in(0, "127.0.0.1"))
+    serv.listen(5)
+    port = serv.local_address.ip_port
+    begin
+      s, _ = serv.accept_nonblock
+    rescue Errno::EWOULDBLOCK
+      assert_kind_of(IO::WaitReadable, $!)
+    end
+  ensure
+    serv.close if serv && !serv.closed?
+    s.close if s && !s.closed?
+  end
 
 end if defined?(Socket)

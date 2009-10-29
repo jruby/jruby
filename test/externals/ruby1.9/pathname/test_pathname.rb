@@ -269,22 +269,101 @@ class TestPathname < Test::Unit::TestCase
   defassert_raise(:relative_path_from, ArgumentError, "a", "..")
   defassert_raise(:relative_path_from, ArgumentError, ".", "..")
 
+  def with_tmpchdir(base=nil)
+    Dir.mktmpdir(base) {|d|
+      d = Pathname.new(d).realpath.to_s
+      Dir.chdir(d) {
+        yield d
+      }
+    }
+  end
+
+  def has_symlink?
+    begin
+      File.symlink(nil, nil)
+    rescue NotImplementedError
+      return false
+    rescue TypeError
+    end
+    return true
+  end
+
   def realpath(path)
     Pathname.new(path).realpath.to_s
   end
 
   def test_realpath
-    begin
-      File.symlink(nil, nil)
-    rescue NotImplementedError
-      return
-    rescue TypeError
-    end
-    Dir.mktmpdir('rubytest-pathname') {|dir|
+    return if !has_symlink?
+    with_tmpchdir('rubytest-pathname') {|dir|
+      assert_raise(Errno::ENOENT) { realpath("#{dir}/not-exist") }
       File.symlink("not-exist-target", "#{dir}/not-exist")
       assert_raise(Errno::ENOENT) { realpath("#{dir}/not-exist") }
+
       File.symlink("loop", "#{dir}/loop")
       assert_raise(Errno::ELOOP) { realpath("#{dir}/loop") }
+
+      File.symlink("../#{File.basename(dir)}/./not-exist-target", "#{dir}/not-exist2")
+      assert_raise(Errno::ENOENT) { realpath("#{dir}/not-exist2") }
+
+      File.open("#{dir}/exist-target", "w") {}
+      File.symlink("../#{File.basename(dir)}/./exist-target", "#{dir}/exist2")
+      assert_nothing_raised { realpath("#{dir}/exist2") }
+
+      File.symlink("loop-relative", "loop-relative")
+      assert_raise(Errno::ELOOP) { realpath("#{dir}/loop-relative") }
+
+      Dir.mkdir("exist")
+      assert_equal("#{dir}/exist", realpath("exist"))
+
+      File.symlink("loop1/loop1", "loop1")
+      assert_raise(Errno::ELOOP) { realpath("#{dir}/loop1") }
+
+      File.symlink("loop2", "loop3")
+      File.symlink("loop3", "loop2")
+      assert_raise(Errno::ELOOP) { realpath("#{dir}/loop2") }
+
+      Dir.mkdir("b")
+
+      File.symlink("b", "c")
+      assert_equal("#{dir}/b", realpath("c"))
+      assert_equal("#{dir}/b", realpath("c/../c"))
+      assert_equal("#{dir}/b", realpath("c/../c/../c/."))
+
+      File.symlink("..", "b/d")
+      assert_equal("#{dir}/b", realpath("c/d/c/d/c"))
+
+      File.symlink("#{dir}/b", "e")
+      assert_equal("#{dir}/b", realpath("e"))
+
+      Dir.mkdir("f")
+      Dir.mkdir("f/g")
+      File.symlink("f/g", "h")
+      assert_equal("#{dir}/f/g", realpath("h"))
+      File.chmod(0000, "f")
+      assert_raise(Errno::EACCES) { realpath("h") }
+      File.chmod(0755, "f")
+    }
+  end
+
+  def realdirpath(path)
+    Pathname.new(path).realdirpath.to_s
+  end
+
+  def test_realdirpath
+    return if !has_symlink?
+    Dir.mktmpdir('rubytest-pathname') {|dir|
+      rdir = realpath(dir)
+      assert_equal("#{rdir}/not-exist", realdirpath("#{dir}/not-exist"))
+      assert_raise(Errno::ENOENT) { realdirpath("#{dir}/not-exist/not-exist-child") }
+      File.symlink("not-exist-target", "#{dir}/not-exist")
+      assert_equal("#{rdir}/not-exist-target", realdirpath("#{dir}/not-exist"))
+      File.symlink("../#{File.basename(dir)}/./not-exist-target", "#{dir}/not-exist2")
+      assert_equal("#{rdir}/not-exist-target", realdirpath("#{dir}/not-exist2"))
+      File.open("#{dir}/exist-target", "w") {}
+      File.symlink("../#{File.basename(dir)}/./exist-target", "#{dir}/exist")
+      assert_equal("#{rdir}/exist-target", realdirpath("#{dir}/exist"))
+      File.symlink("loop", "#{dir}/loop")
+      assert_raise(Errno::ELOOP) { realdirpath("#{dir}/loop") }
     }
   end
 
@@ -391,6 +470,15 @@ class TestPathname < Test::Unit::TestCase
   defassert(:pathsubext, 'lex.yy.o', 'lex.yy.c', '.o')
   defassert(:pathsubext, 'fooaa.o', 'fooaa', '.o')
   defassert(:pathsubext, 'd.e/aa.o', 'd.e/aa', '.o')
+
+  def test_sub_matchdata
+    result = Pathname("abc.gif").sub(/\..*/) {
+      assert_not_nil($~)
+      assert_equal(".gif", $~[0])
+      ".png"
+    }
+    assert_equal("abc.png", result.to_s)
+  end
 
   def root?(path)
     Pathname.new(path).root?

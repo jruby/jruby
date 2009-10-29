@@ -4,11 +4,12 @@ require_relative 'envutil'
 
 class TestSystem < Test::Unit::TestCase
   def valid_syntax?(code, fname)
-    code.force_encoding("ascii-8bit")
-    code = code.sub(/\A(?:\s*\#.*$)*(\n)?/n) {
-      "#$&#{"\n" if $1 && !$2}BEGIN{return true}\n"
+    code = code.dup.force_encoding("ascii-8bit")
+    code.sub!(/\A(?:\xef\xbb\xbf)?(\s*\#.*$)*(\n)?/n) {
+      "#$&#{"\n" if $1 && !$2}BEGIN{throw tag, :ok}\n"
     }
-    eval(code, nil, fname, 0)
+    code.force_encoding("us-ascii")
+    catch {|tag| eval(code, binding, fname, 0)}
   end
 
   def test_system
@@ -45,6 +46,18 @@ class TestSystem < Test::Unit::TestCase
       assert_equal('555', `#{ruby} -x #{tmpfilename} -zzz=555`)
 
       tmp = open(tmpfilename, "w")
+      tmp.print "#! /non/exist\\interpreter?/./to|be:ignored\n";
+      tmp.print "this is a leading junk\n";
+      tmp.print "#! /usr/local/bin/ruby -s\n";
+      tmp.print "print $zzz\n";
+      tmp.print "__END__\n";
+      tmp.print "this is a trailing junk\n";
+      tmp.close
+
+      assert_equal('', `#{ruby} #{tmpfilename}`)
+      assert_equal('555', `#{ruby} #{tmpfilename} -zzz=555`)
+
+      tmp = open(tmpfilename, "w")
       for i in 1..5
         tmp.print i, "\n"
       end
@@ -59,6 +72,28 @@ class TestSystem < Test::Unit::TestCase
 
       File.unlink tmpfilename or `/bin/rm -f "#{tmpfilename}"`
       File.unlink "#{tmpfilename}.bak" or `/bin/rm -f "#{tmpfilename}.bak"`
+
+      if /mswin|mingw/ =~ RUBY_PLATFORM
+        testname = '[ruby-dev:38588]'
+        batch = "batch_tmp.#{$$}"
+        tmpfilename = "#{tmpdir}/#{batch}.bat"
+        open(tmpfilename, "wb") {|f| f.print "\r\n"}
+        assert(system(tmpfilename), testname)
+        assert(system("#{tmpdir}/#{batch}"), testname)
+        assert(system(tmpfilename, "1"), testname)
+        assert(system("#{tmpdir}/#{batch}", "1"), testname)
+        begin
+          path = ENV["PATH"]
+          ENV["PATH"] = "#{tmpdir.tr(File::SEPARATOR, File::ALT_SEPARATOR)}#{File::PATH_SEPARATOR + path if path}"
+          assert(system("#{batch}.bat"), testname)
+          assert(system(batch), testname)
+          assert(system("#{batch}.bat", "1"), testname)
+          assert(system(batch, "1"), testname)
+        ensure
+          ENV["PATH"] = path
+        end
+        File.unlink tmpfilename
+      end
     }
   end
 

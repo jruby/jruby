@@ -105,6 +105,65 @@ class TestClass < Test::Unit::TestCase
     end
   end
 
+  def test_method_redefinition
+    feature2155 = '[ruby-dev:39400]'
+
+    line = __LINE__+4
+    stderr = EnvUtil.verbose_warning do
+      Class.new do
+        def foo; end
+        def foo; end
+      end
+    end
+    assert_match(/:#{line}: warning: method redefined; discarding old foo/, stderr)
+    assert_match(/:#{line-1}: warning: previous definition of foo/, stderr, feature2155)
+
+    stderr = EnvUtil.verbose_warning do
+      Class.new do
+        def foo; end
+        alias bar foo
+        def foo; end
+      end
+    end
+    assert_equal("", stderr)
+
+    stderr = EnvUtil.verbose_warning do
+      Class.new do
+        def foo; end
+        alias bar foo
+        alias bar foo
+      end
+    end
+    assert_equal("", stderr)
+
+    line = __LINE__+4
+    stderr = EnvUtil.verbose_warning do
+      Class.new do
+        define_method(:foo) do end
+        def foo; end
+      end
+    end
+    assert_match(/:#{line}: warning: method redefined; discarding old foo/, stderr)
+    assert_match(/:#{line-1}: warning: previous definition of foo/, stderr, feature2155)
+
+    stderr = EnvUtil.verbose_warning do
+      Class.new do
+        define_method(:foo) do end
+        alias bar foo
+        alias bar foo
+      end
+    end
+    assert_equal("", stderr)
+
+    stderr = EnvUtil.verbose_warning do
+      Class.new do
+        def foo; end
+        undef foo
+      end
+    end
+    assert_equal("", stderr)
+  end
+
   def test_check_inheritable
     assert_raise(TypeError) { Class.new(Object.new) }
 
@@ -143,5 +202,12 @@ class TestClass < Test::Unit::TestCase
   def test_uninitialized
     assert_raise(TypeError) { Class.allocate.new }
     assert_raise(TypeError) { Class.allocate.superclass }
+  end
+
+  def test_nonascii_name
+    c = eval("class ::C\u{df}; self; end")
+    assert_equal("C\u{df}", c.name, '[ruby-core:24600]')
+    c = eval("class C\u{df}; self; end")
+    assert_equal("TestClass::C\u{df}", c.name, '[ruby-core:24600]')
   end
 end

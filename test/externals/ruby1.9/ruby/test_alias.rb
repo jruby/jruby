@@ -45,7 +45,7 @@ class TestAlias < Test::Unit::TestCase
     assert_equal "foo", x.bar
     assert_raise(NoMethodError) { x.quux }
   end
-   
+
   class C
     def m
       $SAFE
@@ -60,5 +60,21 @@ class TestAlias < Test::Unit::TestCase
       dclass.new
     }.call
     assert_raise(SecurityError) { d.mm }
+  end
+
+  def test_nonexistmethod
+    assert_raise(NameError){
+      Class.new{
+        alias_method :foobarxyzzy, :barbaz
+      }
+    }
+  end
+
+  def test_send_alias
+    x = "abc"
+    class << x
+      alias_method :try, :__send__
+    end
+    assert_equal("ABC", x.try(:upcase), '[ruby-dev:38824]')
   end
 end

@@ -4,6 +4,17 @@ require "rss/maker"
 
 module RSS
   class TestMakerAtomEntry < TestCase
+    def test_supported?
+      assert(RSS::Maker.supported?("atom:entry"))
+      assert(RSS::Maker.supported?("atom1.0:entry"))
+      assert(!RSS::Maker.supported?("atom2.0:entry"))
+    end
+
+    def test_find_class
+      assert_equal(RSS::Maker::Atom::Entry, RSS::Maker["atom:entry"])
+      assert_equal(RSS::Maker::Atom::Entry, RSS::Maker["atom1.0:entry"])
+    end
+
     def test_root_element
       entry = Maker.make("atom:entry") do |maker|
         setup_dummy_channel_atom(maker)
@@ -362,6 +373,21 @@ module RSS
         setup_dummy_channel_atom(maker)
         setup_dummy_item_atom(maker)
       end
+    end
+
+    def test_date
+      date = Time.parse("2004/11/1 10:10")
+      feed = Maker.make("atom:entry") do |maker|
+        setup_dummy_channel_atom(maker)
+        maker.channel.date = nil
+        maker.items.new_item do |item|
+          item.link = "http://example.com/article.html"
+          item.title = "Sample Article"
+          item.date = date
+        end
+      end
+      assert_equal(date, feed.items[0].updated.content)
+      assert_equal([date], feed.items[0].dc_dates.collect {|_date| _date.value})
     end
   end
 end

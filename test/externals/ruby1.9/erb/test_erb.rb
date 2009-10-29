@@ -73,7 +73,7 @@ class TestERBCore < Test::Unit::TestCase
 * <%= n %>
 <% end %>
 EOS
-      
+
     ans = <<EOS
 %% hi
 = hello
@@ -118,7 +118,7 @@ EOS
 % n=0
 * 2
 EOS
-      
+
     erb = @erb.new(src, safe, 2)
     assert_equal(ans, erb.result)
     erb = @erb.new(src, safe, '<>')
@@ -234,7 +234,7 @@ EOS
     klass.module_eval do
       def_erb_method('hello_world', erb)
     end
-    assert(klass.new.respond_to?('hello_world'))    
+    assert(klass.new.respond_to?('hello_world'))
   end
 
   def test_def_method_without_filename

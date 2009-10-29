@@ -35,6 +35,10 @@ class Rational_Test < Test::Unit::TestCase
       assert_equal(c, c5)
       assert_instance_of(RationalSub, c5)
     end
+
+    c1 = Rational(1)
+    assert_equal(c1.hash, c.hash, '[ruby-dev:38850]')
+    assert_equal([true, true], [c.eql?(c1), c1.eql?(c)])
   end
 
   def test_eql_p
@@ -124,9 +128,9 @@ class Rational_Test < Test::Unit::TestCase
     assert_equal(Rational(3),Rational('3'))
     assert_equal(Rational(1),Rational('3.0','3.0'))
     assert_equal(Rational(1),Rational('3/3','3/3'))
-    assert_raise(ArgumentError){Rational(nil)}
+    assert_raise(TypeError){Rational(nil)}
     assert_raise(ArgumentError){Rational('')}
-    assert_raise(ArgumentError){Rational(Object.new)}
+    assert_raise(TypeError){Rational(Object.new)}
     assert_raise(ArgumentError){Rational()}
     assert_raise(ArgumentError){Rational(1,2,3)}
 
@@ -692,9 +696,12 @@ class Rational_Test < Test::Unit::TestCase
     assert_equal(true, Rational(0) <= Rational(0))
     assert_equal(true, Rational(0) >= Rational(0))
     assert_equal(false, Rational(0) > Rational(0))
+
+    assert_equal(nil, Rational(0) <=> nil)
+    assert_equal(nil, Rational(0) <=> 'foo')
   end
 
-  def test_equal
+  def test_eqeq
     assert(Rational(1,1) == Rational(1))
     assert(Rational(-1,1) == Rational(-1))
 
@@ -702,6 +709,12 @@ class Rational_Test < Test::Unit::TestCase
     assert_equal(true, Rational(2,1) != Rational(1))
     assert_equal(false, Rational(1) == nil)
     assert_equal(false, Rational(1) == '')
+  end
+
+  def test_coerce
+    assert_equal([Rational(2),Rational(1)], Rational(1).coerce(2))
+    assert_equal([Rational(2.2),Rational(1)], Rational(1).coerce(2.2))
+    assert_equal([Rational(2),Rational(1)], Rational(1).coerce(Rational(2)))
   end
 
   def test_unify
@@ -920,20 +933,20 @@ class Rational_Test < Test::Unit::TestCase
 
   def test_to_r
     c = nil.to_r
-    assert_equal([0,1] , [c.numerator, c.denominator])
+    assert_equal([0,1], [c.numerator, c.denominator])
 
     c = 0.to_r
-    assert_equal([0,1] , [c.numerator, c.denominator])
+    assert_equal([0,1], [c.numerator, c.denominator])
 
     c = 1.to_r
-    assert_equal([1,1] , [c.numerator, c.denominator])
+    assert_equal([1,1], [c.numerator, c.denominator])
 
     c = 1.1.to_r
     assert_equal([2476979795053773, 2251799813685248],
 		 [c.numerator, c.denominator])
 
     c = Rational(1,2).to_r
-    assert_equal([1,2] , [c.numerator, c.denominator])
+    assert_equal([1,2], [c.numerator, c.denominator])
 
     if @complex
       if @keiju
@@ -948,6 +961,61 @@ class Rational_Test < Test::Unit::TestCase
     end
     if (1.0/0).infinite?
       assert_raise(FloatDomainError){(1.0/0).to_r}
+    end
+  end
+
+  def test_rationalize
+    c = nil.rationalize
+    assert_equal([0,1], [c.numerator, c.denominator])
+
+    c = 0.rationalize
+    assert_equal([0,1], [c.numerator, c.denominator])
+
+    c = 1.rationalize
+    assert_equal([1,1], [c.numerator, c.denominator])
+
+    c = 1.1.rationalize
+    assert_equal([11, 10], [c.numerator, c.denominator])
+
+    c = Rational(1,2).rationalize
+    assert_equal([1,2], [c.numerator, c.denominator])
+
+    assert_equal(nil.rationalize(Rational(1,10)), Rational(0))
+    assert_equal(0.rationalize(Rational(1,10)), Rational(0))
+    assert_equal(10.rationalize(Rational(1,10)), Rational(10))
+
+    r = 0.3333
+    assert_equal(r.rationalize, Rational(3333, 10000))
+    assert_equal(r.rationalize(Rational(1,10)), Rational(1,3))
+    assert_equal(r.rationalize(Rational(-1,10)), Rational(1,3))
+
+    r = Rational(5404319552844595,18014398509481984)
+    assert_equal(r.rationalize, r)
+    assert_equal(r.rationalize(Rational(1,10)), Rational(1,3))
+    assert_equal(r.rationalize(Rational(-1,10)), Rational(1,3))
+
+    r = -0.3333
+    assert_equal(r.rationalize, Rational(-3333, 10000))
+    assert_equal(r.rationalize(Rational(1,10)), Rational(-1,3))
+    assert_equal(r.rationalize(Rational(-1,10)), Rational(-1,3))
+
+    r = Rational(-5404319552844595,18014398509481984)
+    assert_equal(r.rationalize, r)
+    assert_equal(r.rationalize(Rational(1,10)), Rational(-1,3))
+    assert_equal(r.rationalize(Rational(-1,10)), Rational(-1,3))
+
+    if @complex
+      if @keiju
+      else
+	assert_raise(RangeError){Complex(1,2).rationalize}
+      end
+    end
+
+    if (0.0/0).nan?
+      assert_raise(FloatDomainError){(0.0/0).rationalize}
+    end
+    if (1.0/0).infinite?
+      assert_raise(FloatDomainError){(1.0/0).rationalize}
     end
   end
 
