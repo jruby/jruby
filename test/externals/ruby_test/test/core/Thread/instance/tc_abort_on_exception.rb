@@ -11,7 +11,7 @@ class TC_Thread_AbortOnException_InstanceMethod < Test::Unit::TestCase
    include Test::Helper
 
    def setup
-      @thread = Thread.new{ raise 'AOE TEST' }
+      @thread = Thread.new{ sleep; raise 'AOE TEST' }
    end
 
    def test_abort_on_exception_basic
@@ -30,7 +30,8 @@ class TC_Thread_AbortOnException_InstanceMethod < Test::Unit::TestCase
    # the test suite?
    #
    def test_abort_on_exception_behavior
-      assert_raise(RuntimeError){ @thread.join }
+      Thread.pass until @thread.status == 'sleep'
+      assert_raise(RuntimeError){ @thread.run; @thread.join }
    end
 
    def test_abort_on_exception_expected_errors
