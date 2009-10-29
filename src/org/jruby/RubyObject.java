@@ -651,7 +651,7 @@ public class RubyObject extends RubyBasicObject {
      */
      @JRubyMethod(name = {"object_id", "__id__"})
      @Override
-     public synchronized IRubyObject id() {
+     public IRubyObject id() {
         return super.id();
      }
 
@@ -660,7 +660,7 @@ public class RubyObject extends RubyBasicObject {
      * Old id version. This one is bound to the "id" name and will emit a deprecation warning.
      */
     @JRubyMethod(name = "id")
-    public synchronized IRubyObject id_deprecated() {
+    public IRubyObject id_deprecated() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id", "Object#id", "Object#object_id");
         return id();
     }

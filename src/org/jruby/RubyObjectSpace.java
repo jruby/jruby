@@ -99,11 +99,16 @@ public class RubyObjectSpace {
             // odd
             return runtime.newFixnum((longId - 1) / 2);
         } else {
-            IRubyObject object = runtime.getObjectSpace().id2ref(longId);
-            if (object == null) {
+            if (runtime.isObjectSpaceEnabled()) {
+                IRubyObject object = runtime.getObjectSpace().id2ref(longId);
+                if (object == null) {
+                    return runtime.getNil();
+                }
+                return object;
+            } else {
+                runtime.getWarnings().warn("ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
                 return runtime.getNil();
             }
-            return object;
         }
     }
     

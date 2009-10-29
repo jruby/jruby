@@ -883,11 +883,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_id
      *
      * Return the internal id of an object.
-     *
-     * FIXME: Should this be renamed to match its ruby name?
      */
-    public synchronized IRubyObject id() {
-        return getRuntime().newFixnum(getRuntime().getObjectSpace().idOf(this));
+    public IRubyObject id() {
+        Ruby runtime = getRuntime();
+        if (runtime.isObjectSpaceEnabled()) {
+            synchronized (this) {
+                return runtime.newFixnum(runtime.getObjectSpace().idOf(this));
+            }
+        } else {
+            return runtime.newFixnum(System.identityHashCode(this));
+        }
     }
 
     /** rb_obj_inspect

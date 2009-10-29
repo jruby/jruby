@@ -113,3 +113,4 @@ test_openssl_stub
 test_missing_jruby_home
 test_ast_inspector
 test_jarred_gems_with_spaces_in_directory
+test_weak_drb_id_conv
