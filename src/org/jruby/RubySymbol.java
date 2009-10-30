@@ -583,6 +583,13 @@ public class RubySymbol extends RubyObject {
         return result;
     }
 
+    public Object toJava(Class target) {
+        if (target == String.class || target == CharSequence.class) {
+            return symbol;
+        }
+        return super.toJava(target);
+    }
+
     public static final class SymbolTable {
         static final int DEFAULT_INITIAL_CAPACITY = 2048; // *must* be power of 2!
         static final int MAXIMUM_CAPACITY = 1 << 30;
