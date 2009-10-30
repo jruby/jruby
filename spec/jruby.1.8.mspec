@@ -3,6 +3,7 @@
 # detect windows platform:
 require 'rbconfig'
 require 'java'
+require 'jruby'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 
@@ -14,12 +15,20 @@ class MSpecScript
   set :language, [ SPEC_DIR + '/language' ]
 
   # Core library specs
-  set :core, [
+  CORE_DIRS = [
     SPEC_DIR + '/core',
 
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'
   ]
+
+  # Filter out ObjectSpace specs if ObjectSpace is disabled
+  unless JRuby.objectspace
+    CORE_DIRS << '^' + SPEC_DIR + '/core/objectspace/_id2ref'
+    CORE_DIRS << '^' + SPEC_DIR + '/core/objectspace/each_object'
+  end
+
+  set :core, CORE_DIRS
 
   if IKVM
     # ftype_spec freezes for some reason under IKVM
