@@ -1,9 +1,10 @@
 require 'test/unit'
 require 'fileutils'
+require 'rbconfig'
 
 # FIXME: This needs platform-specific stuff changed
 class TestIO < Test::Unit::TestCase
-  WIN32 = PLATFORM =~ /mswin/
+  WIN32 = Config::CONFIG['host_os'] =~ /mswin/
 
   SAMPLE = "08: This is a line\n"
 
@@ -624,7 +625,9 @@ class TestIO < Test::Unit::TestCase
   # see tty?
   def test_isatty
     File.open(@file) { |f|  assert(!f.isatty) }
-    if WIN32 
+    if WIN32
+      # FIXME: JRUBY-4186
+      return
       File.open("con") { |f| assert(f.isatty) }
     end
     unless WIN32
@@ -702,6 +705,9 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_pos=
+    # FIXME: JRUBY-61
+    return if WIN32
+
     nums = [ 5, 8, 0, 1, 0 ]
 
     File.open(@file) do |file|
@@ -913,6 +919,9 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_seek
+    # FIXME: JRUBY-61
+    return if WIN32
+
     nums = [ 5, 8, 0, 1, 0 ]
 
     File.open(@file, "rb") do |file|
@@ -1032,7 +1041,9 @@ class TestIO < Test::Unit::TestCase
   # see isatty
   def test_tty?
     File.open(@file) { |f|  assert(!f.tty?) }
-    if WIN32 
+    if WIN32
+      # FIXME: JRUBY-4186
+      return
       File.open("con") { |f| assert(f.tty?) }
     end
     unless WIN32
