@@ -62,7 +62,6 @@ public class JRubyBindingsTest {
 
     @Before
     public void setUp() {
-        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
     }
 
     @After
@@ -75,7 +74,7 @@ public class JRubyBindingsTest {
     @Test
     public void testSize() {
         System.out.println("size");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         int expResult = 0;
         int result = instance.size();
         assertEquals(expResult, result);
@@ -85,6 +84,8 @@ public class JRubyBindingsTest {
         expResult = 3;
         result = instance.size();
         assertEquals(expResult, result);
+
+        instance.clear();
     }
 
     /**
@@ -93,7 +94,7 @@ public class JRubyBindingsTest {
     @Test
     public void testIsEmpty() {
         System.out.println("isEmpty");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         boolean expResult = true;
         boolean result = instance.isEmpty();
         assertEquals(expResult, result);
@@ -114,7 +115,7 @@ public class JRubyBindingsTest {
     public void testContainsKey() {
         System.out.println("containsKey");
         String key = "abc";
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         boolean expResult = false;
         boolean result = instance.containsKey(key);
         assertEquals(expResult, result);
@@ -136,7 +137,7 @@ public class JRubyBindingsTest {
     public void testContainsValue() {
         System.out.println("containsValue");
         Object value = null;
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         boolean expResult = false;
         boolean result = instance.containsValue(value);
         assertEquals(expResult, result);
@@ -158,7 +159,7 @@ public class JRubyBindingsTest {
         System.out.println("get");
         String key = null;
         Object result = null;
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         Object expResult = null;
         try {
             result = instance.get(key);
@@ -186,7 +187,7 @@ public class JRubyBindingsTest {
         System.out.println("put");
         String key = "";
         Object value = null;
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         Object expResult = null;
         Object result = null;
         try {
@@ -212,7 +213,7 @@ public class JRubyBindingsTest {
     @Test
     public void testRemove() {
         System.out.println("remove");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put(ScriptEngine.FILENAME, "filename");
         String key = ScriptEngine.FILENAME;
         Object expResult = "filename";
@@ -233,7 +234,7 @@ public class JRubyBindingsTest {
         Map t = null;
         Object expResult = null;
         Object result = null;
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         try {
             instance.putAll(t);
         } catch (NullPointerException e) {
@@ -262,7 +263,7 @@ public class JRubyBindingsTest {
     @Test
     public void testClear() {
         System.out.println("clear");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
         instance.put(ScriptEngine.FILENAME, "filename");
@@ -279,7 +280,7 @@ public class JRubyBindingsTest {
     @Test
     public void testKeySet() {
         System.out.println("keySet");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
         instance.put(ScriptEngine.FILENAME, "filename");
@@ -296,7 +297,7 @@ public class JRubyBindingsTest {
     @Test
     public void testValues() {
         System.out.println("values");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.SINGLETHREAD));
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
         instance.put(ScriptEngine.FILENAME, "filename");
@@ -313,7 +314,7 @@ public class JRubyBindingsTest {
     @Test
     public void testEntrySet() {
         System.out.println("entrySet");
-        JRubyBindings instance = new JRubyBindings(new ScriptingContainer());
+        JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
         instance.put(ScriptEngine.FILENAME, "filename");

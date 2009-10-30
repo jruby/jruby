@@ -166,7 +166,7 @@ public class ScriptingContainer {
      * Constructs a ScriptingContainer with a default values.
      */
     public ScriptingContainer() {
-        this(LocalContextScope.THREADSAFE, LocalVariableBehavior.TRANSIENT, defaultProps);
+        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT, defaultProps);
     }
 
     public ScriptingContainer(LocalContextScope scope) {
@@ -174,7 +174,7 @@ public class ScriptingContainer {
     }
 
     public ScriptingContainer(LocalVariableBehavior behavior) {
-        this(LocalContextScope.THREADSAFE, behavior, defaultProps);
+        this(LocalContextScope.SINGLETON, behavior, defaultProps);
     }
 
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
@@ -213,13 +213,13 @@ public class ScriptingContainer {
 
     private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior) {
         switch(scope) {
-            case SINGLETON :
-                return new SingletonLocalContextProvider(behavior);
+            case THREADSAFE :
+                return new ThreadSafeLocalContextProvider(behavior);
             case SINGLETHREAD :
                 return new SingleThreadLocalContextProvider(behavior);
-            case THREADSAFE :
+            case SINGLETON :
             default :
-                return new ThreadSafeLocalContextProvider(behavior);
+                return new SingletonLocalContextProvider(behavior);
         }
     }
 

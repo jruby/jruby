@@ -86,7 +86,7 @@ public class JRubyContextTest {
         String name = "";
         Object expResult = null;
         Object result = null;
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        JRubyContext instance = new JRubyContext(new ScriptingContainer(LocalContextScope.THREADSAFE));
         try {
             result = instance.getAttribute(name);
         } catch (IllegalArgumentException e) {
