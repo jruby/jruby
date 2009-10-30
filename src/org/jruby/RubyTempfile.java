@@ -69,6 +69,7 @@ public class RubyTempfile extends RubyFile {
     private final static String DEFAULT_TMP_DIR;
     private static final Object tmpFileLock = new Object();
     private static int counter = -1;
+    private final static java.util.Random RND = new java.util.Random();
 
     static {
         String tmpDir;
@@ -103,7 +104,7 @@ public class RubyTempfile extends RubyFile {
             while (true) {
                 try {
                     if (counter == -1) {
-                        counter = new java.util.Random().nextInt() & 0xffff;
+                        counter = RND.nextInt() & 0xffff;
                     }
                     counter++;
 
