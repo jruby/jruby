@@ -2488,9 +2488,8 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    private IRubyObject slice_internal(long pos, long len, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = getRuntime();
-
+    private IRubyObject slice_internal(long pos, long len, 
+            IRubyObject arg0, IRubyObject arg1, Ruby runtime) {
         if(len < 0) return runtime.getNil();
         int orig_len = realLength;
         if(pos < 0) {
@@ -2501,6 +2500,7 @@ public class RubyArray extends RubyObject implements List {
         } else if(orig_len < pos) {
             return runtime.getNil();
         }
+
         if(orig_len < pos + len) {
             len = orig_len - pos;
         }
@@ -2520,11 +2520,17 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "slice!")
     public IRubyObject slice_bang(IRubyObject arg0) {
         modifyCheck();
+        Ruby runtime = getRuntime();
         if (arg0 instanceof RubyRange) {
-            long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
+            RubyRange range = (RubyRange) arg0;
+            if (!range.checkBegin(realLength)) {
+                return runtime.getNil();
+            }
+
+            long[] beglen = range.begLen(realLength, 1);
             long pos = beglen[0];
             long len = beglen[1];
-            return slice_internal(pos, len, arg0, null);
+            return slice_internal(pos, len, arg0, null, runtime);
         }
         return delete_at((int) RubyNumeric.num2long(arg0));
     }
@@ -2537,7 +2543,7 @@ public class RubyArray extends RubyObject implements List {
         modifyCheck();
         long pos = RubyNumeric.num2long(arg0);
         long len = RubyNumeric.num2long(arg1);
-        return slice_internal(pos, len, arg0, arg1);
+        return slice_internal(pos, len, arg0, arg1, getRuntime());
     }    
 
     /** rb_ary_assoc

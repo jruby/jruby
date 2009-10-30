@@ -127,6 +127,19 @@ public class RubyRange extends RubyObject {
         range.isExclusive = isExclusive;
     }
 
+    final boolean checkBegin(long length) {
+        long beg = RubyNumeric.num2long(this.begin);
+        if(beg < 0) {
+            beg += length;
+            if(beg < 0) {
+                return false;
+            }
+        } else if(length < beg) {
+            return false;
+        }
+        return true;
+    }
+
     final long[] begLen(long len, int err){
         long beg = RubyNumeric.num2long(this.begin);
         long end = RubyNumeric.num2long(this.end);

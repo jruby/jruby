@@ -1102,10 +1102,9 @@ class TestArray < Test::Unit::TestCase
     assert_equal(nil, a.slice!(-6))
     assert_equal(@cls[1, 2, 3, 4, 5], a)
 
-    # JRUBY-4181
-    # a = @cls[1, 2, 3, 4, 5]
-    # assert_equal(nil, a.slice!(-6..4))
-    # assert_equal(@cls[1, 2, 3, 4, 5], a)
+    a = @cls[1, 2, 3, 4, 5]
+    assert_equal(nil, a.slice!(-6..4))
+    assert_equal(@cls[1, 2, 3, 4, 5], a)
 
     a = @cls[1, 2, 3, 4, 5]
     assert_equal(nil, a.slice!(-6,2))
