@@ -101,8 +101,7 @@ module java::util::List
       end
     end.new
 
-    # This should probably return a new instance of self class instead of ArrayList
-    list = self.class.new
+    list = java::util::ArrayList.new
     list.addAll(self)
 
     java::util::Collections.sort(list, comparator)
