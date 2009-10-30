@@ -130,8 +130,12 @@ public class JavaArray extends JavaObject {
                                     " for length " + getLength() + ")");
         } catch (ArrayStoreException e) {
             throw getRuntime().newArgumentError(
-                                    "wrong element type " + javaObject.getClass() + "(array is " +
-                                    getValue().getClass() + ")");
+                                    "wrong element type " + javaObject.getClass() + "(array contains " +
+                                    getValue().getClass().getComponentType().getName() + ")");
+        } catch (IllegalArgumentException iae) {
+            throw getRuntime().newArgumentError(
+                                    "wrong element type " + javaObject.getClass() + "(array contains " +
+                                    getValue().getClass().getComponentType().getName() + ")");
         }
     }
 

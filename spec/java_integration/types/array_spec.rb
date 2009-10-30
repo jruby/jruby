@@ -537,7 +537,7 @@ describe "A Java primitive Array of type" do
 
     it "should be possible to create primitive array from Ruby array" do 
       # Check with symbol name
-      arr = ["foo","bar"].to_java :string
+      arr = ["foo", :bar].to_java :string
       arr.java_class.to_s.should == "[Ljava.lang.String;"
 
       arr.length.should == 2
@@ -547,7 +547,7 @@ describe "A Java primitive Array of type" do
 
 
       # Check with type
-      arr = ["foo","bar"].to_java java.lang.String
+      arr = ["foo", :bar].to_java java.lang.String
       arr.java_class.to_s.should == "[Ljava.lang.String;"
 
       arr.length.should == 2
@@ -559,25 +559,25 @@ describe "A Java primitive Array of type" do
     it "should be possible to set values in primitive array" do 
       arr = java.lang.String[5].new
       arr[0] = "12"
-      arr[1] = "20"
+      arr[1] = :blah
       arr[2] = "42"
       
       arr[0].should == "12"
-      arr[1].should == "20"
+      arr[1].should == "blah"
       arr[2].should == "42"
       arr[3].should be_nil
       arr[4].should be_nil
     end
 
     it "should be possible to get values from primitive array" do 
-      arr = ["flurg", "glax", "morg"].to_java :string
+      arr = ["flurg", :glax, "morg"].to_java :string
       arr[0].should == "flurg"
       arr[1].should == "glax"
       arr[2].should == "morg"
     end
 
     it "should be possible to call methods that take primitive array" do 
-      arr = ["flurg", "glax", "morg"].to_java :string
+      arr = ["flurg", :glax, "morg"].to_java :string
       ret = ArrayReceiver::call_with_string(arr)
       ret.to_a.should == ["flurg", "glax", "morg"]
     end
@@ -677,6 +677,10 @@ describe "A Java primitive Array of type" do
       ary[3].class.should == TrueClass
       ary[4].class.should == FalseClass
       ary[5].class.should == NilClass
+    end
+
+    it "should raise ArgumentError when types can't be coerced" do
+      lambda { [Time.new].to_java :string }.should raise_error(ArgumentError)
     end
   end
 
