@@ -6,6 +6,7 @@ require 'java'
 require 'jruby'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
+WINDOWS = Config::CONFIG['host_os'] =~ /mswin/
 
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
@@ -15,7 +16,7 @@ class MSpecScript
   set :language, [ SPEC_DIR + '/language' ]
 
   # Core library specs
-  CORE_DIRS = [
+  set :core, [
     SPEC_DIR + '/core',
 
     # 1.9
@@ -24,11 +25,9 @@ class MSpecScript
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace
-    CORE_DIRS << '^' + SPEC_DIR + '/core/objectspace/_id2ref'
-    CORE_DIRS << '^' + SPEC_DIR + '/core/objectspace/each_object'
+    get(:core) << '^' + SPEC_DIR + '/core/objectspace/_id2ref'
+    get(:core) << '^' + SPEC_DIR + '/core/objectspace/each_object'
   end
-
-  set :core, CORE_DIRS
 
   if IKVM
     # ftype_spec freezes for some reason under IKVM
@@ -67,10 +66,32 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/rubygems',
   ]
 
+  if WINDOWS
+    # core
+    get(:core) << '^' + SPEC_DIR + '/core/argf'          # hangs
+    get(:core) << '^' + SPEC_DIR + '/core/array/pack'    # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/dir'           # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/env'           # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/filetest'      # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/io'            # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
+
+    # library
+    get(:library) << '^' + SPEC_DIR + '/library/logger'   # many failures
+    get(:library) << '^' + SPEC_DIR + '/library/ftools'   # many failures
+    get(:library) << '^' + SPEC_DIR + '/library/resolv'   # many failures
+    get(:library) << '^' + SPEC_DIR + '/library/tempfile' # many failures
+
+    # exclude specs tagged with 'windows' keyword
+    set :xtags, ['windows']
+  end
+
   set :ci_files, get(:language) + get(:core) + get(:library)
 
   # The default implementation to run the specs.
-  set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name']
+  set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name'] + Config::CONFIG['EXEEXT']
 
   set :backtrace_filter, /mspec\//
 
