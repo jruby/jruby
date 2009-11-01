@@ -2279,10 +2279,16 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_defined
      *
      */
-    @JRubyMethod(name = "const_defined?", required = 1)
+    @JRubyMethod(name = "const_defined?", required = 1, compat = CompatVersion.RUBY1_8)
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject symbol) {
         // Note: includes part of fix for JRUBY-1339
         return context.getRuntime().newBoolean(fastIsConstantDefined(validateConstant(symbol.asJavaString()).intern()));
+    }
+
+    @JRubyMethod(name = "const_defined?", required = 1, compat = CompatVersion.RUBY1_9)
+    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject symbol) {
+        // Note: includes part of fix for JRUBY-1339
+        return context.getRuntime().newBoolean(fastIsConstantDefined19(validateConstant(symbol.asJavaString()).intern()));
     }
 
     /** rb_mod_const_get
@@ -2741,6 +2747,25 @@ public class RubyModule extends RubyObject {
             }
 
         } while (isObject && (module = module.getSuperClass()) != null );
+
+        return false;
+    }
+
+    public boolean fastIsConstantDefined19(String internedName) {
+        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert IdUtil.isConstant(internedName);
+
+        RubyModule module = this;
+
+        do {
+            Object value;
+            if ((value = module.constantTableFastFetch(internedName)) != null) {
+                if (value != UNDEF) return true;
+                return getRuntime().getLoadService().autoloadFor(
+                        module.getName() + "::" + internedName) != null;
+            }
+
+        } while ((module = module.getSuperClass()) != null );
 
         return false;
     }
