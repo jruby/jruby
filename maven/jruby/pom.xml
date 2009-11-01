@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.jruby.embed</groupId>
       <artifactId>jruby-embed</artifactId>
-      <version>0.1.2</version>
+      <version>0.1.3</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
