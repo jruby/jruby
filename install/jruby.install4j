@@ -97,15 +97,20 @@
           <entry location="lib/native/freebsd-i386" fileType="regular" />
           <entry location="lib/native/i386-Linux" fileType="regular" />
           <entry location="lib/native/i386-SunOS" fileType="regular" />
+          <entry location="lib/native/i386-FreeBSD" fileType="regular" />
           <entry location="lib/native/linux-amd64" fileType="regular" />
           <entry location="lib/native/linux-i386" fileType="regular" />
           <entry location="lib/native/openbsd-i386" fileType="regular" />
           <entry location="lib/native/s390x-Linux" fileType="regular" />
+          <entry location="lib/native/sparc-SunOS" fileType="regular" />
+          <entry location="lib/native/sparcv9-SunOS" fileType="regular" />
           <entry location="lib/native/sunos-amd64" fileType="regular" />
           <entry location="lib/native/sunos-sparc" fileType="regular" />
           <entry location="lib/native/sunos-sparcv9" fileType="regular" />
           <entry location="lib/native/sunos-x86" fileType="regular" />
           <entry location="lib/native/x86_64-SunOS" fileType="regular" />
+          <entry location="lib/native/x86_64-FreeBSD" fileType="regular" />
+          <entry location="lib/native/x86_64-Linux" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
       </dirEntry>
