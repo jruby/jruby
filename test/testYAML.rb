@@ -213,10 +213,12 @@ roundtrip("\rj\230fso\304\nEE")
 roundtrip("ks]qkYM\2073Un\317\nL\346Yp\204 CKMfFcRDFZ\vMNk\302fQDR<R\v \314QUa\234P\237s aLJnAu \345\262Wqm_W\241\277J\256ILKpPNsMPuok")
 
 def fuzz_roundtrip(str)
-  str.gsub! "\n ", "\n"
+  str.gsub! /\n +/, "\n"
   out = YAML.load(YAML.dump(str))
   test_equal str, out
 end
+
+fuzz_roundtrip("\n  vKH iqB")
 
 values = (1..255).to_a
 values.delete(13)
