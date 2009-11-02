@@ -493,9 +493,10 @@
     </target>
 
     <target name="dist-jar-complete" depends="jar-complete">
-        <move file="${dest.lib.dir}/jruby-complete.jar" todir="${basedir}"/>
-        <checksum file="jruby-complete.jar" algorithm="md5"/>
-        <checksum file="jruby-complete.jar" algorithm="sha1"/>
+      <mkdir dir="dist"/>
+      <move file="${dest.lib.dir}/jruby-complete.jar" tofile="dist/jruby-complete-${version.jruby}.jar"/>
+      <checksum file="dist/jruby-complete-${version.jruby}.jar" algorithm="md5"/>
+      <checksum file="dist/jruby-complete-${version.jruby}.jar" algorithm="sha1"/>
     </target>
 
     <target name="jar-complete-1.9" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
@@ -1305,9 +1306,10 @@
   </macrodef>
 
   <macrodef name="fixEOLs">
+    <attribute name="dist-stage-dir" default="${dist.stage.bin.dir}"/>
     <sequential>
-      <fixcrlf srcdir="dist/bin" excludes="*.bat,*.exe,*.dll" eol="lf"/>
-      <fixcrlf srcdir="dist/bin" includes="*.bat" eol="crlf"/>
+      <fixcrlf srcdir="@{dist-stage-dir}/bin" excludes="*.bat,*.exe,*.dll" eol="lf"/>
+      <fixcrlf srcdir="@{dist-stage-dir}/bin" includes="*.bat" eol="crlf"/>
     </sequential>
   </macrodef>
 
@@ -1397,15 +1399,15 @@
   </patternset>
 
   <target name="dist-bin" depends="jar-dist">
-    <mkdir dir="dist"/>
-    <copy todir="dist">
+    <mkdir dir="${dist.stage.bin.dir}"/>
+    <copy todir="${dist.stage.bin.dir}">
       <fileset dir="${basedir}">
         <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
-    <mkdir dir="dist/lib/native"/>
-    <unzip dest="dist/lib/native">
+    <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
+    <unzip dest="${dist.stage.bin.dir}/lib/native">
         <fileset dir="build_lib">
             <include name="jffi-*.jar"/>
         </fileset>
@@ -1420,17 +1422,17 @@
             </filtermapper>
         </mapper>
     </unzip>
-    <fixEOLs/>
+    <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
     <antcall target="install-gems">
-      <param name="jruby.home" value="dist"/>
+      <param name="jruby.home" value="${dist.stage.bin.dir}"/>
       <param name="install.ri" value=""/>
       <param name="install.rdoc" value=""/>
     </antcall>
-    <tar destfile="jruby-bin-${version.jruby}.tar.gz" compression="gzip">
-      <tarfileset dir="dist" mode="755" prefix="jruby-${version.jruby}">
+    <tar destfile="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" compression="gzip">
+      <tarfileset dir="${dist.stage.bin.dir}" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </tarfileset>
-      <tarfileset dir="dist" prefix="jruby-${version.jruby}">
+      <tarfileset dir="${dist.stage.bin.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
       </tarfileset>
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
@@ -1443,11 +1445,11 @@
         <include name="tool/nailgun/configure"/>
       </tarfileset>
     </tar>
-    <zip destfile="jruby-bin-${version.jruby}.zip">
-      <zipfileset dir="dist" filemode="755" prefix="jruby-${version.jruby}">
+    <zip destfile="${dist.dir}/jruby-bin-${version.jruby}.zip">
+      <zipfileset dir="${dist.stage.bin.dir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </zipfileset>
-      <zipfileset dir="dist" prefix="jruby-${version.jruby}">
+      <zipfileset dir="${dist.stage.bin.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
@@ -1461,31 +1463,31 @@
       </zipfileset>
     </zip>
 
-    <checksum file="jruby-bin-${version.jruby}.zip" algorithm="md5"/>
-    <checksum file="jruby-bin-${version.jruby}.zip" algorithm="sha1"/>
-    <checksum file="jruby-bin-${version.jruby}.tar.gz" algorithm="md5"/>
-    <checksum file="jruby-bin-${version.jruby}.tar.gz" algorithm="sha1"/>
+    <checksum file="${dist.dir}/jruby-bin-${version.jruby}.zip" algorithm="md5"/>
+    <checksum file="${dist.dir}/jruby-bin-${version.jruby}.zip" algorithm="sha1"/>
+    <checksum file="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" algorithm="md5"/>
+    <checksum file="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" algorithm="sha1"/>
   </target>
 
   <target name="dist-src" depends="jar">
-    <mkdir dir="dist"/>
-    <copy todir="dist">
+    <mkdir dir="${dist.stage.src.dir}"/>
+    <copy todir="${dist.stage.src.dir}">
       <fileset dir="${basedir}">
         <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
     <antcall target="install-gems">
-      <param name="jruby.home" value="dist"/>
+      <param name="jruby.home" value="${dist.stage.src.dir}"/>
       <param name="install.ri" value=""/>
       <param name="install.rdoc" value=""/>
     </antcall>
-    <fixEOLs/>
-    <tar destfile="jruby-src-${version.jruby}.tar.gz" compression="gzip">
-      <tarfileset dir="dist" mode="755" prefix="jruby-${version.jruby}">
+    <fixEOLs dist-stage-dir="${dist.stage.src.dir}"/>
+    <tar destfile="${dist.dir}/jruby-src-${version.jruby}.tar.gz" compression="gzip">
+      <tarfileset dir="${dist.stage.src.dir}" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </tarfileset>
-      <tarfileset dir="dist" prefix="jruby-${version.jruby}">
+      <tarfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
       </tarfileset>
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
@@ -1498,11 +1500,11 @@
         <include name="tool/nailgun/configure"/>
       </tarfileset>
     </tar>
-    <zip destfile="jruby-src-${version.jruby}.zip">
-      <zipfileset dir="dist" filemode="755" prefix="jruby-${version.jruby}">
+    <zip destfile="${dist.dir}/jruby-src-${version.jruby}.zip">
+      <zipfileset dir="${dist.stage.src.dir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
       </zipfileset>
-      <zipfileset dir="dist" prefix="jruby-${version.jruby}">
+      <zipfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
@@ -1516,10 +1518,10 @@
       </zipfileset>
     </zip>
 
-    <checksum file="jruby-src-${version.jruby}.zip" algorithm="md5"/>
-    <checksum file="jruby-src-${version.jruby}.zip" algorithm="sha1"/>
-    <checksum file="jruby-src-${version.jruby}.tar.gz" algorithm="md5"/>
-    <checksum file="jruby-src-${version.jruby}.tar.gz" algorithm="sha1"/>
+    <checksum file="${dist.dir}/jruby-src-${version.jruby}.zip" algorithm="md5"/>
+    <checksum file="${dist.dir}/jruby-src-${version.jruby}.zip" algorithm="sha1"/>
+    <checksum file="${dist.dir}/jruby-src-${version.jruby}.tar.gz" algorithm="md5"/>
+    <checksum file="${dist.dir}/jruby-src-${version.jruby}.tar.gz" algorithm="sha1"/>
   </target>
 
   <target name="dist-snapshot" depends="jar">
@@ -1554,18 +1556,7 @@
   <target name="dist" depends="dist-bin,dist-src,dist-jar-complete"/>
 
   <target name="dist-clean">
-    <delete includeEmptyDirs="true" quiet="true">
-      <fileset dir=".">
-        <include name="jruby-*.tar.gz"/>
-        <include name="jruby-*.zip"/>
-        <include name="jruby-*.tar.gz.md5"/>
-        <include name="jruby-*.tar.gz.sha1"/>
-        <include name="jruby-*.zip.md5"/>
-        <include name="jruby-*.zip.sha1"/>
-        <include name="jruby-complete.jar*"/>
-      </fileset>
-      <fileset dir="dist" includes="**/*"/>
-    </delete>
+    <delete dir="${dist.dir}"/>
   </target>
 
   <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
