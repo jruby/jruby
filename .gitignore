@@ -25,6 +25,7 @@ spec/ruby
 test/rails
 test/prawn
 gem/lib/*.jar
+gem/lib/jruby-jars/version.rb
 gem/pkg
 *.orig
 *.rej
