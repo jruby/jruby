@@ -4,15 +4,13 @@ require 'rubygems'
 require 'hoe'
 
 task :default => :package
-task :package => :prepare
 
-directory "pkg/jruby-jars-#{JRUBY_VERSION}/lib"
+JRUBY_SRC_VERSION = IO.readlines("../default.build.properties").detect {|l| l =~ /^version\.jruby=(.*)/} && $1
 
-file 'pkg/jruby-complete.jar' => "pkg" do
+file 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' => "pkg" do
   pkg_dir = File.expand_path('pkg')
-  Dir.chdir('..') do
-    sh "ant jar-complete -Ddest.lib.dir='#{pkg_dir}'"
-  end
+  fail "Run `ant dist' first to create complete jar" unless File.exist?("../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar")
+  cp "../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar", pkg_dir
 end
 
 def core_files_and_dirs
@@ -20,38 +18,48 @@ def core_files_and_dirs
 end
 
 desc "Run to update jars and versions"
-task :update => ['pkg/jruby-complete.jar', "pkg/jruby-jars-#{JRUBY_VERSION}/lib"] do
+task :update => 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' do
   rm_f 'lib/*.jar'
   %w(pkg/jruby-complete pkg/jruby-core).each {|d| rm_rf d; mkdir_p d }
   Dir.chdir("pkg/jruby-complete") do
-    sh "jar xf ../jruby-complete.jar"
+    sh "jar xf ../jruby-complete-#{JRUBY_SRC_VERSION}.jar"
     mv core_files_and_dirs, "../jruby-core"
   end
-  sh "jar cfm pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-core-#{JRUBY_VERSION}.jar pkg/jruby-complete/META-INF/MANIFEST.MF -C pkg/jruby-core ."
+  sh "jar cfm pkg/jruby-core-#{JRUBY_SRC_VERSION}.jar pkg/jruby-complete/META-INF/MANIFEST.MF -C pkg/jruby-core ."
   rm "pkg/jruby-complete/META-INF/MANIFEST.MF"
-  sh "jar cf pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-stdlib-#{JRUBY_VERSION}.jar -C pkg/jruby-complete ."
-  cp "pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-core-#{JRUBY_VERSION}.jar", 'lib'
-  cp "pkg/jruby-jars-#{JRUBY_VERSION}/lib/jruby-stdlib-#{JRUBY_VERSION}.jar", 'lib'
+  sh "jar cf pkg/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar -C pkg/jruby-complete ."
+  cp "pkg/jruby-core-#{JRUBY_SRC_VERSION}.jar", 'lib'
+  cp "pkg/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar", 'lib'
 
   mkdir_p 'lib/jruby-jars'
   File.open('lib/jruby-jars/version.rb', 'w') do |file|
-    file.write("module JRubyJars\n  VERSION = '#{JRUBY_VERSION}'\nend")
-  end
-
-  File.open('Manifest.txt', 'w') do |file|
-    file.write <<EOS
-History.txt
-Manifest.txt
-README.txt
-lib/jruby-jars/version.rb
-lib/jruby-jars.rb
-lib/jruby-core-#{JRUBY_VERSION}.jar
-lib/jruby-stdlib-#{JRUBY_VERSION}.jar
-EOS
+    file.write("module JRubyJars\n  VERSION = '#{JRUBY_SRC_VERSION}'\nend")
   end
 end
 
-Hoe.new('jruby-jars', JRUBY_VERSION) do |p|
-  p.rubyforge_name = 'jruby-extras' # if different than lowercase project name
-  p.developer('Charles Oliver Nutter', 'charles.nutter@sun.com')
+task :clean do
+  rm_f 'lib/jruby-jars/version.rb'
+  rm_f 'lib/*.jar'
+end
+
+file "lib/jruby-jars/version.rb" => :update
+file "lib/jruby-core-#{JRUBY_SRC_VERSION}.jar" => :update
+file "lib/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar" => :update
+
+File.open('Manifest.txt', 'w') do |file|
+  file.write <<EOS
+History.txt
+Manifest.txt
+README.txt
+lib/jruby-jars.rb
+lib/jruby-jars/version.rb
+lib/jruby-core-#{JRUBY_SRC_VERSION}.jar
+lib/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar
+EOS
+end
+
+Hoe.spec('jruby-jars') do |p|
+  p.version = JRUBY_SRC_VERSION
+  p.rubyforge_name = 'jruby-extras'
+  p.developer('Charles Oliver Nutter', 'headius@headius.com')
 end

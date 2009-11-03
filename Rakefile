@@ -2,7 +2,7 @@
 require 'digest'
 
 class HashTask < Struct.new(:hash, :file)
-  BUF = 100 * 1024 
+  BUF = 100 * 1024
 
   def calculate_hash
     open(file) do |io|
@@ -35,24 +35,28 @@ task :default => [:build]
 
 Object.const_set(:BASE_DIR, Dir.pwd)
 
-# FIXME: Move into helper method and call it
-File.open("default.build.properties") do |props|
-  props.each_line do |line|
+def load_build_properties_into_constants
+  constant_names = []
+  IO.readlines("default.build.properties").each do |line|
     # skip comments
     next if line =~ /(^\W*#|^$)/
-    
+
     # build const name
-    name, value = line.split("=")
-    name.gsub!(".", "_")
-    name.upcase!
+    name, value = line.split("=", 2)
+    name.gsub!(".", "_").upcase!
+    constant_names << name
     Object.const_set(name.to_sym, value)
-    
-    # substitute embedded props
-    value.chop!.gsub!(/\$\{([^}]+)\}/) do |embed|
+  end
+
+  # two-pass so substitutions can appear above where the var is defined
+  constant_names.each do |name|
+    Object.const_get(name).chop!.gsub!(/\$\{([^}]+)\}/) do |embed|
       Object.const_get($1.gsub!(".", "_").upcase!)
     end
+    puts "#{name} = #{Object.const_get(name)}" if Rake.application.options.trace
   end
 end
+load_build_properties_into_constants
 
 def ant(*args)
   system "ant -logger org.apache.tools.ant.NoBannerLogger #{args.join(' ')}"
@@ -81,7 +85,7 @@ namespace :test do
   task :short do
     ant "test"
   end
-  
+
   desc "Run the complete set of tests (will take a while)"
   task :all do
     ant "test-all"
@@ -107,7 +111,7 @@ namespace :spec do
   task :ci do
     ant "spec"
   end
-  
+
   desc "Run all the specs including failures (version-frozen)"
   task :all do
     ant "spec-all"
@@ -121,7 +125,7 @@ namespace :spec do
     t.spec_opts << "--options" << "spec/java_integration/spec.opts"
     t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
   end
-  
+
   desc "Runs Java Integration specs quietly"
   Spec::Rake::SpecTask.new("ji:quiet" => "build/jruby-test-classes.jar") do |t|
     t.spec_opts ||= []
@@ -149,7 +153,7 @@ task :clean do
       include(DIST_DIR).
       include(API_DOCS_DIR)
   end
-  
+
   delete_files.each {|files| rm_rf files, :verbose => true}
 end
 
@@ -215,5 +219,5 @@ task :installer do
   Dir["#{BUILD_DIR}/installers/*.exe"].each do |file|
     md5_checksum file
     sha1_checksum file
-  end 
+  end
 end
