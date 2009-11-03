@@ -49,6 +49,17 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
             this.method = mv;
         }
     }
+
+    /**
+     * Short-hand for specifying a set of aloads
+     *
+     * @param args list of aloads you want
+     */
+    public void aloadMany(int... args) {
+        for (int arg: args) {
+            aload(arg);
+        }
+    }
     
     public void aload(int arg0) {
         getMethodVisitor().visitVarInsn(ALOAD, arg0);
