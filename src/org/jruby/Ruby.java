@@ -537,7 +537,7 @@ public final class Ruby {
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
         if (compile) {
-            script = tryCompile(scriptNode);
+            script = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
             if (forceCompile && script == null) {
                 return getNil();
             }
@@ -560,6 +560,10 @@ public final class Ruby {
     }
     
     private Script tryCompile(Node node, JRubyClassLoader classLoader) {
+        return tryCompile(node, classLoader, false);
+    }
+
+    private Script tryCompile(Node node, JRubyClassLoader classLoader, boolean dump) {
         Script script = null;
         try {
             String filename = node.getPosition().getFile();
@@ -570,7 +574,7 @@ public final class Ruby {
 
             StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
             ASTCompiler compiler = config.newCompiler();
-            if (config.isShowBytecode()) {
+            if (dump) {
                 compiler.compileRoot(node, asmCompiler, inspector, false, false);
                 asmCompiler.dumpClass(System.out);
             } else {
