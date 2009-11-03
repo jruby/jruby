@@ -230,18 +230,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.start();
                         
                         // check arity
-                        mv.aload(0);
-                        mv.aload(1);
-                        mv.aload(4);
-                        mv.aload(5);
+                        mv.aloadMany(0, 1, 4, 5); // method, context, name, args, required
                         mv.pushInt(scope.getRequiredArgs());
                         mv.invokestatic(p(JavaMethod.class), "checkArgumentCount", sig(void.class, JavaMethod.class, ThreadContext.class, String.class, IRubyObject[].class, int.class));
-                        
-                        mv.aload(0);
-                        mv.aload(1);
-                        mv.aload(2);
-                        mv.aload(3);
-                        mv.aload(4);
+
+                        mv.aloadMany(0, 1, 2, 3, 4);
                         for (int i = 0; i < scope.getRequiredArgs(); i++) {
                             mv.aload(5);
                             mv.ldc(i);
@@ -286,11 +279,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                         mv.start();
 
-                        mv.aload(0);
-                        mv.aload(1);
-                        mv.aload(2);
-                        mv.aload(3);
-                        mv.aload(4);
+                        mv.aloadMany(0, 1, 2, 3, 4);
                         for (int i = 1; i <= scope.getRequiredArgs(); i++) {
                             mv.aload(4 + i);
                         }
@@ -358,8 +347,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         // FIXME we want to eliminate these type casts when possible
                         mv.getfield(mnamePath, "$scriptObject", ci(Object.class));
                         mv.checkcast(typePath);
-                        mv.aload(THREADCONTEXT_INDEX);
-                        mv.aload(RECEIVER_INDEX);
+                        mv.aloadMany(THREADCONTEXT_INDEX, RECEIVER_INDEX);
                         if (specificArity) {
                             for (int i = 0; i < scope.getRequiredArgs(); i++) {
                                 mv.aload(ARGS_INDEX + i);
@@ -367,8 +355,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             mv.aload(ARGS_INDEX + scope.getRequiredArgs());
                             mv.invokestatic(typePath, method, StandardASMCompiler.getStaticMethodSignature(typePath, scope.getRequiredArgs()));
                         } else {
-                            mv.aload(ARGS_INDEX);
-                            mv.aload(BLOCK_INDEX);
+                            mv.aloadMany(ARGS_INDEX, BLOCK_INDEX);
                             mv.invokestatic(typePath, method, StandardASMCompiler.getStaticMethodSignature(typePath, 4));
                         }
                     }
@@ -772,9 +759,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     SkinnyMethodAdapter mv = startBlockCall(cw);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
-                    mv.aload(1);
-                    mv.aload(2);
-                    mv.aload(3);
+                    mv.aloadMany(1, 2, 3);
                     mv.invokestatic(typePathString, method, sig(
                             RubyKernel.IRUBY_OBJECT, "L" + typePathString + ";", ThreadContext.class,
                                     RubyKernel.IRUBY_OBJECT, IRubyObject.class));
@@ -807,10 +792,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     SkinnyMethodAdapter mv = startBlockCall19(cw);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
-                    mv.aload(1);
-                    mv.aload(2);
-                    mv.aload(3);
-                    mv.aload(4);
+                    mv.aloadMany(1, 2, 3, 4);
                     mv.invokestatic(typePathString, method, sig(
                             IRubyObject.class, "L" + typePathString + ";", ThreadContext.class,
                                     IRubyObject.class, IRubyObject[].class, Block.class));
@@ -856,8 +838,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.start();
         mv.aload(0);
         mv.invokespecial(p(CompiledBlockCallback.class), "<init>", sig(void.class));
-        mv.aload(0);
-        mv.aload(1);
+        mv.aloadMany(0, 1);
         mv.checkcast(p(fieldClass));
         mv.putfield(namePath, "$scriptObject", ci(fieldClass));
         mv.voidreturn();
@@ -874,8 +855,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.start();
         mv.aload(0);
         mv.invokespecial(p(Object.class), "<init>", sig(void.class));
-        mv.aload(0);
-        mv.aload(1);
+        mv.aloadMany(0, 1);
         mv.checkcast(p(fieldClass));
         mv.putfield(namePath, "$scriptObject", ci(fieldClass));
         mv.voidreturn();
@@ -973,15 +953,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         cw.visitSource(shortPath, null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null));
         mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
+        mv.aload(0);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", "()V");
-        Label line = new Label();
-        mv.visitLineNumber(0, line);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0,0);
-        mv.visitEnd();
+        mv.visitLineNumber(0, new Label());
+        mv.voidreturn();
+        mv.end();
+
         return cw;
     }
 
@@ -989,17 +968,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         cw.visitSource(namePath.replace('.', '/') + ".gen", null);
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null));
+        mv.start();
+        mv.aloadMany(0, 1, 2);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_SUPER_SIG);
-        Label line = new Label();
-        mv.visitLineNumber(0, line);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0,0);
-        mv.visitEnd();
+        mv.visitLineNumber(0, new Label());
+        mv.voidreturn();
+        mv.end();
+        
         return cw;
     }
 
@@ -1021,13 +997,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     private void prepareForPre(SkinnyMethodAdapter mv, int specificArity, boolean block, CallConfiguration callConfig) {
         if (callConfig.isNoop()) return;
         
-        mv.aload(0);
-        mv.aload(THREADCONTEXT_INDEX); // tc
+        mv.aloadMany(0, THREADCONTEXT_INDEX);
         
         switch (callConfig.framing()) {
         case Full:
-            mv.aload(RECEIVER_INDEX); // self
-            mv.aload(NAME_INDEX); // name
+            mv.aloadMany(RECEIVER_INDEX, NAME_INDEX); // self, name
             loadBlockForPre(mv, specificArity, block);
             break;
         case Backtrace:
@@ -1119,97 +1093,36 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    /** load block argument for pre() call.  Since we have fixed-arity call
+     * paths we need calculate where the last var holding the block is.
+     *
+     * is we don't have a block we setup NULL_BLOCK as part of our null pattern
+     * strategy (we do not allow null in any field which accepts block).
+     */
     private void loadBlockForPre(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
-        switch (specificArity) {
-        default:
-        case -1:
-            if (getsBlock) {
-                // variable args with block
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
-            } else {
-                // variable args no block, load null block
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-            }
-            break;
-        case 0:
-            if (getsBlock) {
-                // zero args with block
-                // FIXME: omit args index; subtract one from normal block index
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
-            } else {
-                // zero args, no block; load NULL_BLOCK
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-            }
-            break;
-        case 1:
-            if (getsBlock) {
-                // one arg with block
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
-            } else {
-                // one arg, no block; load NULL_BLOCK
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-            }
-            break;
-        case 2:
-            if (getsBlock) {
-                // two args with block
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 1);
-            } else {
-                // two args, no block; load NULL_BLOCK
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-            }
-            break;
-        case 3:
-            if (getsBlock) {
-                // three args with block
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 2);
-            } else {
-                // three args, no block; load NULL_BLOCK
-                mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-            }
-            break;
+        if (!getsBlock) {            // No block so load null block instance
+            mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            return;
         }
+
+        loadBlock(mv, specificArity, getsBlock);
     }
 
+    /** load the block argument from the correct position.  Since we have fixed-
+     * arity call paths we need to calculate where the last var holding the
+     * block is.
+     * 
+     * If we don't have a block then this does nothing.
+     */
     private void loadBlock(SkinnyMethodAdapter mv, int specificArity, boolean getsBlock) {
-        // load block if it accepts block
-        switch (specificArity) {
-        default:
-        case -1:
-            if (getsBlock) {
-                // all other arg cases with block
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
-            } else {
-                // all other arg cases without block
-            }
+        if (!getsBlock) return;         // No block so nothing more to do
+        
+        switch (specificArity) {        // load block since it accepts a block
+        case 0: case 1: case 2: case 3: // Fixed arities signatures
+            mv.aload(BLOCK_INDEX - 1 + specificArity);
             break;
-        case 0:
-            if (getsBlock) {
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX - 1);
-            } else {
-                // zero args, no block; do nothing
-            }
-            break;
-        case 1:
-            if (getsBlock) {
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX);
-            } else {
-                // one arg, no block; do nothing
-            }
-            break;
-        case 2:
-            if (getsBlock) {
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 1);
-            } else {
-                // two args, no block; do nothing
-            }
-            break;
-        case 3:
-            if (getsBlock) {
-                mv.visitVarInsn(ALOAD, BLOCK_INDEX + 2);
-            } else {
-                // three args, no block; do nothing
-            }
+        default: case -1:
+            mv.aload(BLOCK_INDEX);      // Generic arity signature
             break;
         }
     }
@@ -1319,37 +1232,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     
     private Class selectSuperClass(int specificArity, boolean block) {
         switch (specificArity) {
-        default:
-        case -1:
-            if (block) {
-                return JavaMethod.class;
-            } else {
-                return JavaMethod.JavaMethodN.class;
-            }
+        default: case -1:
+            return block ? JavaMethod.class :
+                JavaMethod.JavaMethodN.class;
         case 0:
-            if (block) {
-                return JavaMethod.JavaMethodZeroBlock.class;
-            } else {
-                return JavaMethod.JavaMethodZero.class;
-            }
+            return block ? JavaMethod.JavaMethodZeroBlock.class :
+                JavaMethod.JavaMethodZero.class;
         case 1:
-            if (block) {
-                return JavaMethod.JavaMethodOneBlock.class;
-            } else {
-                return JavaMethod.JavaMethodOne.class;
-            }
+            return block ? JavaMethod.JavaMethodOneBlock.class :
+                JavaMethod.JavaMethodOne.class;
         case 2:
-            if (block) {
-                return JavaMethod.JavaMethodTwoBlock.class;
-            } else {
-                return JavaMethod.JavaMethodTwo.class;
-            }
+            return block ? JavaMethod.JavaMethodTwoBlock.class :
+                JavaMethod.JavaMethodTwo.class;
         case 3:
-            if (block) {
-                return JavaMethod.JavaMethodThreeBlock.class;
-            } else {
-                return JavaMethod.JavaMethodThree.class;
-            }
+            return block ? JavaMethod.JavaMethodThreeBlock.class :
+                JavaMethod.JavaMethodThree.class;
         }
     }
 
@@ -1435,18 +1332,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
-    
+
     private void invokeCCallTrace(SkinnyMethodAdapter method) {
-        method.aload(0); // method itself
-        method.aload(1); // ThreadContext
-        method.aload(4); // invoked name
+        method.aloadMany(0, 1, 4); // method, threadContext, invokedName
         method.invokevirtual(p(JavaMethod.class), "callTrace", sig(void.class, ThreadContext.class, String.class));
     }
     
     private void invokeCReturnTrace(SkinnyMethodAdapter method) {
-        method.aload(0); // method itself
-        method.aload(1); // ThreadContext
-        method.aload(4); // invoked name
+        method.aloadMany(0, 1, 4); // method, threadContext, invokedName
         method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, String.class));
     }
 }
