@@ -29,7 +29,7 @@ class TC_File_Ftype_ClassMethod < Test::Unit::TestCase
 
          system("mkfifo #{@fifo}")
 
-         if File.exists?("/dev/fd0")
+         if File.exists?("/dev/fd0") &&  File.symlink?("/dev/fd0")
             @block = Pathname.new("/dev/fd0").realpath
             @link  = "/dev/fd0" if File.symlink?("/dev/fd0")
          elsif File.exists?("/dev/diskette")
