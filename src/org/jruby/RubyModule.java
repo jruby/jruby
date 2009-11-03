@@ -655,8 +655,7 @@ public class RubyModule extends RubyObject {
     }
     
     public void defineAnnotatedMethodsIndividually(Class clazz) {
-        String x = clazz.getSimpleName();
-        TypePopulator populator = null;
+        TypePopulator populator;
         
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // we need full traces, use default (slow) populator
