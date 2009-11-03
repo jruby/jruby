@@ -1488,6 +1488,6 @@ public class MiniJava implements Library {
     }
 
     public static boolean isCacheOk(CacheEntry entry, IRubyObject self) {
-        return entry.typeOk(self.getMetaClass()) && entry.method != UndefinedMethod.INSTANCE;
+        return CacheEntry.typeOk(entry, self.getMetaClass()) && entry.method != UndefinedMethod.INSTANCE;
     }
 }

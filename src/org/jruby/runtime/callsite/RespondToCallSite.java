@@ -48,11 +48,11 @@ public class RespondToCallSite extends NormalCachingCallSite {
     // a reanalysis of this code may show a faster way to ensure we're caching
     // safely.
     private synchronized boolean isCacheInvalid(String newString, RubyClass klass) {
-        return lastString != newString || !respondEntry.typeOk(klass);
+        return lastString != newString || !CacheEntry.typeOk(respondEntry, klass);
     }
 
     private boolean isDefaultRespondTo(RubyClass klass, ThreadContext context) {
-        return cache.typeOk(klass) && cache.method == context.getRuntime().getRespondToMethod();
+        return CacheEntry.typeOk(cache, klass) && cache.method == context.getRuntime().getRespondToMethod();
     }
 
     private synchronized void recacheRespondsTo(String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {

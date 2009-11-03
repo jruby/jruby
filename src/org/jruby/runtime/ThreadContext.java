@@ -503,6 +503,10 @@ public final class ThreadContext {
     public void callThreadPoll() {
         if ((calls++ & 0xFF) == 0) pollThreadEvents();
     }
+
+    public static void callThreadPoll(ThreadContext context) {
+        if ((context.calls++ & 0xFF) == 0) context.pollThreadEvents();
+    }
     
     public void trace(RubyEvent event, String name, RubyModule implClass) {
         runtime.callEventHooks(this, event, file, line, name, implClass);

@@ -394,7 +394,7 @@ public abstract class AbstractScript implements Script {
         protected DynamicMethod getMethod(ThreadContext context, IRubyObject self, int index, String methodName) {
             RubyClass selfType = pollAndGetClass(context, self);
             CacheEntry myCache = getCacheEntry(index);
-            if (myCache.typeOk(selfType)) {
+            if (CacheEntry.typeOk(myCache, selfType)) {
                 return myCache.method;
             }
             return cacheAndGet(context, selfType, index, methodName);
