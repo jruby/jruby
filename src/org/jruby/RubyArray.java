@@ -2193,7 +2193,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_collect
      *
      */
-    @JRubyMethod(name = "collect", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"collect", "map"}, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject collect(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return new RubyArray(runtime, runtime.getArray(), this);
@@ -2207,7 +2207,7 @@ public class RubyArray extends RubyObject implements List {
         return collect;
     }
 
-    @JRubyMethod(name = "collect", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"collect", "map"}, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject collect19(ThreadContext context, Block block) {
         return block.isGiven() ? collect(context, block) : enumeratorize(context.getRuntime(), this, "collect");
     }
