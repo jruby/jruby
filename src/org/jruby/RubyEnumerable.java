@@ -468,11 +468,11 @@ public class RubyEnumerable {
         return result;
     }
 
-    public static IRubyObject detect(ThreadContext context, IRubyObject self, final Block block) {
-        return detect(context, self, null, block);
+    public static IRubyObject detectCommon(ThreadContext context, IRubyObject self, final Block block) {
+        return detectCommon(context, self, null, block);
     }
 
-    public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
+    public static IRubyObject detectCommon(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
         final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { null };
         final ThreadContext localContext = context;
@@ -497,23 +497,32 @@ public class RubyEnumerable {
     }
 
     @JRubyMethod(name = "detect", frame = true)
-    public static IRubyObject detect19(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? detect(context, self, block) : enumeratorize(context.getRuntime(), self, "detect");
+    public static IRubyObject detect(ThreadContext context, IRubyObject self, final Block block) {
+        return block.isGiven() ? detectCommon(context, self, block) : enumeratorize(context.getRuntime(), self, "detect");
     }
 
     @JRubyMethod(name = "detect", frame = true)
-    public static IRubyObject detect19(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
-        return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
+    public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
+        return block.isGiven() ? detectCommon(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
+    }
+
+    // FIXME: Custom Array enumeratorize should be made.
+    @JRubyMethod(name = "find", frame = true)
+    public static IRubyObject find(ThreadContext context, IRubyObject self, final Block block) {
+        boolean blockGiven = block.isGiven();
+
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, null, block);
+
+        return blockGiven ? detectCommon(context, self, block) : enumeratorize(context.getRuntime(), self, "find");
     }
 
     @JRubyMethod(name = "find", frame = true)
-    public static IRubyObject find19(ThreadContext context, IRubyObject self, final Block block) {
-        return block.isGiven() ? detect(context, self, block) : enumeratorize(context.getRuntime(), self, "find");
-    }
+    public static IRubyObject find(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
+        boolean blockGiven = block.isGiven();
 
-    @JRubyMethod(name = "find", frame = true)
-    public static IRubyObject find19(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
-        return block.isGiven() ? detect(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find", ifnone);
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, ifnone, block);
+
+        return block.isGiven() ? detectCommon(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find", ifnone);
     }
     
     @JRubyMethod(name = "find_index", frame = true)
@@ -1146,9 +1155,15 @@ public class RubyEnumerable {
 
         return runtime.getTrue();
     }
-
+    
     @JRubyMethod(name = "any?", frame = true)
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
+        
+        return any_pCommon(context, self, block);
+    }
+
+    public static IRubyObject any_pCommon(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
 

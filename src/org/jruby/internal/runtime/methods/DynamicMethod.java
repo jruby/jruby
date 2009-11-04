@@ -69,6 +69,8 @@ public abstract class DynamicMethod {
     protected CallConfiguration callConfig;
     /** The serial number for this method object, to globally identify it */
     protected long serialNumber;
+    /** Is this a builtin core method or not */
+    protected boolean builtin = false;
     
     /**
      * Base constructor for dynamic method handles.
@@ -111,6 +113,14 @@ public abstract class DynamicMethod {
      */
     public long getSerialNumber() {
         return serialNumber;
+    }
+
+    public boolean isBuiltin() {
+        return builtin;
+    }
+
+    public void setIsBuiltin(boolean isBuiltin) {
+        this.builtin = isBuiltin;
     }
 
     /**

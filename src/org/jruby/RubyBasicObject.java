@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -1417,6 +1418,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public int getNativeTypeIndex() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * A method to determine whether the method named by methodName is a builtin
+     * method.  This means a method with a JRubyMethod annotation written in
+     * Java.
+     *
+     * @param methodName to look for.
+     * @return true if so
+     */
+    public boolean isBuiltin(String methodName) {
+        DynamicMethod method = getMetaClass().searchMethodInner(methodName);
+
+        return method != null && method.isBuiltin();
     }
 
     /**

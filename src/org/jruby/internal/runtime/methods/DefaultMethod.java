@@ -336,6 +336,7 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
 
     public DynamicMethod dup() {
         DefaultMethod newMethod = new DefaultMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), position);
+        newMethod.setIsBuiltin(this.builtin);
         newMethod.box = this.box;
         return newMethod;
     }

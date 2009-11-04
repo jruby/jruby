@@ -56,7 +56,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.Ruby19Parser;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -3389,6 +3388,42 @@ public class RubyArray extends RubyObject implements List {
             ary.realLength = n;
             return ary;
         }
+    }
+
+    // Enumerable direct implementations (non-"each" versions)
+
+    public IRubyObject any_p(ThreadContext context, Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
+        if (!block.isGiven()) return any_pBlockless(context);
+
+        for (int i = begin; i < begin + realLength; i++) {
+            if (block.yield(context, values[i]).isTrue()) return context.getRuntime().getTrue();
+        }
+
+        return context.getRuntime().getFalse();
+    }
+
+    private IRubyObject any_pBlockless(ThreadContext context) {
+        for (int i = begin; i < begin + realLength; i++) {
+            if (values[i].isTrue()) return context.getRuntime().getTrue();
+        }
+
+        return context.getRuntime().getFalse();
+    }
+
+    public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.detectCommon(context, this, block);
+
+        return detectCommon(context, ifnone, block);
+    }
+
+    public IRubyObject detectCommon(ThreadContext context, IRubyObject ifnone, Block block) {
+        for (int i = begin; i < begin + realLength; i++) {
+            if (block.yield(context, values[i]).isTrue()) return values[i];
+        }
+
+        return ifnone != null ? ifnone.callMethod(context, "call") : 
+            context.getRuntime().getNil();
     }
 
     public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {
