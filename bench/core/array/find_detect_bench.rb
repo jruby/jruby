@@ -11,30 +11,20 @@ def bench_array(bm)
     end
   end
 
-  bm.report("2m array.any?(21), 20 Fixnum array") do
+  bm.report("2m array.find(21), 20 Fixnum array") do
     i = 0
     while i<2_000_000
-      arr.any? {|e| e == 21}
-      i+=1
-    end
-  end
-
-  arr2 = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
-
-  bm.report("2m array.any? no block, 20 boolean array") do
-    i = 0
-    while i<2_000_000
-      arr2.any?
+      arr.find {|e| e == 21}
       i+=1
     end
   end
 
   arr3 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-  bm.report("2m array.any?(), 200 Fixnum array") do
+  bm.report("2m array.find(), 200 Fixnum array") do
     i = 0
     while i<200_000
-      arr3.any? {|e| e == 1000}
+      arr3.find {|e| e == 1000}
       i+=1
     end
   end
