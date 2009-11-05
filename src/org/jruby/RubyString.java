@@ -6126,7 +6126,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     hash.put(c, 1); // QTRUE
                 }
             }
-            while ((c = trNext(trRepl, runtime, enc)) >= 0) {}  /* retrieve last replacer */;
+            while ((c = trNext(trRepl, runtime, enc)) >= 0) {}  /* retrieve last replacer */
             int last = trRepl.now;
             for (int i=0; i<TRANS_SIZE; i++) {
                 if (trans[i] >= 0) trans[i] = last;
