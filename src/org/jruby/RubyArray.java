@@ -2197,13 +2197,13 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return new RubyArray(runtime, runtime.getArray(), this);
 
-        RubyArray collect = new RubyArray(runtime, realLength);
+        IRubyObject[] arr = new IRubyObject[realLength];
 
-        for (int i = begin; i < begin + realLength; i++) {
-            collect.append(block.yield(context, values[i]));
+        for (int i = 0; i < realLength; i++) {
+            arr[i] = block.yield(context, values[i + begin]);
         }
-        
-        return collect;
+
+        return new RubyArray(runtime, arr);
     }
 
     @JRubyMethod(name = {"collect", "map"}, frame = true, compat = CompatVersion.RUBY1_9)
