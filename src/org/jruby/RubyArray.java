@@ -2242,8 +2242,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_select
      *
      */
-    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_8)
-    public RubyArray select(ThreadContext context, Block block) {
+    public IRubyObject selectCommon(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         RubyArray result = new RubyArray(runtime, realLength);
 
@@ -2255,9 +2254,9 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
-    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject select19(ThreadContext context, Block block) {
-        return block.isGiven() ? select(context, block) : enumeratorize(context.getRuntime(), this, "select");
+    @JRubyMethod(name = "select", frame = true)
+    public IRubyObject select(ThreadContext context, Block block) {
+        return block.isGiven() ? selectCommon(context, block) : enumeratorize(context.getRuntime(), this, "select");
     }
 
     /** rb_ary_delete
@@ -3415,6 +3414,26 @@ public class RubyArray extends RubyObject implements List {
         if (!isBuiltin("each")) return RubyEnumerable.detectCommon(context, this, block);
 
         return detectCommon(context, ifnone, block);
+    }
+
+    public IRubyObject find_index(ThreadContext context, Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, block);
+
+        for (int i = 0; i < realLength; i++) {
+            if (block.yield(context, values[begin + i]).isTrue()) return context.getRuntime().newFixnum(i);
+        }
+
+        return context.getRuntime().getNil();
+    }
+
+    public IRubyObject find_index(ThreadContext context, IRubyObject cond) {
+        if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, cond);
+
+        for (int i = 0; i < realLength; i++) {
+            if (values[begin + i].equals(cond)) return context.getRuntime().newFixnum(i);
+        }
+
+        return context.getRuntime().getNil();
     }
 
     public IRubyObject detectCommon(ThreadContext context, IRubyObject ifnone, Block block) {

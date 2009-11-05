@@ -498,15 +498,23 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "detect", frame = true)
     public static IRubyObject detect(ThreadContext context, IRubyObject self, final Block block) {
+        boolean blockGiven = block.isGiven();
+
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, null, block);
+        
         return block.isGiven() ? detectCommon(context, self, block) : enumeratorize(context.getRuntime(), self, "detect");
     }
 
     @JRubyMethod(name = "detect", frame = true)
     public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
+        boolean blockGiven = block.isGiven();
+
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, null, block);
+
         return block.isGiven() ? detectCommon(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
     }
 
-    // FIXME: Custom Array enumeratorize should be made.
+    // FIXME: Custom Array enumeratorize should be made for all of these methods which skip Array without a supplied block.
     @JRubyMethod(name = "find", frame = true)
     public static IRubyObject find(ThreadContext context, IRubyObject self, final Block block) {
         boolean blockGiven = block.isGiven();
@@ -522,15 +530,32 @@ public class RubyEnumerable {
 
         if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, ifnone, block);
 
-        return block.isGiven() ? detectCommon(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "find", ifnone);
+        return blockGiven ? detectCommon(context, self, ifnone, block) :
+            enumeratorize(context.getRuntime(), self, "find", ifnone);
     }
-    
+
     @JRubyMethod(name = "find_index", frame = true)
     public static IRubyObject find_index(ThreadContext context, IRubyObject self, final Block block) {
+        boolean blockGiven = block.isGiven();
+
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find_index(context, block);
+        
+        return blockGiven ? find_indexCommon(context, self, block) :
+            enumeratorize(context.getRuntime(), self, "find_index");
+    }
+
+    @JRubyMethod(name = "find_index", frame = true)
+    public static IRubyObject find_index(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
         final Ruby runtime = context.getRuntime();
 
-        if (!block.isGiven()) return enumeratorize(runtime, self, "find_index");
+        if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
+        if (self instanceof RubyArray) return ((RubyArray) self).find_index(context, cond);
 
+        return find_indexCommon(context, self, cond);
+    }
+
+    public static IRubyObject find_indexCommon(ThreadContext context, IRubyObject self, final Block block) {
+        final Ruby runtime = context.getRuntime();
         final long result[] = new long[] {0};
 
         try {
@@ -545,15 +570,12 @@ public class RubyEnumerable {
         } catch (JumpException.SpecialJump sj) {
             return RubyFixnum.newFixnum(runtime, result[0]);
         }
+        
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "find_index", frame = true)
-    public static IRubyObject find_index(ThreadContext context, IRubyObject self, final IRubyObject cond, final Block block) {
+    public static IRubyObject find_indexCommon(ThreadContext context, IRubyObject self, final IRubyObject cond) {
         final Ruby runtime = context.getRuntime();
-
-        if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
-
         final long result[] = new long[] {0};
 
         try {
@@ -568,6 +590,7 @@ public class RubyEnumerable {
         } catch (JumpException.SpecialJump sj) {
             return RubyFixnum.newFixnum(runtime, result[0]);
         }
+
         return runtime.getNil();
     }
 
