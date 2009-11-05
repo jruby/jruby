@@ -61,7 +61,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
-import java.nio.charset.MalformedInputException;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -255,7 +254,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private Encoding isCompatibleWith(RubyString other) { 
-        Encoding enc1 = value.encoding;;
+        Encoding enc1 = value.encoding;
         Encoding enc2 = other.value.encoding;
 
         if (enc1 == enc2) return enc1;
@@ -270,7 +269,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     final Encoding isCompatibleWith(EncodingCapable other) {
         if (other instanceof RubyString) return checkEncoding((RubyString)other);
-        Encoding enc1 = value.encoding;;
+        Encoding enc1 = value.encoding;
         Encoding enc2 = other.getEncoding();
 
         if (enc1 == enc2) return enc1;
@@ -2271,8 +2270,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"concat", "<<"}, compat = CompatVersion.RUBY1_8)
     public RubyString concat(IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            long value = ((RubyFixnum) other).getLongValue();
-            if (value >= 0 && value < 256) return cat((byte) value);
+            long longValue = ((RubyFixnum) other).getLongValue();
+            if (longValue >= 0 && longValue < 256) return cat((byte) longValue);
         }
         return append(other);
     }
@@ -3161,10 +3160,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (-beg * enc.maxLength() < length >>> 3) {
                 beg = -beg;
                 int e = end;
-                while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1); // nothing
+                while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1) {} // nothing
                 p = e;
                 if (p == -1) return runtime.getNil();
-                while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1); // nothing
+                while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1) {} // nothing
                 if (p == -1) return runtime.getNil();
                 return makeShared19(runtime, p - s, e - p);
             } else {
@@ -3704,13 +3703,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         carry[0] = 1;
         int carryLen = 1;
 
-        ByteList value = new ByteList(original);
-        value.encoding = original.encoding;
+        ByteList valueCopy = new ByteList(original);
+        valueCopy.encoding = original.encoding;
         Encoding enc = original.encoding;
-        int p = value.begin;
-        int end = p + value.realSize;
+        int p = valueCopy.begin;
+        int end = p + valueCopy.realSize;
         int s = end;
-        byte[]bytes = value.bytes;
+        byte[]bytes = valueCopy.bytes;
 
         NeighborChar neighbor = NeighborChar.FOUND;
         int lastAlnum = -1;
@@ -3730,7 +3729,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (cl <= 0) continue;
             switch (neighbor = succAlnumChar(enc, bytes, s, cl, carry, 0)) {
             case NOT_CHAR: continue;
-            case FOUND:    return value;
+            case FOUND:    return valueCopy;
             case WRAPPED:  lastAlnum = s;
             }
             alnumSeen = true;
@@ -3744,7 +3743,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 int cl = StringSupport.preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
                 neighbor = succChar(enc, bytes, s, cl);
-                if (neighbor == NeighborChar.FOUND) return value;
+                if (neighbor == NeighborChar.FOUND) return valueCopy;
                 if (StringSupport.preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
@@ -3753,12 +3752,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 carryP = s - p;
             }
         }
-        value.ensure(value.begin + value.realSize + carryLen);
-        s = value.begin + carryP;
-        System.arraycopy(value.bytes, s, value.bytes, s + carryLen, value.realSize - carryP);
-        System.arraycopy(carry, 0, value.bytes, s, carryLen);
-        value.realSize += carryLen;
-        return value;
+        valueCopy.ensure(valueCopy.begin + valueCopy.realSize + carryLen);
+        s = valueCopy.begin + carryP;
+        System.arraycopy(valueCopy.bytes, s, valueCopy.bytes, s + carryLen, valueCopy.realSize - carryP);
+        System.arraycopy(carry, 0, valueCopy.bytes, s, carryLen);
+        valueCopy.realSize += carryLen;
+        return valueCopy;
     }
 
     /** rb_str_upto_m
@@ -4611,7 +4610,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (tmp.isNil()) return false;
         RubyString otherString = (RubyString)tmp;
         Encoding enc = checkEncoding(otherString);
-        if (value.realSize < otherString.value.realSize) return false;;
+        if (value.realSize < otherString.value.realSize) return false;
         int p = value.begin;
         int end = p + value.realSize;
         int s = end - otherString.value.realSize;
@@ -5431,7 +5430,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final boolean[]table = new boolean[TRANS_SIZE];
         args[0].convertToString().trSetupTable(table, true);
         for (int i = 1; i<args.length; i++) {
-            args[i].convertToString().trSetupTable(table, false);;
+            args[i].convertToString().trSetupTable(table, false);
         }
 
         return countCommon(runtime, table);
@@ -6025,7 +6024,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (cflag) {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
             while ((c = trNext(trSrc)) >= 0) trans[c & 0xff] = -1;
-            while ((c = trNext(trRepl)) >= 0); 
+            while ((c = trNext(trRepl)) >= 0) {}
             for (int i=0; i<TRANS_SIZE; i++) {
                 if (trans[i] >= 0) trans[i] = trRepl.now;
             }
@@ -6127,7 +6126,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     hash.put(c, 1); // QTRUE
                 }
             }
-            while ((c = trNext(trRepl, runtime, enc)) >= 0);  /* retrieve last replacer */;
+            while ((c = trNext(trRepl, runtime, enc)) >= 0) {}  /* retrieve last replacer */;
             int last = trRepl.now;
             for (int i=0; i<TRANS_SIZE; i++) {
                 if (trans[i] >= 0) trans[i] = last;
@@ -7068,6 +7067,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return MiniJava.javaToRuby(getRuntime(), new String(getBytes()));
     }
 
+    @Override
     public Object toJava(Class target) {
         return JavaUtil.coerceStringToType(this, target);
     }
