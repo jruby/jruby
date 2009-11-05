@@ -307,7 +307,7 @@ class TestKernel < Test::Unit::TestCase
     $stderr = StringIO.new
     raise StandardError rescue nil
     assert_match(
-      /Exception `StandardError' at #{__FILE__}:#{__LINE__ - 2} - StandardError/,
+      /Exception `StandardError' at #{Regexp.quote(__FILE__)}:#{__LINE__ - 2} - StandardError/,
       $stderr.string
     )
 
@@ -315,7 +315,7 @@ class TestKernel < Test::Unit::TestCase
 
     raise RuntimeError.new("TEST_ME") rescue nil
     assert_match(
-      /Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 2} - TEST_ME/,
+      /Exception `RuntimeError' at #{Regexp.quote(__FILE__)}:#{__LINE__ - 2} - TEST_ME/,
       $stderr.string
     )
   ensure
