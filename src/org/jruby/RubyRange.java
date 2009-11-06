@@ -384,7 +384,7 @@ public class RubyRange extends RubyObject {
             }
             return RubyArray.newArrayNoCopy(runtime, array);
         } else {
-            return RubyEnumerable.to_a19(context, this);
+            return RubyEnumerable.to_a(context, this);
         }
     }
 
