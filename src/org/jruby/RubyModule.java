@@ -2771,8 +2771,6 @@ public class RubyModule extends RubyObject {
     // fetch/store/list class variables for this module
     //
 
-    private volatile Map<String, IRubyObject> classVariables;
-
     protected synchronized Map<String, IRubyObject> getClassVariables() {
         if (classVariables == null) {
             classVariables = new Hashtable<String, IRubyObject>(4);
@@ -3070,4 +3068,6 @@ public class RubyModule extends RubyObject {
     protected RubyClass superClass;
 
     public int index;
+
+    private volatile Map<String, IRubyObject> classVariables;
 }

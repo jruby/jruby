@@ -526,10 +526,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * class.
      */
     public RubyClass makeMetaClass(RubyClass superClass) {
-        MetaClass klass = new MetaClass(getRuntime(), superClass); // rb_class_boot
+        MetaClass klass = new MetaClass(getRuntime(), superClass, this); // rb_class_boot
         setMetaClass(klass);
 
-        klass.setAttached(this);
         klass.setMetaClass(superClass.getRealClass().getMetaClass());
 
         superClass.addSubclass(klass);
@@ -805,31 +804,31 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return either a real class, or a clone of the current singleton class
      */
     protected RubyClass getSingletonClassClone() {
-       RubyClass klass = getMetaClass();
+        RubyClass klass = getMetaClass();
 
-       if (!klass.isSingleton()) return klass;
+        if (!klass.isSingleton()) {
+            return klass;
+        }
 
-       MetaClass clone = new MetaClass(getRuntime());
-       clone.flags = flags;
+        MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), ((MetaClass) klass).getAttached());
+        clone.flags = flags;
 
-       if (this instanceof RubyClass) {
-           clone.setMetaClass(clone);
-       } else {
-           clone.setMetaClass(klass.getSingletonClassClone());
-       }
+        if (this instanceof RubyClass) {
+            clone.setMetaClass(clone);
+        } else {
+            clone.setMetaClass(klass.getSingletonClassClone());
+        }
 
-       clone.setSuperClass(klass.getSuperClass());
+        if (klass.hasVariables()) {
+            clone.syncVariables(klass.getVariableList());
+        }
+        clone.syncConstants(klass);
 
-       if (klass.hasVariables()) clone.syncVariables(klass.getVariableList());
-       clone.syncConstants(klass);
+        klass.cloneMethods(clone);
 
-       klass.cloneMethods(clone);
+        ((MetaClass) clone.getMetaClass()).setAttached(clone);
 
-       ((MetaClass)clone.getMetaClass()).setAttached(clone);
-
-       ((MetaClass)clone).setAttached(((MetaClass)klass).getAttached());
-
-       return clone;
+        return clone;
     }
 
     /**

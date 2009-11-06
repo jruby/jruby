@@ -38,20 +38,14 @@ public final class MetaClass extends RubyClass {
     private static final SoftReference<IRubyObject> NULL_SOFT_REF = new SoftReference<IRubyObject>(null);
 
     private SoftReference<IRubyObject> attached = NULL_SOFT_REF; 
-
-    /** NEWOBJ (in RubyObject#getSingletonClassClone()) 
-     * 
-     */
-    public MetaClass(Ruby runtime) {
-        super(runtime, null, false);
-    }
     
     /** rb_class_boot (for MetaClasses) (in makeMetaClass(RubyClass))
      * 
      */
-    public MetaClass(Ruby runtime, RubyClass superClass) {
+    public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
         super(runtime, superClass, false);
-        index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
+        this.attached = new SoftReference<IRubyObject>(attached);
+        this.index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
     }
 
     public boolean isSingleton() {

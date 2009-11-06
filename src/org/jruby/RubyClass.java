@@ -388,10 +388,9 @@ public class RubyClass extends RubyModule {
     @Override
     public RubyClass makeMetaClass(RubyClass superClass) {
         if (isSingleton()) { // could be pulled down to RubyClass in future
-            MetaClass klass = new MetaClass(runtime, superClass); // rb_class_boot
+            MetaClass klass = new MetaClass(runtime, superClass, this); // rb_class_boot
             setMetaClass(klass);
 
-            klass.setAttached(this);
             klass.setMetaClass(klass);
             klass.setSuperClass(getSuperClass().getRealClass().getMetaClass());
             
