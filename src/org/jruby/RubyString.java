@@ -4850,7 +4850,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "partition", frame = true)
     public IRubyObject partition(ThreadContext context, Block block) {
-        return RubyEnumerable.partition19(context, this, block);
+        return RubyEnumerable.partition(context, this, block);
     }
 
     @JRubyMethod(name = "partition", frame = true)

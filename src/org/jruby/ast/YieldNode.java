@@ -106,7 +106,7 @@ public class YieldNode extends Node {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (expandedArguments) {
-            return context.getCurrentFrame().getBlock().yield(context, argsNode.interpret(runtime, context, self, aBlock), null, null, true);
+            return context.getCurrentFrame().getBlock().yieldArray(context, argsNode.interpret(runtime, context, self, aBlock), null, null);
         } 
 
         return context.getCurrentFrame().getBlock().yield(context, argsNode.interpret(runtime, context, self, aBlock));

@@ -67,12 +67,15 @@ public class InterpretedMethod extends DynamicMethod implements JumpTarget, Meth
         inspector.inspect(body);
         inspector.inspect(argsNode);
 
-        if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || staticScope.getNumberOfVariables() != 0) {
-            // must have scope
+        // This optimization is temporarily disabled because of the complications
+        // arising from moving backref/lastline into scope and not being able
+        // to accurately detect that situation.
+//        if (inspector.hasClosure() || inspector.hasScopeAwareMethods() || staticScope.getNumberOfVariables() != 0) {
+//            // must have scope
             needsScope = true;
-        } else {
-            needsScope = false;
-        }
+//        } else {
+//            needsScope = false;
+//        }
 		
         assert argsNode != null;
     }

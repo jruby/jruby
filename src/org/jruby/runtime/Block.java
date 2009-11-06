@@ -193,10 +193,21 @@ public final class Block {
     public IRubyObject yield(ThreadContext context, IRubyObject value) {
         return body.yield(context, value, binding, type);
     }
-    
+
+    @Deprecated
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean aValue) {
         return body.yield(context, value, self, klass, aValue, binding, type);
+    }
+
+    public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self,
+            RubyModule klass) {
+        return body.yield(context, value, self, klass, false, binding, type);
+    }
+
+    public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self,
+            RubyModule klass) {
+        return body.yield(context, value, self, klass, true, binding, type);
     }
 
     @Deprecated

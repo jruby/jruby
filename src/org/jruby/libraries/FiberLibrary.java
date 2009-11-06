@@ -95,7 +95,7 @@ public class FiberLibrary implements Library {
                         ThreadContext context = runtime.getCurrentContext();
                         context.setFiber(Fiber.this);
                         try {
-                            result = Fiber.this.block.yield(runtime.getCurrentContext(), result, null, null, true);
+                            result = Fiber.this.block.yieldArray(runtime.getCurrentContext(), result, null, null);
                         } finally {
                             yieldLock.notify();
                         }

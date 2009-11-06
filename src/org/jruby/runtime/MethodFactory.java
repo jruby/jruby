@@ -59,6 +59,7 @@ public abstract class MethodFactory {
      * This interface should be implemented by code calling any batched methods
      * on this MethodFactory.
      */
+    @Deprecated
     public interface MethodDefiningCallback {
         public void define(RubyModule targetMetaClass, JavaMethodDescriptor desc, DynamicMethod dynamicMethod);
     }

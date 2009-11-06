@@ -66,7 +66,7 @@ public class AssignmentVisitor {
             if (varLen < valueLen) {
                 restArgument.assign(runtime, context, self, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, checkArity);
             } else {
-                restArgument.assign(runtime, context, self, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, checkArity);
+                restArgument.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), Block.NULL_BLOCK, checkArity);
             }
         } else if (checkArity && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
@@ -100,7 +100,7 @@ public class AssignmentVisitor {
             } else if (varLen < valueLen) {
                 argsNode.assign(runtime, context, self, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, checkArity);
             } else {
-                argsNode.assign(runtime, context, self, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, checkArity);
+                argsNode.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), Block.NULL_BLOCK, checkArity);
             }
         } else if (checkArity && valueLen < varLen) {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
@@ -133,7 +133,7 @@ public class AssignmentVisitor {
             } else if (preCount + postCount < valueLen) {
                 rest.assign(runtime, context, self, value.subseqLight(preCount, valueLen - preCount - postCount), Block.NULL_BLOCK, false);
             } else {
-                rest.assign(runtime, context, self, RubyArray.newArrayLight(runtime, 0), Block.NULL_BLOCK, false);
+                rest.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), Block.NULL_BLOCK, false);
             }
 
             // FIXME: This is wrong

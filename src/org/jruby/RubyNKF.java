@@ -241,8 +241,7 @@ public class RubyNKF {
     }
 
     private static RubyString encodeMimeString(Ruby runtime, RubyString str, String format) {
-        RubyArray array = RubyArray.newArray(runtime, 1);
-        array.append(str);
+        RubyArray array = RubyArray.newArray(runtime, str);
         return Pack.pack(runtime, array, new ByteList(ByteList.plain(format))).chomp(runtime.getCurrentContext());
     }
 

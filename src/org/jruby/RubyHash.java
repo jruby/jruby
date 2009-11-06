@@ -1098,7 +1098,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 // rb_yield_values(2,...) equivalent
-                block.yield(context, RubyArray.newArray(runtime, key, value), null, null, true);
+                block.yieldArray(context, RubyArray.newArray(runtime, key, value), null, null);
             }
         });
 
@@ -1296,7 +1296,7 @@ public class RubyHash extends RubyObject implements Map {
 
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                if (block.yield(context, runtime.newArray(key, value), null, null, true).isTrue()) {
+                if (block.yieldArray(context, runtime.newArray(key, value), null, null).isTrue()) {
                     result.append(runtime.newArray(key, value));
                 }
             }
@@ -1314,7 +1314,7 @@ public class RubyHash extends RubyObject implements Map {
 
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                if (block.yield(context, runtime.newArray(key, value), null, null, true).isTrue()) {
+                if (block.yieldArray(context, runtime.newArray(key, value), null, null).isTrue()) {
                     result.fastASet(key, value);
                 }
             }
@@ -1333,7 +1333,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash self = this;
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                if (block.yield(context, RubyArray.newArray(runtime, key, value), null, null, true).isTrue()) {
+                if (block.yieldArray(context, RubyArray.newArray(runtime, key, value), null, null).isTrue()) {
                     self.delete(context, key, Block.NULL_BLOCK);
                 }
             }

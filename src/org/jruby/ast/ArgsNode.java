@@ -83,11 +83,11 @@ public class ArgsNode extends Node {
     private final int postCount;
     private final int postIndex;
     /**
-     * 
+     *
      * @param optionalArguments  Node describing the optional arguments
      * 				This Block will contain assignments to locals (LAsgnNode)
      * @param restArguments  index of the rest argument in the local table
-     * 				(the array argument prefixed by a * which collects 
+     * 				(the array argument prefixed by a * which collects
      * 				all additional params)
      * 				or -1 if there is none.
      * @param argsCount number of regular arguments
@@ -136,7 +136,7 @@ public class ArgsNode extends Node {
         }
         return false;
     }
-    
+
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -156,7 +156,7 @@ public class ArgsNode extends Node {
     public ListNode getArgs() {
         return pre;
     }
-    
+
     public Arity getArity() {
         return arity;
     }
@@ -164,7 +164,7 @@ public class ArgsNode extends Node {
     public int getRequiredArgsCount() {
         return requiredArgsCount;
     }
-    
+
     public int getOptionalArgsCount() {
         return optArgs == null ? 0 : optArgs.size();
     }
@@ -208,7 +208,7 @@ public class ArgsNode extends Node {
 
     /**
      * Gets the explicit block argument of the parameter list (&block).
-     * 
+     *
      * @return Returns a BlockArgNode
      */
     public BlockArgNode getBlock() {

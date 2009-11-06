@@ -63,7 +63,7 @@ public final class ArgsUtil {
      */
     public static RubyArray convertToRubyArray(Ruby runtime, IRubyObject value, boolean coerce) {
         if (value == null) {
-            return RubyArray.newArrayLight(runtime, 0);
+            return RubyArray.newEmptyArray(runtime);
         }
         
         if (coerce) return convertToRubyArrayWithCoerce(runtime, value);
