@@ -132,15 +132,13 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public static final RubyArray newArray(final Ruby runtime, final long len) {
-        RubyArray array = new RubyArray(runtime, len);
-        RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
-        return array;
+        checkLength(runtime, len);
+        return newArray(runtime, (int)len);
     }
     
     public static final RubyArray newArrayLight(final Ruby runtime, final long len) {
-        RubyArray array = new RubyArray(runtime, len, false);
-        RuntimeHelpers.fillNil(array.values, 0, array.values.length, runtime);
-        return array;
+        checkLength(runtime, len);
+        return newArrayLight(runtime, (int)len);
     }
     
     public static final RubyArray newArray(final Ruby runtime, final int len) {
@@ -280,24 +278,9 @@ public class RubyArray extends RubyObject implements List {
         this.isShared = true;
     }
     
-    /* rb_ary_new2
-     * just allocates the internal array
-     */
-    private RubyArray(Ruby runtime, long length) {
-        super(runtime, runtime.getArray());
-        checkLength(length);
-        values = new IRubyObject[(int)length];
-    }
-    
     private RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
         values = new IRubyObject[length];
-    }
-
-    private RubyArray(Ruby runtime, long length, boolean objectspace) {
-        super(runtime, runtime.getArray(), objectspace);
-        checkLength(length);
-        values = new IRubyObject[(int)length];
     }
 
     private RubyArray(Ruby runtime, int length, boolean objectspace) {
@@ -322,12 +305,6 @@ public class RubyArray extends RubyObject implements List {
     private RubyArray(Ruby runtime, RubyClass klass, int length) {
         super(runtime, klass);
         values = new IRubyObject[length];
-    }
-    
-    private RubyArray(Ruby runtime, RubyClass klass, long length) {
-        super(runtime, klass);
-        checkLength(length);
-        values = new IRubyObject[(int)length];
     }
 
     private RubyArray(Ruby runtime, RubyClass klass, IRubyObject[]vals, boolean objectspace) {
@@ -385,13 +362,13 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    private final void checkLength(long length) {
+    private static final void checkLength(Ruby runtime, long length) {
         if (length < 0) {
-            throw getRuntime().newArgumentError("negative array size (or size too big)");
+            throw runtime.newArgumentError("negative array size (or size too big)");
         }
 
         if (length >= Integer.MAX_VALUE) {
-            throw getRuntime().newArgumentError("array size too big");
+            throw runtime.newArgumentError("array size too big");
         }
     }
 
@@ -2749,16 +2726,18 @@ public class RubyArray extends RubyObject implements List {
         if (!tmp.isNil()) return join(context, tmp);
 
         long len = RubyNumeric.num2long(times);
-        if (len == 0) return new RubyArray(getRuntime(), getMetaClass(), IRubyObject.NULL_ARRAY).infectBy(this);
-        if (len < 0) throw getRuntime().newArgumentError("negative argument");
+        Ruby runtime = context.getRuntime();
+        if (len == 0) return new RubyArray(runtime, getMetaClass(), IRubyObject.NULL_ARRAY).infectBy(this);
+        if (len < 0) throw runtime.newArgumentError("negative argument");
 
         if (Long.MAX_VALUE / len < realLength) {
-            throw getRuntime().newArgumentError("argument too big");
+            throw runtime.newArgumentError("argument too big");
         }
 
         len *= realLength;
 
-        RubyArray ary2 = new RubyArray(getRuntime(), getMetaClass(), len);
+        checkLength(runtime, len);
+        RubyArray ary2 = new RubyArray(runtime, getMetaClass(), (int)len);
         ary2.realLength = ary2.values.length;
 
         try {

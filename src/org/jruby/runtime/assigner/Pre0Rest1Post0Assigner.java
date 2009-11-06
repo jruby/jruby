@@ -49,7 +49,7 @@ public class Pre0Rest1Post0Assigner extends Assigner {
 
     @Override
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
-        rest.assign(runtime, context, self, RubyArray.newArrayLight(runtime, 0), block, true);
+        rest.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), block, true);
     }
 
     @Override
