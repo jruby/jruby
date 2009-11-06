@@ -745,7 +745,7 @@ public class ScriptingContainer {
         RubyIO io = new RubyIO(runtime, istream);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", io));
-        runtime.defineGlobalConstant("STDIN", io);
+        runtime.getObject().getConstantMapForWrite().put("STDIN", io);
     }
 
     /**
@@ -799,12 +799,10 @@ public class ScriptingContainer {
         Ruby runtime = getRuntime();
         RubyIO io = new RubyIO(runtime, pstream);
         io.getOpenFile().getMainStream().setSync(true);
-        gulpWarning();
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io));
-        runtime.defineGlobalConstant("STDOUT", io);
+        runtime.getObject().getConstantMapForWrite().put("STDOUT", io);
         runtime.getGlobalVariables().alias("$>", "$stdout");
         runtime.getGlobalVariables().alias("$defout", "$stdout");
-        revertWarning();
     }
 
     public void resetWriter() {
@@ -864,7 +862,7 @@ public class ScriptingContainer {
         RubyIO io = new RubyIO(runtime, error);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io));
-        runtime.defineGlobalConstant("STDERR", io);
+        runtime.getObject().getConstantMapForWrite().put("STDERR", io);
         runtime.getGlobalVariables().alias("$deferr", "$stderr");
     }
 
@@ -894,44 +892,5 @@ public class ScriptingContainer {
      */
     public PrintStream getErr() {
         return getRuntime().getErr();
-    }
-
-    private void gulpWarning() {
-        Boolean gulping = true;
-        Object obj = getAttribute(AttributeName.WARNING_GULPING);
-        if (obj != null && obj instanceof Boolean) {
-            gulping = (Boolean)obj;
-        }
-        if (gulping == false) {
-            return;
-        }
-        RubyIO dummy_io =
-            new RubyIO(getRuntime(),
-            new PrintStream(new WriterOutputStream(new StringWriter())));
-        getRuntime().getGlobalVariables().set("$stderr", dummy_io); //discard unwanted warnings
-    }
-
-    private void revertWarning() {
-        Boolean gulping = true;
-        Object obj = getAttribute(AttributeName.WARNING_GULPING);
-        if (obj != null && obj instanceof Boolean) {
-            gulping = (Boolean)obj;
-        }
-        if (gulping == false) {
-            return;
-        }
-        Map map = getAttributeMap();
-        PrintStream pstream = null;
-        if (map.containsKey(AttributeName.ERROR_WRITER)) {
-            Writer errorWriter = (Writer) map.get(AttributeName.ERROR_WRITER);
-            if (errorWriter != null) {
-                pstream = new PrintStream(new WriterOutputStream(errorWriter));
-            }
-        }
-        if (pstream == null) {
-            pstream = new PrintStream(System.err);
-        }
-        RubyIO error_io = new RubyIO(getRuntime(), pstream);
-        getRuntime().getGlobalVariables().set("$stderr", error_io);
     }
 }

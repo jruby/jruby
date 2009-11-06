@@ -1148,6 +1148,13 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setErrorWriter(errorWriter);
 
+        errorWriter = new StringWriter();
+        instance.setErrorWriter(errorWriter);
+        instance.runScriptlet("ABC=10;ABC=20");
+        String expResult = "<script>:1 warning: already initialized constant ABC";
+        assertEquals(expResult, errorWriter.toString().trim());
+
+        instance.getVarMap().clear();
         instance = null;
     }
 

@@ -423,7 +423,6 @@ public class JRubyContextTest {
         Object expResult = "check setErrorWriter";
         Object result = ew.toString();
         assertTrue(((String)result).startsWith((String) expResult));
-        System.err.println(result);
     }
 
     /**

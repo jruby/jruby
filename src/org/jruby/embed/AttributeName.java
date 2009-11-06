@@ -56,12 +56,6 @@ public enum AttributeName {
     ERROR_WRITER("org.jruby.embed.errorwriter"),
 
     /**
-     * A key used in an attribute map to switch on/off waning gulping when
-     * readers and writers are set. Default is true, so warnings are not output.
-     */
-    WARNING_GULPING("org.jruby.embed.warning_gulping"),
-
-    /**
      * A key used in an attribute map to set a base directory.
      */
     BASE_DIR("org.jruby.embed.basedir"),
