@@ -716,7 +716,7 @@ public class RubyEnumerable {
                 IRubyObject larg = checkArgs(runtime, largs);
                 checkContext(localContext, ctx, "inject");
                 result[0] = result[0] == null ? 
-                        larg : block.yield(ctx, runtime.newArray(result[0], larg), null, null, true);
+                        larg : block.yieldArray(ctx, runtime.newArray(result[0], larg), null, null);
 
                 return runtime.getNil();
             }
@@ -866,8 +866,8 @@ public class RubyEnumerable {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     checkContext(localContext, ctx, "max{}");
-                    if (result[0] == null || RubyComparable.cmpint(ctx, block.yield(ctx, 
-                            runtime.newArray(larg, result[0]), null, null, true), larg, result[0]) > 0) {
+                    if (result[0] == null || RubyComparable.cmpint(ctx, block.yieldArray(ctx,
+                            runtime.newArray(larg, result[0]), null, null), larg, result[0]) > 0) {
                         result[0] = larg;
                     }
                     return runtime.getNil();

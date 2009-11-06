@@ -24,7 +24,7 @@ import org.jruby.runtime.scope.TwoVarDynamicScope;
 public abstract class DynamicScope {
     // Static scoping information for this scope
     protected final StaticScope staticScope;
-    
+
     // Captured dynamic scopes
     protected final DynamicScope parent;
 
@@ -33,7 +33,7 @@ public abstract class DynamicScope {
 
     // Lastline
     private IRubyObject lastline;
-    
+
     // A place to store that special hiding space that bindings need to implement things like:
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
     // hidden shared scope.  We store it here.  This will be null if no binding has yet
@@ -48,7 +48,7 @@ public abstract class DynamicScope {
     protected DynamicScope(StaticScope staticScope) {
         this(staticScope, null);
     }
-    
+
     public static DynamicScope newDynamicScope(StaticScope staticScope, DynamicScope parent) {
         switch (staticScope.getNumberOfVariables()) {
         case 0:
@@ -65,7 +65,7 @@ public abstract class DynamicScope {
             return new ManyVarsDynamicScope(staticScope, parent);
         }
     }
-    
+
     public static DynamicScope newDummyScope(StaticScope staticScope, DynamicScope parent) {
         return new DummyDynamicScope(staticScope, parent);
     }
@@ -91,28 +91,28 @@ public abstract class DynamicScope {
     public static DynamicScope newDynamicScope(StaticScope staticScope) {
         return newDynamicScope(staticScope, null);
     }
-    
+
     public final DynamicScope getEvalScope() {
         // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
         // 'b' will get put into this new dynamic scope.  The original scope does not see the new
-        // 'b' and successive evals with this binding will.  I take it having the ability to have 
-        // succesive binding evals be able to share same scope makes sense from a programmers 
-        // perspective.   One crappy outcome of this design is it requires Dynamic and Static 
+        // 'b' and successive evals with this binding will.  I take it having the ability to have
+        // succesive binding evals be able to share same scope makes sense from a programmers
+        // perspective.   One crappy outcome of this design is it requires Dynamic and Static
         // scopes to be mutable for this one case.
-        
+
         // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
         // bindings for evals.
-        
+
         // We only define one special dynamic scope per 'logical' binding.  So all bindings for
         // the same scope should share the same dynamic scope.  This allows multiple evals with
         // different different bindings in the same scope to see the same stuff.
-        
+
         // No binding scope so we should create one
         if (evalScope == null) {
             // If the next scope out has the same binding scope as this scope it means
             // we are evaling within an eval and in that case we should be sharing the same
             // binding scope.
-            DynamicScope parent = getNextCapturedScope(); 
+            DynamicScope parent = getNextCapturedScope();
             if (parent != null && parent.getEvalScope() == this) {
                 evalScope = this;
             } else {
@@ -120,14 +120,14 @@ public abstract class DynamicScope {
                 evalScope = new ManyVarsDynamicScope(new EvalStaticScope(getStaticScope()), this);
             }
         }
-        
+
         return evalScope;
     }
-    
+
     /**
      * Find the scope to use for flip-flops. Flip-flops live either in the
      * topmost "method scope" or in their nearest containing "eval scope".
-     * 
+     *
      * @return The scope to use for flip-flops
      */
     public DynamicScope getFlipScope() {
@@ -137,10 +137,10 @@ public abstract class DynamicScope {
             return parent.getFlipScope();
         }
     }
-    
+
     /**
      * Get next 'captured' scope.
-     * 
+     *
      * @return the scope captured by this scope for implementing closures
      *
      */
@@ -150,16 +150,16 @@ public abstract class DynamicScope {
 
     /**
      * Get the static scope associated with this DynamicScope.
-     * 
+     *
      * @return static complement to this scope
      */
     public final StaticScope getStaticScope() {
         return staticScope;
     }
-    
+
     /**
      * Get all variable names captured (visible) by this scope (sans $~ and $_).
-     * 
+     *
      * @return a list of variable names
      */
     public final String[] getAllNamesInScope() {
@@ -205,50 +205,50 @@ public abstract class DynamicScope {
         }
         return this.lastline = lastline;
     }
-    
+
     public abstract void growIfNeeded();
-    
+
     public abstract DynamicScope cloneScope();
 
     public abstract IRubyObject[] getValues();
-    
+
     /**
      * Get value from current scope or one of its captured scopes.
-     * 
+     *
      * FIXME: block variables are not getting primed to nil so we need to null check those
      *  until we prime them properly.  Also add assert back in.
-     * 
+     *
      * @param offset zero-indexed value that represents where variable lives
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
     public abstract IRubyObject getValue(int offset, int depth);
-    
+
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
     public abstract IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil);
-    
+
     /**
      * getValueOrNil for depth 0
      */
     public abstract IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil);
-    
+
     /**
      * getValueOrNil for index 0, depth 0
      */
     public abstract IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil);
-    
+
     /**
      * getValueOrNil for index 1, depth 0
      */
     public abstract IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil);
-    
+
     /**
      * getValueOrNil for index 2, depth 0
      */
     public abstract IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil);
-    
+
     /**
      * getValueOrNil for index 3, depth 0
      */
@@ -256,7 +256,7 @@ public abstract class DynamicScope {
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
-     * 
+     *
      * @param offset zero-indexed value that represents where variable lives
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
@@ -265,7 +265,7 @@ public abstract class DynamicScope {
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
-     * 
+     *
      * @param offset zero-indexed value that represents where variable lives
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
@@ -276,7 +276,7 @@ public abstract class DynamicScope {
 
     /**
      * setValue for depth zero
-     * 
+     *
      * @param offset zero-indexed value that represents where variable lives
      * @param value to set
      * @param depth how many captured scopes down this variable should be set
@@ -308,9 +308,9 @@ public abstract class DynamicScope {
      * scope.  Function calls bind to local scopes by assuming that the indexes or the
      * arg list correspond to that of the local scope (plus 2 since $_ and $~ always take
      * the first two slots).  We pass in a second argument because we sometimes get more
-     * values than we are expecting.  The rest get compacted by original caller into 
+     * values than we are expecting.  The rest get compacted by original caller into
      * rest args.
-     * 
+     *
      * @param values up to size specified to be mapped as ordinary parm values
      * @param size is the number of values to assign as ordinary parm values
      */
@@ -358,7 +358,7 @@ public abstract class DynamicScope {
      * @param size which of the last size arguments of values parameter to set
      */
     public abstract void setEndArgValues(IRubyObject[] values, int index, int size);
-    
+
     /**
      * Copy variable values back for ZSuper call.
      */

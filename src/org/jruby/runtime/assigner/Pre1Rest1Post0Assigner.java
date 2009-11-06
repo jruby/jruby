@@ -52,7 +52,7 @@ public class Pre1Rest1Post0Assigner extends Assigner {
     public void assign(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
         parameter1.assign(runtime, context, self, runtime.getNil(), block, false);
         
-        rest.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), block, true);
+        rest.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), block, true);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class Pre1Rest1Post0Assigner extends Assigner {
             Block block) {
         parameter1.assign(runtime, context, self, value1, block, false);
 
-        rest.assign(runtime, context, self, runtime.newArrayNoCopyLight(IRubyObject.NULL_ARRAY), block, true);
+        rest.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), block, true);
     }
 
     @Override

@@ -1699,7 +1699,7 @@ public class RubyModule extends RubyObject {
         if (block.isGiven()) {
             // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
             block.getBinding().setVisibility(PUBLIC);
-            block.yield(getRuntime().getCurrentContext(), this, this, this, false);
+            block.yieldNonArray(getRuntime().getCurrentContext(), this, this, this);
         }
 
         return getRuntime().getNil();

@@ -69,7 +69,7 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
     private final ArgsNode argsNode;
     private final ISourcePosition position;
     private final InterpretedMethod interpretedMethod;
-    
+
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
         super(implementationClass, visibility, CallConfiguration.FrameFullScopeFull);

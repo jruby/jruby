@@ -458,13 +458,6 @@ public class RubyObject extends RubyBasicObject {
         try {
             IRubyObject valueInYield;
             boolean aValue;
-            if (args.length == 1) {
-                valueInYield = args[0];
-                aValue = false;
-            } else {
-                valueInYield = RubyArray.newArrayNoCopy(context.getRuntime(), args);
-                aValue = true;
-            }
 
             // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
             block = block.cloneBlock();
@@ -472,7 +465,13 @@ public class RubyObject extends RubyBasicObject {
             block.getBinding().getFrame().setSelf(RubyObject.this);
             // end hack
 
-            return block.yield(context, valueInYield, RubyObject.this, context.getRubyClass(), aValue);
+            if (args.length == 1) {
+                valueInYield = args[0];
+                return block.yieldNonArray(context, valueInYield, RubyObject.this, context.getRubyClass());
+            } else {
+                valueInYield = RubyArray.newArrayNoCopy(context.getRuntime(), args);
+                return block.yieldArray(context, valueInYield, RubyObject.this, context.getRubyClass());
+            }
             //TODO: Should next and return also catch here?
         } catch (JumpException.BreakJump bj) {
             return (IRubyObject) bj.getValue();
@@ -505,7 +504,7 @@ public class RubyObject extends RubyBasicObject {
             block.getBinding().getFrame().setSelf(RubyObject.this);
             // end hack
 
-            return block.yield(context, this, this, context.getRubyClass(), false);
+            return block.yieldNonArray(context, this, this, context.getRubyClass());
             //TODO: Should next and return also catch here?
         } catch (JumpException.BreakJump bj) {
             return (IRubyObject) bj.getValue();

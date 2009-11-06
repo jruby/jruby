@@ -61,11 +61,11 @@ public abstract class BlockBody implements JumpTarget {
     public static final int ARRAY = 2;
     public static final int SINGLE_RESTARG = 3;
     protected final int argumentType;
-    
+
     public BlockBody(int argumentType) {
         this.argumentType = argumentType;
     }
-    
+
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         args = prepareArgumentsForCall(context, args, type);
 
@@ -73,7 +73,7 @@ public abstract class BlockBody implements JumpTarget {
     }
 
     // This should only be called by 1.8 (1.9 subclasses this to handle unusedBlock).
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, 
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
             Block.Type type, Block unusedBlock) {
         return call(context, args, binding, type);
     }
@@ -82,7 +82,7 @@ public abstract class BlockBody implements JumpTarget {
 
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type);
-    
+
     public int getArgumentType() {
         return argumentType;
     }
@@ -241,7 +241,8 @@ public abstract class BlockBody implements JumpTarget {
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Binding binding, Block.Type type) {
         return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9), null, null, true, binding, type);
     }
-    
+
+
     public abstract StaticScope getStaticScope();
     public abstract void setStaticScope(StaticScope newScope);
 
@@ -249,29 +250,29 @@ public abstract class BlockBody implements JumpTarget {
 
     /**
      * What is the arity of this block?
-     * 
+     *
      * @return the arity
      */
     public abstract Arity arity();
-    
+
     /**
      * Is the current block a real yield'able block instead a null one
-     * 
+     *
      * @return true if this is a valid block or false otherwise
      */
     public boolean isGiven() {
         return true;
     }
-    
+
     /**
      * Compiled codes way of examining arguments
-     * 
+     *
      * @param nodeId to be considered
      * @return something not linked to AST and a constant to make compiler happy
      */
     public static int asArgumentType(NodeType nodeId) {
         if (nodeId == null) return ZERO_ARGS;
-        
+
         switch (nodeId) {
         case ZEROARGNODE: return ZERO_ARGS;
         case MULTIPLEASGNNODE: return MULTIPLE_ASSIGNMENT;
@@ -279,7 +280,7 @@ public abstract class BlockBody implements JumpTarget {
         }
         return ARRAY;
     }
-    
+
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         switch (type) {
         case NORMAL: {
@@ -312,10 +313,10 @@ public abstract class BlockBody implements JumpTarget {
             }
             break;
         }
-        
+
         return args;
     }
-    
+
     public static NodeType getArgumentTypeWackyHack(IterNode iterNode) {
         NodeType argsNodeId = null;
         if (iterNode.getVarNode() != null && iterNode.getVarNode().getNodeType() != NodeType.ZEROARGNODE) {
@@ -329,7 +330,7 @@ public abstract class BlockBody implements JumpTarget {
                 }
             }
         }
-        
+
         return argsNodeId;
     }
 
