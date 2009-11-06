@@ -66,7 +66,6 @@ import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -198,9 +197,6 @@ public class RubyClass extends RubyModule {
         }
         public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(-1, -1);
     }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
 
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableAccessors;
@@ -1169,14 +1165,12 @@ public class RubyClass extends RubyModule {
         return reifiedClass;
     }
 
-    private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
-
     public Map<String, List<Map<Class, Map<String,Object>>>> getParameterAnnotations() {
         if (parameterAnnotations == null) return Collections.EMPTY_MAP;
         return parameterAnnotations;
     }
 
-    public void addParameterAnnotation(String method, int i, Class annoClass, Map<String,Object> value) {
+    public synchronized void addParameterAnnotation(String method, int i, Class annoClass, Map<String,Object> value) {
         if (parameterAnnotations == null) parameterAnnotations = new Hashtable<String,List<Map<Class,Map<String,Object>>>>();
         List<Map<Class,Map<String,Object>>> paramList = parameterAnnotations.get(method);
         if (paramList == null) {
@@ -1200,15 +1194,13 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
-
     public Map<String,Map<Class,Map<String,Object>>> getMethodAnnotations() {
         if (methodAnnotations == null) return Collections.EMPTY_MAP;
 
         return methodAnnotations;
     }
 
-    public void addMethodAnnotation(String methodName, Class annotation, Map fields) {
+    public synchronized void addMethodAnnotation(String methodName, Class annotation, Map fields) {
         if (methodAnnotations == null) methodAnnotations = new Hashtable<String,Map<Class,Map<String,Object>>>();
 
         Map<Class,Map<String,Object>> annos = methodAnnotations.get(methodName);
@@ -1220,21 +1212,17 @@ public class RubyClass extends RubyModule {
         annos.put(annotation, fields);
     }
 
-    private Map<String, Class[]> methodSignatures;
-
     public Map<String,Class[]> getMethodSignatures() {
         if (methodSignatures == null) return Collections.EMPTY_MAP;
 
         return methodSignatures;
     }
 
-    public void addMethodSignature(String methodName, Class[] types) {
+    public synchronized void addMethodSignature(String methodName, Class[] types) {
         if (methodSignatures == null) methodSignatures = new Hashtable<String,Class[]>();
 
         methodSignatures.put(methodName, types);
     }
-
-    private Map<Class, Map<String,Object>> classAnnotations;
 
     public Map<Class,Map<String,Object>> getClassAnnotations() {
         if (classAnnotations == null) return Collections.EMPTY_MAP;
@@ -1242,7 +1230,7 @@ public class RubyClass extends RubyModule {
         return classAnnotations;
     }
 
-    public void addClassAnnotation(Class annotation, Map fields) {
+    public synchronized void addClassAnnotation(Class annotation, Map fields) {
         if (classAnnotations == null) classAnnotations = new Hashtable<Class,Map<String,Object>>();
 
         classAnnotations.put(annotation, fields);
@@ -1266,4 +1254,15 @@ public class RubyClass extends RubyModule {
     private CallSite[] extraCallSites;
 
     private Class reifiedClass;
+
+    @SuppressWarnings("unchecked")
+    private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
+
+    private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
+
+    private Map<String, Map<Class, Map<String,Object>>> methodAnnotations;
+
+    private Map<String, Class[]> methodSignatures;
+
+    private Map<Class, Map<String,Object>> classAnnotations;
 }

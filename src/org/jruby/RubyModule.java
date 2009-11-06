@@ -338,16 +338,25 @@ public class RubyModule extends RubyObject {
     public void setParent(RubyModule parent) {
         this.parent = parent;
     }
-
+    
     public Map<String, DynamicMethod> getMethods() {
-        return methods;
+        Map<String, DynamicMethod> methods = this.methods;
+        return methods == null ?
+            DUMMY_METHODS :
+            methods;
+    }
+
+    public synchronized Map<String, DynamicMethod> getMethodsForWrite() {
+        Map<String, DynamicMethod> methods = this.methods;
+        return methods == null ?
+            this.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1) :
+            methods;
     }
     
-
     // note that addMethod now does its own put, so any change made to
     // functionality here should be made there as well 
     private void putMethod(String name, DynamicMethod method) {
-        getMethods().put(name, method);
+        getMethodsForWrite().put(name, method);
     }
 
     /**
@@ -654,7 +663,7 @@ public class RubyModule extends RubyObject {
             return defineAnnotatedMethod(desc, methodFactory);
         } else {
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods);
-            methodDefiningCallback.define(this, desc, dynamicMethod);
+            define(this, desc, dynamicMethod);
             
             return true;
         }
@@ -669,7 +678,7 @@ public class RubyModule extends RubyObject {
                     getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
             JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
-            methodDefiningCallback.define(this, desc, dynamicMethod);
+            define(this, desc, dynamicMethod);
 
             return true;
         }
@@ -684,7 +693,7 @@ public class RubyModule extends RubyObject {
             if(jrubyMethod.compat() == CompatVersion.BOTH ||
                     getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
-            methodDefiningCallback.define(this, desc, dynamicMethod);
+            define(this, desc, dynamicMethod);
 
             return true;
         }
@@ -788,7 +797,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void addMethodInternal(String name, DynamicMethod method) {
-        synchronized(getMethods()) {
+        synchronized(getMethodsForWrite()) {
             addMethodAtBootTimeOnly(name, method);
             invalidateCacheDescendants();
         }
@@ -803,7 +812,7 @@ public class RubyModule extends RubyObject {
      * @param method The method to bind
      */
     public void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
-        getMethods().put(name, method);
+        getMethodsForWrite().put(name, method);
     }
 
     public void removeMethod(ThreadContext context, String name) {
@@ -818,8 +827,8 @@ public class RubyModule extends RubyObject {
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
-        synchronized(getMethods()) {
-            DynamicMethod method = (DynamicMethod) getMethods().remove(name);
+        synchronized(getMethodsForWrite()) {
+            DynamicMethod method = (DynamicMethod) getMethodsForWrite().remove(name);
             if (method == null) {
                 throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
@@ -871,9 +880,23 @@ public class RubyModule extends RubyObject {
     public final Object getCacheToken() {
         return generation.token;
     }
+
+    private final Map<String, CacheEntry> getCachedMethods() {
+        Map<String, CacheEntry> cachedMethods = this.cachedMethods;
+        return cachedMethods == null ?
+            DUMMY_CACHED_METHODS :
+            cachedMethods;
+    }
+
+    private final Map<String, CacheEntry> getCachedMethodsForWrite() {
+        Map<String, CacheEntry> cachedMethods = this.cachedMethods;
+        return cachedMethods == null ?
+            this.cachedMethods = new ConcurrentHashMap<String, CacheEntry>(0, 0.75f, 1) :
+            cachedMethods;
+    }
     
     private CacheEntry cacheHit(String name) {
-        CacheEntry cacheEntry = cachedMethods.get(name);
+        CacheEntry cacheEntry = getCachedMethods().get(name);
 
         if (cacheEntry != null) {
             if (cacheEntry.token == getCacheToken()) {
@@ -886,7 +909,7 @@ public class RubyModule extends RubyObject {
     
     private CacheEntry addToCache(String name, DynamicMethod method, Object token) {
         CacheEntry entry = new CacheEntry(method, token);
-        cachedMethods.put(name, entry);
+        getCachedMethodsForWrite().put(name, entry);
 
         return entry;
     }
@@ -2939,6 +2962,81 @@ public class RubyModule extends RubyObject {
         return getConstantMapForWrite().remove(name);
     }
 
+    private static void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
+        JRubyMethod jrubyMethod = desc.anno;
+        if (jrubyMethod.frame()) {
+            for (String name : jrubyMethod.name()) {
+                ASTInspector.FRAME_AWARE_METHODS.add(name);
+            }
+        }
+        if(jrubyMethod.compat() == CompatVersion.BOTH ||
+                module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
+            RubyModule singletonClass;
+
+            if (jrubyMethod.meta()) {
+                singletonClass = module.getSingletonClass();
+                dynamicMethod.setImplementationClass(singletonClass);
+
+                String baseName;
+                if (jrubyMethod.name().length == 0) {
+                    baseName = desc.name;
+                    singletonClass.addMethod(baseName, dynamicMethod);
+                } else {
+                    baseName = jrubyMethod.name()[0];
+                    for (String name : jrubyMethod.name()) {
+                        singletonClass.addMethod(name, dynamicMethod);
+                    }
+                }
+
+                if (jrubyMethod.alias().length > 0) {
+                    for (String alias : jrubyMethod.alias()) {
+                        singletonClass.defineAlias(alias, baseName);
+                    }
+                }
+            } else {
+                String baseName;
+                if (jrubyMethod.name().length == 0) {
+                    baseName = desc.name;
+                    module.addMethod(baseName, dynamicMethod);
+                } else {
+                    baseName = jrubyMethod.name()[0];
+                    for (String name : jrubyMethod.name()) {
+                        module.addMethod(name, dynamicMethod);
+                    }
+                }
+
+                if (jrubyMethod.alias().length > 0) {
+                    for (String alias : jrubyMethod.alias()) {
+                        module.defineAlias(alias, baseName);
+                    }
+                }
+
+                if (jrubyMethod.module()) {
+                    singletonClass = module.getSingletonClass();
+                    // module/singleton methods are all defined public
+                    DynamicMethod moduleMethod = dynamicMethod.dup();
+                    moduleMethod.setVisibility(PUBLIC);
+
+                    if (jrubyMethod.name().length == 0) {
+                        baseName = desc.name;
+                        singletonClass.addMethod(desc.name, moduleMethod);
+                    } else {
+                        baseName = jrubyMethod.name()[0];
+                        for (String name : jrubyMethod.name()) {
+                            singletonClass.addMethod(name, moduleMethod);
+                        }
+                    }
+
+                    if (jrubyMethod.alias().length > 0) {
+                        for (String alias : jrubyMethod.alias()) {
+                            singletonClass.defineAlias(alias, baseName);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
 
     public final int id;
@@ -2951,100 +3049,25 @@ public class RubyModule extends RubyObject {
     protected String classId;
 
     private static final Map<String, IRubyObject> DUMMY_CONSTANTS = Collections.unmodifiableMap(new HashMap(0));
+    private static final Map<String, CacheEntry> DUMMY_CACHED_METHODS = Collections.unmodifiableMap(new HashMap(0));
+    private static final Map<String, DynamicMethod> DUMMY_METHODS = Collections.unmodifiableMap(new HashMap(0));
 
     private volatile Map<String, IRubyObject> constants;
-    private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(4, 0.9f, 1);
-    private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(4, 0.75f, 1);
+    private volatile Map<String, DynamicMethod> methods;
+    private Map<String, CacheEntry> cachedMethods;
     protected final Generation generation;
 
-    protected Set<RubyClass> includingHierarchies;
+    protected volatile Set<RubyClass> includingHierarchies;
 
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax.
     private transient List<ClassProvider> classProviders;
 
-    private volatile String bareName;
-    private volatile String fullName;
+    private String bareName;
+    private String fullName;
 
     // superClass may be null.
     protected RubyClass superClass;
 
     public int index;
-
-    private static MethodFactory.MethodDefiningCallback methodDefiningCallback = new MethodFactory.MethodDefiningCallback() {
-        public void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
-            JRubyMethod jrubyMethod = desc.anno;
-            if (jrubyMethod.frame()) {
-                for (String name : jrubyMethod.name()) {
-                    ASTInspector.FRAME_AWARE_METHODS.add(name);
-                }
-            }
-            if(jrubyMethod.compat() == CompatVersion.BOTH ||
-                    module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
-                RubyModule singletonClass;
-
-                if (jrubyMethod.meta()) {
-                    singletonClass = module.getSingletonClass();
-                    dynamicMethod.setImplementationClass(singletonClass);
-
-                    String baseName;
-                    if (jrubyMethod.name().length == 0) {
-                        baseName = desc.name;
-                        singletonClass.addMethod(baseName, dynamicMethod);
-                    } else {
-                        baseName = jrubyMethod.name()[0];
-                        for (String name : jrubyMethod.name()) {
-                            singletonClass.addMethod(name, dynamicMethod);
-                        }
-                    }
-
-                    if (jrubyMethod.alias().length > 0) {
-                        for (String alias : jrubyMethod.alias()) {
-                            singletonClass.defineAlias(alias, baseName);
-                        }
-                    }
-                } else {
-                    String baseName;
-                    if (jrubyMethod.name().length == 0) {
-                        baseName = desc.name;
-                        module.addMethod(baseName, dynamicMethod);
-                    } else {
-                        baseName = jrubyMethod.name()[0];
-                        for (String name : jrubyMethod.name()) {
-                            module.addMethod(name, dynamicMethod);
-                        }
-                    }
-
-                    if (jrubyMethod.alias().length > 0) {
-                        for (String alias : jrubyMethod.alias()) {
-                            module.defineAlias(alias, baseName);
-                        }
-                    }
-
-                    if (jrubyMethod.module()) {
-                        singletonClass = module.getSingletonClass();
-                        // module/singleton methods are all defined public
-                        DynamicMethod moduleMethod = dynamicMethod.dup();
-                        moduleMethod.setVisibility(PUBLIC);
-
-                        if (jrubyMethod.name().length == 0) {
-                            baseName = desc.name;
-                            singletonClass.addMethod(desc.name, moduleMethod);
-                        } else {
-                            baseName = jrubyMethod.name()[0];
-                            for (String name : jrubyMethod.name()) {
-                                singletonClass.addMethod(name, moduleMethod);
-                            }
-                        }
-
-                        if (jrubyMethod.alias().length > 0) {
-                            for (String alias : jrubyMethod.alias()) {
-                                singletonClass.defineAlias(alias, baseName);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    };
 }

@@ -113,6 +113,11 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
+    public Map<String, DynamicMethod> getMethodsForWrite() {
+        return delegate.getMethodsForWrite();
+    }
+
+    @Override
     public void addMethod(String name, DynamicMethod method) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
