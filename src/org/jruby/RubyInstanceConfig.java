@@ -228,6 +228,9 @@ public class RubyInstanceConfig {
     public static final boolean DEBUG_LOAD_SERVICE
             = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
 
+    public static final boolean DEBUG_LAUNCHING
+            = SafePropertyAccessor.getBoolean("jruby.debug.launch", false);
+
     public static final boolean JUMPS_HAVE_BACKTRACE
             = SafePropertyAccessor.getBoolean("jruby.jump.backtrace", false);
 
@@ -510,7 +513,12 @@ public class RubyInstanceConfig {
                 .append("    jruby.debug.loadService=true|false\n")
                 .append("       Log the process of locating and loading libraries. Default is false.\n")
                 .append("    jruby.jump.backtrace=true|false\n")
-                .append("       Make non-local flow jumps generate backtraces. Default is false.\n");
+                .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
+                .append("\nDEBUGGING/LOGGING:\n")
+                .append("    jruby.debug.loadService=true|false\n")
+                .append("       LoadService logging\n")
+                .append("    jruby.debug.launch=true|false\n")
+                .append("       ShellLauncher logging\n");
 
         return sb.toString();
     }

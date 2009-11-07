@@ -6,11 +6,17 @@ module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
-  RUBY = [Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']].join(SEPARATOR)
-  
-  arch = java.lang.System.getProperty('sun.arch.data.model')
-  WINDOWS_JVM_64 = (WINDOWS && arch == '64')
-  
+  RUBY = File.join([Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']]) << Config::CONFIG['EXEEXT']
+
+  if (WINDOWS)
+    RUBY.gsub!('/', '\\')
+  end
+
+  if defined? JRUBY_VERSION
+    arch = java.lang.System.getProperty('sun.arch.data.model')
+    WINDOWS_JVM_64 = (WINDOWS && arch == '64')
+  end
+
   IBM_JVM = Config::CONFIG['host_vendor'] =~ /IBM Corporation/
 
   def q

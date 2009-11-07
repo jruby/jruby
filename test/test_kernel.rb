@@ -1,7 +1,46 @@
 require 'test/unit'
 require 'rbconfig'
+require 'test/test_helper'
+require 'pathname'
 
 class TestKernel < Test::Unit::TestCase
+  include TestHelper
+
+  def log(msg)
+    $stderr.puts msg if $VERBOSE
+  end
+
+  _DIR_ = File.expand_path(File.join(File.dirname(__FILE__), 'testapp'))
+
+  if (WINDOWS)
+    # the testapp.exe exists for sure, it is pre-built
+    TESTAPP_EXISTS = true
+  else
+    Dir.chdir(_DIR_) {
+      file = File.join(_DIR_, 'testapp')
+      `gcc testapp.c -o testapp` unless (File.exist?(file))
+       TESTAPP_EXISTS = File.exist?(file)
+    }
+  end
+
+  TESTAPP_REL = File.join(File.join(File.dirname(__FILE__), 'testapp'), 'testapp')
+  TESTAPP_REL_NONORM = File.join(File.join(File.join(File.join(File.dirname(__FILE__), 'testapp'), '..'), 'testapp'), 'testapp')
+  TESTAPP = File.expand_path(TESTAPP_REL)
+  TESTAPP_NONORM = File.join(File.join(File.join(_DIR_, '..'), 'testapp'), 'testapp')
+
+  # TODO: path with spaces!
+  TESTAPPS = [] << TESTAPP_REL << TESTAPP << TESTAPP_REL_NONORM << TESTAPP_NONORM
+
+  if WINDOWS
+    TESTAPPS << TESTAPP_REL + ".exe"
+    TESTAPPS << (TESTAPP_REL + ".exe").gsub('/', '\\')
+    TESTAPPS << TESTAPP_REL + ".bat"
+    TESTAPPS << (TESTAPP_REL + ".bat").gsub('/', '\\')
+    TESTAPPS << TESTAPP + ".exe"
+    TESTAPPS << (TESTAPP + ".exe").gsub('/', '\\')
+    TESTAPPS << TESTAPP + ".bat"
+    TESTAPPS << (TESTAPP + ".bat").gsub('/', '\\')
+  end
 
   def test_stuff_seemingly_out_of_context
     assert !Kernel.eval("defined? some_unknown_variable")
@@ -371,14 +410,247 @@ class TestKernel < Test::Unit::TestCase
       assert_equal true, system('echo > /dev/null')
     end
   end
-  
+
+  def test_system_empty
+    assert_equal false, system('')
+  end
+
+  def test_system_existing
+    if (WINDOWS)
+      res = system('cd')
+    else
+      res = system('pwd')
+    end
+    assert_equal true, res
+  end
+
+  def test_system_existing_with_leading_space
+    if (WINDOWS)
+      res = system(' cd')
+    else
+      res = system(' pwd')
+    end
+    assert_equal true, res
+  end
+
+  def test_system_existing_with_trailing_space
+    if (WINDOWS)
+      res = system('cd ')
+    else
+      res = system('pwd ')
+    end
+    assert_equal true, res
+  end
+
+  def test_system_non_existing
+    res =  system('program-that-doesnt-exist-for-sure')
+    assert_equal false, res
+  end
+
+  def test_system_existing_with_arg
+    if (WINDOWS)
+      res = system('cd .')
+    else
+      res = system('pwd .')
+    end
+    assert_equal true, res
+  end
+
+  def test_system_non_existing_with_arg
+    res = system('program-that-doesnt-exist-for-sure .')
+    assert_equal false, res
+  end
+
+  def test_system_non_existing_with_args
+    res = system('program-that-doesnt-exist-for-sure','arg1','arg2')
+    assert_equal false, res
+  end
+
+  def test_exec_empty
+      assert_raise(Errno::ENOENT) {
+        exec("")
+      }
+  end
+
+  def test_exec_non_existing
+    assert_raise(Errno::ENOENT) {
+      exec("program-that-doesnt-exist-for-sure")
+    }
+  end
+
+  def test_exec_non_existing_with_args
+    assert_raise(Errno::ENOENT) {
+      exec("program-that-doesnt-exist-for-sure", "arg1", "arg2")
+    }
+  end
+
+  def test_backquote1
+    if (WINDOWS)
+      result = `cmd /c cd`.strip.gsub('\\', '/')
+    else
+      result = `sh -c pwd`.strip
+    end
+    expected = Dir.pwd
+    assert_equal(expected, result)
+  end
+
+  def test_backquote1_1
+    if (WINDOWS)
+      result = `cmd.exe /c cd`.strip.gsub('\\', '/')
+    else
+      result = `pwd`.strip
+    end
+    expected = Dir.pwd
+    assert_equal(expected, result)
+  end
+
+  def test_backquote2
+    TESTAPPS.each { |app|
+      if (app =~ /\/.*\.bat/ && Pathname.new(app).relative?)
+        # MRI can't launch relative BAT files with / in their paths
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app}`.strip
+      assert_equal('NO_ARGS', result, "Can't properly launch '#{app}'")
+    }
+  end
+
+  def test_backquote2_1
+    TESTAPPS.each { |app|
+      if (app =~ /\/.*\.bat/ && Pathname.new(app).relative?)
+        # MRI can't launch relative BAT files with / in their paths
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app} one`.strip
+      assert_equal('one', result, "Can't properly launch '#{app}'")
+    }
+  end
+
+  def test_backquote3
+    TESTAPPS.each { |app|
+      if (app =~ /\// && Pathname.new(app).relative? && WINDOWS)
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app} 2>&1`.strip
+      assert_equal("NO_ARGS", result, "Can't properly launch '#{app}'")
+    }
+  end
+
+  def test_backquote3_1
+    TESTAPPS.each { |app|
+      if (app =~ /\// && Pathname.new(app).relative? && WINDOWS)
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app} one 2>&1`.strip
+      assert_equal("one", result, "Can't properly launch '#{app}'")
+    }
+  end
+
+  def test_backquote3_2
+    TESTAPPS.each { |app|
+      if (app =~ /\// && Pathname.new(app).relative? && WINDOWS)
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app} one two three 2>&1`.strip.split(/[\r\n]+/)
+      assert_equal(%w[one two three], result, "Can't properly launch '#{app}'")
+
+      # TODO: \r\n vs \n
+      # result = `#{app} one two three 2>&1`.strip
+      # assert_equal("one\ntwo\nthree", result, "Can't properly launch '#{app}'")
+    }
+  end
+
+  def test_backquote4
+    TESTAPPS.each { |app|
+      if (app =~ /\/.*\.bat/ && Pathname.new(app).relative?)
+        # MRI can't launch relative BAT files with / in their paths
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app} "" two`.split(/[\r\n]+/)
+      assert_equal(["", "two"], result, "Can't properly launch '#{app}'")
+
+      result = `#{app} ""`.chomp
+      assert_equal('', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} "   "`.chomp
+      assert_equal('   ', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a""`.chomp
+      assert_equal('a', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a" "`.chomp
+      assert_equal('a ', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} ""b`.chomp
+      assert_equal('b', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} " "b`.chomp
+      assert_equal(' b', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a""b`.chomp
+      assert_equal('ab', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a"   "b`.chomp
+      assert_equal('a   b', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a"   "b"  "c`.chomp
+      assert_equal('a   b  c', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a"   "b""c`.chomp
+      assert_equal('a   bc', result, "Can't properly launch '#{app}'")
+    }
+  end
+
+  def test_backquote4_1
+    TESTAPPS.each { |app|
+      if (app =~ /\// && Pathname.new(app).relative? && WINDOWS)
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
+
+      result = `#{app} "   " 2>&1`.chomp
+      assert_equal('   ', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a"" 2>&1`.strip
+      assert_equal('a', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} ""b 2>&1`.strip
+      assert_equal('b', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a""b 2>&1`.strip
+      assert_equal('ab', result, "Can't properly launch '#{app}'")
+
+      result = `#{app} a"   "b 2>&1`.strip
+      assert_equal('a   b', result, "Can't properly launch '#{app}'")
+    }
+  end
+
   def test_test
     assert "Test file existence", test(?f, "README")
     assert "Test file non-existence", !test(?f, "READMEaewertsert45t4w5tgrsfdgrf")
     # Make sure that absolute paths work for testing
     assert "Test should handle absolute paths", test(?f, File.expand_path("README"))
   end
-  
+
 #  test
 #  trace_var
 #  trap

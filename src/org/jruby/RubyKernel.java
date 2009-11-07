@@ -1299,16 +1299,22 @@ public class RubyKernel {
     @JRubyMethod(name = "`", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject aString) {
         Ruby runtime = context.getRuntime();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        
         RubyString string = aString.convertToString();
-        int resultCode = ShellLauncher.runAndWait(runtime, new IRubyObject[] {string}, output);
-        
+        IRubyObject[] args = new IRubyObject[] {string};
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        int resultCode;
+
+        try {
+            // NOTE: not searching executable path before invoking args
+            resultCode = ShellLauncher.runAndWait(runtime, args, output, false);
+        } catch (Exception e) {
+            resultCode = 127;
+        }
+
         runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
-        
         return RubyString.newStringNoCopy(runtime, output.toByteArray());
     }
-    
+
     @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
     public static RubyInteger srand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
@@ -1380,11 +1386,13 @@ public class RubyKernel {
     public static RubyBoolean system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         int resultCode;
+
         try {
             resultCode = ShellLauncher.runAndWait(runtime, args);
         } catch (Exception e) {
             resultCode = 127;
         }
+
         runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
@@ -1403,6 +1411,8 @@ public class RubyKernel {
             // TODO: exec should replace the current process.
             // This could be possible with JNA. 
             resultCode = ShellLauncher.execAndWait(runtime, args);
+        } catch (RaiseException e) {
+            throw e; // no need to wrap this exception
         } catch (Exception e) {
             throw runtime.newErrnoENOENTError("cannot execute");
         }

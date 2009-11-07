@@ -43,9 +43,12 @@ import java.lang.reflect.Field;
 import static java.lang.System.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.jruby.Main;
 import org.jruby.Ruby;
@@ -53,6 +56,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.ext.posix.POSIX;
 import org.jruby.ext.posix.util.FieldAccess;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -67,6 +71,31 @@ import org.jruby.util.io.ModeFlags;
  */
 public class ShellLauncher {
     private static final boolean DEBUG = false;
+
+    private static final String PATH_ENV = "PATH";
+    private static final String HOME_ENV = "HOME";
+
+    // from MRI -- note the unixy file separators
+    private static final String[] DEFAULT_PATH =
+        { "/usr/local/bin", "/usr/ucb", "/usr/bin", "/bin" };
+
+    private static final String[] WINDOWS_EXE_SUFFIXES =
+        { ".exe", ".com", ".cmd", ".bat" };
+
+    private static final String[] WINDOWS_INTERNAL_CMDS = {
+        "assoc", "break", "call", "cd", "chcp",
+        "chdir", "cls", "color", "copy", "ctty", "date", "del", "dir", "echo", "endlocal",
+        "erase", "exit", "for", "ftype", "goto", "if", "lfnfor", "lh", "lock", "md", "mkdir",
+        "move", "path", "pause", "popd", "prompt", "pushd", "rd", "rem", "ren", "rename",
+        "rmdir", "set", "setlocal", "shift", "start", "time", "title", "truename", "type",
+        "unlock", "ver", "verify", "vol", };
+
+    // TODO: better check is needed, with quoting/escaping
+    private static final Pattern SHELL_METACHARACTER_PATTERN =
+        Pattern.compile("[*?{}\\[\\]<>()~&|$;'`\\\\\"\\n]");
+
+    private static final Pattern WIN_ENVVAR_PATTERN = Pattern.compile("%\\w+%");
+
     private static class ScriptThreadProcess extends Process implements Runnable {
         private final String[] argArray;
         private final String[] env;
@@ -75,12 +104,12 @@ public class ShellLauncher {
         private final PipedInputStream processOutput;
         private final PipedInputStream processError;
         private final PipedOutputStream processInput;
-        
+
         private RubyInstanceConfig config;
         private Thread processThread;
         private int result;
         private Ruby parentRuntime;
-        
+
         public ScriptThreadProcess(Ruby parentRuntime, final String[] argArray, final String[] env, final File dir) {
             this(parentRuntime, argArray, env, dir, true);
         }
@@ -175,7 +204,6 @@ public class ShellLauncher {
             try { processError.close(); } catch (IOException io) {}
         }
     }
-    
 
     private static String[] getCurrentEnv(Ruby runtime) {
         RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
@@ -190,6 +218,119 @@ public class ShellLauncher {
         return ret;
     }
 
+    private static boolean filenameIsPathSearchable(String fname, boolean forExec) {
+        boolean isSearchable = true;
+        if (fname.startsWith("/")   ||
+            fname.startsWith("./")  ||
+            fname.startsWith("../") ||
+            (forExec && (fname.indexOf("/") != -1))) {
+            isSearchable = false;
+        }
+        if (Platform.IS_WINDOWS) {
+            if (fname.startsWith("\\")  ||
+                fname.startsWith(".\\") ||
+                fname.startsWith("..\\") ||
+                ((fname.length() > 2) && fname.startsWith(":",1)) ||
+                (forExec && (fname.indexOf("\\") != -1))) {
+                isSearchable = false;
+            }
+        }
+        return isSearchable;
+    }
+
+    private static File tryFile(Ruby runtime, String fdir, String fname) {
+        File pathFile = (fdir == null) ?
+                new File(fname) : new File(fdir, fname);
+
+        log(runtime, "Trying file " + pathFile);
+        if (pathFile.exists()) {
+            return pathFile;
+        } else {
+            return null;
+        }
+    }
+
+    private static boolean withExeSuffix(String fname) {
+        for (String suffix : WINDOWS_EXE_SUFFIXES) {
+            if (fname.endsWith(suffix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec) {
+        File validFile = null;
+        if (isExec && Platform.IS_WINDOWS) {
+            if (withExeSuffix(fname)) {
+                validFile = tryFile(runtime, fdir, fname);
+            } else {
+                for (String suffix: WINDOWS_EXE_SUFFIXES) {
+                    validFile = tryFile(runtime, fdir, fname + suffix);
+                    if (validFile != null) {
+                        // found a valid file, no need to search further
+                        break;
+                    }
+                }
+            }
+        } else {
+            File pathFile = tryFile(runtime, fdir, fname);
+            if (pathFile != null) {
+                if (isExec) {
+                    if (!pathFile.isDirectory()) {
+                        String pathFileStr = pathFile.getAbsolutePath();
+                        POSIX posix = runtime.getPosix();
+                        if (posix.stat(pathFileStr).isExecutable()) {
+                            validFile = pathFile;
+                        }
+                    }
+                } else {
+                    validFile = pathFile;
+                }
+            }
+        }
+        return validFile;
+    }
+
+    private static File isValidFile(Ruby runtime, String fname, boolean isExec) {
+        String fdir = null;
+        return isValidFile(runtime, fdir, fname, isExec);
+    }
+
+    private static File findPathFile(Ruby runtime, String fname, String[] path, boolean isExec) {
+        File pathFile = null;
+        boolean doPathSearch = filenameIsPathSearchable(fname, isExec);
+        if (doPathSearch) {
+            // TODO: not used
+            String pathSeparator = System.getProperty("path.separator");
+            for (String fdir: path) {
+                // NOTE: Jruby's handling of tildes is more complete than
+                //       MRI's, which can't handle user names after the tilde
+                //       when searching the executable path
+                pathFile = isValidFile(runtime, fdir, fname, isExec);
+                if (pathFile != null) {
+                    break;
+                }
+            }
+        } else {
+            pathFile = isValidFile(runtime, fname, isExec);
+        }
+        return pathFile;
+    }
+
+    private static File findPathExecutable(Ruby runtime, String fname) {
+        String path = System.getenv(PATH_ENV);
+        String[] pathNodes = null;
+        if (path == null) {
+            pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
+        }
+        else {
+            String pathSeparator = System.getProperty("path.separator");
+            pathNodes = path.split(pathSeparator);
+        }
+        return findPathFile(runtime, fname, pathNodes, true);
+    }
+
     public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs) {
         return runAndWait(runtime, rawArgs, runtime.getOutputStream());
     }
@@ -199,27 +340,19 @@ public class ShellLauncher {
     }
 
     public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs) {
-        String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
-        if (shouldRunInProcess(runtime, args)) {
-            // exec needs to behave differently in-process, because it's technically
-            // supposed to replace the calling process. So if we're supposed to run
-            // in-process, we allow it to use the default streams and not use
-            // pumpers at all. See JRUBY-2156 and JRUBY-2154.
+        File pwd = new File(runtime.getCurrentDirectory());
+        LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
+
+        if (cfg.shouldRunInProcess()) {
+            log(runtime, "ExecAndWait in-process");
             try {
-                File pwd = new File(runtime.getCurrentDirectory());
-                String command = args[0];
-                // snip off ruby or jruby command from list of arguments
-                // leave alone if the command is the name of a script
-                int startIndex = command.endsWith(".rb") ? 0 : 1;
-                if (command.trim().endsWith("irb")) {
-                    startIndex = 0;
-                    args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
-                }
-                String[] newargs = new String[args.length - startIndex];
-                System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-                ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime, newargs, getCurrentEnv(runtime), pwd, false);
+                // exec needs to behave differently in-process, because it's technically
+                // supposed to replace the calling process. So if we're supposed to run
+                // in-process, we allow it to use the default streams and not use
+                // pumpers at all. See JRUBY-2156 and JRUBY-2154.
+                ScriptThreadProcess ipScript = new ScriptThreadProcess(
+                        runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd, false);
                 ipScript.start();
-                
                 return ipScript.waitFor();
             } catch (IOException e) {
                 throw runtime.newIOErrorFromException(e);
@@ -232,10 +365,14 @@ public class ShellLauncher {
     }
 
     public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
+        return runAndWait(runtime, rawArgs, output, true);
+    }
+
+    public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output, boolean doExecutableSearch) {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
         try {
-            Process aProcess = run(runtime, rawArgs);
+            Process aProcess = run(runtime, rawArgs, doExecutableSearch);
             handleStreams(runtime, aProcess, input, output, error);
             return aProcess.waitFor();
         } catch (IOException e) {
@@ -365,7 +502,7 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject string) throws IOException {
-        return run(runtime, new IRubyObject[] {string});
+        return run(runtime, new IRubyObject[] {string}, false);
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
@@ -375,7 +512,7 @@ public class ShellLauncher {
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
         return new POpenProcess(popenShared(runtime, strings), runtime);
     }
-    
+
     private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
         String shell = getShell(runtime);
         Process childProcess = null;
@@ -394,15 +531,15 @@ public class ShellLauncher {
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
             childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);
         }
-        
+
         return childProcess;
     }
-    
+
     /**
      * Unwrap all filtering streams between the given stream and its actual
      * unfiltered stream. This is primarily to unwrap streams that have
      * buffers that would interfere with interactivity.
-     * 
+     *
      * @param filteredStream The stream to unwrap
      * @return An unwrapped stream, presumably unbuffered
      */
@@ -418,12 +555,12 @@ public class ShellLauncher {
         }
         return filteredStream;
     }
-    
+
     /**
      * Unwrap all filtering streams between the given stream and its actual
      * unfiltered stream. This is primarily to unwrap streams that have
      * buffers that would interfere with interactivity.
-     * 
+     *
      * @param filteredStream The stream to unwrap
      * @return An unwrapped stream, presumably unbuffered
      */
@@ -439,12 +576,12 @@ public class ShellLauncher {
         }
         return filteredStream;
     }
-    
+
     public static class POpenProcess extends Process {
         private final Process child;
         private final Ruby runtime;
         private final ModeFlags modes;
-        
+
         private InputStream input;
         private OutputStream output;
         private InputStream inerr;
@@ -454,12 +591,12 @@ public class ShellLauncher {
         private Pumper inputPumper;
         private Pumper inerrPumper;
         private Pumper outputPumper;
-        
+
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
             this.runtime = runtime;
             this.modes = modes;
-            
+
             if (modes.isWritable()) {
                 prepareOutput(child);
             } else {
@@ -468,21 +605,21 @@ public class ShellLauncher {
                 // problems for IRB etc using stdin.
                 try {child.getOutputStream().close();} catch (IOException ioe) {}
             }
-            
+
             if (modes.isReadable()) {
                 prepareInput(child);
             } else {
                 pumpInput(child, runtime);
             }
-            
+
             pumpInerr(child, runtime);
         }
-        
+
         public POpenProcess(Process child, Ruby runtime) {
             this.child = child;
             this.runtime = runtime;
             this.modes = null;
-            
+
             prepareOutput(child);
             prepareInput(child);
             prepareInerr(child);
@@ -502,15 +639,15 @@ public class ShellLauncher {
         public InputStream getErrorStream() {
             return inerr;
         }
-        
+
         public FileChannel getInput() {
             return inputChannel;
         }
-        
+
         public FileChannel getOutput() {
             return outputChannel;
         }
-        
+
         public FileChannel getError() {
             return inerrChannel;
         }
@@ -534,9 +671,9 @@ public class ShellLauncher {
             } else {
                 outputPumper.quit();
             }
-            
+
             int result = child.waitFor();
-            
+
             return result;
         }
 
@@ -554,7 +691,7 @@ public class ShellLauncher {
                 if (inputChannel != null) inputChannel.close();
                 if (inerrChannel != null) inerrChannel.close();
                 if (outputChannel != null) outputChannel.close();
-                
+
                 // processes seem to have some peculiar locking sequences, so we
                 // need to ensure nobody is trying to close/destroy while we are
                 synchronized (this) {
@@ -645,38 +782,281 @@ public class ShellLauncher {
             inerrChannel = null;
         }
     }
-    
-    public static Process run(Ruby runtime, IRubyObject[] rawArgs) throws IOException {
-        String shell = getShell(runtime);
+
+    private static class LaunchConfig {
+        LaunchConfig(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) {
+            this.runtime = runtime;
+            this.rawArgs = rawArgs;
+            this.doExecutableSearch = doExecutableSearch;
+            shell = getShell(runtime);
+            args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
+        }
+
+        /**
+         * Only run an in-process script if the script name has "ruby", ".rb",
+         * or "irb" in the name.
+         */
+        private boolean shouldRunInProcess() {
+            if (!runtime.getInstanceConfig().isRunRubyInProcess()) {
+                return false;
+            }
+
+            // Check for special shell characters [<>|] at the beginning
+            // and end of each command word and don't run in process if we find them.
+            for (int i = 0; i < args.length; i++) {
+                String c = args[i];
+                if (c.trim().length() == 0) {
+                    continue;
+                }
+                char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
+                for (int j = 0; j < firstLast.length; j++) {
+                    switch (firstLast[j]) {
+                    case '<': case '>': case '|': case ';':
+                    case '*': case '?': case '{': case '}':
+                    case '[': case ']': case '(': case ')':
+                    case '~': case '&': case '$': case '"':
+                    case '`': case '\n': case '\\': case '\'':
+                        return false;
+                    case '2':
+                        if(c.length() > 1 && c.charAt(1) == '>') {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            String command = args[0];
+            String[] slashDelimitedTokens = command.split("/");
+            String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
+            int indexOfRuby = finalToken.indexOf("ruby");
+            boolean inProc = ((indexOfRuby != -1 && indexOfRuby == (finalToken.length() - 4))
+                    || finalToken.endsWith(".rb")
+                    || finalToken.endsWith("irb"));
+
+            if (!inProc) {
+                return false;
+            } else {
+                // snip off ruby or jruby command from list of arguments
+                // leave alone if the command is the name of a script
+                int startIndex = command.endsWith(".rb") ? 0 : 1;
+                if (command.trim().endsWith("irb")) {
+                    startIndex = 0;
+                    args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
+                }
+                execArgs = new String[args.length - startIndex];
+                System.arraycopy(args, startIndex, execArgs, 0, execArgs.length);
+                return true;
+            }
+        }
+
+        /**
+         * This hack is to work around a problem with cmd.exe on windows where it can't
+         * interpret a filename with spaces in the first argument position as a command.
+         * In that case it's better to try passing the bare arguments to runtime.exec.
+         * On all other platforms we'll always run the command in the shell.
+         */
+        private boolean shouldRunInShell() {
+            if (rawArgs.length != 1) {
+                // this is the case when exact executable and its parameters passed,
+                // in such cases MRI just executes it, without any shell.
+                return false;
+            }
+
+            // in one-arg form, we always use shell, except for Windows
+            if (!Platform.IS_WINDOWS) return true;
+
+            // now, deal with Windows
+            if (shell == null) return false;
+
+            // TODO: Better name for the method
+            // Essentially, we just check for shell meta characters.
+            // TODO: we use args here and rawArgs in upper method.
+            for (String arg : args) {
+                if (!shouldVerifyPathExecutable(arg.trim())) {
+                    return true;
+                }
+            }
+
+            // OK, so no shell meta-chars, now check that the command does exist
+            executable = args[0].trim();
+            executableFile = findPathExecutable(runtime, executable);
+
+            // if the executable exists, start it directly with no shell
+            if (executableFile != null) {
+                log(runtime, "Got it: " + executableFile);
+                if (isBatch(executableFile)) {
+                    log(runtime, "This is a BAT/CMD file, will start in shell");
+                    return true;
+                }
+                return false;
+            } else {
+                log(runtime, "Didn't find executable: " + executable);
+            }
+
+            if (isCmdBuiltin(executable)) {
+                cmdBuiltin = true;
+                return true;
+            }
+
+            // TODO: maybe true here?
+            return false;
+        }
+
+        private void verifyExecutableForShell() {
+            String cmdline = rawArgs[0].toString().trim();
+            if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
+                verifyExecutable();
+            }
+
+            // prepare exec args
+            // TODO: can we use args instead of rawArgs?
+            // they hang on non-Windows...
+            execArgs = new String[3];
+            execArgs[0] = shell;
+            execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
+            execArgs[2] = rawArgs[0].toString().trim();
+            // System.arraycopy(args, 0, execArgs, 2, args.length);
+        }
+
+        private void verifyExecutableForDirect() {
+            verifyExecutable();
+            execArgs = args;
+            try {
+                execArgs[0] = executableFile.getCanonicalPath();
+            } catch (IOException ioe) {
+                // can't get the canonical path, will use as-is
+            }
+        }
+
+        private void verifyExecutable() {
+            if (executableFile == null) {
+                if (executable == null) {
+                    executable = args[0].trim();
+                }
+                executableFile = findPathExecutable(runtime, executable);
+            }
+            if (executableFile == null) {
+                throw runtime.newErrnoENOENTError(executable);
+            }
+        }
+
+        private String[] getExecArgs() {
+            return execArgs;
+        }
+
+        private static boolean isBatch(File f) {
+            String path = f.getPath();
+            return (path.endsWith(".bat") || path.endsWith(".cmd"));
+        }
+
+        private boolean isCmdBuiltin(String cmd) {
+            if (!shell.endsWith("sh")) { // assume cmd.exe
+                int idx = Arrays.binarySearch(WINDOWS_INTERNAL_CMDS, cmd.toLowerCase());
+                if (idx >= 0) {
+                    log(runtime, "Found Windows shell's built-in command: " + cmd);
+                    // Windows shell internal command, launch in shell then
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Checks a command string to determine if it has I/O redirection
+         * characters that require it to be executed by a command interpreter.
+         */
+        private static boolean hasRedirection(String cmdline) {
+            if (Platform.IS_WINDOWS) {
+                 // Scan the string, looking for redirection characters (< or >), pipe
+                 // character (|) or newline (\n) that are not in a quoted string
+                 char quote = '\0';
+                 for (int idx = 0; idx < cmdline.length();) {
+                     char ptr = cmdline.charAt(idx);
+                     switch (ptr) {
+                     case '\'':
+                     case '\"':
+                         if (quote == '\0')
+                             quote = ptr;
+                         else if (quote == ptr)
+                             quote = '\0';
+                         idx++;
+                         break;
+                     case '>':
+                     case '<':
+                     case '|':
+                     case '\n':
+                         if (quote == '\0') {
+                             return true;
+                         }
+                         idx++;
+                         break;
+                     case '%':
+                         // detect Windows environment variables: %ABC%
+                         Matcher envVarMatcher = WIN_ENVVAR_PATTERN.matcher(cmdline.substring(idx));
+                         if (envVarMatcher.find()) {
+                             return true;
+                         } else {
+                             idx++;
+                         }
+                         break;
+                     case '\\':
+                         // slash serves as escape character
+                         idx++;
+                     default:
+                         idx++;
+                         break;
+                     }
+                 }
+                 return false;
+            } else {
+                // TODO: better check here needed, with quoting/escaping
+                Matcher metaMatcher = SHELL_METACHARACTER_PATTERN.matcher(cmdline);
+                return metaMatcher.find();
+            }
+        }
+
+        // Should we try to verify the path executable, or just punt to the shell?
+        private static boolean shouldVerifyPathExecutable(String cmdline) {
+            boolean verifyPathExecutable = true;
+            if (hasRedirection(cmdline)) {
+                return false;
+            }
+            return verifyPathExecutable;
+        }
+
+        private Ruby runtime;
+        private boolean doExecutableSearch;
+        private IRubyObject[] rawArgs;
+        private String shell;
+        private String[] args;
+        private String[] execArgs;
+        private boolean cmdBuiltin = false;
+
+        private String executable;
+        private File executableFile;
+    }
+
+    public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
         Process aProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
-        String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
+        LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
-        if (shouldRunInProcess(runtime, args)) {
-            String command = args[0];
-            // snip off ruby or jruby command from list of arguments
-            // leave alone if the command is the name of a script
-            int startIndex = command.endsWith(".rb") ? 0 : 1;
-            if (command.trim().endsWith("irb")) {
-                startIndex = 0;
-                args[0] = runtime.getJRubyHome() + File.separator + "bin" + File.separator + "jirb";
-            }
-            String[] newargs = new String[args.length - startIndex];
-            System.arraycopy(args, startIndex, newargs, 0, newargs.length);
-            ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime, newargs, getCurrentEnv(runtime), pwd);
+        if (cfg.shouldRunInProcess()) {
+            log(runtime, "Launching in-process");
+            ScriptThreadProcess ipScript = new ScriptThreadProcess(
+                    runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
             ipScript.start();
-            aProcess = ipScript;
-        } else if (rawArgs.length == 1 && shouldRunInShell(shell, args)) {
+            return ipScript;
+        } else if (cfg.shouldRunInShell()) {
+            log(runtime, "Launching with shell");
             // execute command with sh -c
             // this does shell expansion of wildcards
-            String[] argArray = new String[3];
-            String cmdline = rawArgs[0].toString();
-            argArray[0] = shell;
-            argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-            argArray[2] = cmdline;
-            aProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
+            cfg.verifyExecutableForShell();
+            aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
         } else {
-            aProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);        
+            log(runtime, "Launching directly (no shell)");
+            cfg.verifyExecutableForDirect();
+            aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
         }
         return aProcess;
     }
@@ -696,7 +1076,7 @@ public class ShellLauncher {
         private final Slave slave;
         private volatile boolean quit;
         private final Ruby runtime;
-        
+
         StreamPumper(Ruby runtime, InputStream in, OutputStream out, boolean avail, Slave slave, Object sync) {
             this.in = in;
             this.out = out;
@@ -727,14 +1107,14 @@ public class ShellLauncher {
                     if (onlyIfAvailable && !hasReadSomething) {
                         if (in.available() == 0) {
                             synchronized (waitLock) {
-                                waitLock.wait(10);                                
+                                waitLock.wait(10);
                             }
                             continue;
                         } else {
                             hasReadSomething = true;
                         }
                     }
-                    
+
                     if ((numRead = in.read(buf)) == -1) {
                         break;
                     }
@@ -760,7 +1140,7 @@ public class ShellLauncher {
         public void quit() {
             this.quit = true;
             synchronized (waitLock) {
-                waitLock.notify();                
+                waitLock.notify();
             }
         }
     }
@@ -772,7 +1152,7 @@ public class ShellLauncher {
         private final Object sync;
         private volatile boolean quit;
         private final Ruby runtime;
-        
+
         ChannelPumper(Ruby runtime, FileChannel inChannel, FileChannel outChannel, Slave slave, Object sync) {
             if (DEBUG) out.println("using channel pumper");
             this.inChannel = inChannel;
@@ -850,6 +1230,7 @@ public class ShellLauncher {
         try { t3.interrupt(); } catch (SecurityException se) {}
     }
 
+    // TODO: move inside the LaunchConfig
     private static String[] parseCommandLine(ThreadContext context, Ruby runtime, IRubyObject[] rawArgs) {
         String[] args;
         if (rawArgs.length == 1) {
@@ -857,7 +1238,8 @@ public class ShellLauncher {
                 runtime.getLoadService().require("jruby/path_helper");
             }
             RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
-            RubyArray parts = (RubyArray) RuntimeHelpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
+            RubyArray parts = (RubyArray) RuntimeHelpers.invoke(
+                    context, pathHelper, "smart_split_command", rawArgs);
             args = new String[parts.getLength()];
             for (int i = 0; i < parts.getLength(); i++) {
                 args[i] = parts.entry(i).toString();
@@ -871,59 +1253,13 @@ public class ShellLauncher {
         return args;
     }
 
-    /**
-     * Only run an in-process script if the script name has "ruby", ".rb", or "irb" in the name
-     */
-    private static boolean shouldRunInProcess(Ruby runtime, String[] commands) {
-        if (!runtime.getInstanceConfig().isRunRubyInProcess()) {
-            return false;
-        }
-
-        // Check for special shell characters [<>|] at the beginning
-        // and end of each command word and don't run in process if we find them.
-        for (int i = 0; i < commands.length; i++) {
-            String c = commands[i];
-            if (c.trim().length() == 0) {
-                continue;
-            }
-            char[] firstLast = new char[] {c.charAt(0), c.charAt(c.length()-1)};
-            for (int j = 0; j < firstLast.length; j++) {
-                switch (firstLast[j]) {
-                case '<': case '>': case '|': case ';':
-                case '*': case '?': case '{': case '}':
-                case '[': case ']': case '(': case ')':
-                case '~': case '&': case '$': case '"':
-                case '`': case '\n': case '\\': case '\'':
-                    return false;
-                case '2':
-                    if(c.length() > 1 && c.charAt(1) == '>') {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        String command = commands[0];
-        String[] slashDelimitedTokens = command.split("/");
-        String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
-        int indexOfRuby = finalToken.indexOf("ruby");
-        return ((indexOfRuby != -1 && indexOfRuby == (finalToken.length() - 4))
-                || finalToken.endsWith(".rb")
-                || finalToken.endsWith("irb"));
-    }
-
-    /**
-     * This hack is to work around a problem with cmd.exe on windows where it can't
-     * interpret a filename with spaces in the first argument position as a command.
-     * In that case it's better to try passing the bare arguments to runtime.exec.
-     * On all other platforms we'll always run the command in the shell.
-     */
-    private static boolean shouldRunInShell(String shell, String[] args) {
-        return !Platform.IS_WINDOWS ||
-                (shell != null && args.length > 1 && !new File(args[0]).exists());
-    }
-
     private static String getShell(Ruby runtime) {
         return runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
+    }
+
+    static void log(Ruby runtime, String msg) {
+        if (RubyInstanceConfig.DEBUG_LAUNCHING) {
+            runtime.getErr().println("ShellLauncher: " + msg);
+        }
     }
 }

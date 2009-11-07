@@ -36,3 +36,4 @@ tool/nailgun/ng
 tool/nailgun/config.log
 jruby-findbugs.html
 .debug.properties
+test/testapp/testapp
