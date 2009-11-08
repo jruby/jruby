@@ -6,7 +6,8 @@ module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
-  RUBY = File.join([Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']]) << Config::CONFIG['EXEEXT']
+  RUBY = '"' + File.join([Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']]) << Config::CONFIG['EXEEXT'] + '"'
+
 
   if (WINDOWS)
     RUBY.gsub!('/', '\\')
@@ -28,7 +29,7 @@ module TestHelper
   end
 
   def jruby_with_pipe(pipe, *args)
-    with_jruby_shell_spawning { `#{pipe} | "#{RUBY}" #{args.join(' ')}` }
+    with_jruby_shell_spawning { `#{pipe} | #{RUBY} #{args.join(' ')}` }
   end
 
   def with_temp_script(script, filename="test-script")

@@ -1,5 +1,11 @@
+require 'rbconfig'
+
 module JRuby
   module PathHelper
+
+    WINDOWS = Config::CONFIG['host_os'] =~ /mswin/
+    WINDOWS_EXE_SUFFIXES = [".exe", ".com", ".bat" , ".cmd"]
+
     # This function does a semi-smart split of a space-separated command line.
     # It is aware of single- and double-quotes as word delimiters, and use of backslash
     # as an escape character.
@@ -60,6 +66,21 @@ module JRuby
       parts
     end
 
+    def self.find_file(exe)
+      # puts "FindFile: looking for #{exe}"
+      if (WINDOWS && exe !~ /\.(exe|com|cmd|bat)$/i)
+        WINDOWS_EXE_SUFFIXES.each do |sfx|
+          if find_file(exe + sfx)
+            return true
+          end
+        end
+      end
+      # TODO: should we find files like 'foo' on Windows,
+      # or should we only deal with .EXE/.BAT, etc.?
+      
+      File.exist?(exe) && !File.directory?(exe)
+    end
+
     # Split the command string into parts, but also check if the first argument
     # looks like an absolute path, and if so, try to reconstruct it even in the
     # case where there are spaces in the directory name. It does this by joining
@@ -73,17 +94,16 @@ module JRuby
       orig_parts = quote_sensitive_split(cmd.strip)
       parts = orig_parts.dup
       exe = parts.shift.dup
-      if exe =~ %r{^([a-zA-Z]:)?[/\\]} && (!File.exist?(exe) || File.directory?(exe))
-        # TODO: checking for simple file existence is not enough on Windows,
-        # since there could be files with extensions: foo.exe, foo.bat, foo.cmd,
-        # and we are not going to find them here.
-        until parts.empty? || (File.exist?(exe) && !File.directory?(exe))
+      if exe =~ %r{^([a-zA-Z]:)?[/\\]} && (!(found = find_file(exe)))
+        until (found)
+          break if parts.empty?
           exe << " #{parts.shift}"
+          found = find_file(exe)
         end
-        if parts.empty?
-          orig_parts
-        else
+        if found
           [exe, *parts]
+        else
+          orig_parts
         end
       else
         orig_parts

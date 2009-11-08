@@ -10,14 +10,14 @@ class TestKernel < Test::Unit::TestCase
     $stderr.puts msg if $VERBOSE
   end
 
-  _DIR_ = File.expand_path(File.join(File.dirname(__FILE__), 'testapp'))
+  TESTAPP_DIR = File.expand_path(File.join(File.dirname(__FILE__), 'testapp'))
 
   if (WINDOWS)
     # the testapp.exe exists for sure, it is pre-built
     TESTAPP_EXISTS = true
   else
-    Dir.chdir(_DIR_) {
-      file = File.join(_DIR_, 'testapp')
+    Dir.chdir(TESTAPP_DIR) {
+      file = File.join(TESTAPP_DIR, 'testapp')
       `gcc testapp.c -o testapp` unless (File.exist?(file))
        TESTAPP_EXISTS = File.exist?(file)
     }
@@ -26,7 +26,7 @@ class TestKernel < Test::Unit::TestCase
   TESTAPP_REL = File.join(File.join(File.dirname(__FILE__), 'testapp'), 'testapp')
   TESTAPP_REL_NONORM = File.join(File.join(File.join(File.join(File.dirname(__FILE__), 'testapp'), '..'), 'testapp'), 'testapp')
   TESTAPP = File.expand_path(TESTAPP_REL)
-  TESTAPP_NONORM = File.join(File.join(File.join(_DIR_, '..'), 'testapp'), 'testapp')
+  TESTAPP_NONORM = File.join(File.join(File.join(TESTAPP_DIR, '..'), 'testapp'), 'testapp')
 
   # TODO: path with spaces!
   TESTAPPS = [] << TESTAPP_REL << TESTAPP << TESTAPP_REL_NONORM << TESTAPP_NONORM
@@ -538,6 +538,11 @@ class TestKernel < Test::Unit::TestCase
         log "-- skipping #{app}"
         next
       end
+
+      if (TESTAPP_DIR =~ /\s/) # spaces in paths, quote!
+        app = '"' + app + '"'
+      end
+
       log "testing #{app}"
 
       result = `#{app} 2>&1`.strip
@@ -551,6 +556,11 @@ class TestKernel < Test::Unit::TestCase
         log "-- skipping #{app}"
         next
       end
+
+      if (TESTAPP_DIR =~ /\s/) # spaces in paths, quote!
+        app = '"' + app + '"'
+      end
+
       log "testing #{app}"
 
       result = `#{app} one 2>&1`.strip
@@ -564,6 +574,11 @@ class TestKernel < Test::Unit::TestCase
         log "-- skipping #{app}"
         next
       end
+
+      if (TESTAPP_DIR =~ /\s/) # spaces in paths, quote!
+        app = '"' + app + '"'
+      end
+
       log "testing #{app}"
 
       result = `#{app} one two three 2>&1`.strip.split(/[\r\n]+/)
@@ -626,6 +641,10 @@ class TestKernel < Test::Unit::TestCase
         next
       end
       log "testing #{app}"
+      
+      if (TESTAPP_DIR =~ /\s/) # spaces in paths, quote!
+        app = '"' + app + '"'
+      end
 
       result = `#{app} "   " 2>&1`.chomp
       assert_equal('   ', result, "Can't properly launch '#{app}'")

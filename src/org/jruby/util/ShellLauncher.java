@@ -80,7 +80,7 @@ public class ShellLauncher {
         { "/usr/local/bin", "/usr/ucb", "/usr/bin", "/bin" };
 
     private static final String[] WINDOWS_EXE_SUFFIXES =
-        { ".exe", ".com", ".cmd", ".bat" };
+        { ".exe", ".com", ".bat", ".cmd" }; // the order is important
 
     private static final String[] WINDOWS_INTERNAL_CMDS = {
         "assoc", "break", "call", "cd", "chcp",
@@ -884,10 +884,11 @@ public class ShellLauncher {
             // if the executable exists, start it directly with no shell
             if (executableFile != null) {
                 log(runtime, "Got it: " + executableFile);
-                if (isBatch(executableFile)) {
-                    log(runtime, "This is a BAT/CMD file, will start in shell");
-                    return true;
-                }
+                // TODO: special processing for BAT/CMD files needed at all?
+                // if (isBatch(executableFile)) {
+                //    log(runtime, "This is a BAT/CMD file, will start in shell");
+                //    return true;
+                // }
                 return false;
             } else {
                 log(runtime, "Didn't find executable: " + executable);
@@ -908,14 +909,18 @@ public class ShellLauncher {
                 verifyExecutable();
             }
 
-            // prepare exec args
-            // TODO: can we use args instead of rawArgs?
-            // they hang on non-Windows...
+            // now, prepare the exec args
+
             execArgs = new String[3];
             execArgs[0] = shell;
             execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
-            execArgs[2] = rawArgs[0].toString().trim();
-            // System.arraycopy(args, 0, execArgs, 2, args.length);
+
+            if (Platform.IS_WINDOWS) {
+                // that's how MRI does it too
+                execArgs[2] = "\"" + cmdline + "\"";
+            } else {
+                execArgs[2] = cmdline;
+            }
         }
 
         private void verifyExecutableForDirect() {
@@ -1254,6 +1259,7 @@ public class ShellLauncher {
     }
 
     private static String getShell(Ruby runtime) {
+        // TODO: rather convoluted way to obtain the shell string!
         return runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
     }
 
