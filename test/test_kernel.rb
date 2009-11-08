@@ -484,6 +484,17 @@ class TestKernel < Test::Unit::TestCase
     }
   end
 
+  # JRUBY-4127
+  def test_backquote_with_quotes
+    if (WINDOWS)
+      result = `"#{TESTAPP_NONORM}" #{Dir.pwd}`.strip
+    else
+      result = `"pwd" .`.strip
+    end
+    expected = Dir.pwd
+    assert_equal(expected, result)
+  end
+
   def test_backquote1
     if (WINDOWS)
       result = `cmd /c cd`.strip.gsub('\\', '/')
