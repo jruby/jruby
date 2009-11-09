@@ -49,6 +49,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.MiniJava;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1032,8 +1033,22 @@ public class RubyClass extends RubyModule {
             reifiedParent = superClass.reifiedClass;
         }
 
+        List impl_interfaces = new ArrayList();
+        for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
+            if (p.isIncluded()) {
+                RubyModule mod = p.getNonIncludedClass();
+                if (mod.getInstanceVariable("@java_class") instanceof JavaClass) {
+                    JavaClass jc = (JavaClass) mod.getInstanceVariable("@java_class");
+                    if (((Class) jc.getValue()).isInterface()) {
+                        impl_interfaces.add(p((Class) jc.getValue()));
+                    }
+                }
+            }
+        }
+
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent), null);
+        cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent),
+                (String[]) impl_interfaces.toArray(new String[impl_interfaces.size()]));
 
         if (classAnnotations != null && classAnnotations.size() != 0) {
             for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
