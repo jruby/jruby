@@ -327,9 +327,10 @@ public class RubyEnumerator extends RubyObject {
         private final Block block;
         private final Ruby runtime;
 
-        public EachWithIndex(ThreadContext ctx, Block block) {
+        public EachWithIndex(ThreadContext ctx, Block block, int index) {
             this.block = block;
             this.runtime = ctx.getRuntime();
+            this.index = index;
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
@@ -338,9 +339,13 @@ public class RubyEnumerator extends RubyObject {
     }
 
     private static IRubyObject with_index_common(ThreadContext context, IRubyObject self, 
-            final Block block, final String rubyMethodName) {
+            final Block block, final String rubyMethodName, IRubyObject arg) {
         final Ruby runtime = context.getRuntime();
-        if (!block.isGiven()) return enumeratorize(runtime, self , rubyMethodName);
+        int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
+        if (!block.isGiven()) {
+            return arg.isNil() ? enumeratorize(runtime, self , rubyMethodName) :
+                enumeratorize(runtime, self , rubyMethodName, runtime.newFixnum(index));
+        }
         
         IRubyObject[] args = new IRubyObject[0];
 
@@ -349,17 +354,27 @@ public class RubyEnumerator extends RubyObject {
             args = e.methodArgs;
         }
 
-        return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block));
+        return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block, index));
     }
 
     @JRubyMethod(name = "each_with_index", frame = true)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, final Block block) {
-        return with_index_common(context, self, block, "each_with_index");
+        return with_index_common(context, self, block, "each_with_index", context.getRuntime().getNil());
     }
 
-    @JRubyMethod(name = "with_index", frame = true)
+    @JRubyMethod(name = "with_index", frame = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject with_index(ThreadContext context, IRubyObject self, final Block block) {
-        return with_index_common(context, self, block, "with_index");
+        return with_index_common(context, self, block, "with_index", context.getRuntime().getNil());
+    }
+
+    @JRubyMethod(name = "with_index", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject with_index19(ThreadContext context, IRubyObject self, final Block block) {
+        return with_index_common(context, self, block, "with_index", context.getRuntime().getNil());
+    }
+
+    @JRubyMethod(name = "with_index", frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject with_index19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
+        return with_index_common(context, self, block, "with_index", arg);
     }
 
     @JRubyMethod(name = "next", frame = true)
