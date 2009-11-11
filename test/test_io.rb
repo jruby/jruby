@@ -440,7 +440,7 @@ class TestIO < Test::Unit::TestCase
                    "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
                    "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NOCTTY", "NONBLOCK",
                    "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
-                   "WRONLY"].each { |c| assert IO.constants.include?(c) }
+                   "WRONLY"].each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
   end
   
   #JRUBY-3012
@@ -448,6 +448,15 @@ class TestIO < Test::Unit::TestCase
     quiet_script = File.dirname(__FILE__) + '/quiet.rb'
     result = `jruby #{quiet_script}`.chomp
     assert_equal("foo", result)
+  end
+
+  # JRUBY-4152
+  def test_tty_leak
+    assert $stdin.tty?
+    10_000.times {
+      $stdin.tty?
+    }
+    assert $stdin.tty?
   end
 
   private
