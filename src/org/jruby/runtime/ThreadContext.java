@@ -509,6 +509,10 @@ public final class ThreadContext {
     }
     
     public void trace(RubyEvent event, String name, RubyModule implClass) {
+        trace(event, name, implClass, file, line);
+    }
+
+    public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
         runtime.callEventHooks(this, event, file, line, name, implClass);
     }
     

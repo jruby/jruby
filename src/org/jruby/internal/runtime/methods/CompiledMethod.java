@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.JumpTarget;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
@@ -48,20 +49,22 @@ public abstract class CompiledMethod extends JavaMethod implements JumpTarget, C
         private final Object scriptObject;
         private MethodFactory factory;
         private DynamicMethod compiledMethod;
+        private final ISourcePosition position;
     
         public LazyCompiledMethod(RubyModule implementationClass, String method, Arity arity, 
-            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, MethodFactory factory) {
+            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position, MethodFactory factory) {
             super(implementationClass, visibility, callConfig);
             this.method = method;
             this.arity = arity;
             this.scope = scope;
             this.scriptObject = scriptObject;
             this.factory = factory;
+            this.position = position;
         }
         
         private synchronized void initializeMethod() {
             if (compiledMethod != null) return;
-            compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig);
+            compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position);
             factory = null;
         }
         

@@ -30,6 +30,8 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -49,6 +51,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -232,7 +235,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String[] scopeNames,
-            int arity, int required, int optional, int rest, CallConfiguration callConfig) {
+            int arity, int required, int optional, int rest, String filename, int line, CallConfiguration callConfig) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
@@ -244,7 +247,10 @@ public class RuntimeHelpers {
         StaticScope scope = creatScopeForClass(context, scopeNames, required, optional, rest);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method = constructNormalMethod(name, visibility, factory, containingClass, javaName, arity, scope, scriptObject, callConfig);
+        DynamicMethod method = constructNormalMethod(
+                factory, javaName,
+                name, containingClass, new SimpleSourcePosition(filename, line), arity, scope, visibility, scriptObject,
+                callConfig);
         
         addInstanceMethod(containingClass, name, method, visibility,context, runtime);
         
@@ -252,7 +258,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String[] scopeNames,
-            int arity, int required, int optional, int rest, CallConfiguration callConfig) {
+            int arity, int required, int optional, int rest, String filename, int line, CallConfiguration callConfig) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
 
@@ -261,7 +267,7 @@ public class RuntimeHelpers {
         StaticScope scope = creatScopeForClass(context, scopeNames, required, optional, rest);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method = constructSingletonMethod(factory, rubyClass, javaName, arity, scope,scriptObject, callConfig);
+        DynamicMethod method = constructSingletonMethod( factory, javaName, rubyClass, new SimpleSourcePosition(filename, line), arity, scope,scriptObject, callConfig);
         
         rubyClass.addMethod(name, method);
         
@@ -1424,7 +1430,7 @@ public class RuntimeHelpers {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 
-    private static DynamicMethod constructNormalMethod(String name, Visibility visibility, MethodFactory factory, RubyModule containingClass, String javaName, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+    private static DynamicMethod constructNormalMethod( MethodFactory factory, String javaName, String name, RubyModule containingClass, ISourcePosition position, int arity, StaticScope scope, Visibility visibility, Object scriptObject, CallConfiguration callConfig) {
         DynamicMethod method;
 
         if (name.equals("initialize") || name.equals("initialize_copy") || visibility == Visibility.MODULE_FUNCTION) {
@@ -1432,19 +1438,19 @@ public class RuntimeHelpers {
         }
         
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            method = factory.getCompiledMethodLazily(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig);
+            method = factory.getCompiledMethodLazily(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig, position);
         } else {
-            method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig);
+            method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig, position);
         }
 
         return method;
     }
 
-    private static DynamicMethod constructSingletonMethod(MethodFactory factory, RubyClass rubyClass, String javaName, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+    private static DynamicMethod constructSingletonMethod(MethodFactory factory, String javaName, RubyClass rubyClass, ISourcePosition position, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            return factory.getCompiledMethodLazily(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig);
+            return factory.getCompiledMethodLazily(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig, position);
         } else {
-            return factory.getCompiledMethod(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig);
+            return factory.getCompiledMethod(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig, position);
         }
     }
 
@@ -1647,5 +1653,23 @@ public class RuntimeHelpers {
         Ruby runtime = context.getRuntime();
         if (a == b) return runtime.getTrue();
         return a.callMethod(context, "==", b);
+    }
+
+    public static void traceLine(ThreadContext context) {
+        String name = context.getFrameName();
+        RubyModule type = context.getFrameKlazz();
+        context.getRuntime().callEventHooks(context, RubyEvent.LINE, context.getFile(), context.getLine(), name, type);
+    }
+
+    public static void traceClass(ThreadContext context) {
+        String name = context.getFrameName();
+        RubyModule type = context.getFrameKlazz();
+        context.getRuntime().callEventHooks(context, RubyEvent.CLASS, context.getFile(), context.getLine(), name, type);
+    }
+
+    public static void traceEnd(ThreadContext context) {
+        String name = context.getFrameName();
+        RubyModule type = context.getFrameKlazz();
+        context.getRuntime().callEventHooks(context, RubyEvent.END, context.getFile(), context.getLine(), name, type);
     }
 }

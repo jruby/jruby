@@ -73,7 +73,9 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
     public DefaultMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
         super(implementationClass, visibility, CallConfiguration.FrameFullScopeFull);
-        this.interpretedMethod = new InterpretedMethod(implementationClass, staticScope, body, argsNode, visibility, position);
+        this.interpretedMethod = DynamicMethodFactory.newInterpretedMethod(
+                implementationClass.getRuntime(), implementationClass, staticScope,
+                body, argsNode, visibility, position);
         this.box.actualMethod = interpretedMethod;
         this.argsNode = argsNode;
         this.body = body;
@@ -116,9 +118,9 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
     }
 
     public void switchToJitted(Script jitCompiledScript, CallConfiguration jitCallConfig) {
-        this.box.actualMethod = new JittedMethod(
-                getImplementationClass(), staticScope, jitCompiledScript,
-                jitCallConfig, getVisibility(), argsNode.getArity(), position,
+        this.box.actualMethod = DynamicMethodFactory.newJittedMethod(
+                getImplementationClass().getRuntime(), getImplementationClass(),
+                staticScope, jitCompiledScript, jitCallConfig, getVisibility(), argsNode.getArity(), position,
                 this);
         this.box.callCount = -1;
         getImplementationClass().invalidateCacheDescendants();

@@ -107,7 +107,7 @@ public class DefnNode extends MethodDefNode implements INameNode {
         // Make a nil node if no body.  Notice this is not part of AST.
         Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
 
-        DynamicMethod newMethod = DynamicMethodFactory.newInterpretedMethod(
+        DynamicMethod newMethod = DynamicMethodFactory.newDefaultMethod(
                 runtime, containingClass, name, scope, body, argsNode,
                 visibility, getPosition());
    

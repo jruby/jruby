@@ -49,7 +49,7 @@ public class TraceableInterpretedMethod extends InterpretedMethod {
     private ISourcePosition position;
     private String name;
 
-    public TraceableInterpretedMethod(RubyModule implementationClass, String name, StaticScope staticScope, Node body,
+    public TraceableInterpretedMethod(RubyModule implementationClass, StaticScope staticScope, Node body,
             ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
         super(implementationClass, staticScope, body, argsNode,
             visibility, position);
@@ -85,6 +85,6 @@ public class TraceableInterpretedMethod extends InterpretedMethod {
 
     @Override
     public DynamicMethod dup() {
-        return new TraceableInterpretedMethod(getImplementationClass(), name, staticScope, body, argsNode, getVisibility(), position);
+        return new TraceableInterpretedMethod(getImplementationClass(), staticScope, body, argsNode, getVisibility(), position);
     }
 }

@@ -163,12 +163,20 @@ public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cl
 
     protected final static void postNoop(ThreadContext context) {}
     
-    protected final void callTrace(ThreadContext context, String name) {
-        context.trace(RubyEvent.C_CALL, name, getImplementationClass());
+    protected final void callTrace(ThreadContext context, boolean enabled, String name) {
+        if (enabled) context.trace(RubyEvent.C_CALL, name, getImplementationClass());
     }
     
-    protected final void returnTrace(ThreadContext context, String name) {
-        context.trace(RubyEvent.C_CALL, name, getImplementationClass());
+    protected final void returnTrace(ThreadContext context, boolean enabled, String name) {
+        if (enabled) context.trace(RubyEvent.C_RETURN, name, getImplementationClass());
+    }
+
+    protected final void callTraceCompiled(ThreadContext context, boolean enabled, String name, String file, int line) {
+        if (enabled) context.trace(RubyEvent.CALL, name, getImplementationClass(), file, line);
+    }
+
+    protected final void returnTraceCompiled(ThreadContext context, boolean enabled, String name) {
+        if (enabled) context.trace(RubyEvent.RETURN, name, getImplementationClass());
     }
     
     public void setArity(Arity arity) {

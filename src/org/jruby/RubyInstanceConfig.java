@@ -1021,9 +1021,7 @@ public class RubyInstanceConfig {
                         shouldRunInterpreter = false;
                         break FOR;
                     } else if (argument.equals("--debug")) {
-                        compileMode = CompileMode.OFF;
                         FULL_TRACE_ENABLED = true;
-                        System.setProperty("jruby.reflection", "true");
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         debug = true;

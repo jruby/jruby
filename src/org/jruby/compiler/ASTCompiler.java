@@ -885,7 +885,7 @@ public class ASTCompiler {
         List<CompilerCallback> bodies = new ArrayList<CompilerCallback>();
         Map<CompilerCallback, int[]> switchCases = null;
         FastSwitchType switchType = getHomogeneousSwitchType(whenNodes);
-        if (switchType != null) {
+        if (switchType != null && !RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // NOTE: Currently this optimization is limited to the following situations:
             // * All expressions must be int-ranged literal fixnums
             // It also still emits the code for the "safe" when logic, which is rather
@@ -899,6 +899,7 @@ public class ASTCompiler {
             final WhenNode whenNode = (WhenNode)node;
             CompilerCallback body = new CompilerCallback() {
                 public void call(BodyCompiler context) {
+                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine();
                     compile(whenNode.getBodyNode(), context, expr);
                 }
             };
@@ -1808,7 +1809,10 @@ public class ASTCompiler {
             inspector.inspect(defnNode.getBodyNode());
         }
 
-        context.defineNewMethod(defnNode.getName(), defnNode.getArgsNode().getArity().getValue(), defnNode.getScope(), body, args, null, inspector, isAtRoot);
+        context.defineNewMethod(
+                defnNode.getName(), defnNode.getArgsNode().getArity().getValue(),
+                defnNode.getScope(), body, args, null, inspector, isAtRoot,
+                defnNode.getPosition().getFile(), defnNode.getPosition().getStartLine());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -1862,7 +1866,10 @@ public class ASTCompiler {
             inspector.inspect(defsNode.getBodyNode());
         }
 
-        context.defineNewMethod(defsNode.getName(), defsNode.getArgsNode().getArity().getValue(), defsNode.getScope(), body, args, receiver, inspector, false);
+        context.defineNewMethod(
+                defsNode.getName(), defsNode.getArgsNode().getArity().getValue(),
+                defsNode.getScope(), body, args, receiver, inspector, false,
+                defsNode.getPosition().getFile(), defsNode.getPosition().getStartLine());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2837,6 +2844,8 @@ public class ASTCompiler {
         context.lineNumber(node.getPosition());
 
         context.setLinePosition(node.getPosition());
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) context.traceLine();
 
         NewlineNode newlineNode = (NewlineNode) node;
 

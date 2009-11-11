@@ -61,6 +61,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2075,6 +2076,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 } else {
                     classBody.invokeThreadContext("preCompiledClassDummyScope", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
                 }
+
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
             }
         };
 
@@ -2092,6 +2095,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         bodyCallback.call(classBody);
         classBody.method.label(end);
         // finally with no exception
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
 
@@ -2099,6 +2103,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         classBody.method.label(after);
         // finally with exception
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
         classBody.method.athrow();
@@ -2161,6 +2166,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 } else {
                     classBody.invokeThreadContext("preCompiledClassDummyScope", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
                 }
+
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
             }
         };
 
@@ -2181,11 +2188,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         classBody.method.go_to(noException);
 
         classBody.method.label(after);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
         classBody.method.athrow();
 
         classBody.method.label(noException);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
         classBody.loadThreadContext();
         classBody.invokeThreadContext("postCompiledClass", sig(Void.TYPE, params()));
 
@@ -2321,7 +2330,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
-            CompilerCallback receiver, ASTInspector inspector, boolean root) {
+            CompilerCallback receiver, ASTInspector inspector, boolean root, String filename, int line) {
         // TODO: build arg list based on number of args, optionals, etc
         String newMethodName;
         if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
@@ -2360,14 +2369,16 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.pushInt(scope.getRequiredArgs());
         method.pushInt(scope.getOptionalArgs());
         method.pushInt(scope.getRestArg());
+        method.ldc(filename);
+        method.ldc(line);
         method.getstatic(p(CallConfiguration.class), inspector.getCallConfig().name(), ci(CallConfiguration.class));
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
+                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, String.class, int.class, CallConfiguration.class)));
         } else {
             invokeUtilityMethod("def", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, CallConfiguration.class)));
+                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, String.class, int.class, CallConfiguration.class)));
         }
     }
 
@@ -2572,5 +2583,20 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.label(done);
 
         getVariableCompiler().releaseTempLocal();
+    }
+
+    public void traceLine() {
+        loadThreadContext();
+        invokeUtilityMethod("traceLine", sig(void.class, ThreadContext.class));
+    }
+
+    public void traceClass() {
+        loadThreadContext();
+        invokeUtilityMethod("traceClass", sig(void.class, ThreadContext.class));
+    }
+
+    public void traceEnd() {
+        loadThreadContext();
+        invokeUtilityMethod("traceEnd", sig(void.class, ThreadContext.class));
     }
 }

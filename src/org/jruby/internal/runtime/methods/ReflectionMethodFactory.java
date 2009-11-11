@@ -39,6 +39,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -64,8 +65,8 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
-            StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
-        return getCompiledMethod(implementationClass, methodName, arity, visibility, scope, scriptObject, callConfig);
+            StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
+        return getCompiledMethod(implementationClass, methodName, arity, visibility, scope, scriptObject, callConfig, position);
     }
     
     /**
@@ -75,11 +76,11 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
-            StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+            StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
         try {
             Class scriptClass = scriptObject.getClass();
             Method method = scriptClass.getMethod(methodName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
-            return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig);
+            return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig, position);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException("No method with name " + methodName + " found in " + scriptObject.getClass());
         }

@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ReflectionMethodFactory;
 import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
@@ -100,7 +101,7 @@ public abstract class MethodFactory {
     public abstract DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, 
             Arity arity, Visibility visibility, StaticScope scope, 
-            Object scriptObject, CallConfiguration callConfig);
+            Object scriptObject, CallConfiguration callConfig, ISourcePosition position);
     
     /**
      * Like getCompiledMethod, but postpones any heavy lifting involved in
@@ -121,7 +122,7 @@ public abstract class MethodFactory {
     public abstract DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass, String method, 
             Arity arity, Visibility visibility, StaticScope scope, 
-            Object scriptObject, CallConfiguration callConfig);
+            Object scriptObject, CallConfiguration callConfig, ISourcePosition position);
     
     /**
      * Based on a list of annotated Java methods, generate a method handle using

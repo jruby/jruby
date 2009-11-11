@@ -121,7 +121,7 @@ public class DefsNode extends MethodDefNode implements INameNode {
         // Make a nil node if no body.  Notice this is not part of AST.
         Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
         
-        DynamicMethod newMethod = DynamicMethodFactory.newInterpretedMethod(
+        DynamicMethod newMethod = DynamicMethodFactory.newDefaultMethod(
                 runtime, rubyClass, name, scope, body, argsNode,
                 Visibility.PUBLIC, getPosition());
    

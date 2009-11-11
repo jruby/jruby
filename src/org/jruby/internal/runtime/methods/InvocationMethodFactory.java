@@ -46,11 +46,13 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -189,8 +191,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass, String method, Arity arity, 
-            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
-        return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig,
+            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
+        return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position,
                 new InvocationMethodFactory(classLoader));
     }
             
@@ -202,7 +204,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, Arity arity, 
-            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
         String sup = COMPILED_SUPER_CLASS;
         Class scriptClass = scriptObject.getClass();
         String mname = scriptClass.getName() + "Invoker" + method + arity;
@@ -219,6 +221,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     SkinnyMethodAdapter mv = null;
                     String signature = null;
                     boolean specificArity = false;
+
+                    // if trace, need to at least populate a backtrace frame
+                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                        switch (callConfig) {
+                        case FrameNoneScopeDummy:
+                            callConfig = CallConfiguration.FrameBacktraceScopeDummy;
+                            break;
+                        case FrameNoneScopeFull:
+                            callConfig = CallConfiguration.FrameBacktraceScopeFull;
+                            break;
+                        case FrameNoneScopeNone:
+                            callConfig = CallConfiguration.FrameBacktraceScopeDummy;
+                            break;
+                        }
+                    }
                     
                     if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
                         signature = COMPILED_CALL_SIG_BLOCK;
@@ -310,17 +327,40 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.visitCode();
                     Label line = new Label();
                     mv.visitLineNumber(0, line);
-                    
-//                    // check arity
-//                    checkArity(mv, scope);
 
                     // invoke pre method stuff
-                    if (!callConfig.isNoop()) {
+                    if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
                         if (specificArity) {
                             invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true, callConfig);
                         } else {
                             invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true, callConfig);
                         }
+                    }
+
+                    int traceBoolIndex = -1;
+                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                        // load and store trace enabled flag
+                        if (specificArity) {
+                            switch (scope.getRequiredArgs()) {
+                            case -1:
+                                traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
+                                break;
+                            case 0:
+                                traceBoolIndex = ARGS_INDEX + 1/*block*/;
+                                break;
+                            default:
+                                traceBoolIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                            }
+                        } else {
+                            traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
+                        }
+
+                        mv.aload(1);
+                        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                        mv.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
+                        mv.istore(traceBoolIndex);
+                        // tracing pre
+                        invokeTraceCompiledPre(mv, COMPILED_SUPER_CLASS, traceBoolIndex, position);
                     }
 
                     Label tryBegin = new Label();
@@ -365,6 +405,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     
                     // normal exit, perform finally and return
                     {
+                        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                            invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                        }
                         if (!callConfig.isNoop()) {
                             invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                         }
@@ -383,6 +426,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             mv.label(doReturnFinally);
 
                             // finally
+                            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                            }
                             if (!callConfig.isNoop()) {
                                 invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                             }
@@ -406,6 +452,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             mv.label(doRedoFinally);
 
                             // finally
+                            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                            }
                             if (!callConfig.isNoop()) {
                                 invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                             }
@@ -420,6 +469,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         mv.label(doFinally);
 
                         //call post method stuff (exception raised)
+                        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                            invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                        }
                         if (!callConfig.isNoop()) {
                             invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
                         }
@@ -1260,9 +1312,28 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         if (!callConfig.isNoop()) {
             invokeCallConfigPre(method, superClass, specificArity, block, callConfig);
         }
-        
+
+        int traceBoolIndex = -1;
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            invokeCCallTrace(method);
+            // load and store trace enabled flag
+            switch (specificArity) {
+            case -1:
+                traceBoolIndex = ARGS_INDEX + (block ? 1 : 0) + 1;
+                break;
+            case 0:
+                traceBoolIndex = ARGS_INDEX + (block ? 1 : 0);
+                break;
+            default:
+                traceBoolIndex = ARGS_INDEX + specificArity + (block ? 1 : 0) + 1;
+            }
+
+            method.aload(1);
+            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+            method.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
+            method.istore(traceBoolIndex);
+
+            // call trace
+            invokeCCallTrace(method, traceBoolIndex);
         }
 
         Label tryBegin = new Label();
@@ -1301,7 +1372,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         // normal finally and exit
         {
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                invokeCReturnTrace(method);
+                invokeCReturnTrace(method, traceBoolIndex);
             }
             
             if (!callConfig.isNoop()) {
@@ -1319,7 +1390,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 method.label(doFinally);
                 
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    invokeCReturnTrace(method);
+                    invokeCReturnTrace(method, traceBoolIndex);
                 }
 
                 //call post method stuff (exception raised)
@@ -1333,13 +1404,33 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private void invokeCCallTrace(SkinnyMethodAdapter method) {
-        method.aloadMany(0, 1, 4); // method, threadContext, invokedName
-        method.invokevirtual(p(JavaMethod.class), "callTrace", sig(void.class, ThreadContext.class, String.class));
+    private void invokeCCallTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
+        method.aloadMany(0, 1); // method, threadContext
+        method.iload(traceBoolIndex); // traceEnable
+        method.aload(4); // invokedName
+        method.invokevirtual(p(JavaMethod.class), "callTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
     
-    private void invokeCReturnTrace(SkinnyMethodAdapter method) {
-        method.aloadMany(0, 1, 4); // method, threadContext, invokedName
-        method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, String.class));
+    private void invokeCReturnTrace(SkinnyMethodAdapter method, int traceBoolIndex) {
+        method.aloadMany(0, 1); // method, threadContext
+        method.iload(traceBoolIndex); // traceEnable
+        method.aload(4); // invokedName
+        method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
+    }
+
+    private void invokeTraceCompiledPre(SkinnyMethodAdapter mv, String superClass, int traceBoolIndex, ISourcePosition position) {
+        mv.aloadMany(0, 1); // method, threadContext
+        mv.iload(traceBoolIndex); // traceEnable
+        mv.aload(4); // invokedName
+        mv.ldc(position.getFile());
+        mv.ldc(position.getStartLine());
+        mv.invokevirtual(superClass, "callTraceCompiled", sig(void.class, ThreadContext.class, boolean.class, String.class, String.class, int.class));
+    }
+
+    private void invokeTraceCompiledPost(SkinnyMethodAdapter mv, String superClass, int traceBoolIndex) {
+        mv.aloadMany(0, 1); // method, threadContext
+        mv.iload(traceBoolIndex); // traceEnable
+        mv.aload(4); // invokedName
+        mv.invokevirtual(superClass, "returnTraceCompiled", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
 }

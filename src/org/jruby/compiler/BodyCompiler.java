@@ -324,7 +324,7 @@ public interface BodyCompiler {
      */
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
-            CompilerCallback receiver, ASTInspector inspector, boolean root);
+            CompilerCallback receiver, ASTInspector inspector, boolean root, String filename, int line);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.
@@ -596,4 +596,8 @@ public interface BodyCompiler {
             CompilerCallback fallback);
 
     public void raiseTypeError(String string);
+
+    public void traceLine();
+    public void traceClass();
+    public void traceEnd();
 }
