@@ -1,7 +1,7 @@
 require 'rbconfig'
 raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['host_os'] =~ /mswin/
 
-require 'ffi'
+require 'ffi/ffi'
 
 class Win32API
   CONVENTION = FFI::Platform.windows? ? :stdcall : :default
