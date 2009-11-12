@@ -29,9 +29,9 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.internal.BiVariableMap;;
 import org.jruby.Ruby;
 import org.jruby.parser.EvalStaticScope;
+import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

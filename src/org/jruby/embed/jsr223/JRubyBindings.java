@@ -30,7 +30,6 @@
 package org.jruby.embed.jsr223;
 
 import java.util.ArrayList;
-import org.jruby.embed.ScriptingContainer;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
+import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.AttributeName;
 
 /**

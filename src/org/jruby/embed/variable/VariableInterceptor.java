@@ -54,6 +54,9 @@ public class VariableInterceptor {
         }
         switch (behavior) {
             case GLOBAL:
+                if ("ARGV".equals(name)) {
+                    return Constant.getInstance(runtime, name, value);
+                }
                 return LocalGlobalVariable.getInstance(runtime, name, value);
             case BSF:
                 BiVariable[] bEntries = {
@@ -166,6 +169,9 @@ public class VariableInterceptor {
     public boolean isKindOfRubyVariable(String name) {
         switch (behavior) {
             case GLOBAL:
+                if ("ARGV".equals(name)) {
+                    return true;
+                }
                 return LocalGlobalVariable.isValidName(name);
             case BSF:
                 if (PersistentLocalVariable.isValidName(name)) {

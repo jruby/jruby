@@ -43,6 +43,7 @@ import java.util.Map;
 import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -622,5 +623,22 @@ public class JRubyEngineTest {
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
         instance = null;
+    }
+
+    /*
+     * Test of ScriptEngine.ARGV, JRUBY-4090
+     */
+    @Test
+    public void testARGV() throws ScriptException {
+        System.out.println("ScriptEngine.ARGV");
+        ScriptEngineManager manager = new ScriptEngineManager();
+        JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
+        String script = "" +
+//            "ARGV << 'foo' \n" +
+            "if ARGV.length == 0\n" +
+            "  raise 'Error No argv passed'\n" +
+            "end";
+        instance.put(ScriptEngine.ARGV,new String[]{"one param"});
+        instance.eval(script);
     }
 }
