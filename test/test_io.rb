@@ -451,12 +451,14 @@ class TestIO < Test::Unit::TestCase
   end
 
   # JRUBY-4152
-  def test_tty_leak
-    assert $stdin.tty?
-    10_000.times {
-      $stdin.tty?
-    }
-    assert $stdin.tty?
+  if $stdin.tty? # in Ant that might be false
+    def test_tty_leak
+      assert $stdin.tty?
+      10_000.times {
+        $stdin.tty?
+      }
+      assert $stdin.tty?
+    end
   end
 
   private
