@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.script.Bindings;
+import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
 
 /**
@@ -103,9 +104,12 @@ public class JRubyBindings implements Bindings {
 
     public Object put(String key, Object value) {
         checkKey(key);
-        Object oldValue = container.put(key, value);
-        if (container.get(key) == null) {
-            oldValue = container.setAttribute(key, value);
+        Object oldValue = null;
+        String adjustedKey = adjustKey(key);
+        if (isRubyVariable(adjustedKey)) {
+            oldValue = container.put(adjustedKey, value);
+        } else {
+            oldValue = container.setAttribute(adjustedKey, value);
             if (container.getAttributeMap().containsKey(BACKED_BINDING)) {
                 Bindings b = (Bindings) container.getAttribute(BACKED_BINDING);
                 b.put(key, value);
@@ -213,5 +217,17 @@ public class JRubyBindings implements Bindings {
             }
         }
         return true;
+    }
+
+    private boolean isRubyVariable(String name) {
+        return container.getVarMap().getVariableInterceptor().isKindOfRubyVariable(name);
+    }
+
+    private String adjustKey(String key) {
+        if (key.equals(ScriptEngine.ARGV)) {
+            return "ARGV";
+        } else {
+            return key;
+        }
     }
 }

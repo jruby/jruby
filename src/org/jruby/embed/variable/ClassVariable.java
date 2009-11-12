@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.BiVariable;
 import org.jruby.embed.internal.BiVariableMap;
 import java.util.List;
 import org.jruby.Ruby;
@@ -38,12 +37,23 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * An implementation of BiVariable for a Ruby class variable.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ClassVariable extends AbstractVariable {
+    private static String pattern = "@@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
+
+    /**
+     * Returns an instance of this class. This factory method is used when a class
+     * variables is put in {@link BiVariableMap}.
+     *
+     * @param runtime Ruby runtime
+     * @param name a variable name
+     * @param javaObject Java object that should be assigned to.
+     * @return the instance of ClassVariable
+     */
     public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
-        String pattern = "@@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
         if (name.matches(pattern)) {
             return new ClassVariable(runtime, name, javaObject);
         }
@@ -54,10 +64,23 @@ public class ClassVariable extends AbstractVariable {
         super(runtime, name, javaObject);
     }
 
+    /**
+     * A constructor used when class variables are retrieved from Ruby.
+     *
+     * @param name the class variable name
+     * @param irubyObject Ruby class variable object
+     */
     ClassVariable(String name, IRubyObject irubyObject) {
         super(name, irubyObject);
     }
 
+    /**
+     * Retrieves class variables from Ruby after the evaluation.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved class variables.
+     */
     public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
         if (receiver == null) {
             receiver = runtime.getTopSelf();
@@ -76,15 +99,47 @@ public class ClassVariable extends AbstractVariable {
         }
     }
 
+    /**
+     * Returns enum type of this variable defined in {@link BiVariable}.
+     *
+     * @return this enum type, BiVariable.Type.ClassVariable.
+     */
     public Type getType() {
         return Type.ClassVariable;
     }
 
+    /**
+     * Returns true if the given name is a decent Ruby class variable. Unless
+     * returns false.
+     *
+     * @param name is a name to be checked.
+     * @return true if the given name is of a Ruby class variable.
+     */
+    public static boolean isValidName(String name) {
+        if (name.matches(pattern)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Injects a class variable value to a parsed Ruby script. This method is 
+     * invoked during EvalUnit#run() is executed.
+     *
+     * @param runtime is environment where a variable injection occurs
+     * @param receiver is the instance that will have variable injection.
+     */
     public void inject(Ruby runtime, IRubyObject receiver) {
         RubyModule rubyClass = getRubyClass(runtime);
         rubyClass.setClassVar(name, irubyObject);
     }
 
+    /**
+     * Removes this object from {@link BiVariableMap}.
+     *
+     * @param runtime enviroment where a variabe is removed.
+     */
     public void remove(Ruby runtime) {
         RubyModule rubyClass = getRubyClass(runtime);
         IRubyObject rubyName = JavaEmbedUtils.javaToRuby(runtime, name);

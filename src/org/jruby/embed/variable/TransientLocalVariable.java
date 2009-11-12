@@ -29,9 +29,7 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.BiVariable;
 import org.jruby.embed.internal.BiVariableMap;
-import org.jruby.embed.BiVariable.Type;
 import org.jruby.Ruby;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -40,33 +38,88 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
+ * An implementation of BiVariable for a transient local variable. This type of
+ * a local variable is available during only one evaluation. After the evaluation,
+ * the variable vanishes.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class TransientLocalVariable extends AbstractVariable {
+    private static String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
+
+    /**
+     * Returns an instance of this class. This factory method is used when a
+     * transient local variable is put in {@link BiVariableMap}.
+     *
+     * @param runtime Ruby runtime
+     * @param name a variable name
+     * @param javaObject Java object that should be assigned to.
+     * @return the instance of TransientLocalVariable
+     */
     public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
-        String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
+
         if (name.matches(pattern)) {
             return new TransientLocalVariable(runtime, name, javaObject);
         }
         return null;
     }
+
     private TransientLocalVariable(Ruby runtime, String name, Object... javaObject) {
         super(runtime, name, javaObject);
     }
 
+    /**
+     * Returns enum type of this variable defined in {@link BiVariable}.
+     *
+     * @return this enum type, BiVariable.Type.LocalVariable.
+     */
     public Type getType() {
         return Type.LocalVariable;
     }
 
+    /**
+     * Returns true if the given name is a decent Ruby local variable. Unless
+     * returns false.
+     *
+     * @param name is a name to be checked.
+     * @return true if the given name is of a Ruby local variable.
+     */
+    public static boolean isValidName(String name) {
+        if (name.matches(pattern)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Doesn't do anything since a transient local variable should not be retrieved
+     * from Ruby.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved local variables.
+     */
     public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
         // Does nothing. This type of variavles never survive over evaluations.
     }
 
+    /**
+     * Injects a local variable value to a parsed Ruby script. This method is
+     * invoked during EvalUnit#run() is executed.
+     *
+     * @param runtime is environment where a variable injection occurs
+     * @param receiver is the instance that will have variable injection.
+     */
     public void inject(Ruby runtime, IRubyObject receiver) {
         //done in BiVariableMap.inject()
     }
 
+    /**
+     * Removes this object from {@link BiVariableMap}.
+     *
+     * @param runtime enviroment where a variabe is removed.
+     */
     public void remove(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         DynamicScope currentScope = context.getCurrentScope();

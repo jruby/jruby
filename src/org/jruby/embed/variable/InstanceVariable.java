@@ -29,9 +29,7 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.BiVariable;
 import org.jruby.embed.internal.BiVariableMap;
-import org.jruby.embed.BiVariable.Type;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
@@ -41,25 +39,50 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 
 /**
+ * An implementation of BiVariable for a Ruby instance variable.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class InstanceVariable extends AbstractVariable {
+    private static String pattern = "@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
+
+    /**
+     * Returns an instance of this class. This factory method is used when an instance
+     * variable is put in {@link BiVariableMap}.
+     *
+     * @param runtime Ruby runtime
+     * @param name a variable name
+     * @param javaObject Java object that should be assigned to.
+     * @return the instance of InstanceVariable
+     */
     public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
-        String pattern = "@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
         if (name.matches(pattern)) {
             return new InstanceVariable(runtime, name, javaObject);
         }
         return null;
     }
+
     private InstanceVariable(Ruby runtime, String name, Object... javaObject) {
         super(runtime, name, javaObject);
     }
 
+    /**
+     * A constructor used when instance variables are retrieved from Ruby.
+     *
+     * @param name the instance variable name
+     * @param irubyObject Ruby instance object
+     */
     public InstanceVariable(String name, IRubyObject irubyObject) {
         super(name, irubyObject);
     }
 
+    /**
+     * Retrieves instance variables from Ruby after the evaluation.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved instance variables.
+     */
     public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
         if (receiver == null) {
             receiver = runtime.getTopSelf();
@@ -80,10 +103,37 @@ public class InstanceVariable extends AbstractVariable {
         }
     }
 
+    /**
+     * Returns enum type of this variable defined in {@link BiVariable}.
+     *
+     * @return this enum type, BiVariable.Type.InstanceVariable.
+     */
     public Type getType() {
         return Type.InstanceVariable;
     }
 
+    /**
+     * Returns true if the given name is a decent Ruby instance variable. Unless
+     * returns false.
+     *
+     * @param name is a name to be checked.
+     * @return true if the given name is of a Ruby instance variable.
+     */
+    public static boolean isValidName(String name) {
+        if (name.matches(pattern)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Injects an instance variable value to a parsed Ruby script. This method is
+     * invoked during EvalUnit#run() is executed.
+     *
+     * @param runtime is environment where a variable injection occurs
+     * @param receiver is the instance that will have variable injection.
+     */
     public void inject(Ruby runtime, IRubyObject receiver) {
         ThreadContext context = runtime.getCurrentContext();
         IRubyObject rubyReceiver = receiver != null ? receiver : context.getFrameSelf();
@@ -91,6 +141,11 @@ public class InstanceVariable extends AbstractVariable {
         ((RubyObject) rubyReceiver).instance_variable_set(rubyName, irubyObject);
     }
 
+    /**
+     * Removes this object from {@link BiVariableMap}.
+     *
+     * @param runtime enviroment where a variabe is removed.
+     */
     public void remove(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         IRubyObject self = context.getFrameSelf();

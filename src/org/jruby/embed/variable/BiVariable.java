@@ -27,7 +27,7 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  * **** END LICENSE BLOCK *****
  */
-package org.jruby.embed;
+package org.jruby.embed.variable;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;

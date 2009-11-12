@@ -29,23 +29,31 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.BiVariable;
 import org.jruby.embed.internal.BiVariableMap;
-import org.jruby.embed.BiVariable.Type;
 import java.util.Collection;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * An implementation of BiVariable for a Ruby constant.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class Constant extends AbstractVariable {
+    private static String pattern = "[A-Z]([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
     private boolean initialized = false;
-    
+
+    /**
+     * Returns an instance of this class. This factory method is used when a constant
+     * is put in {@link BiVariableMap}.
+     *
+     * @param runtime Ruby runtime
+     * @param name a variable name
+     * @param javaObject Java object that should be assigned to.
+     * @return the instance of Constant
+     */
     public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
-        String pattern = "[A-Z]([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
         if (name.matches(pattern)) {
             return new Constant(runtime, name, javaObject);
         }
@@ -56,6 +64,12 @@ public class Constant extends AbstractVariable {
         super(runtime, name, javaObject);
     }
 
+    /**
+     * A constructor used when constants are retrieved from Ruby.
+     *
+     * @param name the constant name
+     * @param irubyObject Ruby constant object
+     */
     Constant(String name, IRubyObject irubyObject) {
         super(name, irubyObject);
     }
@@ -64,6 +78,13 @@ public class Constant extends AbstractVariable {
         this.initialized = true;
     }
 
+    /**
+     * Retrieves constants from Ruby after the evaluation.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved constants.
+     */
     public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
         if (receiver == null) {
             receiver = runtime.getTopSelf();
@@ -83,10 +104,37 @@ public class Constant extends AbstractVariable {
         }
     }
 
+    /**
+     * Returns enum type of this variable defined in {@link BiVariable}.
+     *
+     * @return this enum type, BiVariable.Type.Constant.
+     */
     public Type getType() {
         return Type.Constant;
     }
 
+    /**
+     * Returns true if the given name is a decent Ruby constant. Unless
+     * returns false.
+     *
+     * @param name is a name to be checked.
+     * @return true if the given name is of a Ruby constant.
+     */
+    public static boolean isValidName(String name) {
+        if (name.matches(pattern)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Injects a constant value to a parsed Ruby script. This method is
+     * invoked during EvalUnit#run() is executed.
+     *
+     * @param runtime is environment where a variable injection occurs
+     * @param receiver is the instance that will have variable injection.
+     */
     public void inject(Ruby runtime, IRubyObject receiver) {
         if (initialized) {
             return;
@@ -101,6 +149,11 @@ public class Constant extends AbstractVariable {
         initialized = true;
     }
 
+    /**
+     * Removes this object from {@link BiVariableMap}.
+     *
+     * @param runtime enviroment where a variabe is removed.
+     */
     public void remove(Ruby runtime) {
         /* Like this? - from RubyModule
          IRubyObject oldValue = fetchConstant(name);

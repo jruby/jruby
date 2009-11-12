@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.BiVariable;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.JavaEmbedUtils;

@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.BiVariable;
 import org.jruby.embed.internal.BiVariableMap;
 import java.util.Set;
 import org.jruby.Ruby;
@@ -37,25 +36,51 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * An implementation of BiVariable for JSR223 style global variable. The assigend
+ * name is like a local vars in Java, but a global in Ruby.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class LocalGlobalVariable extends GlobalVariable {
+    private static String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
+
+    /**
+     * Returns an instance of this class. This factory method is used when a local
+     * global type variable is put in {@link BiVariableMap}.
+     *
+     * @param runtime Ruby runtime
+     * @param name a variable name
+     * @param javaObject Java object that should be assigned to.
+     * @return the instance of LocalGlobalVariable
+     */
     public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
-        String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
         if (name.matches(pattern)) {
             return new LocalGlobalVariable(runtime, name, javaObject);
         }
         return null;
     }
+
     private LocalGlobalVariable(Ruby runtime, String name, Object... javaObject) {
         super(runtime, name, javaObject);
     }
 
+    /**
+     * A constructor used when local global type variables are retrieved from Ruby.
+     *
+     * @param name the local global type variable name
+     * @param irubyObject Ruby global object
+     */
     LocalGlobalVariable(String name, IRubyObject irubyObject) {
         super(name, irubyObject);
     }
 
+    /**
+     * Retrieves global variables from Ruby after the evaluation as a local global type.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved global variables.
+     */
     public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
         GlobalVariables gvars = runtime.getGlobalVariables();
         Set<String> names = gvars.getNames();
@@ -76,11 +101,38 @@ public class LocalGlobalVariable extends GlobalVariable {
         }
     }
 
+    /**
+     * Returns true if the given name is a local global type variable. Unless
+     * returns false.
+     *
+     * @param name is a name to be checked.
+     * @return true if the given name is of a local global type variable.
+     */
+    public static boolean isValidName(String name) {
+        if (name.matches(pattern)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Injects a global value to a parsed Ruby script. This method is
+     * invoked during EvalUnit#run() is executed.
+     *
+     * @param runtime is environment where a variable injection occurs
+     * @param receiver is the instance that will have variable injection.
+     */
     @Override
     public void inject(Ruby runtime, IRubyObject receiver) {
         runtime.getGlobalVariables().set("$"+name, irubyObject);
     }
 
+    /**
+     * Removes this object from {@link BiVariableMap}.
+     *
+     * @param runtime enviroment where a variabe is removed.
+     */
     @Override
     public void remove(Ruby runtime) {
         setJavaObject(runtime, null);

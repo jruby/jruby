@@ -31,7 +31,6 @@ package org.jruby.embed.variable;
 
 import java.util.List;
 import org.jruby.Ruby;
-import org.jruby.embed.BiVariable;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -161,6 +160,46 @@ public class VariableInterceptor {
                     variables.remove(i);
                 }
             }
+        }
+    }
+
+    public boolean isKindOfRubyVariable(String name) {
+        switch (behavior) {
+            case GLOBAL:
+                return LocalGlobalVariable.isValidName(name);
+            case BSF:
+                if (PersistentLocalVariable.isValidName(name)) {
+                    return true;
+                } else if (GlobalVariable.isValidName(name)) {
+                    return true;
+                }
+                return false;
+            case PERSISTENT:
+                if (GlobalVariable.isValidName(name)) {
+                    return true;
+                } else if (PersistentLocalVariable.isValidName(name)) {
+                    return true;
+                } else if (InstanceVariable.isValidName(name)) {
+                    return true;
+                } else if (Constant.isValidName(name)) {
+                    return true;
+                } else if (ClassVariable.isValidName(name)) {
+                    return true;
+                }
+                return false;
+            default:
+                if (GlobalVariable.isValidName(name)) {
+                    return true;
+                } else if (TransientLocalVariable.isValidName(name)) {
+                    return true;
+                } else if (InstanceVariable.isValidName(name)) {
+                    return true;
+                } else if (Constant.isValidName(name)) {
+                    return true;
+                } else if (ClassVariable.isValidName(name)) {
+                    return true;
+                }
+                return false;
         }
     }
 }
