@@ -1,5 +1,1 @@
-require 'ffi'
-module FFI
-  class Buffer
-  end
-end
+# This file intentionally left blank
