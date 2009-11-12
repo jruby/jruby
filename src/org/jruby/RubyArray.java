@@ -2368,40 +2368,39 @@ public class RubyArray extends RubyObject implements List {
 
 
     /** rb_ary_zip
-     * 
+     *
      */
     @JRubyMethod(name = "zip", optional = 1, rest = true, frame = true)
     public IRubyObject zip(ThreadContext context, IRubyObject[] args, Block block) {
-        for (int i = 0; i < args.length; i++) {
-            args[i] = args[i].convertToArray();
-        }
-
         Ruby runtime = context.getRuntime();
+
+        // Array#zip whether 1.8 or 1.9 uses to_ary unlike Enumerable version
+        args = RubyEnumerable.zipCommonConvert(runtime, args, "to_ary");
+
         if (block.isGiven()) {
             for (int i = 0; i < realLength; i++) {
-                RubyArray tmp = new RubyArray(runtime, args.length + 1);
-                tmp.append(elt(i));
+                IRubyObject[] tmp = new IRubyObject[args.length + 1];
+                tmp[0] = values[begin + i];
                 for (int j = 0; j < args.length; j++) {
-                    tmp.append(((RubyArray) args[j]).elt(i));
+                    tmp[j + 1] = ((RubyArray) args[j]).elt(i);
                 }
-                block.yield(context, tmp);
+                block.yield(context, newArrayNoCopyLight(runtime, tmp));
             }
             return runtime.getNil();
         }
-        
-        int len = realLength;
-        RubyArray result = new RubyArray(runtime, len);
-        for (int i = 0; i < len; i++) {
-            RubyArray tmp = new RubyArray(runtime, args.length + 1);
-            tmp.append(elt(i));
-            for (int j = 0; j < args.length; j++) {
-                tmp.append(((RubyArray) args[j]).elt(i));
-            }
-            result.append(tmp);
-        }
-        return result;
-    }
 
+        IRubyObject[] result = new IRubyObject[realLength];
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject[] tmp = new IRubyObject[args.length + 1];
+            tmp[0] = values[begin + i];
+            for (int j = 0; j < args.length; j++) {
+                tmp[j + 1] = ((RubyArray) args[j]).elt(i);
+            }
+            result[i] = newArrayNoCopyLight(runtime, tmp);
+        }
+        return newArrayNoCopy(runtime, result);
+    }
+    
     /** rb_ary_cmp
      *
      */
@@ -3369,6 +3368,24 @@ public class RubyArray extends RubyObject implements List {
     }
 
     // Enumerable direct implementations (non-"each" versions)
+    public IRubyObject all_p(ThreadContext context, Block block) {
+        if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
+        if (!block.isGiven()) return all_pBlockless(context);
+
+        for (int i = begin; i < begin + realLength; i++) {
+            if (!block.yield(context, values[i]).isTrue()) return context.getRuntime().getFalse();
+        }
+
+        return context.getRuntime().getTrue();
+    }
+
+    private IRubyObject all_pBlockless(ThreadContext context) {
+        for (int i = begin; i < begin + realLength; i++) {
+            if (!values[i].isTrue()) return context.getRuntime().getFalse();
+        }
+
+        return context.getRuntime().getTrue();
+    }
 
     public IRubyObject any_p(ThreadContext context, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);

@@ -1142,9 +1142,15 @@ public class RubyEnumerable {
         }
         return result[0] ? runtime.getTrue() : runtime.getFalse();
     }
-    
+
     @JRubyMethod(name = "all?", frame = true)
     public static IRubyObject all_p(ThreadContext context, IRubyObject self, final Block block) {
+        if (self instanceof RubyArray) return ((RubyArray) self).all_p(context, block);
+
+        return all_pCommon(context, self, block);
+    }
+
+    public static IRubyObject all_pCommon(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
 
@@ -1231,15 +1237,21 @@ public class RubyEnumerable {
         return zipCommon(context, self, args, block, "to_ary");
     }
 
-    private static IRubyObject zipCommon(ThreadContext context, IRubyObject self,
-            final IRubyObject[] args, final Block block, String methodConverter) {
-        final Ruby runtime = context.getRuntime();
+    public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args, String methodConverter) {
+        RubyClass array = runtime.getArray();
 
         for (int i = 0; i < args.length; i++) {
-            args[i] = TypeConverter.convertToType(args[i], runtime.getArray(), methodConverter);
+            args[i] = TypeConverter.convertToType(args[i], array, methodConverter);
         }
 
-        final int aLen = args.length + 1;
+        return args;
+    }
+
+    public static IRubyObject zipCommon(ThreadContext context, IRubyObject self,
+            IRubyObject[] aArgs, final Block block, String methodConverter) {
+        final Ruby runtime = context.getRuntime();
+        final int aLen = aArgs.length + 1;
+        final IRubyObject[] args = zipCommonConvert(runtime, aArgs, methodConverter);
 
         if (block.isGiven()) {
             callEach(runtime, context, self, new BlockCallback() {
