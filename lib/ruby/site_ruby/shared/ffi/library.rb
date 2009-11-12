@@ -2,26 +2,24 @@ module FFI::Library
   DEFAULT = FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
 
   def ffi_lib(*names)
-    ffi_libs = []
-    errors = {}
-    names.each do |name|
-      [ name, FFI.map_library_name(name) ].each do |libname|
+
+    ffi_libs = names.map do |name|
+      libnames = (name.is_a?(::Array) ? name : [ name ]).map { |n| [ n, FFI.map_library_name(n) ].uniq }.flatten
+      lib = nil
+      errors = {}
+
+      libnames.each do |libname|
         begin
           lib = FFI::DynamicLibrary.open(libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
-          if lib
-            ffi_libs << lib
-            break
-          end
+          break if lib
         rescue Exception => ex
-          errors[name] = ex
+          errors[libname] = ex
         end
       end
-    end
 
-    if ffi_libs.empty?
-      msgs = []
-      errors.each {|name, ex| msgs << "Failed to load library '#{name}': #{ex.message}" }
-      raise LoadError.new(msgs.join('\n'))
+      if lib.nil?
+        raise LoadError.new(errors.values.join('. '))
+      end
     end
 
     @ffi_libs = ffi_libs
