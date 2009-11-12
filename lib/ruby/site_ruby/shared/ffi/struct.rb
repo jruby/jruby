@@ -1,5 +1,3 @@
-require 'ffi'
-
 module FFI
   class Struct
 
