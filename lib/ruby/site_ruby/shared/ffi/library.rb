@@ -20,6 +20,9 @@ module FFI::Library
       if lib.nil?
         raise LoadError.new(errors.values.join('. '))
       end
+
+      # return the found lib
+      lib
     end
 
     @ffi_libs = ffi_libs
