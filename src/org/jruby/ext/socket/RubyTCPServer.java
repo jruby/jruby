@@ -40,6 +40,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 
 import java.nio.channels.SocketChannel;
+import java.util.regex.Pattern;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -64,7 +66,8 @@ import org.jruby.util.io.InvalidValueException;
 @JRubyClass(name="TCPServer", parent="TCPSocket")
 public class RubyTCPServer extends RubyTCPSocket {
     static void createTCPServer(Ruby runtime) {
-        RubyClass rb_cTCPServer = runtime.defineClass("TCPServer", runtime.fastGetClass("TCPSocket"), TCPSERVER_ALLOCATOR);
+        RubyClass rb_cTCPServer = runtime.defineClass(
+                "TCPServer", runtime.fastGetClass("TCPSocket"), TCPSERVER_ALLOCATOR);
 
         rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
         
@@ -113,20 +116,36 @@ public class RubyTCPServer extends RubyTCPSocket {
                 portInt = RubyNumeric.fix2int(portInteger);
 
                 if (portInt <= 0) {
-                    portInt = RubyNumeric.fix2int(RubySocket.getservbyname(context, context.getRuntime().getObject(), new IRubyObject[] {portString}));
+                    portInt = RubyNumeric.fix2int(RubySocket.getservbyname(
+                            context, context.getRuntime().getObject(), new IRubyObject[] {portString}));
                 }
             }
 
             socket_address = new InetSocketAddress(addr, portInt);
             ssc.socket().bind(socket_address);
-            initSocket(context.getRuntime(), new ChannelDescriptor(ssc, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(
+                    ssc, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch(UnknownHostException e) {
             throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch(BindException e) {
-            //            e.printStackTrace();
-            throw context.getRuntime().newErrnoEADDRINUSEError();
+            // e.printStackTrace();
+            String msg = e.getMessage();
+            if (msg == null) {
+                msg = "bind";
+            } else {
+                msg = "bind - " + msg;
+            }
+
+            // This is ugly, but what can we do, Java provides the same BindingException
+            // for both EADDRNOTAVAIL and EADDRINUSE, so we differentiate the errors
+            // based on BindException's message.
+            if(ADDR_NOT_AVAIL_PATTERN.matcher(msg).find()) {
+                throw context.getRuntime().newErrnoEADDRNOTAVAILError(msg);
+            } else {
+                throw context.getRuntime().newErrnoEADDRINUSEError(msg);
+            }
         } catch(IOException e) {
             throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch (IllegalArgumentException iae) {
@@ -248,4 +267,6 @@ public class RubyTCPServer extends RubyTCPSocket {
             tcpServer.callMethod(context, "close");
         }
     }
+
+    private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 }

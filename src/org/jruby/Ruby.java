@@ -2886,6 +2886,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EADDRINUSE"), "Address in use");
     }
 
+    public RaiseException newErrnoEADDRINUSEError(String message) {
+        return newRaiseException(getErrno().fastGetClass("EADDRINUSE"), message);
+    }
+
     public RaiseException newErrnoEINVALError() {
         return newRaiseException(getErrno().fastGetClass("EINVAL"), "Invalid file");
     }
@@ -2949,6 +2953,10 @@ public final class Ruby {
     public RaiseException newErrnoECHILDError() {
         return newRaiseException(getErrno().fastGetClass("ECHILD"), "No child processes");
     }    
+
+    public RaiseException newErrnoEADDRNOTAVAILError(String message) {
+        return newRaiseException(getErrno().fastGetClass("EADDRNOTAVAIL"), message);
+    }
 
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
