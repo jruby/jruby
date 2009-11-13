@@ -317,13 +317,11 @@ public class JRubyEngineTest {
         assertEquals(expResult, ((String)result).trim());
 
         // Ruby 1.9 mode is somehow broken in 1.5.0dev
-        /*
         BSFManager.registerScriptingEngine("jruby19", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         instance = (JRubyEngine) manager.loadScriptingEngine("jruby19");
         result = instance.eval("org/jruby/embed/ruby/block-param-scope.rb", 0, 0, PathType.CLASSPATH);
         expResult = "bear";
         assertEquals(expResult, ((String)result).trim());
-        */
     }
 
     @Test

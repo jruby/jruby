@@ -220,12 +220,12 @@ public class MultipleScriptsRunnerTest {
         }
     }
 
-    /* test_io.rb has failed at least since 620d88bb */
     @Test
     public void testByAbsolutePath() throws FileNotFoundException {
         String[] testnames = {
             "test_dir.rb",
             "test_file.rb",
+            "test_io.rb",
             "test_load.rb",
             "test_load_class_before_rb.rb"
         };
@@ -242,8 +242,7 @@ public class MultipleScriptsRunnerTest {
         }
     }
 
-    /* test_io_1_9.rb has failed at least since 620d88bb */
-    //@Test
+    @Test
     public void test19ByAbsolutePath() throws FileNotFoundException {
         String[] testnames = {
             "test_io_1_9.rb"
