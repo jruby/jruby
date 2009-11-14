@@ -117,7 +117,7 @@ module FFI::Library
   end
 
   def callback(*args)
-    raise ArgError, "wrong number of arguments" if args.length < 2 || args.length > 3
+    raise ArgumentError, "wrong number of arguments" if args.length < 2 || args.length > 3
     name, params, ret = if args.length == 3
       args
     else
