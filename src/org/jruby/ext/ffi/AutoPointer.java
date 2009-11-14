@@ -1,8 +1,8 @@
 
 package org.jruby.ext.ffi;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -18,9 +18,10 @@ public final class AutoPointer extends Pointer {
     static final String AUTOPTR_CLASS_NAME = "AutoPointer";
     
     /** Keep strong references to the Reaper until cleanup */
-    private static final Map<Reaper, Boolean> referenceSet = new ConcurrentHashMap<Reaper, Boolean>();
+    private static final ConcurrentMap<Reaper, Boolean> referenceSet = new ConcurrentHashMap<Reaper, Boolean>();
     
     private Pointer pointer;
+    private volatile Reaper reaper;
     
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(AUTOPTR_CLASS_NAME,
@@ -69,7 +70,7 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
-        referenceSet.put(new Reaper(this, pointer, getMetaClass(), "release"), Boolean.TRUE);
+        referenceSet.put(reaper = new Reaper(this, pointer, getMetaClass(), "release"), Boolean.TRUE);
 
         return this;
     }
@@ -82,9 +83,36 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
-        referenceSet.put(new Reaper(this, pointer, releaser, "call"), Boolean.TRUE);
+        referenceSet.put(reaper = new Reaper(this, pointer, releaser, "call"), Boolean.TRUE);
 
         return this;
+    }
+
+    @JRubyMethod(name = "free")
+    public final IRubyObject free(ThreadContext context) {
+        Reaper r = reaper;
+
+        if (r == null) {
+            throw context.getRuntime().newRuntimeError("pointer already freed");
+        }
+
+        r.release(context);
+        reaper = null;
+        
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "autorelease=")
+    public final IRubyObject autorelease(ThreadContext context, IRubyObject autorelease) {
+        Reaper r = reaper;
+
+        if (r == null) {
+            throw context.getRuntime().newRuntimeError("pointer already freed");
+        }
+
+        r.autorelease(autorelease.isTrue());
+        
+        return context.getRuntime().getNil();
     }
 
     private static final class Reaper extends ReferenceReaper.Phantom<AutoPointer> implements Runnable {
@@ -99,9 +127,21 @@ public final class AutoPointer extends Pointer {
             this.methodName = methodName;
         }
 
-        public void run() {
+        public final void release(ThreadContext context) {
             referenceSet.remove(this);
-            proc.callMethod(pointer.getRuntime().getCurrentContext(), methodName, pointer);
+            proc.callMethod(context, methodName, pointer);
+        }
+
+        public final void autorelease(boolean autorelease) {
+            if (!autorelease) {
+                referenceSet.remove(this);
+            } else {
+                referenceSet.putIfAbsent(this, Boolean.TRUE);
+            }
+        }
+
+        public void run() {
+            release(pointer.getRuntime().getCurrentContext());
         }
     }
 }
