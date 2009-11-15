@@ -1,21 +1,21 @@
 module FFI
   TypeDefs = Hash.new
-  def self.add_typedef(current, add)
-    if current.kind_of?(Type)
-      code = current
-    else
-      code = TypeDefs[current]
-      raise TypeError, "Unable to resolve type '#{current}'" unless code
-    end
 
-    TypeDefs[add] = code
+  def self.add_typedef(current, add)
+    TypeDefs[add] = self.find_type(current)
   end
+  
+  
   def self.find_type(name, type_map = nil)
-    type_map = TypeDefs if type_map.nil?
-    code = type_map[name]
-    code = name if !code && name.kind_of?(FFI::Type)
-    raise TypeError, "Unable to resolve type '#{name}'" unless code
-    return code
+    type = if name.is_a?(FFI::Type)
+      name
+    elsif type_map
+      type_map[name]
+    end || TypeDefs[name]
+
+    raise TypeError, "Unable to resolve type '#{name}'" unless type
+
+    return type
   end
 
   # Converts a char

@@ -127,22 +127,29 @@ module FFI::Library
 
     # Add to the symbol -> type map (unless there was no name)
     unless name.nil?
-      @ffi_callbacks = Hash.new unless defined?(@ffi_callbacks)
-      @ffi_callbacks[name] = cb
+      __cb_map[name] = cb
+
+      # Also put in the type map, so it can be used for typedefs
+      __type_map[name] = cb
     end
 
     cb
   end
 
+  def __type_map
+    defined?(@ffi_typedefs) ? @ffi_typedefs : (@ffi_typedefs = Hash.new)
+  end
+
+  def __cb_map
+    defined?(@ffi_callbacks) ? @ffi_callbacks: (@ffi_callbacks = Hash.new)
+  end
+  
   def typedef(current, add, info=nil)
-    @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
-    code = if current.kind_of?(FFI::Type)
+    __type_map[add] = if current.kind_of?(FFI::Type)
       current
     else
-      @ffi_typedefs[current] || FFI.find_type(current)
+      __type_map[current] || FFI.find_type(current)
     end
-
-    @ffi_typedefs[add] = code
   end
 
   def enum(*args)
@@ -179,19 +186,19 @@ module FFI::Library
   end
 
   def find_type(name)
-    code = if defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(name)
-      @ffi_typedefs[name]
-    elsif defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(name)
-      @ffi_callbacks[name]
+    if name.kind_of?(FFI::Type)
+      name
+
     elsif name.is_a?(Class) && name < FFI::Struct
       FFI::NativeType::POINTER
-    elsif name.kind_of?(FFI::Type)
-      name
-    end
-    if code.nil? || code.kind_of?(Symbol)
-      FFI.find_type(name)
-    else
-      code
-    end
+    
+    elsif defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(name)
+      @ffi_typedefs[name]
+
+    elsif defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(name)
+      @ffi_callbacks[name]
+
+    end || FFI.find_type(name)
   end
+
 end

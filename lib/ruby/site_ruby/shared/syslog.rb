@@ -24,6 +24,9 @@ module Syslog
   include Constants
   
   module Foreign
+    extend FFI::Library
+    ffi_lib FFI::Platform::LIBC
+
     # methods
     attach_function :open, "openlog", [:pointer, :int, :int], :void
     attach_function :close, "closelog", [], :void
@@ -80,7 +83,7 @@ module Syslog
       @options = opt
       @facility = fac
       @ident_memory = if ident
-        ptr = MemoryPointer.new ident.length + 1
+        ptr = FFI::MemoryPointer.new ident.length + 1
         ptr.write_string(ident + "\0")
         ptr
       else

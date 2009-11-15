@@ -1,4 +1,5 @@
 require 'ffi'
+MemoryPointer = FFI::MemoryPointer
 Buffer = FFI::Buffer
 Platform = FFI::Platform
 LongSize = FFI::Platform::LONG_SIZE / 8

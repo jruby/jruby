@@ -1,6 +1,8 @@
 require 'ffi'
 require 'java'
 
+MemoryPointer = FFI::MemoryPointer
+
 describe "MemoryPointer#total" do
   it "MemoryPointer.new(:char, 1).total == 1" do
     MemoryPointer.new(:char, 1).total.should == 1

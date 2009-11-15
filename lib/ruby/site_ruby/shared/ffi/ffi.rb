@@ -76,7 +76,6 @@ require 'ffi/struct'
 require 'ffi/io'
 require 'ffi/variadic'
 require 'ffi/errno'
-require 'ffi/rbx'
 require 'ffi/managedstruct'
 require 'ffi/enum'
 
