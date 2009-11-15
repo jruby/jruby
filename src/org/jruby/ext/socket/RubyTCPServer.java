@@ -29,16 +29,13 @@ package org.jruby.ext.socket;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-
 import java.nio.channels.ServerSocketChannel;
-
 import java.nio.channels.SocketChannel;
 import java.util.regex.Pattern;
 
@@ -56,9 +53,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.InvalidValueException;
+import org.jruby.util.io.ModeFlags;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -70,7 +67,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 "TCPServer", runtime.fastGetClass("TCPSocket"), TCPSERVER_ALLOCATOR);
 
         rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
-        
+
         runtime.getObject().fastSetConstant("TCPserver",rb_cTCPServer);
     }
 
@@ -93,8 +90,8 @@ public class RubyTCPServer extends RubyTCPSocket {
         IRubyObject port = args.length > 1 ? args[1] : context.getRuntime().getNil();
 
         if(hostname.isNil()
-	   || ((hostname instanceof RubyString)
-	       && ((RubyString) hostname).isEmpty())) {
+                || ((hostname instanceof RubyString)
+                        && ((RubyString) hostname).isEmpty())) {
             hostname = context.getRuntime().newString("0.0.0.0");
         } else if (hostname instanceof RubyFixnum) {
             // numeric host, use it for port
@@ -161,7 +158,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "accept")
     public IRubyObject accept(ThreadContext context) {
         RubyTCPSocket socket = new RubyTCPSocket(context.getRuntime(), context.getRuntime().fastGetClass("TCPSocket"));
-        
+
         try {
             while (true) {
                 boolean ready = context.getThread().select(this, SelectionKey.OP_ACCEPT);
@@ -172,7 +169,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     try {
                         SocketChannel connected = ssc.accept();
                         connected.finishConnect();
-                        
+
                         //
                         // Force the client socket to be blocking
                         //
@@ -180,7 +177,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                             connected.configureBlocking(false);
                             connected.configureBlocking(true);
                         }
-        
+
                         // otherwise one key has been selected (ours) so we get the channel and hand it off
                         socket.initSocket(context.getRuntime(), new ChannelDescriptor(connected, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
                     } catch (InvalidValueException ex) {
@@ -258,9 +255,9 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "open", rest = true, frame = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject tcpServer = recv.callMethod(context, "new", args);
-        
+
         if (!block.isGiven()) return tcpServer;
-        
+
         try {
             return block.yield(context, tcpServer);
         } finally {

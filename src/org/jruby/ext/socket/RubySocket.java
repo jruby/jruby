@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,18 +27,26 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.kenai.constantine.platform.AddressFamily;
-import static com.kenai.constantine.platform.AddressFamily.*;
-import static com.kenai.constantine.platform.ProtocolFamily.*;
-import com.kenai.constantine.platform.Sock;
-import static com.kenai.constantine.platform.Sock.*;
-import static com.kenai.constantine.platform.NameInfo.*;
-import static com.kenai.constantine.platform.IPProto.*;
+import static com.kenai.constantine.platform.AddressFamily.AF_INET;
+import static com.kenai.constantine.platform.IPProto.IPPROTO_TCP;
+import static com.kenai.constantine.platform.IPProto.IPPROTO_UDP;
+import static com.kenai.constantine.platform.NameInfo.NI_NUMERICHOST;
+import static com.kenai.constantine.platform.NameInfo.NI_NUMERICSERV;
+import static com.kenai.constantine.platform.ProtocolFamily.PF_INET;
+import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
+import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
@@ -56,20 +64,23 @@ import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.platform.Platform;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.InvalidValueException;
+import org.jruby.util.io.ModeFlags;
+
+import com.kenai.constantine.platform.AddressFamily;
+import com.kenai.constantine.platform.Sock;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -102,7 +113,7 @@ public class RubySocket extends RubyBasicSocket {
             return new RubySocket(runtime, klass);
         }
     };
-    
+
     public static final int MSG_OOB = 0x1;
     public static final int MSG_PEEK = 0x2;
     public static final int MSG_DONTROUTE = 0x4;
@@ -112,7 +123,7 @@ public class RubySocket extends RubyBasicSocket {
 
     static void createSocket(Ruby runtime) {
         RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);
-        
+
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
 
@@ -131,10 +142,10 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
         rb_mConstants.fastSetConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
         rb_mConstants.fastSetConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
-        
+
         // constants webrick crashes without
         rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
-        
+
         // More constants needed by specs
         rb_mConstants.fastSetConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
         rb_mConstants.fastSetConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
@@ -147,7 +158,7 @@ public class RubySocket extends RubyBasicSocket {
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
     }
-    
+
     public RubySocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -168,14 +179,14 @@ public class RubySocket extends RubyBasicSocket {
         Ruby ruby = context.getRuntime();
         if (fd instanceof RubyFixnum) {
             RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
-            
+
             // normal file descriptor..try to work with it
             ChannelDescriptor descriptor = socket.getDescriptorByFileno((int)((RubyFixnum)fd).getLongValue());
-            
+
             if (descriptor == null) {
                 throw ruby.newErrnoEBADFError();
             }
-            
+
             Channel mainChannel = descriptor.getChannel();
 
             if (mainChannel instanceof SocketChannel) {
@@ -195,7 +206,7 @@ public class RubySocket extends RubyBasicSocket {
             }
 
             socket.initSocket(ruby, descriptor);
-            
+
             return socket;
         } else {
             throw context.getRuntime().newTypeError(fd, context.getRuntime().getFixnum());
@@ -217,7 +228,7 @@ public class RubySocket extends RubyBasicSocket {
             } else {
                 soDomain = RubyNumeric.fix2int(domain);
             }
-        
+
             if(type instanceof RubyString) {
                 String typeString = type.toString();
                 if(typeString.equals("SOCK_STREAM")) {
@@ -232,14 +243,14 @@ public class RubySocket extends RubyBasicSocket {
             }
 
             soProtocol = RubyNumeric.fix2int(protocol);
-        
+
             Channel channel = null;
             if(soType == Sock.SOCK_STREAM.value()) {
                 channel = SocketChannel.open();
             } else if(soType == Sock.SOCK_DGRAM.value()) {
                 channel = DatagramChannel.open();
             }
-            
+
             initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
@@ -335,53 +346,121 @@ public class RubySocket extends RubyBasicSocket {
         return context.getRuntime().newString(sb.toString());
     }
 
+    @JRubyMethod(backtrace = true)
+    public IRubyObject bind(ThreadContext context, IRubyObject arg) {
+        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, this, arg);
+
+        try {
+            IRubyObject addr = sockaddr.pop(context);
+            IRubyObject port = sockaddr.pop(context);
+            InetSocketAddress iaddr = new InetSocketAddress(
+                    addr.convertToString().toString(), RubyNumeric.fix2int(port));
+
+            Channel socketChannel = getChannel();
+            if (socketChannel instanceof SocketChannel) {
+                Socket socket = ((SocketChannel)socketChannel).socket();
+                socket.bind(iaddr);
+            } else if (socketChannel instanceof DatagramChannel) {
+                DatagramSocket socket = ((DatagramChannel)socketChannel).socket();
+                socket.bind(iaddr);
+            } else {
+                throw getRuntime().newErrnoENOPROTOOPTError();
+            }
+        } catch(UnknownHostException e) {
+            throw sockerr(context.getRuntime(), "bind(2): unknown host");
+        } catch(SocketException e) {
+            handleSocketException(context.getRuntime(), e);
+        } catch(IOException e) {
+            e.printStackTrace();
+            throw sockerr(context.getRuntime(), "bind(2): name or service not known");
+        } catch (IllegalArgumentException iae) {
+            throw sockerr(context.getRuntime(), iae.getMessage());
+        } catch (Error e) {
+            // Workaround for a bug in Sun's JDK 1.5.x, see
+            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
+            Throwable cause = e.getCause();
+            if (cause instanceof SocketException) {
+                handleSocketException(context.getRuntime(), (SocketException)cause);
+            } else {
+                throw e;
+            }
+        }
+        return RubyFixnum.zero(context.getRuntime());
+    }
+
+    private void handleSocketException(Ruby runtime, SocketException e) {
+        // e.printStackTrace();
+        String msg = formatMessage(e, "bind");
+
+        // This is ugly, but what can we do, Java provides the same exception type
+        // for different situations, so we differentiate the errors
+        // based on the exception's message.
+        if (ALREADY_BOUND_PATTERN.matcher(msg).find()) {
+            throw runtime.newErrnoEINVALError(msg);
+        } else if (ADDR_NOT_AVAIL_PATTERN.matcher(msg).find()) {
+            throw runtime.newErrnoEADDRNOTAVAILError(msg);
+        } else if (PERM_DENIED_PATTERN.matcher(msg).find()) {
+            throw runtime.newErrnoEACCESError(msg);
+        } else {
+            throw runtime.newErrnoEADDRINUSEError(msg);
+        }
+    }
+
+    private static String formatMessage(Throwable e, String defaultMsg) {
+        String msg = e.getMessage();
+        if (msg == null) {
+            msg = defaultMsg;
+        } else {
+            msg = defaultMsg + " - " + msg;
+        }
+        return msg;
+    }
+
     @Deprecated
     public static IRubyObject pack_sockaddr_in(IRubyObject recv, IRubyObject port, IRubyObject host) {
         return pack_sockaddr_in(recv.getRuntime().getCurrentContext(), recv, port, host);
     }
     @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
-	return pack_sockaddr_in(context, recv,
-				RubyNumeric.fix2int(port),
-				host.isNil()
-				? null
-				: host.convertToString().toString());
+        return pack_sockaddr_in(context, recv,
+                RubyNumeric.fix2int(port),
+                host.isNil() ? null : host.convertToString().toString());
     }
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, int iport, String host) {
-	ByteArrayOutputStream bufS = new ByteArrayOutputStream();
-	try {
-	    DataOutputStream ds = new DataOutputStream(bufS);
-	    if(Platform.IS_BSD) {
-		ds.write(16);
-		ds.write(2);
-	    } else {
-		ds.write(2);
-		ds.write(0);
-	    }
+        ByteArrayOutputStream bufS = new ByteArrayOutputStream();
+        try {
+            DataOutputStream ds = new DataOutputStream(bufS);
+            if(Platform.IS_BSD) {
+                ds.write(16);
+                ds.write(2);
+            } else {
+                ds.write(2);
+                ds.write(0);
+            }
 
-	    ds.write(iport >> 8);
-	    ds.write(iport);
+            ds.write(iport >> 8);
+            ds.write(iport);
 
-	    try {
-		if(host != null && "".equals(host)) {
-		    ds.writeInt(0);
-		} else {
-		    InetAddress[] addrs = InetAddress.getAllByName(host);
-		    byte[] addr = addrs[0].getAddress();
-		    ds.write(addr, 0, addr.length);
-		}
-	    } catch (UnknownHostException e) {
-		throw sockerr(context.getRuntime(), "getaddrinfo: No address associated with nodename");
-	    }
+            try {
+                if(host != null && "".equals(host)) {
+                    ds.writeInt(0);
+                } else {
+                    InetAddress[] addrs = InetAddress.getAllByName(host);
+                    byte[] addr = addrs[0].getAddress();
+                    ds.write(addr, 0, addr.length);
+                }
+            } catch (UnknownHostException e) {
+                throw sockerr(context.getRuntime(), "getaddrinfo: No address associated with nodename");
+            }
 
-	    ds.writeInt(0);
-	    ds.writeInt(0);
-	} catch (IOException e) {
-	    throw sockerr(context.getRuntime(), "pack_sockaddr_in: internal error");
-	}
+            ds.writeInt(0);
+            ds.writeInt(0);
+        } catch (IOException e) {
+            throw sockerr(context.getRuntime(), "pack_sockaddr_in: internal error");
+        }
 
         return context.getRuntime().newString(new ByteList(bufS.toByteArray(),
-							   false));
+                false));
     }
     @Deprecated
     public static IRubyObject unpack_sockaddr_in(IRubyObject recv, IRubyObject addr) {
@@ -393,7 +472,7 @@ public class RubySocket extends RubyBasicSocket {
         if((Platform.IS_BSD && val.charAt(0) != 16 && val.charAt(1) != 2) || (!Platform.IS_BSD && val.charAt(0) != 2)) {
             throw context.getRuntime().newArgumentError("can't resolve socket address of wrong type");
         }
-        
+
         int port = (val.charAt(2) << 8) + (val.charAt(3));
         StringBuilder sb = new StringBuilder();
         sb.append((int)val.charAt(4));
@@ -405,8 +484,8 @@ public class RubySocket extends RubyBasicSocket {
         sb.append((int)val.charAt(7));
 
         IRubyObject[] result = new IRubyObject[]{
-            context.getRuntime().newFixnum(port),
-            context.getRuntime().newString(sb.toString())};
+                context.getRuntime().newFixnum(port),
+                context.getRuntime().newString(sb.toString())};
 
         return context.getRuntime().newArrayNoCopy(result);
     }
@@ -480,8 +559,8 @@ public class RubySocket extends RubyBasicSocket {
                 }
             }
 
-            // When Socket::AI_PASSIVE and host is nil, return 'any' address. 
-            InetAddress[] addrs = null; 
+            // When Socket::AI_PASSIVE and host is nil, return 'any' address.
+            InetAddress[] addrs = null;
             if(!flags.isNil()) {
                 // The value of 1 is for Socket::AI_PASSIVE.
                 int flag = RubyNumeric.fix2int(flags);
@@ -526,13 +605,6 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    // FIXME: may need to broaden for IPV6 IP address strings
-    private static final Pattern STRING_ADDRESS_PATTERN =
-        Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
-    
-    private static final int HOST_GROUP = 3;
-    private static final int PORT_GROUP = 5;
-    
     @Deprecated
     public static IRubyObject getnameinfo(IRubyObject recv, IRubyObject[] args) {
         return getnameinfo(recv.getRuntime().getCurrentContext(), recv, args);
@@ -578,7 +650,7 @@ public class RubySocket extends RubyBasicSocket {
         } else {
             throw runtime.newArgumentError("invalid args");
         }
-        
+
         InetAddress addr;
         try {
             addr = InetAddress.getByName(host);
@@ -599,4 +671,15 @@ public class RubySocket extends RubyBasicSocket {
         return runtime.newArray(runtime.newString(host), runtime.newString(port));
 
     }
+
+    // FIXME: may need to broaden for IPV6 IP address strings
+    private static final Pattern STRING_ADDRESS_PATTERN =
+        Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
+
+    private final static Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
+    private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
+    private final static Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");
+
+    private static final int HOST_GROUP = 3;
+    private static final int PORT_GROUP = 5;
 }// RubySocket
