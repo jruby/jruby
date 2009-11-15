@@ -18,6 +18,7 @@ import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.MutableAttributeSet;
@@ -39,7 +40,7 @@ public class TextAreaReadline implements KeyListener {
     private static final String EMPTY_LINE = "";
     
     private JTextComponent area;
-    private int startPos;
+    private volatile int startPos;
     private String currentLine;
     
     public volatile MutableAttributeSet promptStyle;
@@ -186,6 +187,8 @@ public class TextAreaReadline implements KeyListener {
             }
         });
     }};
+
+    private static final int MAX_DOC_SIZE = 100000;
     private final Join inputJoin = INPUT_SPEC.createJoin();
 
     public TextAreaReadline(JTextComponent area) {
@@ -208,7 +211,7 @@ public class TextAreaReadline implements KeyListener {
                     }
                     
                     public void remove(DocumentFilter.FilterBypass fb, int offset, int length) throws BadLocationException {
-                        if (offset >= startPos) super.remove(fb, offset, length);
+                        if (offset >= startPos || offset == 0) super.remove(fb, offset, length);
                     }
                     
                     public void replace(DocumentFilter.FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
@@ -497,18 +500,31 @@ public class TextAreaReadline implements KeyListener {
     public void shutdown() {
         inputJoin.send(Channel.SHUTDOWN, null);
     }
-    
+
     /** Output methods **/
-    
+
     protected void append(String toAppend, AttributeSet style) {
        try {
-           area.getDocument().insertString(area.getDocument().getLength(), toAppend, style);
-       } catch (BadLocationException e) { }
+           Document doc = area.getDocument();
+           doc.insertString(doc.getLength(), toAppend, style);
+
+           // Cut the document to fit into the MAX_DOC_SIZE.
+           // See JRUBY-4237.
+           int extra = doc.getLength() - MAX_DOC_SIZE;
+           if (extra > 0) {
+               int removeBytes = extra + MAX_DOC_SIZE/10;
+               doc.remove(0, removeBytes);
+               startPos -= removeBytes;
+           }
+       } catch (BadLocationException e) {}
     }
 
     private void writeLineUnsafe(final String line) {
-        if (line.startsWith("=>")) append(line, resultStyle);
-        else append(line, outputStyle);
+        if (line.startsWith("=>")) {
+            append(line, resultStyle);
+        } else {
+            append(line, outputStyle);
+        }
         startPos = area.getDocument().getLength();
     }
     
