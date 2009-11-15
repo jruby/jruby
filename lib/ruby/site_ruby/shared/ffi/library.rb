@@ -1,51 +1,48 @@
 module FFI::Library
-  DEFAULT = FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
+  CURRENT_PROCESS = nil
+  LIBC = FFI::Platform::LIBC
 
   def ffi_lib(*names)
 
     ffi_libs = names.map do |name|
-      libnames = (name.is_a?(::Array) ? name : [ name ]).map { |n| [ n, FFI.map_library_name(n) ].uniq }.flatten
-      lib = nil
-      errors = {}
+      if name == CURRENT_PROCESS
+        FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
+      else
+        libnames = (name.is_a?(::Array) ? name : [ name ]).map { |n| [ n, FFI.map_library_name(n) ].uniq }.flatten.compact
+        lib = nil
+        errors = {}
 
-      libnames.each do |libname|
-        begin
-          lib = FFI::DynamicLibrary.open(libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
-          break if lib
-        rescue Exception => ex
-          errors[libname] = ex
+        libnames.each do |libname|
+          begin
+            lib = FFI::DynamicLibrary.open(libname, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
+            break if lib
+          rescue Exception => ex
+            errors[libname] = ex
+          end
         end
-      end
 
-      if lib.nil?
-        raise LoadError.new(errors.values.join('. '))
-      end
+        if lib.nil?
+          raise LoadError.new(errors.values.join('. '))
+        end
 
-      # return the found lib
-      lib
+        # return the found lib
+        lib
+      end
     end
 
     @ffi_libs = ffi_libs
   end
 
+
   def ffi_convention(convention)
     @ffi_convention = convention
   end
 
+
   def ffi_libraries
-    unless defined?(@ffi_libs) or self.name.nil?
-      libs = []
-      # Try the exact name (e.g. User32) and all lower case (e.g. LibC -> libc)
-      [ self.name, self.name.downcase ].each do |name|
-        begin
-          libs << FFI::DynamicLibrary.open(name, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
-        rescue Exception
+    raise LoadError.new("no library specified") if !defined?(@ffi_libs) || @ffi_libs.empty?
+    @ffi_libs
         end
-      end
-      @ffi_libs = libs unless libs.empty?
-    end
-    defined?(@ffi_libs) ? @ffi_libs : [ DEFAULT ]
-  end
 
   ##
   # Attach C function +name+ to this module.
@@ -123,6 +120,9 @@ module FFI::Library
     else
       [ nil, args[0], args[1] ]
     end
+    options = Hash.new
+    options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
+    options[:enums] = @ffi_enums if defined?(@ffi_enums)
     cb = FFI::CallbackInfo.new(find_type(ret), params.map { |e| find_type(e) })
 
     # Add to the symbol -> type map (unless there was no name)
