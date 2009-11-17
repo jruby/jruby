@@ -1,0 +1,1 @@
+fails(JRUBY-4243):Integer#prime_division Performs a prime factorization of a negative integer

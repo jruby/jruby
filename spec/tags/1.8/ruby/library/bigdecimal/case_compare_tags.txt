@@ -1,0 +1,2 @@
+fails(JRUBY-4242):BigDecimal#=== NaN is never equal to any number
+fails(JRUBY-4242):BigDecimal#=== returns false when compared objects that can not be coerced into BigDecimal

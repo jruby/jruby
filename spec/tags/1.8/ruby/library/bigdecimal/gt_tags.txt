@@ -1,0 +1,2 @@
+fails(JRUBY-4242):BigDecimal#> properly handles NaN values
+fails(JRUBY-4242):BigDecimal#> raises an ArgumentError if the argument can't be coerced into a BigDecimal
