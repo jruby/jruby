@@ -2,9 +2,11 @@ package org.jruby.compiler.ir.compiler_pass.opts;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.util.ListIterator;
 
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Module;
@@ -38,12 +40,21 @@ public class LocalOptimizationPass implements CompilerPass
 
     public void run(IR_Scope s)
     {
-        if (s instanceof IR_ExecutionScope)
-            runLocalOpts((IR_ExecutionScope)s);
+        if (s instanceof IR_ExecutionScope) {
+            IR_ExecutionScope es = (IR_ExecutionScope)s;
 
-        // After running local opts, set various method flags!
-        if (s instanceof IR_Method)
-            ((IR_Method)s).computeMethodFlags();
+            // Run this pass on nested closures first!
+            // This let us compute execute scope flags for a method based on what all nested closures do
+            List<IR_Closure> closures = es.getClosures();
+            for (IR_Closure c: closures)
+                run(c);
+
+            // Now, run on current scope
+            runLocalOpts(es);
+
+            // Only after running local opts, compute various execution scope flags
+            es.computeExecutionScopeFlags();
+        }
     }
 
     private static void runLocalOpts(IR_ExecutionScope s)
@@ -146,10 +157,6 @@ public class LocalOptimizationPass implements CompilerPass
                 valueMap = new HashMap<Operand,Operand>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
-
-            // Run local optimizations on any constructed closures
-            if (i instanceof BUILD_CLOSURE_Instr)
-                runLocalOpts(((BUILD_CLOSURE_Instr)i).getClosure());
         }
     }
 

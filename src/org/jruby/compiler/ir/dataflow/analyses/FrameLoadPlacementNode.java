@@ -93,7 +93,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                     reqdLoads = newReqdLoads;
                 }
                 // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-                else if (call.usesCallersFrame()) {
+                else if (call.requiresFrame()) {
                     reqdLoads.clear();
                 }
             }
@@ -152,7 +152,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                     // add loads in the closure
                     ((FrameLoadPlacementProblem)cl_cfg.getDataFlowSolution(flp.getName())).addLoads();
                 }
-                else if (call.usesCallersFrame()) {
+                else if (call.requiresFrame()) {
                     it.next();
                     for (Variable v: reqdLoads) {
                         it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));

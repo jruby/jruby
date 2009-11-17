@@ -89,7 +89,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
                 CALL_Instr call = (CALL_Instr)i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                        // At this call site, a frame will get allocated if it has not been already!
+                    // At this call site, a frame will get allocated if it has not been already!
                     frameAllocated = true;
 
                     IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
@@ -100,20 +100,21 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     cl_fsp.compute_MOP_Solution();
                     cl_cfg.setDataFlowSolution(cl_fsp.getName(), cl_fsp);
 
-                     // Only those variables that are:
-                     // (a) dirty, and
-                     // (b) used/defined in the closure
-                     //     (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
-                     // will need to be stored into the frame before the call!
-                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
-                     for (Variable v: dirtyVars) {
-                         if (cl_fsp.scopeDefinesOrUsesVariable(v))
-                             newDirtyVars.remove(v);
-                     }
-                     dirtyVars = newDirtyVars;
+                    // If the call is an eval, or if the callee can capture this method's frame,
+                    // we have to spill all variables.
+                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersFrame();
+
+                    // Unless we have to spill everything, spill only those dirty variables that are:
+                    // - used/defined in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
+                    Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
+                    for (Variable v: dirtyVars) {
+                        if (spillAllVars || cl_fsp.scopeDefinesOrUsesVariable(v))
+                            newDirtyVars.remove(v);
+                    }
+                    dirtyVars = newDirtyVars;
                 }
                 // Call has no closure && it requires stores
-                else if (call.usesCallersFrame()) {
+                else if (call.requiresFrame()) {
                     dirtyVars.clear();
                      frameAllocated = true;
                 }
@@ -163,14 +164,15 @@ public class FrameStorePlacementNode extends FlowGraphNode
                         frameAllocated = true;
                     }
 
-                    // Only those variables that are:
-                    // (a) dirty, and
-                    // (b) used/defined in the closure
-                    //     (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
-                    // will need to be stored into the frame before the call!
+                    // If the call is an eval, or if the callee can capture this method's frame,
+                    // we have to spill all variables.
+                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersFrame();
+
+                    // Unless we have to spill everything, spill only those dirty variables that are:
+                    // - used/defined in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v: dirtyVars) {
-                        if (cl_fsp.scopeDefinesOrUsesVariable(v)) {
+                        if (spillAllVars || cl_fsp.scopeDefinesOrUsesVariable(v)) {
                             instrs.add(new STORE_TO_FRAME_Instr(s, v._name, v));
                             newDirtyVars.remove(v);
                         }
@@ -182,7 +184,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     ((FrameStorePlacementProblem)cl_cfg.getDataFlowSolution(fsp.getName())).addStoreAndFrameAllocInstructions();
                 }
                 // Call has no closure && it requires stores
-                else if (call.usesCallersFrame()) {
+                else if (call.requiresFrame()) {
                     instrs.previous();
                     if (!frameAllocated) {
                         instrs.add(new ALLOC_FRAME_Instr(s));
