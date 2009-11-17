@@ -36,32 +36,31 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyArray;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.load.Library;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.anno.JRubyModule;
-
-import jline.ConsoleReader;
+import jline.CandidateListCompletionHandler;
 import jline.Completor;
+import jline.ConsoleReader;
 import jline.CursorBuffer;
 import jline.FileNameCompletor;
-import jline.CandidateListCompletionHandler;
 import jline.History;
+
 import org.jruby.CompatVersion;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyIO;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.anno.JRubyModule;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.Library;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -138,6 +137,7 @@ public class Readline {
         ConsoleHolder holder = new ConsoleHolder();
         holder.history = new ReadlineHistory();
         holder.currentCompletor = null;
+        COMPLETION_CASE_FOLD = runtime.getNil();
 
         RubyModule mReadline = runtime.defineModule("Readline");
 
