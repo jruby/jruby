@@ -93,7 +93,7 @@ public class RubyMethod extends RubyObject implements DataType {
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
-        newMethod.method = method.getRealMethod();
+        newMethod.method = method;
         newMethod.receiver = receiver;
 
         return newMethod;
