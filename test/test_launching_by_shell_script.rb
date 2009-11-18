@@ -170,4 +170,12 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
     assert_equal "two", result
     assert_equal 2, $?.exitstatus
   end
+
+  # JRUBY-4238
+  def test_run_script_from_jar
+      file = "file:" + File.expand_path("test/jar_with_ruby_files.jar") + "!/run_hello_from_jar.rb"
+      out = jruby(file)
+      assert_equal 0, $?.exitstatus
+      assert_equal "hello", out.strip
+  end
 end

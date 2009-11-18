@@ -40,8 +40,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTCompiler19;
@@ -1204,8 +1206,36 @@ public class RubyInstanceConfig {
                 return new BufferedInputStream(new FileInputStream(file), 8192);
             }
         } catch (IOException e) {
+            // We haven't found any file directly on the file system,
+            // now check for files inside the JARs.
+            InputStream is = getJarScriptSource();
+            if (is != null) {
+                return new BufferedInputStream(is, 8129);
+            }
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
         }
+    }
+
+    private InputStream getJarScriptSource() {
+        String name = getScriptFileName();
+        boolean looksLikeJarURL = name.startsWith("file:") && name.indexOf("!/") != -1;
+        if (!looksLikeJarURL) {
+            return null;
+        }
+
+        String before = name.substring("file:".length(), name.indexOf("!/"));
+        String after =  name.substring(name.indexOf("!/") + 2);
+
+        try {
+            JarFile jFile = new JarFile(before);
+            JarEntry entry = jFile.getJarEntry(after);
+
+            if (entry != null && !entry.isDirectory()) {
+                return jFile.getInputStream(entry);
+            }
+        } catch (IOException ignored) {
+        }
+        return null;
     }
 
     public String displayedFileName() {
