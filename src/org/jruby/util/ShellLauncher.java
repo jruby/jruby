@@ -826,10 +826,11 @@ public class ShellLauncher {
             }
 
             String command = args[0];
-            String[] slashDelimitedTokens = command.split("/");
+            // handle both slash types, \ and /.
+            String[] slashDelimitedTokens = command.split("[/\\\\]");
             String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
-            int indexOfRuby = finalToken.indexOf("ruby");
-            boolean inProc = ((indexOfRuby != -1 && indexOfRuby == (finalToken.length() - 4))
+            boolean inProc = (finalToken.endsWith("ruby")
+                    || (Platform.IS_WINDOWS && finalToken.endsWith("ruby.exe"))
                     || finalToken.endsWith(".rb")
                     || finalToken.endsWith("irb"));
 
