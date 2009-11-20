@@ -942,7 +942,7 @@ public class RubyClass extends RubyModule {
     public IRubyObject superclass19(ThreadContext context) {
         RubyClass superClazz = superClass;
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject()) return runtime.getNil();
+            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
         }
 
