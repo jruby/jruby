@@ -122,7 +122,24 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
     assert_equal "Gem", lines[0]
   end
-  
+
+  def test_dash_big_C
+    if (WINDOWS)
+      res = jruby('-CC:/ -e "puts Dir.pwd"').rstrip
+      assert_equal "C:/", res
+    else
+      res = jruby('-C/ -e "puts Dir.pwd"').rstrip
+      assert_equal "/", res
+    end
+    assert_equal 0, $?.exitstatus
+  end
+
+  def test_dash_big_C_error
+    out = jruby('-CaeAEUAOEUAeu_NOT_EXIST_xxx -e "puts Dir.pwd"').rstrip
+    assert_equal 1, $?.exitstatus
+    assert_match /chdir.*fatal/, out
+  end
+
   def test_dash_little_w_turns_warnings_on
     with_jruby_shell_spawning do
       assert_match /warning/, `#{RUBY} -v -e "defined? true" 2>&1`

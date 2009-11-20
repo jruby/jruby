@@ -866,15 +866,13 @@ public class RubyInstanceConfig {
                         }
                         if (!(new File(currentDirectory).isDirectory())) {
                             MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
-                            mee.setUsageError(true);
                             throw mee;
                         }
                     } catch (IOException e) {
                         MainExitException mee = new MainExitException(1, getArgumentError(" -C must be followed by a valid directory"));
-                        mee.setUsageError(true);
                         throw mee;
                     }
-                    break;
+                    break FOR;
                 case 'd':
                     debug = true;
                     verbose = Boolean.TRUE;
