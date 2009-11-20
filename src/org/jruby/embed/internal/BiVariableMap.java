@@ -206,11 +206,12 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         {@code null} if this map contains no mapping for the key
      */
     public V get(Object key) {
-        if (containsKey(key)) {
-            return (V)getVariable((String)key).getJavaObject();
-        } else {
+        interceptor.tryLazyRetrieval(this, runtime, null, key);
+        BiVariable bv = getVariable((String)key);
+        if (bv == null) {
             return null;
         }
+        return (V)bv.getJavaObject();
     }
 
     /**

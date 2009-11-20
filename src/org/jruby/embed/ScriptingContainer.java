@@ -46,7 +46,6 @@ import org.jruby.RubyGlobal.InputGlobalVariable;
 import org.jruby.RubyGlobal.OutputGlobalVariable;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyNil;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.internal.EmbedRubyInterfaceAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
@@ -58,8 +57,6 @@ import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 

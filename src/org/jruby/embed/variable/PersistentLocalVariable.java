@@ -92,12 +92,8 @@ public class PersistentLocalVariable extends AbstractVariable {
      * @param name is a name to be checked.
      * @return true if the given name is of a Ruby local variable.
      */
-    public static boolean isValidName(String name) {
-        if (name.matches(pattern)) {
-            return true;
-        } else {
-            return false;
-        }
+    public static boolean isValidName(Object name) {
+        return isValidName(pattern, name);
     }
 
     /**

@@ -42,11 +42,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class LocalGlobalVariable extends GlobalVariable {
-    private static String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
+    private static String pattern = "([a-zA-Z]|(_([a-zA-Z]|_|\\d)))([a-zA-Z]|_|\\d)*";
 
     /**
      * Returns an instance of this class. This factory method is used when a local
-     * global type variable is put in {@link BiVariableMap}.
+     * global type variable is put into {@link BiVariableMap}.
      *
      * @param runtime Ruby runtime
      * @param name a variable name
@@ -108,12 +108,8 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param name is a name to be checked.
      * @return true if the given name is of a local global type variable.
      */
-    public static boolean isValidName(String name) {
-        if (name.matches(pattern)) {
-            return true;
-        } else {
-            return false;
-        }
+    public static boolean isValidName(Object name) {
+        return isValidName(pattern, name);
     }
 
     /**

@@ -38,16 +38,31 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
- *
+ * This class is responsible to local variable behavior dependent processings.
+ * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class VariableInterceptor {
     private LocalVariableBehavior behavior;
-    
+
+    /**
+     * Contructs an instance with a given local variable behavior.
+     *
+     * @param behavior local variable behavior
+     */
     public VariableInterceptor(LocalVariableBehavior behavior) {
         this.behavior = behavior;
     }
 
+    /**
+     * Returns an appropriate type of a variable instance to the specified local
+     * variable behavior.
+     * 
+     * @param runtime Ruby runtime
+     * @param name variable name
+     * @param value variable value
+     * @return an appropriate type of the variable instance.
+     */
     public BiVariable getVariableInstance(Ruby runtime, String name, Object... value) {
         if (value == null || value.length < 1) {
             return null;
@@ -94,6 +109,16 @@ public class VariableInterceptor {
         return null;
     }
 
+    /**
+     * Injects variable values from Java to Ruby just before an evaluation or
+     * method invocation.
+     *
+     * @param map a variable map that has name-value pairs to be injected
+     * @param runtime Ruby runtime
+     * @param scope scope to inject local variable values
+     * @param depth depth of a frame to inject local variable values
+     * @param receiver a receiver when the script has been evaluated once
+     */
     public void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
         if (scope != null) {
             IRubyObject[] values4Injection = map.getLocalVarValues();
@@ -109,6 +134,14 @@ public class VariableInterceptor {
         }
     }
 
+    /**
+     * Retrieves variable/constant names and values after the evaluation or method
+     * invocation.
+     *
+     * @param map varible map that holds retrieved name-value pairs.
+     * @param runtime Ruby runtime
+     * @param receiver a receiver when the script has been evaluated once
+     */
     public void retrieve(BiVariableMap map, Ruby runtime, IRubyObject receiver) {
         switch (behavior) {
             case GLOBAL:
@@ -122,28 +155,42 @@ public class VariableInterceptor {
             // continues to the default case
             default:
                 InstanceVariable.retrieve(runtime, receiver, map);
-                GlobalVariable.retrieve(runtime, receiver, map);
+                //GlobalVariable.retrieve(runtime, receiver, map);//tryLazyRetrieval
                 ClassVariable.retrieve(runtime, receiver, map);
                 Constant.retrieve(runtime, receiver, map);
         }
-        /*
-        if (LocalVariableBehavior.GLOBAL == behavior) {
-            LocalGlobalVariable.retrieve(runtime, receiver, map);
-        } else {
-            InstanceVariable.retrieve(runtime, receiver, map);
-            GlobalVariable.retrieve(runtime, receiver, map);
-            ClassVariable.retrieve(runtime, receiver, map);
-            Constant.retrieve(runtime, receiver, map);
-
-            if (LocalVariableBehavior.PERSISTENT == behavior) {
-                PersistentLocalVariable.retrieve(runtime, receiver, map);
-            } else if (LocalVariableBehavior.TRANSIENT == behavior) {
-                // no operation
-            }
-        }
-        */
     }
 
+    /**
+     * Retrieves specified variable/constant name and value after the evaluation
+     * or method invocation only when it is requested.
+     *
+     * @param map varible map that holds retrieved name-value pairs.
+     * @param runtime Ruby runtime
+     * @param receiver a receiver when the script has been evaluated once
+     * @
+     */
+    public void tryLazyRetrieval(BiVariableMap map, Ruby runtime, IRubyObject receiver, Object key) {
+        switch (behavior) {
+            case GLOBAL:
+                break;
+            case BSF:
+                break;
+            case PERSISTENT:
+            default:
+                if (GlobalVariable.isValidName(key)) {
+                    GlobalVariable.retrieveByKey(runtime, map, (String)key);
+                }
+        }
+    }
+
+    /**
+     * Clears global variable values from Ruby runtime to behave the same as
+     * JSR 223 reference implementation.
+     *
+     * @param variables a variable list to be cleared from Ruby runtime
+     * @param runtime Ruby runtime
+     */
     public void terminateGlobalVariables(List<BiVariable> variables, Ruby runtime) {
         if (LocalVariableBehavior.GLOBAL == behavior) {
             for (int i = 0; i < variables.size(); i++) {
@@ -155,6 +202,13 @@ public class VariableInterceptor {
         }
     }
 
+    /**
+     * Clears local variables form the variable map so that old local variable
+     * name-value pairs are not to be used in successive evaluations.
+     *
+     * @param varNames variable name list to be cleared
+     * @param variables variable value list to be cleared
+     */
     public void terminateLocalVariables(List<String> varNames, List<BiVariable> variables) {
         if (LocalVariableBehavior.TRANSIENT == behavior) {
             for (int i = 0; i < variables.size(); i++) {
@@ -166,6 +220,12 @@ public class VariableInterceptor {
         }
     }
 
+    /**
+     * Checks the given name is whether a legal Ruby variable/constant name or not.
+     *
+     * @param name a given name to be checked
+     * @return true when the name is a lega Ruby variable/constant name, otherwise false.
+     */
     public boolean isKindOfRubyVariable(String name) {
         switch (behavior) {
             case GLOBAL:

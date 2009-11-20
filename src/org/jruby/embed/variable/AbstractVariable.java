@@ -114,4 +114,15 @@ abstract class AbstractVariable implements BiVariable {
         RubyModule rubyClass = scope.getModule();
         return rubyClass;
     }
+
+    protected static boolean isValidName(String pattern, Object name) {
+        if (!(name instanceof String)) {
+            return false;
+        }
+        if (((String)name).matches(pattern)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

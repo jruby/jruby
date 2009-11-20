@@ -79,7 +79,7 @@ public class Constant extends AbstractVariable {
     }
 
     /**
-     * Retrieves constants from Ruby after the evaluation.
+     * Retrieves constants from Ruby after the evaluation or method invocation.
      *
      * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
@@ -120,12 +120,8 @@ public class Constant extends AbstractVariable {
      * @param name is a name to be checked.
      * @return true if the given name is of a Ruby constant.
      */
-    public static boolean isValidName(String name) {
-        if (name.matches(pattern)) {
-            return true;
-        } else {
-            return false;
-        }
+    public static boolean isValidName(Object name) {
+        return isValidName(pattern, name);
     }
 
     /**

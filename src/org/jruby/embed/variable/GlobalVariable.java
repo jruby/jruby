@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class GlobalVariable extends AbstractVariable {
-    private static String pattern = "\\$([a-zA-Z]|(_([a-zA-Z]|_|\\d)))([a-zA-Z]|_|\\d)*";
+    private static String pattern = "\\$(([a-zA-Z]|_|\\d)*|-[a-zA-Z]|[!-~&&[^#%()-\\{\\}\\[\\]\\|\\^]])";
 
     /**
      * Returns an instance of this class. This factory method is used when a global
@@ -54,7 +54,9 @@ public class GlobalVariable extends AbstractVariable {
      */
     public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            return new GlobalVariable(runtime, name, javaObject);
+            GlobalVariable gvar = new GlobalVariable(runtime, name, javaObject);
+            gvar.tryEagerInjection(runtime, null);
+            return gvar;
         }
         return null;
     }
@@ -87,16 +89,34 @@ public class GlobalVariable extends AbstractVariable {
             if (isPredefined(name)) {
                 continue;
             }
-            BiVariable var;
             IRubyObject value = gvars.get(name);
-            if (vars.containsKey((Object)name)) {
-                var = vars.getVariable(name);
-                var.setRubyObject(value);
-            } else {
-                var = new GlobalVariable(name, value);
-                vars.update(name, var);
-            }
+            updateMap(vars, name, value);
         }
+    }
+
+    private static void updateMap(BiVariableMap vars, String name, IRubyObject value) {
+        BiVariable var;
+        if (vars.containsKey((Object) name)) {
+            var = vars.getVariable(name);
+            var.setRubyObject(value);
+        } else {
+            var = new GlobalVariable(name, value);
+            vars.update(name, var);
+        }
+    }
+
+    /**
+     * Retrieves a global variable by key from Ruby after the evaluation.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save a retrieved global variable.
+     * @param key name of the global variable
+     */
+    public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
+        GlobalVariables gvars = runtime.getGlobalVariables();
+        IRubyObject value = gvars.get(key);
+        updateMap(vars, key, value);
     }
 
     protected static boolean isPredefined(String name) {
@@ -106,8 +126,8 @@ public class GlobalVariable extends AbstractVariable {
             "\\$(DEBUG|F|FILENAME|KCODE|LOAD_PATH|SAFE|VERBOSE|CLASSPATH|LOADED_FEATURES|PROGRAM_NAME)",
             "\\$(configure_args|deferr|defout|expect_verbose|stderr|stdin|stdout)"
         };
-        for (String pattern : patterns) {
-            if (name.matches(pattern)) {
+        for (String p : patterns) {
+            if (name.matches(p)) {
                 return true;
             }
         }
@@ -130,12 +150,31 @@ public class GlobalVariable extends AbstractVariable {
      * @param name is a name to be checked.
      * @return true if the given name is of a Ruby global variable.
      */
-    public static boolean isValidName(String name) {
-        if (name.matches(pattern)) {
-            return true;
-        } else {
-            return false;
-        }
+    public static boolean isValidName(Object name) {
+        return isValidName(pattern, name);
+    }
+
+    /**
+     * Sets a Java object and its Ruby type as a value of this object.
+     * At the same time, sets Ruby object to Ruby runtime.
+     *
+     * @param runtime is used to convert a Java object to Ruby object.
+     * @param javaObject is a variable value to be set.
+     */
+    public void setJavaObject(Ruby runtime, Object javaObject) {
+        updateJavaObject(runtime, javaObject);
+        tryEagerInjection(runtime, null);
+    }
+
+    /**
+     * A global variable is injected when it is set. This method does nothing.
+     * Instaed injection is done by tryEagerInjection.
+     *
+     * @param runtime is environment where a variable injection occurs
+     * @param receiver is the instance that will have variable injection.
+     */
+    public void inject(Ruby runtime, IRubyObject receiver) {
+        // do nothing
     }
 
     /**
@@ -145,7 +184,7 @@ public class GlobalVariable extends AbstractVariable {
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver) {
+    public void tryEagerInjection(Ruby runtime, IRubyObject receiver) {
         runtime.getGlobalVariables().set(name, irubyObject);
     }
 
