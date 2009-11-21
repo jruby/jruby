@@ -1,5 +1,4 @@
 require 'rubygems/config_file'
-require 'etc'
 
 module Gem
 
@@ -67,17 +66,19 @@ class Gem::SourceIndex
     end
 
     def spec_directories_from_classpath
+      ## FIXME: requiring 'jruby' below also loads the whole 'java' stuff,
+      ## thus adding yet another 200+ ms to startup!
       require 'jruby'
-      require 'uri'
 
       JRuby.runtime.getJRubyClassLoader.getResources("specifications").map do |u|
+        # lazily load 'uri', saves us 100ms during startup in typical case
+        require 'uri'
 
         if u.getProtocol == 'jar' and u.getFile =~ /^file:/
           file_url = URI.unescape(u.getFile)
         else
           file_url = u.getFile
         end
-
         file_url
       end
     end
@@ -92,4 +93,3 @@ if (Gem::win_platform?)
     end
   end
 end
-
