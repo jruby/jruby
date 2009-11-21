@@ -38,8 +38,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -47,6 +49,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Defines the memory layout for a native structure.
@@ -452,21 +455,26 @@ public final class StructLayout extends Type {
         private final long getOffset(IRubyObject index) {
             return offset + (Util.uint32Value(index) * arrayType.getComponentType().getNativeSize());
         }
+
         private final long getOffset(int index) {
             return offset + (index * arrayType.getComponentType().getNativeSize());
         }
+
         private IRubyObject get(Ruby runtime, int index) {
             return aio.get(runtime, ptr.getMemoryIO(), getOffset(index));
         }
+
         @JRubyMethod(name = "[]")
         public IRubyObject get(ThreadContext context, IRubyObject index) {
             return aio.get(context.getRuntime(), ptr.getMemoryIO(), getOffset(index));
         }
+
         @JRubyMethod(name = "[]=")
         public IRubyObject put(ThreadContext context, IRubyObject index, IRubyObject value) {
             aio.put(context.getRuntime(), ptr.getMemoryIO(), getOffset(index), value);
             return value;
         }
+
         @JRubyMethod(name = { "to_a", "to_ary" })
         public IRubyObject get(ThreadContext context) {
             Ruby runtime = context.getRuntime();
@@ -476,10 +484,12 @@ public final class StructLayout extends Type {
             }
             return RubyArray.newArrayNoCopy(runtime, elems);
         }
+
         @JRubyMethod(name = { "to_ptr" })
         public IRubyObject to_ptr(ThreadContext context) {
             return ptr.slice(context.getRuntime(), offset);
         }
+
         @JRubyMethod(name = { "size" })
         public IRubyObject size(ThreadContext context) {
             return context.getRuntime().newFixnum(arrayType.getNativeSize());
@@ -496,6 +506,283 @@ public final class StructLayout extends Type {
                 block.yield(context, get(context.getRuntime(), i));
             }
             return this;
+        }
+
+        @JRubyMethod(name = { "to_s" })
+        public IRubyObject to_s(ThreadContext context) {
+            switch (arrayType.getComponentType().getNativeType()) {
+                case CHAR:
+                case UCHAR:
+                    return MemoryUtil.getTaintedString(context.getRuntime(), ptr.getMemoryIO(), offset, arrayType.length());
+                default:
+                    return context.getRuntime().getNil();
+            }
+        }
+    }
+
+    /**
+     * Primitive (byte, short, int, long, float, double) types are all handled by
+     * a PrimitiveMember type.
+     */
+    static final class PrimitiveMember extends Member {
+        private final MemoryOp op;
+
+        PrimitiveMember(IRubyObject name, Type type, int index, long offset) {
+            super(name, type, index, offset);
+            op = MemoryOp.getMemoryOp(type.getNativeType());
+        }
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            op.put(runtime, getMemoryIO(ptr), offset, value);
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            return op.get(runtime, getMemoryIO(ptr), offset);
+        }
+    }
+
+    static final class PointerMember extends StructLayout.Member {
+
+        PointerMember(IRubyObject name, Type type, int index, long offset) {
+            super(name, type, index, offset);
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            if (value instanceof Pointer) {
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Pointer) value).getMemoryIO());
+            } else if (value instanceof Struct) {
+                MemoryIO mem = ((Struct) value).getMemoryIO();
+
+                if (!(mem instanceof DirectMemoryIO)) {
+                    throw runtime.newArgumentError("Struct memory not backed by a native pointer");
+                }
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), mem);
+
+            } else if (value instanceof RubyInteger) {
+                getMemoryIO(ptr).putAddress(offset, Util.int64Value(ptr));
+            } else if (value.respondsTo("to_ptr")) {
+                IRubyObject addr = value.callMethod(runtime.getCurrentContext(), "to_ptr");
+                if (addr instanceof Pointer) {
+                    getMemoryIO(ptr).putMemoryIO(offset, ((Pointer) addr).getMemoryIO());
+                } else {
+                    throw runtime.newArgumentError("Invalid pointer value");
+                }
+            } else if (value.isNil()) {
+                getMemoryIO(ptr).putAddress(offset, 0L);
+            } else {
+                throw runtime.newArgumentError("Invalid pointer value");
+            }
+            cache.putReference(this, value);
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            DirectMemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
+            IRubyObject old = cache.getCachedValue(this);
+            if (old instanceof Pointer) {
+                MemoryIO oldMemory = ((Pointer) old).getMemoryIO();
+                if (memory.equals(oldMemory)) {
+                    return old;
+                }
+            }
+            Pointer retval = new Pointer(runtime, memory);
+            cache.putCachedValue(this, retval);
+            return retval;
+        }
+
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
+        }
+    }
+
+    static final class StringMember extends StructLayout.Member {
+        StringMember(IRubyObject name, Type type, int index, long offset) {
+            super(name, type, index, offset);
+        }
+
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
+            if (io == null || io.isNull()) {
+                return runtime.getNil();
+            }
+
+            return RubyString.newStringNoCopy(runtime, io.getZeroTerminatedByteArray(0));
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            ByteList bl = value.convertToString().getByteList();
+
+            MemoryPointer mem = MemoryPointer.allocate(runtime, 1, bl.length() + 1, false);
+            //
+            // Keep a reference to the temporary memory in the cache so it does
+            // not get freed by the GC until the struct is freed
+            //
+            cache.putReference(this, mem);
+
+            MemoryIO io = mem.getMemoryIO();
+            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
+            io.putByte(bl.length(), (byte) 0);
+
+            getMemoryIO(ptr).putMemoryIO(getOffset(ptr), io);
+        }
+    }
+
+    static final class CallbackMember extends StructLayout.Member {
+        private final CallbackInfo cbInfo;
+
+        CallbackMember(IRubyObject name, CallbackInfo cbInfo, int index, long offset) {
+            super(name, cbInfo, index, offset);
+            this.cbInfo = cbInfo;
+        }
+
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
+        }
+
+        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
+            if (value.isNil()) {
+                getMemoryIO(ptr).putAddress(getOffset(ptr), 0L);
+            } else {
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, cbInfo, value);
+                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), cb.getMemoryIO());
+                cache.putCachedValue(this, cb);
+                cache.putReference(this, cb);
+            }
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            return Factory.getInstance().newFunction(runtime, ((Pointer) ptr).getPointer(runtime, getOffset(ptr)), cbInfo);
+        }
+    }
+
+    static final class StructMember extends StructLayout.Member implements StructLayout.Aggregate {
+        private final RubyClass klass;
+        private final StructLayout layout;
+
+        StructMember(IRubyObject name, StructLayout layout, RubyClass klass, int index, long offset) {
+            super(name, layout, index, offset);
+            this.klass = klass;
+            this.layout = layout;
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            throw runtime.newNotImplementedError("Cannot set Struct fields");
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            IRubyObject s = cache.getCachedValue(this);
+            if (s == null) {
+                s = klass.newInstance(runtime.getCurrentContext(),
+                        new IRubyObject[] { ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)) },
+                        Block.NULL_BLOCK);
+                cache.putCachedValue(this, s);
+            }
+
+            return s;
+        }
+
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        protected boolean isValueReferenceNeeded() {
+            return true;
+        }
+
+        public Collection<StructLayout.Member> getMembers() {
+            return layout.getFields();
+        }
+    }
+
+    static final class ArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
+        private final MemoryOp op;
+        private final Type.Array arrayType;
+
+        ArrayMember(IRubyObject name, Type.Array arrayType, int index, long offset, MemoryOp op) {
+            super(name, arrayType, index, offset);
+            this.op = op;
+            this.arrayType = arrayType;
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            throw runtime.newNotImplementedError("Cannot set Array fields");
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            IRubyObject s = cache.getCachedValue(this);
+            if (s == null) {
+                s = new StructLayout.Array(runtime, ptr, offset, arrayType, op);
+                cache.putCachedValue(this, s);
+            }
+
+            return s;
+        }
+
+        @Override
+        protected boolean isCacheable() {
+            return true;
+        }
+
+        public Collection<StructLayout.Member> getMembers() {
+
+            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(arrayType.length());
+            Type elemType = arrayType.getComponentType();
+            for (int i = 0; i < arrayType.length(); ++i) {
+                members.add(new StructLayout.PrimitiveMember(getRuntime().getNil(), elemType, i, i * elemType.getNativeSize()));
+            }
+
+            return members;
+        }
+    }
+
+    static final class CharArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
+        private final int length;
+        CharArrayMember(IRubyObject name, Type type, int index, long offset, int size) {
+            super(name, type, index, offset);
+            this.length = size;
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            ByteList bl = value.convertToString().getByteList();
+            getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.unsafeBytes(), bl.begin(),
+                    Math.min(bl.length(), length - 1));
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            return MemoryUtil.getTaintedString(runtime, getMemoryIO(ptr), getOffset(ptr), length);
+        }
+
+        public Collection<StructLayout.Member> getMembers() {
+
+            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(length);
+
+            for (int i = 0; i < length; ++i) {
+                members.add(new StructLayout.PrimitiveMember(type.getRuntime().getNil(), type, i, i * type.getNativeSize()));
+            }
+
+            return members;
         }
     }
 }
