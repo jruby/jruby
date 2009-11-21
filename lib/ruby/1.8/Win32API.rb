@@ -4,9 +4,9 @@ raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['
 require 'ffi-internal.so'
 
 class Win32API
-  CONVENTION = FFI::Platform.windows? ? :stdcall : :default
   SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
   TypeDefs = {
+    '0' => FFI::Type::VOID,
     'V' => FFI::Type::VOID,
     'P' => FFI::Type::POINTER,
     'I' => FFI::Type::INT,
@@ -15,7 +15,7 @@ class Win32API
   }
 
   def self.find_type(name)
-    code = TypeDefs[name]
+    code = TypeDefs[name] || TypeDefs[name.upcase]
     raise TypeError, "Unable to resolve type '#{name}'" unless code
     return code
   end
@@ -40,7 +40,7 @@ class Win32API
     lib
   end
   
-  def initialize(lib, func, params, ret='L')
+  def initialize(lib, func, params, ret='L', calltype = :stdcall)
     @lib = lib
     @func = func
     @params = params
@@ -53,7 +53,7 @@ class Win32API
     SUFFIXES.each do |suffix|
       sym = @lib.find_function(func.to_s + suffix)
       if sym
-        options = { :convention => CONVENTION }
+        options = { :convention => calltype }
         @ffi_func = FFI::Function.new(Win32API.find_type(ret), Win32API.map_types(params), sym, options)
         @ffi_func.attach(self, :call)
         self.instance_eval("alias :Call :call")
@@ -61,7 +61,7 @@ class Win32API
       end
     end
     
-    raise FFI::NotFoundError, "Could not locate #{func}" unless @ffi_func
+    raise LoadError.new("Could not locate #{func}") unless @ffi_func
   end
 
   def inspect
