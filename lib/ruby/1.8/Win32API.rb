@@ -1,17 +1,17 @@
 require 'rbconfig'
 raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['host_os'] =~ /mswin/
 
-require 'ffi/ffi'
+require 'ffi-internal.so'
 
 class Win32API
   CONVENTION = FFI::Platform.windows? ? :stdcall : :default
   SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
   TypeDefs = {
-    'V' => :void,
-    'P' => :pointer,
-    'I' => :int,
-    'N' => :int,
-    'L' => :int,
+    'V' => FFI::Type::VOID,
+    'P' => FFI::Type::POINTER,
+    'I' => FFI::Type::INT,
+    'N' => FFI::Type::INT,
+    'L' => FFI::Type::INT,
   }
 
   def self.find_type(name)
@@ -21,15 +21,25 @@ class Win32API
   end
 
   def self.map_types(spec)
-    types = []
     if spec.kind_of?(String)
-      spec.each_byte { |c|types << self.find_type(c.chr.upcase) }
+      spec.split //
     elsif spec.kind_of?(Array)
-      spec.each { |c|types << self.find_type(c.upcase) }
-    end
-    types
+      spec
+    else
+      raise ArgumentError.new("invalid parameter types specification")
+    end.map { |c| self.find_type(c) }
   end
 
+  def self.map_library_name(lib)
+    # Mangle the library name to reflect the native library naming conventions
+    if lib && File.basename(lib) == lib
+      ext = ".#{FFI::Platform::LIBSUFFIX}"
+      lib = FFI::Platform::LIBPREFIX + lib unless lib =~ /^#{FFI::Platform::LIBPREFIX}/
+      lib += ext unless lib =~ /#{ext}/
+    end
+    lib
+  end
+  
   def initialize(lib, func, params, ret='L')
     @lib = lib
     @func = func
@@ -39,20 +49,18 @@ class Win32API
     #
     # Attach the method as 'call', so it gets all the froody arity-splitting optimizations
     #
-    extend FFI::Library
-    ffi_lib lib
-    ffi_convention CONVENTION
-    attached = false
-    SUFFIXES.each { |suffix|
-      begin
-        attach_function(:call, func.to_s + suffix, Win32API.map_types(params), Win32API.find_type(ret))
+    @lib = FFI::DynamicLibrary.open(Win32API.map_library_name(lib), FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
+    SUFFIXES.each do |suffix|
+      sym = @lib.find_function(func.to_s + suffix)
+      if sym
+        @ffi_func = FFI::Function.new(Win32API.find_type(ret), Win32API.map_types(params), sym)
+        @ffi_func.attach(self, :call)
         self.instance_eval("alias :Call :call")
-        attached = true
         break
-      rescue FFI::NotFoundError => ex
       end
-    }
-    raise FFI::NotFoundError, "Could not locate #{func}" unless attached
+    end
+    
+    raise FFI::NotFoundError, "Could not locate #{func}" unless @ffi_func
   end
 
   def inspect
