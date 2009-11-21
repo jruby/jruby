@@ -1,24 +1,5 @@
 module FFI
   class Pointer
-    # Write +obj+ as a C int at the memory pointed to.
-      def write_int(obj)
-        put_int32(0, obj)
-      end
-
-      # Read a C int from the memory pointed to.
-      def read_int
-        get_int32(0)
-      end
-
-      # Write +obj+ as a C long at the memory pointed to.
-      def write_long(obj)
-        put_long(0, obj)
-      end
-
-      # Read a C long from the memory pointed to.
-      def read_long
-        get_long(0)
-      end
 
       def write_string(str, len=nil)
         len = str.size unless len
@@ -62,12 +43,7 @@ module FFI
       def write_array_of_long(ary)
         put_array_of_long(0, ary)
       end
-      def read_pointer
-        get_pointer(0)
-      end
-      def write_pointer(ptr)
-        put_pointer(0, ptr)
-      end
+
       def read_array_of_pointer(length)
         get_array_of_pointer(0, length)
       end
