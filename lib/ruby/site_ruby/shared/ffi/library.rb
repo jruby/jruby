@@ -1,11 +1,15 @@
+module FFI
+  CURRENT_PROCESS = USE_THIS_PROCESS_AS_LIBRARY = Object.new
+end
+
 module FFI::Library
-  CURRENT_PROCESS = nil
+  CURRENT_PROCESS = FFI::CURRENT_PROCESS
   LIBC = FFI::Platform::LIBC
 
   def ffi_lib(*names)
 
     ffi_libs = names.map do |name|
-      if name == CURRENT_PROCESS
+      if name == FFI::CURRENT_PROCESS
         FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_GLOBAL)
       else
         libnames = (name.is_a?(::Array) ? name : [ name ]).map { |n| [ n, FFI.map_library_name(n) ].uniq }.flatten.compact
