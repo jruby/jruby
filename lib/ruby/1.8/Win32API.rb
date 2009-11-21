@@ -53,7 +53,8 @@ class Win32API
     SUFFIXES.each do |suffix|
       sym = @lib.find_function(func.to_s + suffix)
       if sym
-        @ffi_func = FFI::Function.new(Win32API.find_type(ret), Win32API.map_types(params), sym)
+        options = { :convention => CONVENTION }
+        @ffi_func = FFI::Function.new(Win32API.find_type(ret), Win32API.map_types(params), sym, options)
         @ffi_func.attach(self, :call)
         self.instance_eval("alias :Call :call")
         break
