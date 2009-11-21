@@ -560,6 +560,10 @@ public class RubyBignum extends RubyInteger {
             getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
         } else if (other instanceof RubyFloat) {
             d = ((RubyFloat) other).getDoubleValue();
+            if (this.compareTo(RubyFixnum.zero(runtime)) == -1
+                    &&  d != Math.round(d)) {
+                return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
+            }
         } else {
             return coerceBin(context, "**", other);
 

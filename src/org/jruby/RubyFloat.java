@@ -384,6 +384,16 @@ public class RubyFloat extends RubyNumeric {
             return coerceBin(context, "**", other);
         }
     }
+    
+    @JRubyMethod(name = "**", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
+        double d_other = ((RubyNumeric) other).getDoubleValue();
+        if (value < 0 && (d_other != Math.round(d_other))) {
+            return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
+        } else {
+            return op_pow(context, other);
+        }
+    }
 
     /** flo_eq
      * 
