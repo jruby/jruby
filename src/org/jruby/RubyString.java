@@ -6456,18 +6456,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             enumeratorize(context.getRuntime(), this, "lines", arg);
     }
 
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject each19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_lineCommon19(context, block) : 
-            enumeratorize(context.getRuntime(), this, "each");
-    }
-
-    @JRubyMethod(name = "each", frame = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject each19(ThreadContext context, IRubyObject arg, Block block) {
-        return block.isGiven() ? each_lineCommon19(context, arg, block) : 
-            enumeratorize(context.getRuntime(), this, "each", arg);
-    }
-
     @JRubyMethod(name = "each_line", frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, Block block) {
         return block.isGiven() ? each_lineCommon19(context, block) : 
