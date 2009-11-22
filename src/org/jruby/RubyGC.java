@@ -49,6 +49,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyModule(name="GC")
 public class RubyGC {
+    private static volatile boolean gcDisabled = false;
+    private static volatile boolean stress = false;
+
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
         runtime.setGC(result);
@@ -70,13 +73,32 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject enable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "GC.enable will not work on JRuby", "GC.enable");
-        return recv.getRuntime().getNil();
+        recv.getRuntime().getWarnings().warn(
+                ID.EMPTY_IMPLEMENTATION, "GC.enable will not work on JRuby", "GC.enable");
+        boolean old = gcDisabled;
+        gcDisabled = false;
+        return recv.getRuntime().newBoolean(old);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject disable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn(ID.EMPTY_IMPLEMENTATION, "GC.disable will not work on JRuby", "GC.disable");
-        return recv.getRuntime().getNil();
+        recv.getRuntime().getWarnings().warn(
+                ID.EMPTY_IMPLEMENTATION, "GC.disable will not work on JRuby", "GC.disable");
+        boolean old = gcDisabled;
+        gcDisabled = true;
+        return recv.getRuntime().newBoolean(old);
+    }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject stress(IRubyObject recv) {
+        return recv.getRuntime().newBoolean(stress);
+    }
+
+    @JRubyMethod(name = "stress=", module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject stress_set(IRubyObject recv, IRubyObject arg) {
+        recv.getRuntime().getWarnings().warn(
+                ID.EMPTY_IMPLEMENTATION, "GC.stress= does nothing on JRuby", "GC.stress=");
+        stress = arg.isTrue();
+        return recv.getRuntime().newBoolean(stress);
     }
 }
