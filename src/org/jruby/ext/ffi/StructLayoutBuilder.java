@@ -182,7 +182,7 @@ public final class StructLayoutBuilder extends RubyObject {
 
             Type.Array arrayType = (Type.Array) type;
             field = new StructLayout.ArrayMember(fieldName, arrayType, fieldCount, offset,
-                    MemoryOp.getMemoryOp(arrayType.getComponentType().getNativeType()));
+                    MemoryOp.getMemoryOp(arrayType.getComponentType()));
 
         } else if (type instanceof StructByValue) {
             StructByValue sbv = (StructByValue) type;
@@ -245,11 +245,11 @@ public final class StructLayoutBuilder extends RubyObject {
         int offset = calculateOffset(args, 3, type.getNativeAlignment());
         
         int length = Util.int32Value(args[2]);
-        MemoryOp io = MemoryOp.getMemoryOp(type.getNativeType());
-        if (io == null) {
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+        if (op == null) {
             throw context.getRuntime().newNotImplementedError("Unsupported array field type: " + type);
         }
-        StructLayout.Member field = new StructLayout.ArrayMember(fieldName, new Type.Array(runtime, type, length), fieldCount++, offset, io);
+        StructLayout.Member field = new StructLayout.ArrayMember(fieldName, new Type.Array(runtime, type, length), fieldCount++, offset, op);
 
         return storeField(runtime, fieldName, field, type.getNativeAlignment(), (type.getNativeSize() * length));
     }

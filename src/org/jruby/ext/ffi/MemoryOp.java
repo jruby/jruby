@@ -2,6 +2,8 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -54,9 +56,27 @@ abstract class MemoryOp {
                 return null;
         }
     }
+
+    public static final MemoryOp getMemoryOp(Type type) {
+        if (type instanceof Type.Builtin) {
+            return getMemoryOp(type.getNativeType());
+        } else if (type instanceof StructByValue) {
+            StructByValue sbv = (StructByValue) type;
+            return new StructOp(sbv.getStructClass());
+        }
+        return null;
+    }
     
     abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
     abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
+
+    IRubyObject get(Ruby runtime, AbstractMemory ptr, long offset) {
+        return get(runtime, ptr.getMemoryIO(), offset);
+    }
+
+    void put(Ruby runtime, AbstractMemory ptr, long offset, IRubyObject value) {
+        put(runtime, ptr.getMemoryIO(), offset, value);
+    }
 
     static final class BooleanOp extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
@@ -157,6 +177,42 @@ abstract class MemoryOp {
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
             return runtime.newFloat(io.getDouble(offset));
+        }
+    }
+
+    static final class StructOp extends MemoryOp {
+        private final RubyClass structClass;
+
+        public StructOp(RubyClass structClass) {
+            this.structClass = structClass;
+        }
+
+        @Override
+        IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        IRubyObject get(Ruby runtime, AbstractMemory ptr, long offset) {
+            return structClass.newInstance(runtime.getCurrentContext(),
+                        new IRubyObject[] { ptr.slice(runtime, offset) },
+                        Block.NULL_BLOCK);
+        }
+
+        @Override
+        void put(Ruby runtime, AbstractMemory ptr, long offset, IRubyObject value) {
+            if (!(value instanceof Struct)) {
+                throw runtime.newTypeError("expected a struct");
+            }
+            Struct s = (Struct) value;
+            byte[] tmp = new byte[Struct.getStructSize(runtime, s)];
+            s.getMemoryIO().get(0, tmp, 0, tmp.length);
+            ptr.getMemoryIO().put(offset, tmp, 0, tmp.length);
         }
     }
 }

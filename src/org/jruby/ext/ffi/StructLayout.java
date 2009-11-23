@@ -461,17 +461,17 @@ public final class StructLayout extends Type {
         }
 
         private IRubyObject get(Ruby runtime, int index) {
-            return aio.get(runtime, ptr.getMemoryIO(), getOffset(index));
+            return aio.get(runtime, ptr, getOffset(index));
         }
 
         @JRubyMethod(name = "[]")
         public IRubyObject get(ThreadContext context, IRubyObject index) {
-            return aio.get(context.getRuntime(), ptr.getMemoryIO(), getOffset(index));
+            return aio.get(context.getRuntime(), ptr, getOffset(index));
         }
 
         @JRubyMethod(name = "[]=")
         public IRubyObject put(ThreadContext context, IRubyObject index, IRubyObject value) {
-            aio.put(context.getRuntime(), ptr.getMemoryIO(), getOffset(index), value);
+            aio.put(context.getRuntime(), ptr, getOffset(index), value);
             return value;
         }
 
@@ -529,7 +529,7 @@ public final class StructLayout extends Type {
 
         PrimitiveMember(IRubyObject name, Type type, int index, long offset) {
             super(name, type, index, offset);
-            op = MemoryOp.getMemoryOp(type.getNativeType());
+            op = MemoryOp.getMemoryOp(type);
         }
         public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             op.put(runtime, getMemoryIO(ptr), offset, value);

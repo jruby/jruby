@@ -117,7 +117,9 @@ module FFI
       end
 
       def find_type(type, mod = nil)
-        if (type.kind_of?(Class) && type < FFI::Struct) || type.is_a?(::Array)
+        if type.kind_of?(Class) && type < FFI::Struct
+          FFI::Type::Struct.new(type)
+        elsif type.is_a?(::Array)
           type
         elsif mod
           mod.find_type(type)
