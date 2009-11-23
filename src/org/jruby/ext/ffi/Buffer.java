@@ -37,17 +37,21 @@ public final class Buffer extends AbstractMemory {
         super(runtime, klass, new ArrayMemoryIO(runtime, 0), 0, 0);
         this.inout = IN | OUT;
     }
-    Buffer(Ruby runtime, int size) {
+    
+    public Buffer(Ruby runtime, int size) {
         this(runtime, size, IN | OUT);
     }
-    Buffer(Ruby runtime, int size, int flags) {
+    
+    public Buffer(Ruby runtime, int size, int flags) {
         this(runtime, runtime.fastGetModule("FFI").fastGetClass("Buffer"),
             new ArrayMemoryIO(runtime, size), size, 1, flags);
     }
-    Buffer(Ruby runtime, byte[] data, int offset, int size) {
+    
+    public Buffer(Ruby runtime, byte[] data, int offset, int size) {
         this(runtime, runtime.fastGetModule("FFI").fastGetClass("Buffer"),
             new ArrayMemoryIO(runtime, data, offset, size), size, 1, IN | OUT);
     }
+
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int typeSize, int inout) {
         super(runtime, (RubyClass) klass, io, size, typeSize);
         this.inout = inout;

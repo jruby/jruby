@@ -7,7 +7,6 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
-import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -30,6 +29,7 @@ import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -458,8 +458,7 @@ public final class DefaultMethodFactory {
      * Returns a {@link RubyString} to ruby.
      */
     private static final class StringInvoker extends BaseInvoker {
-        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
-
+        
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             return FFIUtil.getString(context.getRuntime(), invoker.invokeAddress(function, args));
         }
@@ -471,7 +470,6 @@ public final class DefaultMethodFactory {
      * Returns a FFI::Struct instance to ruby.
      */
     private static final class StructByValueInvoker extends BaseInvoker {
-        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
         private final StructByValue info;
 
         public StructByValueInvoker(StructByValue info) {
@@ -479,7 +477,8 @@ public final class DefaultMethodFactory {
         }
 
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return info.newStruct(context.getRuntime(), invoker.invokeStruct(function, args), 0);
+            Buffer buf = new Buffer(context.getRuntime(), invoker.invokeStruct(function, args), 0, info.getStructLayout().getSize());
+            return info.getStructClass().newInstance(context, new IRubyObject[] { buf }, Block.NULL_BLOCK);
         }
     }
 
@@ -488,7 +487,6 @@ public final class DefaultMethodFactory {
      * Returns a {@link Invoker} to ruby.
      */
     private static final class CallbackInvoker extends BaseInvoker {
-        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
         private final Type returnType;
         private final Type[] parameterTypes;
 
