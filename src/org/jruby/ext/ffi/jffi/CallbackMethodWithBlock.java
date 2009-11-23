@@ -55,7 +55,7 @@ final class CallbackMethodWithBlock extends DynamicMethod {
                     marshallers[i].marshal(invocation, buffer, args[i - 1]);
                 }
             }
-            return functionInvoker.invoke(context.getRuntime(), function, buffer);
+            return functionInvoker.invoke(context, function, buffer);
         } finally {
             invocation.finish();
         }

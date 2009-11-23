@@ -28,7 +28,7 @@ class DefaultMethodThreeArg extends DefaultMethod {
                 m1.marshal(invocation, buffer, arg1);
                 m2.marshal(invocation, buffer, arg2);
                 m3.marshal(invocation, buffer, arg3);
-                return functionInvoker.invoke(context.getRuntime(), function, buffer);
+                return functionInvoker.invoke(context, function, buffer);
             } finally {
                 invocation.finish();
             }
@@ -36,7 +36,7 @@ class DefaultMethodThreeArg extends DefaultMethod {
             m1.marshal(context, buffer, arg1);
             m2.marshal(context, buffer, arg2);
             m3.marshal(context, buffer, arg3);
-            return functionInvoker.invoke(context.getRuntime(), function, buffer);
+            return functionInvoker.invoke(context, function, buffer);
         }
     }
 

@@ -24,13 +24,13 @@ final class DefaultMethodOneArg extends DefaultMethod {
             Invocation invocation = new Invocation(context);
             try {
                 m1.marshal(invocation, buffer, arg1);
-                return functionInvoker.invoke(context.getRuntime(), function, buffer);
+                return functionInvoker.invoke(context, function, buffer);
             } finally {
                 invocation.finish();
             }
         } else {
             m1.marshal(context, buffer, arg1);
-            return functionInvoker.invoke(context.getRuntime(), function, buffer);
+            return functionInvoker.invoke(context, function, buffer);
         }
         
     }

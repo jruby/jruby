@@ -36,7 +36,7 @@ class DefaultMethod extends JFFIDynamicMethod {
                 for (int i = 0; i < args.length; ++i) {
                     marshallers[i].marshal(invocation, buffer, args[i]);
                 }
-                return functionInvoker.invoke(context.getRuntime(), function, buffer);
+                return functionInvoker.invoke(context, function, buffer);
             } finally {
                 invocation.finish();
             }
@@ -44,7 +44,7 @@ class DefaultMethod extends JFFIDynamicMethod {
             for (int i = 0; i < args.length; ++i) {
                 marshallers[i].marshal(context, buffer, args[i]);
             }
-            return functionInvoker.invoke(context.getRuntime(), function, buffer);
+            return functionInvoker.invoke(context, function, buffer);
         }
     }
 }

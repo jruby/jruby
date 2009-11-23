@@ -298,9 +298,9 @@ public final class DefaultMethodFactory {
      * Invokes the native function with no return type, and returns nil to ruby.
      */
     private static final class VoidInvoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             invoker.invokeInt(function, args);
-            return runtime.getNil();
+            return context.getRuntime().getNil();
         }
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
     }
@@ -310,8 +310,8 @@ public final class DefaultMethodFactory {
      * Returns a Boolean to ruby.
      */
     private static final class BooleanInvoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return runtime.newBoolean(invoker.invokeInt(function, args) != 0);
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return context.getRuntime().newBoolean(invoker.invokeInt(function, args) != 0);
         }
         public static final FunctionInvoker INSTANCE = new BooleanInvoker();
     }
@@ -326,9 +326,9 @@ public final class DefaultMethodFactory {
             this.returnType = returnType;
         }
 
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return returnType.callMethod(runtime.getCurrentContext(), "find",
-                    runtime.newFixnum(invoker.invokeInt(function, args)));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return returnType.callMethod(context, "find",
+                    context.getRuntime().newFixnum(invoker.invokeInt(function, args)));
         }
     }
 
@@ -337,8 +337,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Signed8Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned8(runtime, invoker.invokeInt(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newSigned8(context.getRuntime(), invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed8Invoker();
     }
@@ -348,8 +348,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Unsigned8Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned8(runtime, invoker.invokeInt(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newUnsigned8(context.getRuntime(), invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned8Invoker();
     }
@@ -359,8 +359,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Signed16Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned16(runtime, invoker.invokeInt(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newSigned16(context.getRuntime(), invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed16Invoker();
     }
@@ -370,8 +370,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Unsigned16Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned16(runtime, invoker.invokeInt(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newUnsigned16(context.getRuntime(), invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned16Invoker();
     }
@@ -380,8 +380,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Signed32Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned32(runtime, invoker.invokeInt(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newSigned32(context.getRuntime(), invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed32Invoker();
     }
@@ -391,8 +391,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Unsigned32Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned32(runtime, invoker.invokeInt(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newUnsigned32(context.getRuntime(), invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned32Invoker();
     }
@@ -402,8 +402,8 @@ public final class DefaultMethodFactory {
      * Returns a Fixnum to ruby.
      */
     private static final class Signed64Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned64(runtime, invoker.invokeLong(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newSigned64(context.getRuntime(), invoker.invokeLong(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed64Invoker();
     }
@@ -413,8 +413,8 @@ public final class DefaultMethodFactory {
      * Returns a ruby Fixnum or Bignum.
      */
     private static final class Unsigned64Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned64(runtime, invoker.invokeLong(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return Util.newUnsigned64(context.getRuntime(), invoker.invokeLong(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned64Invoker();
     }
@@ -424,8 +424,8 @@ public final class DefaultMethodFactory {
      * Returns a Float to ruby.
      */
     private static final class Float32Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return runtime.newFloat(invoker.invokeFloat(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return context.getRuntime().newFloat(invoker.invokeFloat(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Float32Invoker();
     }
@@ -435,8 +435,8 @@ public final class DefaultMethodFactory {
      * Returns a Float to ruby.
      */
     private static final class Float64Invoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return runtime.newFloat(invoker.invokeDouble(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return context.getRuntime().newFloat(invoker.invokeDouble(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Float64Invoker();
     }
@@ -446,9 +446,9 @@ public final class DefaultMethodFactory {
      * Returns a {@link MemoryPointer} to ruby.
      */
     private static final class PointerInvoker extends BaseInvoker {
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             final long address = invoker.invokeAddress(function, args);
-            return new Pointer(runtime, NativeMemoryIO.wrap(runtime, address));
+            return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
         }
         public static final FunctionInvoker INSTANCE = new PointerInvoker();
     }
@@ -460,8 +460,8 @@ public final class DefaultMethodFactory {
     private static final class StringInvoker extends BaseInvoker {
         private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
 
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return FFIUtil.getString(runtime, invoker.invokeAddress(function, args));
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return FFIUtil.getString(context.getRuntime(), invoker.invokeAddress(function, args));
         }
         public static final FunctionInvoker INSTANCE = new StringInvoker();
     }
@@ -478,8 +478,8 @@ public final class DefaultMethodFactory {
             this.info = info;
         }
 
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
-            return info.newStruct(runtime, invoker.invokeStruct(function, args), 0);
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return info.newStruct(context.getRuntime(), invoker.invokeStruct(function, args), 0);
         }
     }
 
@@ -498,12 +498,12 @@ public final class DefaultMethodFactory {
         }
         
 
-        public final IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args) {
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             long address = invoker.invokeAddress(function, args);
             if (address == 0) {
-                return runtime.getNil();
+                return context.getRuntime().getNil();
             }
-            return new JFFIInvoker(runtime, address, returnType, parameterTypes);
+            return new JFFIInvoker(context.getRuntime(), address, returnType, parameterTypes);
         }
     }
 

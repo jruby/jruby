@@ -128,7 +128,7 @@ public class VariadicInvoker extends RubyObject {
                 marshallers[i].marshal(invocation, args, params[i]);
             }
 
-            return functionInvoker.invoke(context.getRuntime(), function, args);
+            return functionInvoker.invoke(context, function, args);
         } finally {
             invocation.finish();
         }

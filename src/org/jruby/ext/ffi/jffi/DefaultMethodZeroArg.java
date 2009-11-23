@@ -20,12 +20,12 @@ class DefaultMethodZeroArg extends JFFIDynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         arity.checkArity(context.getRuntime(), args);
-        return functionInvoker.invoke(context.getRuntime(), function, dummyBuffer);
+        return functionInvoker.invoke(context, function, dummyBuffer);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return functionInvoker.invoke(context.getRuntime(), function, dummyBuffer);
+        return functionInvoker.invoke(context, function, dummyBuffer);
     }
 
 }

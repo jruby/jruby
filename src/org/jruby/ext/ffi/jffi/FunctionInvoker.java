@@ -3,7 +3,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
-import org.jruby.Ruby;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -12,5 +12,5 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 interface FunctionInvoker {
 
-    IRubyObject invoke(Ruby runtime, Function function, HeapInvocationBuffer args);
+    IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args);
 }
