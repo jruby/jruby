@@ -45,7 +45,7 @@ public final class StructByValue extends Type {
     }
 
     private StructByValue(Ruby runtime, RubyClass klass, RubyClass structClass, StructLayout structLayout) {
-        super(runtime, klass, NativeType.STRUCT);
+        super(runtime, klass, NativeType.STRUCT, structLayout.size, structLayout.alignment);
         this.structClass = structClass;
         this.structLayout = structLayout;
     }
