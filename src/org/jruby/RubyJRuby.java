@@ -79,8 +79,9 @@ public class RubyJRuby {
         ThreadContext context = runtime.getCurrentContext();
         runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.defineModule("JRuby");
-        
+
         jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
+        jrubyModule.defineAnnotatedMethods(UtilLibrary.class);
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
 
@@ -151,11 +152,36 @@ public class RubyJRuby {
         }
     }
 
-    @JRubyMethod(module = true)
-    public static void gc(IRubyObject recv) {
-        System.gc();
+    /**
+     * Utilities library for all those methods that don't need the full 'java' library
+     * to be loaded. This is done mostly for performance reasons. For example, for those
+     * who only need to enable the object space, not loading 'java' might save 200-300ms
+     * of startup time, like in case of jirb.
+     */
+    public static class UtilLibrary implements Library {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
+            RubyModule mJRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
+            mJRubyUtil.defineAnnotatedMethods(UtilLibrary.class);
+        }
+        @JRubyMethod(module = true)
+        public static void gc(IRubyObject recv) {
+            System.gc();
+        }
+        @JRubyMethod(name = "objectspace", module = true)
+        public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
+            Ruby runtime = recv.getRuntime();
+            return RubyBoolean.newBoolean(
+                    runtime, runtime.isObjectSpaceEnabled());
+        }
+        @JRubyMethod(name = "objectspace=", module = true)
+        public static IRubyObject setObjectSpaceEnabled(
+                IRubyObject recv, IRubyObject arg) {
+            Ruby runtime = recv.getRuntime();
+            runtime.setObjectSpaceEnabled(arg.isTrue());
+            return runtime.getNil();
+        }
     }
-    
+
     @JRubyMethod(name = "runtime", frame = true, module = true)
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
         return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), recv.getRuntime());
@@ -176,21 +202,6 @@ public class RubyJRuby {
             }
         }
         return currentRuntime.getNil();
-    }
-
-    @JRubyMethod(name = "objectspace", frame = true, module = true)
-    public static IRubyObject getObjectSpaceEnabled(IRubyObject recv, Block b) {
-        Ruby runtime = recv.getRuntime();
-        return RubyBoolean.newBoolean(
-                runtime, runtime.isObjectSpaceEnabled());
-    }
-
-    @JRubyMethod(name = "objectspace=", required = 1, frame = true, module = true)
-    public static IRubyObject setObjectSpaceEnabled(
-            IRubyObject recv, IRubyObject arg, Block b) {
-        Ruby runtime = recv.getRuntime();
-        runtime.setObjectSpaceEnabled(arg.isTrue());
-        return runtime.getNil();
     }
 
     @JRubyMethod(name = {"parse", "ast_for"}, optional = 3, frame = true, module = true)

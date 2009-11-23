@@ -8,9 +8,9 @@
 #
 
 if defined?(JRUBY_VERSION)
-  require 'jruby'
+  require 'jruby/util'
   # useful for code completion
-  JRuby.objectspace = true
+  JRuby::Util.objectspace = true
 end
 
 require "irb"
