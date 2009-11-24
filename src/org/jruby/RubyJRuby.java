@@ -34,8 +34,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
@@ -179,6 +182,32 @@ public class RubyJRuby {
             Ruby runtime = recv.getRuntime();
             runtime.setObjectSpaceEnabled(arg.isTrue());
             return runtime.getNil();
+        }
+        @JRubyMethod(name = "classloader_resources", module = true)
+        public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
+            Ruby runtime = recv.getRuntime();
+            String resource = arg.convertToString().toString();
+            final List<RubyString> urlStrings = new ArrayList<RubyString>();
+
+            try {
+                Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
+                while (urls.hasMoreElements()) {
+                    URL url = urls.nextElement();
+
+                    String urlString;
+                    if ("jar".equals(url.getProtocol()) && url.getFile().startsWith("file:/")) {
+                        urlString = URLDecoder.decode(url.getFile());
+                    } else {
+                        urlString = url.getFile();
+                    }
+
+                    urlStrings.add(runtime.newString(urlString));
+                }
+                return RubyArray.newArrayNoCopy(runtime,
+                        urlStrings.toArray(new IRubyObject[urlStrings.size()]));
+            } catch (IOException ignore) {}
+
+            return runtime.newEmptyArray();
         }
     }
 
