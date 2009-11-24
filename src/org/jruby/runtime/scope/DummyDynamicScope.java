@@ -69,7 +69,8 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.getLastLine(runtime);
         }
-        throw new RuntimeException("DummyDynamicScope should never be used for lastline storage");
+        runtime.getWarnings().warning("DummyDynamicScope should never be used for lastline storage");
+        return runtime.getNil();
     }
 
     /**
@@ -79,6 +80,7 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.setLastLine(lastline);
         }
-        throw new RuntimeException("DummyDynamicScope should never be used for backref storage");
+        lastline.getRuntime().getWarnings().warning("DummyDynamicScope should never be used for backref storage");
+        return lastline;
     }
 }
