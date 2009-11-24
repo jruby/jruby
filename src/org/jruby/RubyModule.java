@@ -188,7 +188,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected static class Generation {
-        public volatile Object token;
+        public Object token;
         public Generation() {
             token = new Object();
         }
