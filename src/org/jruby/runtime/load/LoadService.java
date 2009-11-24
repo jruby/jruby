@@ -44,6 +44,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -124,6 +125,19 @@ import org.jruby.util.JRubyFile;
  * @author jpetersen
  */
 public class LoadService {
+    // Enabling this would print out load timings for every require'd library.
+    // Currently, this is a simple compile-time flag, but we can make it into
+    // a configurable option, if there is a need.
+    private final static boolean DEBUG_LOAD_TIMINGS = false;
+    private final static LoadTimer LOAD_TIMER;
+    static {
+        if (DEBUG_LOAD_TIMINGS) {
+            LOAD_TIMER = new TracingLoadTimer();
+        } else {
+            LOAD_TIMER = new LoadTimer();
+        }
+    }
+
     public enum SuffixType {
         Source, Extension, Both, Neither;
         
@@ -312,11 +326,47 @@ public class LoadService {
         }
     }
 
+    private static class LoadTimer {
+        public long startLoad(String file) { return 0L; }
+        public void endLoad(String file, long startTime) {}
+    }
+
+    private static class TracingLoadTimer extends LoadTimer {
+        private final AtomicInteger indent = new AtomicInteger(0);
+        private String getIndentString() {
+            StringBuilder buf = new StringBuilder();
+            int i = indent.get();
+            for (int j = 0; j < i; j++) {
+                buf.append("  ");
+            }
+            return buf.toString();
+        }
+        @Override
+        public long startLoad(String file) {
+            int i = indent.incrementAndGet();
+            System.err.println(getIndentString() + "-> " + file);
+            return System.currentTimeMillis();
+        }
+        @Override
+        public void endLoad(String file, long startTime) {
+            System.err.println(getIndentString() + "<- " + file + " - "
+                    + (System.currentTimeMillis() - startTime) + "ms");
+            indent.decrementAndGet();
+        }
+    }
+
     public boolean require(String file) {
         if(!runtime.getProfile().allowRequire(file)) {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
-        return smartLoad(file);
+
+        long startTime = LOAD_TIMER.startLoad(file);
+        try {
+            return smartLoad(file);
+        } finally {
+            LOAD_TIMER.endLoad(file, startTime);
+        }
+
     }
 
     /**
