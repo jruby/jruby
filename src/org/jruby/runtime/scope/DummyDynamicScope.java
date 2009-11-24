@@ -1,6 +1,7 @@
 package org.jruby.runtime.scope;
 
 import org.jruby.Ruby;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,7 +47,8 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.getBackRef(runtime);
         }
-        throw new RuntimeException("DummyDynamicScope should never be used for backref storage");
+        runtime.getWarnings().warning("DummyDynamicScope should never be used for backref storage");
+        return runtime.getNil();
     }
 
     /**
@@ -56,7 +58,8 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
         if (!staticScope.isBackrefLastlineScope()) {
             return parent.setBackRef(backref);
         }
-        throw new RuntimeException("DummyDynamicScope should never be used for backref storage");
+        backref.getRuntime().getWarnings().warning("DummyDynamicScope should never be used for backref storage");
+        return backref;
     }
 
     /**
