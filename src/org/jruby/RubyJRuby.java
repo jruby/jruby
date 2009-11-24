@@ -183,6 +183,7 @@ public class RubyJRuby {
             runtime.setObjectSpaceEnabled(arg.isTrue());
             return runtime.getNil();
         }
+        @SuppressWarnings("deprecation")
         @JRubyMethod(name = "classloader_resources", module = true)
         public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
             Ruby runtime = recv.getRuntime();
