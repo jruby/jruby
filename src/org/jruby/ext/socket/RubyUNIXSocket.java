@@ -104,7 +104,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 dst.position(dst.position()+v);
             }
 
-            return v;
+            if (v == 0) {
+                // Maintain ReadableByteChannel.read's EOF contract.
+                return -1;
+            } else {
+                return v;
+            }
         }
 
         public int write(ByteBuffer src) throws IOException {
