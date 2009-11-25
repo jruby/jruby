@@ -126,8 +126,6 @@ public class RubyBasicSocket extends RubyIO {
                     asSocket().shutdownOutput();
                 } else if (socketChannel instanceof Shutdownable) {
                     ((Shutdownable)socketChannel).shutdownOutput();
-                } else {
-                    throw context.getRuntime().newNotImplementedError("This socket class doesn't support #close_write");
                 }
             } catch (IOException e) {
                 throw context.getRuntime().newIOError(e.getMessage());
@@ -160,8 +158,6 @@ public class RubyBasicSocket extends RubyIO {
                         asSocket().shutdownInput();
                     } else if (socketChannel instanceof Shutdownable) {
                         ((Shutdownable)socketChannel).shutdownInput();
-                    } else {
-                        throw context.getRuntime().newNotImplementedError("This socket class doesn't support #close_read");
                     }
                 } catch (IOException e) {
                     throw runtime.newIOError(e.getMessage());
