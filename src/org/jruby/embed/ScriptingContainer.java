@@ -373,6 +373,31 @@ public class ScriptingContainer {
     }
 
     /**
+     * Removes the specified Ruby variable with the specified variable name in a
+     * variable map. If the map previously contained a mapping for the key,
+     * the old value is returned. The key must be a valid Ruby variable name.
+     * This is a short cut method of ScriptingContainer#getVarMap().remove(key).
+     *
+     * @param key is a key that the specified value is to be associated with
+     * @return a previous value associated with a key, or null if there was
+     *         no mapping for this key.
+     */
+    public Object remove(String key) {
+        return provider.getVarMap().remove(key);
+    }
+
+    /**
+     * Removes all of the mappings from this map.
+     * The map will be empty after this call returns. Ruby variables are also
+     * removed from Ruby instance. However, Ruby instance keep having global variable
+     * names with null value.
+     * This is a short cut method of ScriptingContainer#getVarMap().clear().
+     */
+    public void clear() {
+        provider.getVarMap().clear();
+    }
+
+    /**
      * Parses a script and return an object which can be run(). This allows
      * the script to be parsed once and evaluated many times.
      * 

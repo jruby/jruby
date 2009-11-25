@@ -1,4 +1,4 @@
-	/**
+/**
  * **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
@@ -138,6 +138,19 @@ public class MultipleScriptsRunnerTest {
         return list;
     }
 
+    /*
+     * test_dir.rb : test passes if this file is loaded from an absolute path.
+     * test_file.rb : test passes if this file is loaded from an absolute path.
+     * test_io.rb : test passes if this file is loaded from an absolute path.
+     * test_kernel.rb : test passes if this file is loaded from an absolute path.
+     * test_load.rb : test passes if this file is loaded from an absolute path.
+     * test_load_class_before_rb.rb : test passes if this file is loaded from an absolute path.
+     * test_local_jump_error.rb: also fails on an interpreter, JRUBY-2760
+     * test_missing_jruby_home.rb: bad test code. jruby.home system property doesn't
+     *                             exists during this test. null can't be set to.
+     * test_numeric.rb : also fails on an interprter.
+     * test_thread_backtrace.rb: __FILE__ problem. fails even if it is loaded from an absolute path.
+     */
     private boolean isTestable(String filename) {
         String[] skipList = {
             "test_command_line_switches.rb",
@@ -150,7 +163,6 @@ public class MultipleScriptsRunnerTest {
             "test_local_jump_error.rb",
             "test_missing_jruby_home.rb",
             "test_numeric.rb",
-            "test_object_class_default_methods.rb",
             "test_thread_backtrace.rb"
         };
         for (int i = 0; i < skipList.length; i++) {
@@ -226,6 +238,7 @@ public class MultipleScriptsRunnerTest {
             "test_dir.rb",
             "test_file.rb",
             "test_io.rb",
+            "test_kernel.rb",
             "test_load.rb",
             "test_load_class_before_rb.rb"
         };

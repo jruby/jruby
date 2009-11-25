@@ -373,7 +373,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     /**
      * Removes all of the mappings from this map.
      * The map will be empty after this call returns. Ruby variables are also
-     * remove from Ruby instance. However, Ruby instance keep having global variable
+     * removed from Ruby instance. However, Ruby instance keep having global variable
      * names with null value.
      */
     public void clear() {

@@ -90,7 +90,12 @@ public class LocalContext {
 
     public Ruby getRuntime() {
         if (runtime == null) {
-            runtime = JavaEmbedUtils.initialize(loadPaths, config);
+            // stopped executing runtime.getLoadService().require("java");
+            // during the intialization process. This results in the same
+            // behavior as "jruby -e ..."
+            //runtime = JavaEmbedUtils.initialize(loadPaths, config);
+            runtime = Ruby.newInstance(config);
+            runtime.getLoadService().init(loadPaths);
         }
         return runtime;
     }

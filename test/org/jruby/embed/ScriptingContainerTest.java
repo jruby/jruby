@@ -1197,4 +1197,60 @@ public class ScriptingContainerTest {
         instance = null;
     }
 
+    /**
+     * Test of methods Java object should have.
+     *
+     * Currently, __jtrap is missing and removed from expResult.
+     */
+    @Test
+    public void testMethods() {
+        System.out.println("");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String[] expResult = {
+            "==", "===", "=~", "[]", "[]=", "__id__", "__jcreate!", "__jsend!",
+            "__send__", "all?", "any?", "class", "class__method",
+            "clear", "clear__method", "clone", "clone__method", "collect", "com",
+            "containsKey", "containsKey__method", "containsValue", "containsValue__method",
+            "contains_key", "contains_key?", "contains_key__method", "contains_key__method?",
+            "contains_value", "contains_value?", "contains_value__method",
+            "contains_value__method?", "count", "cycle", "detect", "display", "drop",
+            "drop_while", "dup", "each", "each_cons", "each_slice", "each_with_index",
+            "empty", "empty?", "empty__method", "empty__method?", "entries", "entrySet",
+            "entrySet__method", "entry_set", "entry_set__method", "enum_cons", "enum_for",
+            "enum_slice", "enum_with_index", "eql?", "equal?", "equals", "equals?",
+            "equals__method", "equals__method?", "extend", "finalize", "finalize__method",
+            "find", "find_all", "find_index", "first", "freeze", "frozen?", "get",
+            "getClass", "getClass__method", "get__method", "get_class", "get_class__method",
+            "grep", "group_by", "handle_different_imports", "hash", "hashCode",
+            "hashCode__method", "hash_code", "hash_code__method", "id", "include?",
+            "include_class", "initialize", "inject", "inspect", "instance_eval",
+            "instance_exec", "instance_of?", "instance_variable_defined?",
+            "instance_variable_get", "instance_variable_set", "instance_variables",
+            "isEmpty", "isEmpty__method", "is_a?", "is_empty", "is_empty?",
+            "is_empty__method", "is_empty__method?", "java", "java_class", "java_kind_of?",
+            "java_method", "java_object", "java_object=", "java_send", "javax", "keySet",
+            "keySet__method", "key_set", "key_set__method", "kind_of?", "map", "marshal_dump",
+            "marshal_load", "max", "max_by", "member?", "method", "methods", "min",
+            "min_by", "minmax", "minmax_by", "nil?", "none?", "notify", "notifyAll",
+            "notifyAll__method", "notify__method", "notify_all", "notify_all__method",
+            "object_id", "org", "partition", "private_methods", "protected_methods",
+            "public_methods", "put", "putAll", "putAll__method", "put__method", "put_all",
+            "put_all__method", "reduce", "reject", "remove", "remove__method", "respond_to?",
+            "reverse_each", "select", "send", "singleton_methods", "size", "size__method",
+            "sort", "sort_by", "synchronized", "taint", "tainted?", "take", "take_while",
+            "tap", "toString", "toString__method", "to_a", "to_enum", "to_java_object",
+            "to_s", "to_string", "to_string__method", "type", "untaint", "values",
+            "values__method", "wait", "wait__method", "zip"
+        };
+        String script = "require 'java'\njava.util.HashMap.new.methods.sort";
+        List<String> ret = (List<String>)instance.runScriptlet(script);
+        assertEquals(expResult.length, ret.size());
+
+        String[] retMethods = ret.toArray(new String[ret.size()]);
+        assertArrayEquals(expResult, retMethods);
+
+        instance.clear();
+        instance = null;
+    }
+
 }
