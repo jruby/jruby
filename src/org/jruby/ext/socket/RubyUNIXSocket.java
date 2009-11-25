@@ -28,6 +28,7 @@
 package org.jruby.ext.socket;
 
 import com.kenai.constantine.platform.Fcntl;
+import com.kenai.constantine.platform.Shutdown;
 import com.kenai.constantine.platform.OpenFlags;
 import com.kenai.constantine.platform.SocketLevel;
 import com.kenai.constantine.platform.SocketOption;
@@ -79,12 +80,18 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     /**
      * Implements reading and writing to a socket fd using recv and send
      */
-    private static class UnixDomainSocketChannel implements ReadableByteChannel, WritableByteChannel {
+    private static class UnixDomainSocketChannel implements ReadableByteChannel, WritableByteChannel,
+                                                            Shutdownable {
+        private final static int SHUT_RD = Shutdown.SHUT_RD.value();
+        private final static int SHUT_WR = Shutdown.SHUT_WR.value();
+        
+        private final Ruby runtime;
         private final int fd;
         private boolean open = true;
 
-        public UnixDomainSocketChannel(int fd) {
+        public UnixDomainSocketChannel(Ruby runtime, int fd) {
             this.fd = fd;
+            this.runtime = runtime;
         }
 
         public void close() throws IOException {
@@ -121,6 +128,20 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             }
 
             return v;
+        }
+        
+        public void shutdownInput() throws IOException {
+            int v = INSTANCE.shutdown(fd, SHUT_RD);
+            if(v == -1) {
+                rb_sys_fail(runtime, "shutdown(2)");
+            }
+        }
+        
+        public void shutdownOutput() throws IOException {
+            int v = INSTANCE.shutdown(fd, SHUT_WR);
+            if(v == -1) {
+                rb_sys_fail(runtime, "shutdown(2)");
+            }
         }
     }
 
@@ -174,6 +195,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         int unlink(String path);
         int close(int s);
+        int shutdown(int s, int how);
 
         void perror(String arg);
 
@@ -335,7 +357,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     protected void init_sock(Ruby runtime) {
         try {
             ModeFlags modes = new ModeFlags(ModeFlags.RDWR);
-            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(new UnixDomainSocketChannel(fd), getNewFileno(), modes, new java.io.FileDescriptor())));
+            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(new UnixDomainSocketChannel(runtime, fd), getNewFileno(), modes, new java.io.FileDescriptor())));
             openFile.setPipeStream(openFile.getMainStream());
             openFile.setMode(modes.getOpenFileFlags());
             openFile.getMainStream().setSync(true);

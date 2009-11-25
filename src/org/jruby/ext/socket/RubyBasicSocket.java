@@ -120,13 +120,17 @@ public class RubyBasicSocket extends RubyIO {
             close();
         } else {
             Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-            if (socketChannel instanceof SocketChannel
-                    || socketChannel instanceof DatagramChannel) {
-                try {
+            try {
+                if (socketChannel instanceof SocketChannel
+                        || socketChannel instanceof DatagramChannel) {
                     asSocket().shutdownOutput();
-                } catch (IOException e) {
-                    throw context.getRuntime().newIOError(e.getMessage());
+                } else if (socketChannel instanceof Shutdownable) {
+                    ((Shutdownable)socketChannel).shutdownOutput();
+                } else {
+                    throw context.getRuntime().newNotImplementedError("This socket class doesn't support #close_write");
                 }
+            } catch (IOException e) {
+                throw context.getRuntime().newIOError(e.getMessage());
             }
             openFile.setPipeStream(null);
             openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
@@ -150,13 +154,17 @@ public class RubyBasicSocket extends RubyIO {
         } else {
             if(openFile.getPipeStream() != null) {
                 Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-                if (socketChannel instanceof SocketChannel
-                    || socketChannel instanceof DatagramChannel) {
-                    try {
+                try {
+                    if (socketChannel instanceof SocketChannel
+                            || socketChannel instanceof DatagramChannel) {
                         asSocket().shutdownInput();
-                    } catch (IOException e) {
-                        throw runtime.newIOError(e.getMessage());
+                    } else if (socketChannel instanceof Shutdownable) {
+                        ((Shutdownable)socketChannel).shutdownInput();
+                    } else {
+                        throw context.getRuntime().newNotImplementedError("This socket class doesn't support #close_read");
                     }
+                } catch (IOException e) {
+                    throw runtime.newIOError(e.getMessage());
                 }
                 openFile.setMainStream(openFile.getPipeStream());
                 openFile.setPipeStream(null);
