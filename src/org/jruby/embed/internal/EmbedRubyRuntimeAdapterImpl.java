@@ -41,6 +41,7 @@ import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyRuntimeAdapter;
+import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.embed.AttributeName;
@@ -52,10 +53,12 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -154,6 +157,10 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         if (filename == null || filename.length() == 0) {
             filename = "<script>";
         }
+        IAccessor d = new ValueAccessor(RubyString.newString(container.getRuntime(), filename));
+        container.getRuntime().getGlobalVariables().define("$PROGRAM_NAME", d);
+        container.getRuntime().getGlobalVariables().define("$0", d);
+
         int line = 0;
         if (lines != null && lines.length > 0) {
             line = lines[0];
