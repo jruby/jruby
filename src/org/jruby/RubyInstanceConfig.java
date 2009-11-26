@@ -230,6 +230,9 @@ public class RubyInstanceConfig {
     public static final boolean DEBUG_LOAD_SERVICE
             = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
 
+    public static final boolean DEBUG_LOAD_TIMINGS
+            = SafePropertyAccessor.getBoolean("jruby.debug.loadService.timing", false);
+
     public static final boolean DEBUG_LAUNCHING
             = SafePropertyAccessor.getBoolean("jruby.debug.launch", false);
 
@@ -510,17 +513,17 @@ public class RubyInstanceConfig {
                 .append("       Set bytecode version for JRuby to generate. Default is current JVM version.\n")
                 .append("    jruby.management.enabled=true|false\n")
                 .append("       Set whether JMX management is enabled. Default is true.\n")
-                .append("    jruby.debug.fullTrace=true|false\n")
-                .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n")
-                .append("    jruby.debug.loadService=true|false\n")
-                .append("       Log the process of locating and loading libraries. Default is false.\n")
                 .append("    jruby.jump.backtrace=true|false\n")
                 .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
                 .append("\nDEBUGGING/LOGGING:\n")
                 .append("    jruby.debug.loadService=true|false\n")
                 .append("       LoadService logging\n")
+                .append("    jruby.debug.loadService.timing=true|false\n")
+                .append("       Print load timings for each require'd library. Default is false.\n")
                 .append("    jruby.debug.launch=true|false\n")
-                .append("       ShellLauncher logging\n");
+                .append("       ShellLauncher logging\n")
+                .append("    jruby.debug.fullTrace=true|false\n")
+                .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n");
 
         return sb.toString();
     }

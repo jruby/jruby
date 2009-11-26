@@ -125,18 +125,7 @@ import org.jruby.util.JRubyFile;
  * @author jpetersen
  */
 public class LoadService {
-    // Enabling this would print out load timings for every require'd library.
-    // Currently, this is a simple compile-time flag, but we can make it into
-    // a configurable option, if there is a need.
-    private final static boolean DEBUG_LOAD_TIMINGS = false;
-    private final static LoadTimer LOAD_TIMER;
-    static {
-        if (DEBUG_LOAD_TIMINGS) {
-            LOAD_TIMER = new TracingLoadTimer();
-        } else {
-            LOAD_TIMER = new LoadTimer();
-        }
-    }
+    private final LoadTimer loadTimer;
 
     public enum SuffixType {
         Source, Extension, Both, Neither;
@@ -176,6 +165,11 @@ public class LoadService {
     
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
+        if (RubyInstanceConfig.DEBUG_LOAD_TIMINGS) {
+            loadTimer = new TracingLoadTimer();
+        } else {
+            loadTimer = new LoadTimer();
+        }
     }
 
     public void init(List additionalDirectories) {
@@ -360,11 +354,11 @@ public class LoadService {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
 
-        long startTime = LOAD_TIMER.startLoad(file);
+        long startTime = loadTimer.startLoad(file);
         try {
             return smartLoad(file);
         } finally {
-            LOAD_TIMER.endLoad(file, startTime);
+            loadTimer.endLoad(file, startTime);
         }
 
     }
