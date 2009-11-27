@@ -96,23 +96,36 @@ module FFI
       end
 
       raise FFI::NotFoundError.new(cname, ffi_libraries) if address.nil? || address.null?
-      sc = Class.new(FFI::Struct)
-      sc.layout :gvar, find_type(type)
-      s = sc.new(address)
+      
+      if type.is_a?(Class) && type < FFI::Struct
+        # If it is a global struct, just attach directly to the pointer
+        s = type.new(address)
+        self.module_eval <<-code, __FILE__, __LINE__
+          @@ffi_gvar_#{mname} = s
+          def self.#{mname}
+            @@ffi_gvar_#{mname}
+          end
+        code
 
-      #
-      # Attach to this module as mname/mname=
-      #
-      self.module_eval <<-code
-        @@ffi_gvar_#{mname} = s
-        def self.#{mname}
-          @@ffi_gvar_#{mname}[:gvar]
-        end
-        def self.#{mname}=(value)
-          @@ffi_gvar_#{mname}[:gvar] = value
-        end
-      code
+      else
+        sc = Class.new(FFI::Struct)
+        sc.layout :gvar, find_type(type)
+        s = sc.new(address)
+        #
+        # Attach to this module as mname/mname=
+        #
+        self.module_eval <<-code, __FILE__, __LINE__
+          @@ffi_gvar_#{mname} = s
+          def self.#{mname}
+            @@ffi_gvar_#{mname}[:gvar]
+          end
+          def self.#{mname}=(value)
+            @@ffi_gvar_#{mname}[:gvar] = value
+          end
+        code
 
+      end
+      
       address
     end
 
