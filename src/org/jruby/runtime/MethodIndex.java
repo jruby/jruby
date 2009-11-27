@@ -122,7 +122,7 @@ public class MethodIndex {
         Integer index = NUMBERS.get(methodName);
         
         if (index == null) {
-            index = new Integer(NAMES.size());
+            index = Integer.valueOf(NAMES.size());
             NUMBERS.put(methodName, index);
             NAMES.add(methodName);
         }

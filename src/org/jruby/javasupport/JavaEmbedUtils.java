@@ -299,11 +299,11 @@ public class JavaEmbedUtils {
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, byte value) {
-        return javaToRuby(runtime, new Byte(value));
+        return javaToRuby(runtime, Byte.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, char value) {
-        return javaToRuby(runtime, new Character(value));
+        return javaToRuby(runtime, Character.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, double value) {
@@ -315,14 +315,14 @@ public class JavaEmbedUtils {
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, int value) {
-        return javaToRuby(runtime, new Integer(value));
+        return javaToRuby(runtime, Integer.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, long value) {
-        return javaToRuby(runtime, new Long(value));
+        return javaToRuby(runtime, Long.valueOf(value));
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, short value) {
-        return javaToRuby(runtime, new Short(value));
+        return javaToRuby(runtime, Short.valueOf(value));
     }
 }

@@ -73,7 +73,7 @@ public class ObjectSpace {
     private Long createId(IRubyObject object) {
         cleanIdentities();
         maxId += 2; // id must always be even
-        Long longMaxId = new Long(maxId);
+        Long longMaxId = Long.valueOf(maxId);
         identities.put(longMaxId, new IdReference(object, maxId, deadIdentityReferences));
         identitiesByObject.put(object, longMaxId);
         return longMaxId;
@@ -82,7 +82,7 @@ public class ObjectSpace {
     public IRubyObject id2ref(long id) {
         synchronized (identities) {
             cleanIdentities();
-            IdReference reference = (IdReference) identities.get(new Long(id));
+            IdReference reference = (IdReference) identities.get(Long.valueOf(id));
             if (reference == null)
                 return null;
             return (IRubyObject) reference.get();
@@ -92,7 +92,7 @@ public class ObjectSpace {
     private void cleanIdentities() {
         IdReference ref;
         while ((ref = (IdReference) deadIdentityReferences.poll()) != null)
-            identities.remove(new Long(ref.id()));
+            identities.remove(Long.valueOf(ref.id()));
     }
     
     public void addFinalizer(IRubyObject object, IRubyObject proc) {

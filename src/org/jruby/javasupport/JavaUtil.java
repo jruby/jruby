@@ -859,9 +859,9 @@ public class JavaUtil {
         if (javaClass.isPrimitive()) {
             String s = ((RubyString)TypeConverter.convertToType(rubyObject, rubyObject.getRuntime().getString(), "to_s", true)).getUnicodeValue();
             if (s.length() > 0) {
-                return new Character(s.charAt(0));
+                return Character.valueOf(s.charAt(0));
             }
-            return new Character('\0');
+            return Character.valueOf('\0');
         } else if (javaClass == String.class) {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
             ByteList bytes = rubyString.getByteList();
@@ -960,10 +960,10 @@ public class JavaUtil {
     public static final RubyConverter RUBY_BYTE_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return new Byte((byte) ((RubyNumeric) rubyObject.callMethod(
+                return Byte.valueOf((byte) ((RubyNumeric) rubyObject.callMethod(
                         context, "to_i")).getLongValue());
             }
-            return new Byte((byte) 0);
+            return Byte.valueOf((byte) 0);
         }
     };
 
@@ -971,10 +971,10 @@ public class JavaUtil {
     public static final RubyConverter RUBY_SHORT_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return new Short((short) ((RubyNumeric) rubyObject.callMethod(
+                return Short.valueOf((short) ((RubyNumeric) rubyObject.callMethod(
                         context, "to_i")).getLongValue());
             }
-            return new Short((short) 0);
+            return Short.valueOf((short) 0);
         }
     };
 
@@ -982,10 +982,10 @@ public class JavaUtil {
     public static final RubyConverter RUBY_CHAR_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return new Character((char) ((RubyNumeric) rubyObject.callMethod(
+                return Character.valueOf((char) ((RubyNumeric) rubyObject.callMethod(
                         context, "to_i")).getLongValue());
             }
-            return new Character((char) 0);
+            return Character.valueOf((char) 0);
         }
     };
 
@@ -993,10 +993,10 @@ public class JavaUtil {
     public static final RubyConverter RUBY_INTEGER_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return new Integer((int) ((RubyNumeric) rubyObject.callMethod(
+                return Integer.valueOf((int) ((RubyNumeric) rubyObject.callMethod(
                         context, "to_i")).getLongValue());
             }
-            return new Integer(0);
+            return Integer.valueOf(0);
         }
     };
 
@@ -1004,10 +1004,10 @@ public class JavaUtil {
     public static final RubyConverter RUBY_LONG_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return new Long(((RubyNumeric) rubyObject.callMethod(
+                return Long.valueOf(((RubyNumeric) rubyObject.callMethod(
                         context, "to_i")).getLongValue());
             }
-            return new Long(0);
+            return Long.valueOf(0);
         }
     };
 
@@ -1255,7 +1255,7 @@ public class JavaUtil {
             javaObject = null;
             break;
         case ClassIndex.FIXNUM:
-            javaObject = new Long(((RubyFixnum) object).getLongValue());
+            javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
             break;
         case ClassIndex.BIGNUM:
             javaObject = ((RubyBignum) object).getValue();
@@ -1312,19 +1312,19 @@ public class JavaUtil {
         if (argument instanceof Number) {
             final Number number = (Number) argument;
             if (type == Long.class) {
-                return new Long(number.longValue());
+                return Long.valueOf(number.longValue());
             } else if (type == Integer.class) {
-                return new Integer(number.intValue());
+                return Integer.valueOf(number.intValue());
             } else if (type == Byte.class) {
-                return new Byte(number.byteValue());
+                return Byte.valueOf(number.byteValue());
             } else if (type == Character.class) {
-                return new Character((char) number.intValue());
+                return Character.valueOf((char) number.intValue());
             } else if (type == Double.class) {
                 return new Double(number.doubleValue());
             } else if (type == Float.class) {
                 return new Float(number.floatValue());
             } else if (type == Short.class) {
-                return new Short(number.shortValue());
+                return Short.valueOf(number.shortValue());
             }
         }
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {

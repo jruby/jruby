@@ -255,7 +255,7 @@ public class JavaProxyClassFactory {
         try {
             return (Class) defineClass_method
                     .invoke(loader, new Object[] { className, data,
-                            new Integer(0), new Integer(data.length), JavaProxyClassFactory.class.getProtectionDomain() });
+                            Integer.valueOf(0), Integer.valueOf(data.length), JavaProxyClassFactory.class.getProtectionDomain() });
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

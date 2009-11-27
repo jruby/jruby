@@ -2669,7 +2669,7 @@ public Object case278_line1086(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case244_line958(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Long(lexer.getCmdArgumentState().begin());
+                    yyVal = Long.valueOf(lexer.getCmdArgumentState().begin());
     return yyVal;
 }
 public Object case252_line983(Object yyVal, Object[] yyVals, int yyTop) {
@@ -2813,7 +2813,7 @@ public Object case216_line869(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case301_line1160(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new Integer(support.getInSingle());
+                    yyVal = Integer.valueOf(support.getInSingle());
                     support.setInSingle(0);
                     support.pushLocalScope();
     return yyVal;

@@ -108,7 +108,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     public void cacheSymbol(BaseBodyCompiler method, String symbol) {
         Integer index = symbolIndices.get(symbol);
         if (index == null) {
-            index = new Integer(inheritedSymbolCount++);
+            index = Integer.valueOf(inheritedSymbolCount++);
             symbolIndices.put(symbol, index);
         }
 
@@ -194,7 +194,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         } else {
             Integer index = fixnumIndices.get(value);
             if (index == null) {
-                index = new Integer(inheritedFixnumCount++);
+                index =  Integer.valueOf(inheritedFixnumCount++);
                 fixnumIndices.put(value, index);
             }
             
@@ -251,7 +251,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         String asString = contents.toString();
         Integer index = stringIndices.get(asString);
         if (index == null) {
-            index = new Integer(inheritedStringCount++);
+            index = Integer.valueOf(inheritedStringCount++);
             stringIndices.put(asString, index);
         }
 

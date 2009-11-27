@@ -47,7 +47,7 @@ public class MarshalCache {
 
     public void register(IRubyObject value) {
         Map cache = selectCache(value);
-        cache.put(value, new Integer(cache.size()));
+        cache.put(value, Integer.valueOf(cache.size()));
     }
 
     private int registeredIndex(IRubyObject value) {

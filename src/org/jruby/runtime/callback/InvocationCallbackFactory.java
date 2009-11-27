@@ -1134,7 +1134,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
     @Deprecated
     private void loadArgument(MethodVisitor mv, int argsIndex, int argIndex, Class type1) {
         mv.visitVarInsn(ALOAD, argsIndex);
-        mv.visitLdcInsn(new Integer(argIndex));
+        mv.visitLdcInsn(Integer.valueOf(argIndex));
         mv.visitInsn(AALOAD);
         checkCast(mv, type1);
     }
@@ -1158,7 +1158,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             case 2: mv.iconst_2(); break;
             case 1: mv.iconst_1(); break;
             case 0: mv.iconst_0(); break;
-            default: mv.ldc(new Integer(arity.getValue()));
+            default: mv.ldc(Integer.valueOf(arity.getValue()));
             }
    
             mv.if_icmpeq(arityOk);
@@ -1174,7 +1174,7 @@ public class InvocationCallbackFactory extends CallbackFactory implements Opcode
             case 2: mv.iconst_2(); break;
             case 1: mv.iconst_1(); break;
             case 0: mv.iconst_0(); break;
-            default: mv.ldc(new Integer(arity.getValue()));
+            default: mv.ldc(Integer.valueOf(arity.getValue()));
             }
 
             mv.invokevirtual(p(Ruby.class), "newArgumentError", sig(RaiseException.class, params(int.class, int.class)));

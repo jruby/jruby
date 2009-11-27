@@ -956,7 +956,7 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = new Long(lexer.getCmdArgumentState().begin());
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().begin());
                 } call_args {
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
@@ -1158,7 +1158,7 @@ primary         : literal
                     $$ = new Boolean(support.isInDef());
                     support.setInDef(false);
                 } term {
-                    $$ = new Integer(support.getInSingle());
+                    $$ = Integer.valueOf(support.getInSingle());
                     support.setInSingle(0);
                     support.pushLocalScope();
                 } bodystmt kEND {

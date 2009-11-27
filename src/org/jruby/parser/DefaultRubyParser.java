@@ -2531,7 +2531,7 @@ public Object case395_line1498(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case308_line1156(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new Integer(support.getInSingle());
+                  yyVal = Integer.valueOf(support.getInSingle());
                   support.setInSingle(0);
 		  support.pushLocalScope();
     return yyVal;
@@ -2694,7 +2694,7 @@ public Object case320_line1212(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case250_line970(Object yyVal, Object[] yyVals, int yyTop) {
-	          yyVal = new Long(lexer.getCmdArgumentState().begin());
+	          yyVal = Long.valueOf(lexer.getCmdArgumentState().begin());
     return yyVal;
 }
 public Object case197_line794(Object yyVal, Object[] yyVals, int yyTop) {
