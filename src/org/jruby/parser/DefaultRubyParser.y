@@ -1151,7 +1151,7 @@ primary       : literal
                   support.popCurrentScope();
               }
               | kCLASS tLSHFT expr {
-                  $$ = new Boolean(support.isInDef());
+                  $$ = Boolean.valueOf(support.isInDef());
                   support.setInDef(false);
               } term {
                   $$ = Integer.valueOf(support.getInSingle());

@@ -3167,7 +3167,7 @@ public Object case226_line886(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case307_line1153(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new Boolean(support.isInDef());
+                  yyVal = Boolean.valueOf(support.isInDef());
                   support.setInDef(false);
     return yyVal;
 }
