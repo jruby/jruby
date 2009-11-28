@@ -914,10 +914,25 @@ public class RubyKernel {
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
      * @param name the name of the file to require
      **/
-    @JRubyMethod(name = "require", required = 1, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "require", required = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        Ruby runtime = recv.getRuntime();
-        
+        return requireCommon(recv.getRuntime(), recv, name, block);
+    }
+
+    @JRubyMethod(name = "require", required = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
+        Ruby runtime = context.getRuntime();
+
+        IRubyObject tmp = name.checkStringType();
+        if (!tmp.isNil()) {
+            return requireCommon(runtime, recv, tmp, block);
+        }
+
+        return requireCommon(runtime, recv,
+                name.respondsTo("to_path") ? name.callMethod(context, "to_path") : name, block);
+    }
+
+    private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
         if (runtime.getLoadService().lockAndRequire(name.convertToString().toString())) {
             return runtime.getTrue();
         }
