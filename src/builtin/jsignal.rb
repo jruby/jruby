@@ -25,7 +25,7 @@ class ::Object
         when 'SIG_DFL', 'DEFAULT'
           # do nothing...because I don't think we can return to old default
         when String
-          Signal::__jtrap_kernel(proc{eval cmd, TOP_LEVEL_BINDING}, sig)
+          Signal::__jtrap_kernel(proc{eval cmd, TOPLEVEL_BINDING}, sig)
         else
           Signal::__jtrap_kernel(proc{cmd.call}, sig)
         end
