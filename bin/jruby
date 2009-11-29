@@ -171,9 +171,11 @@ do
             exit
         elif [ "${val}" = "-classpath" ]; then
             CP="$CP$CP_DELIMITER$2"
+            CLASSPATH=""
             shift
         elif [ "${val}" = "-cp" ]; then
             CP="$CP$CP_DELIMITER$2"
+            CLASSPATH=""
             shift
         else
             if [ "${val:0:3}" = "-ea" ]; then
@@ -182,9 +184,6 @@ do
                 JAVA_ENCODING=$val
             fi
             java_args=("${java_args[@]}" "${1:2}")
-        fi
-        if [ "$CP" != "" ]; then
-          CLASSPATH=""
         fi
         ;;
      # Match switches that take an argument
