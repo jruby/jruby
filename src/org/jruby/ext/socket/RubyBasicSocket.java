@@ -48,6 +48,7 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
@@ -115,27 +116,16 @@ public class RubyBasicSocket extends RubyIO {
         if (openFile.getPipeStream() == null && openFile.isReadable()) {
             throw context.getRuntime().newIOError("closing non-duplex IO for writing");
         }
-        
+
         if (!openFile.isReadable()) {
             close();
         } else {
-            Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-            try {
-                if (socketChannel instanceof SocketChannel
-                        || socketChannel instanceof DatagramChannel) {
-                    asSocket().shutdownOutput();
-                } else if (socketChannel instanceof Shutdownable) {
-                    ((Shutdownable)socketChannel).shutdownOutput();
-                }
-            } catch (IOException e) {
-                throw context.getRuntime().newIOError(e.getMessage());
-            }
-            openFile.setPipeStream(null);
-            openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
+            // shutdown write
+            shutdownInternal(context, 1);
         }
         return context.getRuntime().getNil();
     }
-    
+
     @Override
     public IRubyObject close_read(ThreadContext context) {
         Ruby runtime = context.getRuntime();
@@ -150,22 +140,8 @@ public class RubyBasicSocket extends RubyIO {
         if (!openFile.isWritable()) {
             close();
         } else {
-            if(openFile.getPipeStream() != null) {
-                Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-                try {
-                    if (socketChannel instanceof SocketChannel
-                            || socketChannel instanceof DatagramChannel) {
-                        asSocket().shutdownInput();
-                    } else if (socketChannel instanceof Shutdownable) {
-                        ((Shutdownable)socketChannel).shutdownInput();
-                    }
-                } catch (IOException e) {
-                    throw runtime.newIOError(e.getMessage());
-                }
-                openFile.setMainStream(openFile.getPipeStream());
-                openFile.setPipeStream(null);
-                openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
-            }
+            // shutdown read
+            shutdownInternal(context, 0);
         }
         return runtime.getNil();
     }
@@ -603,18 +579,57 @@ public class RubyBasicSocket extends RubyIO {
         if (context.getRuntime().getSafeLevel() >= 4 && tainted_p(context).isFalse()) {
             throw context.getRuntime().newSecurityError("Insecure: can't shutdown socket");
         }
-        
+
         int how = 2;
         if (args.length > 0) {
             how = RubyNumeric.fix2int(args[0]);
         }
-        if (how < 0 || 2 < how) {
+        return shutdownInternal(context, how);
+    }
+
+    private IRubyObject shutdownInternal(ThreadContext context, int how) {
+        Channel socketChannel;
+        switch (how) {
+        case 0:
+            socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+            try {
+                if (socketChannel instanceof SocketChannel
+                        || socketChannel instanceof DatagramChannel) {
+                    asSocket().shutdownInput();
+                } else if (socketChannel instanceof Shutdownable) {
+                    ((Shutdownable)socketChannel).shutdownInput();
+                }
+            } catch (IOException e) {
+                throw context.getRuntime().newIOError(e.getMessage());
+            }
+            if(openFile.getPipeStream() != null) {
+                openFile.setMainStream(openFile.getPipeStream());
+                openFile.setPipeStream(null);
+            }
+            openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
+            return RubyFixnum.zero(context.getRuntime());
+        case 1:
+            socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+            try {
+                if (socketChannel instanceof SocketChannel
+                        || socketChannel instanceof DatagramChannel) {
+                    asSocket().shutdownOutput();
+                } else if (socketChannel instanceof Shutdownable) {
+                    ((Shutdownable)socketChannel).shutdownOutput();
+                }
+            } catch (IOException e) {
+                throw context.getRuntime().newIOError(e.getMessage());
+            }
+            openFile.setPipeStream(null);
+            openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
+            return RubyFixnum.zero(context.getRuntime());
+        case 2:
+            shutdownInternal(context, 0);
+            shutdownInternal(context, 1);
+            return RubyFixnum.zero(context.getRuntime());
+        default:
             throw context.getRuntime().newArgumentError("`how' should be either 0, 1, 2");
         }
-        if (how != 2) {
-            throw context.getRuntime().newNotImplementedError("Shutdown currently only works with how=2");
-        }
-        return close();
     }
 
     protected boolean doNotReverseLookup(ThreadContext context) {
