@@ -253,4 +253,16 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       end
     end
   end
+
+  # JRUBY-4289
+  if (WINDOWS)
+    def test_case_uppercase_exe
+      weird_jruby = '"' + File.join([Config::CONFIG['bindir'], 'jRuBy']) << '.ExE' + '"'
+      with_jruby_shell_spawning do
+        res = `#{weird_jruby} -e "puts 1"`.rstrip
+        assert_equal '1', res
+        assert_equal 0, $?.exitstatus
+      end
+    end
+  end
 end

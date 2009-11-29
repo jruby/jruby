@@ -251,8 +251,9 @@ public class ShellLauncher {
     }
 
     private static boolean withExeSuffix(String fname) {
+        String lowerCaseFname = fname.toLowerCase();
         for (String suffix : WINDOWS_EXE_SUFFIXES) {
-            if (fname.endsWith(suffix)) {
+            if (lowerCaseFname.endsWith(suffix)) {
                 return true;
             }
         }
