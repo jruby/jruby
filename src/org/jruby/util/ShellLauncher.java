@@ -827,6 +827,11 @@ public class ShellLauncher {
             }
 
             String command = args[0];
+
+            if (Platform.IS_WINDOWS) {
+                command = command.toLowerCase();
+            }
+
             // handle both slash types, \ and /.
             String[] slashDelimitedTokens = command.split("[/\\\\]");
             String finalToken = slashDelimitedTokens[slashDelimitedTokens.length - 1];
