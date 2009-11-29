@@ -36,7 +36,7 @@ public class TwoOperandInstr extends IR_Instr
         _arg1 = _arg1.getSimplifiedOperand(valueMap);
         // SSS FIXME: Looks like _arg2 can be null for NOT alu instructions -- fix this IR bug.
         if (_arg2 == null)
-           System.out.println("Got null arg2 for a 2-operand instruction: " + this.toString());
+           ; //System.out.println("Got null arg2 for a 2-operand instruction: " + this.toString());
         else
            _arg2 = _arg2.getSimplifiedOperand(valueMap);
     }

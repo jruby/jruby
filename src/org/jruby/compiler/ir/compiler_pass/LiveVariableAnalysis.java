@@ -24,7 +24,7 @@ public class LiveVariableAnalysis implements CompilerPass
         lvp.setup(c);
         lvp.compute_MOP_Solution();
         c.setDataFlowSolution(lvp.getName(), lvp);
-        System.out.println("LVP for " + s + " is: " + lvp);
+//        System.out.println("LVP for " + s + " is: " + lvp);
         for (IR_Closure x: ((IR_Method)s).getClosures()) {
            lvp = (LiveVariablesProblem)x.getCFG().getDataFlowSolution(lvp.getName());
 /*

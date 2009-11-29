@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 
 import org.jruby.Ruby;
 import org.jruby.ast.AliasNode;
@@ -61,6 +62,7 @@ import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
+import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
@@ -209,47 +211,85 @@ public class IR_Builder
     }
 
     public static void main(String[] args) {
-        IR_Scope scope = buildFromMain(args);
-        System.out.println("################## Before local optimization pass ##################");
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
-        System.out.println("################## After local optimization pass ##################");
-//        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
-        System.out.println("################## After dead code elimination pass ##################");
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis());
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddFrameInstructions());
-        scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+        boolean isCommandLineScript = args[0].equals("-e");
+        boolean isDebug = args[0].equals("-debug");
+        int     i = isCommandLineScript ? 1 : 0;
+        i += (isDebug ? 1 : 0);
+        while (i < args.length) {
+           long t1 = new Date().getTime();
+           Node ast = buildAST(isCommandLineScript, args[i]);
+           long t2 = new Date().getTime();
+           IR_Scope scope = new IR_Builder().buildRoot(ast);
+           long t3 = new Date().getTime();
+           if (isDebug) {
+               System.out.println("################## Before local optimization pass ##################");
+               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+           }
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+           long t4 = new Date().getTime();
+           if (isDebug) {
+               System.out.println("################## After local optimization pass ##################");
+               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+           }
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
+           long t5 = new Date().getTime();
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
+           long t6 = new Date().getTime();
+           if (isDebug) {
+               System.out.println("################## After dead code elimination pass ##################");
+           }
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis());
+           long t7 = new Date().getTime();
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
+           long t8 = new Date().getTime();
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddFrameInstructions());
+           long t9 = new Date().getTime();
+           System.out.println("Time to build AST         : " + (t2 - t1));
+           System.out.println("Time to build IR          : " + (t3 - t2));
+           System.out.println("Time to run local opts    : " + (t4 - t3));
+           System.out.println("Time to run build cfg     : " + (t5 - t4));
+           System.out.println("Time to run build domtree : " + (t6 - t5));
+           System.out.println("Time to run lva           : " + (t7 - t6));
+           System.out.println("Time to run dead code elim: " + (t8 - t7));
+           System.out.println("Time to add frame instrs  : " + (t9 - t8));
+           if (isDebug) {
+               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+           }
+           i++;
+        }
     }
 
-    public static IR_Scope buildFromMain(String[] args) {
+    public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
-        Node node = null;
-        if (args[0].equals("-e")) {
+        if (isCommandLineScript) {
             // inline script
-            node = ruby.parse(ByteList.create(args[1]), "-e", null, 0, false);
+            return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
         } else {
-            // inline script
+            // from file
+            FileInputStream fis = null;
             try {
-                File file = new File(args[0]);
-                FileInputStream fis = new FileInputStream(file);
+                File file = new File(arg);
+                fis = new FileInputStream(file);
                 long size = file.length();
                 byte[] bytes = new byte[(int)size];
                 fis.read(bytes);
-                node = ruby.parse(new ByteList(bytes), args[0], null, 0, false);
+                System.out.println("-- processing " + arg + " --");
+                return ruby.parse(new ByteList(bytes), arg, null, 0, false);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } finally {
+                try { if (fis != null) fis.close(); } catch(Exception e) { }
             }
         }
-
-        return new IR_Builder().buildRoot(node);
     }
 
     public Operand build(Node node, IR_Scope m) {
         if (node == null) {
             return null;
+        }
+        if (m == null) {
+            System.out.println("Got a null scope!");
+            throw new NotCompilableException("Unknown node encountered in builder: " + node);
         }
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node, m); // done
@@ -326,7 +366,7 @@ public class IR_Builder
             case RETURNNODE: return buildReturn((ReturnNode) node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
-//            case SCLASSNODE: return buildSClass(node, m); // DEFERRED
+            case SCLASSNODE: return buildSClass(node, m); // done
             case SELFNODE: return buildSelf((SelfNode) node, m); // done
             case SPLATNODE: return buildSplat((SplatNode) node, m); // done
             case STRNODE: return buildStr((StrNode) node, m); // done
@@ -752,6 +792,7 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
+				// SSS FIXME: Is this correct?
             container = new MetaObject(IR_Class.getCoreClass("Object"));
         }
 
@@ -771,10 +812,13 @@ public class IR_Builder
             containerScope.addClass(c);
         }
         else {
+				// SSS FIXME: This should fetch the class corresponding to 'container' and use it!
+				// But, how do we do this in a (1) AOT setup (2) mixed-mode compilation where
+				// the container class might only get interpreted, and never compiled?
             c = new IR_Class(container, s, superClass, className, false);
             cMetaObj = new MetaObject(c);
             s.addInstr(new PUT_CONST_Instr(container, className, cMetaObj));
-            // SSS FIXME: What happens to the add class in this case??
+				s.addClass(c);
         }
 
             // Build the class body!
@@ -785,32 +829,33 @@ public class IR_Builder
         return cMetaObj;
     }
 
-/**
-    public Operand buildSClass(Node node, IR_Scope m) {
+    // SSS FIXME: Verify logic ...
+    public Operand buildSClass(Node node, IR_Scope s) {
         final SClassNode sclassNode = (SClassNode) node;
+        //  class Foo
+        //  ...
+        //    class << self 
+        //    ...
+        //    end
+        //  ...  
+        //  end
+        //
+        // Here, the class << self declaration is in the class root method.
+        // Foo is the class in whose context this is being defined.
+        IR_Method  classRootMethod = (IR_Method)s;
+        MetaObject currClass       = (MetaObject)classRootMethod.getParent();
+        Operand receiver = build(sclassNode.getReceiverNode(), s);
 
-        CompilerCallback receiverCallback = new CompilerCallback() {
+        // SSS FIXME: If the metaclass/singleton class already exists, shouldn't we fetch that?
+        IR_Class c = new IR_Class(s, s, new MetaObject(IR_Module.getCoreClass("Class")), "Class:" + ((IR_Module)currClass._scope)._name, true); 
+        if (sclassNode.getBodyNode() != null) {
+            build(sclassNode.getBodyNode(), c.getRootMethod());
+        }
 
-                    public void call(IR_Scope m) {
-                        build(sclassNode.getReceiverNode(), m, true);
-                    }
-                };
+        // SSS FIXME: We might be missing some DEFINE_.. instructions here ....
 
-        CompilerCallback bodyCallback = new CompilerCallback() {
-
-                    public void call(IR_Scope m) {
-                        if (sclassNode.getBodyNode() != null) {
-                            build(sclassNode.getBodyNode(), m, true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-
-
-        m.defineClass("SCLASS", sclassNode.getScope(), null, null, bodyCallback, receiverCallback, inspector);
+        return new MetaObject(c);
     }
-**/
 
     public Operand buildClassVar(ClassVarNode node, IR_Scope s) {
         Variable ret = s.getNewVariable();
@@ -1422,6 +1467,8 @@ public class IR_Builder
 
     private Operand defineNewMethod(MethodDefNode defnNode, IR_Scope s, boolean isInstanceMethod)
     {
+		  // SSS FIXME: If this is a class method, shouldn't the parent scope
+		  // be the metaclass / singleton class??
         IR_Method m = new IR_Method(s, s, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args

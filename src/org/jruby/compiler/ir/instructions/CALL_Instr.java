@@ -152,9 +152,14 @@ public class CALL_Instr extends MultiOperandInstr
             return true;
          
         if (_closure != null) {
-            IR_Closure cl = (IR_Closure)((MetaObject)_closure)._scope;
-            if (cl.requiresFrame())
-                return true;
+            if (_closure instanceof MetaObject) {
+                IR_Closure cl = (IR_Closure)((MetaObject)_closure)._scope;
+                if (cl.requiresFrame())
+                    return true;
+            }
+            else {  /* can be instance of a symbol .. ex: [1,2,3,4].map(&:foo) .. here &:foo is the closure */
+                return false;
+            }
         }
 
         // Check if we are calling Proc.new or lambda
@@ -211,11 +216,14 @@ public class CALL_Instr extends MultiOperandInstr
     public boolean canCaptureCallersFrame()
     {
 /**
+ * We should do this better by setting default flags for various core library methods
+ * and by checking type of receiver to see if the receiver is any core object (string, array, etc.)
+ *
         if (_methAddr instanceof MethAddr) {
            String n = ((MethAddr)_methAddr).getName();
            return !n.equals("each") && !n.equals("inject") && !n.equals("+") && !n.equals("*") && !n.equals("+=") && !n.equals("*=");
         }
-**/
+ **/
 
         Operand   r  = getReceiver(); 
         IR_Method rm = getTargetMethodWithReceiver(r);

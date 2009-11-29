@@ -80,13 +80,13 @@ public abstract class IR_ScopeImpl implements IR_Scope
     private int _nextMethodIndex;
     private int _nextClosureIndex;
 
-        // List of modules, classes, and methods defined in this scope!
-    final public List<IR_Module>  _modules  = new ArrayList<IR_Module>();
-    final public List<IR_Class>   _classes  = new ArrayList<IR_Class>();
-    final public List<IR_Method>  _methods  = new ArrayList<IR_Method>();
+    // List of modules, classes, and methods defined in this scope (lexical scope -- not class / method hierarchies).
+    // In many cases, the lexical scoping and class/method hierarchies might coincide.
+    final public List<IR_Module> _modules  = new ArrayList<IR_Module>();
+    final public List<IR_Class>  _classes  = new ArrayList<IR_Class>();
+    final public List<IR_Method> _methods  = new ArrayList<IR_Method>();
 
-    private void init(Operand parent, IR_Scope lexicalParent)
-    {
+    private void init(Operand parent, IR_Scope lexicalParent) {
         _parent = parent;
         _lexicalParent = lexicalParent;
         _nextVarIndex = new HashMap<String, Integer>();
@@ -97,35 +97,29 @@ public abstract class IR_ScopeImpl implements IR_Scope
 //        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
     }
 
-    public IR_ScopeImpl(IR_Scope parent, IR_Scope lexicalParent)
-    {
+    public IR_ScopeImpl(IR_Scope parent, IR_Scope lexicalParent) {
         init(new MetaObject(parent), lexicalParent);
     }
 
-    public IR_ScopeImpl(Operand parent, IR_Scope lexicalParent)
-    {
+    public IR_ScopeImpl(Operand parent, IR_Scope lexicalParent) {
         init(parent, lexicalParent);
     }
 
         // Returns the containing parent scope!
-    public Operand getParent()
-    {
+    public Operand getParent() {
         return _parent;
     }
 
-    public IR_Scope getLexicalParent()
-    {
+    public IR_Scope getLexicalParent() {
         return _lexicalParent;
     }
 
-    public int getNextClosureId()
-    {
+    public int getNextClosureId() {
         _nextClosureIndex++;
         return _nextClosureIndex;
     }
 
-    public Variable getNewVariable(String prefix)
-    {
+    public Variable getNewVariable(String prefix) {
         if (prefix == null)
             prefix = "%v_";
 
@@ -145,13 +139,9 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return new Variable(prefix + idx);
     }
 
-    public Variable getNewVariable()
-    {
-       return getNewVariable("%v_");
-    }
+    public Variable getNewVariable() { return getNewVariable("%v_"); }
 
-    public Label getNewLabel(String lblPrefix)
-    {
+    public Label getNewLabel(String lblPrefix) {
         Integer idx = _nextVarIndex.get(lblPrefix);
         if (idx == null)
             idx = 0;
@@ -166,14 +156,12 @@ public abstract class IR_ScopeImpl implements IR_Scope
         // get "self"
     public Variable getSelf() { return new Variable("self"); }
 
-    public void addModule(IR_Module m) 
-    {
+    public void addModule(IR_Module m) {
         setConstantValue(m._name, new MetaObject(m)) ;
         _modules.add(m);
     }
 
-    public void addClass(IR_Class c)
-    { 
+    public void addClass(IR_Class c) { 
         setConstantValue(c._name, new MetaObject(c));
         _classes.add(c);
     }
@@ -201,21 +189,18 @@ public abstract class IR_ScopeImpl implements IR_Scope
         }
     }
 
-    public void addInstr(IR_Instr i)
-    { 
+    public void addInstr(IR_Instr i) { 
         throw new RuntimeException("Encountered instruction add in a non-execution scope!");
     }
 
         // Record that newName is a new method name for method with oldName
         // This is for the 'alias' keyword which resolves method names in the static compile/parse-time context
-    public void recordMethodAlias(String newName, String oldName)
-    {
+    public void recordMethodAlias(String newName, String oldName) {
         _methodAliases.put(oldName, newName);
     }
 
         // Unalias 'name' and return new name
-    public String unaliasMethodName(String name)
-    {
+    public String unaliasMethodName(String name) {
         String n = name;
         String a = null;
         do {
@@ -246,8 +231,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         //    if the reference is unresolved, when a value is retrieved for the forward-ref
         //    and we get a null, we can throw a ConstMissing exception!  Not sure!
         //
-    public Operand getConstantValue(String constRef)
-    {
+    public Operand getConstantValue(String constRef) {
 //        System.out.println("Looking in " + this + " for constant: " + constRef);
         Operand cv = _constMap.get(constRef);
         Operand p  = _parent;
@@ -267,8 +251,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return cv;
     }
 
-    public void setConstantValue(String constRef, Operand val) 
-    {
+    public void setConstantValue(String constRef, Operand val) {
         if (val.isConstant())
             _constMap.put(constRef, val); 
 
@@ -284,8 +267,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap);
     }
 
-    protected void runCompilerPassOnNestedScopes(CompilerPass p)
-    {
+    protected void runCompilerPassOnNestedScopes(CompilerPass p) {
         if (!_modules.isEmpty())
             for (IR_Scope m: _modules)
                 m.runCompilerPass(p);
@@ -299,8 +281,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
                 meth.runCompilerPass(p);
     }
 
-    public void runCompilerPass(CompilerPass p)
-    {
+    public void runCompilerPass(CompilerPass p) {
         boolean isPreOrder =  p.isPreOrder();
         if (isPreOrder)
             p.run(this);

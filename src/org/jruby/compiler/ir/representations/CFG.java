@@ -407,7 +407,7 @@ public class CFG
         Map<BasicBlock, BasicBlock> idomMap = new HashMap<BasicBlock, BasicBlock>();
         for (Integer i = 0; i < maxNodeId; i++) {
             idomMap.put(poNumbersToBB[i], poNumbersToBB[idoms[i]]);
-            System.out.println("IDOM(" + poNumbersToBB[i].getID() + ") = " + poNumbersToBB[idoms[i]].getID());
+//            System.out.println("IDOM(" + poNumbersToBB[i].getID() + ") = " + poNumbersToBB[idoms[i]].getID());
         }
     }
 

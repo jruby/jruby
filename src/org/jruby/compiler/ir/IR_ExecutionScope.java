@@ -78,58 +78,62 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
      * **************************************************************************** */
     private boolean _requiresFrame;
 
-    /* Is there any call to eval in this method? */
-    private boolean _callsEval;
-
-        // NOTE: Since we are processing ASTs, loop bodies are processed in depth-first manner
-        // with outer loops encountered before inner loops, and inner loops finished before outer ones.
-        //
-        // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
-        // This lets us implement next/redo/break/retry easily for the non-closure cases
+    // NOTE: Since we are processing ASTs, loop bodies are processed in depth-first manner
+    // with outer loops encountered before inner loops, and inner loops finished before outer ones.
+    //
+    // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
+    // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IR_Loop> _loopStack;
 
-    private void init()
-    {
+    private void init() {
         _instrs = new ArrayList<IR_Instr>();
         _closures = new ArrayList<IR_Closure>();
         _loopStack = new Stack<IR_Loop>();
+
+        // All flags are true by default!
         _canModifyCode = true;
-        _canCaptureCallersFrame = false;
-        _requiresFrame = false;
+        _canCaptureCallersFrame = true;
+        _requiresFrame = true;
     }
 
-    public IR_ExecutionScope(IR_Scope parent, IR_Scope lexicalParent)
-    {
+    public IR_ExecutionScope(IR_Scope parent, IR_Scope lexicalParent) {
         super(parent, lexicalParent);
         init();
     }
 
-    public IR_ExecutionScope(Operand parent, IR_Scope lexicalParent)
-    {
+    public IR_ExecutionScope(Operand parent, IR_Scope lexicalParent) {
         super(parent, lexicalParent);
         init();
     }
 
-    public void addClosure(IR_Closure c)
-    {
+    public void addClosure(IR_Closure c) {
         _closures.add(c);
     }
 
-    public void addInstr(IR_Instr i)
-    { 
+    public void addInstr(IR_Instr i) { 
         _instrs.add(i); 
     }
 
-    public void startLoop(IR_Loop l) { _loopStack.push(l); }
+    public void startLoop(IR_Loop l) { 
+        _loopStack.push(l);
+    }
 
-    public void endLoop(IR_Loop l) { _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */ }
+    public void endLoop(IR_Loop l) { 
+        _loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */
+    }
 
-    public IR_Loop getCurrentLoop() { return _loopStack.isEmpty() ? null : _loopStack.peek(); }
+    public IR_Loop getCurrentLoop() { 
+        return _loopStack.isEmpty() ? null : _loopStack.peek();
+    }
 
-    public List<IR_Closure> getClosures() { return _closures; }
+    public List<IR_Closure> getClosures() { 
+        return _closures;
+    }
 
     // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
-    public List<IR_Instr> getInstrs() { return _instrs; }
+    public List<IR_Instr> getInstrs() { 
+        return _instrs;
+    }
 
     public void setCodeModificationFlag(boolean f) { 
         _canModifyCode = f;
@@ -147,22 +151,19 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
         return _canCaptureCallersFrame;
     }
 
-    public CFG buildCFG()
-    {
+    public CFG buildCFG() {
         _cfg = new CFG(this);
         _cfg.build(_instrs);
         return _cfg;
     }
 
     // Get the control flow graph for this scope
-    public CFG getCFG()
-    {
+    public CFG getCFG() {
         return _cfg;
     }
 
 /**
-    public void runCompilerPass(CompilerPass p)
-    {
+    public void runCompilerPass(CompilerPass p) {
         boolean isPreOrder =  p.isPreOrder();
         if (isPreOrder)
             p.run(this);
@@ -177,20 +178,18 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
     }
 **/
 
-    public void computeExecutionScopeFlags()
-    {
+    public void computeExecutionScopeFlags() {
         // init
         _canModifyCode = true;
         _canCaptureCallersFrame = false;
         _requiresFrame = false;
-        _callsEval = false;
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
         // but potentially at a later time after doing ssa generation and constant propagation
         boolean receivesClosureArg = false;
         for (IR_Instr i: getInstrs()) {
-            if (i instanceof RECV_CLOSURE_Instr)   // SSS FIXME: Conservative, but safe
+            if (i instanceof RECV_CLOSURE_Instr)
                 receivesClosureArg = true;
 
             // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?

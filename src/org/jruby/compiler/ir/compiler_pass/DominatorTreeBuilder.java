@@ -15,7 +15,7 @@ public class DominatorTreeBuilder implements CompilerPass
     public void run(IR_Scope s)
     {
         if (s instanceof IR_ExecutionScope) {
-            System.out.println("Starting build of dom tree for " + s);
+//            System.out.println("Starting build of dom tree for " + s);
             CFG c = ((IR_ExecutionScope)s).getCFG();
             try {
                 c.buildDominatorTree();

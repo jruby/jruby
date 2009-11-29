@@ -56,6 +56,16 @@ public class IR_Module extends IR_ScopeImpl
     private void addRootMethod()
     {
         // Build a dummy static method for the class -- the scope in which all definitions, and class code executes, equivalent to java clinit
+        // SSS FIXME: We have to build different instances of the root method each time we run into a class definition.
+        //
+        //    class Foo
+        //      def m1; ...; end
+        //    end
+        //
+        //    class Foo
+        //      def m2; ...; end
+        //    end
+        //
         String n = ROOT_METHOD_PREFIX + _name;
         _rootMethod = new IR_Method(this, this, n, n, false);
         addMethod(_rootMethod);
@@ -72,6 +82,7 @@ public class IR_Module extends IR_ScopeImpl
     { 
         super(parent, lexicalParent);
         _name = name;
+        addRootMethod();
     }
 
     public IR_Method getRootMethod() { return _rootMethod; }
