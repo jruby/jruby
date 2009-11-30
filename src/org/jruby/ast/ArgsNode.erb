@@ -96,7 +96,8 @@ public class ArgsNode extends Node {
         this.preCount = pre == null ? 0 : pre.size();
         this.post = post;
         this.postCount = post == null ? 0 : post.size();
-        this.postIndex = rest == null ? 0 : rest.getIndex() + 1;
+        int optArgCount = optionalArguments == null ? 0 : optionalArguments.size();
+        this.postIndex = getPostCount(preCount, optArgCount, rest);
         this.optArgs = optionalArguments;
         this.restArg = rest == null ? -1 : rest.getIndex();
         this.restArgNode = rest;
@@ -108,6 +109,13 @@ public class ArgsNode extends Node {
         this.arity = calculateArity();
 
         this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0);
+    }
+
+    private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
+        // Simple-case: If we have a rest we know where it is
+        if (rest != null) return rest.getIndex() + 1;
+
+        return preCount + optArgCount;
     }
 
     public NodeType getNodeType() {
