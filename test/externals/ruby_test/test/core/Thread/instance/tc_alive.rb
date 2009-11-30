@@ -20,7 +20,7 @@ class TC_Thread_Alive_InstanceMethod < Test::Unit::TestCase
 
    def test_alive
       assert_equal(true, @thread.alive?)
-      assert_nothing_raised{ @thread.exit }
+      assert_nothing_raised{ @thread.exit; @thread.join }
       assert_equal(false, @thread.alive?)
    end
 
