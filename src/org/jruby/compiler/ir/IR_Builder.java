@@ -33,6 +33,7 @@ import org.jruby.ast.DStrNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
+import org.jruby.ast.EnsureNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
@@ -117,6 +118,7 @@ import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.IS_TRUE_Instr;
 import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
+import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
@@ -207,9 +209,9 @@ import org.jruby.util.ByteList;
 public class IR_Builder
 {
     public static void main(String[] args) {
-        boolean isDebug = args[0].equals("-debug");
+        boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
-        boolean isCommandLineScript = args[1].equals("-e");
+        boolean isCommandLineScript = args.length > 1 && args[1].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
         while (i < args.length) {
            long t1 = new Date().getTime();
@@ -240,6 +242,9 @@ public class IR_Builder
            long t8 = new Date().getTime();
            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddFrameInstructions());
            long t9 = new Date().getTime();
+           if (isDebug) {
+               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+           }
            System.out.println("Time to build AST         : " + (t2 - t1));
            System.out.println("Time to build IR          : " + (t3 - t2));
            System.out.println("Time to run local opts    : " + (t4 - t3));
@@ -248,9 +253,6 @@ public class IR_Builder
            System.out.println("Time to run lva           : " + (t7 - t6));
            System.out.println("Time to run dead code elim: " + (t8 - t7));
            System.out.println("Time to add frame instrs  : " + (t9 - t8));
-           if (isDebug) {
-               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-           }
            i++;
         }
     }
@@ -328,7 +330,7 @@ public class IR_Builder
             case DSYMBOLNODE: return buildDSymbol(node, m); // done
             case DVARNODE: return buildDVar((DVarNode) node, m); // done
             case DXSTRNODE: return buildDXStr((DXStrNode) node, m); // done
-//            case ENSURENODE: return buildEnsureNode(node, m); // DEFERRED
+            case ENSURENODE: return buildEnsureNode(node, m); // done
             case EVSTRNODE: return buildEvStr((EvStrNode) node, m); // done
             case FALSENODE: return buildFalse(node, m); // done
             case FCALLNODE: return buildFCall((FCallNode) node, m); // done
@@ -797,7 +799,7 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-				// SSS FIXME: Is this correct?
+            // SSS FIXME: Is this correct?
             container = new MetaObject(IR_Class.getCoreClass("Object"));
         }
 
@@ -817,13 +819,13 @@ public class IR_Builder
             containerScope.addClass(c);
         }
         else {
-				// SSS FIXME: This should fetch the class corresponding to 'container' and use it!
-				// But, how do we do this in a (1) AOT setup (2) mixed-mode compilation where
-				// the container class might only get interpreted, and never compiled?
+            // SSS FIXME: This should fetch the class corresponding to 'container' and use it!
+            // But, how do we do this in a (1) AOT setup (2) mixed-mode compilation where
+            // the container class might only get interpreted, and never compiled?
             c = new IR_Class(container, s, superClass, className, false);
             cMetaObj = new MetaObject(c);
             s.addInstr(new PUT_CONST_Instr(container, className, cMetaObj));
-				s.addClass(c);
+            s.addClass(c);
         }
 
             // Build the class body!
@@ -1472,8 +1474,8 @@ public class IR_Builder
 
     private Operand defineNewMethod(MethodDefNode defnNode, IR_Scope s, boolean isInstanceMethod)
     {
-		  // SSS FIXME: If this is a class method, shouldn't the parent scope
-		  // be the metaclass / singleton class??
+        // SSS FIXME: If this is a class method, shouldn't the parent scope
+        // be the metaclass / singleton class??
         IR_Method m = new IR_Method(s, s, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
@@ -1484,7 +1486,7 @@ public class IR_Builder
                 // if root of method is rescue, build as a light rescue
             Operand rv;
             if (defnNode.getBodyNode() instanceof RescueNode)
-                rv = buildRescueInternal(defnNode.getBodyNode(), m, true);
+                rv = buildRescueInternal(defnNode.getBodyNode(), m, null, null, null, true);
             else
                 rv = build(defnNode.getBodyNode(), m);
 
@@ -1619,38 +1621,44 @@ public class IR_Builder
         return new BacktickString(strPieces);
     }
 
-/**
     public Operand buildEnsureNode(Node node, IR_Scope m) {
-        final EnsureNode ensureNode = (EnsureNode) node;
-
-        if (ensureNode.getEnsureNode() != null) {
-            m.performEnsure(new BranchCallback() {
-
-                        public void branch(IR_Scope m) {
-                            if (ensureNode.getBodyNode() != null) {
-                                build(ensureNode.getBodyNode(), m, true);
-                            } else {
-                                m.loadNil();
-                            }
-                        }
-                    },
-                    new BranchCallback() {
-
-                        public void branch(IR_Scope m) {
-                            build(ensureNode.getEnsureNode(), m, false);
-                        }
-                    });
-        } else {
-            if (ensureNode.getBodyNode() != null) {
-                build(ensureNode.getBodyNode(), m,true);
-            } else {
-                m.loadNil();
+        EnsureNode ensureNode       = (EnsureNode) node;
+        Node       bodyNode         = ensureNode.getBodyNode();
+        Label      ensureStartLabel = null;
+        Label      ensureEndLabel  = null;
+        Variable   returnAddrVar    = null;
+        Variable   result           = m.getNewVariable();
+        if (bodyNode != null) {
+            Operand x;
+            if (bodyNode instanceof RescueNode) {
+                returnAddrVar = m.getNewVariable();
+                ensureStartLabel = m.getNewLabel();
+                ensureEndLabel = m.getNewLabel();
+                buildRescueInternal(bodyNode, m, ensureStartLabel, ensureEndLabel, returnAddrVar, false);
+            }
+            else {
+                build(bodyNode, m);
             }
         }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+
+        // Generate the ensure block now
+        //   START:
+        //     ... ensure code ...
+        //     JMP(ret_addr)
+        //   END:
+        if (ensureStartLabel != null)
+            m.addInstr(new LABEL_Instr(ensureStartLabel));
+
+        Operand x = (ensureNode.getEnsureNode() == null) ? Nil.NIL :  build(ensureNode.getEnsureNode(), m);
+        m.addInstr(new COPY_Instr(result, x));
+
+        if (returnAddrVar != null)
+            m.addInstr(new JUMP_INDIRECT_Instr(returnAddrVar));
+        if (ensureEndLabel != null)
+            m.addInstr(new LABEL_Instr(ensureEndLabel));
+
+        return result;
     }
-**/
 
     public Operand buildEvStr(EvStrNode node, IR_Scope s) {
             // SSS: FIXME: Somewhere here, we need to record information the type of this operand as String
@@ -2464,60 +2472,73 @@ public class IR_Builder
     }
 
     public Operand buildRescue(Node node, IR_Scope m) {
-        return buildRescueInternal(node, m, false);
+        return buildRescueInternal(node, m, null, null, null, false);
     }
 
-    private Operand buildRescueInternal(Node node, IR_Scope m, final boolean light) {
+    private Operand buildRescueInternal(Node node, IR_Scope m, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, final boolean light) {
         final RescueNode rescueNode = (RescueNode) node;
-        Operand tmp;
-        Variable rv = m.getNewVariable();
-        Label rBegin = m.getNewLabel(); // Label marking start of the begin-rescue-end block
-        Label rStart = m.getNewLabel(); // Label marking start of the rescue code.
-        Label rEnd   = m.getNewLabel(); // Lable marking end of the begin-rescue-end block
-        Label elseLabel = rescueNode.getElseNode() == null ? null : m.getNewLabel();
+        Label rBeginLabel = m.getNewLabel(); // Label marking start of the begin-rescue-end block
+        Label rFirstLabel = m.getNewLabel(); // Label marking start of the first rescue code.
+        Label rEndLabel   = m.getNewLabel(); // Label marking end of the begin-rescue-end block
+        Label elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        RESCUE_BLOCK_Instr ri = new RESCUE_BLOCK_Instr(rBegin, rStart, elseLabel, rEnd);
+        RESCUE_BLOCK_Instr ri = new RESCUE_BLOCK_Instr(rBeginLabel, rFirstLabel, elseLabel, rEndLabel);
         m.addInstr(ri);
-        m.addInstr(new LABEL_Instr(rBegin));
+        m.addInstr(new LABEL_Instr(rBeginLabel));
 
         // Body
-        if (rescueNode.getBodyNode() != null) {
+        Operand tmp = Nil.NIL;  // default return value if for some strange reason, we dont have the body node or the else node!
+        Variable rv = m.getNewVariable();
+        if (rescueNode.getBodyNode() != null)
             tmp = build(rescueNode.getBodyNode(), m);
-            m.addInstr(new COPY_Instr(rv, tmp));
-        }
 
-        // The actual rescue block
-        m.addInstr(new LABEL_Instr(rStart));
-        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEnd, light);
-
-        // Else part of the body
-        if (rescueNode.getElseNode() != null) {
+        // Else part of the body -- we simply fall through from the main body if there were no exceptions
+        if (elseLabel != null) {
             m.addInstr(new LABEL_Instr(elseLabel));
             tmp = build(rescueNode.getElseNode(), m);
-            m.addInstr(new COPY_Instr(rv, tmp));
+        }
+        m.addInstr(new COPY_Instr(rv, tmp));
+
+        // - If we dont have an ensure block, simply jump the end of the rescue block
+        // - If we do have an ensure block, set up the return address to the end of the rescue block,
+        //    and go execute the ensure code.
+        if (ensureStartLabel == null) {
+            m.addInstr(new JUMP_Instr(rEndLabel));
+        }
+        else {
+            m.addInstr(new COPY_Instr(returnAddrVar, ensureEndLabel));
+            m.addInstr(new JUMP_Instr(ensureStartLabel));
         }
 
-		  // End label
-        m.addInstr(new LABEL_Instr(rEnd));
+        // Build the actual rescue block
+        m.addInstr(new LABEL_Instr(rFirstLabel));
+        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, rEndLabel, light);
+
+        // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
+        if (ensureStartLabel == null)
+            m.addInstr(new LABEL_Instr(rEndLabel));
 
         return rv;
     }
 
-    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label endLabel, final boolean light) {
+    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, Label endLabel, final boolean light) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
 
         // Load exception & exception comparison type
         Variable exc = m.getNewVariable();
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
-        Operand excType = (exceptionList == null) ? new StandardError() : build(exceptionList, m);
+        Operand excType = (exceptionList == null) ? null : build(exceptionList, m);
 
         // Compare and branch as necessary!
-        Label uncaughtLabel = m.getNewLabel();
-        Variable eqqResult = m.getNewVariable();
-        m.addInstr(new EQQ_Instr(eqqResult, exc, excType));
-        m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+        Label uncaughtLabel = null;
+        if (excType != null) {
+            uncaughtLabel = m.getNewLabel();
+            Variable eqqResult = m.getNewVariable();
+            m.addInstr(new EQQ_Instr(eqqResult, exc, excType));
+            m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+        }
 
         // Caught exception case -- build rescue body
         Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
@@ -2536,14 +2557,30 @@ public class IR_Builder
 //            m.clearErrorInfo();
         }
         // Jump to end of rescue block since we've caught and processed the exception
-        m.addInstr(new JUMP_Instr(endLabel));
+        if (ensureStartLabel == null) {
+            m.addInstr(new JUMP_Instr(endLabel));
+        }
+        else {
+            m.addInstr(new COPY_Instr(returnAddrVar, ensureEndLabel));
+            m.addInstr(new JUMP_Instr(ensureStartLabel));
+        }
 
         // Uncaught exception -- build other rescue nodes or rethrow!
-        m.addInstr(new LABEL_Instr(uncaughtLabel));
-        if (rescueBodyNode.getOptRescueNode() != null) {
-            buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, light);
-        } else {
-            m.addInstr(new THROW_EXCEPTION_Instr(exc));
+        if (uncaughtLabel != null) {
+            m.addInstr(new LABEL_Instr(uncaughtLabel));
+            if (rescueBodyNode.getOptRescueNode() != null) {
+                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, endLabel, light);
+            } else {
+                // If we have to run an ensure block, create a new label before the throw exception
+                // which the ensure block can return to after completing its run.
+                if (ensureStartLabel != null) {
+                    Label rethrowLabel = m.getNewLabel();
+                    m.addInstr(new COPY_Instr(returnAddrVar, rethrowLabel));
+                    m.addInstr(new JUMP_Instr(ensureStartLabel));
+                    m.addInstr(new LABEL_Instr(rethrowLabel));
+                }
+                m.addInstr(new THROW_EXCEPTION_Instr(exc));
+            }
         }
     }
 

@@ -44,7 +44,7 @@ public enum Operation
     FRAME_STORE(OpType.store_op),
 
 // jump and branch operations
-    BREAK(OpType.branch_op), JUMP(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
+    BREAK(OpType.branch_op), JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
 
 // others
     ATTR_ASSIGN(OpType.dont_care),
