@@ -124,7 +124,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
             prefix = "%v_";
 
         // We need to ensure that the variable names generated here cannot conflict with ruby variable names!
-        // Hence the "%" tthat is appended to the beginning!
+        // Hence the "%" that is appended to the beginning!
         if (!prefix.startsWith("%"))
             prefix += "%";
 

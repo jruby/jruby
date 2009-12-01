@@ -80,6 +80,8 @@ import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.Colon2ConstNode;
 import org.jruby.ast.Colon2MethodNode;
 import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.RescueNode;
+import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.DXStrNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
@@ -123,10 +125,13 @@ import org.jruby.compiler.ir.instructions.PUT_GLOBAL_VAR_Instr;
 import org.jruby.compiler.ir.instructions.RECV_ARG_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
+import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.RECV_OPT_ARG_Instr;
+import org.jruby.compiler.ir.instructions.RESCUE_BLOCK_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
 import org.jruby.compiler.ir.instructions.THREAD_POLL_Instr;
+import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YIELD_Instr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Backref;
@@ -150,6 +155,7 @@ import org.jruby.compiler.ir.operands.Range;
 import org.jruby.compiler.ir.operands.Regexp;
 import org.jruby.compiler.ir.operands.SValue;
 import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.StandardError;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.Variable;
@@ -200,21 +206,11 @@ import org.jruby.util.ByteList;
 
 public class IR_Builder
 {
-    public static Node skipOverNewlines(Node n)
-    {
-        //Equivalent check ..
-        //while (n instanceof NewlineNode)
-        while (n.getNodeType() == NodeType.NEWLINENODE)
-            n = ((NewlineNode)n).getNextNode();
-
-        return n;
-    }
-
     public static void main(String[] args) {
-        boolean isCommandLineScript = args[0].equals("-e");
         boolean isDebug = args[0].equals("-debug");
-        int     i = isCommandLineScript ? 1 : 0;
-        i += (isDebug ? 1 : 0);
+        int     i = isDebug ? 1 : 0;
+        boolean isCommandLineScript = args[1].equals("-e");
+        i += (isCommandLineScript ? 1 : 0);
         while (i < args.length) {
            long t1 = new Date().getTime();
            Node ast = buildAST(isCommandLineScript, args[i]);
@@ -281,6 +277,15 @@ public class IR_Builder
                 try { if (fis != null) fis.close(); } catch(Exception e) { }
             }
         }
+    }
+
+    public static Node skipOverNewlines(Node n) {
+        //Equivalent check ..
+        //while (n instanceof NewlineNode)
+        while (n.getNodeType() == NodeType.NEWLINENODE)
+            n = ((NewlineNode)n).getNextNode();
+
+        return n;
     }
 
     public Operand build(Node node, IR_Scope m) {
@@ -361,7 +366,7 @@ public class IR_Builder
             case REGEXPNODE: return buildRegexp((RegexpNode) node, m); // done
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
-//            case RESCUENODE: return buildRescue(node, m); // DEFERRED
+            case RESCUENODE: return buildRescue(node, m); // done
 //            case RETRYNODE: return buildRetry(node, m); // DEFERRED
             case RETURNNODE: return buildReturn((ReturnNode) node, m); // done
             case ROOTNODE:
@@ -1477,13 +1482,12 @@ public class IR_Builder
             // Build IR for body
         if (defnNode.getBodyNode() != null) {
                 // if root of method is rescue, build as a light rescue
-/**
- * INCOMPLETE
+            Operand rv;
             if (defnNode.getBodyNode() instanceof RescueNode)
-                buildRescueInternal(defnNode.getBodyNode(), m, true);
+                rv = buildRescueInternal(defnNode.getBodyNode(), m, true);
             else
-**/
-            Operand rv = build(defnNode.getBodyNode(), m);
+                rv = build(defnNode.getBodyNode(), m);
+
             if (rv != null)
                m.addInstr(new RETURN_Instr(rv));
         } else {
@@ -2459,104 +2463,89 @@ public class IR_Builder
         return new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions());
     }
 
-/**
     public Operand buildRescue(Node node, IR_Scope m) {
-        buildRescueInternal(node, m, false);
+        return buildRescueInternal(node, m, false);
     }
 
-    private void buildRescueInternal(Node node, IR_Scope m, final boolean light) {
+    private Operand buildRescueInternal(Node node, IR_Scope m, final boolean light) {
         final RescueNode rescueNode = (RescueNode) node;
+        Operand tmp;
+        Variable rv = m.getNewVariable();
+        Label rBegin = m.getNewLabel(); // Label marking start of the begin-rescue-end block
+        Label rStart = m.getNewLabel(); // Label marking start of the rescue code.
+        Label rEnd   = m.getNewLabel(); // Lable marking end of the begin-rescue-end block
+        Label elseLabel = rescueNode.getElseNode() == null ? null : m.getNewLabel();
 
-        BranchCallback body = new BranchCallback() {
-            public void branch(IR_Scope m) {
-                if (rescueNode.getBodyNode() != null) {
-                    build(rescueNode.getBodyNode(), m, true);
-                } else {
-                    m.loadNil();
-                }
+        // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
+        RESCUE_BLOCK_Instr ri = new RESCUE_BLOCK_Instr(rBegin, rStart, elseLabel, rEnd);
+        m.addInstr(ri);
+        m.addInstr(new LABEL_Instr(rBegin));
 
-                if (rescueNode.getElseNode() != null) {
-                    m.consumeCurrentValue();
-                    build(rescueNode.getElseNode(), m, true);
-                }
-            }
-        };
+        // Body
+        if (rescueNode.getBodyNode() != null) {
+            tmp = build(rescueNode.getBodyNode(), m);
+            m.addInstr(new COPY_Instr(rv, tmp));
+        }
 
-        BranchCallback rubyHandler = new BranchCallback() {
-            public void branch(IR_Scope m) {
-                buildRescueBodyInternal(rescueNode.getRescueNode(), m, light);
-            }
-        };
+        // The actual rescue block
+        m.addInstr(new LABEL_Instr(rStart));
+        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEnd, light);
 
-        ASTInspector rescueInspector = new ASTInspector();
-        rescueInspector.inspect(rescueNode.getRescueNode());
-        if (light) {
-            m.performRescueLight(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
+        // Else part of the body
+        if (rescueNode.getElseNode() != null) {
+            m.addInstr(new LABEL_Instr(elseLabel));
+            tmp = build(rescueNode.getElseNode(), m);
+            m.addInstr(new COPY_Instr(rv, tmp));
+        }
+
+		  // End label
+        m.addInstr(new LABEL_Instr(rEnd));
+
+        return rv;
+    }
+
+    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label endLabel, final boolean light) {
+        final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
+        final Node exceptionList = rescueBodyNode.getExceptionNodes();
+
+        // Load exception & exception comparison type
+        Variable exc = m.getNewVariable();
+        m.addInstr(new RECV_EXCEPTION_Instr(exc));
+        Operand excType = (exceptionList == null) ? new StandardError() : build(exceptionList, m);
+
+        // Compare and branch as necessary!
+        Label uncaughtLabel = m.getNewLabel();
+        Variable eqqResult = m.getNewVariable();
+        m.addInstr(new EQQ_Instr(eqqResult, exc, excType));
+        m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+
+        // Caught exception case -- build rescue body
+        Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
+        if (realBody.getNodeType().isImmediate()) {
+            Operand x = build(realBody, m);
+            m.addInstr(new COPY_Instr(rv, x));
+// SSS FIXME: todo
+//            m.clearErrorInfo();
         } else {
-            m.performRescue(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
+// SSS FIXME: todo
+//            m.storeExceptionInErrorInfo();
+            Operand x = build(realBody, m);
+            m.addInstr(new COPY_Instr(rv, x));
+            // FIXME: this should reset to what it was before
+// SSS FIXME: todo
+//            m.clearErrorInfo();
+        }
+        // Jump to end of rescue block since we've caught and processed the exception
+        m.addInstr(new JUMP_Instr(endLabel));
+
+        // Uncaught exception -- build other rescue nodes or rethrow!
+        m.addInstr(new LABEL_Instr(uncaughtLabel));
+        if (rescueBodyNode.getOptRescueNode() != null) {
+            buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, light);
+        } else {
+            m.addInstr(new THROW_EXCEPTION_Instr(exc));
         }
     }
-
-    private void buildRescueBodyInternal(Node node, IR_Scope m, final boolean light) {
-        final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
-
-        m.loadException();
-
-        final Node exceptionList = rescueBodyNode.getExceptionNodes();
-        ArgumentsCallback rescueArgs = setupCallArgs(exceptionList);
-        if (rescueArgs == null) rescueArgs = new ArgumentsCallback() {
-            public int getArity() {
-                return 1;
-            }
-
-            public void call(IR_Scope m) {
-                m.loadStandardError();
-            }
-        };
-
-        m.checkIsExceptionHandled(rescueArgs);
-
-        BranchCallback trueBranch = new BranchCallback() {
-            public void branch(IR_Scope m) {
-                // check if it's an immediate, and don't outline
-                Node realBody = rescueBodyNode.getBodyNode();
-                if (realBody instanceof NewlineNode) {
-                    m.setLinePosition(realBody.getPosition());
-                    realBody = IR_Builder.skipOverNewlines(realBody);
-                }
-
-                if (realBody.getNodeType().isImmediate()) {
-                    build(realBody, m, true);
-                    m.clearErrorInfo();
-                } else {
-                    m.storeExceptionInErrorInfo();
-                    if (light) {
-                        build(rescueBodyNode.getBodyNode(), m, true);
-                    } else {
-                        IR_Scope nestedBody = m.outline("rescue_line_" + rescueBodyNode.getPosition().getStartLine());
-                        build(rescueBodyNode.getBodyNode(), nestedBody, true);
-                        nestedBody.endBody();
-                    }
-
-                    // FIXME: this should reset to what it was before
-                    m.clearErrorInfo();
-                }
-            }
-        };
-
-        BranchCallback falseBranch = new BranchCallback() {
-            public void branch(IR_Scope m) {
-                if (rescueBodyNode.getOptRescueNode() != null) {
-                    buildRescueBodyInternal(rescueBodyNode.getOptRescueNode(), m, light);
-                } else {
-                    m.rethrowException();
-                }
-            }
-        };
-
-        m.performBooleanBranch(trueBranch, falseBranch);
-    }
-**/
 
 /**
     public Operand buildRetry(Node node, IR_Scope s) {

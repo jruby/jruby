@@ -19,6 +19,7 @@ public enum Operation
     GET_METHOD(OpType.dont_care),
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
     RECV_ARG(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
+	 RECV_EXCEPTION(OpType.recv_arg_op),
     CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op),
     DECLARE_TYPE(OpType.declare_type_op),
 
