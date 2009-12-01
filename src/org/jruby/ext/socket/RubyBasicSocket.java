@@ -168,21 +168,24 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
         OpenFile openFile = getOpenFileChecked();
         try {
+            context.getThread().beforeBlockingCall();
             return RubyString.newString(context.getRuntime(), openFile.getMainStream().read(RubyNumeric.fix2int(args[0])));
         } catch (BadDescriptorException e) {
             throw context.getRuntime().newErrnoEBADFError();
         } catch (EOFException e) {
             // recv returns nil on EOF
             return context.getRuntime().getNil();
-    	} catch (IOException e) {
+        } catch (IOException e) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
             if ("Socket not open".equals(e.getMessage())) {
 	            throw context.getRuntime().newIOError(e.getMessage());
             }
-    	    throw context.getRuntime().newSystemCallError(e.getMessage());
-    	}
+            throw context.getRuntime().newSystemCallError(e.getMessage());
+        } finally {
+            context.getThread().afterBlockingCall();
+        }
     }
 
     protected InetSocketAddress getLocalSocket() {
