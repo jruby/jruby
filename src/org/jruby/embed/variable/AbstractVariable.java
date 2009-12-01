@@ -62,6 +62,11 @@ abstract class AbstractVariable implements BiVariable {
 
     protected void updateJavaObject(Ruby runtime, Object javaObject) {
         this.javaObject = javaObject;
+        if (javaObject == null) {
+            this.javaType = null;
+        } else {
+            this.javaType = javaObject.getClass();
+        }
         this.irubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
     }
 
@@ -75,17 +80,6 @@ abstract class AbstractVariable implements BiVariable {
             return;
         }
         this.irubyObject = rubyObject;
-        Ruby rt = rubyObject.getRuntime();
-        if (javaType != null) {
-            // Java originated varibales
-            this.javaObject = javaType.cast(JavaEmbedUtils.rubyToJava(rt, rubyObject, javaType));
-        } else {
-            // Ruby originated variables
-            this.javaObject = JavaEmbedUtils.rubyToJava(rubyObject);
-            if (this.javaObject != null) {
-                this.javaType = this.javaObject.getClass();
-            }
-        }
     }
 
     public String getName() {
@@ -93,6 +87,20 @@ abstract class AbstractVariable implements BiVariable {
     }
 
     public Object getJavaObject() {
+        if (irubyObject == null) {
+            return javaObject;
+        }
+        Ruby rt = irubyObject.getRuntime();
+        if (javaType != null) {
+            // Java originated varibales
+            javaObject = javaType.cast(JavaEmbedUtils.rubyToJava(rt, irubyObject, javaType));
+        } else {
+            // Ruby originated variables
+            javaObject = JavaEmbedUtils.rubyToJava(irubyObject);
+            if (javaObject != null) {
+                javaType = javaObject.getClass();
+            }
+        }
         return javaObject;
     }
 
