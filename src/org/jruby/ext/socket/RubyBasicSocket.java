@@ -27,46 +27,55 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.kenai.constantine.platform.SocketLevel;
-import com.kenai.constantine.platform.SocketOption;
-import static com.kenai.constantine.platform.Sock.*;
-import static com.kenai.constantine.platform.IPProto.*;
-import static com.kenai.constantine.platform.TCP.*;
+import static com.kenai.constantine.platform.IPProto.IPPROTO_TCP;
+import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
+import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
+import static com.kenai.constantine.platform.TCP.TCP_NODELAY;
+
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.channels.Channel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.DatagramChannel;
-import java.net.Socket;
-import java.net.ServerSocket;
 import java.net.DatagramSocket;
-import java.net.SocketAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+
 import org.jruby.CompatVersion;
-import org.jruby.util.io.OpenFile;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.OpenFile;
+
+import com.kenai.constantine.platform.SocketLevel;
+import com.kenai.constantine.platform.SocketOption;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
+    private static final ByteList FORMAT_SMALL_I = new ByteList(ByteList.plain("i"));
+
     private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBasicSocket(runtime, klass);
@@ -280,11 +289,15 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private void setSndBuf(IRubyObject val) throws IOException {
-        Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-        if(socketChannel instanceof SocketChannel) {
-            asSocket().setSendBufferSize(asNumber(val));
-        } else if(socketChannel instanceof DatagramChannel) {
-            asDatagramSocket().setSendBufferSize(asNumber(val));
+        try {
+            Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+            if(socketChannel instanceof SocketChannel) {
+                asSocket().setSendBufferSize(asNumber(val));
+            } else if(socketChannel instanceof DatagramChannel) {
+                asDatagramSocket().setSendBufferSize(asNumber(val));
+            }
+        } catch (IllegalArgumentException iae) {
+            throw getRuntime().newErrnoEINVALError(iae.getMessage());
         }
     }
 
@@ -312,25 +325,29 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private int asNumber(IRubyObject val) {
-        if(val instanceof RubyNumeric) {
+        if (val instanceof RubyNumeric) {
             return RubyNumeric.fix2int(val);
-        } else {
+        } else if (val instanceof RubyBoolean) {
+            return val.isTrue() ? 1 : 0;
+        }
+        else {
             return stringAsNumber(val);
         }
     }
 
     private int stringAsNumber(IRubyObject val) {
-        String str = val.convertToString().toString();
-        int res = 0;
-        res += (str.charAt(0)<<24);
-        res += (str.charAt(1)<<16);
-        res += (str.charAt(2)<<8);
-        res += (str.charAt(3));
-        return res;
+        ByteList str = val.convertToString().getByteList();
+        IRubyObject res = Pack.unpack(getRuntime(), str, FORMAT_SMALL_I).entry(0);
+        
+        if (res.isNil()) {
+            throw getRuntime().newErrnoEINVALError();
+        }
+
+        return RubyNumeric.fix2int(res);
     }
 
     protected boolean asBoolean(IRubyObject val) {
-        if(val instanceof RubyString) {
+        if (val instanceof RubyString) {
             return stringAsNumber(val) != 0;
         } else if(val instanceof RubyNumeric) {
             return RubyNumeric.fix2int(val) != 0;
@@ -348,9 +365,16 @@ public class RubyBasicSocket extends RubyIO {
 
     private IRubyObject getLinger(Ruby runtime) throws IOException {
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-        return number(runtime,
-                      (socketChannel instanceof SocketChannel) ? asSocket().getSoLinger() : 0
-                      );
+
+        int linger = 0;
+        if (socketChannel instanceof SocketChannel) {
+            linger = asSocket().getSoLinger();
+            if (linger < 0) {
+                linger = 0;
+            }
+        }
+
+        return number(runtime, linger);
     }
 
     private IRubyObject getOOBInline(Ruby runtime) throws IOException {
@@ -411,15 +435,14 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject trueFalse(Ruby runtime, boolean val) {
-        return runtime.newString( val ? " \u0000\u0000\u0000" : "\u0000\u0000\u0000\u0000" );
+        return number(runtime, val ? 1 : 0);
     }
 
-    private IRubyObject number(Ruby runtime, long s) {
-        StringBuilder result = new StringBuilder();
-        result.append((char) ((s>>24) &0xff)).append((char) ((s>>16) &0xff));
-        result.append((char) ((s >> 8) & 0xff)).append((char) (s & 0xff));
-        return runtime.newString(result.toString());
+    private static IRubyObject number(Ruby runtime, int s) {
+        RubyArray array = runtime.newArray(runtime.newFixnum(s));
+        return Pack.pack(runtime, array, FORMAT_SMALL_I);
     }
+
     @Deprecated
     public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
         return getsockopt(getRuntime().getCurrentContext(), lev, optname);
