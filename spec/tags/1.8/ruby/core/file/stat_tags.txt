@@ -1,0 +1,1 @@
+fails(JRUBY-4292, linux):File.stat should be able to call stat on an unlinked file
