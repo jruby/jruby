@@ -2137,7 +2137,6 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse() {
-        modify();
         final RubyArray dup; 
         if (realLength > 1) {
             dup = safeReverse();
