@@ -1,1 +1,0 @@
-fails(JRUBY-2739):Socket::BasicSocket#shutdown closes the writing end of the socket when arg is 1

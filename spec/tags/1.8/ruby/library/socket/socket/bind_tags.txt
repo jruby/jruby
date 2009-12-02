@@ -1,2 +1,0 @@
-fails(JRUBY-2739):Socket#bind binds to a port
-fails(JRUBY-2739):Socket#bind raises an error if we try to bind to an already bound port

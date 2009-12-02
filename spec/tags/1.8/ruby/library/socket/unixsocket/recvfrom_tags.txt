@@ -1,1 +1,0 @@
-fails(JRUBY-2739):UNIXSocket#recvfrom uses different message options

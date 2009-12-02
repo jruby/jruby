@@ -1,2 +1,0 @@
-fails(JRUBY-2739):UDPSocket.bind receives a hostname and a port
-fails(JRUBY-2739):UDPSocket.bind binds to INADDR_ANY if the hostname is empty

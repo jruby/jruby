@@ -1,6 +1,0 @@
-fails(JRUBY-2840):Socket::Constants defines socket types
-fails(JRUBY-2840):Socket::Constants defines protocol families
-fails(JRUBY-2840):Socket::Constants defines address families
-fails(JRUBY-2840):Socket::Constants defines send/receive options
-fails(JRUBY-2840):Socket::Constants defines multicast options
-fails(JRUBY-2840):Socket::Constants defines TCP options
