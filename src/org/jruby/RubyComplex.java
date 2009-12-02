@@ -912,7 +912,7 @@ public class RubyComplex extends RubyNumeric {
         return f_to_f(context, real);
     }
 
-    /** nucomp_to_f
+    /** nucomp_to_r
      * 
      */
     @JRubyMethod(name = "to_r")
@@ -921,6 +921,14 @@ public class RubyComplex extends RubyNumeric {
             throw context.getRuntime().newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Rational");            
         }
         return f_to_r(context, real);
+    }
+
+    /** nucomp_rationalize
+     *
+     */
+    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rationalize(ThreadContext context, IRubyObject arg) {
+        return to_r(context);
     }
     
     static RubyArray str_to_c_internal(ThreadContext context, IRubyObject recv) {
