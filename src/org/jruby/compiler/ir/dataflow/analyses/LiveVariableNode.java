@@ -219,6 +219,7 @@ public class LiveVariableNode extends FlowGraphNode
 /* ---------- Protected / package fields, methods --------- */
     void markDeadInstructions()
     {
+//        System.out.println("dead processing for " + _bb.getID());
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
         _tmp = (BitSet)_out.clone();
 

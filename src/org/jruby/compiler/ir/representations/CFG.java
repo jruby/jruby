@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.representations;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.LinkedList;
@@ -19,9 +20,14 @@ import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
+import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.RESCUE_BLOCK_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
+import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
+import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Variable;
 
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 
@@ -131,6 +137,23 @@ public class CFG
         return createNewBB(getNewLabel(), g, bbMap);
     }
 
+    private void addEdge(DirectedGraph<BasicBlock, CFG_Edge> g, BasicBlock src, Label tgt, Map<Label, BasicBlock> bbMap, Map<Label, List<BasicBlock>> forwardRefs)
+    {
+        BasicBlock tgtBB = bbMap.get(tgt);
+        if (tgtBB != null) {
+            g.addEdge(src, tgtBB);
+        }
+        else {
+            // Add a forward reference from tgt -> src
+            List<BasicBlock> frefs = forwardRefs.get(tgt);
+            if (frefs == null) {
+                frefs = new ArrayList<BasicBlock>();
+                forwardRefs.put(tgt, frefs);
+            }
+            frefs.add(src);
+        }
+    }
+
     public void build(List<IR_Instr> instrs)
     {
         // Map of label & basic blocks which are waiting for a bb with that label
@@ -138,6 +161,9 @@ public class CFG
 
         // Map of label & basic blocks with that label
         Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
+
+        // Map of return address variable and all possible targets (required to connect up ensure blocks with their targets)
+        Map<Variable, Set<Label>> retAddrMap = new HashMap<Variable, Set<Label>>();
 
         DirectedGraph<BasicBlock, CFG_Edge> g = new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
                                                     new EdgeFactory<BasicBlock, CFG_Edge>() {
@@ -184,6 +210,14 @@ public class CFG
                 bbEndedWithControlXfer = false;
             }
 
+            // RESCUE_BLOCK IR instructions are dummy instructions -- they are around to propagate
+            // information to later passes.
+            if (i instanceof RESCUE_BLOCK_Instr) {
+                RESCUE_BLOCK_Instr rbi = (RESCUE_BLOCK_Instr)i;
+                // SSS FIXME: Only adding 1 edge!  Have to add edges from all bb's of the body to bb of the first rescuer!
+                addEdge(g, currBB, rbi._firstBlock, bbMap, forwardRefs);
+            }
+
             if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
@@ -210,28 +244,38 @@ public class CFG
                     retBBs.add(currBB);
                     bbEndedWithControlXfer = true;
                 }
+                else if (i instanceof THROW_EXCEPTION_Instr) {
+                    tgt = null;
+                    retBBs.add(currBB);
+                    bbEndedWithControlXfer = true;
+                }
+                else if (i instanceof JUMP_INDIRECT_Instr) {
+                    tgt = null;
+                    bbEndedWithControlXfer = true;
+                    Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr)i)._target);
+                    for (Label l: retAddrs)
+                        addEdge(g, currBB, l, bbMap, forwardRefs);
+                }
                 else {
                     tgt = null;
                 }
 
                 if (tgt != null) {
-                    BasicBlock tgtBB = bbMap.get(tgt);
-                    if (tgtBB != null) {
-                        g.addEdge(currBB, tgtBB);
-                    }
-                    else {
-                        // Add a forward reference from tgt -> currBB
-                        List<BasicBlock> frefs = forwardRefs.get(tgt);
-                        if (frefs == null) {
-                            frefs = new ArrayList<BasicBlock>();
-                            forwardRefs.put(tgt, frefs);
-                        }
-                        frefs.add(currBB);
-                    }
+                    addEdge(g, currBB, tgt, bbMap, forwardRefs);
                 }
             }
             else if (iop != Operation.LABEL) {
                currBB.addInstr(i);
+            }
+
+            if (i instanceof SET_RETADDR_Instr) {
+                Variable v = i.getResult();
+                Set<Label> addrs = retAddrMap.get(v);
+                if (addrs == null) {
+                    addrs = new HashSet<Label>();
+                    retAddrMap.put(v, addrs);
+                }
+                addrs.add(((SET_RETADDR_Instr)i).getReturnAddr());
             }
 
             // Build CFG for the closure!

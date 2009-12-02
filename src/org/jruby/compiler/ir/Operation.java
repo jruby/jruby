@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, load_op, store_op, declare_type_op, guard_op };
+enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, exc_op, load_op, store_op, declare_type_op, guard_op };
 
 public enum Operation
 {
@@ -8,7 +8,7 @@ public enum Operation
     NOP(OpType.dont_care),
 
 // value copy and type conversion operations
-    COPY(OpType.dont_care), TYPE_CVT(OpType.dont_care), BOX_VAL(OpType.dont_care), UNBOX_OBJ(OpType.dont_care),
+    COPY(OpType.dont_care), SET_RETADDR(OpType.dont_care), TYPE_CVT(OpType.dont_care), BOX_VAL(OpType.dont_care), UNBOX_OBJ(OpType.dont_care),
 
 // alu operations
     ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
@@ -33,7 +33,7 @@ public enum Operation
     DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
 
 // exception instructions
-    THROW(OpType.dont_care), RESCUE(OpType.dont_care), RETRY(OpType.dont_care),
+    THROW(OpType.exc_op), RESCUE(OpType.dont_care), RETRY(OpType.dont_care),
 
 // Loads
     GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op),
@@ -71,10 +71,11 @@ public enum Operation
     public boolean isCall()       { return _type == OpType.call_op; }
     public boolean isEval()       { return _type == OpType.eval_op; }
     public boolean isReturn()     { return _type == OpType.ret_op; }
+    public boolean isException()  { return _type == OpType.exc_op; }
     public boolean isArgReceive() { return _type == OpType.recv_arg_op; }
 
     public boolean startsBasicBlock() { return this == LABEL; }
-    public boolean endsBasicBlock() { return isBranch() || isReturn(); }
+    public boolean endsBasicBlock() { return isBranch() || isReturn() || isException(); }
 
         // By default, call instructions cannot be deleted even if their results aren't used by anyone
         // unless we know more about what the call is, what it does, etc.

@@ -10,10 +10,10 @@ public class RESCUE_BLOCK_Instr extends IR_Instr
 {
     private static Operand[] _empty = new Operand[] {};
 
-    Label _begin;
-    Label _firstBlock;
-    Label _elseBlock;
-    Label _end;
+    final public Label _begin;
+    final public Label _firstBlock;
+    final public Label _elseBlock;
+    final public Label _end;
 
     public RESCUE_BLOCK_Instr(Label rBegin, Label firstBlock, Label elseBlock, Label rEnd)
     {

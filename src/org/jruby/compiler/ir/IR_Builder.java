@@ -132,6 +132,7 @@ import org.jruby.compiler.ir.instructions.RECV_OPT_ARG_Instr;
 import org.jruby.compiler.ir.instructions.RESCUE_BLOCK_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
+import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THREAD_POLL_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YIELD_Instr;
@@ -1625,7 +1626,7 @@ public class IR_Builder
         EnsureNode ensureNode       = (EnsureNode) node;
         Node       bodyNode         = ensureNode.getBodyNode();
         Label      ensureStartLabel = null;
-        Label      ensureEndLabel  = null;
+        Label      ensureEndLabel   = null;
         Variable   returnAddrVar    = null;
         Variable   result           = m.getNewVariable();
         if (bodyNode != null) {
@@ -2477,15 +2478,16 @@ public class IR_Builder
 
     private Operand buildRescueInternal(Node node, IR_Scope m, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, final boolean light) {
         final RescueNode rescueNode = (RescueNode) node;
-        Label rBeginLabel = m.getNewLabel(); // Label marking start of the begin-rescue-end block
-        Label rFirstLabel = m.getNewLabel(); // Label marking start of the first rescue code.
-        Label rEndLabel   = m.getNewLabel(); // Label marking end of the begin-rescue-end block
-        Label elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
+        boolean noEnsure    = (ensureStartLabel == null);
+        Label   rBeginLabel = m.getNewLabel(); // Label marking start of the begin-rescue(-ensure)-end block
+        Label   rFirstLabel = m.getNewLabel(); // Label marking start of the first rescue code.
+        Label   rEndLabel   = noEnsure ? m.getNewLabel() : ensureEndLabel; // Label marking end of the begin-rescue(-ensure)-end block
+        Label   elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
+        m.addInstr(new LABEL_Instr(rBeginLabel));
         RESCUE_BLOCK_Instr ri = new RESCUE_BLOCK_Instr(rBeginLabel, rFirstLabel, elseLabel, rEndLabel);
         m.addInstr(ri);
-        m.addInstr(new LABEL_Instr(rBeginLabel));
 
         // Body
         Operand tmp = Nil.NIL;  // default return value if for some strange reason, we dont have the body node or the else node!
@@ -2498,16 +2500,16 @@ public class IR_Builder
             m.addInstr(new LABEL_Instr(elseLabel));
             tmp = build(rescueNode.getElseNode(), m);
         }
-        m.addInstr(new COPY_Instr(rv, tmp));
 
-        // - If we dont have an ensure block, simply jump the end of the rescue block
+        // - If we dont have an ensure block, simply jump to the end of the rescue block
         // - If we do have an ensure block, set up the return address to the end of the rescue block,
         //    and go execute the ensure code.
-        if (ensureStartLabel == null) {
+        if (noEnsure) {
+            m.addInstr(new COPY_Instr(rv, tmp));
             m.addInstr(new JUMP_Instr(rEndLabel));
         }
         else {
-            m.addInstr(new COPY_Instr(returnAddrVar, ensureEndLabel));
+            m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
             m.addInstr(new JUMP_Instr(ensureStartLabel));
         }
 
@@ -2516,7 +2518,7 @@ public class IR_Builder
         buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, rEndLabel, light);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
-        if (ensureStartLabel == null)
+        if (noEnsure)
             m.addInstr(new LABEL_Instr(rEndLabel));
 
         return rv;
@@ -2525,6 +2527,7 @@ public class IR_Builder
     private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, Label endLabel, final boolean light) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
+        boolean noEnsure = (ensureStartLabel == null);
 
         // Load exception & exception comparison type
         Variable exc = m.getNewVariable();
@@ -2557,11 +2560,11 @@ public class IR_Builder
 //            m.clearErrorInfo();
         }
         // Jump to end of rescue block since we've caught and processed the exception
-        if (ensureStartLabel == null) {
+        if (noEnsure) {
             m.addInstr(new JUMP_Instr(endLabel));
         }
         else {
-            m.addInstr(new COPY_Instr(returnAddrVar, ensureEndLabel));
+            m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
             m.addInstr(new JUMP_Instr(ensureStartLabel));
         }
 
@@ -2573,9 +2576,9 @@ public class IR_Builder
             } else {
                 // If we have to run an ensure block, create a new label before the throw exception
                 // which the ensure block can return to after completing its run.
-                if (ensureStartLabel != null) {
+                if (!noEnsure) {
                     Label rethrowLabel = m.getNewLabel();
-                    m.addInstr(new COPY_Instr(returnAddrVar, rethrowLabel));
+                    m.addInstr(new SET_RETADDR_Instr(returnAddrVar, rethrowLabel));
                     m.addInstr(new JUMP_Instr(ensureStartLabel));
                     m.addInstr(new LABEL_Instr(rethrowLabel));
                 }
