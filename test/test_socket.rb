@@ -85,6 +85,32 @@ class SocketTest < Test::Unit::TestCase
       end
     end
   end
+
+  # JRUBY-4299
+  def test_tcp_socket_reuse_addr
+    socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+
+    # default
+    assert_equal 0, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
+
+    socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+    assert_equal 1, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
+  ensure
+    socket.close
+  end
+
+  # JRUBY-4299
+  def test_udp_socket_reuse_addr
+    socket = Socket.new(Socket::AF_INET, Socket::SOCK_DGRAM, 0)
+
+    # default
+    assert_equal 0, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
+
+    socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+    assert_equal 1, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
+  ensure
+    socket.close
+  end
 end
 
 class UNIXSocketTests < Test::Unit::TestCase
@@ -370,13 +396,26 @@ class ServerTest < Test::Unit::TestCase
     # propagate the thread's termination error, checking it for IOError
     assert_raise(IOError) {thread.value}
   end
-  
-    # JRUBY-2874
-    def test_raises_socket_error_on_out_of_range_port
-      [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
-        assert_raises(SocketError) do
-          TCPServer.new('localhost', port)
-        end
+
+  # JRUBY-2874
+  def test_raises_socket_error_on_out_of_range_port
+    [-2**16, -2**8, -2, -1, 2**16, 2**16 + 1, 2**17, 2**30 -1].each do |port|
+      assert_raises(SocketError) do
+        TCPServer.new('localhost', port)
       end
     end
+  end
+
+  # JRUBY-4299
+  def test_server_reuse_addr
+    socket = TCPServer.new("127.0.0.1", 7777)
+
+    # default
+    assert_equal 0, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
+
+    socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+    assert_equal 1, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
+  ensure
+    socket.close
+  end
 end

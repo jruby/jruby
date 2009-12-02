@@ -262,10 +262,15 @@ public class RubyBasicSocket extends RubyIO {
             asSocket().setTcpNoDelay(asBoolean(val));
         }
     }
+
     private void setReuseAddr(IRubyObject val) throws IOException {
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-        if(socketChannel instanceof ServerSocketChannel) {
+        if (socketChannel instanceof ServerSocketChannel) {
             asServerSocket().setReuseAddress(asBoolean(val));
+        } else if (socketChannel instanceof SocketChannel) {
+            asSocket().setReuseAddress(asBoolean(val));
+        } else if (socketChannel instanceof DatagramChannel) {
+            asDatagramSocket().setReuseAddress(asBoolean(val));
         }
     }
 
@@ -406,9 +411,17 @@ public class RubyBasicSocket extends RubyIO {
 
     private IRubyObject getReuseAddr(Ruby runtime) throws IOException {
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
-        return trueFalse(runtime,
-                         (socketChannel instanceof ServerSocketChannel) ? asServerSocket().getReuseAddress() : false
-                         );
+
+        boolean reuse = false;
+        if (socketChannel instanceof ServerSocketChannel) {
+            reuse = asServerSocket().getReuseAddress();
+        } else if (socketChannel instanceof SocketChannel) {
+            reuse = asSocket().getReuseAddress();
+        } else if (socketChannel instanceof DatagramChannel) {
+            reuse = asDatagramSocket().getReuseAddress();
+        }
+
+        return trueFalse(runtime, reuse);
     }
 
     private IRubyObject getTimeout(Ruby runtime) throws IOException {
