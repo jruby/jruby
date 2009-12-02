@@ -90,9 +90,6 @@ class SocketTest < Test::Unit::TestCase
   def test_tcp_socket_reuse_addr
     socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
 
-    # default
-    assert_equal 0, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
-
     socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
     assert_equal 1, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
   ensure
@@ -102,9 +99,6 @@ class SocketTest < Test::Unit::TestCase
   # JRUBY-4299
   def test_udp_socket_reuse_addr
     socket = Socket.new(Socket::AF_INET, Socket::SOCK_DGRAM, 0)
-
-    # default
-    assert_equal 0, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
 
     socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
     assert_equal 1, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
@@ -409,9 +403,6 @@ class ServerTest < Test::Unit::TestCase
   # JRUBY-4299
   def test_server_reuse_addr
     socket = TCPServer.new("127.0.0.1", 7777)
-
-    # default
-    assert_equal 0, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
 
     socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
     assert_equal 1, socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR).unpack('i')[0]
