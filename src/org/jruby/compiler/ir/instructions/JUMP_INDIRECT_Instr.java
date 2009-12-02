@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
+// Used in ensure blocks to jump to the label contained in '_target'
 public class JUMP_INDIRECT_Instr extends NoOperandInstr
 {
     public final Variable _target; 

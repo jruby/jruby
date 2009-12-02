@@ -1,14 +1,14 @@
 package org.jruby.compiler.ir.instructions;
 
-// This is of the form:
-//   v = LBL_..
-
 import java.util.Map;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 
+// This is of the form:
+//    v = LBL_..
+// Used in rescue blocks to tell the ensure block where to return to after it is done doing its thing.
 public class SET_RETADDR_Instr extends OneOperandInstr 
 {
     public SET_RETADDR_Instr(Variable d, Label l)

@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
+// This is an internal ruby array generated during multiple assignment expressions.
 public class GET_ARRAY_Instr extends OneOperandInstr
 {
     public final int     _index;

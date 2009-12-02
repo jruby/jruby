@@ -5,18 +5,14 @@ enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, 
 public enum Operation
 {
 // ------ Define the operations below ----
-    NOP(OpType.dont_care),
 
 // value copy and type conversion operations
-    COPY(OpType.dont_care), SET_RETADDR(OpType.dont_care), TYPE_CVT(OpType.dont_care), BOX_VAL(OpType.dont_care), UNBOX_OBJ(OpType.dont_care),
+    COPY(OpType.dont_care), SET_RETADDR(OpType.dont_care),
 
 // alu operations
-    ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
-    OR(OpType.alu_op), AND(OpType.alu_op), XOR(OpType.alu_op), NOT(OpType.alu_op),
-    LSHIFT(OpType.alu_op), RSHIFT(OpType.alu_op),
+    NOT(OpType.alu_op),
 
 // method handle, arg receive, return value, and  call instructions
-    GET_METHOD(OpType.dont_care),
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
     RECV_ARG(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
 	 RECV_EXCEPTION(OpType.recv_arg_op),
@@ -26,9 +22,6 @@ public enum Operation
 // closure instructions
     YIELD(OpType.dont_care),
 
-// eval instructions
-    EVAL_OP(OpType.eval_op), CLASS_EVAL(OpType.eval_op),
-    
 // def instructions
     DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
 
@@ -44,7 +37,7 @@ public enum Operation
     FRAME_STORE(OpType.store_op),
 
 // jump and branch operations
-    BREAK(OpType.branch_op), JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op), BLE(OpType.branch_op), BLT(OpType.branch_op), BGE(OpType.branch_op), BGT(OpType.branch_op),
+    BREAK(OpType.branch_op), JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op),
 
 // others
     ATTR_ASSIGN(OpType.dont_care),
@@ -77,9 +70,9 @@ public enum Operation
     public boolean startsBasicBlock() { return this == LABEL; }
     public boolean endsBasicBlock() { return isBranch() || isReturn() || isException(); }
 
-        // By default, call instructions cannot be deleted even if their results aren't used by anyone
-        // unless we know more about what the call is, what it does, etc.
-        // Similarly for evals, stores, returns.
+    // By default, call instructions cannot be deleted even if their results aren't used by anyone
+    // unless we know more about what the call is, what it does, etc.
+    // Similarly for evals, stores, returns.
     public boolean hasSideEffects() 
     {
         return isCall() || isEval() || isStore() || isReturn();

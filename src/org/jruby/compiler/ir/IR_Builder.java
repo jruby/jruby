@@ -800,7 +800,6 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            // SSS FIXME: Is this correct?
             container = new MetaObject(IR_Class.getCoreClass("Object"));
         }
 
@@ -1487,7 +1486,7 @@ public class IR_Builder
                 // if root of method is rescue, build as a light rescue
             Operand rv;
             if (defnNode.getBodyNode() instanceof RescueNode)
-                rv = buildRescueInternal(defnNode.getBodyNode(), m, null, null, null, true);
+                rv = buildRescueInternal(defnNode.getBodyNode(), m, null, null, null);
             else
                 rv = build(defnNode.getBodyNode(), m);
 
@@ -1635,7 +1634,7 @@ public class IR_Builder
                 returnAddrVar = m.getNewVariable();
                 ensureStartLabel = m.getNewLabel();
                 ensureEndLabel = m.getNewLabel();
-                buildRescueInternal(bodyNode, m, ensureStartLabel, ensureEndLabel, returnAddrVar, false);
+                buildRescueInternal(bodyNode, m, ensureStartLabel, ensureEndLabel, returnAddrVar);
             }
             else {
                 build(bodyNode, m);
@@ -1689,9 +1688,13 @@ public class IR_Builder
             case ITERNODE:
                 return build((IterNode)node, s);
             case BLOCKPASSNODE:
+                // SSS FIXME: We need to create a closure out of the named proc.
+                //     Ex: a.map(&:id)
+                // 1. if the value is a nil, pass a null block.
+                // 2. if not a proc, call a toProc on it and pass it in
+                //    (and, in cases where the object is a literal proc, the proc & toproc will cancel each other out!)
+                // 3. if the value is a proc, pass it in.
                 return build(((BlockPassNode)node).getBodyNode(), s);
-                // FIXME: Translate this call below!
-                // s.unwrapPassedBlock();
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
@@ -1817,13 +1820,6 @@ public class IR_Builder
         return ret;
     }
 
-    // SSS FIXME: Why is the for node being built using closures and not as a "regular" loop with branches?
-    //
-    // This has implications on inlining, implementations of closures, next, break, etc.
-    // When "each" and the block it consumes are inlined together in the caller, the "loop"
-    // from the each should become a normal loop without any closures.  But, in this implementation
-    // of for, we replace one closure with another!
-    //
     public Operand buildForIter(final ForNode forNode, IR_ExecutionScope s) {
             // Create a new closure context
         IR_Closure closure = new IR_Closure(s, s);
@@ -2032,7 +2028,7 @@ public class IR_Builder
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new MetaObject(IR_Class.getCoreClass("Object")); // SSS FIXME: Is this correct?
+            container = new MetaObject(IR_Class.getCoreClass("Object"));
         }
 
         // Build the new module
@@ -2160,7 +2156,7 @@ public class IR_Builder
         return setResult;
     }
 
-    // Translate "x &&= y" --> "x = (is_true(x) ? y : false)" -->
+    // Translate "x &&= y" --> "x = y if is_true(x)" -->
     // 
     //    x = -- build(x) should return a variable! --
     //    f = is_true(x)
@@ -2382,13 +2378,42 @@ public class IR_Builder
         return elt;
     }
 
-    // SSS FIXME: Incorrect -- this is just a copy of the OR case
+    // Translate "a[x] &&= n" --> "a[x] = n if is_true(a[x])"
     public Operand buildOpElementAsgnWithAnd(Node node, IR_Scope s) {
-        return buildOpElementAsgnWithOr(node, s);
+        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+        Operand array = build(opElementAsgnNode.getReceiverNode(), s);
+        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        Label    l     = s.getNewLabel();
+        Variable elt   = s.getNewVariable();
+        Variable f     = s.getNewVariable();
+        Operand[] allArgs = new Operand[args.size()+1];
+        int i = 1;
+        allArgs[0] = array;
+        for (Operand x: args) {
+            allArgs[i] = x;
+            i++;
+        }
+        s.addInstr(new CALL_Instr(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new IS_TRUE_Instr(f, elt));
+        s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l));
+        Operand value = build(opElementAsgnNode.getValueNode(), s);
+        allArgs = new Operand[args.size()+2];
+        i = 1;
+        allArgs[0] = array;
+        for (Operand x: args) {
+            allArgs[i] = x;
+            i++;
+        }
+        allArgs[i] = value;
+        s.addInstr(new CALL_Instr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new COPY_Instr(elt, value));
+        s.addInstr(new LABEL_Instr(l));
+        return elt;
     }
 
-    // SSS FIXME: Incorrect -- this is just a copy of the OR case
+    // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
     public Operand buildOpElementAsgnWithMethod(Node node, IR_Scope s) {
+    // SSS FIXME: Incorrect -- this is just a copy of the OR case
         return buildOpElementAsgnWithOr(node, s);
     }
 
@@ -2473,10 +2498,10 @@ public class IR_Builder
     }
 
     public Operand buildRescue(Node node, IR_Scope m) {
-        return buildRescueInternal(node, m, null, null, null, false);
+        return buildRescueInternal(node, m, null, null, null);
     }
 
-    private Operand buildRescueInternal(Node node, IR_Scope m, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, final boolean light) {
+    private Operand buildRescueInternal(Node node, IR_Scope m, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar) {
         final RescueNode rescueNode = (RescueNode) node;
         boolean noEnsure    = (ensureStartLabel == null);
         Label   rBeginLabel = m.getNewLabel(); // Label marking start of the begin-rescue(-ensure)-end block
@@ -2515,7 +2540,7 @@ public class IR_Builder
 
         // Build the actual rescue block
         m.addInstr(new LABEL_Instr(rFirstLabel));
-        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, rEndLabel, light);
+        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, rEndLabel);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (noEnsure)
@@ -2524,7 +2549,7 @@ public class IR_Builder
         return rv;
     }
 
-    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, Label endLabel, final boolean light) {
+    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, Label endLabel) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
         boolean noEnsure = (ensureStartLabel == null);
@@ -2532,6 +2557,7 @@ public class IR_Builder
         // Load exception & exception comparison type
         Variable exc = m.getNewVariable();
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
+        // Compute all elements of the exception array eagerly
         Operand excType = (exceptionList == null) ? null : build(exceptionList, m);
 
         // Compare and branch as necessary!
@@ -2545,20 +2571,9 @@ public class IR_Builder
 
         // Caught exception case -- build rescue body
         Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
-        if (realBody.getNodeType().isImmediate()) {
-            Operand x = build(realBody, m);
-            m.addInstr(new COPY_Instr(rv, x));
-// SSS FIXME: todo
-//            m.clearErrorInfo();
-        } else {
-// SSS FIXME: todo
-//            m.storeExceptionInErrorInfo();
-            Operand x = build(realBody, m);
-            m.addInstr(new COPY_Instr(rv, x));
-            // FIXME: this should reset to what it was before
-// SSS FIXME: todo
-//            m.clearErrorInfo();
-        }
+        Operand x = build(realBody, m);
+        m.addInstr(new COPY_Instr(rv, x));
+
         // Jump to end of rescue block since we've caught and processed the exception
         if (noEnsure) {
             m.addInstr(new JUMP_Instr(endLabel));
@@ -2572,7 +2587,7 @@ public class IR_Builder
         if (uncaughtLabel != null) {
             m.addInstr(new LABEL_Instr(uncaughtLabel));
             if (rescueBodyNode.getOptRescueNode() != null) {
-                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, endLabel, light);
+                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, endLabel);
             } else {
                 // If we have to run an ensure block, create a new label before the throw exception
                 // which the ensure block can return to after completing its run.

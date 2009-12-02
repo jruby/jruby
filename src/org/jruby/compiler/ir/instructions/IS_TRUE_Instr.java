@@ -4,9 +4,9 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
-// SSS FIXME: Verify semantics of this instruction
-//
 //    is_true(a) = (!a.nil? && a != false) 
+//
+// Only nil and false compute to false
 //
 public class IS_TRUE_Instr extends OneOperandInstr
 {

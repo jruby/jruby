@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.operands.Variable;
 
 // SSS NOTE: 'variables' are used only during optimizations -- they don't contribute to
 // the list of inputs to the case statement during dataflow analyses.
+// This is just a dummy placeholder instruction -- nothing to do during interpretation or code generation.
 public class CASE_Instr extends OneOperandInstr {
     Label[] labels;
     Operand[] variables;
