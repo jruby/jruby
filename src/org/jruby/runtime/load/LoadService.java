@@ -917,10 +917,10 @@ public class LoadService {
             return null;
         }
         
-        Outer: for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
+        Outer: for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
             // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
-            String loadPathEntry = ((IRubyObject)pathIter.next()).toString();
+            String loadPathEntry = pathIter.next().toString();
 
             if (loadPathEntry.equals(".") || loadPathEntry.equals("")) {
                 foundResource = tryResourceFromCWD(state, baseName, suffixType);
@@ -934,10 +934,11 @@ public class LoadService {
                     break Outer;
                 }
             } else {
+                boolean looksLikeJarURL = loadPathLooksLikeJarURL(loadPathEntry);
                 for (String suffix : suffixType.getSuffixes()) {
                     String namePlusSuffix = baseName + suffix;
 
-                    if (loadPathLooksLikeJarURL(loadPathEntry)) {
+                    if (looksLikeJarURL) {
                         foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
                     } else {
                         foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
@@ -1097,7 +1098,7 @@ public class LoadService {
             classLoader = runtime.getInstanceConfig().getLoader();
         }
 
-        for (Iterator pathIter = loadPath.getList().iterator(); pathIter.hasNext();) {
+        for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
 
             // if entry is an empty string, skip it
