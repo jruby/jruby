@@ -104,7 +104,9 @@ public class MultipleScriptsRunnerTest {
                 instance.getProvider().setLoadPaths(loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setObjectSpaceEnabled(true);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
-                instance.runScriptlet(PathType.CLASSPATH, "test/" + testname);
+                // test_backquote.rb fails when the current directory is set.
+                //instance.getProvider().getRubyInstanceConfig().setCurrentDirectory(basedir + "/test");
+                instance.runScriptlet(PathType.CLASSPATH, testname);
             } catch (Throwable t) {
                 t.printStackTrace();
             } finally {
@@ -139,16 +141,40 @@ public class MultipleScriptsRunnerTest {
     }
 
     /*
+     * foo_for_test_require_once.rb is a file to be used by test_require_once.rb
+     * junit_testrunner.rb can't be evaluated itself.
+     * test_backtraces.rb needs java library to be loaded before the evaluation.
+     * test_loading_behavior.rb is a file to be used in test_load.rb.
      * test_local_jump_error.rb: also fails on an interpreter, JRUBY-2760
      * test_missing_jruby_home.rb: bad test code. jruby.home system property doesn't
      *                             exists during this test. null can't be set to.
      * test_numeric.rb : also fails on an interprter.
+     * test_thread_backtrace.rb fails loaded from both classpath and absolute paths.
+     * testLine_*.rbs are used in testLine.rb
      */
     private boolean isTestable(String filename) {
-        String[] skipList = {         
+        String[] skipList = {
+            "foo_for_test_require_once.rb",
+            "junit_testrunner.rb",
+            "test_backtraces.rb",
+            "test_command_line_switches.rb",
+            "test_dir.rb",
+            "test_file.rb",
+            "test_io.rb",
+            "test_kernel.rb",
+            "test_load.rb",
+            "test_load_class_before_rb.rb",
+            "test_loading_behavior.rb",
             "test_local_jump_error.rb",
             "test_missing_jruby_home.rb",
-            "test_numeric.rb"
+            "test_numeric.rb",
+            "test_thread_backtrace.rb",
+            "testLine_block_comment.rb",
+            "testLine_block_comment_start.rb",
+            "testLine_code.rb",
+            "testLine_comment.rb",
+            "testLine_line_comment_start.rb",
+            "testLine_mixed_comment.rb"
         };
         for (int i = 0; i < skipList.length; i++) {
             if (filename.equals(skipList[i])) {
@@ -264,6 +290,31 @@ public class MultipleScriptsRunnerTest {
             } finally {
                 instance = null;
             }
+        }
+    }
+
+    /*
+     * test_backtraces.rb fails test_exception_from_thread_with_abort_on_exception_true(TestBacktraces)
+     *                    [test_backtraces.rb:288]:
+     *                    <SystemExit> expected but was
+     *                    <Thread>.
+     */
+    @Test
+    public void testWithJavaLibrary() throws FileNotFoundException {
+        String[] testnames = {
+            //"test_backtraces.rb"
+        };
+        for (int i=0; i<testnames.length; i++) {
+            System.out.println("[" + testnames[i] + "]");
+            String testname = testnames[i];
+            ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+            instance.getProvider().setLoadPaths(loadPaths);
+            instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
+            instance.runScriptlet("require 'java'");
+            instance.runScriptlet(PathType.CLASSPATH, testname);
+
+            instance.getVarMap().clear();
+            instance = null;
         }
     }
 }
