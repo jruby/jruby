@@ -6870,18 +6870,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject encode(ThreadContext context, IRubyObject enc) {
         modify19();
         Ruby runtime = context.getRuntime();
-        RubyString stringDup = runtime.newString(this.value);
 
-        stringDup.value = encodeCommon(context, runtime, stringDup.value, enc, runtime.getNil(),
+        ByteList encoded = encodeCommon(context, runtime, value, enc, runtime.getNil(),
             runtime.getNil());
-        return stringDup;
+        return runtime.newString(encoded);
     }
 
     @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject arg) {
         modify19();
         Ruby runtime = context.getRuntime();
-        RubyString stringDup = runtime.newString(this.value);
 
         IRubyObject fromEnc = arg;
         IRubyObject opts = runtime.getNil();
@@ -6889,18 +6887,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
             fromEnc = runtime.getNil();
             opts = arg;
         }
-        stringDup.value = encodeCommon(context, runtime, stringDup.value, enc, fromEnc, opts);
-        return stringDup;
+        ByteList encoded = encodeCommon(context, runtime, value, enc, fromEnc, opts);
+        return runtime.newString(encoded);
     }
 
     @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject fromEnc, IRubyObject opts) {
         modify19();
         Ruby runtime = context.getRuntime();
-        RubyString stringDup = runtime.newString(this.value);
 
-        stringDup.value = encodeCommon(context, runtime, stringDup.value, enc, fromEnc, opts);
-        return stringDup;
+        ByteList encoded = encodeCommon(context, runtime, value, enc, fromEnc, opts);
+        return runtime.newString(encoded);
     }
 
     private ByteList encodeCommon(ThreadContext context, Ruby runtime, ByteList value,
