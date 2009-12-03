@@ -1139,7 +1139,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfFloat32(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat64(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
