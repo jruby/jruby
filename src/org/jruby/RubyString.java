@@ -6917,7 +6917,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } catch (CharacterCodingException e) {
             throw runtime.newInvalidByteSequenceError("");
         }
-        return new ByteList(toBytes.array(), encoding);
+
+        // CharsetEncoder#encode guarantees a newly-allocated buffer, so
+        // it's safe for us to take ownership of it without copying
+        ByteList result = new ByteList(toBytes.array(), toBytes.arrayOffset(),
+                toBytes.limit() - toBytes.arrayOffset(), false);
+        result.encoding = encoding;
+        return result;
     }
 
     private CharsetEncoder getEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
