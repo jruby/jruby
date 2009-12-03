@@ -1088,11 +1088,6 @@ public class RubyKernel {
 
     @JRubyMethod(name = "set_trace_func", required = 1, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject set_trace_func(ThreadContext context, IRubyObject recv, IRubyObject trace_func, Block block) {
-        if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // without full tracing, many events will not fire
-            context.getRuntime().getWarnings().warn("set_trace_func will not capture all events without --debug flag");
-        }
-        
         if (trace_func.isNil()) {
             context.getRuntime().setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
