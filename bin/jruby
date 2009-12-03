@@ -229,7 +229,6 @@ do
      --ng-server)
         # Start up as Nailgun server
         java_class=com.martiansoftware.nailgun.NGServer
-        JAVA_VM=-server
         VERIFY_JRUBY=true ;;
      --ng)
         # Use native Nailgun client to toss commands to server
