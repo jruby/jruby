@@ -6856,16 +6856,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modify19();
         Ruby runtime = context.getRuntime();
         IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(runtime);
-        RubyString stringDup = runtime.newString(this.value);
 
         if (!defaultInternal.isNil()) {
-            stringDup.value = encodeCommon(context, runtime, stringDup.value, defaultInternal, runtime.getNil(),
-                runtime.getNil());
+            ByteList encoded = encodeCommon(context, runtime, value, defaultInternal,
+                                            runtime.getNil(), runtime.getNil());
+            return runtime.newString(encoded);
+        } else {
+            return dup();
         }
-
-        return stringDup;
     }
-    
+
     @JRubyMethod(name = "encode", compat = CompatVersion.RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc) {
         modify19();
