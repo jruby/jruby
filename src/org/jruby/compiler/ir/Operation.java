@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, exc_op, load_op, store_op, declare_type_op, guard_op };
+enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, exc_op, load_op, store_op, declare_type_op, guard_op };
 
 public enum Operation
 {
@@ -8,6 +8,9 @@ public enum Operation
 
 // value copy and type conversion operations
     COPY(OpType.dont_care), SET_RETADDR(OpType.dont_care),
+
+// debugging / stacktrace info
+    LINE_NUM(OpType.debug_op), FILE_NAME(OpType.debug_op),
 
 // alu operations
     NOT(OpType.alu_op),

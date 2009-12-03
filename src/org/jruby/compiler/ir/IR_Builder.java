@@ -109,6 +109,7 @@ import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
+import org.jruby.compiler.ir.instructions.FILE_NAME_Instr;
 import org.jruby.compiler.ir.instructions.GET_ARRAY_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
@@ -120,6 +121,7 @@ import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.LINE_NUM_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
@@ -282,9 +284,10 @@ public class IR_Builder
         }
     }
 
-    public static Node skipOverNewlines(Node n) {
-        //Equivalent check ..
-        //while (n instanceof NewlineNode)
+    public static Node skipOverNewlines(IR_Scope s, Node n) {
+        if (n.getNodeType() == NodeType.NEWLINENODE)
+            s.addInstr(new LINE_NUM_Instr(n.getPosition().getStartLine()));
+
         while (n.getNodeType() == NodeType.NEWLINENODE)
             n = ((NewlineNode)n).getNextNode();
 
@@ -435,7 +438,7 @@ public class IR_Builder
         argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
         if (args != null) {
            // unwrap newline nodes to get their actual type
-           args = skipOverNewlines(args);
+           args = skipOverNewlines(s, args);
            buildArgs(argsList, args, s);
         }
 
@@ -447,7 +450,7 @@ public class IR_Builder
         argsList.add(s.getSelf());
         if (args != null) {
            // unwrap newline nodes to get their actual type
-           args = skipOverNewlines(args);
+           args = skipOverNewlines(s, args);
            buildArgs(argsList, args, s);
         }
 
@@ -849,19 +852,32 @@ public class IR_Builder
         //
         // Here, the class << self declaration is in the class root method.
         // Foo is the class in whose context this is being defined.
-        IR_Method  classRootMethod = (IR_Method)s;
-        MetaObject currClass       = (MetaObject)classRootMethod.getParent();
+        IR_Class  mc = null;
         Operand receiver = build(sclassNode.getReceiverNode(), s);
-
-        // SSS FIXME: If the metaclass/singleton class already exists, shouldn't we fetch that?
-        IR_Class c = new IR_Class(s, s, new MetaObject(IR_Module.getCoreClass("Class")), "Class:" + ((IR_Module)currClass._scope)._name, true); 
-        if (sclassNode.getBodyNode() != null) {
-            build(sclassNode.getBodyNode(), c.getRootMethod());
+        if ((receiver instanceof Variable) && ((Variable)receiver)._name.equals("self")) {
+            IR_Method  classRootMethod = (IR_Method)s;
+            MetaObject currClass       = (MetaObject)classRootMethod.getParent();
+            // SSS FIXME: If the metaclass/singleton class already exists, shouldn't we fetch that?
+            mc = new IR_Class(s, s, new MetaObject(IR_Module.getCoreClass("Class")), "Meta<" + ((IR_Module)currClass._scope)._name + ">", true); 
+        }
+        else {
+            // Get the class of the receiver
+            Variable   rClass    = s.getNewVariable();
+            CALL_Instr callInstr = new CALL_Instr(rClass, new MethAddr("class"), new Operand[] {receiver}, null);
+            // SSS FIXME: 
+            // 1. If the metaclass/singleton class already exists, shouldn't we fetch that?
+            // 2. We are in deep doo doo now!  We dont know the class name statically!
+            // Needs rearchitecting of IR_Class ...
+            mc = new IR_Class(s, s, rClass, "<FIXME>", true); 
         }
 
-        // SSS FIXME: We might be missing some DEFINE_.. instructions here ....
+        // Record the new class as being defined in scope s
+        s.addClass(mc);
+       
+        if (sclassNode.getBodyNode() != null)
+            build(sclassNode.getBodyNode(), mc.getRootMethod());
 
-        return new MetaObject(c);
+        return new MetaObject(mc);
     }
 
     public Operand buildClassVar(ClassVarNode node, IR_Scope s) {
@@ -1891,7 +1907,7 @@ public class IR_Builder
     //     --- r is the result of the if expression --
     //
     public Operand buildIf(final IfNode ifNode, IR_Scope s) {
-        Node actualCondition = skipOverNewlines(ifNode.getCondition());
+        Node actualCondition = skipOverNewlines(s, ifNode.getCondition());
 
         Variable result     = s.getNewVariable();
         Label    falseLabel = s.getNewLabel();
@@ -2096,14 +2112,7 @@ public class IR_Builder
     }
 
     public Operand buildNewline(NewlineNode node, IR_Scope s) {
-        // SSS FIXME: We need to build debug information tracking into the IR in some fashion
-        // So, these methods below would have to have equivalents in IR_Scope implementations.
-/**
-        s.lineNumber(node.getPosition());
-        s.setLinePosition(node.getPosition());
-**/
-
-        return build(node.getNextNode(), s);
+        return build(skipOverNewlines(s, node), s);
     }
 
     public Operand buildNext(final NextNode nextNode, IR_ExecutionScope s) {
@@ -2570,7 +2579,7 @@ public class IR_Builder
         }
 
         // Caught exception case -- build rescue body
-        Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
+        Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
         m.addInstr(new COPY_Instr(rv, x));
 
@@ -2623,6 +2632,9 @@ public class IR_Builder
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Class  rootClass = script._dummyClass;
         IR_Method rootMethod = rootClass.getRootMethod();
+
+        // Debug info: record file name
+        rootMethod.addInstr(new FILE_NAME_Instr(node.getPosition().getFile()));
 
         // add a "self" recv here
         // TODO: is this right?
