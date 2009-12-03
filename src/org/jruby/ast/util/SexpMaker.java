@@ -64,6 +64,9 @@ public class SexpMaker {
     
     private void processMethod(String methodName, Node argsNode, Node body) {
         sb.append("(method ").append(methodName).append(' ');
+        // JRUBY-4301, include filename and line in sexp
+        sb.append("(file ").append(body.getPosition().getFile()).append(") ");
+        sb.append("(line ").append(body.getPosition().getStartLine()).append(") ");
         process(argsNode);
         sb.append(" ");
         process(body);
