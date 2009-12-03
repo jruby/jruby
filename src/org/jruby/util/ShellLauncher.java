@@ -60,6 +60,7 @@ import org.jruby.ext.posix.POSIX;
 import org.jruby.ext.posix.util.FieldAccess;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
@@ -1266,8 +1267,7 @@ public class ShellLauncher {
     }
 
     private static String getShell(Ruby runtime) {
-        // TODO: rather convoluted way to obtain the shell string!
-        return runtime.evalScriptlet("require 'rbconfig'; Config::CONFIG['SHELL']").toString();
+        return RbConfigLibrary.jrubyShell();
     }
 
     static void log(Ruby runtime, String msg) {
