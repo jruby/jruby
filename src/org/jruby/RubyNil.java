@@ -198,6 +198,14 @@ public class RubyNil extends RubyObject {
         return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.getRuntime()));
     }
 
+    /** nilclass_rationalize
+     *
+     */
+    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject rationalize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return to_r(context, recv);
+    }
+
     @Override
     public Object toJava(Class target) {
         if (target.isPrimitive()) {
