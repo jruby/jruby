@@ -114,9 +114,6 @@ public class RubyMarshal {
 
     private static OutputStream outputStream(IRubyObject out) {
         setBinmodeIfPossible(out);
-        if (out instanceof RubyIO) {
-            return ((RubyIO) out).getOutStream();
-        }
         return new IOOutputStream(out);
     }
 
@@ -171,9 +168,6 @@ public class RubyMarshal {
 
     private static InputStream inputStream(IRubyObject in) {
         setBinmodeIfPossible(in);
-        if (in instanceof RubyIO) {
-            return ((RubyIO) in).getInStream();
-        }
         return new IOInputStream(in);
     }
 
