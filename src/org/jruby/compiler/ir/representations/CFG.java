@@ -36,7 +36,7 @@ import org.jgrapht.graph.*;
 
 public class CFG
 {
-    enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
+    enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
 
     public static class CFG_Edge
     {
@@ -61,9 +61,10 @@ public class CFG
     BasicBlock _entryBB;        // Entry BB -- dummy
     BasicBlock _exitBB;         // Exit BB -- dummy
     int        _nextBBId;       // Next available basic block id
-    DirectedGraph<BasicBlock, CFG_Edge> _cfg;   // The actual graph
-    LinkedList<BasicBlock> _postOrderList;      // Post order traversal list of the cfg
-    HashMap<String, DataFlowProblem> _dfProbs;  // Map of name -> dataflow problem
+    DirectedGraph<BasicBlock, CFG_Edge> _cfg;           // The actual graph
+    LinkedList<BasicBlock>              _postOrderList; // Post order traversal list of the cfg
+    Map<String, DataFlowProblem>        _dfProbs;       // Map of name -> dataflow problem
+    Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
 
     public CFG(IR_ExecutionScope s)
     {
@@ -71,6 +72,7 @@ public class CFG
         _scope = s;
         _postOrderList = null;
         _dfProbs = new HashMap<String, DataFlowProblem>();
+        _bbMap = new HashMap<Label, BasicBlock>();
     }
 
     public DirectedGraph getGraph()
@@ -159,9 +161,6 @@ public class CFG
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
 
-        // Map of label & basic blocks with that label
-        Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
-
         // Map of return address variable and all possible targets (required to connect up ensure blocks with their targets)
         Map<Variable, Set<Label>> retAddrMap = new HashMap<Variable, Set<Label>>();
 
@@ -171,11 +170,10 @@ public class CFG
                                                     });
 
         // Dummy entry basic block (see note at end to see why)
-        _entryBB = createNewBB(g, bbMap);
+        _entryBB = createNewBB(g, _bbMap);
 
         // First real bb
-        BasicBlock firstBB = new BasicBlock(this, getNewLabel());
-        g.addVertex(firstBB);
+        BasicBlock firstBB = createNewBB(g, _bbMap);
 
         // Build the rest!
         List<BasicBlock> retBBs = new ArrayList<BasicBlock>();  // This will be the list of bbs that have a 'return' instruction
@@ -187,22 +185,22 @@ public class CFG
             Operation iop = i._op;
             if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr)i)._lbl;
-                newBB = createNewBB(l, g, bbMap);
+                newBB = createNewBB(l, g, _bbMap);
                 if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
                    g.addEdge(currBB, newBB);
                 currBB = newBB;
 
                 // Add forward reference edges
-                List<BasicBlock> readers = forwardRefs.get(l);
-                if (readers != null) {
-                    for (BasicBlock b: readers)
+                List<BasicBlock> frefs = forwardRefs.get(l);
+                if (frefs != null) {
+                    for (BasicBlock b: frefs)
                         g.addEdge(b, newBB);
                 }
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
             }
             else if (bbEnded) {
-                newBB = createNewBB(g, bbMap);
+                newBB = createNewBB(g, _bbMap);
                 if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
                     g.addEdge(currBB, newBB); // currBB cannot be null!
                 currBB = newBB;
@@ -215,7 +213,7 @@ public class CFG
             if (i instanceof RESCUE_BLOCK_Instr) {
                 RESCUE_BLOCK_Instr rbi = (RESCUE_BLOCK_Instr)i;
                 // SSS FIXME: Only adding 1 edge!  Have to add edges from all bb's of the body to bb of the first rescuer!
-                addEdge(g, currBB, rbi._firstBlock, bbMap, forwardRefs);
+                addEdge(g, currBB, rbi._firstBlock, _bbMap, forwardRefs);
             }
 
             if (iop.endsBasicBlock()) {
@@ -254,14 +252,14 @@ public class CFG
                     bbEndedWithControlXfer = true;
                     Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr)i)._target);
                     for (Label l: retAddrs)
-                        addEdge(g, currBB, l, bbMap, forwardRefs);
+                        addEdge(g, currBB, l, _bbMap, forwardRefs);
                 }
                 else {
                     tgt = null;
                 }
 
                 if (tgt != null) {
-                    addEdge(g, currBB, tgt, bbMap, forwardRefs);
+                    addEdge(g, currBB, tgt, _bbMap, forwardRefs);
                 }
             }
             else if (iop != Operation.LABEL) {
@@ -294,7 +292,7 @@ public class CFG
         // * dummy entry -> first basic block (real entry)
         // * all return bbs to the exit bb
         // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
-        _exitBB = createNewBB(g, bbMap);
+        _exitBB = createNewBB(g, _bbMap);
         g.addEdge(_entryBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         g.addEdge(_entryBB, firstBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         for (BasicBlock rb: retBBs)

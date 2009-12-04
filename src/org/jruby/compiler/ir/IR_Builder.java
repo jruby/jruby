@@ -1643,17 +1643,25 @@ public class IR_Builder
         Label      ensureStartLabel = null;
         Label      ensureEndLabel   = null;
         Variable   returnAddrVar    = null;
-        Variable   result           = m.getNewVariable();
+        Operand    rv = null;
         if (bodyNode != null) {
-            Operand x;
             if (bodyNode instanceof RescueNode) {
                 returnAddrVar = m.getNewVariable();
                 ensureStartLabel = m.getNewLabel();
                 ensureEndLabel = m.getNewLabel();
-                buildRescueInternal(bodyNode, m, ensureStartLabel, ensureEndLabel, returnAddrVar);
+                rv = buildRescueInternal(bodyNode, m, ensureStartLabel, ensureEndLabel, returnAddrVar);
             }
             else {
-                build(bodyNode, m);
+                rv = build(bodyNode, m);
+                // SSS FIXME: if rv is null, the body returned!  So, we have to intercept the return
+                // and insert the following 2 instrs. before the return!
+                // m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
+                // m.addInstr(new JUMP_Instr(ensureStartLabel));
+                if (rv == null) {
+                    returnAddrVar = m.getNewVariable();
+                    ensureStartLabel = m.getNewLabel();
+                    ensureEndLabel = m.getNewLabel();
+                }
             }
         }
 
@@ -1662,16 +1670,32 @@ public class IR_Builder
         //     ... ensure code ...
         //     JMP(ret_addr)
         //   END:
+        //
+        // Optimization: The start and end labels and the jmp are ignored if the main body falls through
+        // ex: begin 
+        //        .. something without a return! ..
+        //     ensure
+        //        .. something else ..
+        //     end
+
         if (ensureStartLabel != null)
             m.addInstr(new LABEL_Instr(ensureStartLabel));
 
         Operand x = (ensureNode.getEnsureNode() == null) ? Nil.NIL :  build(ensureNode.getEnsureNode(), m);
-        m.addInstr(new COPY_Instr(result, x));
-
         if (returnAddrVar != null)
             m.addInstr(new JUMP_INDIRECT_Instr(returnAddrVar));
         if (ensureEndLabel != null)
             m.addInstr(new LABEL_Instr(ensureEndLabel));
+
+        // The value of the main body is the result of the entire ensure expression.  The ensure has no effect
+        // unless it has an explicit 'return'.  In that case, the result of the main body is useless.  The value
+        // of the entire expression becomes null in that case!
+        if (x == null)
+            rv = null;
+
+        Variable result = m.getNewVariable();
+        if (rv != null)
+            m.addInstr(new COPY_Instr(result, rv));
 
         return result;
     }
@@ -2539,12 +2563,20 @@ public class IR_Builder
         // - If we do have an ensure block, set up the return address to the end of the rescue block,
         //    and go execute the ensure code.
         if (noEnsure) {
-            m.addInstr(new COPY_Instr(rv, tmp));
-            m.addInstr(new JUMP_Instr(rEndLabel));
+            if (tmp != null) {  // tmp can be null if the protected body returns
+                m.addInstr(new COPY_Instr(rv, tmp));
+                m.addInstr(new JUMP_Instr(rEndLabel));
+            }
         }
         else {
-            m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
-            m.addInstr(new JUMP_Instr(ensureStartLabel));
+            if (tmp != null) {
+                m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
+                m.addInstr(new JUMP_Instr(ensureStartLabel));
+            }
+            else {
+                // SSS FIXME: The main body returned!
+                // We have to insert the above 2 instrs. just before the return!
+            }
         }
 
         // Build the actual rescue block
@@ -2581,15 +2613,23 @@ public class IR_Builder
         // Caught exception case -- build rescue body
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
-        m.addInstr(new COPY_Instr(rv, x));
+        if (x != null)  // can be null if the rescued block 'return'ed.
+            m.addInstr(new COPY_Instr(rv, x));
 
         // Jump to end of rescue block since we've caught and processed the exception
         if (noEnsure) {
-            m.addInstr(new JUMP_Instr(endLabel));
+            if (x != null)
+                m.addInstr(new JUMP_Instr(endLabel));
         }
         else {
-            m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
-            m.addInstr(new JUMP_Instr(ensureStartLabel));
+            if (x != null) {
+                m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
+                m.addInstr(new JUMP_Instr(ensureStartLabel));
+            }
+            else {
+                // SSS FIXME: The main body returned!
+                // We have to insert the above 2 instrs. just before the return!
+            }
         }
 
         // Uncaught exception -- build other rescue nodes or rethrow!
