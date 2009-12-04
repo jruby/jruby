@@ -65,6 +65,7 @@ public class CFG
     LinkedList<BasicBlock>              _postOrderList; // Post order traversal list of the cfg
     Map<String, DataFlowProblem>        _dfProbs;       // Map of name -> dataflow problem
     Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
+    BasicBlock[]                        _bbArray;       // Array indexed by bb id
 
     public CFG(IR_ExecutionScope s)
     {
@@ -119,6 +120,19 @@ public class CFG
     public Set<BasicBlock> getNodes()
     {
         return _cfg.vertexSet();
+    }
+
+    // SSS FIXME: This is only valid temporarily while the cfg blocks
+    // haven't been reordered around.  This code is there temporarily
+    // to get Tom & Charlie started on the IR interpreter.
+    public BasicBlock getFallThroughBB(BasicBlock bb)
+    {
+        return _bbArray[bb.getID()];
+    }
+
+    public BasicBlock getTargetBB(Label l)
+    {
+        return _bbMap.get(l);
     }
 
     private Label getNewLabel()
@@ -299,6 +313,12 @@ public class CFG
             g.addEdge(rb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         if (!bbEndedWithControlXfer)
             g.addEdge(currBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
+
+        // Set up the bb array
+        int n = getMaxNodeID();
+        _bbArray = new BasicBlock[n];
+        for (BasicBlock x: _bbMap.values())
+            _bbArray[x.getID()-1] = x;
 
         _cfg = g;
     }
