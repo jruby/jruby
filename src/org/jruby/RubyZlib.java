@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -968,7 +969,7 @@ public class RubyZlib {
         public IRubyObject initialize(IRubyObject io, Block unusedBlock) {
             realIo = io;
             try {
-                this.io = new GZIPInputStream(new IOInputStream(io));
+                this.io = new BufferedInputStream(new GZIPInputStream(new IOInputStream(io)));
             } catch (IOException e) {
                 Ruby runtime = io.getRuntime();
                 RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("GzipReader").fastGetClass("Error");
@@ -1105,7 +1106,7 @@ public class RubyZlib {
         }
 
         private boolean isEof() throws IOException {
-            return ((GZIPInputStream)io).available() == 0;
+            return io.available() == 0;
         }
 
         @Override
