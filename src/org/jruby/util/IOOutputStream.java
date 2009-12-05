@@ -29,6 +29,7 @@ package org.jruby.util;
 
 import java.io.OutputStream;
 import java.io.IOException;
+import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,6 +48,7 @@ import org.jruby.runtime.MethodIndex;
  */
 public class IOOutputStream extends OutputStream {
     private final IRubyObject io;
+    private final OutputStream out;
     private final CallSite writeAdapter;
     private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
@@ -69,6 +71,7 @@ public class IOOutputStream extends OutputStream {
         } else {
             writeAdapter = writeSite;
         }
+        this.out = io instanceof RubyIO && !((RubyIO)io).isClosed() ? ((RubyIO) io).getOutStream() : null;
     }
 
     /**
@@ -81,7 +84,12 @@ public class IOOutputStream extends OutputStream {
     }
 
     public void write(final int bite) throws IOException {
-        writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
+        if (out != null) {
+            out.write(bite);
+        } else {
+            writeAdapter.call(io.getRuntime().getCurrentContext(), io, io,
+                    RubyString.newStringLight(io.getRuntime(), new ByteList(new byte[]{(byte)bite},false)));
+        }
     }
 
     @Override
@@ -91,11 +99,19 @@ public class IOOutputStream extends OutputStream {
 
     @Override
     public void write(final byte[] b,final int off, final int len) throws IOException {
-        writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
+        if (out != null) {
+            out.write(b, off, len);
+        } else {
+            writeAdapter.call(io.getRuntime().getCurrentContext(), io, io, RubyString.newStringLight(io.getRuntime(), new ByteList(b, off, len, false)));
+        }
     }
     
     @Override
     public void close() throws IOException {
-        if (io.respondsTo("close")) closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
+        if (out != null) {
+            out.close();
+        } else if (io.respondsTo("close")) {
+            closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
+        }
     }
 }

@@ -85,6 +85,9 @@ public class IOInputStream extends InputStream {
     }
     
     public int read() throws IOException {
+        if (in != null) {
+            return in.read();
+        }
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, numOne);
         int returnValue = -1;
         if (!readValue.isNil()) {
@@ -94,6 +97,9 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b) throws IOException {
+        if (in != null) {
+            return in.read(b, 0, b.length);
+        }
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
@@ -105,6 +111,9 @@ public class IOInputStream extends InputStream {
     }
 
     public int read(byte[] b, int off, int len) throws IOException {
+        if (in != null) {
+            return in.read(b, off, len);
+        }
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(len));
         int returnValue = -1;
         if (!readValue.isNil()) {

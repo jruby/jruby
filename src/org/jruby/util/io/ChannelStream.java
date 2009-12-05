@@ -472,6 +472,28 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * Copies bytes from the channel buffer into a destination <tt>ByteBuffer</tt>
      *
+     * @param dst A <tt>ByteBuffer</tt> to place the data in.
+     * @return The number of bytes copied.
+     */
+    private final int copyBufferedBytes(byte[] dst, int off, int len) {
+        int bytesCopied = 0;
+
+        if (ungotc != -1 && len > 0) {
+            dst[off++] = (byte) ungotc;
+            ungotc = -1;
+            ++bytesCopied;
+        }
+
+        final int n = Math.min(len - bytesCopied, buffer.remaining());
+        buffer.get(dst, off, n);
+        bytesCopied += n;
+
+        return bytesCopied;
+    }
+
+    /**
+     * Copies bytes from the channel buffer into a destination <tt>ByteBuffer</tt>
+     *
      * @param dst A <tt>ByteList</tt> to place the data in.
      * @param len The maximum number of bytes to copy.
      * @return The number of bytes copied.
@@ -634,18 +656,14 @@ public class ChannelStream implements Stream, Finalizable {
      */
     public InputStream newInputStream() {
         InputStream in = descriptor.getBaseInputStream();
-        if (in == null) {
-            return Channels.newInputStream((ReadableByteChannel)descriptor.getChannel());
-        } else {
-            return in;
-        }
+        return in == null ? new InputStreamAdapter(this) : in;
     }
 
     /**
      * @see org.jruby.util.IOHandler#getOutputStream()
      */
     public OutputStream newOutputStream() {
-        return Channels.newOutputStream((WritableByteChannel)descriptor.getChannel());
+        return new OutputStreamAdapter(this);
     }
     
     public void clearerr() {
@@ -1017,6 +1035,35 @@ public class ChannelStream implements Stream, Finalizable {
         
         return buf.realSize;
     }
+
+    /**
+     * @throws IOException
+     * @throws BadDescriptorException
+     * @see org.jruby.util.IOHandler#syswrite(String buf)
+     */
+    private int bufferedWrite(ByteBuffer buf) throws IOException, BadDescriptorException {
+        checkWritable();
+        ensureWrite();
+
+        // Ruby ignores empty syswrites
+        if (buf == null || !buf.hasRemaining()) return 0;
+
+        final int nbytes = buf.remaining();
+        if (nbytes >= buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
+            flushWrite(); // ensure nothing left to write
+
+            descriptor.write(buf);
+            // TODO: check the return value here
+        } else {
+            if (nbytes > buffer.remaining()) flushWrite();
+
+            buffer.put(buf);
+        }
+
+        if (isSync()) flushWrite();
+
+        return nbytes - buf.remaining();
+    }
     
     /**
      * @throws IOException 
@@ -1156,6 +1203,11 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized int fwrite(ByteList string) throws IOException, BadDescriptorException {
         return bufferedWrite(string);
     }
+
+    public synchronized int write(ByteBuffer buf) throws IOException, BadDescriptorException {
+        return bufferedWrite(buf);
+    }
+
     public synchronized int writenonblock(ByteList buf) throws IOException, BadDescriptorException {
         checkWritable();
         ensureWrite();
@@ -1357,5 +1409,170 @@ public class ChannelStream implements Stream, Finalizable {
         Stream handler = new ChannelStream(runtime, descriptor, modes, descriptor.getFileDescriptor());
         
         return handler;
+    }
+
+    private static final class InputStreamAdapter extends java.io.InputStream {
+        private final ChannelStream stream;
+
+        public InputStreamAdapter(ChannelStream stream) {
+            this.stream = stream;
+        }
+
+        @Override
+        public int read() throws IOException {
+            synchronized (stream) {
+                // If it can be pulled direct from the buffer, don't go via the slow path
+                if (stream.reading && stream.bufferedBytesAvailable() > 0) {
+                    try {
+                        final int b = stream.read();
+                        return b != -1 ? (b & 0xff) : -1;
+                    } catch (BadDescriptorException ex) {
+                        throw new IOException(ex);
+                    }
+                }
+            }
+
+            byte[] b = new byte[1];
+            return read(b, 0, 1) == 1 ? b[0] : -1;
+        }
+
+        @Override
+        public int read(byte[] bytes, int off, int len) throws IOException {
+            if (bytes == null) {
+                throw new NullPointerException("null destination buffer");
+            }
+            if ((len | off | (off + len) | (bytes.length - (off + len))) < 0) {
+                throw new IndexOutOfBoundsException();
+            }
+            if (len == 0) {
+                return 0;
+            }
+
+            try {
+                synchronized(stream) {
+                    final int available = stream.reading ? stream.bufferedBytesAvailable() : 0;
+                     if (available >= len) {
+                        return stream.copyBufferedBytes(bytes, off, len);
+                    } else if (stream.getDescriptor().getChannel() instanceof SelectableChannel) {
+                        SelectableChannel ch = (SelectableChannel) stream.getDescriptor().getChannel();
+                        synchronized (ch.blockingLock()) {
+                            boolean oldBlocking = ch.isBlocking();
+                            try {
+                                if (!oldBlocking) {
+                                    ch.configureBlocking(true);
+                                }
+                                return stream.bufferedRead(ByteBuffer.wrap(bytes, off, len), true);
+                            } finally {
+                                if (!oldBlocking) {
+                                    ch.configureBlocking(oldBlocking);
+                                }
+                            }
+                        }
+                    } else {
+                        return stream.bufferedRead(ByteBuffer.wrap(bytes, off, len), true);
+                    }
+                }
+            } catch (BadDescriptorException ex) {
+                throw new IOException(ex);
+            } catch (EOFException ex) {
+                return -1;
+            }
+        }
+
+        @Override
+        public int available() throws IOException {
+            synchronized (stream) {
+                return stream.reading && !stream.eof ? stream.bufferedBytesAvailable() : 0;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                synchronized (stream) {
+                    stream.close(false);
+                }
+            } catch (BadDescriptorException ex) {
+                throw new IOException(ex);
+            }
+        }
+    }
+
+    private static final class OutputStreamAdapter extends java.io.OutputStream {
+        private final ChannelStream stream;
+
+        public OutputStreamAdapter(ChannelStream stream) {
+            this.stream = stream;
+        }
+
+        @Override
+        public void write(int i) throws IOException {
+            synchronized (stream) {
+                if (!stream.reading && !stream.isSync() && stream.buffer.hasRemaining()) {
+                    stream.buffer.put((byte) i);
+                    return;
+                }
+            }
+            byte[] b = { (byte) i };
+            write(b, 0, 1);
+        }
+
+        @Override
+        public void write(byte[] bytes, int off, int len) throws IOException {
+            if (bytes == null) {
+                throw new NullPointerException("null source buffer");
+            }
+
+            try {
+                synchronized(stream) {
+                    if (!stream.reading && !stream.isSync() && stream.buffer.remaining() >= len) {
+                        stream.buffer.put(bytes, off, len);
+
+                    } else if (stream.getDescriptor().getChannel() instanceof SelectableChannel) {
+                        SelectableChannel ch = (SelectableChannel) stream.getDescriptor().getChannel();
+                        synchronized (ch.blockingLock()) {
+                            boolean oldBlocking = ch.isBlocking();
+                            try {
+                                if (!oldBlocking) {
+                                    ch.configureBlocking(true);
+                                }
+                                stream.bufferedWrite(ByteBuffer.wrap(bytes, off, len));
+                            } finally {
+                                if (!oldBlocking) {
+                                    ch.configureBlocking(oldBlocking);
+                                }
+                            }
+                        }
+                    } else {
+                        stream.bufferedWrite(ByteBuffer.wrap(bytes, off, len));
+                    }
+                }
+            } catch (BadDescriptorException ex) {
+                throw new IOException(ex);
+            }
+        }
+
+
+        @Override
+        public void close() throws IOException {
+            try {
+                synchronized (stream) {
+                    stream.close(false);
+                }
+            } catch (BadDescriptorException ex) {
+                throw new IOException(ex);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            try {
+                synchronized (stream) {
+                    stream.flushWrite(true);
+                }
+            } catch (BadDescriptorException ex) {
+                throw new IOException(ex);
+            }
+        }
     }
 }
