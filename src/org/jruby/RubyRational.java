@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_cmp;
 import static org.jruby.util.Numeric.f_div;
@@ -40,6 +41,7 @@ import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
 import static org.jruby.util.Numeric.f_one_p;
+import static org.jruby.util.Numeric.f_quo;
 import static org.jruby.util.Numeric.f_rshift;
 import static org.jruby.util.Numeric.f_sub;
 import static org.jruby.util.Numeric.f_to_f;
@@ -53,6 +55,7 @@ import static org.jruby.util.Numeric.i_gcd;
 import static org.jruby.util.Numeric.i_ilog2;
 import static org.jruby.util.Numeric.k_exact_p;
 import static org.jruby.util.Numeric.ldexp;
+import static org.jruby.util.Numeric.nurat_rationalize_internal;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
@@ -114,7 +117,7 @@ public class RubyRational extends RubyNumeric {
     /** rb_rational_raw
      * 
      */
-    static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, RubyObject y) {
+    static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return new RubyRational(runtime, runtime.getRational(), x, y);
     }
 
@@ -871,8 +874,35 @@ public class RubyRational extends RubyNumeric {
     public IRubyObject to_r(ThreadContext context) {
         return this;
     }
-    
-    /** nurat_to_r
+
+    /** nurat_rationalize
+     *
+     */
+    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+
+        IRubyObject a, b;
+
+        if (args.length == 0) return to_r(context);
+
+        if (f_negative_p(context, this))
+            return f_negate(context,
+                    ((RubyRational) f_abs(context, this)).rationalize(context, args));
+
+        IRubyObject eps = f_abs(context, args[0]);
+        a = f_sub(context, this, eps);
+        b = f_add(context, this, eps);
+
+        if (f_equal_p(context, a, b)) return this;
+        IRubyObject[] ary = new IRubyObject[2];
+        ary[0] = a;
+        ary[1] = b;
+        IRubyObject[] ans = nurat_rationalize_internal(context, ary);
+
+        return newRational(context, this.metaClass, ans[0], ans[1]);
+    }
+
+    /** nurat_hash
      * 
      */
     @JRubyMethod(name = "hash")

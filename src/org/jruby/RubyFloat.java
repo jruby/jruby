@@ -38,10 +38,19 @@
 package org.jruby;
 
 import java.math.BigInteger;
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_expt;
+import static org.jruby.util.Numeric.f_lshift;
 import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_negate;
+import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_sub;
+import static org.jruby.util.Numeric.f_to_r;
+import static org.jruby.util.Numeric.f_zero_p;
 import static org.jruby.util.Numeric.frexp;
 import static org.jruby.util.Numeric.ldexp;
+import static org.jruby.util.Numeric.nurat_rationalize_internal;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -631,6 +640,55 @@ public class RubyFloat extends RubyNumeric {
         IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
         IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
         return f_mul(context, rf, f_expt(context, RubyFixnum.newFixnum(runtime, FLT_RADIX), rn));
+    }
+
+    /** float_rationalize
+     *
+     */
+    @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+        if (f_negative_p(context, this))
+            return f_negate(context, ((RubyFloat) f_abs(context, this)).rationalize(context, args));
+
+        Ruby runtime = context.getRuntime();
+        RubyFixnum one = RubyFixnum.one(runtime);
+        RubyFixnum two = RubyFixnum.two(runtime);
+
+        IRubyObject eps, a, b;
+        if (args.length != 0) {
+            eps = f_abs(context, args[0]);
+            a = f_sub(context, this, eps);
+            b = f_add(context, this, eps);
+        } else {
+            long[] exp = new long[1];
+            double f = frexp(value, exp);
+            f = ldexp(f, DBL_MANT_DIG);
+            long n = exp[0] - DBL_MANT_DIG;
+
+
+            IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
+            IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
+
+            if (f_zero_p(context, rf) || !(f_negative_p(context, rn) || f_zero_p(context, rn)))
+                return RubyRational.newRationalRaw(runtime, f_lshift(context,rf,rn));
+
+            a = RubyRational.newRationalRaw(runtime,
+                    f_sub(context,f_mul(context, two, rf),one),
+                    f_lshift(context, one, f_sub(context,one,rn)));
+            b = RubyRational.newRationalRaw(runtime,
+                    f_add(context,f_mul(context, two, rf),one),
+                    f_lshift(context, one, f_sub(context,one,rn)));
+        }
+
+        if (a.callMethod(context, "==", b).isTrue()) return f_to_r(context, this);
+
+        IRubyObject[] ary = new IRubyObject[2];
+        ary[0] = a;
+        ary[1] = b;
+        IRubyObject[] ans = nurat_rationalize_internal(context, ary);
+
+        return RubyRational.newRationalRaw(runtime, ans[0], ans[1]);
+
     }
 
     /** floor
