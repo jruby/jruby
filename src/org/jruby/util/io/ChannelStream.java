@@ -460,8 +460,9 @@ public class ChannelStream implements Stream, Finalizable {
                 // Need to clamp source (buffer) size to avoid overrun
                 //
                 ByteBuffer tmp = buffer.duplicate();
-                tmp.limit(dst.remaining());
+                tmp.limit(tmp.position() + dst.remaining());
                 dst.put(tmp);
+                buffer.position(tmp.position());
             }
         }
 
