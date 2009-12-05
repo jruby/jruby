@@ -50,7 +50,8 @@ public class IOInputStream extends InputStream {
     private final IRubyObject io;
     private final InputStream in;
     private final IRubyObject numOne;
-    private final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
+    private static final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
+    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new InputStream with the object provided.
@@ -62,7 +63,8 @@ public class IOInputStream extends InputStream {
             throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"read\".");
         }
         this.io = io;
-        this.in = ((io instanceof RubyIO) && !((RubyIO)io).isClosed()) ? ((RubyIO)io).getInStream() : null;
+        this.in = ((io instanceof RubyIO) && !((RubyIO)io).isClosed() && ((RubyIO)io).isBuiltin("read"))
+                ? ((RubyIO)io).getInStream() : null;
         this.numOne = RubyFixnum.one(this.io.getRuntime());
     }
 
@@ -70,6 +72,8 @@ public class IOInputStream extends InputStream {
     public void close() throws IOException {
         if (in != null) {
             in.close();
+        } else if (io.respondsTo("close")) {
+            closeAdapter.call(io.getRuntime().getCurrentContext(), io, io);
         }
     }
 

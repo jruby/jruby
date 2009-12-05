@@ -50,7 +50,7 @@ public class IOOutputStream extends OutputStream {
     private final IRubyObject io;
     private final OutputStream out;
     private final CallSite writeAdapter;
-    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new OutputStream with the object provided.
@@ -71,7 +71,7 @@ public class IOOutputStream extends OutputStream {
         } else {
             writeAdapter = writeSite;
         }
-        this.out = io instanceof RubyIO && !((RubyIO)io).isClosed() ? ((RubyIO) io).getOutStream() : null;
+        this.out = io instanceof RubyIO && !((RubyIO)io).isClosed() && ((RubyIO)io).isBuiltin("write") ? ((RubyIO) io).getOutStream() : null;
     }
 
     /**
