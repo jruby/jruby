@@ -527,7 +527,7 @@ public class ChannelStream implements Stream, Finalizable {
      * @return The number of bytes that can be read without reading the underlying stream.
      */
     private final int bufferedInputBytesRemaining() {
-        return reading ? (buffer.remaining() + ungotc != -1 ? 1 : 0) : 0;
+        return reading ? (buffer.remaining() + (ungotc != -1 ? 1 : 0)) : 0;
     }
 
     /**
