@@ -759,11 +759,13 @@ public class RubyStringIO extends RubyObject {
             newPosition += amount;
         } else if (whence == Stream.SEEK_END) {
             newPosition = data.internal.getByteList().length() + amount;
-        } else {
+        } else if (whence == Stream.SEEK_SET) {
             newPosition = amount;
+        } else {
+            throw getRuntime().newErrnoEINVALError("invalid whence");
         }
 
-        if (newPosition < 0) throw getRuntime().newErrnoEINVALError();
+        if (newPosition < 0) throw getRuntime().newErrnoEINVALError("invalid seek value");
 
         data.pos = newPosition;
         data.eof = false;
