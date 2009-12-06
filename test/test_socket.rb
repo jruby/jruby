@@ -38,7 +38,7 @@ class SocketTest < Test::Unit::TestCase
       # JRuby returns "127.0.0.1", "127.0.0.1"
       # MRI returns  "<actual_hostname>", "127.0.0.1"
       unless WINDOWS
-        assert_equal("localhost", addrs[0][2])
+        #assert_equal("localhost", addrs[0][2])
         assert_equal("127.0.0.1", addrs[0][3])
       end
     end
