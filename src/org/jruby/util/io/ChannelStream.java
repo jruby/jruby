@@ -364,7 +364,7 @@ public class ChannelStream implements Stream, Finalizable {
             ensureRead();
             
             FileChannel channel = (FileChannel)descriptor.getChannel();
-            final long left = fileSize - channel.position() + bufferedBytesAvailable();
+            final long left = fileSize - channel.position() + bufferedInputBytesRemaining();
             if (left <= 0) {
                 eof = true;
                 return null;
@@ -501,7 +501,7 @@ public class ChannelStream implements Stream, Finalizable {
     private final int copyBufferedBytes(ByteList dst, int len) {
         int bytesCopied = 0;
 
-        dst.ensure(Math.min(len, bufferedBytesAvailable()));
+        dst.ensure(Math.min(len, bufferedInputBytesRemaining()));
 
         if (bytesCopied < len && ungotc != -1) {
             ++bytesCopied;
@@ -523,12 +523,41 @@ public class ChannelStream implements Stream, Finalizable {
     
     /**
      * Returns a count of how many bytes are available in the read buffer
-     * 
+     *
      * @return The number of bytes that can be read without reading the underlying stream.
      */
-    private final int bufferedBytesAvailable() {
-        return buffer.remaining() + (reading && ungotc != -1 ? 1 : 0);
+    private final int bufferedInputBytesRemaining() {
+        return reading ? (buffer.remaining() + ungotc != -1 ? 1 : 0) : 0;
     }
+
+    /**
+     * Tests if there are bytes remaining in the read buffer.
+     *
+     * @return <tt>true</tt> if there are bytes available in the read buffer.
+     */
+    private final boolean hasBufferedInputBytes() {
+        return reading && (buffer.hasRemaining() || ungotc != -1);
+    }
+
+    /**
+     * Returns a count of how many bytes of space is available in the write buffer.
+     *
+     * @return The number of bytes that can be written to the buffer without flushing
+     * to the underlying stream.
+     */
+    private final int bufferedOutputSpaceRemaining() {
+        return !reading ? buffer.remaining() : 0;
+    }
+
+    /**
+     * Tests if there is space available in the write buffer.
+     *
+     * @return <tt>true</tt> if there are bytes available in the write buffer.
+     */
+    private final boolean hasBufferedOutputSpace() {
+        return !reading && buffer.hasRemaining();
+    }
+
 
     /**
      * <p>Close IO handler resources.</p>
@@ -850,12 +879,12 @@ public class ChannelStream implements Stream, Finalizable {
             // to the total size of buffered + remaining bytes in file
             //
             FileChannel fileChannel = (FileChannel) descriptor.getChannel();
-            resultSize = (int) Math.min(fileChannel.size() - fileChannel.position() + bufferedBytesAvailable(), number);
+            resultSize = (int) Math.min(fileChannel.size() - fileChannel.position() + bufferedInputBytesRemaining(), number);
         } else {
             //
             // Cannot discern the total read length - allocate at least enough for the buffered data
             //
-            resultSize = Math.min(bufferedBytesAvailable(), number);
+            resultSize = Math.min(bufferedInputBytesRemaining(), number);
         }
 
         ByteList result = new ByteList(resultSize);
@@ -1289,9 +1318,9 @@ public class ChannelStream implements Stream, Finalizable {
             return fread(number);
         }
 
-        if (bufferedBytesAvailable() > 0) {
+        if (hasBufferedInputBytes()) {
             // already have some bytes buffered, just return those
-            return bufferedRead(Math.min(bufferedBytesAvailable(), number));
+            return bufferedRead(Math.min(bufferedInputBytesRemaining(), number));
         } else {
             // otherwise, we try an unbuffered read to get whatever's available
             return read(number);
@@ -1422,10 +1451,9 @@ public class ChannelStream implements Stream, Finalizable {
         public int read() throws IOException {
             synchronized (stream) {
                 // If it can be pulled direct from the buffer, don't go via the slow path
-                if (stream.reading && stream.bufferedBytesAvailable() > 0) {
+                if (stream.hasBufferedInputBytes()) {
                     try {
-                        final int b = stream.read();
-                        return b != -1 ? (b & 0xff) : -1;
+                        return stream.read();
                     } catch (BadDescriptorException ex) {
                         throw new IOException(ex.getMessage());
                     }
@@ -1450,7 +1478,7 @@ public class ChannelStream implements Stream, Finalizable {
 
             try {
                 synchronized(stream) {
-                    final int available = stream.reading ? stream.bufferedBytesAvailable() : 0;
+                    final int available = stream.bufferedInputBytesRemaining();
                      if (available >= len) {
                         return stream.copyBufferedBytes(bytes, off, len);
                     } else if (stream.getDescriptor().getChannel() instanceof SelectableChannel) {
@@ -1482,7 +1510,7 @@ public class ChannelStream implements Stream, Finalizable {
         @Override
         public int available() throws IOException {
             synchronized (stream) {
-                return stream.reading && !stream.eof ? stream.bufferedBytesAvailable() : 0;
+                return !stream.eof ? stream.bufferedInputBytesRemaining() : 0;
             }
         }
 
@@ -1508,7 +1536,7 @@ public class ChannelStream implements Stream, Finalizable {
         @Override
         public void write(int i) throws IOException {
             synchronized (stream) {
-                if (!stream.reading && !stream.isSync() && stream.buffer.hasRemaining()) {
+                if (!stream.isSync() && stream.hasBufferedOutputSpace()) {
                     stream.buffer.put((byte) i);
                     return;
                 }
@@ -1522,10 +1550,13 @@ public class ChannelStream implements Stream, Finalizable {
             if (bytes == null) {
                 throw new NullPointerException("null source buffer");
             }
+            if ((len | off | (off + len) | (bytes.length - (off + len))) < 0) {
+                throw new IndexOutOfBoundsException();
+            }
 
             try {
                 synchronized(stream) {
-                    if (!stream.reading && !stream.isSync() && stream.buffer.remaining() >= len) {
+                    if (!stream.isSync() && stream.bufferedOutputSpaceRemaining() >= len) {
                         stream.buffer.put(bytes, off, len);
 
                     } else if (stream.getDescriptor().getChannel() instanceof SelectableChannel) {
