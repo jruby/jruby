@@ -1427,7 +1427,7 @@ public class ChannelStream implements Stream, Finalizable {
                         final int b = stream.read();
                         return b != -1 ? (b & 0xff) : -1;
                     } catch (BadDescriptorException ex) {
-                        throw new IOException(ex);
+                        throw new IOException(ex.getMessage());
                     }
                 }
             }
@@ -1473,7 +1473,7 @@ public class ChannelStream implements Stream, Finalizable {
                     }
                 }
             } catch (BadDescriptorException ex) {
-                throw new IOException(ex);
+                throw new IOException(ex.getMessage());
             } catch (EOFException ex) {
                 return -1;
             }
@@ -1493,7 +1493,7 @@ public class ChannelStream implements Stream, Finalizable {
                     stream.close(false);
                 }
             } catch (BadDescriptorException ex) {
-                throw new IOException(ex);
+                throw new IOException(ex.getMessage());
             }
         }
     }
@@ -1548,7 +1548,7 @@ public class ChannelStream implements Stream, Finalizable {
                     }
                 }
             } catch (BadDescriptorException ex) {
-                throw new IOException(ex);
+                throw new IOException(ex.getMessage());
             }
         }
 
@@ -1560,7 +1560,7 @@ public class ChannelStream implements Stream, Finalizable {
                     stream.close(false);
                 }
             } catch (BadDescriptorException ex) {
-                throw new IOException(ex);
+                throw new IOException(ex.getMessage());
             }
         }
 
@@ -1571,7 +1571,7 @@ public class ChannelStream implements Stream, Finalizable {
                     stream.flushWrite(true);
                 }
             } catch (BadDescriptorException ex) {
-                throw new IOException(ex);
+                throw new IOException(ex.getMessage());
             }
         }
     }
