@@ -396,7 +396,7 @@ public class RubyStringIO extends RubyObject {
                 ix = data.internal.getByteList().getRealSize();
                 add = ByteList.EMPTY_BYTELIST;
             } else {
-                add = isParagraph? NEWLINE : sep;
+                add = sep;
             }
 
             ByteList line = new ByteList(ix - (int)data.pos + add.length());
