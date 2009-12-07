@@ -927,7 +927,7 @@ public class RubyComplex extends RubyNumeric {
      *
      */
     @JRubyMethod(name = "rationalize", optional = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject rationalize(ThreadContext context, IRubyObject arg) {
+    public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         return to_r(context);
     }
     
