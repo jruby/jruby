@@ -91,6 +91,7 @@ test_unmarshal
 test_variables
 test_vietnamese_charset
 #test_trace_func
+test_win32
 test_zlib
 test_yaml
 test_system_error
