@@ -21,7 +21,7 @@ unless defined?(OpenSSL)
     SSL
     X509
     ].each {|c| autoload c, "jruby/openssl/autoloads/#{c.downcase}"}
-    
+
     def self.determine_version
       require 'java'
       java.security.MessageDigest.getInstance("SHA224", PROVIDER);
@@ -122,7 +122,7 @@ unless defined?(OpenSSL)
               super(name, data.first)
             }
           }
-          singleton = (class <<klass; self; end)
+          singleton = (class << klass; self; end)
           singleton.class_eval{
             define_method(:digest){|data| Digest.digest(name, data) }
             define_method(:hexdigest){|data| Digest.hexdigest(name, data) }
@@ -185,7 +185,7 @@ unless defined?(OpenSSL)
         @mac.init(javax.crypto.spec.SecretKeySpec.new(@key.to_java_bytes, @name))
       end
     end
-    warn %{JRuby limited openssl loaded. gem install jruby-openssl for full support.
-http://jruby.kenai.com/pages/JRuby_Builtin_OpenSSL}
+    warn %{JRuby limited openssl loaded. http://jruby.org/openssl
+gem install jruby-openssl for full support.}
   end
 end
