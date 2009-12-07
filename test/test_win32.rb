@@ -13,5 +13,16 @@ class TestWin32 < Test::Unit::TestCase
       end
     end
 
+    def test_win32_resolv
+      require 'win32/resolv'
+      assert_not_nil Win32::Resolv.get_hosts_path
+    end
+
+    # JRUBY-3480
+    def test_resolv
+      require 'resolv'
+      assert_match(/^[\d\.:]+$/, Resolv.getaddress("www.google.com"))
+    end
+
   end
 end
