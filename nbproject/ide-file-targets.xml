@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir=".." name="jruby-netbeans-ide-targets">
+    <import file="../build.xml"/>
+    <target name="compile-selected-files-in-test">
+        <fail unless="files">Must set property 'files'</fail>
+        <mkdir dir="${test.classes.dir}"/>
+        <javac debug="true" destdir="${test.classes.dir}" includes="${files}" source="${javac.version}" srcdir="test" target="${javac.version}">
+            <classpath refid="test.class.path"/>
+        </javac>
+    </target>
+    <target name="run-selected-files-in-test">
+        <fail unless="classname">Must set property 'classname'</fail>
+        <mkdir dir="${test.classes.dir}"/>
+        <junit dir="${test.classes.dir}" errorProperty="test.failed" failureProperty="test.failed" filtertrace="false" fork="true" printsummary="withOutAndErr" showoutput="true">
+            <classpath refid="test.class.path"/>
+            <formatter type="brief" usefile="false"/>
+            <formatter type="xml"/>
+            <test name="${classname}"/>
+        </junit>
+    </target>
+    <target name="compile-selected-files-in-src">
+        <fail unless="files">Must set property 'files'</fail>
+        <mkdir dir="${jruby.classes.dir}"/>
+        <javac debug="true" destdir="${jruby.classes.dir}" includes="${files}" source="${javac.version}" srcdir="${src.dir}" target="${javac.version}">
+            <classpath refid="build.classpath"/>
+        </javac>
+    </target>
+    <target description="Debug a Single Test" if="netbeans.home" name="debug-selected-files-in-test">
+        <fail unless="classname">Must set property 'classname'</fail>
+        <nbjpdastart addressproperty="jpda.address" name="${classname}" transport="dt_socket">
+            <classpath refid="test.class.path"/>
+            <!-- Optional - If source roots are properly declared in project, should
+             work without setting source path.
+             <sourcepath refid="debug.sourcepath"/> -->
+        </nbjpdastart>
+        <junit dir="${test.classes.dir}" errorProperty="test.failed" failureProperty="test.failed" filtertrace="false" fork="true" printsummary="withOutAndErr" showoutput="true">
+            <jvmarg value="-Xdebug"/>
+            <jvmarg value="-Xnoagent"/>
+            <jvmarg value="-Djava.compiler=none"/>
+            <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+            <classpath refid="test.class.path"/>
+            <formatter type="brief" usefile="false"/>
+            <formatter type="xml"/>
+            <test name="${classname}"/>
+        </junit>
+    </target>
+</project>
