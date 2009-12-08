@@ -416,30 +416,36 @@ class TestKernel < Test::Unit::TestCase
   end
 
   def test_system_existing
-    if (WINDOWS)
-      res = system('cd')
-    else
-      res = system('pwd')
+    quiet do
+      if (WINDOWS)
+        res = system('cd')
+      else
+        res = system('pwd')
+      end
+      assert_equal true, res
     end
-    assert_equal true, res
   end
 
   def test_system_existing_with_leading_space
-    if (WINDOWS)
-      res = system(' cd')
-    else
-      res = system(' pwd')
+    quiet do
+      if (WINDOWS)
+        res = system(' cd')
+      else
+        res = system(' pwd')
+      end
+      assert_equal true, res
     end
-    assert_equal true, res
   end
 
   def test_system_existing_with_trailing_space
-    if (WINDOWS)
-      res = system('cd ')
-    else
-      res = system('pwd ')
+    quiet do
+      if (WINDOWS)
+        res = system('cd ')
+      else
+        res = system('pwd ')
+      end
+      assert_equal true, res
     end
-    assert_equal true, res
   end
 
   def test_system_non_existing
