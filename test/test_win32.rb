@@ -24,5 +24,9 @@ class TestWin32 < Test::Unit::TestCase
       assert_match(/^[\d\.:]+$/, Resolv.getaddress("www.google.com"))
     end
 
+  else
+    # make testrunner happy
+    def test_noop
+    end
   end
 end
