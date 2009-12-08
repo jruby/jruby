@@ -240,8 +240,16 @@ public class ShellLauncher {
     }
 
     private static File tryFile(Ruby runtime, String fdir, String fname) {
-        File pathFile = (fdir == null) ?
-                new File(fname) : new File(fdir, fname);
+        File pathFile;
+        if (fdir == null) {
+            pathFile = new File(fname);
+        } else {
+            pathFile = new File(fdir, fname);
+        }
+
+        if (!pathFile.isAbsolute()) {
+            pathFile = new File(runtime.getCurrentDirectory(), pathFile.getPath());
+        }
 
         log(runtime, "Trying file " + pathFile);
         if (pathFile.exists()) {
@@ -328,6 +336,10 @@ public class ShellLauncher {
         }
         else {
             String pathSeparator = System.getProperty("path.separator");
+            if (Platform.IS_WINDOWS) {
+                // Windows-specific behavior
+                path = "." + pathSeparator + path;
+            }
             pathNodes = path.split(pathSeparator);
         }
         return findPathFile(runtime, fname, pathNodes, true);

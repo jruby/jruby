@@ -674,6 +674,48 @@ class TestKernel < Test::Unit::TestCase
     }
   end
 
+  def test_backquote_with_executable_in_cwd
+    Dir.chdir(TESTAPP_DIR) do
+      result = `./testapp one`
+      assert_equal 0, $?.exitstatus
+      assert_equal "one", result.rstrip
+    end
+  end
+
+  if (WINDOWS)
+    def test_backquote_with_executable_in_cwd_2
+      Dir.chdir(TESTAPP_DIR) do
+        result = `testapp one`
+        assert_equal 0, $?.exitstatus
+        assert_equal "one", result.rstrip
+      end
+    end
+  end
+
+  def test_system_with_executable_in_cwd
+    Dir.chdir(TESTAPP_DIR) do
+      result = nil
+      quiet do
+        result = system("./testapp one")
+      end
+      assert_equal 0, $?.exitstatus
+      assert result
+    end
+  end
+
+  if (WINDOWS)
+    def test_system_with_executable_in_cwd_2
+      Dir.chdir(TESTAPP_DIR) do
+        result = nil
+        quiet do
+          result = system("testapp one")
+        end
+        assert_equal 0, $?.exitstatus
+        assert result
+      end
+    end
+  end
+
   def test_test
     assert "Test file existence", test(?f, "README")
     assert "Test file non-existence", !test(?f, "READMEaewertsert45t4w5tgrsfdgrf")

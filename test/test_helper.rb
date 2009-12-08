@@ -8,9 +8,11 @@ module TestHelper
   SEPARATOR = WINDOWS ? '\\' : '/'
   RUBY = '"' + File.join([Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']]) << Config::CONFIG['EXEEXT'] + '"'
 
-
   if (WINDOWS)
     RUBY.gsub!('/', '\\')
+    DEVNULL = 'NUL:'
+  else
+    DEVNULL = '/dev/null'
   end
 
   if defined? JRUBY_VERSION
@@ -51,5 +53,14 @@ module TestHelper
   ensure
     JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
   end
-end
 
+  def quiet(&block)
+    io = [STDOUT.dup, STDERR.dup]
+    STDOUT.reopen DEVNULL
+    STDERR.reopen DEVNULL
+    block.call
+  ensure
+    STDOUT.reopen io.first
+    STDERR.reopen io.last
+  end
+end
