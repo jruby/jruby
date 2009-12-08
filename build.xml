@@ -941,10 +941,11 @@
       <classpath refid="test.class.path"/>
 
       <sysproperty key="java.security.manager" value=""/>
-      <sysproperty key="java.security.policy" value="file:test/restricted.policy"/>
+      <!-- Note the extra '=' in the value, it *is* intentional -->
+      <sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
       <sysproperty key="java.awt.headless" value="true"/>
       <jvmarg value="${run.jvm.model}"/>
-      <arg value="-e"/>
+      <arg value="-ve"/>
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
   </target>

@@ -1212,12 +1212,8 @@ public final class Ruby {
         if (profile.allowClass("UnboundMethod")) {
             RubyUnboundMethod.defineUnboundMethodClass(this);
         }
-        if (!isSecurityRestricted()) {
-            // Signal uses sun.misc.* classes, this is not allowed
-            // in the security-sensitive environments
-            if (profile.allowModule("Signal")) {
-                RubySignal.createSignal(this);
-            }
+        if (profile.allowModule("Signal")) {
+            RubySignal.createSignal(this);
         }
         if (profile.allowClass("Continuation")) {
             RubyContinuation.createContinuation(this);

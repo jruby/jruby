@@ -83,6 +83,7 @@ public class Readline {
     public static class ReadlineHistory extends History {
         ArrayList historyList = null;
         Field index = null;
+        private boolean securityRestricted = false;
 
         public ReadlineHistory() {
             try {
@@ -94,7 +95,7 @@ public class Readline {
             } catch (NoSuchFieldException ex) {
                 ex.printStackTrace();
             } catch (SecurityException ex) {
-                ex.printStackTrace();
+                securityRestricted = true;
             } catch (IllegalArgumentException ex) {
                 ex.printStackTrace();
             } catch (IllegalAccessException ex) {
@@ -103,6 +104,9 @@ public class Readline {
         }
 
         public void setCurrentIndex(int i) {
+            if (securityRestricted) {
+                return; // do nothing
+            }
             try {
                 index.setInt(this, i);
             } catch (IllegalArgumentException ex) {
@@ -113,21 +117,35 @@ public class Readline {
         }
 
         public void set(int i, String s) {
+            if (securityRestricted) {
+                return; // do nothing
+            }
             historyList.set(i, s);
         }
 
+        @SuppressWarnings("unchecked")
         public String pop() {
+            if (securityRestricted) {
+                // Not fully implemented in security restricted environment.
+                // We just return the last value, without really popping it.
+                List histList = getHistoryList();
+                return (String)histList.get(histList.size() - 1);
+            }
             return remove(historyList.size() - 1);
         }
 
         public String remove(int i) {
+            if (securityRestricted) {
+                // do nothing, we can't modify the history without
+                // accessing private members of History.
+                return "";
+            }
             setCurrentIndex(historyList.size() - 2);
             return (String)historyList.remove(i);
         }
     }
 
     public static class ConsoleHolder {
-
         public ConsoleReader readline;
         public Completor currentCompletor;
         public ReadlineHistory history;

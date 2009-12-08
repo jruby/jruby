@@ -44,6 +44,7 @@ import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.anno.JRubyModule;
 
 @JRubyModule(name="Config")
@@ -108,10 +109,9 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
 
         String normalizedHome;
-        if (Ruby.isSecurityRestricted()) {
+        normalizedHome = runtime.getJRubyHome();
+        if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
             normalizedHome = "SECURITY RESTRICTED";
-        } else {
-            normalizedHome = runtime.getJRubyHome();
         }
         setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getPath());
         setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
@@ -144,7 +144,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "build", Constants.BUILD);
         setConfig(configHash, "target", Constants.TARGET);
         
-        String libdir = System.getProperty("jruby.lib");
+        String libdir = SafePropertyAccessor.getProperty("jruby.lib");
         if (libdir == null) {
             libdir = new NormalizedFile(normalizedHome, "lib").getPath();
         } else {
@@ -274,12 +274,12 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String jrubyScript() {
-        return System.getProperty("jruby.script", "jruby").replace('\\', '/');
+        return SafePropertyAccessor.getProperty("jruby.script", "jruby").replace('\\', '/');
     }
 
     // TODO: note lack of command.com support for Win 9x...
     public static String jrubyShell() {
-        return System.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
+        return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
 }

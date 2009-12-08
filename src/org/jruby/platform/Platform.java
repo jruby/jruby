@@ -92,7 +92,7 @@ public class Platform {
     }
     public static final String ARCH = initArchitecture();
     public static final String OS = initOperatingSystem();
-    public static final String JVM = System.getProperty("java.vm.name");
+    public static final String JVM = getProperty("java.vm.name", "unknown");
 
     public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
 

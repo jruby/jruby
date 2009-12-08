@@ -183,39 +183,37 @@ public class LoadService {
         }
 
         // add $RUBYLIB paths
-       RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
-       RubyString env_rubylib = runtime.newString("RUBYLIB");
-       if (env.has_key_p(env_rubylib).isTrue()) {
-           String rubylib = env.op_aref(runtime.getCurrentContext(), env_rubylib).toString();
-           String[] paths = rubylib.split(File.pathSeparator);
-           for (int i = 0; i < paths.length; i++) {
-               addPath(paths[i]);
-           }
-       }
+        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        RubyString env_rubylib = runtime.newString("RUBYLIB");
+        if (env.has_key_p(env_rubylib).isTrue()) {
+            String rubylib = env.op_aref(runtime.getCurrentContext(), env_rubylib).toString();
+            String[] paths = rubylib.split(File.pathSeparator);
+            for (int i = 0; i < paths.length; i++) {
+                addPath(paths[i]);
+            }
+        }
 
-       // wrap in try/catch for security exceptions in an applet
-       if (!Ruby.isSecurityRestricted()) {
-           try {
-               String jrubyHome = runtime.getJRubyHome();
-               if (jrubyHome != null) {
-                   char sep = '/';
-                   String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
+        // wrap in try/catch for security exceptions in an applet
+        try {
+            String jrubyHome = runtime.getJRubyHome();
+            if (jrubyHome != null) {
+                char sep = '/';
+                String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
-                   // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
-                   if (runtime.is1_9()) {
-                       addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
-                       addPath(rubyDir + "site_ruby" + sep + "shared");
-                       addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-                       addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
-                   } else {
-                       // Add 1.8 libs
-                       addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-                       addPath(rubyDir + "site_ruby" + sep + "shared");
-                       addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-                   }
-               }
-           } catch(SecurityException e) {}
-       }
+                // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
+                if (runtime.is1_9()) {
+                    addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
+                    addPath(rubyDir + "site_ruby" + sep + "shared");
+                    addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+                    addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
+                } else {
+                    // Add 1.8 libs
+                    addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+                    addPath(rubyDir + "site_ruby" + sep + "shared");
+                    addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+                }
+            }
+        } catch(SecurityException ignore) {}
         
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
         if (runtime.getSafeLevel() == 0) {

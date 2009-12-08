@@ -732,7 +732,7 @@ public class RubyInstanceConfig {
                     jrubyHome = verifyHome(jrubyHome);
                 } else {
                     // otherwise fall back on system temp location
-                    jrubyHome = System.getProperty("java.io.tmpdir");
+                    jrubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
                 }
             }
         }
@@ -746,7 +746,7 @@ public class RubyInstanceConfig {
     // We require the home directory to be absolute
     private String verifyHome(String home) {
         if (home.equals(".")) {
-            home = System.getProperty("user.dir");
+            home = SafePropertyAccessor.getProperty("user.dir");
         }
         if (home.startsWith("cp:")) {
             home = home.substring(3);
@@ -756,7 +756,7 @@ public class RubyInstanceConfig {
                 home = f.getAbsolutePath();
             }
             if (!f.exists()) {
-                System.err.println("Warning: JRuby home \"" + f + "\" does not exist, using " + System.getProperty("java.io.tmpdir"));
+                System.err.println("Warning: JRuby home \"" + f + "\" does not exist, using " + SafePropertyAccessor.getProperty("java.io.tmpdir"));
                 return System.getProperty("java.io.tmpdir");
             }
         }
