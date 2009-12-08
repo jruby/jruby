@@ -36,7 +36,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
-import java.util.Arrays;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -74,8 +73,13 @@ public class RubyDigest {
 
         RubyModule mDigest = runtime.defineModule("Digest");
         mDigest.defineAnnotatedMethods(RubyDigest.class);
-        RubyClass cDigestBase = mDigest.defineClassUnder("Base",runtime.getObject(), Base.BASE_ALLOCATOR);
-        cDigestBase.defineAnnotatedMethods(Base.class);
+        RubyModule mDigestInstance = mDigest.defineModuleUnder("Instance");
+        mDigestInstance.defineAnnotatedMethods(DigestInstance.class);
+        RubyClass cDigestClass = mDigest.defineClassUnder("Class", runtime.getObject(), DigestClass.DIGEST_CLASS_ALLOCATOR);
+        cDigestClass.defineAnnotatedMethods(DigestClass.class);
+        cDigestClass.includeModule(mDigestInstance);
+        RubyClass cDigestBase = mDigest.defineClassUnder("Base", cDigestClass, DigestBase.DIGEST_BASE_ALLOCATOR);
+        cDigestBase.defineAnnotatedMethods(DigestBase.class);
     }
 
     private static MessageDigest createMessageDigest(Ruby runtime, String providerName) throws NoSuchAlgorithmException {
@@ -90,6 +94,33 @@ public class RubyDigest {
         return MessageDigest.getInstance(providerName);
     }
 
+    private final static byte[] digits = {
+        '0', '1', '2', '3', '4', '5',
+        '6', '7', '8', '9', 'a', 'b',
+        'c', 'd', 'e', 'f', 'g', 'h',
+        'i', 'j', 'k', 'l', 'm', 'n',
+        'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z'
+    };
+
+    private static ByteList toHex(byte[] val) {
+        ByteList byteList = new ByteList(val.length * 2);
+        for (int i = 0, j = val.length; i < j; i++) {
+            int b = val[i] & 0xFF;
+            byteList.append(digits[b >> 4]);
+            byteList.append(digits[b & 0xF]);
+        }
+        return byteList;
+    }
+
+    private static IRubyObject toHexString(Ruby runtime, byte[] val) {
+        return RubyString.newStringNoCopy(runtime, ByteList.plain(toHex(val)));
+    }
+
+    @JRubyMethod(name = "hexencode", required = 1, meta = true)
+    public static IRubyObject s_hexencode(IRubyObject recv, IRubyObject arg) {
+        return toHexString(recv.getRuntime(), arg.convertToString().getBytes());
+    }
 
     @JRubyMethod(name = "const_missing", required = 1, module = true)
     public static IRubyObject const_missing(ThreadContext ctx, IRubyObject recv, IRubyObject symbol) {
@@ -111,6 +142,27 @@ public class RubyDigest {
         return digest.getConstant(sym);
     }
 
+
+    private static class Metadata {
+
+        private final String name;
+        private final int blockLength;
+
+        Metadata(String name, int blockLength) {
+            this.name = name;
+            this.blockLength = blockLength;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        int getBlockLength() {
+            return blockLength;
+        }
+    }
+
+
     @JRubyClass(name="Digest::MD5", parent="Digest::Base")
     public static class MD5 {}
     @JRubyClass(name="Digest::RMD160", parent="Digest::Base")
@@ -129,15 +181,7 @@ public class RubyDigest {
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
-        cDigest_MD5.defineFastMethod("block_length", new Callback() {
-            public Arity getArity() {
-                return Arity.NO_ARGUMENTS;
-            }
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return RubyFixnum.newFixnum(recv.getRuntime(), 64);
-            }
-        });
-        cDigest_MD5.setInternalModuleVariable("metadata",runtime.newString("MD5"));
+        cDigest_MD5.setInternalVariable("metadata", new Metadata("MD5", 64));
     }
 
     public static void createDigestRMD160(Ruby runtime) {
@@ -145,11 +189,10 @@ public class RubyDigest {
         if(provider == null) {
             throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
-
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase,cDigestBase.getAllocator());
-        cDigest_RMD160.setInternalModuleVariable("metadata",runtime.newString("RIPEMD160"));
+        cDigest_RMD160.setInternalVariable("metadata", new Metadata("RIPEMD160", 64));
     }
 
     public static void createDigestSHA1(Ruby runtime) {
@@ -157,7 +200,7 @@ public class RubyDigest {
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA1.setInternalModuleVariable("metadata",runtime.newString("SHA1"));
+        cDigest_SHA1.setInternalVariable("metadata", new Metadata("SHA1", 64));
     }
 
     public static void createDigestSHA2(Ruby runtime) {
@@ -167,99 +210,188 @@ public class RubyDigest {
         } catch(NoSuchAlgorithmException e) {
             throw runtime.newLoadError("SHA2 not supported");
         }
-
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
         RubyClass cDigest_SHA2_META = mDigest.defineClassUnder("SHA2",cDigestBase,cDigestBase.getAllocator());
-        RubyString sha256Method = runtime.newString("SHA-256");
-        Callback sha256Callback = new Callback() {
-            public Arity getArity() {
-                return Arity.NO_ARGUMENTS;
-            }
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return RubyFixnum.newFixnum(recv.getRuntime(), 64);
-            }
-        };
-        cDigest_SHA2_256.setInternalModuleVariable("metadata", sha256Method);
-        cDigest_SHA2_META.setInternalModuleVariable("metadata", sha256Method);
-        cDigest_SHA2_256.defineFastMethod("block_length", sha256Callback);
-        cDigest_SHA2_META.defineFastMethod("block_length", sha256Callback);
-
+        Metadata sha256Metadata = new Metadata("SHA-256", 64);
+        cDigest_SHA2_256.setInternalVariable("metadata", sha256Metadata);
+        cDigest_SHA2_META.setInternalVariable("metadata", sha256Metadata);
         RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_384.setInternalModuleVariable("metadata",runtime.newString("SHA-384"));
-        cDigest_SHA2_384.defineFastMethod("block_length", new Callback() {
-            public Arity getArity() {
-                return Arity.NO_ARGUMENTS;
-            }
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return RubyFixnum.newFixnum(recv.getRuntime(), 128);
-            }
-        });
+        cDigest_SHA2_384.setInternalVariable("metadata", new Metadata("SHA-384", 128));
         RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_512.setInternalModuleVariable("metadata",runtime.newString("SHA-512"));
-        cDigest_SHA2_512.defineFastMethod("block_length", new Callback() {
-            public Arity getArity() {
-                return Arity.NO_ARGUMENTS;
-            }
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                return RubyFixnum.newFixnum(recv.getRuntime(), 128);
-            }
-        });
+        cDigest_SHA2_512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
     }
 
-    @JRubyClass(name="Digest::Base")
-    public static class Base extends RubyObject {
-        protected static final ObjectAllocator BASE_ALLOCATOR = new ObjectAllocator() {
+
+    @JRubyModule(name = "Digest::Instance")
+    public static class DigestInstance {
+
+        private static IRubyObject throwUnimplError(IRubyObject self, String name) {
+            throw self.getRuntime().newRuntimeError(String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(), name));
+        }
+
+        /* instance methods that should be overridden */
+        @JRubyMethod(name = {"update", "<<"}, required = 1)
+        public static IRubyObject update(ThreadContext ctx, IRubyObject self, IRubyObject arg) {
+            return throwUnimplError(self, "update");
+        }
+
+        @JRubyMethod()
+        public static IRubyObject finish(ThreadContext ctx, IRubyObject self) {
+            return throwUnimplError(self, "finish");
+        }
+
+        @JRubyMethod()
+        public static IRubyObject reset(ThreadContext ctx, IRubyObject self) {
+            return throwUnimplError(self, "reset");
+        }
+
+        @JRubyMethod()
+        public static IRubyObject digest_length(ThreadContext ctx, IRubyObject self) {
+            return digest(ctx, self, null).convertToString().length();
+        }
+
+        @JRubyMethod()
+        public static IRubyObject block_length(ThreadContext ctx, IRubyObject self) {
+            return throwUnimplError(self, "block_length");
+        }
+
+        /* instance methods that may be overridden */
+        @JRubyMethod(name = "==", required = 1)
+        public static IRubyObject op_equal(ThreadContext ctx, IRubyObject self, IRubyObject oth) {
+            RubyString str1, str2;
+            RubyModule instance = (RubyModule)self.getRuntime().fastGetModule("Digest").fastGetConstantAt("Instance");
+            if (oth.getMetaClass().getRealClass().hasModuleInHierarchy(instance)) {
+                str1 = digest(ctx, self, null).convertToString();
+                str2 = digest(ctx, oth, null).convertToString();
+            } else {
+                str1 = to_s(ctx, self).convertToString();
+                str2 = oth.convertToString();
+            }
+            boolean ret = str1.length().eql(str2.length()) && (str1.eql(str2));
+            return ret ? self.getRuntime().getTrue() : self.getRuntime().getFalse();
+        }
+
+        @JRubyMethod()
+        public static IRubyObject inspect(ThreadContext ctx, IRubyObject self) {
+            return RubyString.newStringNoCopy(self.getRuntime(), ByteList.plain("#<" + self.getMetaClass().getRealClass().getName() + ": " + hexdigest(ctx, self, null) + ">"));
+        }
+
+        /* instance methods that need not usually be overridden */
+        @JRubyMethod(name = "new")
+        public static IRubyObject newObject(ThreadContext ctx, IRubyObject self) {
+            return self.rbClone().callMethod(ctx, "reset");
+        }
+
+        @JRubyMethod(optional = 1)
+        public static IRubyObject digest(ThreadContext ctx, IRubyObject self, IRubyObject[] args) {
+            IRubyObject value = null;
+            if (args != null && args.length > 0) {
+                self.callMethod(ctx, "reset");
+                self.callMethod(ctx, "update", args[0]);
+                value = self.callMethod(ctx, "finish");
+                self.callMethod(ctx, "reset");
+            } else {
+                IRubyObject clone = self.rbClone();
+                value = clone.callMethod(ctx, "finish");
+                clone.callMethod(ctx, "reset");
+            }
+            return value;
+        }
+
+        @JRubyMethod(name = "digest!")
+        public static IRubyObject digest_bang(ThreadContext ctx, IRubyObject self) {
+            IRubyObject value = self.callMethod(ctx, "finish");
+            self.callMethod(ctx, "reset");
+            return value;
+        }
+
+        @JRubyMethod(optional = 1)
+        public static IRubyObject hexdigest(ThreadContext ctx, IRubyObject self, IRubyObject[] args) {
+            return toHexString(ctx.getRuntime(), digest(ctx, self, args).convertToString().getBytes());
+        }
+
+        @JRubyMethod(name = "hexdigest!")
+        public static IRubyObject hexdigest_bang(ThreadContext ctx, IRubyObject self) {
+            return toHexString(ctx.getRuntime(), digest_bang(ctx, self).convertToString().getBytes());
+        }
+
+        @JRubyMethod()
+        public static IRubyObject to_s(ThreadContext ctx, IRubyObject self) {
+            return self.callMethod(ctx, "hexdigest");
+        }
+
+        @JRubyMethod(name = {"length", "size"})
+        public static IRubyObject length(ThreadContext ctx, IRubyObject self) {
+            return self.callMethod(ctx, "digest_length");
+        }
+    }
+
+
+    @JRubyClass(name="Digest::Class")
+    public static class DigestClass extends RubyObject {
+        protected static final ObjectAllocator DIGEST_CLASS_ALLOCATOR = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new Base(runtime, klass);
+                return new DigestClass(runtime, klass);
             }
         };
-        
-        @JRubyMethod(name = "digest", required = 1, meta = true)
-        public static IRubyObject s_digest(IRubyObject recv, IRubyObject str) {
-            Ruby runtime = recv.getRuntime();
-            String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
-            try {
-                MessageDigest md = createMessageDigest(runtime, name);
-                return RubyString.newStringShared(runtime, md.digest(str.convertToString().getBytes()));
-            } catch(NoSuchAlgorithmException e) {
-                throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
-            }
+
+        public DigestClass(Ruby runtime, RubyClass type) {
+            super(runtime, type);
         }
         
-        @JRubyMethod(name = "hexdigest", required = 1, meta = true)
-        public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject str) {
+        @JRubyMethod(name = "digest", required = 1, optional = 1, frame = true, meta = true)
+        public static IRubyObject s_digest(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
-            String name = ((RubyClass)recv).searchInternalModuleVariable("metadata").toString();
-            try {
-                MessageDigest md = createMessageDigest(runtime, name);
-                return RubyString.newStringNoCopy(runtime, ByteList.plain(toHex(md.digest(str.convertToString().getBytes()))));
-            } catch(NoSuchAlgorithmException e) {
-                throw recv.getRuntime().newNotImplementedError("Unsupported digest algorithm (" + name + ")");
+            if (args.length < 1) {
+                throw runtime.newArgumentError("no data given");
             }
+            RubyString str = args[0].convertToString();
+            IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+            IRubyObject obj = ((RubyClass)recv).newInstance(ctx, newArgs, Block.NULL_BLOCK);
+            return obj.callMethod(ctx, "digest", str);
         }
+
+        @JRubyMethod(name = "hexdigest", required = 1, optional = 1, frame = true, meta = true)
+        public static IRubyObject s_hexdigest(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+            Ruby runtime = recv.getRuntime();
+            byte[] digest = recv.callMethod(ctx, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
+            return RubyDigest.toHexString(runtime, digest);
+        }
+    }
+
+
+    @JRubyClass(name="Digest::Base")
+    public static class DigestBase extends RubyObject {
+        protected static final ObjectAllocator DIGEST_BASE_ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                return new DigestBase(runtime, klass);
+            }
+        };
 
         private MessageDigest algo;
+        private int blockLength = 0;
 
-        public Base(Ruby runtime, RubyClass type) {
+        public DigestBase(Ruby runtime, RubyClass type) {
             super(runtime,type);
 
             if(type == runtime.fastGetModule("Digest").fastGetClass("Base")) {
                 throw runtime.newNotImplementedError("Digest::Base is an abstract class");
             }
-            if(!type.hasInternalModuleVariable("metadata")) {
+            if(!type.hasInternalVariable("metadata")) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
             try {
-                setAlgorithm(type.searchInternalModuleVariable("metadata"));
+                setAlgorithm((Metadata)type.getInternalVariable("metadata"));
             } catch(NoSuchAlgorithmException e) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
 
         }
         
-        @JRubyMethod(name = "initialize", optional = 1, frame = true)
+        @JRubyMethod(optional = 1, frame = true)
         public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             if(args.length > 0 && !args[0].isNil()) {
                 update(args[0]);
@@ -267,16 +399,16 @@ public class RubyDigest {
             return this;
         }
 
-        @JRubyMethod(name = "initialize_copy", required = 1)
+        @JRubyMethod(required = 1)
         public IRubyObject initialize_copy(IRubyObject obj) {
             if(this == obj) {
                 return this;
             }
             ((RubyObject)obj).checkFrozen();
 
-            String name = ((Base)obj).algo.getAlgorithm();
+            String name = ((DigestBase)obj).algo.getAlgorithm();
             try {
-                algo = (MessageDigest)((Base)obj).algo.clone();
+                algo = (MessageDigest)((DigestBase)obj).algo.clone();
             } catch(CloneNotSupportedException e) {
                 throw getRuntime().newTypeError("Could not initialize copy of digest (" + name + ")");
             }
@@ -290,155 +422,36 @@ public class RubyDigest {
             return this;
         }
 
-        @JRubyMethod(name = "digest", optional = 1)
-        public IRubyObject digest(IRubyObject[] args) {
-            if (args.length == 1) {
-                algo.reset();
-                update(args[0]);
-            }
-
-            IRubyObject digest = getDigestString();
-
-            if (args.length == 1) {
-                algo.reset();
-            }
+        @JRubyMethod()
+        public IRubyObject finish() {
+            IRubyObject digest = RubyString.newStringNoCopy(getRuntime(), algo.digest());
+            algo.reset();
             return digest;
         }
         
-        @JRubyMethod(name = "digest!")
-        public IRubyObject digest_bang() {
-            IRubyObject digest = getDigestStringNoClone();
-            reset();
-            return digest;
-        }
-
-        @JRubyMethod(name = {"hexdigest"}, optional = 1)
-        public IRubyObject hexdigest(IRubyObject[] args) {
-            if (args.length == 1) {
-                algo.reset();
-                update(args[0]);
-            }
-
-            IRubyObject digest = getDigestHexString();
-
-            if (args.length == 1) {
-                algo.reset();
-            }
-            
-            return digest;
-        }
-        
-        @JRubyMethod(name = {"to_s"})
-        public IRubyObject to_s() {
-            return getDigestHexString();
-        }
-
-        @JRubyMethod(name = {"hexdigest!"})
-        public IRubyObject hexdigest_bang() {
-            IRubyObject digest = getDigestHexStringNoClone();
-            reset();
-            return digest;
-        }
-        
-        @JRubyMethod(name = "inspect")
-        public IRubyObject inspect() {
-            return RubyString.newStringNoCopy(getRuntime(), ByteList.plain("#<" + getMetaClass().getRealClass().getName() + ": " + getDigestHex() + ">"));
-        }
-
-        @JRubyMethod(name = "==", required = 1)
-        public IRubyObject op_equal(IRubyObject oth) {
-            boolean ret = this == oth;
-            if(!ret) {
-                if (oth instanceof Base) {
-                    Base b = (Base)oth;
-                    ret = this.algo.getAlgorithm().equals(b.algo.getAlgorithm()) &&
-                            Arrays.equals(getDigest(), b.getDigest());
-                } else {
-                    IRubyObject str = oth.convertToString();
-                    ret = this.to_s().equals(str);
-                }
-            }
-
-            return ret ? getRuntime().getTrue() : getRuntime().getFalse();
-        }
-        
-        @JRubyMethod(name = {"length", "size", "digest_length"})
-        public IRubyObject length() {
+        @JRubyMethod()
+        public IRubyObject digest_length() {
             return RubyFixnum.newFixnum(getRuntime(), algo.getDigestLength());
         }
 
-        @JRubyMethod(name = {"block_length"})
+        @JRubyMethod()
         public IRubyObject block_length() {
-            throw getRuntime().newRuntimeError(
-                    this.getMetaClass() + " doesn't implement block_length()");
+            if (blockLength == 0) {
+                throw getRuntime().newRuntimeError(
+                        this.getMetaClass() + " doesn't implement block_length()");
+            }
+            return RubyFixnum.newFixnum(getRuntime(), blockLength);
         }
 
-        @JRubyMethod(name = {"reset"})
+        @JRubyMethod()
         public IRubyObject reset() {
             algo.reset();
-            return getRuntime().getNil();
+            return this;
         }
 
-       private void setAlgorithm(IRubyObject algo) throws NoSuchAlgorithmException {
-           this.algo = createMessageDigest(getRuntime(), algo.toString());
+        private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {
+           this.algo = createMessageDigest(getRuntime(), metadata.getName());
+           this.blockLength = metadata.getBlockLength();
         }
-
-        final static byte[] digits = {
-        '0' , '1' , '2' , '3' , '4' , '5' ,
-        '6' , '7' , '8' , '9' , 'a' , 'b' ,
-        'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
-        'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
-        'o' , 'p' , 'q' , 'r' , 's' , 't' ,
-        'u' , 'v' , 'w' , 'x' , 'y' , 'z'
-        };
-
-        private byte[] getDigest() {
-            MessageDigest copy;
-            try {
-                copy = (MessageDigest)algo.clone();
-            } catch (CloneNotSupportedException cnse) {
-                copy = algo;
-            }
-            return copy.digest();
-        }
-
-        private byte[] getDigestNoClone() {
-            return algo.digest();
-        }
-
-        private ByteList getDigestHex() {
-            return toHex(getDigest());
-        }
-
-        private ByteList getDigestHexNoClone() {
-            return toHex(getDigestNoClone());
-        }
-
-        private IRubyObject getDigestString() {
-            return RubyString.newStringNoCopy(getRuntime(), getDigest());
-        }
-
-        private IRubyObject getDigestStringNoClone() {
-            return RubyString.newStringNoCopy(getRuntime(), getDigestNoClone());
-        }
-
-        private IRubyObject getDigestHexString() {
-            return RubyString.newStringNoCopy(getRuntime(), getDigestHex());
-        }
-
-        private IRubyObject getDigestHexStringNoClone() {
-            return RubyString.newStringNoCopy(getRuntime(), getDigestHexNoClone());
-        }
-
-        private static ByteList toHex(byte[] val) {
-            ByteList byteList = new ByteList(val.length * 2);
-            for(int i=0,j=val.length;i<j;i++) {
-                int b = val[i] & 0xFF;
-                byteList.append(digits[b >> 4]);
-                byteList.append(digits[b & 0xF]);
-            }
-            return byteList;
-        }
-
     }
 }// RubyDigest
