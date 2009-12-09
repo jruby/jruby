@@ -30,6 +30,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.StrNode;
@@ -184,7 +185,7 @@ public class SexpMaker {
         case NOTNODE: noDataContents(node); break;
         case NTHREFNODE: nthRefNode((NthRefNode) node); break;
         case OPASGNANDNODE: noDataContents(node); break;
-        case OPASGNNODE: noDataContents(node); break;
+        case OPASGNNODE: opAsgnNode((OpAsgnNode) node); break;
         case OPASGNORNODE: noDataContents(node); break;
         case OPELEMENTASGNNODE: opElementAsgnNode((OpElementAsgnNode) node); break;
         case ORNODE: noDataContents(node); break;
@@ -367,6 +368,10 @@ public class SexpMaker {
 
     private void aliasNode(AliasNode node) {
         sb.append(" ").append(node.getOldName()).append(node.getNewName());
+    }
+
+    private void opAsgnNode(OpAsgnNode node) {
+        sb.append(" '").append(node.getOperatorName()).append("'");
     }
 
     private void noDataContents(Node node) {
