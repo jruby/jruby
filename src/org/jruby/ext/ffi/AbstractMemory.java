@@ -246,7 +246,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_int8", "put_char", "write_char" } , required = 1)
+    @JRubyMethod(name = { "write_char" } , required = 1)
+    public IRubyObject write_char(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putByte(0, Util.int8Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes a 8 bit signed integer value to the memory area.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_int8", "put_char" } , required = 1)
     public IRubyObject put_int8(ThreadContext context, IRubyObject value) {
         getMemoryIO().putByte(0, Util.int8Value(value));
 
@@ -272,7 +285,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_int8", "get_char", "read_char" })
+    @JRubyMethod(name = { "read_char" })
+    public IRubyObject read_char(ThreadContext context) {
+        return Util.newSigned8(context.getRuntime(), getMemoryIO().getByte(0));
+    }
+
+    /**
+     * Reads an 8 bit signed integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_int8", "get_char" })
     public IRubyObject get_int8(ThreadContext context) {
         return Util.newSigned8(context.getRuntime(), getMemoryIO().getByte(0));
     }
@@ -294,7 +317,19 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_uint8", "put_uchar", "write_uchar" }, required = 1)
+    @JRubyMethod(name = { "write_uchar" }, required = 1)
+    public IRubyObject write_uchar(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putByte(0, (byte) Util.uint8Value(value));
+        return this;
+    }
+
+    /**
+     * Writes a 8 bit unsigned integer value to the memory area.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_uint8", "put_uchar" }, required = 1)
     public IRubyObject put_uint8(ThreadContext context, IRubyObject value) {
         getMemoryIO().putByte(0, (byte) Util.uint8Value(value));
         return this;
@@ -318,7 +353,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_uint8", "get_uchar", "read_uchar" })
+    @JRubyMethod(name = { "read_uchar" })
+    public IRubyObject read_uchar(ThreadContext context) {
+        return Util.newUnsigned8(context.getRuntime(), getMemoryIO().getByte(0));
+    }
+
+    /**
+     * Reads an 8 bit unsigned integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_uint8", "get_uchar" })
     public IRubyObject get_uint8(ThreadContext context) {
         return Util.newUnsigned8(context.getRuntime(), getMemoryIO().getByte(0));
     }
@@ -340,7 +385,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_int16", "put_short", "write_short" }, required = 1)
+    @JRubyMethod(name = { "write_short" }, required = 1)
+    public IRubyObject write_short(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putShort(0, Util.int16Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes a 16 bit signed integer value to the memory address.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_int16", "put_short" }, required = 1)
     public IRubyObject put_int16(ThreadContext context, IRubyObject value) {
         getMemoryIO().putShort(0, Util.int16Value(value));
 
@@ -366,7 +424,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_int16", "get_short", "read_short" })
+    @JRubyMethod(name = { "read_short" })
+    public IRubyObject read_short(ThreadContext context) {
+        return Util.newSigned16(context.getRuntime(), getMemoryIO().getShort(0));
+    }
+
+    /**
+     * Reads a 16 bit signed integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_int16", "get_short" })
     public IRubyObject get_int16(ThreadContext context) {
         return Util.newSigned16(context.getRuntime(), getMemoryIO().getShort(0));
     }
@@ -388,7 +456,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_uint16", "put_ushort", "write_ushort" }, required = 1)
+    @JRubyMethod(name = { "write_ushort" }, required = 1)
+    public IRubyObject write_ushort(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putShort(0, (short) Util.uint16Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes a 16 bit unsigned integer value to the memory address.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_uint16", "put_ushort" }, required = 1)
     public IRubyObject put_uint16(ThreadContext context, IRubyObject value) {
         getMemoryIO().putShort(0, (short) Util.uint16Value(value));
 
@@ -414,7 +495,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_uint16", "get_ushort", "read_ushort" })
+    @JRubyMethod(name = { "read_ushort" })
+    public IRubyObject read_ushort(ThreadContext context) {
+        return Util.newUnsigned16(context.getRuntime(), getMemoryIO().getShort(0));
+    }
+
+    /**
+     * Reads a 16 bit unsigned integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_uint16", "get_ushort" })
     public IRubyObject get_uint16(ThreadContext context) {
         return Util.newUnsigned16(context.getRuntime(), getMemoryIO().getShort(0));
     }
@@ -436,7 +527,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_int32", "put_int", "write_int" })
+    @JRubyMethod(name = { "write_int" })
+    public IRubyObject write_int(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putInt(0, Util.int32Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes a 32 bit signed integer value to the memory address.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_int32", "put_int" })
     public IRubyObject put_int32(ThreadContext context, IRubyObject value) {
         getMemoryIO().putInt(0, Util.int32Value(value));
 
@@ -462,7 +566,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_int32", "get_int", "read_int" })
+    @JRubyMethod(name = { "read_int" })
+    public IRubyObject read_int(ThreadContext context) {
+        return Util.newSigned32(context.getRuntime(), getMemoryIO().getInt(0));
+    }
+
+    /**
+     * Reads a 32 bit signed integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_int32", "get_int" })
     public IRubyObject get_int32(ThreadContext context) {
         return Util.newSigned32(context.getRuntime(), getMemoryIO().getInt(0));
     }
@@ -484,7 +598,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_uint32", "put_uint", "write_uint" }, required = 1)
+    @JRubyMethod(name = { "write_uint" }, required = 1)
+    public IRubyObject write_uint(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putInt(0, (int) Util.uint32Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes an 32 bit unsigned integer value to the memory address.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_uint32", "put_uint" }, required = 1)
     public IRubyObject put_uint32(ThreadContext context, IRubyObject value) {
         getMemoryIO().putInt(0, (int) Util.uint32Value(value));
 
@@ -510,7 +637,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_uint32", "get_uint", "read_uint" })
+    @JRubyMethod(name = { "read_uint" })
+    public IRubyObject read_uint(ThreadContext context) {
+        return Util.newUnsigned32(context.getRuntime(), getMemoryIO().getInt(0));
+    }
+
+    /**
+     * Reads a 32 bit unsigned integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_uint32", "get_uint" })
     public IRubyObject get_uint32(ThreadContext context) {
         return Util.newUnsigned32(context.getRuntime(), getMemoryIO().getInt(0));
     }
@@ -532,7 +669,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_int64", "put_long_long", "write_long_long" }, required = 1)
+    @JRubyMethod(name = { "write_long_long" }, required = 1)
+    public IRubyObject write_long_long(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putLong(0, Util.int64Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes a 64 bit integer value to the memory area.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_int64", "put_long_long" }, required = 1)
     public IRubyObject put_int64(ThreadContext context, IRubyObject value) {
         getMemoryIO().putLong(0, Util.int64Value(value));
 
@@ -558,7 +708,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_int64", "get_long_long", "read_long_long" })
+    @JRubyMethod(name = { "read_long_long" })
+    public IRubyObject read_long_long(ThreadContext context) {
+        return Util.newSigned64(context.getRuntime(), getMemoryIO().getLong(0));
+    }
+
+    /**
+     * Reads a 64 bit integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_int64", "get_long_long" })
     public IRubyObject get_int64(ThreadContext context) {
         return Util.newSigned64(context.getRuntime(), getMemoryIO().getLong(0));
     }
@@ -580,7 +740,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_uint64", "put_ulong_long", "write_ulong_long" }, required = 1)
+    @JRubyMethod(name = { "write_ulong_long" }, required = 1)
+    public IRubyObject write_ulong_long(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putLong(0, Util.uint64Value(value));
+
+        return this;
+    }
+
+    /**
+     * Writes a 64 bit unsigned integer value to the memory area.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_uint64", "put_ulong_long" }, required = 1)
     public IRubyObject put_uint64(ThreadContext context, IRubyObject value) {
         getMemoryIO().putLong(0, Util.uint64Value(value));
 
@@ -606,7 +779,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_uint64", "get_ulong_long", "read_ulong_long" })
+    @JRubyMethod(name = { "read_ulong_long" })
+    public IRubyObject read_ulong_long(ThreadContext context) {
+        return Util.newUnsigned64(context.getRuntime(), getMemoryIO().getLong(0));
+    }
+
+    /**
+     * Reads a 64 bit unsigned integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_uint64", "get_ulong_long" })
     public IRubyObject get_uint64(ThreadContext context) {
         return Util.newUnsigned64(context.getRuntime(), getMemoryIO().getLong(0));
     }
@@ -666,7 +849,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read.
      */
-    @JRubyMethod(name = { "get_long", "read_long" })
+    @JRubyMethod(name = { "read_long" })
+    public IRubyObject read_long(ThreadContext context) {
+        return get_long(context);
+    }
+
+    /**
+     * Reads a C long integer value from the memory area.
+     *
+     * @return The value read.
+     */
+    @JRubyMethod(name = { "get_long" })
     public IRubyObject get_long(ThreadContext context) {
         return Platform.getPlatform().longSize() == 32
                 ? get_int32(context) : get_int64(context);
@@ -718,6 +911,16 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read.
      */
+    @JRubyMethod(name = { "read_ulong" })
+    public IRubyObject read_ulong(ThreadContext context) {
+        return get_ulong(context);
+    }
+
+    /**
+     * Reads a C unsigned long integer value from the memory area.
+     *
+     * @return The value read.
+     */
     @JRubyMethod(name = { "get_ulong", "read_ulong" })
     public IRubyObject get_ulong(ThreadContext context) {
         return Platform.getPlatform().longSize() == 32
@@ -743,7 +946,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_float32", "put_float", "write_float" }, required = 1)
+    @JRubyMethod(name = { "write_float" }, required = 1)
+    public IRubyObject write_float(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putFloat(0, Util.floatValue(value));
+
+        return this;
+    }
+
+    /**
+     * Writes an 32 bit floating point value to the memory area.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_float32", "put_float" }, required = 1)
     public IRubyObject put_float32(ThreadContext context, IRubyObject value) {
         getMemoryIO().putFloat(0, Util.floatValue(value));
 
@@ -769,7 +985,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_float32", "get_float", "read_float" })
+    @JRubyMethod(name = { "read_float" })
+    public IRubyObject read_float(ThreadContext context) {
+        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getFloat(0));
+    }
+
+    /**
+     * Reads a 32 bit floating point value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_float32", "get_float" })
     public IRubyObject get_float32(ThreadContext context) {
         return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getFloat(0));
     }
@@ -791,7 +1017,20 @@ abstract public class AbstractMemory extends RubyObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_float64", "put_double", "write_double" }, required = 1)
+    @JRubyMethod(name = { "write_double" }, required = 1)
+    public IRubyObject write_double(ThreadContext context, IRubyObject value) {
+        getMemoryIO().putDouble(0, Util.doubleValue(value));
+
+        return this;
+    }
+
+    /**
+     * Writes an 64 bit floating point value to the memory area.
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = { "put_float64", "put_double" }, required = 1)
     public IRubyObject put_float64(ThreadContext context, IRubyObject value) {
         getMemoryIO().putDouble(0, Util.doubleValue(value));
 
@@ -817,7 +1056,17 @@ abstract public class AbstractMemory extends RubyObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "get_float64", "get_double", "read_double" })
+    @JRubyMethod(name = { "read_double" })
+    public IRubyObject read_double(ThreadContext context) {
+        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getDouble(0));
+    }
+
+    /**
+     * Reads a 64 bit floating point value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "get_float64", "get_double" })
     public IRubyObject get_float64(ThreadContext context) {
         return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getDouble(0));
     }
@@ -1253,7 +1502,12 @@ abstract public class AbstractMemory extends RubyObject {
     }
 
 
-    @JRubyMethod(name = { "get_pointer", "read_pointer" })
+    @JRubyMethod(name = { "read_pointer" })
+    public IRubyObject read_pointer(ThreadContext context) {
+        return getPointer(context.getRuntime(), 0);
+    }
+
+    @JRubyMethod(name = { "get_pointer" })
     public IRubyObject get_pointer(ThreadContext context) {
         return getPointer(context.getRuntime(), 0);
     }
@@ -1286,7 +1540,13 @@ abstract public class AbstractMemory extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = { "put_pointer", "write_pointer" }, required = 1)
+    @JRubyMethod(name = { "write_pointer" })
+    public IRubyObject write_pointer(ThreadContext context, IRubyObject value) {
+        putPointer(context, 0, value);
+        return this;
+    }
+
+    @JRubyMethod(name = { "put_pointer" }, required = 1)
     public IRubyObject put_pointer(ThreadContext context, IRubyObject value) {
         putPointer(context, 0, value);
         return this;
