@@ -2440,18 +2440,23 @@ public class RubyIO extends RubyObject {
 
         return getRuntime().getNil();
     }
-    
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
+
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1, backtrace = true)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         IRubyObject value = getPartial(context, args, true);
 
         if (value.isNil()) throw context.getRuntime().newEOFError();
 
+        if (value instanceof RubyString) {
+            RubyString str = (RubyString) value;
+            if (str.isEmpty()) {
+                throw context.getRuntime().newErrnoEAGAINError("");
+            }
+        }
+
         return value;
     }
 
-
-    
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         IRubyObject value = getPartial(context, args, false);
