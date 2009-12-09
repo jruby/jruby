@@ -1,8 +1,5 @@
 #!/usr/bin/env jruby
-
-require 'getoptlong'
-require 'rdoc/usage'
-
+#
 # == Synopsis
 #
 # ast: Display information in the AST
@@ -12,7 +9,7 @@ require 'rdoc/usage'
 # ast [OPTION] ... script.rb
 #
 # -h, --help:
-#  Display this help
+# Display this help
 #
 # -s, --sexp:
 # Display the S-Expression for the AST
@@ -27,6 +24,9 @@ require 'rdoc/usage'
 # Expression to try: 'ast -e "puts 1"'
 #
 # script.rb: The script to execute
+
+require 'getoptlong'
+require 'rdoc/usage'
 
 opts = GetoptLong.new(
   [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
