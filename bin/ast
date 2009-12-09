@@ -1,4 +1,75 @@
 #!/usr/bin/env jruby
+
+require 'getoptlong'
+require 'rdoc/usage'
+
+# == Synopsis
+#
+# ast: Display information in the AST
+#
+# == Usage
+#
+# ast [OPTION] ... script.rb
+#
+# -h, --help:
+#  Display this help
+#
+# -s, --sexp:
+# Display the S-Expression for the AST
+#
+# --source:
+# Display the source
+#
+# --no-ast
+# Do not print out the AST for this (only useful with -s)
+#
+# -e:
+# Expression to try: 'ast -e "puts 1"'
+#
+# script.rb: The script to execute
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--sexp', '-s', GetoptLong::NO_ARGUMENT ],
+  [ '--no-ast', GetoptLong::NO_ARGUMENT ],
+  [ '--source', GetoptLong::NO_ARGUMENT ],
+  [ '--expression', '-e', GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+print_source = false
+print_sexp = false
+print_ast = true
+expression = nil
+
+opts.each do |opt, arg|
+  case opt
+  when '--help'
+    RDoc::usage
+  when '--sexp'
+    print_sexp = true
+  when '--no-ast'
+    print_ast = false
+  when '--expression'
+    expression = arg
+  when '--source'
+    print_source = true
+  end
+end
+
+if ARGV.length > 1
+  puts "You may only specify one script (see --help)"
+  exit 0
+elsif ARGV == 1
+  if expression
+    puts "-e and a script is not a valid combination (see --help)"
+    exit 0
+  end
+  expression = File.read(ARGV.shift)
+elsif !expression
+  puts "No script specified (see --help)"
+  exit 0
+end
+
 require 'jruby'
 
 $indent_string = "  "
@@ -28,8 +99,21 @@ def indent(string)
   string.gsub(/,\s*$/, '').squeeze("\n")
 end
 
-file = ARGV.shift
-src = file == "-e" ? ARGV.shift : File.read(file)
+root = JRuby.parse(expression)
 
-puts indent(JRuby.parse(src).to_string)
+if print_source
+  puts "Source:"
+  puts expression
+  puts
+end
 
+if print_ast
+  print "AST:"
+  puts indent(root.to_string) 
+  puts
+end
+
+if print_sexp
+  puts "SEXP:"
+  puts org.jruby.ast.util.SexpMaker.create(root) 
+end
