@@ -1057,24 +1057,29 @@ public class RubyZlib {
 
             int len = RubyNumeric.fix2int(args[0]);
             if (len < 0) {
-            	throw getRuntime().newArgumentError("negative length " + len + " given");
+                throw getRuntime().newArgumentError("negative length " + len + " given");
             } else if (len > 0) {
-            	byte[] buffer = new byte[len];
-            	int toRead = len;
-            	int offset = 0;
-            	int read = 0;
-            	while (toRead > 0) {
-            		read = io.read(buffer,offset,toRead);
-            		if (read == -1) {
-            			break;
-            		}
-            		toRead -= read;
-            		offset += read;
-            	} // hmm...
+                byte[] buffer = new byte[len];
+                int toRead = len;
+                int offset = 0;
+                int read = 0;
+                while (toRead > 0) {
+                    read = io.read(buffer, offset, toRead);
+                    if (read == -1) {
+                        if (offset == 0) {
+                            // we're at EOF right away
+                            return getRuntime().getNil();
+                        }
+                        break;
+                    }
+                    toRead -= read;
+                    offset += read;
+                } // hmm...
                 this.position += buffer.length;
-            	return RubyString.newString(getRuntime(),new ByteList(buffer,0,len-toRead,false));
+                return RubyString.newString(getRuntime(),
+                        new ByteList(buffer, 0, len - toRead, false));
             }
-                
+
             return RubyString.newEmptyString(getRuntime());
         }
 
@@ -1106,6 +1111,19 @@ public class RubyZlib {
         }
 
         private boolean isEof() throws IOException {
+            if (io.available() == 0) {
+                return true;
+            } else {
+                // Java's GZIPInputStream behavior is such
+                // that it says that more bytes available even
+                // when we are right before the EOF, but not yet
+                // encountered the actual EOF during the reading.
+                // So, we compensate for that to provide MRI
+                // compatible behavior.
+                io.mark(16);
+                io.read();
+                io.reset();
+            }
             return io.available() == 0;
         }
 
