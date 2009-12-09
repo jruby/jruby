@@ -1,0 +1,1 @@
+fails(JRUBY-4339):Kernel#load allows wrapping the code in the file in an anonymous module

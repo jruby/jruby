@@ -1,0 +1,1 @@
+fails(JRUBY-4337):Kernel.lambda allows long returns to flow through it
