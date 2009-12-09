@@ -239,6 +239,9 @@ public class RubyInstanceConfig {
     public static final boolean JUMPS_HAVE_BACKTRACE
             = SafePropertyAccessor.getBoolean("jruby.jump.backtrace", false);
 
+    public static final boolean JIT_CACHE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.jit.cache", true);
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 
@@ -485,6 +488,8 @@ public class RubyInstanceConfig {
                 .append("    jruby.jit.exclude=<ClsOrMod,ClsOrMod::method_name,-::method_name>\n")
                 .append("       Exclude methods from JIT by class/module short name, c/m::method_name,\n")
                 .append("       or -::method_name for anon/singleton classes/modules. Comma-delimited.\n")
+                .append("    jruby.jit.cache=true|false\n")
+                .append("       Cache jitted method in-memory bodies across runtimes and loads. Default is true.\n")
                 .append("\nNATIVE SUPPORT:\n")
                 .append("    jruby.native.enabled=true|false\n")
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true\n")

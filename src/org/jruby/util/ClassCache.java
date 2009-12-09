@@ -6,6 +6,7 @@ import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jruby.RubyInstanceConfig;
 
 /**
  * A Simple cache which maintains a collection of classes that can potentially be shared among
@@ -78,23 +79,34 @@ public class ClassCache<T> {
     
     public Class<T> cacheClassByKey(Object key, ClassGenerator classGenerator) 
         throws ClassNotFoundException {
-        WeakReference<Class<T>> weakRef = cache.get(key);
         Class<T> contents = null;
-        if (weakRef != null) contents = weakRef.get();
-        
-        if (weakRef == null || contents == null) {
-            if (isFull()) return null;
-            
-            OneShotClassLoader oneShotCL = new OneShotClassLoader(getClassLoader());
-            contents = (Class<T>)oneShotCL.defineClass(classGenerator.name(), classGenerator.bytecode());
-            classLoadCount.incrementAndGet();
-            
-            cleanup();
-            cache.put(key, new KeyedClassReference(key, contents, referenceQueue));
+        if (RubyInstanceConfig.JIT_CACHE_ENABLED) {
+            WeakReference<Class<T>> weakRef = cache.get(key);
+            if (weakRef != null) contents = weakRef.get();
+
+            if (weakRef == null || contents == null) {
+                if (isFull()) return null;
+
+                contents = defineClass(classGenerator);
+
+                cleanup();
+
+                cache.put(key, new KeyedClassReference(key, contents, referenceQueue));
+            } else {
+                classReuseCount.incrementAndGet();
+            }
         } else {
-            classReuseCount.incrementAndGet();
+            contents = defineClass(classGenerator);
         }
         
+        return contents;
+    }
+
+    protected Class<T> defineClass(ClassGenerator classGenerator) {
+        OneShotClassLoader oneShotCL = new OneShotClassLoader(getClassLoader());
+        Class<T> contents = (Class<T>)oneShotCL.defineClass(classGenerator.name(), classGenerator.bytecode());
+        classLoadCount.incrementAndGet();
+
         return contents;
     }
     
