@@ -73,10 +73,15 @@ public class SexpMaker {
         sb.append(")");
     }
     
+    @Override
     public String toString() {
         return sb.toString();
     }
-    
+
+    /**
+     * process each node by printing out '(' name data child* ')'
+     * @param node
+     */
     private void process(Node node) {
         if (node == null) {
             sb.append("null");
@@ -109,26 +114,31 @@ public class SexpMaker {
         
         sb.append(className.toLowerCase());
     }
-    
+
+    /**
+     * Extra information that is not child nodes, but actual leaf data.
+     *
+     * @param node
+     */
     private void leafInfo(Node node) {
         switch (node.getNodeType()) {
         case ALIASNODE: aliasNode((AliasNode) node); break;
-        case ANDNODE: nothing(node); break;
-        case ARGSCATNODE: nothing(node); break;
-        case ARGSPUSHNODE: nothing(node); break;
+        case ANDNODE: noDataContents(node); break;
+        case ARGSCATNODE: noDataContents(node); break;
+        case ARGSPUSHNODE: noDataContents(node); break;
         case ARGUMENTNODE: argumentNode((ArgumentNode) node); break;
-        case ARRAYNODE: nothing(node); break;
+        case ARRAYNODE: noDataContents(node); break;
         case ATTRASSIGNNODE: attrAssignNode((AttrAssignNode) node); break;
         case BACKREFNODE: backRefNode((BackRefNode) node); break;
-        case BEGINNODE: nothing(node); break;
+        case BEGINNODE: noDataContents(node); break;
         case BIGNUMNODE: bignumNode((BignumNode) node); break;
         case BLOCKARGNODE: blockArgNode((BlockArgNode) node); break;
-        case BLOCKNODE: nothing(node); break;
-        case BLOCKPASSNODE: nothing(node); break;
-        case BREAKNODE: nothing(node); break;
+        case BLOCKNODE: noDataContents(node); break;
+        case BLOCKPASSNODE: noDataContents(node); break;
+        case BREAKNODE: noDataContents(node); break;
         case CALLNODE: callNode((CallNode) node); break;
-        case CASENODE: nothing(node); break;
-        case CLASSNODE: nothing(node); break;
+        case CASENODE: noDataContents(node); break;
+        case CLASSNODE: noDataContents(node); break;
         case CLASSVARASGNNODE: classVarAsgnNode((ClassVarAsgnNode) node); break;
         case CLASSVARDECLNODE: classVarDeclNode((ClassVarDeclNode) node); break;
         case CLASSVARNODE: classVarNode((ClassVarNode) node); break;
@@ -137,75 +147,75 @@ public class SexpMaker {
         case CONSTDECLNODE: constDeclNode((ConstDeclNode) node); break;
         case CONSTNODE: constNode((ConstNode) node); break;
         case DASGNNODE: dAsgnNode((DAsgnNode) node); break;
-        case DEFINEDNODE: nothing(node); break;
-        case DEFNNODE: nothing(node); break;
-        case DEFSNODE: nothing(node); break;
+        case DEFINEDNODE: noDataContents(node); break;
+        case DEFNNODE: noDataContents(node); break;
+        case DEFSNODE: noDataContents(node); break;
         case DOTNODE: dotNode((DotNode) node); break;
         case DREGEXPNODE: dRegexpNode((DRegexpNode) node); break;
-        case DSTRNODE: nothing(node); break;
-        case DSYMBOLNODE: nothing(node); break;
+        case DSTRNODE: noDataContents(node); break;
+        case DSYMBOLNODE: noDataContents(node); break;
         case DVARNODE: dVarNode((DVarNode) node); break;
-        case DXSTRNODE: nothing(node); break;
-        case ENSURENODE: nothing(node); break;
-        case EVSTRNODE: nothing(node); break;
-        case FALSENODE: nothing(node); break;
+        case DXSTRNODE: noDataContents(node); break;
+        case ENSURENODE: noDataContents(node); break;
+        case EVSTRNODE: noDataContents(node); break;
+        case FALSENODE: noDataContents(node); break;
         case FCALLNODE: fCallNode((FCallNode) node); break;
         case FIXNUMNODE: fixnumNode((FixnumNode) node); break;
         case FLIPNODE: flipNode((FlipNode) node); break;
         case FLOATNODE: floatNode((FloatNode) node); break;
-        case FORNODE: nothing(node); break;
+        case FORNODE: noDataContents(node); break;
         case GLOBALASGNNODE: globalAsgnNode((GlobalAsgnNode) node); break;
         case GLOBALVARNODE: globalVarNode((GlobalVarNode) node); break;
-        case HASHNODE: nothing(node); break;
-        case IFNODE: nothing(node); break;
-        case INSTASGNNODE: nothing(node); instAsgnNode((InstAsgnNode) node); break;
-        case INSTVARNODE: nothing(node); instVarNode((InstVarNode) node); break;
-        case ITERNODE: nothing(node); break;
+        case HASHNODE: noDataContents(node); break;
+        case IFNODE: noDataContents(node); break;
+        case INSTASGNNODE: noDataContents(node); instAsgnNode((InstAsgnNode) node); break;
+        case INSTVARNODE: noDataContents(node); instVarNode((InstVarNode) node); break;
+        case ITERNODE: noDataContents(node); break;
         case LOCALASGNNODE: localAsgnNode((LocalAsgnNode) node); break;
         case LOCALVARNODE: localVarNode((LocalVarNode) node); break;
-        case MATCH2NODE: nothing(node); break;
-        case MATCH3NODE: nothing(node); break;
-        case MATCHNODE: nothing(node); break;
-        case MODULENODE: nothing(node); break;
-        case MULTIPLEASGNNODE: nothing(node); break;
-        case NEWLINENODE: nothing(node); break;
-        case NEXTNODE: nothing(node); break;
-        case NILNODE: nothing(node); break;
-        case NOTNODE: nothing(node); break;
+        case MATCH2NODE: noDataContents(node); break;
+        case MATCH3NODE: noDataContents(node); break;
+        case MATCHNODE: noDataContents(node); break;
+        case MODULENODE: noDataContents(node); break;
+        case MULTIPLEASGNNODE: noDataContents(node); break;
+        case NEWLINENODE: noDataContents(node); break;
+        case NEXTNODE: noDataContents(node); break;
+        case NILNODE: noDataContents(node); break;
+        case NOTNODE: noDataContents(node); break;
         case NTHREFNODE: nthRefNode((NthRefNode) node); break;
-        case OPASGNANDNODE: nothing(node); break;
-        case OPASGNNODE: nothing(node); break;
-        case OPASGNORNODE: nothing(node); break;
+        case OPASGNANDNODE: noDataContents(node); break;
+        case OPASGNNODE: noDataContents(node); break;
+        case OPASGNORNODE: noDataContents(node); break;
         case OPELEMENTASGNNODE: opElementAsgnNode((OpElementAsgnNode) node); break;
-        case ORNODE: nothing(node); break;
-        case PREEXENODE: nothing(node); break;
-        case POSTEXENODE: nothing(node); break;
-        case REDONODE: nothing(node); break;
+        case ORNODE: noDataContents(node); break;
+        case PREEXENODE: noDataContents(node); break;
+        case POSTEXENODE: noDataContents(node); break;
+        case REDONODE: noDataContents(node); break;
         case REGEXPNODE: regexpNode((RegexpNode) node); break;
-        case RESCUEBODYNODE: nothing(node); break;
-        case RESCUENODE: nothing(node); break;
-        case RETRYNODE: nothing(node); break;
-        case RETURNNODE: nothing(node); break;
-        case ROOTNODE: nothing(node); break;
-        case SCLASSNODE: nothing(node); break;
-        case SELFNODE: nothing(node); break;
-        case SPLATNODE: nothing(node); break;
+        case RESCUEBODYNODE: noDataContents(node); break;
+        case RESCUENODE: noDataContents(node); break;
+        case RETRYNODE: noDataContents(node); break;
+        case RETURNNODE: noDataContents(node); break;
+        case ROOTNODE: noDataContents(node); break;
+        case SCLASSNODE: noDataContents(node); break;
+        case SELFNODE: noDataContents(node); break;
+        case SPLATNODE: noDataContents(node); break;
         case STRNODE: strNode((StrNode) node); break;
-        case SUPERNODE: nothing(node); break;
-        case SVALUENODE: nothing(node); break;
+        case SUPERNODE: noDataContents(node); break;
+        case SVALUENODE: noDataContents(node); break;
         case SYMBOLNODE: symbolNode((SymbolNode) node); break;
-        case TOARYNODE: nothing(node); break;
-        case TRUENODE: nothing(node); break;
+        case TOARYNODE: noDataContents(node); break;
+        case TRUENODE: noDataContents(node); break;
         case UNDEFNODE: undefNode((UndefNode) node); break;
-        case UNTILNODE: nothing(node); break;
+        case UNTILNODE: noDataContents(node); break;
         case VALIASNODE: valiasNode((VAliasNode) node); break;
         case VCALLNODE: vcallNode((VCallNode) node); break;
-        case WHENNODE: nothing(node); break;
-        case WHILENODE: nothing(node); break;
+        case WHENNODE: noDataContents(node); break;
+        case WHILENODE: noDataContents(node); break;
         case XSTRNODE: xStrNode((XStrNode) node); break;
-        case YIELDNODE: nothing(node); break;
-        case ZARRAYNODE: nothing(node); break;
-        case ZSUPERNODE: nothing(node); break;
+        case YIELDNODE: noDataContents(node); break;
+        case ZARRAYNODE: noDataContents(node); break;
+        case ZSUPERNODE: noDataContents(node); break;
         default:
         }
     }
@@ -358,8 +368,8 @@ public class SexpMaker {
     private void aliasNode(AliasNode node) {
         sb.append(" ").append(node.getOldName()).append(node.getNewName());
     }
-    
-    private void nothing(Node node) {
+
+    private void noDataContents(Node node) {
     }
         
 }
