@@ -623,12 +623,24 @@ abstract public class AbstractMemory extends RubyObject {
     }
 
     /**
+     * Writes a C long integer value to the memory area. This version is added
+     * to support the "write_long" alias for the single-arg "put_long".
+     *
+     * @param value The value to write.
+     * @return The value written.
+     */
+    @JRubyMethod(name = "write_long", required = 1)
+    public IRubyObject write_long(ThreadContext context, IRubyObject value) {
+        return put_long(context, value);
+    }
+
+    /**
      * Writes a C long integer value to the memory area.
      *
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "put_long", "write_long" }, required = 1)
+    @JRubyMethod(name = "put_long", required = 1)
     public IRubyObject put_long(ThreadContext context, IRubyObject value) {
         return Platform.getPlatform().longSize() == 32
                 ? put_int32(context, value)
