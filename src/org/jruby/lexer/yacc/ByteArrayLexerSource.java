@@ -166,7 +166,7 @@ public class ByteArrayLexerSource extends LexerSource {
         return c;
     }
 
-    private int backward(int c) {
+    private void backward(int c) {
         offset--;
         if (c == '\n') {
             line--;
@@ -174,7 +174,6 @@ public class ByteArrayLexerSource extends LexerSource {
                 unread('\r');
             }
         }
-        return c;
     }
 
     interface Cursor {
@@ -237,7 +236,8 @@ public class ByteArrayLexerSource extends LexerSource {
             return forward(c);
         }
         public void unread(int c) {
-            region.append(backward(c));
+            region.append(c);
+            backward(c);
         }
         public int at(int offset) {
             if (offset < 0) {
