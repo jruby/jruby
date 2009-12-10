@@ -1095,6 +1095,13 @@ public class RubyClass extends RubyModule {
         m.voidreturn();
         m.end();
 
+        // toJava method to always pass the actual object
+        mv = cw.visitMethod(ACC_PUBLIC, "toJava", CodegenUtils.sig(Object.class, Class.class), null, null);
+        m = new SkinnyMethodAdapter(mv);
+        m.aload(0);
+        m.areturn();
+        m.end();
+
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
