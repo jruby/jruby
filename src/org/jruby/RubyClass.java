@@ -49,6 +49,8 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.MiniJava;
+import org.jruby.java.proxies.JavaInterfaceTemplate;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -1033,22 +1035,15 @@ public class RubyClass extends RubyModule {
             reifiedParent = superClass.reifiedClass;
         }
 
-        List impl_interfaces = new ArrayList();
-        for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
-            if (p.isIncluded()) {
-                RubyModule mod = p.getNonIncludedClass();
-                if (mod.getInstanceVariable("@java_class") instanceof JavaClass) {
-                    JavaClass jc = (JavaClass) mod.getInstanceVariable("@java_class");
-                    if (((Class) jc.getValue()).isInterface()) {
-                        impl_interfaces.add(p((Class) jc.getValue()));
-                    }
-                }
-            }
+        Class[] interfaces = Java.getInterfacesFromRubyClass(this);
+        String[] interfaceNames = new String[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            interfaceNames[i] = p(interfaces[i]);
         }
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, javaPath, null, p(reifiedParent),
-                (String[]) impl_interfaces.toArray(new String[impl_interfaces.size()]));
+                interfaceNames);
 
         if (classAnnotations != null && classAnnotations.size() != 0) {
             for (Map.Entry<Class,Map<String,Object>> entry : classAnnotations.entrySet()) {
@@ -1056,7 +1051,7 @@ public class RubyClass extends RubyModule {
                 Map<String,Object> fields = entry.getValue();
 
                 AnnotationVisitor av = cw.visitAnnotation(ci(annoType), true);
-                CodegenUtils.visitAnnotationFields(av, entry.getValue());
+                CodegenUtils.visitAnnotationFields(av, fields);
                 av.visitEnd();
             }
         }

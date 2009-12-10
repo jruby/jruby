@@ -51,6 +51,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.MetaClass;
@@ -1099,6 +1101,23 @@ public class Java implements Library {
 
     public static IRubyObject wrapJavaObject(Ruby runtime, Object object) {
         return allocateProxy(object, getProxyClassForObject(runtime, object));
+    }
+
+    public static Class[] getInterfacesFromRubyClass(RubyClass klass) {
+        Set<Class> interfaces = new HashSet<Class>();
+        // walk all superclasses aggregating interfaces
+        while (klass != null) {
+            IRubyObject maybeInterfaces = klass.getInstanceVariables().getInstanceVariable("@java_interfaces");
+            if (maybeInterfaces instanceof RubyArray) {
+                RubyArray moreInterfaces = (RubyArray)maybeInterfaces;
+                if (!moreInterfaces.isFrozen()) moreInterfaces.setFrozen(true);
+
+                interfaces.addAll(moreInterfaces);
+            }
+            klass = klass.getSuperClass();
+        }
+
+        return interfaces.toArray(new Class[interfaces.size()]);
     }
     
     private static int interfacesHashCode(Class[] a) {
