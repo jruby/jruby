@@ -62,7 +62,6 @@ import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -2181,7 +2180,7 @@ public final class Ruby {
         }
         
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
+        return parser.parse(file, bytes, scope,
                 new ParserConfiguration(getKCode(), lineNumber, false, false, true, config));
     }
 
@@ -2196,7 +2195,7 @@ public final class Ruby {
             bytes = content.getBytes();
         }
 
-        return parser.parse(file, new ByteArrayInputStream(bytes), scope, 
+        return parser.parse(file, bytes, scope,
                 new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, true, config));
     }
     

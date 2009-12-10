@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
 
 public class InputStreamLexerSource extends LexerSource {
@@ -154,19 +153,6 @@ public class InputStreamLexerSource extends LexerSource {
 
         return c;
     }
-    
-    /**
-     * Create a source.
-     * 
-     * @param name the name of the source (e.g a filename: foo.rb)
-     * @param content the data of the source
-     * @return the new source
-     */
-    public static LexerSource getSource(String name, InputStream content, List<String> list,
-            ParserConfiguration configuration) {
-        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), 
-                configuration.hasExtraPositionInformation());
-    }
 
     @Override
     public ByteList readLineBytes() throws IOException {
@@ -180,12 +166,13 @@ public class InputStreamLexerSource extends LexerSource {
     }
     
     @Override
-    public int skipUntil(int c) throws IOException {
-        for (c = read(); c != '\n' && c != RubyYaccLexer.EOF; c = read()) {}
-        
+    public int skipUntil(int marker) throws IOException {
+        int c;
+        for (c = read(); c != marker && c != RubyYaccLexer.EOF; c = read()) {}
         return c;
     }
 
+    @Override
     public void unreadMany(CharSequence buffer) {
         int length = buffer.length();
         for (int i = length - 1; i >= 0; i--) {
@@ -252,10 +239,12 @@ public class InputStreamLexerSource extends LexerSource {
      * 
      * @return true if so
      */
+    @Override
     public boolean wasBeginOfLine() {
         return twoAgo == '\n';
     }
 
+    @Override
     public boolean lastWasBeginOfLine() {
         return oneAgo == '\n';
     }
@@ -299,5 +288,10 @@ public class InputStreamLexerSource extends LexerSource {
         unread(c);
         
         return list;
+    }
+
+    @Override
+    public InputStream getRemainingAsStream() {
+        return in;
     }
 }

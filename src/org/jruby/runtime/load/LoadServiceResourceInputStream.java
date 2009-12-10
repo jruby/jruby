@@ -1,0 +1,42 @@
+package org.jruby.runtime.load;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ *
+ * @author nicksieger
+ */
+public class LoadServiceResourceInputStream extends ByteArrayInputStream {
+    public LoadServiceResourceInputStream(byte[] bytes) {
+        super(bytes);
+    }
+
+    public LoadServiceResourceInputStream(InputStream stream) throws IOException {
+        super(new byte[0]);
+        bufferEntireStream(stream);
+    }
+
+    public byte[] getBytes() {
+        if (buf.length != count) {
+            byte[] b = new byte[count];
+            System.arraycopy(buf, 0, b, 0, count);
+            return b;
+        } else {
+            return buf;
+        }
+    }
+
+    private void bufferEntireStream(InputStream stream) throws IOException {
+        byte[] b = new byte[1024];
+        int bytesRead = 0;
+        while ((bytesRead = stream.read(b)) != -1) {
+            byte[] newbuf = new byte[buf.length + bytesRead];
+            System.arraycopy(buf, 0, newbuf, 0, buf.length);
+            System.arraycopy(b, 0, newbuf, buf.length, bytesRead);
+            buf = newbuf;
+            count = buf.length;
+        }
+    }
+}

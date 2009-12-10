@@ -76,7 +76,7 @@ public class LoadServiceResource {
 
     public InputStream getInputStream() throws IOException {
         if (resource != null) {
-            return resource.openStream();
+            return new LoadServiceResourceInputStream(resource.openStream());
         }
         byte[] bytes = new byte[(int)path.length()];
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
@@ -84,7 +84,7 @@ public class LoadServiceResource {
         FileChannel fc = fis.getChannel();
         fc.read(buffer);
         fis.close();
-        return new ByteArrayInputStream(bytes);
+        return new LoadServiceResourceInputStream(bytes);
     }
 
     public String getName() {

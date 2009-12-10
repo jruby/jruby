@@ -142,6 +142,12 @@ public abstract class LexerSource {
                 configuration.hasExtraPositionInformation());
     }
 
+    public static LexerSource getSource(String name, byte[] content, List<String> list,
+            ParserConfiguration configuration) {
+        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber(),
+                configuration.hasExtraPositionInformation());
+    }
+
     private void captureFeatureNewline() {
         StringBuilder temp = sourceLine;
         // Save sourceLine for error reporting to display line where error occurred
@@ -179,7 +185,7 @@ public abstract class LexerSource {
         return sourceLine.toString() + makePointer(errorLocation);
     }
 
-    private String makePointer(int length) {
+    protected String makePointer(int length) {
         StringBuilder buf = new StringBuilder();
 
         for (int i = 0; i < length; i++) {
@@ -211,4 +217,5 @@ public abstract class LexerSource {
     public abstract boolean peek(int c) throws IOException;
     public abstract boolean lastWasBeginOfLine();
     public abstract boolean wasBeginOfLine();
+    public abstract InputStream getRemainingAsStream();
 }

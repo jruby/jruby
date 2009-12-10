@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001 Chad Fowler <chadfowler@chadfowler.com>
+ * Copyright (C) 2001, 2009 Chad Fowler <chadfowler@chadfowler.com>
  * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
  * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -86,6 +86,8 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(EventHookTest.class);
         suite.addTestSuite(TestMethodFactories.class);
         suite.addTestSuite(TimeOutputFormatterTest.class);
+        suite.addTestSuite(org.jruby.lexer.yacc.ByteArrayLexerSourceTest.class);
+        suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
         return suite;
     }
 }

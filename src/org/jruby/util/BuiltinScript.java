@@ -30,12 +30,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.load.LoadServiceResourceInputStream;
 
 /**
  * Loading of Ruby scripts that are built into JRuby.
@@ -53,7 +53,7 @@ public class BuiltinScript implements Library {
 
         if (in == null) throw runtime.newIOError("Resource not found: " + resourceName);
 
-        runtime.loadFile(name, new BufferedInputStream(in, 8192), wrap);
+        runtime.loadFile(name, new LoadServiceResourceInputStream(in), wrap);
         
         in.close();
     }
