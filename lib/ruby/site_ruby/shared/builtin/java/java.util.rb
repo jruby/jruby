@@ -108,21 +108,16 @@ module java::util::List
 
     list
   end
-  def sort!()
-    comparator = java::util::Comparator.new
-    if block_given?
-      # These gymnastics are needed because using def will not capture the block in it's closure
-      comparator_singleton = (class << comparator; self; end)
-      comparator_singleton.send :define_method, :compare do |o1, o2|
-        yield(o1, o2)
-      end
-    else
-      def comparator.compare(o1, o2)
+  def sort!(&block)
+    comparator = java::util::Comparator.impl do |name, o1, o2|
+      if block
+        block.call(o1, o2)
+      else
         o1 <=> o2
       end
     end
 
-    java::util::Collections.sort(java_object, comparator)
+    java::util::Collections.sort(self, comparator)
 
     self
   end

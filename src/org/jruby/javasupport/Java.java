@@ -951,62 +951,6 @@ public class Java implements Library {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
-    @JRubyMethod(required = 1, rest = true, frame = true, module = true, visibility = Visibility.PRIVATE)
-    @Deprecated
-    public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args, Block block) {
-        int size = Arity.checkArgumentCount(recv.getRuntime(), args, 1, -1) - 1;
-        final RubyProc proc;
-
-        // Is there a supplied proc argument or do we assume a block was supplied
-        if (args[size] instanceof RubyProc) {
-            proc = (RubyProc) args[size];
-        } else {
-            proc = recv.getRuntime().newProc(Block.Type.PROC, block);
-            size++;
-        }
-
-        // Create list of interfaces to proxy (and make sure they really are interfaces)
-        Class[] interfaces = new Class[size];
-        for (int i = 0; i < size; i++) {
-            if (!(args[i] instanceof JavaClass) || !((JavaClass) args[i]).interface_p().isTrue()) {
-                throw recv.getRuntime().newArgumentError("Java interface expected. got: " + args[i]);
-            }
-            interfaces[i] = ((JavaClass) args[i]).javaClass();
-        }
-
-        return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJRubyClassLoader(), interfaces, new InvocationHandler() {
-
-            private Map parameterTypeCache = new ConcurrentHashMap();
-
-            public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
-                Class[] parameterTypes = (Class[]) parameterTypeCache.get(method);
-                if (parameterTypes == null) {
-                    parameterTypes = method.getParameterTypes();
-                    parameterTypeCache.put(method, parameterTypes);
-                }
-                int methodArgsLength = parameterTypes.length;
-                String methodName = method.getName();
-
-                if (methodName.equals("toString") && methodArgsLength == 0) {
-                    return proxy.getClass().getName();
-                } else if (methodName.equals("hashCode") && methodArgsLength == 0) {
-                    return Integer.valueOf(proxy.getClass().hashCode());
-                } else if (methodName.equals("equals") && methodArgsLength == 1 && parameterTypes[0].equals(Object.class)) {
-                    return Boolean.valueOf(proxy == nargs[0]);
-                }
-                Ruby runtime = recv.getRuntime();
-                int length = nargs == null ? 0 : nargs.length;
-                IRubyObject[] rubyArgs = new IRubyObject[length + 2];
-                rubyArgs[0] = JavaUtil.convertJavaToRuby(runtime, proxy);
-                rubyArgs[1] = new JavaMethod(runtime, method);
-                for (int i = 0; i < length; i++) {
-                    rubyArgs[i + 2] = JavaUtil.convertJavaToRuby(runtime, nargs[i]);
-                }
-                return proc.call(runtime.getCurrentContext(), rubyArgs).toJava(method.getReturnType());
-            }
-        }));
-    }
-
     @JRubyMethod(required = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper, IRubyObject ifcs, Block block) {
         IRubyObject[] javaClasses = ((RubyArray)ifcs).toJavaArray();

@@ -12,21 +12,12 @@ class JavaInterfaceExtender
 end
 
 class InterfaceJavaProxy < JavaProxy
-  class << self  
-    def new(*outer_args, &block)
-      proxy = allocate
-      JavaUtilities.set_java_object(proxy, Java.new_proxy_instance(proxy.class.java_class) { |proxy2, method, *args|
-        proxy.send(method.name, *args)
-      })
-      proxy.send(:initialize,*outer_args,&block)
-      proxy
-    end
-  end
-    
   def self.impl(*meths, &block)
     block = lambda {|*args| send(:method_missing, *args) } unless block
 
+    interface = JavaUtilities.get_interface_module java_class
     Class.new(self) do
+      include interface
       define_method(:method_missing) do |name, *args|
         return block.call(name, *args) if meths.empty? || meths.include?(name)
         super
