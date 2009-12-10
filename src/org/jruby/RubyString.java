@@ -3474,20 +3474,89 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return arg2;
     }
 
+    private final boolean isHeadSlice(int beg, int len) {
+        return beg == 0 && len > 0 && len <= value.realSize;
+    }
+
+    private final boolean isTailSlice(int beg, int len) {
+        return beg >= 0 && len > 0 && (beg + len) == value.realSize;
+    }
+
+    
+    /**
+     * Excises (removes) a slice of the string that starts at index zero
+     *
+     * @param len The number of bytes to remove.
+     */
+    private final void exciseHead(int len) {
+        // just adjust the view start
+        view(len, value.realSize - len);
+    }
+
+    /**
+     * Excises (removes) a slice of the string that ends at the last byte in the string
+     *
+     * @param len The number of bytes to remove.
+     */
+    private final void exciseTail(int len) {
+        // just adjust the view length
+        view(0, value.realSize - len);
+    }
+    
     /** rb_str_slice_bang
      *
      */
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         IRubyObject result = op_aref(context, arg0);
-        if (!result.isNil()) op_aset(context, arg0, RubyString.newEmptyString(context.getRuntime()));
+        if (!result.isNil()) {
+            // Optimize slice!(0), slice!(0..len), and slice!(pos..-1)
+            int beg = -1;
+            int len = 1;
+            if (arg0 instanceof RubyFixnum) {
+                 beg = RubyNumeric.num2int(arg0);
+
+            } else if (arg0 instanceof RubyRange) {
+                int[] begLen = ((RubyRange) arg0).begLenInt(value.realSize, 2);
+                beg = begLen[0];
+                len = begLen[1];
+            }
+            
+            if (isHeadSlice(beg, len)) {
+                exciseHead(len);
+
+            } else if (isTailSlice(beg, len)) {
+                exciseTail(len);
+
+            } else {
+                op_aset(context, arg0, RubyString.newEmptyString(context.getRuntime()));
+            }
+        }
         return result;
     }
 
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject result = op_aref(context, arg0, arg1);
-        if (!result.isNil()) op_aset(context, arg0, arg1, RubyString.newEmptyString(context.getRuntime()));
+        if (!result.isNil()) {
+            // Optimize slice!(0, len) and slice!(str.length - len, len)
+            int beg = -1;
+            int len = 0;
+            if (arg0 instanceof RubyFixnum && arg1 instanceof RubyFixnum) {
+                 beg = RubyNumeric.num2int(arg0);
+                 len = RubyNumeric.num2int(arg1);
+            }
+
+            if (isHeadSlice(beg, len)) {
+                exciseHead(len);
+
+            } else if (isTailSlice(beg, len)) {
+                exciseTail(len);
+
+            } else {
+                op_aset(context, arg0, arg1, RubyString.newEmptyString(context.getRuntime()));
+            }
+        }
         return result;
     }
 
