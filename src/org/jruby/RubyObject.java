@@ -1251,7 +1251,7 @@ public class RubyObject extends RubyBasicObject {
      *
      *  The default to_a method is deprecated.
      */
-    @JRubyMethod(name = "to_a", visibility = Visibility.PUBLIC)
+    @JRubyMethod(name = "to_a", visibility = Visibility.PUBLIC, compat = CompatVersion.RUBY1_8)
     public RubyArray to_a() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete", "to_a");
         return getRuntime().newArray(this);

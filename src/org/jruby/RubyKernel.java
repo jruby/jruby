@@ -306,18 +306,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        IRubyObject value = object.checkArrayType();
-
-        if (value.isNil()) {
-            if (object.getMetaClass().searchMethod("to_a").getImplementationClass() != context.getRuntime().getKernel()) {
-                value = object.callMethod(context, "to_a");
-                if (!(value instanceof RubyArray)) throw context.getRuntime().newTypeError("`to_a' did not return Array");
-                return value;
-            } else {
-                return context.getRuntime().newArray(object);
-            }
-        }
-        return value;
+        return RuntimeHelpers.arrayValue(context, context.getRuntime(), object);
     }
 
     @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)

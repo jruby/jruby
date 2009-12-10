@@ -1355,15 +1355,19 @@ public class RuntimeHelpers {
     }
 
     public static RubyArray arrayValue(IRubyObject value) {
+        Ruby runtime = value.getRuntime();
+        return arrayValue(runtime.getCurrentContext(), runtime, value);
+    }
+
+    public static RubyArray arrayValue(ThreadContext context, Ruby runtime, IRubyObject value) {
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can 
+            // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
             // remove this hack too.
-            Ruby runtime = value.getRuntime();
-            
-            if (value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
-                value = value.callMethod(runtime.getCurrentContext(), "to_a");
+
+            if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
+                value = value.callMethod(context, "to_a");
                 if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
                 return (RubyArray)value;
             } else {
