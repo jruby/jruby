@@ -1283,6 +1283,16 @@ public class ParserSupport {
         
         return new EvStrNode(position, head);
     }
+
+    public IterNode new_iter(ISourcePosition position, Node vars, 
+            StaticScope scope, Node body) {
+        // FIXME: JRUBY-4180: We throw away block arg here while we should be
+        //   passing it through.  Temporary until block unification of 1.8/1.9
+        if (vars != null && vars instanceof BlockPassNode) {
+            vars = ((BlockPassNode) vars).getArgsNode();
+        }
+        return new IterNode(position, vars, scope, body);
+    }
     
     public Node new_yield(ISourcePosition position, Node node) {
         boolean state = true;

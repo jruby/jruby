@@ -227,7 +227,7 @@ public class DefaultRubyParser implements RubyParser {
 %type <Node>  f_arglist f_args f_opt undef_list string_dvar backref 
 %type <Node>  mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args 
 %type <Node>  block_var opt_block_var lhs none
-%type <ListNode> qword_list word_list f_arg f_optarg 
+%type <ListNode> qword_list word_list f_arg f_optarg
 %type <ListNode> args mlhs_head assocs assoc assoc_list
 %type <Node> when_args
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
@@ -236,6 +236,8 @@ public class DefaultRubyParser implements RubyParser {
 %type <MultipleAsgnNode> mlhs mlhs_basic mlhs_entry
 %type <RescueBodyNode> opt_rescue
 %type <AssignableNode> var_lhs
+%type <Node> for_var 
+%type <ListNode> block_par
 
 %type <RestArgNode> f_rest_arg 
    //%type <Token> rparen rbracket reswords f_bad_arg
@@ -484,7 +486,7 @@ block_command : block_call
 cmd_brace_block	: tLBRACE_ARG {
                     support.pushBlockScope();
 		} opt_block_var compstmt tRCURLY {
-                    $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4);
+                    $$ = support.new_iter(getPosition($1), $3, support.getCurrentScope(), $4);
                     support.popCurrentScope();
 		}
 
@@ -1132,7 +1134,7 @@ primary       : literal
               | kCASE opt_terms kELSE compstmt kEND {
 		  $$ = $4;
               }
-              | kFOR block_var kIN {
+              | kFOR for_var kIN {
                   lexer.getConditionState().begin();
               } expr_value do {
                   lexer.getConditionState().end();
@@ -1237,8 +1239,61 @@ opt_else      : none
                   $$ = $2;
               }
 
-block_var     : lhs
+for_var       : lhs
               | mlhs {
+              }
+
+block_par     : mlhs_item {
+                  $$ = support.newArrayNode($1.getPosition(), $1);
+              }
+              | block_par ',' mlhs_item {
+                  $$ = $1.add($3);
+              }
+
+block_var     : block_par {
+                  if ($1.size() == 1) {
+                      $$ = $1.get(0);
+                  } else {
+                      $$ = new MultipleAsgnNode(getPosition($1), $1, null);
+                  }
+              }
+              | block_par ',' {
+                  $$ = new MultipleAsgnNode(getPosition($1), $1, null);
+              }
+              | block_par ',' tAMPER lhs {
+                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), $1, null), 
+                                            new BlockPassNode(getPosition($3), $4));
+              }
+              | block_par ',' tSTAR lhs ',' tAMPER lhs {
+                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), $1, $4), 
+                                            new BlockPassNode(getPosition($6), $7));
+              }
+              | block_par ',' tSTAR ',' tAMPER lhs {
+                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition())), 
+                                            new BlockPassNode(getPosition($5), $6));
+              }
+              | block_par ',' tSTAR lhs {
+                  $$ = new MultipleAsgnNode(getPosition($1), $1, $4);
+              }
+              | block_par ',' tSTAR {
+                  $$ = new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition()));
+              }
+              | tSTAR lhs ',' tAMPER lhs {
+                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($2), null, $2), 
+                                            new BlockPassNode(getPosition($4), $5));
+              }
+              | tSTAR ',' tAMPER lhs {
+                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition($1))), 
+                                            new BlockPassNode(getPosition($3), $4));
+              }
+              | tSTAR lhs {
+                  $$ = new MultipleAsgnNode(getPosition($2), null, $2);
+              }
+              | tSTAR {
+                  $$ = new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition($1)));
+              }
+              | tAMPER lhs {
+                  $$ = new BlockPassNode(getPosition($1), $2);
               }
 
 opt_block_var : none
@@ -1263,7 +1318,7 @@ opt_block_var : none
 do_block      : kDO_BLOCK {
                   support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
-                  $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4);
+                  $$ = support.new_iter(getPosition($1), $3, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
 
@@ -1309,13 +1364,13 @@ method_call   : operation paren_args {
 brace_block   : tLCURLY {
                   support.pushBlockScope();
 	      } opt_block_var compstmt tRCURLY {
-                  $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4);
+                  $$ = support.new_iter(getPosition($1), $3, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
               | kDO {
                   support.pushBlockScope();
 	      } opt_block_var compstmt kEND {
-                  $$ = new IterNode(getPosition($1), $3, support.getCurrentScope(), $4);
+                  $$ = support.new_iter(getPosition($1), $3, support.getCurrentScope(), $4);
                   support.popCurrentScope();
               }
 
