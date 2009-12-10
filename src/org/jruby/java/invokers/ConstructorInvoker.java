@@ -1,8 +1,6 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Constructor;
-import org.jruby.javasupport.*;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,6 +11,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaConstructor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,15 +19,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ConstructorInvoker extends RubyToJavaInvoker {
     private Constructor[] ctors;
     
-    public ConstructorInvoker(RubyModule host, List<Constructor> methods) {
+    public ConstructorInvoker(RubyModule host, List<Constructor> ctors) {
         super(host);
-        this.ctors = methods.toArray(new Constructor[methods.size()]);
-        
-        if (!Ruby.isSecurityRestricted()) {
-            try {
-                Method.setAccessible(this.ctors, true);
-            } catch(SecurityException e) {}
-        }
+        this.ctors = ctors.toArray(new Constructor[ctors.size()]);
+
+        trySetAccessible(this.ctors);
     }
 
     // TODO: varargs?

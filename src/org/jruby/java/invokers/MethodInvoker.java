@@ -1,10 +1,7 @@
 package org.jruby.java.invokers;
 
-import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.JavaMethod;
 
 public abstract class MethodInvoker extends RubyToJavaInvoker {
     private Method[] methods;
@@ -26,14 +24,6 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
         super(host);
         this.methods = new Method[] {method};
         trySetAccessible(methods);
-    }
-
-    private static void trySetAccessible(Method[] methods) {
-        if (!Ruby.isSecurityRestricted()) {
-            try {
-                Method.setAccessible(methods, true);
-            } catch(SecurityException e) {}
-        }
     }
 
     // TODO: varargs?

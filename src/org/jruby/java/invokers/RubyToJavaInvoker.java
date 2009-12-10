@@ -1,8 +1,10 @@
 package org.jruby.java.invokers;
 
+import java.lang.reflect.AccessibleObject;
 import org.jruby.javasupport.*;
 import java.util.Arrays;
 import java.util.Map;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.JavaProxy;
@@ -34,6 +36,14 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
         }
         JavaProxy proxy = (JavaProxy)self;
         return proxy;
+    }
+
+    static void trySetAccessible(AccessibleObject[] accObjs) {
+        if (!Ruby.isSecurityRestricted()) {
+            try {
+                AccessibleObject.setAccessible(accObjs, true);
+            } catch(SecurityException e) {}
+        }
     }
 
     void raiseNoMatchingCallableError(String name, IRubyObject proxy, Object... args) {

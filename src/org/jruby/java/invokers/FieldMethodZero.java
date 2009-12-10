@@ -1,7 +1,6 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Field;
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.runtime.Visibility;
@@ -13,9 +12,6 @@ public abstract class FieldMethodZero extends JavaMethodZero {
 
     FieldMethodZero(String name, RubyModule host, Field field) {
         super(host, Visibility.PUBLIC);
-        if (!Ruby.isSecurityRestricted()) {
-            field.setAccessible(true);
-        }
         this.field = field;
         this.name = name;
     }

@@ -249,11 +249,6 @@ public class JavaClass extends JavaObject {
             if (methods == null) {
                 methods = new ArrayList<Method>(4);
             }
-            if (!Ruby.isSecurityRestricted()) {
-                try {
-                    method.setAccessible(true);
-                } catch(SecurityException e) {}
-            }
             methods.add(method);
             haveLocalMethod |= javaClass == method.getDeclaringClass();
         }
@@ -356,16 +351,10 @@ public class JavaClass extends JavaObject {
             if (proxy.getConstantAt(field.getName()) == null) {
                 // TODO: catch exception if constant is already set by other
                 // thread
-                if (!Ruby.isSecurityRestricted()) {
-                    try {
-                        field.setAccessible(true);
-                    } catch(SecurityException e) {}
-                }
                 try {
                     proxy.setConstant(field.getName(), JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), field.get(null)));
                 } catch (IllegalAccessException iae) {
-                    throw proxy.getRuntime().newTypeError(
-                                        "illegal access on setting variable: " + iae.getMessage());
+                    // if we can't read it, we don't set it
                 }
             }
         }
