@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.ArefCallSite;
+import org.jruby.runtime.callsite.AsetCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
@@ -156,6 +157,8 @@ public class MethodIndex {
             return new GeCallSite();
         } else if (name.equals("[]")) {
             return new ArefCallSite();
+        } else if (name.equals("[]=")) {
+            return new AsetCallSite();
         }
 
         return new NormalCachingCallSite(name);
