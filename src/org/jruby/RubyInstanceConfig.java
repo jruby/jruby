@@ -567,8 +567,15 @@ public class RubyInstanceConfig {
 
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();
+        tryProcessArgumentsWithRubyopts(arguments);
+    }
+
+    private void tryProcessArgumentsWithRubyopts(String[] arguments) {
         try {
             String rubyopt = System.getenv("RUBYOPT");
+            if (rubyopt == null && environment != null && environment.containsKey("RUBYOPT")) {
+                rubyopt = environment.get("RUBYOPT").toString();
+            }
             if (rubyopt != null) {
                 String[] rubyoptArgs = rubyopt.split("\\s+");
                 for (int i = 0; i < rubyoptArgs.length; i++) {
