@@ -990,12 +990,12 @@
         <sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
         <sysproperty key="jruby.reflection" value="@{reflection}"/>
         <sysproperty key="jruby.launch.inproc" value="@{inproc}"/>
-	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-	<sysproperty key="emma.coverage.out.merge" value="true" />
+        <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
+        <sysproperty key="emma.coverage.out.merge" value="true" />
         <sysproperty key="emma.verbosity.level" value="silent" />
 
         <arg line="@{jruby.args}"/>
-        <arg value="${base.dir}/bin/rake"/>
+        <arg line="-S rake"/>
         <arg line="@{rake.targets}"/>
       </java>
     </sequential>
