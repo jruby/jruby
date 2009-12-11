@@ -729,6 +729,17 @@ class TestKernel < Test::Unit::TestCase
     assert "Test should handle absolute paths", test(?f, File.expand_path("README"))
   end
 
+  # JRUBY-4348
+  def test_exec_rubyopt
+    old = ENV['RUBYOPT']
+    ENV['RUBYOPT'] = "-v"
+    result =  `ruby -e "a=1"`
+    assert_equal 0, $?.exitstatus
+    assert_match /ruby/i, result
+  ensure
+    ENV['RUBYOPT'] = old
+  end
+
 #  test
 #  trace_var
 #  trap
