@@ -105,15 +105,7 @@ public class RubyEnumerator extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
-
-        if (runtime.is1_9()) {
-            runtime.getLoadService().lockAndRequire("generator");
-            IRubyObject generator = runtime.fastGetClass("Generator").callMethod(context, "new", IRubyObject.NULL_ARRAY, block);
-            return initialize(context, generator);
-        }
-        
+    public IRubyObject initialize(ThreadContext context) {
         throw context.getRuntime().newArgumentError(0, 1);
     }
 
@@ -143,7 +135,7 @@ public class RubyEnumerator extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         IRubyObject[] methArgs = new IRubyObject[args.length - 2];
         System.arraycopy(args, 2, methArgs, 0, methArgs.length);
         return initialize(args[0], args[1], methArgs);
