@@ -1,6 +1,5 @@
 package org.jruby.java.proxies;
 
-import org.jruby.javasupport.*;
 import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -14,7 +13,12 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOneBlock;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaUtilities;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -80,7 +84,7 @@ public class JavaInterfaceTemplate {
         return RuntimeHelpers.invokeSuper(context, self, clazz, block);
     }
 
-    private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, RubyClass clazz) {
+    private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, final RubyClass clazz) {
         Ruby runtime = context.getRuntime();
         IRubyObject javaClassObj = self.getInstanceVariables().fastGetInstanceVariable("@java_class");
 
@@ -338,13 +342,33 @@ public class JavaInterfaceTemplate {
     }
 
     @JRubyMethod(rest = true, backtrace = true)
-    public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        IRubyObject proxy = getDeprecatedInterfaceProxy(
-                context,
-                self,
-                self.getInstanceVariables().fastGetInstanceVariable("@java_class"));
+    public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block implBlock) {
+        Ruby runtime = context.getRuntime();
 
-        return RuntimeHelpers.invoke(context, proxy, "impl", args, block);
+        if (!implBlock.isGiven()) throw runtime.newArgumentError("block required to call #impl on a Java interface");
+
+        final RubyArray methodNames = (args.length > 0) ? runtime.newArray(args) : null;
+
+        RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject());
+        implClass.include(new IRubyObject[] {self});
+
+        IRubyObject implObject = implClass.callMethod(context, "new");
+
+        implClass.addMethod("method_missing",
+                new org.jruby.internal.runtime.methods.JavaMethod(implClass, Visibility.PUBLIC) {
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                        Arity.checkArgumentCount(context.getRuntime(), args.length, 1, -1);
+
+                        if (methodNames == null || methodNames.include_p(context, args[0]).isTrue()) {
+                            return implBlock.call(context, args);
+                        } else {
+                            return clazz.getSuperClass().callMethod(context, "method_missing", args, block);
+                        }
+                    }
+                });
+
+        return implObject;
     }
 
     @JRubyMethod(name = "new", rest = true, backtrace = true)

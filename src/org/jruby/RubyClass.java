@@ -312,6 +312,7 @@ public class RubyClass extends RubyModule {
         superClass = superClazz;
         marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
+        allocator = superClazz.allocator;
         
         infectBy(superClass);        
     }
