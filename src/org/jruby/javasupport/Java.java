@@ -38,8 +38,6 @@ import org.jruby.java.addons.KernelJavaAddons;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -63,10 +61,8 @@ import org.jruby.RubyClassPathVariable;
 import org.jruby.RubyException;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
@@ -967,6 +963,12 @@ public class Java implements Library {
             interfaces[i] = ((JavaClass) javaClasses[i]).javaClass();
         }
 
+        return newInterfaceImpl(wrapper, interfaces);
+    }
+
+    public static IRubyObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
+        final Ruby runtime = wrapper.getRuntime();
+        
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
         if (!SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy")) {
@@ -989,7 +991,7 @@ public class Java implements Library {
 
             try {
                 Constructor proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
-                return JavaObject.wrap(recv.getRuntime(), proxyConstructor.newInstance(wrapper));
+                return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
             } catch (NoSuchMethodException nsme) {
                 throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
             } catch (InvocationTargetException ite) {
@@ -1000,7 +1002,7 @@ public class Java implements Library {
                 throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
             }
         } else {
-            return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJRubyClassLoader(), interfaces, new InvocationHandler() {
+            return JavaObject.wrap(runtime, Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
                 private Map parameterTypeCache = new ConcurrentHashMap();
 
                 public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {

@@ -249,22 +249,9 @@ public class JavaInterfaceTemplate {
 
     private static IRubyObject jcreateProxy(IRubyObject self, IRubyObject[] args) {
         RubyClass current = self.getMetaClass();
-        RubyArray interfaces2 = self.getRuntime().newArray();
-
-        // walk all superclasses aggregating interfaces
-        while (current != null) {
-            IRubyObject maybeInterfaces = current.getInstanceVariables().getInstanceVariable("@java_interfaces");
-            if (maybeInterfaces instanceof RubyArray) {
-                RubyArray moreInterfaces = (RubyArray)maybeInterfaces;
-                if (!moreInterfaces.isFrozen()) moreInterfaces.setFrozen(true);
-
-                interfaces2 = (RubyArray)interfaces2.op_or(moreInterfaces);
-            }
-            current = current.getSuperClass();
-        }
 
         // construct the new interface impl and set it into the object
-        IRubyObject newObject = Java.new_proxy_instance2(self, self, interfaces2, Block.NULL_BLOCK);
+        IRubyObject newObject = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
         return JavaUtilities.set_java_object(self, self, newObject);
     }
 
