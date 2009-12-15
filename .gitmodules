@@ -1,9 +1,0 @@
-[submodule "modules/joni"]
-	path = modules/joni
-	url = git://github.com/jruby/joni.git
-[submodule "modules/jcodings"]
-	path = modules/jcodings
-	url = git://github.com/jruby/jcodings.git
-[submodule "modules/bytelist"]
-	path = modules/bytelist
-	url = git://github.com/jruby/bytelist.git
