@@ -297,6 +297,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
+        <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
         <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
