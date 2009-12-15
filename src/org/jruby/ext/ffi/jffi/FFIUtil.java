@@ -10,6 +10,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ThreadContext;
@@ -38,7 +39,7 @@ public final class FFIUtil {
         m.put(NativeType.UINT, com.kenai.jffi.Type.UINT32);
         m.put(NativeType.ULONG_LONG, com.kenai.jffi.Type.UINT64);
 
-        if (com.kenai.jffi.Platform.getPlatform().longSize() == 32) {
+        if (Platform.getPlatform().longSize() == 32) {
             m.put(NativeType.LONG, com.kenai.jffi.Type.SINT32);
             m.put(NativeType.ULONG, com.kenai.jffi.Type.UINT32);
         } else {

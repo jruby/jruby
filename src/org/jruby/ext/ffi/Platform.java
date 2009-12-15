@@ -339,7 +339,7 @@ public class Platform {
      * @return the size of a long in bits
      */
     public final int longSize() {
-        return addressSize;
+        return longSize;
     }
 
     /**
