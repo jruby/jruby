@@ -101,10 +101,6 @@ public class CodegenUtils {
     /**
      * Create a method signature from the given param types and return values
      */
-    public static String sig(Class retval, Class... params) {
-        return sigParams(params) + ci(retval);
-    }
-    
     public static String sig(Class... retvalParams) {
         Class[] justParams = new Class[retvalParams.length - 1];
         System.arraycopy(retvalParams, 1, justParams, 0, justParams.length);
