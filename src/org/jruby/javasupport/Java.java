@@ -1056,7 +1056,13 @@ public class Java implements Library {
         // normal new class implementing interfaces
         interfacesHashCode = 31 * interfacesHashCode + clazz.hashCode();
         
-        String implClassName = clazz.getName().replaceAll("::", "\\$\\$") + "_" + Math.abs(interfacesHashCode);
+        String implClassName;
+        if (clazz.getBaseName() == null) {
+            // no-name class, generate a bogus name for it
+            implClassName = "anon_class" + System.identityHashCode(clazz) + "_" + Math.abs(interfacesHashCode);
+        } else {
+            implClassName = clazz.getName().replaceAll("::", "\\$\\$") + "_" + Math.abs(interfacesHashCode);
+        }
         Class proxyImplClass;
         try {
             proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
