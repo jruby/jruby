@@ -72,7 +72,7 @@
     <dependency>
       <groupId>org.jruby.ext.posix</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>1.0.5</version>
+      <version>1.0.8</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
