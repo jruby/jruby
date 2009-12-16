@@ -22,7 +22,7 @@ class Win32API
 
   def self.map_types(spec)
     if spec.kind_of?(String)
-      spec.split //
+      spec.split(//)
     elsif spec.kind_of?(Array)
       spec
     else
