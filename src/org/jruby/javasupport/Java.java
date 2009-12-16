@@ -1046,7 +1046,7 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject newRealInterfaceImpl(final RubyClass clazz) {
+    public static IRubyObject generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
         final Class[] interfaces = getInterfacesFromRubyClass(clazz);
 

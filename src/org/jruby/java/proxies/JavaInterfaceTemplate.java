@@ -5,7 +5,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -255,7 +254,7 @@ public class JavaInterfaceTemplate {
                 assert self instanceof RubyClass : "new defined on non-class";
 
                 RubyClass clazzSelf = (RubyClass) self;
-                IRubyObject newObj = Java.newRealInterfaceImpl(clazzSelf);
+                IRubyObject newObj = Java.generateRealClass(clazzSelf);
 
                 RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
 
