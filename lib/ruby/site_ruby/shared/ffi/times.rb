@@ -6,6 +6,7 @@ module Process
     SC_CLK_TCK = com.kenai.constantine.platform.Sysconf::_SC_CLK_TCK.value
 
     extend FFI::Library
+    ffi_lib FFI::Library::LIBC
     class Times < FFI::Struct
       layout \
         :utime => :long, 
