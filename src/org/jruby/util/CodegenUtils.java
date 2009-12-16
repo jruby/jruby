@@ -104,6 +104,12 @@ public class CodegenUtils {
     public static String sig(Class retval, Class... params) {
         return sigParams(params) + ci(retval);
     }
+    
+    public static String sig(Class... retvalParams) {
+        Class[] justParams = new Class[retvalParams.length - 1];
+        System.arraycopy(retvalParams, 1, justParams, 0, justParams.length);
+        return sigParams(justParams) + ci(retvalParams[0]);
+    }
 
     public static String sig(Class retval, String descriptor, Class... params) {
         return sigParams(descriptor, params) + ci(retval);
