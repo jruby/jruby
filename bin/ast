@@ -59,7 +59,7 @@ end
 if ARGV.length > 1
   puts "You may only specify one script (see --help)"
   exit 0
-elsif ARGV == 1
+elsif ARGV.length == 1
   if expression
     puts "-e and a script is not a valid combination (see --help)"
     exit 0
