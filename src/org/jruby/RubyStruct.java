@@ -198,7 +198,7 @@ public class RubyStruct extends RubyObject {
         RubyClass superClass = (RubyClass)recv;
 
         if (name == null || nilName) {
-            newStruct = RubyClass.newClass(runtime, superClass); 
+            newStruct = RubyClass.newClass(runtime, superClass);
             newStruct.setAllocator(STRUCT_INSTANCE_ALLOCATOR);
             newStruct.makeMetaClass(superClass.getMetaClass());
             newStruct.inherit(superClass);
@@ -217,6 +217,8 @@ public class RubyStruct extends RubyObject {
             newStruct = superClass.defineClassUnder(name, superClass, STRUCT_INSTANCE_ALLOCATOR);
         }
 
+        // set reified class to RubyStruct, for Java subclasses to use
+        newStruct.setReifiedClass(RubyStruct.class);
         newStruct.index = ClassIndex.STRUCT;
         
         newStruct.fastSetInternalVariable("__size__", member.length());

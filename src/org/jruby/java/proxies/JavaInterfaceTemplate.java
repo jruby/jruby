@@ -110,16 +110,20 @@ public class JavaInterfaceTemplate {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
-        if ((clazz.hasInstanceVariable("@java_class") && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false)) || clazz.hasInstanceVariable("@java_proxy_class")) {
+        if (
+                (clazz.hasInstanceVariable("@java_class")
+                    && clazz.getInstanceVariable("@java_class").isTrue()
+                    && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false))
+                || 
+                (clazz.hasInstanceVariable("@java_proxy_class")
+                    && clazz.getInstanceVariable("@java_proxy_class").isTrue())) {
             throw runtime.newArgumentError("can not add Java interface to existing Java class");
         }
     }
 
     private static void initInterfaceImplMethods(ThreadContext context, RubyClass clazz) {
-        Ruby runtime = context.getRuntime();
-
         // setup new, etc unless this is a ConcreteJavaProxy subclass
-        if (!clazz.isMethodBound("__jcreate!", false)) {
+        if (!clazz.isMethodBound("__jcreate_meta!", false)) {
             // First we make modifications to the class, to adapt it to being
             // both a Ruby class and a proxy for a Java type
 
@@ -128,40 +132,56 @@ public class JavaInterfaceTemplate {
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
 
-            // We capture the original "new" and make it private
-            DynamicMethod newMethod = singleton.searchMethod("new").dup();
-            singleton.addMethod("__jredef_new", newMethod);
-            newMethod.setVisibility(Visibility.PRIVATE);
+            if (clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class")) {
+                // superclass is a Java class...use old style impl for now
 
-            // The replacement "new" allocates and inits the Ruby object as before, but
-            // also instantiates our proxified Java object by calling __jcreate!
-            singleton.addMethod("new", new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
+                // The replacement "new" allocates and inits the Ruby object as before, but
+                // also instantiates our proxified Java object by calling __jcreate!
+                singleton.addMethod("new", new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
 
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    assert self instanceof RubyClass : "new defined on non-class";
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                        assert self instanceof RubyClass : "new defined on non-class";
 
-                    RubyClass clazzSelf = (RubyClass) self;
-                    IRubyObject newObj = clazzSelf.allocate();
-                    RuntimeHelpers.invoke(context, newObj, "__jcreate!", args, block);
-                    RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
+                        RubyClass clazzSelf = (RubyClass) self;
+                        IRubyObject newObj = clazzSelf.allocate();
+                        RuntimeHelpers.invoke(context, newObj, "__jcreate!", args, block);
+                        RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
 
-                    return newObj;
-                }
-            });
+                        return newObj;
+                    }
+                });
+
+                // jcreate instantiates the proxy object which implements all interfaces
+                // and which is wrapped and implemented by this object
+                clazz.addMethod("__jcreate!", new JavaMethodN(clazz, Visibility.PRIVATE) {
+
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                        return jcreateProxy(self, args);
+                    }
+                });
+            } else {
+                // The new "new" actually generates a real Java class to use for the Ruby class's
+                // backing store, instantiates that, and then calls initialize on it.
+                singleton.addMethod("new", new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
+
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                        assert self instanceof RubyClass : "new defined on non-class";
+
+                        RubyClass clazzSelf = (RubyClass) self;
+                        IRubyObject newObj = Java.newRealInterfaceImpl(clazzSelf);
+
+                        RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
+
+                        return newObj;
+                    }
+                });
+            }
 
             // Next, we define a few private methods that we'll use to manipulate
             // the Java object contained within this Ruby object
-
-            // jcreate instantiates the proxy object which implements all interfaces
-            // and which is wrapped and implemented by this object
-            clazz.addMethod("__jcreate!", new JavaMethodN(clazz, Visibility.PRIVATE) {
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                    return jcreateProxy(self, args);
-                }
-            });
 
             // Used by our duck-typification of Proc into interface types, to allow
             // coercing a simple proc into an interface parameter.
@@ -173,8 +193,6 @@ public class JavaInterfaceTemplate {
                     return result;
                 }
             });
-
-            clazz.includeModule(runtime.getModule("JavaProxyMethods"));
 
             // If we hold a Java object, we need a java_class accessor
             clazz.addMethod("java_class", new JavaMethodZero(clazz, Visibility.PUBLIC) {
@@ -354,55 +372,15 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod(name = "new", rest = true, backtrace = true)
     public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        IRubyObject proxy = getDeprecatedInterfaceProxy(
-                context,
-                self,
-                self.getInstanceVariables().fastGetInstanceVariable("@java_class"));
-
-        return RuntimeHelpers.invoke(context, proxy, "new", args, block);
-    }
-
-    private static IRubyObject getDeprecatedInterfaceProxy(ThreadContext context, IRubyObject recv, IRubyObject javaClassObject) {
         Ruby runtime = context.getRuntime();
-        JavaClass javaClass;
-        if (javaClassObject instanceof RubyString) {
-            javaClass = JavaClass.for_name(recv, javaClassObject);
-        } else if (javaClassObject instanceof JavaClass) {
-            javaClass = (JavaClass) javaClassObject;
-        } else {
-            throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
-        }
-        if (!javaClass.javaClass().isInterface()) {
-            throw runtime.newArgumentError("expected Java interface class, got " + javaClassObject);
-        }
-        RubyClass proxyClass;
-        if ((proxyClass = javaClass.getProxyClass()) != null) {
-            return proxyClass;
-        }
-        javaClass.lockProxy();
-        try {
-            if ((proxyClass = javaClass.getProxyClass()) == null) {
-                RubyModule interfaceModule = Java.getInterfaceModule(runtime, javaClass);
-                RubyClass interfaceJavaProxy = runtime.fastGetClass("InterfaceJavaProxy");
-                proxyClass = RubyClass.newClass(runtime, interfaceJavaProxy);
-                proxyClass.setAllocator(interfaceJavaProxy.getAllocator());
-                proxyClass.makeMetaClass(interfaceJavaProxy.getMetaClass());
-                // parent.setConstant(name, proxyClass); // where the name should come from ?
-                proxyClass.inherit(interfaceJavaProxy);
-                proxyClass.callMethod(context, "java_class=", javaClass);
-                // including interface module so old-style interface "subclasses" will
-                // respond correctly to #kind_of?, etc.
-                proxyClass.includeModule(interfaceModule);
-                javaClass.setupProxy(proxyClass);
-                // add reference to interface module
-                if (proxyClass.fastGetConstantAt("Includable") == null) {
-                    proxyClass.fastSetConstant("Includable", interfaceModule);
-                }
 
-            }
-        } finally {
-            javaClass.unlockProxy();
+        RubyClass implClass = (RubyClass)self.getInstanceVariables().getInstanceVariable("@__implementation");
+        if (implClass == null) {
+            implClass = RubyClass.newClass(runtime, (RubyClass)runtime.getClass("InterfaceJavaProxy"));
+            implClass.include(new IRubyObject[] {self});
+            RuntimeHelpers.setInstanceVariable(implClass, self, "@__implementation");
         }
-        return proxyClass;
+
+        return RuntimeHelpers.invoke(context, implClass, "new", args, block);
     }
 }

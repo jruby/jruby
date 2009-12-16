@@ -61,6 +61,7 @@ import org.jruby.RubyClassPathVariable;
 import org.jruby.RubyException;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.exceptions.RaiseException;
@@ -1031,6 +1032,43 @@ public class Java implements Library {
                     } catch (RuntimeException e) { e.printStackTrace(); throw e; }
                 }
             }));
+        }
+    }
+
+    public static IRubyObject newRealInterfaceImpl(final RubyClass clazz) {
+        final Ruby runtime = clazz.getRuntime();
+        final Class[] interfaces = getInterfacesFromRubyClass(clazz);
+
+        // hashcode is a combination of the interfaces and the Ruby class we're using
+        // to implement them
+        int interfacesHashCode = interfacesHashCode(interfaces);
+        // normal new class implementing interfaces
+        interfacesHashCode = 31 * interfacesHashCode + clazz.hashCode();
+        
+        String implClassName = clazz.getName().replaceAll("::", "\\$\\$") + "_" + Math.abs(interfacesHashCode);
+        Class proxyImplClass;
+        try {
+            proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
+        } catch (ClassNotFoundException cnfe) {
+            // try to use super's reified class; otherwise, RubyObject (for now)
+            Class superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+            if (superClass == null) {
+                superClass = RubyObject.class;
+            }
+            proxyImplClass = MiniJava.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
+        }
+
+        try {
+            Constructor proxyConstructor = proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
+            return (IRubyObject)proxyConstructor.newInstance(runtime, clazz);
+        } catch (NoSuchMethodException nsme) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
+        } catch (InvocationTargetException ite) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
+        } catch (InstantiationException ie) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);
+        } catch (IllegalAccessException iae) {
+            throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
         }
     }
     

@@ -338,7 +338,7 @@ public class JavaConstructor extends JavaCallable {
 
     private IRubyObject handlelIllegalArgumentEx(IllegalArgumentException iae, Object... arguments) {
         throw getRuntime().newTypeError(
-                "for constructor of type" +
+                "for constructor of type " +
                 constructor.getDeclaringClass().getSimpleName() +
                 " expected " +
                 argument_types().inspect() +

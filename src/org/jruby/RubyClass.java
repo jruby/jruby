@@ -1178,6 +1178,10 @@ public class RubyClass extends RubyModule {
         reifiedClass = result;
     }
 
+    public void setReifiedClass(Class newReifiedClass) {
+        this.reifiedClass = newReifiedClass;
+    }
+
     public Class getReifiedClass() {
         return reifiedClass;
     }

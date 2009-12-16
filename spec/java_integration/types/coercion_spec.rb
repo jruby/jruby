@@ -424,11 +424,9 @@ describe "Java primitive-box-typed interface methods" do
     vri.result.should == obj
     vri.result.class.should == Fixnum
 
-    pending "char appears to be getting signed/unsigned-garbled" do
-      vri_handler.receiveCharObj(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Fixnum
-    end
+    vri_handler.receiveCharObj(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
 
     vri_handler.receiveIntObj(obj).should == obj
     vri.result.should == obj
