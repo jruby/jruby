@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -51,6 +52,7 @@ public class CallbackInfo extends Type implements NativeParam {
 
     protected final Type[] parameterTypes;
     protected final Type returnType;
+    protected final boolean stdcall;
 
     private volatile Object providerCallbackInfo;
 
@@ -81,11 +83,12 @@ public class CallbackInfo extends Type implements NativeParam {
      * @param returnType The return type of the callback
      * @param paramTypes The parameter types of the callback
      */
-    public CallbackInfo(Ruby runtime, RubyClass klazz, Type returnType, Type[] paramTypes) {
+    public CallbackInfo(Ruby runtime, RubyClass klazz, Type returnType, Type[] paramTypes, boolean stdcall) {
         super(runtime, klazz, NativeType.POINTER);
         this.arity = Arity.fixed(paramTypes.length);
         this.parameterTypes = paramTypes;
         this.returnType = returnType;
+        this.stdcall = stdcall;
     }
 
     /**
@@ -98,30 +101,45 @@ public class CallbackInfo extends Type implements NativeParam {
      *
      * @return A new CallbackInfo instance
      */
-    @JRubyMethod(name = "new", meta = true)
+    @JRubyMethod(name = "new", meta = true, required = 2, optional = 1)
     public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass,
-            IRubyObject returnType, IRubyObject paramTypes)
+            IRubyObject[] args)
     {
+        IRubyObject returnType = args[0], paramTypes = args[1];
+
         if (!(returnType instanceof Type)) {
-            throw context.getRuntime().newArgumentError("wrong argument type "
+            throw context.getRuntime().newTypeError("wrong argument type "
                     + returnType.getMetaClass().getName() + " (expected FFI::Type)");
         }
+
         if (!(paramTypes instanceof RubyArray)) {
-            throw context.getRuntime().newArgumentError("wrong argument type "
+            throw context.getRuntime().newTypeError("wrong argument type "
                     + paramTypes.getMetaClass().getName() + " (expected Array)");
         }
+
         Type[] nativeParamTypes = new Type[((RubyArray)paramTypes).size()];
         for (int i = 0; i < nativeParamTypes.length; ++i) {
             IRubyObject obj = ((RubyArray) paramTypes).entry(i);
             if (!(obj instanceof Type)) {
-                throw context.getRuntime().newArgumentError("wrong argument type "
+                throw context.getRuntime().newTypeError("wrong argument type "
                         + obj.getMetaClass().getName() + " (expected array of FFI::Type)");
             }
             nativeParamTypes[i] = (Type) obj;
         }
+
+        boolean stdcall = false;
+        if (args.length > 2) {
+            if (!(args[2] instanceof RubyHash)) {
+                throw context.getRuntime().newTypeError("wrong argument type "
+                        + args[3].getMetaClass().getName() + " (expected Hash)");
+            }
+            RubyHash hash = (RubyHash) args[2];
+            stdcall = "stdcall".equals(hash.get(context.getRuntime().newSymbol("convention")));
+        }
+        
         try {
             return new CallbackInfo(context.getRuntime(), (RubyClass) klass,
-                    (Type) returnType, nativeParamTypes);
+                    (Type) returnType, nativeParamTypes, stdcall);
         } catch (UnsatisfiedLinkError ex) {
             return context.getRuntime().getNil();
         }
@@ -152,6 +170,10 @@ public class CallbackInfo extends Type implements NativeParam {
      */
     public final Type[] getParameterTypes() {
         return parameterTypes;
+    }
+
+    public final boolean isStdcall() {
+        return stdcall;
     }
 
     public final Object getProviderCallbackInfo() {

@@ -14,7 +14,6 @@ import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -36,16 +35,15 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
 
         return result;
     }
-    
-    
-    JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes) {
+
+    JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes, CallingConvention convention) {
         this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"),
                 new CodeMemoryIO(runtime, address),
-                returnType, parameterTypes, "default", null);
+                returnType, parameterTypes, convention, null);
     }
 
     JFFIInvoker(Ruby runtime, RubyClass klass, DirectMemoryIO fptr,
-            Type returnType, Type[] parameterTypes, String convention, IRubyObject enums) {
+            Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
         super(runtime, klass, parameterTypes.length, fptr);
 
         final com.kenai.jffi.Type jffiReturnType = FFIUtil.getFFIType(returnType);
@@ -61,11 +59,9 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         }
         
         function = new Function(fptr.getAddress(), jffiReturnType, jffiParamTypes);
-        this.parameterTypes = new Type[parameterTypes.length];
-        System.arraycopy(parameterTypes, 0, this.parameterTypes, 0, parameterTypes.length);
+        this.parameterTypes = (Type[]) parameterTypes.clone();
         this.returnType = returnType;
-        this.convention = "stdcall".equals(convention)
-                ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
+        this.convention = convention;
         this.enums = enums;
         // Wire up Function#call(*args) to use the super-fast native invokers
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
@@ -117,7 +113,9 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         }
         DirectMemoryIO fptr = (DirectMemoryIO) ptr.getMemoryIO();
         return new JFFIInvoker(context.getRuntime(), (RubyClass) recv, fptr,
-                (Type) returnType, parameterTypes, convention, enums);
+                (Type) returnType, parameterTypes, 
+                "stdcall".equals(convention) ? CallingConvention.STDCALL : CallingConvention.DEFAULT,
+                enums);
     }
 
     @Override

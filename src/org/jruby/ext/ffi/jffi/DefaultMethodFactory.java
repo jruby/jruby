@@ -489,10 +489,12 @@ public final class DefaultMethodFactory {
     private static final class CallbackInvoker extends BaseInvoker {
         private final Type returnType;
         private final Type[] parameterTypes;
+        private final CallingConvention convention;
 
         public CallbackInvoker(CallbackInfo cbInfo) {
             this.returnType = cbInfo.getReturnType();
             this.parameterTypes = cbInfo.getParameterTypes();
+            this.convention = cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
         }
         
 
@@ -501,7 +503,7 @@ public final class DefaultMethodFactory {
             if (address == 0) {
                 return context.getRuntime().getNil();
             }
-            return new JFFIInvoker(context.getRuntime(), address, returnType, parameterTypes);
+            return new JFFIInvoker(context.getRuntime(), address, returnType, parameterTypes, convention);
         }
     }
 

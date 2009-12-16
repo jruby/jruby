@@ -82,7 +82,8 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         CodeMemoryIO mem = new CodeMemoryIO(runtime, address);
         RubyClass klass = runtime.fastGetModule("FFI").fastGetClass("Function");
         return new Function(runtime, klass, mem, 
-                cbInfo.getReturnType(), cbInfo.getParameterTypes(), CallingConvention.DEFAULT, null);
+                cbInfo.getReturnType(), cbInfo.getParameterTypes(),
+                cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null);
     }
 
 

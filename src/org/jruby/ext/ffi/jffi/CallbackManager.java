@@ -147,7 +147,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     }
 
     private final ClosureInfo newClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
-        return new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(), CallingConvention.DEFAULT);
+        return new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(),
+                cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
     }
 
     /**
@@ -476,7 +477,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                     CallbackInfo cbInfo = (CallbackInfo) type;
                     if (address != 0) {
                         return new JFFIInvoker(runtime, address,
-                                cbInfo.getReturnType(), cbInfo.getParameterTypes());
+                                cbInfo.getReturnType(), cbInfo.getParameterTypes(),
+                                cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
                     } else {
                         return runtime.getNil();
                     }
