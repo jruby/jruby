@@ -147,10 +147,17 @@
             <include name="**/*.properties"/>
         </fileset>
         <filterset>
-            <filter token="os.arch" value="${os.arch}"/>
+            <filter token="version.ruby.major" value="${version.ruby.major}"/>
+            <filter token="version.ruby" value="${version.ruby}"/>
+            <filter token="version.ruby.patchlevel" value="${version.ruby.patchlevel}"/>
+            <filter token="version.ruby1_9.major" value="${version.ruby1_9.major}"/>
+            <filter token="version.ruby1_9" value="${version.ruby1_9}"/>
+            <filter token="version.ruby1_9.patchlevel" value="${version.ruby1_9.patchlevel}"/>
+            <filter token="build.date" value="${build.date}"/>
+            <filter token="version.jruby" value="${version.jruby}"/>
             <filter token="java.specification.version" value="${java.specification.version}"/>
             <filter token="javac.version" value="${javac.version}"/>
-            <filter token="build.date" value="${build.date}"/>
+            <filter token="os.arch" value="${os.arch}"/>
         </filterset>
     </copy>
   </target>
