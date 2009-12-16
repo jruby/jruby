@@ -45,6 +45,7 @@ import org.jruby.java.MiniJava;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -80,6 +81,9 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), PROC_ALLOCATOR);
         runtime.setProc(procClass);
+
+        procClass.index = ClassIndex.PROC;
+        procClass.setReifiedClass(RubyProc.class);
         
         procClass.defineAnnotatedMethods(RubyProc.class);
         

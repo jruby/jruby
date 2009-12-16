@@ -44,6 +44,7 @@ import org.jruby.ext.posix.util.Platform;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -77,6 +78,9 @@ public class RubyDir extends RubyObject {
     public static RubyClass createDirClass(Ruby runtime) {
         RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), DIR_ALLOCATOR);
         runtime.setDir(dirClass);
+
+        dirClass.index = ClassIndex.DIR;
+        dirClass.setReifiedClass(RubyDir.class);
 
         dirClass.includeModule(runtime.getEnumerable());
         dirClass.defineAnnotatedMethods(RubyDir.class);

@@ -68,6 +68,10 @@ public class RubyMatchData extends RubyObject {
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
         runtime.setMatchData(matchDataClass);
+
+        matchDataClass.index = ClassIndex.MATCHDATA;
+        matchDataClass.setReifiedClass(RubyMatchData.class);
+        
         runtime.defineGlobalConstant("MatchingData", matchDataClass);
         matchDataClass.kindOf = new RubyModule.KindOf() {
             @Override

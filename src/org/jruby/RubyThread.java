@@ -59,6 +59,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.concurrent.ExecutionException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.io.BlockingIO;
@@ -167,6 +168,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // initialize then fills with appropriate data.
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setThread(threadClass);
+
+        threadClass.index = ClassIndex.THREAD;
+        threadClass.setReifiedClass(RubyThread.class);
 
         threadClass.defineAnnotatedMethods(RubyThread.class);
 

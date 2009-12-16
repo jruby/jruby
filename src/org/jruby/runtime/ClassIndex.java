@@ -42,8 +42,20 @@ public final class ClassIndex {
     public static final int GENERATOR = 24;
     public static final int YIELDER = 25;
     public static final int FILE = 26;
+    @Deprecated
     public static final int MATCH = 27;
-    public static final int MAX_CLASSES = 28;
+    public static final int MATCHDATA = 27;
+    public static final int THREADGROUP = 28;
+    public static final int THREAD = 29;
+    public static final int EXCEPTION = 30;
+    public static final int IO = 31;
+    public static final int BINDING = 32;
+    public static final int PROC = 33;
+    public static final int METHOD = 34;
+    public static final int DIR = 35;
+    public static final int UNBOUNDMETHOD = 36;
+    public static final int CONTINUATION = 37;
+    public static final int MAX_CLASSES = 38;
 
     /** Creates a new instance of ClassIndex */
     private ClassIndex() {

@@ -56,7 +56,9 @@ public class RubyBignum extends RubyInteger {
         RubyClass bignum = runtime.defineClass("Bignum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setBignum(bignum);
+
         bignum.index = ClassIndex.BIGNUM;
+        bignum.setReifiedClass(RubyBignum.class);
         
         bignum.defineAnnotatedMethods(RubyBignum.class);
 

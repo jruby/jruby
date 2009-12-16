@@ -48,6 +48,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -68,6 +69,9 @@ public class RubyNumeric extends RubyObject {
     public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
         runtime.setNumeric(numeric);
+
+        numeric.index = ClassIndex.NUMERIC;
+        numeric.setReifiedClass(RubyNumeric.class);
 
         numeric.kindOf = new RubyModule.KindOf() {
             @Override

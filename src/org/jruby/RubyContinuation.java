@@ -30,6 +30,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -54,6 +55,10 @@ public class RubyContinuation extends RubyObject {
     
     public static void createContinuation(Ruby runtime) {
         RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
+
+        cContinuation.index = ClassIndex.CONTINUATION;
+        cContinuation.setReifiedClass(RubyContinuation.class);
+        
         cContinuation.defineAnnotatedMethods(RubyContinuation.class);
         cContinuation.getSingletonClass().undefineMethod("new");
         

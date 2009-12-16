@@ -97,6 +97,7 @@ public class RubySymbol extends RubyObject {
         runtime.setSymbol(symbolClass);
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.index = ClassIndex.SYMBOL;
+        symbolClass.setReifiedClass(RubySymbol.class);
         symbolClass.kindOf = new RubyModule.KindOf() {
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubySymbol;

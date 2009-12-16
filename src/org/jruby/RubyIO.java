@@ -324,6 +324,10 @@ public class RubyIO extends RubyObject {
 
     public static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
+
+        ioClass.index = ClassIndex.IO;
+        ioClass.setReifiedClass(RubyIO.class);
+
         ioClass.kindOf = new RubyModule.KindOf() {
             @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {

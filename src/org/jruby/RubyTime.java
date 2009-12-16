@@ -177,7 +177,10 @@ public class RubyTime extends RubyObject {
 
     public static RubyClass createTimeClass(Ruby runtime) {
         RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), TIME_ALLOCATOR);
+
         timeClass.index = ClassIndex.TIME;
+        timeClass.setReifiedClass(RubyTime.class);
+        
         runtime.setTime(timeClass);
         
         timeClass.includeModule(runtime.getComparable());

@@ -37,6 +37,7 @@ public class RubyConverter extends RubyObject {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
         runtime.setConverter(converterc);
         converterc.index = ClassIndex.CONVERTER;
+        converterc.setReifiedClass(RubyConverter.class);
         converterc.kindOf = new RubyModule.KindOf() {
             @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {

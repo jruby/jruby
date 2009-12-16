@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
@@ -73,6 +74,9 @@ public class RubyMethod extends RubyObject implements DataType {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setMethod(methodClass);
+
+        methodClass.index = ClassIndex.METHOD;
+        methodClass.setReifiedClass(RubyMethod.class);
         
         methodClass.defineAnnotatedMethods(RubyMethod.class);
         

@@ -87,7 +87,10 @@ public class RubyFloat extends RubyNumeric {
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFloat(floatc);
+
         floatc.index = ClassIndex.FLOAT;
+        floatc.setReifiedClass(RubyFloat.class);
+        
         floatc.kindOf = new RubyModule.KindOf() {
             @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {

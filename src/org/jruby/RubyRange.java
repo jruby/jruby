@@ -52,6 +52,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
@@ -77,6 +78,10 @@ public class RubyRange extends RubyObject {
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
         runtime.setRange(result);
+
+        result.index = ClassIndex.RANGE;
+        result.setReifiedClass(RubyRange.class);
+
         result.kindOf = new RubyModule.KindOf() {
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyRange;

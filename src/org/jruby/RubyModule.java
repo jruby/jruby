@@ -124,6 +124,7 @@ public class RubyModule extends RubyObject {
     
     public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
         moduleClass.index = ClassIndex.MODULE;
+        moduleClass.setReifiedClass(RubyModule.class);
         moduleClass.kindOf = new RubyModule.KindOf() {
             @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {

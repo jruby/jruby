@@ -43,6 +43,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,6 +62,10 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setInteger(integer);
+
+        integer.index = ClassIndex.INTEGER;
+        integer.setReifiedClass(RubyInteger.class);
+        
         integer.kindOf = new RubyModule.KindOf() {
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyInteger;

@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -71,6 +72,9 @@ public class RubyBinding extends RubyObject {
     public static RubyClass createBindingClass(Ruby runtime) {
         RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
         runtime.setBinding(bindingClass);
+
+        bindingClass.index = ClassIndex.BINDING;
+        bindingClass.setReifiedClass(RubyBinding.class);
         
         bindingClass.defineAnnotatedMethods(RubyBinding.class);
         bindingClass.getSingletonClass().undefineMethod("new");

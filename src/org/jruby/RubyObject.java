@@ -137,6 +137,7 @@ public class RubyObject extends RubyBasicObject {
      */
     public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
         objectClass.index = ClassIndex.OBJECT;
+        objectClass.setReifiedClass(RubyObject.class);
 
         objectClass.defineAnnotatedMethods(ObjectMethods.class);
 
