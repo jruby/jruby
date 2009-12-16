@@ -19,12 +19,6 @@ class MSpecScript
   set :core, [
     SPEC_DIR + '/core',
 
-    # FIXME: Temporarily exclusion until JRUBY-4180 is fixed.
-    '^' + SPEC_DIR + '/core/proc/case_compare_spec.rb',
-    '^' + SPEC_DIR + '/core/proc/element_reference_spec.rb',
-    '^' + SPEC_DIR + '/core/proc/yield_spec.rb',
-    '^' + SPEC_DIR + '/core/proc/call_spec.rb',
-
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'
   ]
