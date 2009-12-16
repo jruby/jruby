@@ -56,6 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyClassPathVariable;
 import org.jruby.RubyException;
@@ -97,6 +98,7 @@ import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
+    public static final boolean NEW_STYLE_EXTENSION = SafePropertyAccessor.getBoolean("jruby.ji.newStyleExtension", false);
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
@@ -404,8 +406,10 @@ public class Java implements Library {
                     proxyClass = createProxyClass(runtime,
                             runtime.getJavaSupport().getConcreteProxyClass(),
                             javaClass, true);
-                    proxyClass.getMetaClass().defineFastMethod("inherited",
-                            runtime.getJavaSupport().getConcreteProxyCallback());
+                    if (!NEW_STYLE_EXTENSION) {
+                        proxyClass.getMetaClass().defineFastMethod("inherited",
+                                runtime.getJavaSupport().getConcreteProxyCallback());
+                    }
                     addToJavaPackageModule(proxyClass, javaClass);
 
                 } else {
@@ -1056,6 +1060,19 @@ public class Java implements Library {
                 superClass = RubyObject.class;
             }
             proxyImplClass = MiniJava.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
+            clazz.setReifiedClass(proxyImplClass);
+            
+            // add a default initialize if one does not already exist and this is a Java-hierarchy class
+            if (NEW_STYLE_EXTENSION &&
+                    !(RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize"))
+                    ) {
+                clazz.addMethod("initialize", new JavaMethodZero(clazz, Visibility.PUBLIC) {
+                    @Override
+                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                        return context.getRuntime().getNil();
+                    }
+                });
+            }
         }
 
         try {
@@ -1064,6 +1081,7 @@ public class Java implements Library {
         } catch (NoSuchMethodException nsme) {
             throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
         } catch (InvocationTargetException ite) {
+            ite.printStackTrace();
             throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
         } catch (InstantiationException ie) {
             throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ie);

@@ -518,6 +518,9 @@ public class JavaClass extends JavaObject {
             setupInterfaceProxy(proxy);
             return;
         }
+
+        proxy.setReifiedClass(javaClass);
+        
         assert this.proxyClass == null;
         this.unfinishedProxyClass = proxy;
         if (javaClass.isArray() || javaClass.isPrimitive()) {

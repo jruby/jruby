@@ -110,11 +110,12 @@ public class JavaInterfaceTemplate {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
-        if (
+        if ((Java.NEW_STYLE_EXTENSION && clazz.getReifiedClass() != null)
+                ||
                 (clazz.hasInstanceVariable("@java_class")
                     && clazz.getInstanceVariable("@java_class").isTrue()
                     && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false))
-                || 
+                ||
                 (clazz.hasInstanceVariable("@java_proxy_class")
                     && clazz.getInstanceVariable("@java_proxy_class").isTrue())) {
             throw runtime.newArgumentError("can not add Java interface to existing Java class");
@@ -132,7 +133,7 @@ public class JavaInterfaceTemplate {
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
 
-            if (clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class")) {
+            if (!Java.NEW_STYLE_EXTENSION && clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class")) {
                 // superclass is a Java class...use old style impl for now
 
                 // The replacement "new" allocates and inits the Ruby object as before, but

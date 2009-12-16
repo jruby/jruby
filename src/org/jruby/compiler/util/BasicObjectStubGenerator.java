@@ -36,8 +36,14 @@ import static org.jruby.util.CodegenUtils.*;
 
 public class BasicObjectStubGenerator {
     private static final Method[] BASIC_OBJECT_STUB_METHODS = BasicObjectStub.class.getDeclaredMethods();
-    public static void addBasicObjectStubToClass(ClassVisitor cv) {
+    public static void addBasicObjectStubsToClass(ClassVisitor cv) {
         for (Method stub : BASIC_OBJECT_STUB_METHODS) {
+            if (stub.getName().equals("getRuntime") ||
+                    stub.getName().equals("getMetaClass")) {
+                // skip these and implement appropriately for the specific case
+                continue;
+            }
+            
             // trim off IRubyObject self argument
             Class[] signature = new Class[stub.getParameterTypes().length - 1];
             for (int i = 0; i < signature.length; i++) {
@@ -81,7 +87,34 @@ public class BasicObjectStubGenerator {
             }
 
             // invoke stub
-            method.invokestatic(p(BasicObjectStub.class), stub.getName(), sig(stub.getParameterTypes()));
+            method.invokestatic(p(BasicObjectStub.class), stub.getName(), sig(stub.getReturnType(), stub.getParameterTypes()));
+
+            Class retType = stub.getReturnType();
+            if (retType == void.class) {
+                method.voidreturn();
+            } else {
+                if (retType.isPrimitive()) {
+                    if (retType == boolean.class ||
+                            retType == byte.class ||
+                            retType == char.class ||
+                            retType == short.class ||
+                            retType == int.class) {
+                        method.ireturn();
+                    } else if (retType == long.class) {
+                        method.lreturn();
+                    } else if (retType == float.class) {
+                        method.freturn();
+                    } else if (retType == double.class) {
+                        method.dreturn();
+                    } else {
+                        throw new RuntimeException("unknown primitive type: " + retType);
+                    }
+                } else {
+                    method.areturn();
+                }
+            }
+
+            method.end();
         }
     }
 }

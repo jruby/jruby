@@ -19,18 +19,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.compiler.util.BasicObjectStubGenerator;
 import org.jruby.compiler.util.HandleFactory;
 import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -612,8 +615,20 @@ public class MiniJava implements Library {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         String pathName = name.replace('.', '/');
 
+        boolean isRubyHierarchy = RubyBasicObject.class.isAssignableFrom(superClass);
+
         // construct the class, implementing all supertypes
-        cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(superClass), superTypeNames);
+        if (isRubyHierarchy) {
+            // Ruby hierarchy...just extend it
+            cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(superClass), superTypeNames);
+        } else {
+            // Non-Ruby hierarchy; add IRubyObject
+            String[] plusIRubyObject = new String[superTypeNames.length + 1];
+            plusIRubyObject[0] = p(IRubyObject.class);
+            System.arraycopy(superTypeNames, 0, plusIRubyObject, 1, superTypeNames.length);
+            
+            cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(superClass), plusIRubyObject);
+        }
         cw.visitSource(pathName + ".gen", null);
 
         // fields needed for dispatch and such
@@ -628,16 +643,51 @@ public class MiniJava implements Library {
 
         // create constructor
         SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null));
-        initMethod.aloadMany(0, 1, 2);
-        initMethod.invokespecial(p(superClass), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+
+        if (isRubyHierarchy) {
+            // superclass is in the Ruby object hierarchy; invoke typical Ruby superclass constructor
+            initMethod.aloadMany(0, 1, 2);
+            initMethod.invokespecial(p(superClass), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        } else {
+            // superclass is not in Ruby hierarchy; store objects and call no-arg super constructor
+            cw.visitField(ACC_FINAL | ACC_PRIVATE, "$ruby", ci(Ruby.class), null, null).visitEnd();
+            cw.visitField(ACC_FINAL | ACC_PRIVATE, "$rubyClass", ci(RubyClass.class), null, null).visitEnd();
+
+            initMethod.aloadMany(0, 1);
+            initMethod.putfield(pathName, "$ruby", ci(Ruby.class));
+            initMethod.aloadMany(0, 2);
+            initMethod.putfield(pathName, "$rubyClass", ci(RubyClass.class));
+
+            // only no-arg super constructor supported right now
+            initMethod.aload(0);
+            initMethod.invokespecial(p(superClass), "<init>", sig(void.class));
+        }
         initMethod.voidreturn();
         initMethod.end();
 
-        // create toJava
-        SkinnyMethodAdapter toJavaMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "toJava", sig(Object.class, Class.class), null, null));
-        toJavaMethod.aload(0);
-        toJavaMethod.areturn();
-        toJavaMethod.end();
+        if (isRubyHierarchy) {
+            // override toJava
+            SkinnyMethodAdapter toJavaMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "toJava", sig(Object.class, Class.class), null, null));
+            toJavaMethod.aload(0);
+            toJavaMethod.areturn();
+            toJavaMethod.end();
+        } else {
+            // decorate with stubbed IRubyObject methods
+            BasicObjectStubGenerator.addBasicObjectStubsToClass(cw);
+
+            // add getRuntime and getMetaClass impls based on captured fields
+            SkinnyMethodAdapter getRuntimeMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "getRuntime", sig(Ruby.class), null, null));
+            getRuntimeMethod.aload(0);
+            getRuntimeMethod.getfield(pathName, "$ruby", ci(Ruby.class));
+            getRuntimeMethod.areturn();
+            getRuntimeMethod.end();
+
+            SkinnyMethodAdapter getMetaClassMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "getMetaClass", sig(RubyClass.class), null, null));
+            getMetaClassMethod.aload(0);
+            getMetaClassMethod.getfield(pathName, "$rubyClass", ci(RubyClass.class));
+            getMetaClassMethod.areturn();
+            getMetaClassMethod.end();
+        }
 
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
