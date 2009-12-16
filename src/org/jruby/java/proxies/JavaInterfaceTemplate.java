@@ -165,20 +165,7 @@ public class JavaInterfaceTemplate {
             } else {
                 // The new "new" actually generates a real Java class to use for the Ruby class's
                 // backing store, instantiates that, and then calls initialize on it.
-                singleton.addMethod("new", new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
-
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                        assert self instanceof RubyClass : "new defined on non-class";
-
-                        RubyClass clazzSelf = (RubyClass) self;
-                        IRubyObject newObj = Java.newRealInterfaceImpl(clazzSelf);
-
-                        RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
-
-                        return newObj;
-                    }
-                });
+                addRealImplClassNew(clazz);
             }
 
             // Next, we define a few private methods that we'll use to manipulate
@@ -258,6 +245,23 @@ public class JavaInterfaceTemplate {
                 }
             });
         }
+    }
+
+    public static void addRealImplClassNew(RubyClass clazz) {
+        RubyClass singleton = clazz.getSingletonClass();
+        singleton.addMethod("new", new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                assert self instanceof RubyClass : "new defined on non-class";
+
+                RubyClass clazzSelf = (RubyClass) self;
+                IRubyObject newObj = Java.newRealInterfaceImpl(clazzSelf);
+
+                RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
+
+                return newObj;
+            }
+        });
     }
 
     private static IRubyObject jcreateProxy(IRubyObject self, IRubyObject[] args) {

@@ -92,7 +92,6 @@ import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -138,18 +137,6 @@ public class Java implements Library {
         
         javaUtils.defineAnnotatedMethods(JavaUtilities.class);
 
-        runtime.getJavaSupport().setConcreteProxyCallback(new Callback() {
-            public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                Arity.checkArgumentCount(recv.getRuntime(), args, 1, 1);
-                
-                return Java.concrete_proxy_inherited(recv, args[0]);
-            }
-
-            public Arity getArity() {
-                return Arity.ONE_ARGUMENT;
-            }
-        });
-
         JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
         
         // Now attach Java-related extras to core classes
@@ -173,6 +160,25 @@ public class Java implements Library {
 
         return javaModule;
     }
+
+    public static class OldStyleExtensionInherited {
+        @JRubyMethod
+        public static IRubyObject inherited(IRubyObject recv, IRubyObject arg0) {
+            return Java.concrete_proxy_inherited(recv, arg0);
+        }
+    };
+
+    public static class NewStyleExtensionInherited {
+        @JRubyMethod
+        public static IRubyObject inherited(IRubyObject recv, IRubyObject arg0) {
+            if (!(arg0 instanceof RubyClass)) {
+                throw recv.getRuntime().newTypeError(arg0, recv.getRuntime().getClassClass());
+            }
+            
+            JavaInterfaceTemplate.addRealImplClassNew((RubyClass)arg0);
+            return recv.getRuntime().getNil();
+        }
+    };
     
     /**
      * This populates the master map from short-cut names to JavaClass instances for
@@ -406,9 +412,10 @@ public class Java implements Library {
                     proxyClass = createProxyClass(runtime,
                             runtime.getJavaSupport().getConcreteProxyClass(),
                             javaClass, true);
-                    if (!NEW_STYLE_EXTENSION) {
-                        proxyClass.getMetaClass().defineFastMethod("inherited",
-                                runtime.getJavaSupport().getConcreteProxyCallback());
+                    if (NEW_STYLE_EXTENSION) {
+                        proxyClass.getMetaClass().defineAnnotatedMethods(NewStyleExtensionInherited.class);
+                    } else {
+                        proxyClass.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
                     }
                     addToJavaPackageModule(proxyClass, javaClass);
 

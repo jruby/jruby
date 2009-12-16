@@ -114,16 +114,6 @@ public class JavaSupport {
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
     }
-
-    final synchronized void setConcreteProxyCallback(Callback concreteProxyCallback) {
-        if (this.concreteProxyCallback == null) {
-            this.concreteProxyCallback = concreteProxyCallback;
-        }
-    }
-    
-    final Callback getConcreteProxyCallback() {
-        return concreteProxyCallback;
-    }
     
     final Map getMatchCache() {
         return matchCache;
