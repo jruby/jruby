@@ -3309,6 +3309,7 @@ public class RubyArray extends RubyObject implements List {
         int n = RubyNumeric.num2int(nv);
 
         if (n < 0) throw runtime.newArgumentError("negative sample number");
+        if (n > realLength) n = realLength;
 
         int i, j, k;
         switch (n) {
