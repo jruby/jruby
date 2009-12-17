@@ -179,12 +179,11 @@ public class RubyKernel {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
-        if (!(file instanceof RubyString)) throw runtime.newTypeError(file, runtime.getString());
-        RubyString fileString = file.convertToString();
+        if (!runtime.is1_9() && !(file instanceof RubyString)) throw runtime.newTypeError(file, runtime.getString());
+
+        RubyString fileString = RubyFile.get_path(runtime.getCurrentContext(), file);
         
-        if (fileString.isEmpty()) {
-            throw runtime.newArgumentError("empty file name");
-        }
+        if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
         
         final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
         final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();

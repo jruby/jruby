@@ -2226,19 +2226,34 @@ public class RubyModule extends RubyObject {
     /** rb_mod_class_variables
      *
      */
-    @JRubyMethod(name = "class_variables")
+    @JRubyMethod(name = "class_variables", compat = CompatVersion.RUBY1_8)
     public RubyArray class_variables(ThreadContext context) {
-        Set<String> names = new HashSet<String>();
+        Ruby runtime = context.getRuntime();
+        RubyArray ary = runtime.newArray();
+        
+        Collection<String> names = classVariablesCommon();
+        ary.addAll(names);
+        return ary;
+    }
 
+    @JRubyMethod(name = "class_variables", compat = CompatVersion.RUBY1_9)
+    public RubyArray class_variables19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        RubyArray ary = runtime.newArray();
+        
+        Collection<String> names = classVariablesCommon();
+        for (String name : names) {
+            ary.add(runtime.newSymbol(name));
+        }
+        return ary;
+    }
+
+    private Collection<String> classVariablesCommon() {
+        Set<String> names = new HashSet<String>();
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             names.addAll(p.getClassVariableNameList());
         }
-
-        RubyArray ary = context.getRuntime().newArray();
-
-        ary.addAll(names);
-
-        return ary;
+        return names;
     }
 
 
@@ -2324,46 +2339,62 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_8)
     public RubyArray constants(ThreadContext context) {
-        return constantsCommon(context, true);
+        Ruby runtime = context.getRuntime();
+        RubyArray array = runtime.newArray();
+        Collection<String> constantNames = constantsCommon(runtime, true);
+        array.addAll(constantNames);
+        
+        return array;
     }
 
     @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_9)
     public RubyArray constants19(ThreadContext context) {
-        return constantsCommon(context, true);
+        return constantsCommon19(context, true);
     }
 
     @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_9)
     public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
-        return constantsCommon(context, allConstants.isTrue());
+        return constantsCommon19(context, allConstants.isTrue());
+    }
+    
+    public RubyArray constantsCommon19(ThreadContext context, boolean allConstants) {
+        Ruby runtime = context.getRuntime();
+        RubyArray array = runtime.newArray();
+        
+        Collection<String> constantNames = constantsCommon(runtime, allConstants);
+        
+        for (String name : constantNames) {
+            array.add(runtime.newSymbol(name));
+        }
+        return array;
     }
 
     /** rb_mod_constants
      *
      */
-    public RubyArray constantsCommon(ThreadContext context, boolean allConstants) {
-        Ruby runtime = context.getRuntime();
-        RubyArray array = runtime.newArray();
+    public Collection<String> constantsCommon(Ruby runtime, boolean allConstants) {        
         RubyModule objectClass = runtime.getObject();
 
+        Collection<String> constantNames = new HashSet<String>();
         if (allConstants) {
             if (getRuntime().getModule() == this || objectClass == this) {
-                array.addAll(objectClass.getConstantNames());
+                constantNames = objectClass.getConstantNames();
             } else {
                 Set<String> names = new HashSet<String>();
                 for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
                     names.addAll(module.getConstantNames());
                 }
-                array.addAll(names);
+                constantNames = names;
             }
         } else {
-            if (getRuntime().getModule() == this || objectClass == this) {
-                array.addAll(objectClass.getConstantNames());
+            if (runtime.getModule() == this || objectClass == this) {
+                constantNames = objectClass.getConstantNames();
             } else {
-                array.addAll(getConstantNames());
+                constantNames = getConstantNames();
             }
         }
 
-        return array;
+        return constantNames;
     }
 
 
@@ -2597,7 +2628,7 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        deleteConstant(name);
+        if (!runtime.is1_9()) deleteConstant(name);
         
         return runtime.getLoadService().autoload(getName() + "::" + name);
     }
