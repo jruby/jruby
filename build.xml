@@ -84,6 +84,10 @@
     <condition property="run.jvm.model" value="">
         <not><isset property="run.jvm.model"/></not>
     </condition>
+    <condition property="spec.jvm.model.option" value="">
+        <equals arg1="${run.jvm.model}" arg2=""/>
+    </condition>
+    <property name="spec.jvm.model.option" value="-T -J${run.jvm.model}"/>
     <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
     <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri/1.8/system/created.rid"/>
   </target>
@@ -1284,7 +1288,7 @@
         <arg line="-T -J-Demma.coverage.out.file=${test.results.dir}/coverage.emma"/>
         <arg line="-T -J-Demma.coverage.out.merge=true"/>
         <arg line="-T -J-Demma.verbosity.level=silent" />
-        <arg line="-T -J${run.jvm.model}" />
+        <arg line="${spec.jvm.model.option}" />
 	<arg line="-f m"/>
 	<arg line="-B @{spec.config}"/>
       </java>
