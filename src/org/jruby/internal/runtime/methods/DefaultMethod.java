@@ -45,6 +45,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,7 +58,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method.
  *
  */
-public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodArgs {
+public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodArgs, PositionAware {
+
     private static class DynamicMethodBox {
         public DynamicMethod actualMethod;
         public int callCount = 0;
@@ -329,6 +331,14 @@ public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodAr
 
     public ISourcePosition getPosition() {
         return position;
+    }
+
+    public String getFile() {
+        return position.getFile();
+    }
+
+    public int getLine() {
+        return position.getLine();
     }
 
     @Override

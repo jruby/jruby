@@ -40,6 +40,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
@@ -278,6 +279,18 @@ public class RubyMethod extends RubyObject implements DataType {
     @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
         return implementationModule;
+    }
+
+    @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
+    public IRubyObject source_location(ThreadContext context) {
+        if (method instanceof PositionAware) {
+            Ruby runtime = context.getRuntime();
+            PositionAware poser = (PositionAware) method;
+            return runtime.newArray(runtime.newString(poser.getFile()),
+                    runtime.newFixnum(poser.getLine() + 1 /*zero-based*/));
+        }
+
+        return context.getRuntime().getNil();
     }
 }
 

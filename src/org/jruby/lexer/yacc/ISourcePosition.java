@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
+import org.jruby.runtime.PositionAware;
+
 /**
  * This interface is the combination of two needs:  1) A Ruby interpreter position (for warnings 
  * and errors).  The interpreter only cares about filename and endLine.  2) A IDE position (offsets
@@ -36,7 +38,7 @@ package org.jruby.lexer.yacc;
  * of 0 and an endOffset of 3 ( 0a1b2c3 ).
  * 
  */
-public interface ISourcePosition {
+public interface ISourcePosition extends PositionAware {
     /**
      * Which file does this source position live in?
      * 
@@ -58,6 +60,10 @@ public interface ISourcePosition {
         }
 
         public int getStartLine() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public int getLine() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     };
