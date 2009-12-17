@@ -449,10 +449,10 @@ expr            : command_call
                     $$ = support.newOrNode(getPosition($2), $1, $3);
                 }
                 | kNOT expr {
-                    $$ = new NotNode(getPosition($1), support.getConditionNode($2));
+                    $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
                 }
                 | tBANG command_call {
-                    $$ = new NotNode(getPosition($1), support.getConditionNode($2));
+                    $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
                 }
                 | arg
 
@@ -830,11 +830,7 @@ arg             : lhs '=' arg {
                     $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, getPosition()), "-@");
                 }
                 | tUPLUS arg {
-                    if (support.isLiteral($2)) {
-                        $$ = $2;
-                    } else {
-                        $$ = support.getOperatorCallNode($2, "+@");
-                    }
+                    $$ = support.getOperatorCallNode($2, "+@");
                 }
                 | tUMINUS arg {
                     $$ = support.getOperatorCallNode($2, "-@");
@@ -885,10 +881,10 @@ arg             : lhs '=' arg {
                     $$ = new NotNode(getPosition($1), support.getMatchNode($1, $3));
                 }
                 | tBANG arg {
-                    $$ = new NotNode(getPosition($1), support.getConditionNode($2));
+                    $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
                 }
                 | tTILDE arg {
-                    $$ = support.getOperatorCallNode($2, "~");
+                    $$ = support.getOperatorCallNode($2, "!");
                 }
                 | arg tLSHFT arg {
                     $$ = support.getOperatorCallNode($1, "<<", $3, getPosition());
