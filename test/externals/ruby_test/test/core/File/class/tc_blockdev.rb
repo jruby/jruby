@@ -32,6 +32,10 @@ class TC_File_Block_ClassMethod < Test::Unit::TestCase
             @block_dev = "/dev/sr0"
          elsif File.exists?("/dev/disk0")
             @block_dev = "/dev/disk0"
+         elsif File.exists?("/dev/sda0")
+            @block_dev = "/dev/sda0"
+         elsif File.exists?("/dev/sda1")
+            @block_dev = "/dev/sda1"
          else
             @block_dev = nil
          end
