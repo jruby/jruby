@@ -92,7 +92,7 @@ public class RubyNumeric extends RubyObject {
         }
     };
 
-    public static double DBL_EPSILON=2.2204460492503131e-16;
+    public static final double DBL_EPSILON=2.2204460492503131e-16;
 
     private static IRubyObject convertToNum(double val, Ruby runtime) {
 

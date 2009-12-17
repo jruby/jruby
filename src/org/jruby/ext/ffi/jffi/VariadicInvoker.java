@@ -63,7 +63,7 @@ public class VariadicInvoker extends RubyObject {
     @JRubyMethod(name = { "__new" }, meta = true, required = 4)
     public static VariadicInvoker newInvoker(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         CallingConvention conv = "stdcall".equals(args[3].toString())
-                ? CallingConvention.STDCALL : CallingConvention.STDCALL;
+                ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
         Library library;
         long address;
         try {

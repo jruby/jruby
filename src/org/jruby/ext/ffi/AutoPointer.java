@@ -21,7 +21,7 @@ public final class AutoPointer extends Pointer {
     private static final ConcurrentMap<Reaper, Boolean> referenceSet = new ConcurrentHashMap<Reaper, Boolean>();
     
     private Pointer pointer;
-    private volatile Reaper reaper;
+    private transient volatile Reaper reaper;
     
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(AUTOPTR_CLASS_NAME,

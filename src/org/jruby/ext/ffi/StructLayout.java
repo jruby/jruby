@@ -457,7 +457,7 @@ public final class StructLayout extends Type {
         }
 
         private final long getOffset(int index) {
-            return offset + (index * arrayType.getComponentType().getNativeSize());
+            return offset + (long) (index * arrayType.getComponentType().getNativeSize());
         }
 
         private IRubyObject get(Ruby runtime, int index) {
