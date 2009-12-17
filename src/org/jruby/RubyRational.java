@@ -29,7 +29,7 @@ import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_cmp;
 import static org.jruby.util.Numeric.f_div;
-import static org.jruby.util.Numeric.f_equal_p;
+import static org.jruby.util.Numeric.f_equal;
 import static org.jruby.util.Numeric.f_expt;
 import static org.jruby.util.Numeric.f_floor;
 import static org.jruby.util.Numeric.f_gcd;
@@ -658,22 +658,23 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "==")
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             if (f_zero_p(context, num) && f_zero_p(context, other)) return runtime.getTrue();
             if (!(den instanceof RubyFixnum) || ((RubyFixnum)den).getLongValue() != 1) return runtime.getFalse();
-            if (f_equal_p(context, num, other)) return runtime.getTrue();
-            return runtime.getFalse();
+            return f_equal(context, num, other);
         } else if (other instanceof RubyFloat) {
-            return f_equal_p(context, f_to_f(context, this), other) ? runtime.getTrue() : runtime.getFalse();
+            return f_equal(context, f_to_f(context, this), other);
         } else if (other instanceof RubyRational) {
             RubyRational otherRational = (RubyRational)other;
             if (f_zero_p(context, num) && f_zero_p(context, otherRational.num)) return runtime.getTrue();
-            if (f_equal_p(context, num, otherRational.num) && f_equal_p(context, den, otherRational.den)) return runtime.getTrue();
-            return runtime.getFalse();
+            return runtime.newBoolean(f_equal(context, num, otherRational.num).isTrue() &&
+                    f_equal(context, den, otherRational.den).isTrue());
+
         }
-        return f_equal_p(context, other, this) ? runtime.getTrue() : runtime.getFalse();
+        return f_equal(context, other, this);
     }
 
     /** nurat_coerce
@@ -895,7 +896,7 @@ public class RubyRational extends RubyNumeric {
         a = f_sub(context, this, eps);
         b = f_add(context, this, eps);
 
-        if (f_equal_p(context, a, b)) return this;
+        if (f_equal(context, a, b).isTrue()) return this;
         IRubyObject[] ary = new IRubyObject[2];
         ary[0] = a;
         ary[1] = b;

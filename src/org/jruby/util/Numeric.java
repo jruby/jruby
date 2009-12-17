@@ -270,14 +270,18 @@ public class Numeric {
         return x.callMethod(context, "truncate");
     }
     
-    /** f_equal_p
+    /** f_equal
+     *
+     * Note: This may not return a value which is a boolean.  other.== can
+     * return non-boolean (which unless it is nil it will be isTrue()).
      * 
      */
-    public static boolean f_equal_p(ThreadContext context, IRubyObject x, IRubyObject y) {
+    public static IRubyObject f_equal(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() == ((RubyFixnum)y).getLongValue();
+            return context.getRuntime().newBoolean(((RubyFixnum)x).getLongValue() == ((RubyFixnum)y).getLongValue());
         }
-        return x.callMethod(context, "==", y).isTrue();
+
+        return x.callMethod(context, "==", y);
     }
 
     /** f_expt

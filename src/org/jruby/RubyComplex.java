@@ -33,7 +33,7 @@ import static org.jruby.util.Numeric.f_conjugate;
 import static org.jruby.util.Numeric.f_denominator;
 import static org.jruby.util.Numeric.f_div;
 import static org.jruby.util.Numeric.f_divmod;
-import static org.jruby.util.Numeric.f_equal_p;
+import static org.jruby.util.Numeric.f_equal;
 import static org.jruby.util.Numeric.f_exact_p;
 import static org.jruby.util.Numeric.f_expt;
 import static org.jruby.util.Numeric.f_gt_p;
@@ -652,18 +652,19 @@ public class RubyComplex extends RubyNumeric {
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) {
             RubyComplex otherComplex = (RubyComplex) other;
-            boolean test = f_equal_p(context, real, otherComplex.real) && f_equal_p(context, image, otherComplex.image);
+            boolean test = f_equal(context, real, otherComplex.real).isTrue() &&
+                    f_equal(context, image, otherComplex.image).isTrue();
 
             return context.getRuntime().newBoolean(test);
         }
 
         if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
-            boolean test = f_equal_p(context, real, other) && f_zero_p(context, image);
+            boolean test = f_equal(context, real, other).isTrue() && f_zero_p(context, image);
             
             return context.getRuntime().newBoolean(test);
         }
         
-        return context.getRuntime().newBoolean(f_equal_p(context, other, this));
+        return f_equal(context, other, this);
     }
 
     /** nucomp_coerce 
@@ -807,7 +808,7 @@ public class RubyComplex extends RubyNumeric {
             RubyComplex otherComplex = (RubyComplex)other;
             if (real.getMetaClass() == otherComplex.real.getMetaClass() &&
                 image.getMetaClass() == otherComplex.image.getMetaClass() &&
-                f_equal_p(context, this, otherComplex)) {
+                f_equal(context, this, otherComplex).isTrue()) {
                 return context.getRuntime().getTrue();
             }
         }
