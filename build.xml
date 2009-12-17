@@ -1401,6 +1401,8 @@
     <include name=".classpath"/>
     <include name="default.build.properties"/>
     <include name="jruby.bnd.template"/>
+    <include name="pom.xml"/>
+    <include name="maven/**"/>
     <exclude name="lib/jruby.jar"/>
   </patternset>
 
