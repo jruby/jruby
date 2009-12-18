@@ -12,7 +12,7 @@ public class IR_Script extends IR_ScopeImpl
     {
         super((IR_Scope)null, null);
         _fileName = sourceName;
-        _dummyClass = new IR_Class(this, this, null, "__SCRIPT_ROOT__", false);
+        _dummyClass = new IR_Class(this, null, null, "__SCRIPT_ROOT__");
         addClass(_dummyClass);
     }
 

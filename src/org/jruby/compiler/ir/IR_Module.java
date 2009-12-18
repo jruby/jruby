@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.MetaObject;
 
 public class IR_Module extends IR_ScopeImpl
 {
@@ -17,7 +18,7 @@ public class IR_Module extends IR_ScopeImpl
 
     static private IR_Class addCoreClass(String name, IR_Scope parent, String[] coreMethods)
     {
-        IR_Class c = new IR_Class(parent, (IR_Scope)null, null, name, false);
+        IR_Class c = new IR_Class(parent, null, null, name);
         _coreClasses.put(c._name, c);
         if (coreMethods != null) {
             for (String m: coreMethods) {
@@ -67,20 +68,15 @@ public class IR_Module extends IR_ScopeImpl
         //    end
         //
         String n = ROOT_METHOD_PREFIX + _name;
-        _rootMethod = new IR_Method(this, this, n, n, false);
+        _rootMethod = new IR_Method(this, new MetaObject(this), n, false);
         addMethod(_rootMethod);
     }
 
-    public IR_Module(IR_Scope parent, IR_Scope lexicalParent, String name)
-    { 
-        super(parent, lexicalParent);
-        _name = name;
-        addRootMethod();
-    }
-
-    public IR_Module(Operand parent, IR_Scope lexicalParent, String name)
-    { 
-        super(parent, lexicalParent);
+    public IR_Module(IR_Scope lexicalParent, Operand container, String name)
+    {
+        // SSS FIXME: container could be a meta-object which means we can record the constant statically!
+        // Add in this opt!
+        super(lexicalParent, container);
         _name = name;
         addRootMethod();
     }

@@ -48,25 +48,8 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
  */
 public abstract class IR_ScopeImpl implements IR_Scope
 {
-    Operand  _parent;         // Parent container for this context (can be dynamic!!)
-                              // If dynamic, at runtime, this will be the meta-object corresponding to a class/script/module/method/closure
+    Operand  _container;      // Parent container for this context
     IR_Scope _lexicalParent;  // Lexical parent scope
-
-// SSS FIXME: Maybe this is not really a concern after all ...
-        // Nesting level of this scope in the lexical nesting of scopes in the current file -- this is not to be confused
-        // with semantic nesting of scopes across files.
-        //
-        // Consider this code in a file f
-        // class M1::M2::M3::C 
-        //   ...
-        // end
-        //
-        // So, C is at lexical nesting level of 1 (the file script is at 0) in the file 'f'
-        // Semantically it is at level 3 (M1, M2, M3 are at 0,1,2).
-        //
-        // This is primarily used to ensure that variable names don't clash!
-        // i.e. definition of %v_1 in a closure shouldn't override the use of %v_1 from the parent scope!
-//    private int _lexicalNestingLevel;
 
         // Map of constants defined in this scope (not valid for methods!)
     private Map<String, Operand> _constMap;
@@ -86,28 +69,23 @@ public abstract class IR_ScopeImpl implements IR_Scope
     final public List<IR_Class>  _classes  = new ArrayList<IR_Class>();
     final public List<IR_Method> _methods  = new ArrayList<IR_Method>();
 
-    private void init(Operand parent, IR_Scope lexicalParent) {
-        _parent = parent;
+    private void init(IR_Scope lexicalParent, Operand container) {
         _lexicalParent = lexicalParent;
+        _container = container;
         _nextVarIndex = new HashMap<String, Integer>();
         _constMap = new HashMap<String, Operand>();
         _methodAliases = new HashMap<String, String>();
         _nextMethodIndex = 0;
         _nextClosureIndex = 0;
-//        _lexicalNestingLevel = lexicalParent == null ? 0 : ((IR_ScopeImpl)lexicalParent)._lexicalNestingLevel + 1;
     }
 
-    public IR_ScopeImpl(IR_Scope parent, IR_Scope lexicalParent) {
-        init(new MetaObject(parent), lexicalParent);
+    public IR_ScopeImpl(IR_Scope lexicalParent, Operand container) {
+        init(lexicalParent, container);
     }
 
-    public IR_ScopeImpl(Operand parent, IR_Scope lexicalParent) {
-        init(parent, lexicalParent);
-    }
-
-        // Returns the containing parent scope!
-    public Operand getParent() {
-        return _parent;
+        // Returns the containing scope!
+    public Operand getContainer() {
+        return _container;
     }
 
     public IR_Scope getLexicalParent() {
@@ -133,9 +111,6 @@ public abstract class IR_ScopeImpl implements IR_Scope
             idx = 0;
         _nextVarIndex.put(prefix, idx+1);
 
-        // Insert nesting level to ensure variable names don't conflict across nested scopes!
-        // i.e. definition of %v_1 in a closure shouldn't override the use of %v_1 from the parent scope!
-//        return new Variable(prefix + _lexicalNestingLevel + "_" + idx);
         return new Variable(prefix + idx);
     }
 
@@ -172,7 +147,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
            return;
 
         if ((this instanceof IR_Method) && ((IR_Method)this).isAClassRootMethod()) {
-            IR_Module c = (IR_Module)(((MetaObject)this._parent)._scope);
+            IR_Module c = (IR_Module)(((MetaObject)this._container)._scope);
             c.getRootMethod().addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
         }
         else if (m._isInstanceMethod && (this instanceof IR_Module)) {
@@ -185,7 +160,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         }
         else {
             // SSS FIXME: Do I have to generate a define method instruction here??
-            // throw new RuntimeException("Encountered method add in a non-class scope!");
+            throw new RuntimeException("Encountered method add in a non-class scope!");
         }
     }
 
@@ -234,8 +209,8 @@ public abstract class IR_ScopeImpl implements IR_Scope
     public Operand getConstantValue(String constRef) {
 //        System.out.println("Looking in " + this + " for constant: " + constRef);
         Operand cv = _constMap.get(constRef);
-        Operand p  = _parent;
-        // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the parent is a static scope
+        Operand p  = _container;
+        // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
         if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
             // Can be null for IR_Script meta objects
             if (((MetaObject)p)._scope == null) {

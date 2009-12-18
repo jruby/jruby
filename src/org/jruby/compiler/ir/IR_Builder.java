@@ -214,7 +214,7 @@ public class IR_Builder
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
-        boolean isCommandLineScript = args.length > 1 && args[1].equals("-e");
+        boolean isCommandLineScript = args.length > i && args[i].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
         while (i < args.length) {
            long t1 = new Date().getTime();
@@ -808,76 +808,40 @@ public class IR_Builder
 
             // Build a new class and add it to the current scope (could be a script / module / class)
         String   className = cpathNode.getName();
-        IR_Class c;
-        Operand  cMetaObj;
-        if (container == null) {
-            c = new IR_Class(s, s, superClass, className, false);
-            cMetaObj = new MetaObject(c);
-            s.addClass(c);
-        }
-        else if (container instanceof MetaObject) {
-            IR_Scope containerScope = ((MetaObject)container)._scope;
-            c = new IR_Class(containerScope, s, superClass, className, false);
-            cMetaObj = container;
-            containerScope.addClass(c);
-        }
-        else {
-            // SSS FIXME: This should fetch the class corresponding to 'container' and use it!
-            // But, how do we do this in a (1) AOT setup (2) mixed-mode compilation where
-            // the container class might only get interpreted, and never compiled?
-            c = new IR_Class(container, s, superClass, className, false);
-            cMetaObj = new MetaObject(c);
-            s.addInstr(new PUT_CONST_Instr(container, className, cMetaObj));
-            s.addClass(c);
-        }
+        IR_Class c = new IR_Class(s, container, superClass, className);
+        s.addClass(c);
+        if (container != null)
+            s.addInstr(new PUT_CONST_Instr(container, className, new MetaObject(c)));
 
             // Build the class body!
         if (classNode.getBodyNode() != null)
             build(classNode.getBodyNode(), c.getRootMethod());
 
-            // Return a meta object corresponding to the class
-        return cMetaObj;
+        return null;
     }
 
-    // SSS FIXME: Verify logic ...
     public Operand buildSClass(Node node, IR_Scope s) {
         final SClassNode sclassNode = (SClassNode) node;
         //  class Foo
         //  ...
-        //    class << self 
+        //    class << self
         //    ...
         //    end
-        //  ...  
+        //  ...
         //  end
         //
-        // Here, the class << self declaration is in the class root method.
+        // Here, the class << self declaration is in Foo's root method.
         // Foo is the class in whose context this is being defined.
-        IR_Class  mc = null;
         Operand receiver = build(sclassNode.getReceiverNode(), s);
-        if ((receiver instanceof Variable) && ((Variable)receiver)._name.equals("self")) {
-            IR_Method  classRootMethod = (IR_Method)s;
-            MetaObject currClass       = (MetaObject)classRootMethod.getParent();
-            // SSS FIXME: If the metaclass/singleton class already exists, shouldn't we fetch that?
-            mc = new IR_Class(s, s, new MetaObject(IR_Module.getCoreClass("Class")), "Meta<" + ((IR_Module)currClass._scope)._name + ">", true); 
-        }
-        else {
-            // Get the class of the receiver
-            Variable   rClass    = s.getNewVariable();
-            CALL_Instr callInstr = new CALL_Instr(rClass, new MethAddr("class"), new Operand[] {receiver}, null);
-            // SSS FIXME: 
-            // 1. If the metaclass/singleton class already exists, shouldn't we fetch that?
-            // 2. We are in deep doo doo now!  We dont know the class name statically!
-            // Needs rearchitecting of IR_Class ...
-            mc = new IR_Class(s, s, rClass, "<FIXME>", true); 
-        }
+        IR_Class mc = new IR_MetaClass(s, receiver);
 
-        // Record the new class as being defined in scope s
+        // Record the new class as being lexically defined in scope s
         s.addClass(mc);
-       
+
         if (sclassNode.getBodyNode() != null)
             build(sclassNode.getBodyNode(), mc.getRootMethod());
 
-        return new MetaObject(mc);
+        return null;
     }
 
     public Operand buildClassVar(ClassVarNode node, IR_Scope s) {
@@ -1488,11 +1452,13 @@ public class IR_Builder
     }
 **/
 
-    private Operand defineNewMethod(MethodDefNode defnNode, IR_Scope s, boolean isInstanceMethod)
+    private Operand defineNewMethod(MethodDefNode defnNode, IR_Scope s, Operand receiver, boolean isInstanceMethod)
     {
-        // SSS FIXME: If this is a class method, shouldn't the parent scope
-        // be the metaclass / singleton class??
-        IR_Method m = new IR_Method(s, s, defnNode.getName(), isInstanceMethod);
+        IR_Method m;
+        if (isInstanceMethod)
+            m = new IR_Method(s, new MetaObject(s), defnNode.getName(), isInstanceMethod);
+        else
+            m = new IR_Method(s, receiver, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
         receiveArgs(defnNode.getArgsNode(), m);
@@ -1512,22 +1478,27 @@ public class IR_Builder
             m.addInstr(new RETURN_Instr(Nil.NIL));
         }
 
-        s.addMethod(m);
+        if (isInstanceMethod) {
+            s.addMethod(m);
+        }
+        else {
+            // Add 'm' to the meta class of the receiver!
+            IR_MetaClass mc = new IR_MetaClass(m.getLexicalParent(), receiver);
+            mc.addMethod(m);
+        }
 
         return Nil.NIL;
     }
 
     public Operand buildDefn(MethodDefNode node, IR_Scope s) {
-            // Instance method
-        return defineNewMethod(node, s, true);
+        // Instance method
+        return defineNewMethod(node, s, null, true);
     }
 
     public Operand buildDefs(MethodDefNode node, IR_Scope s) {
-            // Class method
-        return defineNewMethod(node, s, false);
-
-            // SSS FIXME: Receiver -- this is the class meta object basically?
-        // Operand receiver = build(defsNode.getReceiverNode(), s);
+        // Class method
+        Operand receiver = build(node.getNameNode(), s);
+        return defineNewMethod(node, s, receiver, false);
     }
 
     public Operand receiveArgs(final ArgsNode argsNode, IR_Scope s) {
@@ -1862,7 +1833,7 @@ public class IR_Builder
 
     public Operand buildForIter(final ForNode forNode, IR_ExecutionScope s) {
             // Create a new closure context
-        IR_Closure closure = new IR_Closure(s, s);
+        IR_Closure closure = new IR_Closure(s);
         s.addClosure(closure);
 
             // Build args
@@ -2003,7 +1974,7 @@ public class IR_Builder
 
     public Operand buildIter(final IterNode iterNode, IR_ExecutionScope s) {
             // Create a new closure context
-        IR_Closure closure = new IR_Closure(s, s);
+        IR_Closure closure = new IR_Closure(s);
         s.addClosure(closure);
 
             // Build args
@@ -2073,24 +2044,16 @@ public class IR_Builder
 
         // Build the new module
         String    moduleName = moduleNode.getCPath().getName();
-        IR_Module m;
-        Operand   mMetaObj;
-        if (container == null) {
-            m = new IR_Module(s, s, moduleName);
-            mMetaObj = new MetaObject(m);
-            s.addModule(m);
-        }
-        else {
-            m = new IR_Module(container, s, moduleName);
-            mMetaObj = new MetaObject(m);
-            s.addInstr(new PUT_CONST_Instr(container, moduleName, mMetaObj));
-        }
+        IR_Module m = new IR_Module(s, container, moduleName);
+        s.addModule(m);
+        if (container != null)
+            s.addInstr(new PUT_CONST_Instr(container, moduleName, new MetaObject(m)));
 
         // Build the module body
         if (moduleNode.getBodyNode() != null)
             build(moduleNode.getBodyNode(), m.getRootMethod());
 
-        return mMetaObj;
+        return null;
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IR_Scope s) {

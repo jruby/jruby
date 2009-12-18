@@ -9,8 +9,11 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 // Script, Module, Class, Method, Closure
 public interface IR_Scope
 {
-        // Returns the containing parent scope -- can be a dynamic value (hence Operand)!
-    public Operand getParent();
+        // Returns the containing parent scope
+    public Operand getContainer();
+
+        // Returns the lexical scope that contains this scope definition
+    public IR_Scope getLexicalParent();
 
         // scripts
     public void addClass(IR_Class c);

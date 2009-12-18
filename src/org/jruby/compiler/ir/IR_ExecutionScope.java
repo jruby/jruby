@@ -96,13 +96,8 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
         _requiresFrame = true;
     }
 
-    public IR_ExecutionScope(IR_Scope parent, IR_Scope lexicalParent) {
-        super(parent, lexicalParent);
-        init();
-    }
-
-    public IR_ExecutionScope(Operand parent, IR_Scope lexicalParent) {
-        super(parent, lexicalParent);
+    public IR_ExecutionScope(IR_Scope lexicalParent, Operand container) {
+        super(lexicalParent, container);
         init();
     }
 

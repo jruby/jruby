@@ -16,7 +16,7 @@ public class PUT_CVAR_Instr extends PUT_Instr
         // Walk up the scope tree right now as much as possible, to avoid run-time walking
         // SSS FIXME: Any reason why this might break in the presence of ruby's dynamic resolution?  What might break?
         while ((scope instanceof MetaObject) && !(((MetaObject)scope)._scope instanceof IR_Class))
-            scope = ((MetaObject)scope)._scope.getParent();
+            scope = ((MetaObject)scope)._scope.getContainer();
 
         return scope;
     }

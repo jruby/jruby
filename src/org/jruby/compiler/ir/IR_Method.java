@@ -23,18 +23,14 @@ public class IR_Method extends IR_ExecutionScope
     private CodeVersion _token;   // Current code version token for this method -- can change during execution as methods get redefined!
     private List<Operand> _callArgs;
 
-    public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, boolean isInstanceMethod) {
-        super(parent, lexicalParent);
+    public IR_Method(IR_Scope lexicalParent, Operand container, String name, boolean isInstanceMethod) {
+        super(lexicalParent, container);
         _name = name;
         _isInstanceMethod = isInstanceMethod;
         _startLabel = getNewLabel("_METH_START_");
         _endLabel   = getNewLabel("_METH_END_");
         _callArgs = new ArrayList<Operand>();
         _token = CodeVersion.getVersionToken();
-    }
-
-    public IR_Method(IR_Scope parent, IR_Scope lexicalParent, String name, String javaName, boolean isInstanceMethod) {
-        this(parent, lexicalParent, name, isInstanceMethod);
     }
 
     public void addInstr(IR_Instr i) {
@@ -51,7 +47,7 @@ public class IR_Method extends IR_ExecutionScope
 
     public void setConstantValue(String constRef, Operand val) {
         if (isAClassRootMethod())
-            ((MetaObject)_parent)._scope.setConstantValue(constRef, val);
+            ((MetaObject)_container)._scope.setConstantValue(constRef, val);
         else
             throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a method!");
     }
@@ -67,7 +63,7 @@ public class IR_Method extends IR_ExecutionScope
     }
 
     public IR_Module getDefiningModule() {
-        return (_parent instanceof MetaObject) ? (IR_Module)((MetaObject)_parent)._scope : null;
+        return (_container instanceof MetaObject) ? (IR_Module)((MetaObject)_container)._scope : null;
     }
 
     public CodeVersion getCodeVersionToken() { 
