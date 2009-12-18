@@ -1038,8 +1038,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeUtilityMethod("negate", sig(IRubyObject.class, IRubyObject.class, Ruby.class));
     }
 
-    public void splatCurrentValue() {
-        method.invokestatic(p(RuntimeHelpers.class), "splatValue", sig(RubyArray.class, params(IRubyObject.class)));
+    public void splatCurrentValue(String methodName) {
+        method.invokestatic(p(RuntimeHelpers.class), methodName, sig(RubyArray.class, params(IRubyObject.class)));
     }
 
     public void singlifySplattedValue() {

@@ -361,4 +361,9 @@ public class ASTCompiler19 extends ASTCompiler {
     protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
         context.createNewHash19(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
     }
+
+    @Override
+    protected void splatCurrentValue(BodyCompiler context) {
+        context.splatCurrentValue("splatValue19");
+    }
 }

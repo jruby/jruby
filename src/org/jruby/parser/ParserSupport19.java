@@ -39,6 +39,9 @@ import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.SValue19Node;
+import org.jruby.ast.SValueNode;
+import org.jruby.ast.Splat19Node;
 import org.jruby.ast.SplatNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -172,5 +175,16 @@ public class ParserSupport19 extends ParserSupport {
         }
 
         return new ArrayNode(first.getPosition(), first).add(second);
+    }
+
+
+    @Override
+    public SplatNode newSplatNode(ISourcePosition position, Node node) {
+        return new Splat19Node(position, makeNullNil(node));
+    }
+
+    @Override
+    public SValueNode newSValueNode(ISourcePosition position, Node node) {
+        return new SValue19Node(position, node);
     }
 }

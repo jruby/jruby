@@ -1397,9 +1397,25 @@ public class RuntimeHelpers {
         return array.getLength() == 1 ? array.first() : array;
     }
 
+    public static IRubyObject aValueSplat19(IRubyObject value) {
+        if (!(value instanceof RubyArray)) {
+            return value.getRuntime().getNil();
+        }
+
+        return (RubyArray) value;
+    }
+
     public static RubyArray splatValue(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().newArray(value);
+        }
+
+        return arrayValue(value);
+    }
+
+    public static RubyArray splatValue19(IRubyObject value) {
+        if (value.isNil()) {
+            return value.getRuntime().newEmptyArray();
         }
 
         return arrayValue(value);

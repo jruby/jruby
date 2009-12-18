@@ -121,7 +121,7 @@ public class MultipleAsgnNode extends AssignableNode {
         }
         case SPLATNODE: {
             SplatNode splatNode = (SplatNode) getValueNode();
-            RubyArray rubyArray = RuntimeHelpers.splatValue(splatNode.getValue().interpret(runtime, context, self, aBlock));
+            RubyArray rubyArray = (RubyArray) splatNode.interpret(runtime, context, self, aBlock);
             return AssignmentVisitor.multiAssign(runtime, context, self, this, rubyArray, false);
         }
         default:

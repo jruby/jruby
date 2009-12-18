@@ -628,7 +628,7 @@ public class ASTCompiler {
         compile(argsCatNode.getFirstNode(), context,true);
         context.ensureRubyArray();
         compile(argsCatNode.getSecondNode(), context,true);
-        context.splatCurrentValue();
+        splatCurrentValue(context);
         context.concatArrays();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
@@ -3465,9 +3465,13 @@ public class ASTCompiler {
 
         compile(splatNode.getValue(), context, true);
 
-        context.splatCurrentValue();
+        splatCurrentValue(context);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+
+    protected void splatCurrentValue(BodyCompiler context) {
+        context.splatCurrentValue("splatValue");
     }
 
     public void compileStr(Node node, BodyCompiler context, boolean expr) {
@@ -3706,7 +3710,7 @@ public class ASTCompiler {
         // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an array
         context.createNewArray(true);
         compile(argsCatNode.getSecondNode(), context,true);
-        context.splatCurrentValue();
+        splatCurrentValue(context);
         context.concatArrays();
         context.convertToJavaArray();
         // TODO: don't require pop
@@ -3745,7 +3749,7 @@ public class ASTCompiler {
         SplatNode splatNode = (SplatNode) node;
 
         compile(splatNode.getValue(), context,true);
-        context.splatCurrentValue();
+        splatCurrentValue(context);
         context.convertToJavaArray();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();

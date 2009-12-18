@@ -40,7 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class SValueNode extends Node {
-    private final Node node;
+    protected final Node node;
     
     public SValueNode(ISourcePosition position, Node node) {
         super(position);

@@ -440,7 +440,7 @@ public interface BodyCompiler {
      * Convert the current value into a "splatted value" suitable for passing as
      * method arguments or disassembling into multiple variables.
      */
-    public void splatCurrentValue();
+    public void splatCurrentValue(String methodName);
     
     /**
      * Given a splatted value, extract a single value. If no splat or length is
