@@ -69,7 +69,7 @@ class TestTimeout < Test::Unit::TestCase
   def test_net_http_timeout
     assert_raises Timeout::Error do
       http = Net::HTTP.new('www.google.de')
-      http.open_timeout = 0.01
+      http.open_timeout = 0.001
       response = http.start do |h|
         h.request_get '/index.html'
       end
