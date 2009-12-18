@@ -29,8 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.kenai.constantine.Constant;
-import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -45,6 +43,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ShellLauncher;
 
 
 /**
@@ -937,6 +936,13 @@ public class RubyProcess {
     @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
+    }
+
+    @JRubyMethod(name = "spawn", required = 1, rest = true, module = true, compat = CompatVersion.RUBY1_9)
+    public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        long pid = ShellLauncher.runWithoutWait(runtime, args);
+        return RubyFixnum.newFixnum(runtime, pid);
     }
     
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)
