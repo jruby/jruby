@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
+import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -89,16 +90,9 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String def;
-        try {
-            context.setWithinDefined(true);
-            def = firstNode.definition(runtime, context, self, aBlock);
-        } finally {
-            context.setWithinDefined(false);
-        }
-   
         IRubyObject result = runtime.getNil();
-        if (def != null) {
+
+        if (defined(runtime, context, firstNode, self, aBlock)) {
             result = firstNode.interpret(runtime, context, self, aBlock);
         }
         if (!result.isTrue()) {
@@ -106,5 +100,25 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
         }
    
         return ASTInterpreter.pollAndReturn(context, result);
+    }
+
+    private boolean defined(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
+        try {
+            context.setWithinDefined(true);
+            return node.definition(runtime, context, self, aBlock) != null;
+        } finally {
+            context.setWithinDefined(false);
+        }
+    }
+
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        try {
+            interpret(runtime, context, self, aBlock);
+            return "assignment";
+        } catch (JumpException jumpExcptn) {
+        }
+
+        return null;
     }
 }

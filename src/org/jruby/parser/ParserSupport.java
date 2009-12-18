@@ -247,7 +247,7 @@ public class ParserSupport {
         case LOCALASGNNODE:
             return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
         case CONSTDECLNODE: // CONSTANT
-            return currentScope.declare(node.getPosition(), ((INameNode) node).getName());
+            return new ConstNode(node.getPosition(), ((INameNode) node).getName());
         case INSTASGNNODE: // INSTANCE VARIABLE
             return new InstVarNode(node.getPosition(), ((INameNode) node).getName());
         case CLASSVARDECLNODE:

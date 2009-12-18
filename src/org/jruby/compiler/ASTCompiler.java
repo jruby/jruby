@@ -1307,6 +1307,8 @@ public class ASTCompiler {
             case LOCALASGNNODE:
             case MULTIPLEASGNNODE:
             case OPASGNNODE:
+            case OPASGNANDNODE:
+            case OPASGNORNODE:
             case OPELEMENTASGNNODE:
                 context.pushString("assignment");
                 break;
