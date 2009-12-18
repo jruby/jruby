@@ -2582,7 +2582,7 @@ public Object case360_line1350(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
 public Object case31_line425(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), new SValueNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
+                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), support.newSValueNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
     return yyVal;
 }
 public Object case257_line993(Object yyVal, Object[] yyVals, int yyTop) {

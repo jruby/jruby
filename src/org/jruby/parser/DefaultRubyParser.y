@@ -423,7 +423,7 @@ stmt          : kALIAS fitem {
                   support.backrefAssignError($1);
               }
               | lhs '=' mrhs {
-                  $$ = support.node_assign($1, new SValueNode(getPosition($1), $3));
+                  $$ = support.node_assign($1, support.newSValueNode(getPosition($1), $3));
               }
  	      | mlhs '=' arg_value {
                   if ($1.getHeadNode() != null) {

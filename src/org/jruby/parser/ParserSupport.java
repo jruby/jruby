@@ -515,7 +515,7 @@ public class ParserSupport {
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
-                node = new SValueNode(position, node);
+                node = newSValueNode(position, node);
             }
         }
         
@@ -796,6 +796,10 @@ public class ParserSupport {
         } 
 
         return node;
+    }
+
+    public SValueNode newSValueNode(ISourcePosition position, Node node) {
+        return new SValueNode(position, node);
     }
     
     public SplatNode newSplatNode(ISourcePosition position, Node node) {
