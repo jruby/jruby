@@ -154,19 +154,38 @@ public class ThreadLibrary implements Library {
             return this;
         }
 
-        @JRubyMethod
-        public synchronized RubyBoolean unlock(ThreadContext context) {
-            if (isLocked()) {
-                if (owner != context.getThread()) {
-                    throw context.getRuntime().newThreadError(
-                            "Mutex is not owned by calling thread");
-                }
-                owner = null;
-                notify();
-                return context.getRuntime().getTrue();
-            } else {
-                throw context.getRuntime().newThreadError("Mutex is not locked");
+        @JRubyMethod(name = "unlock", compat = CompatVersion.RUBY1_8)
+        public synchronized IRubyObject unlock(ThreadContext context) {
+            Ruby runtime = context.getRuntime();
+
+            if (!isLocked()) throw runtime.newThreadError("Mutex is not locked");
+
+            if (owner != context.getThread()) {
+                throw runtime.newThreadError("Mutex is not owned by calling thread");
             }
+
+            // FIXME: 1.8 throws nil when the unlock is not waking.  I don't
+            // think we can know this?
+            owner = null;
+            notify();
+            return this;
+        }
+
+        @JRubyMethod(name = "unlock", compat = CompatVersion.RUBY1_9)
+        public synchronized IRubyObject unlock19(ThreadContext context) {
+            Ruby runtime = context.getRuntime();
+
+            if (!isLocked()) {
+                throw runtime.newThreadError("Attempt to unlock a mutex which is not locked");
+            }
+
+            if (owner != context.getThread()) {
+                throw runtime.newThreadError("Attempt to unlock a mutex which is locked by another thread");
+            }
+
+            owner = null;
+            notify();
+            return this;
         }
 
         @JRubyMethod
