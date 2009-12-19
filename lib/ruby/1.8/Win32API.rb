@@ -8,7 +8,7 @@ class Win32API
   TypeDefs = {
     '0' => FFI::Type::VOID,
     'V' => FFI::Type::VOID,
-    'P' => FFI::Type::POINTER,
+    'P' => FFI::Type::WIN32PTR,
     'I' => FFI::Type::INT,
     'N' => FFI::Type::INT,
     'L' => FFI::Type::INT,

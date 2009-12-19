@@ -9,6 +9,7 @@ import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -286,6 +287,10 @@ public final class DefaultMethodFactory {
                 return BufferMarshaller.OUT;
             case BUFFER_INOUT:
                 return BufferMarshaller.INOUT;
+
+            case WIN32PTR:
+                return BufferMarshaller.WIN32PTR;
+                
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);
         }
@@ -692,9 +697,20 @@ public final class DefaultMethodFactory {
         static final ParameterMarshaller IN = new BufferMarshaller(ArrayFlags.IN);
         static final ParameterMarshaller OUT = new BufferMarshaller(ArrayFlags.OUT);
         static final ParameterMarshaller INOUT = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT);
+
+        /** A special case for implementation of the Win32API 'P' type */
+        static final ParameterMarshaller WIN32PTR = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT, true);
+
         private final int flags;
+        private final boolean acceptIntegerValues;
+
         public BufferMarshaller(int flags) {
+            this(flags, false);
+        }
+
+        public BufferMarshaller(int flags, boolean acceptIntegerValues) {
             this.flags = flags;
+            this.acceptIntegerValues = acceptIntegerValues;
         }
         private static final int bufferFlags(Buffer buffer) {
             int f = buffer.getInOutFlags();
@@ -753,6 +769,11 @@ public final class DefaultMethodFactory {
                     }
                     break;
                 }
+
+            } else if (parameter instanceof RubyInteger && acceptIntegerValues) {
+                
+                buffer.putAddress(((RubyInteger) parameter).getLongValue());
+
             } else {
                 throw context.getRuntime().newArgumentError("Invalid buffer/pointer parameter");
             }

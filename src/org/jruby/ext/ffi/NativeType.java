@@ -65,7 +65,8 @@ public enum NativeType implements NativeParam {
     VARARGS,
     // ARRAY and STRUCT are only used internally
     ARRAY,
-    STRUCT;
+    STRUCT,
+    WIN32PTR;
     
     public final int intValue() {
         return ordinal();
