@@ -392,6 +392,8 @@ public class JavaClass extends JavaObject {
     private RubyClass unfinishedProxyClass;
     
     private final ReentrantLock proxyLock = new ReentrantLock();
+
+    private final Initializer initializer;
     
     public RubyModule getProxyModule() {
         // allow proxy to be read without synchronization. if proxy
@@ -441,10 +443,11 @@ public class JavaClass extends JavaObject {
     private JavaClass(Ruby runtime, Class<?> javaClass) {
         super(runtime, (RubyClass) runtime.getJavaSupport().getJavaClassClass(), javaClass);
         if (javaClass.isInterface()) {
-            initializeInterface(javaClass);
+            initializer = new InterfaceInitializer(javaClass);
         } else if (!(javaClass.isArray() || javaClass.isPrimitive())) {
-            // TODO: public only?
-            initializeClass(javaClass);
+            initializer = new ClassInitializer(javaClass);
+        } else {
+            initializer = DUMMY_INITIALIZER;
         }
     }
     
@@ -453,64 +456,100 @@ public class JavaClass extends JavaObject {
         return other instanceof JavaClass &&
             this.getValue() == ((JavaClass)other).getValue();
     }
-    
-    private void initializeInterface(Class<?> javaClass) {
-        Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
-        List<ConstantField> constants = new ArrayList<ConstantField>(); 
-        Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
-        Field[] fields = getDeclaredFields(javaClass); 
 
-        for (int i = fields.length; --i >= 0; ) {
-            Field field = fields[i];
-            if (javaClass != field.getDeclaringClass()) continue;
-            if (ConstantField.isConstant(field)) constants.add(new ConstantField(field));
-            
-            int modifiers = field.getModifiers();
-            if (Modifier.isStatic(modifiers)) addField(staticCallbacks, staticNames, field, Modifier.isFinal(modifiers), true);
+    private interface Initializer {
+        public void initialize();
+    }
+
+    private class InterfaceInitializer implements Initializer {
+        private volatile boolean hasRun = false;
+        private final Class javaClass;
+
+        public InterfaceInitializer(Class<?> javaClass) {
+            this.javaClass = javaClass;
         }
+        
+        public synchronized void initialize() {
+            if (hasRun) return;
+            hasRun = true;
 
-        // Now add all aliases for the static methods (fields) as appropriate
-        for (Map.Entry<String, NamedInstaller> entry : staticCallbacks.entrySet()) {
-            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller)entry.getValue(), staticNames);
+            Map<String, AssignedName> staticNames  = new HashMap<String, AssignedName>(STATIC_RESERVED_NAMES);
+            List<ConstantField> constants = new ArrayList<ConstantField>();
+            Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
+            Field[] fields = getDeclaredFields(javaClass);
+
+            for (int i = fields.length; --i >= 0; ) {
+                Field field = fields[i];
+                if (javaClass != field.getDeclaringClass()) continue;
+                if (ConstantField.isConstant(field)) constants.add(new ConstantField(field));
+
+                int modifiers = field.getModifiers();
+                if (Modifier.isStatic(modifiers)) addField(staticCallbacks, staticNames, field, Modifier.isFinal(modifiers), true);
             }
+
+            // Now add all aliases for the static methods (fields) as appropriate
+            for (Map.Entry<String, NamedInstaller> entry : staticCallbacks.entrySet()) {
+                if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
+                    assignAliases((MethodInstaller)entry.getValue(), staticNames);
+                }
+            }
+
+            JavaClass.this.staticAssignedNames = staticNames;
+            JavaClass.this.staticInstallers = staticCallbacks;
+            JavaClass.this.constantFields = constants;
+        }
+    };
+
+    private class ClassInitializer implements Initializer {
+        private volatile boolean hasRun = false;
+        private final Class javaClass;
+
+        public ClassInitializer(Class<?> javaClass) {
+            this.javaClass = javaClass;
         }
 
-        this.staticAssignedNames = staticNames;
-        this.staticInstallers = staticCallbacks;        
-        this.constantFields = constants;
+        public synchronized void initialize() {
+            if (hasRun) return;
+            hasRun = true;
+            
+            Class<?> superclass = javaClass.getSuperclass();
+            Map<String, AssignedName> staticNames;
+            Map<String, AssignedName> instanceNames;
+            if (superclass == null) {
+                staticNames = new HashMap<String, AssignedName>();
+                instanceNames = new HashMap<String, AssignedName>();
+            } else {
+                JavaClass superJavaClass = get(getRuntime(),superclass);
+                staticNames = new HashMap<String, AssignedName>(superJavaClass.getStaticAssignedNames());
+                instanceNames = new HashMap<String, AssignedName>(superJavaClass.getInstanceAssignedNames());
+            }
+            staticNames.putAll(STATIC_RESERVED_NAMES);
+            instanceNames.putAll(INSTANCE_RESERVED_NAMES);
+            Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
+            Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
+            List<ConstantField> constantFields = new ArrayList<ConstantField>();
+
+            setupClassFields(javaClass, constantFields, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
+            setupClassMethods(javaClass, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
+            setupClassConstructors(javaClass);
+
+            JavaClass.this.staticAssignedNames = Collections.unmodifiableMap(staticNames);
+            JavaClass.this.instanceAssignedNames = Collections.unmodifiableMap(instanceNames);
+            JavaClass.this.staticInstallers = Collections.unmodifiableMap(staticCallbacks);
+            JavaClass.this.instanceInstallers = Collections.unmodifiableMap(instanceCallbacks);
+            JavaClass.this.constantFields = Collections.unmodifiableList(constantFields);
+        }
     }
 
-    private void initializeClass(Class<?> javaClass) {
-        Class<?> superclass = javaClass.getSuperclass();
-        Map<String, AssignedName> staticNames;
-        Map<String, AssignedName> instanceNames;
-        if (superclass == null) {
-            staticNames = new HashMap<String, AssignedName>();
-            instanceNames = new HashMap<String, AssignedName>();
-        } else {
-            JavaClass superJavaClass = get(getRuntime(),superclass);
-            staticNames = new HashMap<String, AssignedName>(superJavaClass.getStaticAssignedNames());
-            instanceNames = new HashMap<String, AssignedName>(superJavaClass.getInstanceAssignedNames());
+    private static final Initializer DUMMY_INITIALIZER = new Initializer() {
+        public synchronized void initialize() {
+            // anything useful we could do here?
         }
-        staticNames.putAll(STATIC_RESERVED_NAMES);
-        instanceNames.putAll(INSTANCE_RESERVED_NAMES);
-        Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
-        Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
-        List<ConstantField> constantFields = new ArrayList<ConstantField>();
-        
-        setupClassFields(javaClass, constantFields, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
-        setupClassMethods(javaClass, staticNames, staticCallbacks, instanceNames, instanceCallbacks);
-        setupClassConstructors(javaClass);
-        
-        this.staticAssignedNames = Collections.unmodifiableMap(staticNames);
-        this.instanceAssignedNames = Collections.unmodifiableMap(instanceNames);
-        this.staticInstallers = Collections.unmodifiableMap(staticCallbacks);
-        this.instanceInstallers = Collections.unmodifiableMap(instanceCallbacks);
-        this.constantFields = Collections.unmodifiableList(constantFields);
-    }
+    };
     
     public void setupProxy(final RubyClass proxy) {
+        initializer.initialize();
+
         assert proxyLock.isHeldByCurrentThread();
         proxy.defineFastMethod("__jsend!", __jsend_method);
         final Class<?> javaClass = javaClass();
@@ -787,6 +826,8 @@ public class JavaClass extends JavaObject {
     
     // old (quasi-deprecated) interface class
     private void setupInterfaceProxy(final RubyClass proxy) {
+        initializer.initialize();
+        
         assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyClass == null;
@@ -796,6 +837,8 @@ public class JavaClass extends JavaObject {
     }
     
     public void setupInterfaceModule(final RubyModule module) {
+        initializer.initialize();
+        
         assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyModule == null;
