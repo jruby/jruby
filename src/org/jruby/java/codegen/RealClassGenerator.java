@@ -476,27 +476,15 @@ public class RealClassGenerator {
                     mv.invokeinterface(p(IRubyObject.class), "getRuntime", sig(Ruby.class));
                     mv.astore(rubyIndex);
 
-                    // Try to look up field for simple name
-                    // get field; if nonnull, go straight to dispatch
+                    // store current CacheEntry
                     mv.getstatic(pathName, simpleName, ci(CacheEntry.class));
-                    mv.dup();
+                    mv.astore(rubyIndex + 1);
+
+                    // check current CacheEntry
+                    mv.aload(rubyIndex + 1);
                     mv.aload(0);
                     mv.invokestatic(p(RealClassGenerator.class), "isCacheOk", sig(boolean.class, params(CacheEntry.class, IRubyObject.class)));
                     mv.iftrue(dispatch);
-
-                    // field is null, lock class and try to populate
-                    mv.line(6);
-                    mv.pop();
-                    mv.getstatic(pathName, "$monitor", ci(Object.class));
-                    mv.monitorenter();
-
-                    // try/finally block to ensure unlock
-                    Label tryStart = new Label();
-                    Label tryEnd = new Label();
-                    Label finallyStart = new Label();
-                    Label finallyEnd = new Label();
-                    mv.line(7);
-                    mv.label(tryStart);
 
                     mv.aload(0);
                     for (String eachName : nameSet) {
@@ -505,53 +493,36 @@ public class RealClassGenerator {
                     mv.invokestatic(p(RealClassGenerator.class), "searchWithCache", sig(CacheEntry.class, params(IRubyObject.class, String.class, nameSet.size())));
 
                     // store it
-                    mv.putstatic(pathName, simpleName, ci(CacheEntry.class));
-
-                    // all done with lookup attempts, release monitor
-                    mv.getstatic(pathName, "$monitor", ci(Object.class));
-                    mv.monitorexit();
-                    mv.go_to(recheckMethod);
-
-                    // end of try block
-                    mv.label(tryEnd);
-
-                    // finally block to release monitor
-                    mv.label(finallyStart);
-                    mv.line(9);
-                    mv.getstatic(pathName, "$monitor", ci(Object.class));
-                    mv.monitorexit();
-                    mv.label(finallyEnd);
-                    mv.athrow();
-
-                    // exception handling for monitor release
-                    mv.trycatch(tryStart, tryEnd, finallyStart, null);
-                    mv.trycatch(finallyStart, finallyEnd, finallyStart, null);
+                    mv.astore(rubyIndex + 1);
 
                     // re-get, re-check method; if not null now, go to dispatch
                     mv.label(recheckMethod);
                     mv.line(10);
-                    mv.getstatic(pathName, simpleName, ci(CacheEntry.class));
-                    mv.dup();
+                    mv.aload(rubyIndex + 1);
                     mv.getfield(p(CacheEntry.class), "method", ci(DynamicMethod.class));
                     mv.invokevirtual(p(DynamicMethod.class), "isUndefined", sig(boolean.class));
                     mv.iffalse(dispatch);
 
                     // method still not available, call method_missing
                     mv.line(11);
-                    mv.pop();
-                    // exit monitor before making call
-                    // FIXME: this not being in a finally is a little worrisome
                     mv.aload(0);
                     mv.ldc(simpleName);
                     coerceArgumentsToRuby(mv, paramTypes, rubyIndex);
                     mv.invokestatic(p(RuntimeHelpers.class), "invokeMethodMissing", sig(IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
                     mv.go_to(end);
 
-                    // perform the dispatch
+                    // perform the dispatch, saving successful CacheEntry first
                     mv.label(dispatch);
-                    mv.line(12, dispatch);
-                    // get current context
+
+                    // store cache entry
+                    mv.aload(rubyIndex + 1);
+                    mv.putstatic(pathName, simpleName, ci(CacheEntry.class));
+
+                    // get method
+                    mv.aload(rubyIndex + 1);
                     mv.getfield(p(CacheEntry.class), "method", ci(DynamicMethod.class));
+                    
+                    // get current context
                     mv.aload(rubyIndex);
                     mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
 
