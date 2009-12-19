@@ -46,6 +46,10 @@ class Object
     class_names = [*include_class]
 
     class_names.each do |full_class_name|
+      if !full_class_name.respond_to? :match
+        raise ArgumentError.new "Invalid java class/interface: #{full_class_name}"
+      end
+
       package_name, class_name = full_class_name.match(/((.*)\.)?([^\.]*)/)[2,3]
 
       if block_given?
