@@ -92,6 +92,10 @@ public final class StructLayout extends Type {
         arrayClass.includeModule(runtime.getEnumerable());
         arrayClass.defineAnnotatedMethods(Array.class);
 
+        RubyClass charArrayClass = runtime.defineClassUnder("CharArray", arrayClass,
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
+        charArrayClass.defineAnnotatedMethods(CharArray.class);
+
         RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
         fieldClass.defineAnnotatedMethods(Member.class);
@@ -438,13 +442,18 @@ public final class StructLayout extends Type {
     }
     
     @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
-    public static final class Array extends RubyObject {
-        private final AbstractMemory ptr;
-        private final MemoryOp aio;
-        private final Type.Array arrayType;
+    public static class Array extends RubyObject {
+        protected final AbstractMemory ptr;
+        protected final MemoryOp aio;
+        protected final Type.Array arrayType;
 
         Array(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"));
+            this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"),
+                    ptr, offset, type, aio);
+        }
+
+        Array(Ruby runtime, RubyClass klass, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
+            super(runtime, klass);
             this.ptr = ((AbstractMemory) ptr).slice(runtime, offset, type.getNativeSize());
             this.arrayType = type;
             this.aio = aio;
@@ -480,10 +489,12 @@ public final class StructLayout extends Type {
         @JRubyMethod(name = { "to_a", "to_ary" })
         public IRubyObject get(ThreadContext context) {
             Ruby runtime = context.getRuntime();
+
             IRubyObject[] elems = new IRubyObject[arrayType.length()];
             for (int i = 0; i < elems.length; ++i) {
                 elems[i] = get(runtime, i);
             }
+
             return RubyArray.newArrayNoCopy(runtime, elems);
         }
 
@@ -510,15 +521,19 @@ public final class StructLayout extends Type {
             return this;
         }
 
+        
+    }
+
+    @JRubyClass(name="FFI::StructLayout::CharArray", parent="FFI::StructLayout::Array")
+    public static final class CharArray extends Array {
+        CharArray(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("CharArray"),
+                    ptr, offset, type, aio);
+        }
+
         @JRubyMethod(name = { "to_s" })
         public IRubyObject to_s(ThreadContext context) {
-            switch (arrayType.getComponentType().getNativeType()) {
-                case CHAR:
-                case UCHAR:
-                    return MemoryUtil.getTaintedString(context.getRuntime(), ptr.getMemoryIO(), 0, arrayType.length());
-                default:
-                    return context.getRuntime().getNil();
-            }
+            return MemoryUtil.getTaintedString(context.getRuntime(), ptr.getMemoryIO(), 0, arrayType.length());
         }
     }
 
@@ -729,13 +744,39 @@ public final class StructLayout extends Type {
         }
 
         public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
-            throw runtime.newNotImplementedError("Cannot set Array fields");
+
+            if (isCharArray() && value instanceof RubyString) {
+                ByteList bl = value.convertToString().getByteList();
+                getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.unsafeBytes(), bl.begin(),
+                    Math.min(bl.length(), arrayType.length() - 1));
+
+            } else {
+                RubyArray ary = value.convertToArray();
+                int count = ary.size();
+                if (count > arrayType.length()) {
+                    throw runtime.newIndexError("array too big");
+                }
+                AbstractMemory memory = (AbstractMemory) ptr;
+
+                // Clear any elements that will not be filled by the array
+                if (count < arrayType.length()) {
+                    memory.getMemoryIO().setMemory(offset + (count * arrayType.getComponentType().getNativeSize()),
+                            (arrayType.length() - count) * arrayType.getComponentType().getNativeSize(), (byte) 0);
+                }
+                
+                for (int i = 0; i < count; ++i) {
+                    op.put(runtime, memory, offset + (i * arrayType.getComponentType().getNativeSize()),
+                            ary.entry(i));
+                }
+            }
         }
 
         public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
             IRubyObject s = cache.getCachedValue(this);
             if (s == null) {
-                s = new StructLayout.Array(runtime, ptr, offset, arrayType, op);
+                s = isCharArray()
+                        ? new StructLayout.CharArray(runtime, ptr, offset, arrayType, op)
+                        : new StructLayout.Array(runtime, ptr, offset, arrayType, op);
                 cache.putCachedValue(this, s);
             }
 
@@ -756,6 +797,11 @@ public final class StructLayout extends Type {
             }
 
             return members;
+        }
+
+        private final boolean isCharArray() {
+            return arrayType.getComponentType().nativeType == NativeType.CHAR
+                    || arrayType.getComponentType().nativeType == NativeType.UCHAR;
         }
     }
 
