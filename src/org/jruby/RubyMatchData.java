@@ -101,7 +101,7 @@ public class RubyMatchData extends RubyObject {
 
     @Override
     public int getNativeTypeIndex() {
-        return ClassIndex.MATCH;
+        return ClassIndex.MATCHDATA;
     }
 
     private static final class Pair implements Comparable {
