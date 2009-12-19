@@ -921,6 +921,49 @@ public class ScriptingContainerTest {
     /**
      * Test of callMethod method, of class ScriptingContainer.
      */
+    @Test
+    public void testCallMethod_without_returnType() {
+        System.out.println("callMethod no returnType");
+        Object receiver = null;
+        String methodName = "";
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        Object expResult = null;
+        Object result = instance.callMethod(receiver, methodName);
+        assertEquals(expResult, result);
+        String script =
+                "def say_something\n" +
+                  "return \"Oh, well. I'm stucked\"" +
+                "end";
+        receiver = instance.runScriptlet(script);
+        methodName = "say_something";
+        String something = (String)instance.callMethod(receiver, methodName);
+        assertEquals("Oh, well. I'm stucked", something);
+
+        script =
+                "def give_me_foo\n" +
+                  "Java::org.jruby.embed.FooArU.new\n" +
+                "end";
+        receiver = instance.runScriptlet(script);
+        methodName = "give_me_foo";
+        FooArU foo = (FooArU)instance.callMethod(receiver, methodName);
+        assertEquals("May I have your name?", foo.askPolitely());
+
+        script =
+                "def give_me_array(*args)\n" +
+                  "args\n" +
+                "end";
+        receiver = instance.runScriptlet(script);
+        methodName = "give_me_array";
+        List<Double> list =
+                (List<Double>)instance.callMethod(receiver, methodName, 3.1415, 2.7182, 1.4142);
+        Double[] a = {3.1415, 2.7182, 1.4142};
+        List expList = Arrays.asList(a);
+        assertEquals(expList, list);
+    }
+
+    /**
+     * Test of callMethod method, of class ScriptingContainer.
+     */
     /*
     @Test
     public void testCallMethod_5args_2() {

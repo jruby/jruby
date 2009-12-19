@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -566,6 +565,32 @@ public class ScriptingContainer {
         return objectAdapter;
     }
 
+    /**
+     * Executes a method defined in Ruby script. This method is used when a Ruby
+     * method does not have any argument.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param returnType is the type we want it to convert to
+     * @return an instance of requested Java type
+     */
+    public Object callMethod(Object receiver, String methodName, Object... args) {
+        return objectAdapter.callMethod(receiver, methodName, args);
+    }
+
+    /**
+     * Executes a method defined in Ruby script. This method is used when a Ruby
+     * method does not have any argument.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param returnType is the type we want it to convert to
+     * @return an instance of requested Java type
+     */
+    public Object callMethod(Object receiver, String methodName, Block block, Object... args) {
+        return objectAdapter.callMethod(receiver, methodName, block, args);
+    }
+    
     /**
      * Executes a method defined in Ruby script. This method is used when a Ruby
      * method does not have any argument.

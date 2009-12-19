@@ -41,6 +41,28 @@ import org.jruby.runtime.Block;
  */
 public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
     /**
+     * Executes a method defined in Ruby script.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param args are method arguments.
+     * @return an instance automatically converted from Ruby to Java
+     */
+    Object callMethod(Object receiver, String methodName, Object... args);
+
+    /**
+     * Executes a method defined in Ruby script. This method is used when a Ruby
+     * method has a block in its arguments.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param args is an array of method arguments except a block
+     * @param block is a block to be executed in this method
+     * @return an instance of automatically converted Java type
+     */
+    Object callMethod(Object receiver, String methodName, Block block, Object... args);
+
+    /**
      * Executes a method defined in Ruby script. This method is used when a Ruby
      * method does not have any argument.
      * 
