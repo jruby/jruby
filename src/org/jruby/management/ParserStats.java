@@ -2,12 +2,13 @@ package org.jruby.management;
 
 import java.lang.ref.SoftReference;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
 
 public class ParserStats implements ParserStatsMBean {
     private final SoftReference<Ruby> ruby;
     private AtomicInteger totalParseTime = new AtomicInteger(0);
-    private AtomicInteger totalParsedBytes = new AtomicInteger(0);
+    private AtomicLong totalParsedBytes = new AtomicLong(0);
     private AtomicInteger totalEvalParses = new AtomicInteger(0);
     private AtomicInteger totalLoadParses = new AtomicInteger(0);
     private AtomicInteger totalJRubyModuleParses = new AtomicInteger(0);
@@ -42,14 +43,14 @@ public class ParserStats implements ParserStatsMBean {
         return runtime.getParser().getTotalTime() / 1000000000.0;
     }
 
-    public int getTotalParsedBytes() {
+    public long getTotalParsedBytes() {
         Ruby runtime = ruby.get();
         if (runtime == null) return 0;
         return runtime.getParser().getTotalBytes();
     }
 
     public double getParseTimePerKB() {
-        int totalBytes = getTotalParsedBytes();
+        long totalBytes = getTotalParsedBytes();
         if (totalBytes == 0) return 0;
         return getTotalParseTime() / (totalBytes / 1000.0);
     }
