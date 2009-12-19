@@ -352,6 +352,20 @@ public class RuntimeHelpers {
         return new MethodMissingMethod(methodMissing);
     }
 
+    public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
+        Ruby runtime = selfClass.getClassRuntime();
+
+        if (name.equals("method_missing")) {
+            return selectInternalMM(runtime, visibility, callType);
+        }
+
+        DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
+        if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
+            return selectInternalMM(runtime, visibility, callType);
+        }
+        return new MethodMissingMethod(methodMissing);
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private DynamicMethod delegate;
 
