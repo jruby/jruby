@@ -5,7 +5,7 @@
         <vendor>The JRuby Team</vendor>
         <description>Sample WebStart Application with JRuby</description>
         <description kind="short">JRuby IRB Console Sample</description>
-        <homepage href="http://jruby.codehaus.org/"/>
+        <homepage href="http://jruby.org/"/>
     </information>
     <resources>
         <j2se version="1.5+"/>

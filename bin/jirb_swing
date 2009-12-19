@@ -8,6 +8,11 @@ require 'jruby'
 require 'irb'
 require 'irb/completion'
 
+if ARGV.empty?
+  # default options, esp. useful for jrubyw
+  ARGV << '--readline' << '--prompt' << 'inf-ruby'
+end
+
 import java.awt.Color
 import java.awt.Font
 import javax.swing.JFrame

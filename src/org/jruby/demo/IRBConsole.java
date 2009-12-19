@@ -72,7 +72,10 @@ public class IRBConsole extends JFrame {
         Thread t2 = new Thread() {
             public void run() {
                 console.setVisible(true);
-                runtime.evalScriptlet("require 'irb'; require 'irb/completion'; IRB.start");
+                runtime.evalScriptlet(
+                        "ARGV << '--readline' << '--prompt' << 'inf-ruby';"
+                        + "require 'irb'; require 'irb/completion';"
+                        + "IRB.start");
             }
         };
         t2.start();
