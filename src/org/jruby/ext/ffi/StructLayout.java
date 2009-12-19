@@ -441,23 +441,25 @@ public final class StructLayout extends Type {
     public static final class Array extends RubyObject {
         private final AbstractMemory ptr;
         private final MemoryOp aio;
-        private final long offset;
         private final Type.Array arrayType;
 
         Array(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"));
-            this.ptr = (AbstractMemory) ptr;
-            this.offset = offset;
+            this.ptr = ((AbstractMemory) ptr).slice(runtime, offset, type.getNativeSize());
             this.arrayType = type;
             this.aio = aio;
         }
 
         private final long getOffset(IRubyObject index) {
-            return offset + (Util.uint32Value(index) * arrayType.getComponentType().getNativeSize());
+            return getOffset(Util.int32Value(index));
         }
 
         private final long getOffset(int index) {
-            return offset + (long) (index * arrayType.getComponentType().getNativeSize());
+            if (index < 0 || index >= arrayType.length()) {
+                throw getRuntime().newIndexError("index " + index + " out of bounds");
+            }
+
+            return (long) (index * arrayType.getComponentType().getNativeSize());
         }
 
         private IRubyObject get(Ruby runtime, int index) {
@@ -487,7 +489,7 @@ public final class StructLayout extends Type {
 
         @JRubyMethod(name = { "to_ptr" })
         public IRubyObject to_ptr(ThreadContext context) {
-            return ptr.slice(context.getRuntime(), offset);
+            return ptr;
         }
 
         @JRubyMethod(name = { "size" })
@@ -513,7 +515,7 @@ public final class StructLayout extends Type {
             switch (arrayType.getComponentType().getNativeType()) {
                 case CHAR:
                 case UCHAR:
-                    return MemoryUtil.getTaintedString(context.getRuntime(), ptr.getMemoryIO(), offset, arrayType.length());
+                    return MemoryUtil.getTaintedString(context.getRuntime(), ptr.getMemoryIO(), 0, arrayType.length());
                 default:
                     return context.getRuntime().getNil();
             }

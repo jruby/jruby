@@ -120,6 +120,11 @@ public final class Buffer extends AbstractMemory {
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return new Buffer(runtime, getMetaClass(), this.io.slice(offset), this.size - offset, this.typeSize, this.inout);
     }
+
+    protected AbstractMemory slice(Ruby runtime, long offset, long size) {
+        return new Buffer(runtime, getMetaClass(), this.io.slice(offset, size), size, this.typeSize, this.inout);
+    }
+
     protected Pointer getPointer(Ruby runtime, long offset) {
         return new Pointer(runtime, (DirectMemoryIO) getMemoryIO().getMemoryIO(offset));
     }

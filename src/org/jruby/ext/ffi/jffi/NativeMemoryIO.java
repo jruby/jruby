@@ -38,6 +38,10 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
         return offset == 0 ? this :new NativeMemoryIO(this, offset);
     }
 
+    public DirectMemoryIO slice(long offset, long size) {
+        return new BoundedNativeMemoryIO(runtime, this, offset, size);
+    }
+
     public final java.nio.ByteBuffer asByteBuffer() {
         return IO.newDirectByteBuffer(address, Integer.MAX_VALUE);
     }

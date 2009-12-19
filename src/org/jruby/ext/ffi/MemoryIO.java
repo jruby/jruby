@@ -60,6 +60,17 @@ public interface MemoryIO {
     public MemoryIO slice(long offset);
 
     /**
+     * Creates a new MemoryIO pointing to a subset of the memory area of this
+     * <tt>MemoryIO</tt>.
+     * @param offset The offset within the existing memory area to start the
+     * new <tt>MemoryIO</tt> at.
+     * @param size The size of the new slice.
+     *
+     * @return A <tt>MemoryIO</tt> instance.
+     */
+    public MemoryIO slice(long offset, long size);
+
+    /**
      * Creates a view of this memory object as a java NIO byte buffer.
      *
      * @return A ByteBuffer instance

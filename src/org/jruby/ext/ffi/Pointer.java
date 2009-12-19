@@ -134,6 +134,12 @@ public class Pointer extends AbstractMemory {
                 size == Long.MAX_VALUE ? Long.MAX_VALUE : size - offset, typeSize);
     }
 
+    @Override
+    protected AbstractMemory slice(Ruby runtime, long offset, long size) {
+        return new Pointer(runtime, getPointerClass(runtime),
+                (DirectMemoryIO) getMemoryIO().slice(offset, size), size, typeSize);
+    }
+
     protected Pointer getPointer(Ruby runtime, long offset) {
         return new Pointer(runtime, getPointerClass(runtime), getMemoryIO().getMemoryIO(offset), Long.MAX_VALUE);
     }

@@ -74,6 +74,14 @@ public final class ArrayMemoryIO implements MemoryIO {
         checkBounds(offset, 1);
         return offset == 0 ? this : new ArrayMemoryIO(runtime, array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);
     }
+
+    public ArrayMemoryIO slice(long offset, long size) {
+        checkBounds(offset, size);
+
+        return offset == 0 && size == this.length
+                ? this
+                : new ArrayMemoryIO(runtime, array(), arrayOffset() + (int) offset, (int) size);
+    }
     
     public java.nio.ByteBuffer asByteBuffer() {
         return java.nio.ByteBuffer.wrap(buffer, offset, length).duplicate();

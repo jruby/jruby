@@ -1601,5 +1601,6 @@ abstract public class AbstractMemory extends RubyObject {
         return slice(context.getRuntime(), RubyNumeric.fix2long(value));
     }
     abstract protected AbstractMemory slice(Ruby runtime, long offset);
+    abstract protected AbstractMemory slice(Ruby runtime, long offset, long size);
     abstract protected Pointer getPointer(Ruby runtime, long offset);
 }

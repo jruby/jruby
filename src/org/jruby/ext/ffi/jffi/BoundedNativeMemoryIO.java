@@ -15,7 +15,7 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
     private final Ruby runtime;
     final long address;
     final long size;
-    final BoundedNativeMemoryIO parent; // keep a reference to avoid the memory being freed
+    final DirectMemoryIO parent; // keep a reference to avoid the memory being freed
 
     BoundedNativeMemoryIO(Ruby runtime, long address, int size) {
         this.runtime = runtime;
@@ -24,10 +24,17 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         this.parent = null;
     }
 
-    private BoundedNativeMemoryIO(BoundedNativeMemoryIO parent, long offset) {
+    BoundedNativeMemoryIO(BoundedNativeMemoryIO parent, long offset) {
         this.runtime = parent.runtime;
-        this.address = parent.address + offset;
+        this.address = parent.getAddress() + offset;
         this.size = parent.size - offset;
+        this.parent = parent;
+    }
+
+    BoundedNativeMemoryIO(Ruby runtime, DirectMemoryIO parent, long offset, long size) {
+        this.runtime = runtime;
+        this.address = parent.getAddress() + offset;
+        this.size = size;
         this.parent = parent;
     }
 
@@ -42,6 +49,11 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public BoundedNativeMemoryIO slice(long offset) {
         checkBounds(offset, 1);
         return offset == 0 ? this :new BoundedNativeMemoryIO(this, offset);
+    }
+
+    public BoundedNativeMemoryIO slice(long offset, long size) {
+        checkBounds(offset, size);
+        return offset == 0 && size == this.size ? this :new BoundedNativeMemoryIO(runtime, this, offset, size);
     }
 
     public final java.nio.ByteBuffer asByteBuffer() {
