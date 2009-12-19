@@ -884,7 +884,7 @@ arg             : lhs '=' arg {
                     $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
                 }
                 | tTILDE arg {
-                    $$ = support.getOperatorCallNode($2, "!");
+                    $$ = support.getOperatorCallNode($2, "~");
                 }
                 | arg tLSHFT arg {
                     $$ = support.getOperatorCallNode($1, "<<", $3, getPosition());
