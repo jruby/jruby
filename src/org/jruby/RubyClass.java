@@ -48,10 +48,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.java.MiniJava;
-import org.jruby.java.proxies.JavaInterfaceTemplate;
+import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1154,10 +1152,10 @@ public class RubyClass extends RubyModule {
 
                 m.aload(0); // self
                 m.ldc(methodName); // method name
-                MiniJava.coerceArgumentsToRuby(m, params, rubyIndex);
+                RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
                 m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
 
-                MiniJava.coerceResultAndReturn(m, methodSignature[0]);
+                RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
             m.end();

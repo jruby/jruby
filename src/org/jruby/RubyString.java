@@ -78,7 +78,6 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.java.MiniJava;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -7126,11 +7125,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } catch (Exception e) {
             throw new RuntimeException("Something's seriously broken with encodings", e);
         }
-    }
-
-    @Override
-    public IRubyObject to_java() {
-        return MiniJava.javaToRuby(getRuntime(), new String(getBytes()));
     }
 
     @Override

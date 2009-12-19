@@ -42,7 +42,6 @@ import java.util.Map;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.java.MiniJava;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
@@ -1094,16 +1093,6 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "induced_from", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(other);
-    }
-
-    @Override
-    public IRubyObject to_java() {
-        return MiniJava.javaToRuby(getRuntime(), Long.valueOf(value));
-    }
-
-    @Override
-    public IRubyObject as(Class javaClass) {
-        return MiniJava.javaToRuby(getRuntime(), coerceToJavaType(getRuntime(), this, javaClass));
     }
     
     private static Object coerceToJavaType(Ruby ruby, RubyFixnum self, Class javaClass) {

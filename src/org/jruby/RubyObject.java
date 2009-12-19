@@ -1497,14 +1497,6 @@ public class RubyObject extends RubyBasicObject {
         return context.getRuntime().newBoolean(! callMethod(context, "=~", arg).isTrue());
     }
 
-    public IRubyObject to_java() {
-        throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
-    }
-
-    public IRubyObject as(Class javaClass) {
-        throw getRuntime().newTypeError(getMetaClass().getBaseName() + " cannot coerce to a Java type.");
-    }
-
 
     //
     // INSTANCE VARIABLE RUBY METHODS
