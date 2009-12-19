@@ -24,6 +24,13 @@ class TestWin32 < Test::Unit::TestCase
       assert_match(/^[\d\.:]+$/, Resolv.getaddress("www.google.com"))
     end
 
+    # JRUBY-4313
+    def test_syslog
+      assert_raise(LoadError) do
+        require 'syslog'
+      end
+    end
+
   else
     # make testrunner happy
     def test_noop
