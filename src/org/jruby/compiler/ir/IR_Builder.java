@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Stack;
 import java.util.Map;
 import java.util.Date;
 
@@ -259,6 +260,68 @@ public class IR_Builder
            i++;
         }
     }
+
+    /* -----------------------------------------------------------------------------------
+     * Every ensure block has a start label and end label, and at the end, it will execute
+     * an jump to an address stored in a return address variable.
+     *
+     * This ruby code will translate to the IR shown below
+     * -----------------
+     *   begin
+     *       ... protected body ...
+     *   ensure
+     *       ... ensure block to run
+     *   end
+     * -----------------
+     *  IR instructions for the protected body
+     *  L_start:
+     *     .. ensure block IR ...
+     *     jump %ret_addr
+     *  L_end:
+     * -----------------
+     *
+     * If N is a node in the protected body that might exit this scope (exception rethrows
+     * and returns), N has to first jump to the ensure block and let the ensure block run.
+     * In addition, N has to set up a return address label in the return address var of
+     * this ensure block so that the ensure block can transfer control block to N.
+     *
+     * Since we can have a nesting of ensure blocks, we are maintaining a stack of these
+     * well-nested ensure blocks.  Every node N that will exit this scope will have to 
+     * co-ordinate the jumps in-and-out of the ensure blocks in the top-to-bottom stacked
+     * order.
+     * ----------------------------------------------------------------------------------- */
+    private static class EnsureBlockInfo
+    {
+        Label    start;
+        Label    end;
+        Variable returnAddr;
+            // Flag set if the protected body has a return or if it rethrows exception
+            // -- basically anytime there is a non-fallthru xfer of control flow.
+        boolean  noFallThru;
+
+        public EnsureBlockInfo(IR_Scope m)
+        {
+            returnAddr = m.getNewVariable();
+            start      = m.getNewLabel();
+            end        = m.getNewLabel();
+            noFallThru = false;
+        }
+
+        public static void emitJumpChain(IR_Scope m, Stack<EnsureBlockInfo> ebStack)
+        {
+            int n = ebStack.size();
+            EnsureBlockInfo[] ebArray = ebStack.toArray(new EnsureBlockInfo[n]);
+            for (int i = n-1; i >= 0; i--) {
+                Label retLabel = m.getNewLabel();
+                m.addInstr(new SET_RETADDR_Instr(ebArray[i].returnAddr, retLabel));
+                m.addInstr(new JUMP_Instr(ebArray[i].start));
+                m.addInstr(new LABEL_Instr(retLabel));
+                ebArray[i].noFallThru = true;
+            }
+        }
+    }
+
+    private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -1452,7 +1515,7 @@ public class IR_Builder
     }
 **/
 
-    private Operand defineNewMethod(MethodDefNode defnNode, IR_Scope s, Operand receiver, boolean isInstanceMethod)
+    private void defineNewMethod(MethodDefNode defnNode, IR_Scope s, Operand receiver, boolean isInstanceMethod)
     {
         IR_Method m;
         if (isInstanceMethod)
@@ -1465,13 +1528,9 @@ public class IR_Builder
 
             // Build IR for body
         if (defnNode.getBodyNode() != null) {
-                // if root of method is rescue, build as a light rescue
-            Operand rv;
-            if (defnNode.getBodyNode() instanceof RescueNode)
-                rv = buildRescueInternal(defnNode.getBodyNode(), m, null, null, null);
-            else
-                rv = build(defnNode.getBodyNode(), m);
-
+               // if root of method is rescue, build as a light rescue
+            Node bodyNode = defnNode.getBodyNode();
+            Operand rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m) : build(bodyNode, m);
             if (rv != null)
                m.addInstr(new RETURN_Instr(rv));
         } else {
@@ -1486,19 +1545,19 @@ public class IR_Builder
             IR_MetaClass mc = new IR_MetaClass(m.getLexicalParent(), receiver);
             mc.addMethod(m);
         }
-
-        return Nil.NIL;
     }
 
     public Operand buildDefn(MethodDefNode node, IR_Scope s) {
         // Instance method
-        return defineNewMethod(node, s, null, true);
+        defineNewMethod(node, s, null, true);
+        return null;
     }
 
     public Operand buildDefs(MethodDefNode node, IR_Scope s) {
         // Class method
         Operand receiver = build(node.getNameNode(), s);
-        return defineNewMethod(node, s, receiver, false);
+        defineNewMethod(node, s, receiver, false);
+        return null;
     }
 
     public Operand receiveArgs(final ArgsNode argsNode, IR_Scope s) {
@@ -1510,7 +1569,6 @@ public class IR_Builder
         // s.getVariableCompiler().checkMethodArity(required, opt, rest);
 
             // self = args[0]
-            // SSS FIXME: Verify that this is correct
         s.addInstr(new RECV_ARG_Instr(s.getSelf(), 0));
 
             // Other args begin at index 1
@@ -1609,32 +1667,13 @@ public class IR_Builder
     }
 
     public Operand buildEnsureNode(Node node, IR_Scope m) {
-        EnsureNode ensureNode       = (EnsureNode) node;
-        Node       bodyNode         = ensureNode.getBodyNode();
-        Label      ensureStartLabel = null;
-        Label      ensureEndLabel   = null;
-        Variable   returnAddrVar    = null;
-        Operand    rv = null;
-        if (bodyNode != null) {
-            if (bodyNode instanceof RescueNode) {
-                returnAddrVar = m.getNewVariable();
-                ensureStartLabel = m.getNewLabel();
-                ensureEndLabel = m.getNewLabel();
-                rv = buildRescueInternal(bodyNode, m, ensureStartLabel, ensureEndLabel, returnAddrVar);
-            }
-            else {
-                rv = build(bodyNode, m);
-                // SSS FIXME: if rv is null, the body returned!  So, we have to intercept the return
-                // and insert the following 2 instrs. before the return!
-                // m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
-                // m.addInstr(new JUMP_Instr(ensureStartLabel));
-                if (rv == null) {
-                    returnAddrVar = m.getNewVariable();
-                    ensureStartLabel = m.getNewLabel();
-                    ensureEndLabel = m.getNewLabel();
-                }
-            }
-        }
+        // Push a new ensure block info node onto the stack of ensure block
+        EnsureBlockInfo ebi = new EnsureBlockInfo(m);
+        _ensureBlockStack.push(ebi);
+
+        EnsureNode ensureNode = (EnsureNode)node;
+        Node       bodyNode   = ensureNode.getBodyNode();
+        Operand rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m) : build(bodyNode, m);
 
         // Generate the ensure block now
         //   START:
@@ -1649,26 +1688,24 @@ public class IR_Builder
         //        .. something else ..
         //     end
 
-        if (ensureStartLabel != null)
-            m.addInstr(new LABEL_Instr(ensureStartLabel));
+        if (ebi.noFallThru)
+            m.addInstr(new LABEL_Instr(ebi.start));
 
-        Operand x = (ensureNode.getEnsureNode() == null) ? Nil.NIL :  build(ensureNode.getEnsureNode(), m);
-        if (returnAddrVar != null)
-            m.addInstr(new JUMP_INDIRECT_Instr(returnAddrVar));
-        if (ensureEndLabel != null)
-            m.addInstr(new LABEL_Instr(ensureEndLabel));
-
-        // The value of the main body is the result of the entire ensure expression.  The ensure has no effect
-        // unless it has an explicit 'return'.  In that case, the result of the main body is useless.  The value
-        // of the entire expression becomes null in that case!
-        if (x == null)
+        // Two cases:
+        // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
+        // 2. Ensure block has an explicit return => the result of the protected body is ignored.
+        Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? Nil.NIL : build(ensureNode.getEnsureNode(), m);
+        if (ensureRetVal == null)   // null => there was a return from within the ensure block!
             rv = null;
 
-        Variable result = m.getNewVariable();
-        if (rv != null)
-            m.addInstr(new COPY_Instr(result, rv));
+        if (ebi.noFallThru) {
+            m.addInstr(new JUMP_INDIRECT_Instr(ebi.returnAddr));
+            m.addInstr(new LABEL_Instr(ebi.end));
+        }
 
-        return result;
+        _ensureBlockStack.pop();
+
+        return rv;
     }
 
     public Operand buildEvStr(EvStrNode node, IR_Scope s) {
@@ -2494,15 +2531,15 @@ public class IR_Builder
     }
 
     public Operand buildRescue(Node node, IR_Scope m) {
-        return buildRescueInternal(node, m, null, null, null);
+        return buildRescueInternal(node, m);
     }
 
-    private Operand buildRescueInternal(Node node, IR_Scope m, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar) {
+    private Operand buildRescueInternal(Node node, IR_Scope m) {
         final RescueNode rescueNode = (RescueNode) node;
-        boolean noEnsure    = (ensureStartLabel == null);
+        boolean noEnsure    = _ensureBlockStack.empty();
         Label   rBeginLabel = m.getNewLabel(); // Label marking start of the begin-rescue(-ensure)-end block
         Label   rFirstLabel = m.getNewLabel(); // Label marking start of the first rescue code.
-        Label   rEndLabel   = noEnsure ? m.getNewLabel() : ensureEndLabel; // Label marking end of the begin-rescue(-ensure)-end block
+        Label   rEndLabel   = noEnsure ? m.getNewLabel() : _ensureBlockStack.peek().end; // Label marking end of the begin-rescue(-ensure)-end block
         Label   elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
@@ -2511,7 +2548,7 @@ public class IR_Builder
         m.addInstr(ri);
 
         // Body
-        Operand tmp = Nil.NIL;  // default return value if for some strange reason, we dont have the body node or the else node!
+        Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
         Variable rv = m.getNewVariable();
         if (rescueNode.getBodyNode() != null)
             tmp = build(rescueNode.getBodyNode(), m);
@@ -2522,29 +2559,28 @@ public class IR_Builder
             tmp = build(rescueNode.getElseNode(), m);
         }
 
-        // - If we dont have an ensure block, simply jump to the end of the rescue block
-        // - If we do have an ensure block, set up the return address to the end of the rescue block,
-        //    and go execute the ensure code.
-        if (noEnsure) {
-            if (tmp != null) {  // tmp can be null if the protected body returns
-                m.addInstr(new COPY_Instr(rv, tmp));
+        if (tmp != null) {
+            m.addInstr(new COPY_Instr(rv, tmp));
+
+            // No explicit return from the protected body
+            // - If we dont have any ensure blocks, simply jump to the end of the rescue block
+            // - If we do, get the innermost ensure block, set up the return address to the end of the ensure block, and go execute the ensure code.
+            if (noEnsure) {
                 m.addInstr(new JUMP_Instr(rEndLabel));
+            }
+            else {
+                EnsureBlockInfo ebi = _ensureBlockStack.peek();
+                m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
+                m.addInstr(new JUMP_Instr(ebi.start));
             }
         }
         else {
-            if (tmp != null) {
-                m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
-                m.addInstr(new JUMP_Instr(ensureStartLabel));
-            }
-            else {
-                // SSS FIXME: The main body returned!
-                // We have to insert the above 2 instrs. just before the return!
-            }
+            rv = null;
         }
 
         // Build the actual rescue block
         m.addInstr(new LABEL_Instr(rFirstLabel));
-        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, rEndLabel);
+        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEndLabel);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (noEnsure)
@@ -2553,10 +2589,10 @@ public class IR_Builder
         return rv;
     }
 
-    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label ensureStartLabel, Label ensureEndLabel, Variable returnAddrVar, Label endLabel) {
+    private void buildRescueBodyInternal(IR_Scope m, Node node, Variable rv, Label endLabel) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
-        boolean noEnsure = (ensureStartLabel == null);
+        boolean haveEnsureBlocks = !_ensureBlockStack.empty();
 
         // Load exception & exception comparison type
         Variable exc = m.getNewVariable();
@@ -2576,22 +2612,16 @@ public class IR_Builder
         // Caught exception case -- build rescue body
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
-        if (x != null)  // can be null if the rescued block 'return'ed.
+        if (x != null) { // can be null if the rescue block has an explicit return
             m.addInstr(new COPY_Instr(rv, x));
-
-        // Jump to end of rescue block since we've caught and processed the exception
-        if (noEnsure) {
-            if (x != null)
-                m.addInstr(new JUMP_Instr(endLabel));
-        }
-        else {
-            if (x != null) {
-                m.addInstr(new SET_RETADDR_Instr(returnAddrVar, ensureEndLabel));
-                m.addInstr(new JUMP_Instr(ensureStartLabel));
+            // Jump to end of rescue block since we've caught and processed the exception
+            if (haveEnsureBlocks) {
+                EnsureBlockInfo ebi = _ensureBlockStack.peek();
+                m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
+                m.addInstr(new JUMP_Instr(ebi.start));
             }
             else {
-                // SSS FIXME: The main body returned!
-                // We have to insert the above 2 instrs. just before the return!
+                m.addInstr(new JUMP_Instr(endLabel));
             }
         }
 
@@ -2599,16 +2629,11 @@ public class IR_Builder
         if (uncaughtLabel != null) {
             m.addInstr(new LABEL_Instr(uncaughtLabel));
             if (rescueBodyNode.getOptRescueNode() != null) {
-                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, ensureStartLabel, ensureEndLabel, returnAddrVar, endLabel);
+                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel);
             } else {
-                // If we have to run an ensure block, create a new label before the throw exception
-                // which the ensure block can return to after completing its run.
-                if (!noEnsure) {
-                    Label rethrowLabel = m.getNewLabel();
-                    m.addInstr(new SET_RETADDR_Instr(returnAddrVar, rethrowLabel));
-                    m.addInstr(new JUMP_Instr(ensureStartLabel));
-                    m.addInstr(new LABEL_Instr(rethrowLabel));
-                }
+                // If we have ensure blocks, set up a chain of jumps to execute all the ensure blocks
+                if (haveEnsureBlocks)
+                    EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
                 m.addInstr(new THROW_EXCEPTION_Instr(exc));
             }
         }
@@ -2626,6 +2651,9 @@ public class IR_Builder
 
     public Operand buildReturn(ReturnNode returnNode, IR_Scope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
+        // Before we return, have to go execute all the ensure blocks
+        if (!_ensureBlockStack.empty())
+            EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
         m.addInstr(new RETURN_Instr(retVal));
         return null;
     }
