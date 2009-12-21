@@ -239,6 +239,8 @@ do
         JAVA_VM=-client ;;
      --server)
         JAVA_VM=-server ;;
+     --noclient)         # JRUBY-4296
+        unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
      --ng-server)
