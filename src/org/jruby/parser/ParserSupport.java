@@ -36,6 +36,7 @@
 package org.jruby.parser;
 
 import org.jruby.CompatVersion;
+import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsPreOneArgNode;
 import org.jruby.ast.ArgsPreTwoArgNode;
@@ -125,6 +126,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.LiteralNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
@@ -150,6 +152,7 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
+import org.jruby.ast.UndefNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.WhenOneArgNode;
 import org.jruby.ast.YieldNode;
@@ -1398,5 +1401,21 @@ public class ParserSupport {
             if (pre.size() == 2) return new ArgsPreTwoArgNode(position, pre);
         }
         return new ArgsNode(position, pre, optional, rest, post, block);
+    }
+
+    public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
+        if (!(newNode instanceof LiteralNode) || !(newNode instanceof LiteralNode)) {
+            throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
+                    "alias does not yet support dynamic values or strings");
+        }
+        return new AliasNode(position, ((LiteralNode) newNode).getName(), ((LiteralNode) oldNode).getName());
+    }
+
+    public Node newUndef(ISourcePosition position, Node nameNode) {
+        if (!(nameNode instanceof LiteralNode)) {
+            throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
+                    "undef does not yet support dynamic values or strings");
+        }
+        return new UndefNode(position, ((LiteralNode) nameNode).getName());
     }
 }

@@ -38,7 +38,6 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
-import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -76,6 +75,7 @@ import org.jruby.ast.IfNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.LiteralNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
@@ -105,7 +105,6 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.ToAryNode;
 import org.jruby.ast.TypedArgumentNode;
-import org.jruby.ast.UndefNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
@@ -163,7 +162,7 @@ public class DefaultRubyParser implements RubyParser {
 
 %token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <Token> variable 
-%type <Token>  fitem sym symbol operation operation2 operation3 cname fname op
+%type <Token>  sym symbol operation operation2 operation3 cname fname op
 %type <Token>  f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
@@ -236,6 +235,8 @@ public class DefaultRubyParser implements RubyParser {
 %type <MultipleAsgnNode> mlhs mlhs_basic mlhs_entry
 %type <RescueBodyNode> opt_rescue
 %type <AssignableNode> var_lhs
+%type <LiteralNode> fsym
+%type <Node> fitem
 %type <Node> for_var 
 %type <ListNode> block_par
 
@@ -323,7 +324,7 @@ stmts         : none
 stmt          : kALIAS fitem {
                   lexer.setState(LexState.EXPR_FNAME);
               } fitem {
-                  $$ = new AliasNode(getPosition($1), (String) $2.getValue(), (String) $4.getValue());
+                  $$ = support.newAlias(getPosition($1), $2, $4);
               }
               | kALIAS tGVAR tGVAR {
                   $$ = new VAliasNode(getPosition($1), (String) $2.getValue(), (String) $3.getValue());
@@ -664,15 +665,29 @@ fname         : tIDENTIFIER | tCONSTANT | tFID
                   $$ = $<>1;
               }
 
-fitem         : fname | symbol
+// LiteralNode:fsym
+fsym          : fname {
+                  $$ = new LiteralNode($1);
+              }
+              | symbol {
+                  $$ = new LiteralNode($1);
+              }
+
+// Node:fitem
+fitem         : fsym {
+                  $$ = $1;
+              }
+              | dsym {
+                  $$ = $1;
+              }
 
 undef_list    : fitem {
-                  $$ = new UndefNode(getPosition($1), (String) $1.getValue());
+                  $$ = support.newUndef(getPosition($1), $1);
               }
               | undef_list ',' {
                   lexer.setState(LexState.EXPR_FNAME);
 	      } fitem {
-                  $$ = support.appendToBlock($1, new UndefNode(getPosition($1), (String) $4.getValue()));
+                  $$ = support.appendToBlock($1, support.newUndef(getPosition($1), $4));
               }
 
 // Token:op - inline operations [!null]
