@@ -22,7 +22,8 @@ import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
-import org.jruby.compiler.ir.instructions.RESCUE_BLOCK_Instr;
+import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
+import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
@@ -178,6 +179,12 @@ public class CFG
         // Map of return address variable and all possible targets (required to connect up ensure blocks with their targets)
         Map<Variable, Set<Label>> retAddrMap = new HashMap<Variable, Set<Label>>();
 
+        // List of bbs that have a 'return' instruction
+        List<BasicBlock> retBBs = new ArrayList<BasicBlock>();
+
+        // Rescue body end marker instructions are mapped to the bbs that end the rescued bodies
+        Map<RESCUED_BODY_END_MARKER_Instr, BasicBlock> rbeMarkers = new HashMap<RESCUED_BODY_END_MARKER_Instr, BasicBlock>();
+
         DirectedGraph<BasicBlock, CFG_Edge> g = new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
                                                     new EdgeFactory<BasicBlock, CFG_Edge>() {
                                                         public CFG_Edge createEdge(BasicBlock s, BasicBlock d) { return new CFG_Edge(s, d); }
@@ -190,7 +197,7 @@ public class CFG
         BasicBlock firstBB = createNewBB(g, _bbMap);
 
         // Build the rest!
-        List<BasicBlock> retBBs = new ArrayList<BasicBlock>();  // This will be the list of bbs that have a 'return' instruction
+        BasicBlock prevBB  = null;
         BasicBlock currBB  = firstBB;
         BasicBlock newBB   = null;
         boolean    bbEnded = false;
@@ -199,6 +206,7 @@ public class CFG
             Operation iop = i._op;
             if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr)i)._lbl;
+                prevBB = currBB;
                 newBB = createNewBB(l, g, _bbMap);
                 if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
                    g.addEdge(currBB, newBB);
@@ -213,7 +221,8 @@ public class CFG
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
             }
-            else if (bbEnded) {
+            else if (bbEnded && (iop != Operation.RESCUE_BODY_END)) {
+                prevBB = currBB;
                 newBB = createNewBB(g, _bbMap);
                 if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
                     g.addEdge(currBB, newBB); // currBB cannot be null!
@@ -222,15 +231,14 @@ public class CFG
                 bbEndedWithControlXfer = false;
             }
 
-            // RESCUE_BLOCK IR instructions are dummy instructions -- they are around to propagate
-            // information to later passes.
-            if (i instanceof RESCUE_BLOCK_Instr) {
-                RESCUE_BLOCK_Instr rbi = (RESCUE_BLOCK_Instr)i;
-                // SSS FIXME: Only adding 1 edge!  Have to add edges from all bb's of the body to bb of the first rescuer!
-                addEdge(g, currBB, rbi._firstBlock, _bbMap, forwardRefs);
+            if (i instanceof RESCUED_BODY_START_MARKER_Instr) {
+                ((RESCUED_BODY_START_MARKER_Instr)i).setRescuedBodyStartBB(currBB);
             }
-
-            if (iop.endsBasicBlock()) {
+            else if (i instanceof RESCUED_BODY_END_MARKER_Instr) {
+					 currBB.addInstr(i);
+                rbeMarkers.put((RESCUED_BODY_END_MARKER_Instr)i, currBB);
+            }
+            else if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
                 Label tgt;
@@ -289,10 +297,20 @@ public class CFG
                 }
                 addrs.add(((SET_RETADDR_Instr)i).getReturnAddr());
             }
-
-            // Build CFG for the closure!
-            if (i instanceof BUILD_CLOSURE_Instr) {
+				else if (i instanceof BUILD_CLOSURE_Instr) { // Build CFG for the closure!
                 ((BUILD_CLOSURE_Instr)i).getClosure().buildCFG();
+            }
+        }
+
+        // Hook up the first bb of all the rescue blocks with the last bb of the rescued body
+        for (RESCUED_BODY_END_MARKER_Instr rbEnd: rbeMarkers.keySet()) {
+            BasicBlock rbEndBB = rbeMarkers.get(rbEnd);
+            RESCUED_BODY_START_MARKER_Instr rbStart = rbEnd._rbStartInstr;
+            rbStart.setRescuedBodyEndBB(rbEndBB);
+            for (Label l: rbStart._rescueBlockLabels) {
+                BasicBlock rescueBlockStartBB = getTargetBB(l);
+                rescueBlockStartBB.setRescuedBodyEndBB(rbEndBB);
+                g.addEdge(rbEndBB, rescueBlockStartBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
             }
         }
 

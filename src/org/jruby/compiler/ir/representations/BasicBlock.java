@@ -14,6 +14,7 @@ public class BasicBlock
     Label          _label;  // All basic blocks have a starting label
     List<IR_Instr> _instrs; // List of non-label instructions
     boolean        _isLive;
+    BasicBlock     _rescuedBodyEndBB;  // If this is the start of a rescue block, this is the last basic block of the rescued body
 
     public BasicBlock(CFG c, Label l)
     {
@@ -22,7 +23,10 @@ public class BasicBlock
         _isLive = true;
         _cfg = c;
         _id = c.getNextBBID();
+        _rescuedBodyEndBB = null;
     }
+
+    void setRescuedBodyEndBB(BasicBlock rbEnd) { _rescuedBodyEndBB = rbEnd; }
 
     public int getID() { return _id; }
 
@@ -31,6 +35,8 @@ public class BasicBlock
     public void insertInstr(IR_Instr i) { _instrs.add(0, i); }
 
     public List<IR_Instr> getInstrs() { return _instrs; }
+
+    public BasicBlock getRescuedBodyEndBB() { return _rescuedBodyEndBB; }
 
     public String toString() { return "BB [" + _id + ":" + _label + "]"; }
 
