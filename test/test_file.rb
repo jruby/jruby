@@ -920,6 +920,13 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
+  #JRUBY-4380: File.open raises IOError instead of Errno::ENOENT
+  def test_open_with_nonexisting_directory
+    file_path = "/foo/bar"
+    assert(!File.exist?(file_path))
+    assert_raises(Errno::ENOENT) { File.open(file_path, "wb") }
+  end
+
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception
   def test_file_url
     path = File.expand_path(__FILE__)

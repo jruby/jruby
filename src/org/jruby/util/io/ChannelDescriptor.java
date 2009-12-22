@@ -651,7 +651,18 @@ public class ChannelDescriptor {
                 if (theFile.exists() && flags.isExclusive()) {
                     throw new FileExistsException(path);
                 }
-                fileCreated = theFile.createNewFile();
+                try {
+                    fileCreated = theFile.createNewFile();
+                } catch (IOException ioe) {
+                    // See JRUBY-4380.
+                    // MRI behavior: raise Errno::ENOENT in case
+                    // when the directory for the file doesn't exist.
+                    // Java in such cases just throws IOException.
+                    File parent = theFile.getParentFile();
+                    if (parent != null && parent != theFile && !parent.exists()) {
+                        throw new FileNotFoundException(path);
+                    }
+                }
             } else {
                 if (!theFile.exists()) {
                     throw new FileNotFoundException(path);
