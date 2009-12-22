@@ -1404,18 +1404,10 @@ public class ParserSupport {
     }
 
     public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
-        if (!(newNode instanceof LiteralNode) || !(newNode instanceof LiteralNode)) {
-            throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
-                    "alias does not yet support dynamic values or strings");
-        }
-        return new AliasNode(position, ((LiteralNode) newNode).getName(), ((LiteralNode) oldNode).getName());
+        return new AliasNode(position, newNode, oldNode);
     }
 
     public Node newUndef(ISourcePosition position, Node nameNode) {
-        if (!(nameNode instanceof LiteralNode)) {
-            throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
-                    "undef does not yet support dynamic values or strings");
-        }
-        return new UndefNode(position, ((LiteralNode) nameNode).getName());
+        return new UndefNode(position, nameNode);
     }
 }

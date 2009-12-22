@@ -969,11 +969,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(p(PrintStream.class), "println", sig(Void.TYPE, params(Object.class)));
     }
 
-    public void defineAlias(String newName, String oldName) {
+    public void defineAlias(CompilerCallback args) {
         loadThreadContext();
-        method.ldc(newName);
-        method.ldc(oldName);
-        invokeUtilityMethod("defineAlias", sig(IRubyObject.class, ThreadContext.class, String.class, String.class));
+        args.call(this);
+        invokeUtilityMethod("defineAlias", sig(IRubyObject.class, ThreadContext.class, Object.class, Object.class));
+    }
+
+    public void literal(String value) {
+        method.ldc(value);
     }
 
     public void loadFalse() {
@@ -1982,25 +1985,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.athrow();                                    
     }    
 
-    public void undefMethod(String name) {
+    public void undefMethod(CompilerCallback nameArg) {
         loadThreadContext();
-        invokeThreadContext("getRubyClass", sig(RubyModule.class));
-
-        Label notNull = new Label();
-        method.dup();
-        method.ifnonnull(notNull);
-        method.pop();
-        loadRuntime();
-        method.ldc("No class to undef method '" + name + "'.");
-        invokeRuby("newTypeError", sig(RaiseException.class, params(String.class)));
-        method.athrow();
-
-        method.label(notNull);
-        loadThreadContext();
-        method.ldc(name);
-        method.invokevirtual(p(RubyModule.class), "undef", sig(Void.TYPE, params(ThreadContext.class, String.class)));
-
-        loadNil();
+        nameArg.call(this);
+        invokeUtilityMethod("undefMethod", sig(IRubyObject.class, ThreadContext.class, Object.class));
     }
 
     public void defineClass(

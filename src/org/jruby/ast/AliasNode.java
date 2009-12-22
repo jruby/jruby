@@ -44,10 +44,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** Represents an alias statement (<code>alias newName oldName</code>).
  */
 public class AliasNode extends Node {
-    private String oldName;
-    private String newName;
+    private Node oldName;
+    private Node newName;
 
-    public AliasNode(ISourcePosition position, String newName, String oldName) {
+    public AliasNode(ISourcePosition position, Node newName, Node oldName) {
         super(position);
         this.oldName = oldName;
         this.newName = newName;
@@ -69,7 +69,7 @@ public class AliasNode extends Node {
      * Gets the newName.
      * @return the newName as in the alias statement :  <code> alias <b>newName</b> oldName </code>
      */
-    public String getNewName() {
+    public Node getNewName() {
         return newName;
     }
 
@@ -77,15 +77,19 @@ public class AliasNode extends Node {
      * Gets the oldName.
      * @return the oldName as in the alias statement :  <code> alias newName <b>oldName</b></code>
      */
-    public String getOldName() {
+    public Node getOldName() {
         return oldName;
     }
     
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Node.createList(newName, oldName);
     }
     
+    @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RuntimeHelpers.defineAlias(context, newName, oldName);    
+        String newerName = RuntimeHelpers.interpretAliasUndefName(newName, runtime, context, self, aBlock);
+        String olderName = RuntimeHelpers.interpretAliasUndefName(oldName, runtime, context, self, aBlock);
+
+        return RuntimeHelpers.defineAlias(context, newerName, olderName);
     }
 }

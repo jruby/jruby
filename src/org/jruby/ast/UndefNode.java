@@ -36,6 +36,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -45,9 +46,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents an 'undef' statement.
  */
 public class UndefNode extends Node {
-    private String name;
+    private Node name;
 
-    public UndefNode(ISourcePosition position, String name) {
+    public UndefNode(ISourcePosition position, Node name) {
         super(position);
         this.name = name;
     }
@@ -68,23 +69,24 @@ public class UndefNode extends Node {
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
+    public Node getName() {
         return name;
     }
     
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Node.createList(name);
     }
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyModule module = context.getRubyClass();
+        String undefName = RuntimeHelpers.interpretAliasUndefName(name, runtime, context, self, aBlock);
    
         if (module == null) {
-            throw runtime.newTypeError("No class to undef method '" + name + "'.");
+            throw runtime.newTypeError("No class to undef method '" + undefName + "'.");
         }
         
-        module.undef(context, name);
+        module.undef(context, undefName);
    
         return runtime.getNil();        
     }

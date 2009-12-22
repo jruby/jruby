@@ -17,7 +17,9 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.LiteralNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1212,13 +1214,33 @@ public class RuntimeHelpers {
         hash.fastASetCheckString19(runtime, key3, value3);
         return hash;
     }
+
+    public static IRubyObject undefMethod(ThreadContext context, Object nameArg) {
+        RubyModule module = context.getRubyClass();
+
+        String name = (nameArg instanceof String) ?
+            (String) nameArg : nameArg.toString();
+
+        if (module == null) {
+            throw context.getRuntime().newTypeError("No class to undef method '" + name + "'.");
+        }
+
+        module.undef(context, name);
+
+        return context.getRuntime().getNil();
+    }
     
-    public static IRubyObject defineAlias(ThreadContext context, String newName, String oldName) {
+    public static IRubyObject defineAlias(ThreadContext context, Object newNameArg, Object oldNameArg) {
         Ruby runtime = context.getRuntime();
         RubyModule module = context.getRubyClass();
    
         if (module == null) throw runtime.newTypeError("no class to make alias");
-   
+
+        String newName = (newNameArg instanceof String) ?
+            (String) newNameArg : newNameArg.toString();
+        String oldName = (oldNameArg instanceof String) ? 
+            (String) oldNameArg : oldNameArg.toString();
+
         module.defineAlias(newName, oldName);
         module.callMethod(context, "method_added", runtime.newSymbol(newName));
    
@@ -1705,5 +1727,25 @@ public class RuntimeHelpers {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
         context.getRuntime().callEventHooks(context, RubyEvent.END, context.getFile(), context.getLine(), name, type);
+    }
+
+    /**
+     * Some of this code looks scary.  All names for an alias or undef is a
+     * fitem in 1.8/1.9 grammars.  This means it is guaranteed to be either
+     * a LiteralNode of a DSymbolNode.  Nothing else is possible.  Also
+     * Interpreting a DSymbolNode will always yield a RubySymbol.
+     */
+    public static String interpretAliasUndefName(Node nameNode, Ruby runtime,
+            ThreadContext context, IRubyObject self, Block aBlock) {
+        String name;
+
+        if (nameNode instanceof LiteralNode) {
+            name = ((LiteralNode) nameNode).getName();
+        } else {
+            assert nameNode instanceof DSymbolNode: "Alias or Undef not literal or dsym";
+            name = ((RubySymbol) nameNode.interpret(runtime, context, self, aBlock)).asJavaString();
+        }
+
+        return name;
     }
 }

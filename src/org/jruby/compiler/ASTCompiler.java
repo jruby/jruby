@@ -89,6 +89,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.LiteralNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Match2Node;
@@ -152,7 +153,7 @@ public class ASTCompiler {
         }
         switch (node.getNodeType()) {
             case ALIASNODE:
-                compileAlias(node, context, expr);
+                compileAlias((AliasNode) node, context, expr);
                 break;
             case ANDNODE:
                 compileAnd(node, context, expr);
@@ -289,6 +290,9 @@ public class ASTCompiler {
             case ITERNODE:
                 compileIter(node, context);
                 break;
+            case LITERALNODE:
+                compileLiteral((LiteralNode) node, context);
+                break;
             case LOCALASGNNODE:
                 compileLocalAsgn(node, context, expr);
                 break;
@@ -393,7 +397,7 @@ public class ASTCompiler {
                 compileTrue(node, context, expr);
                 break;
             case UNDEFNODE:
-                compileUndef(node, context, expr);
+                compileUndef((UndefNode) node, context, expr);
                 break;
             case UNTILNODE:
                 compileUntil(node, context, expr);
@@ -565,10 +569,16 @@ public class ASTCompiler {
         }
     }
 
-    public void compileAlias(Node node, BodyCompiler context, boolean expr) {
-        final AliasNode alias = (AliasNode) node;
+    public void compileAlias(final AliasNode alias, BodyCompiler context, boolean expr) {
+        CompilerCallback args = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(alias.getNewName(), context, true);
+                compile(alias.getOldName(), context, true);
+            }
+        };
 
-        context.defineAlias(alias.getNewName(), alias.getOldName());
+        context.defineAlias(args);
+        
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2617,6 +2627,10 @@ public class ASTCompiler {
         }
     }
 
+    public void compileLiteral(LiteralNode literal, BodyCompiler context) {
+        context.literal(literal.getName());
+    }
+
     public void compileLocalAsgn(Node node, BodyCompiler context, boolean expr) {
         final LocalAsgnNode localAsgnNode = (LocalAsgnNode) node;
 
@@ -3541,8 +3555,13 @@ public class ASTCompiler {
         }
     }
 
-    public void compileUndef(Node node, BodyCompiler context, boolean expr) {
-        context.undefMethod(((UndefNode) node).getName());
+    public void compileUndef(final UndefNode undef, BodyCompiler context, boolean expr) {
+        CompilerCallback nameArg = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(undef.getName(), context, true);
+            }
+        };
+        context.undefMethod(nameArg);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

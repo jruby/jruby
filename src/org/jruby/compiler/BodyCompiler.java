@@ -328,11 +328,8 @@ public interface BodyCompiler {
     
     /**
      * Define an alias for a new name to an existing oldName'd method.
-     * 
-     * @param newName The new alias to create
-     * @param oldName The name of the existing method or alias
      */
-    public void defineAlias(String newName, String oldName);
+    public void defineAlias(CompilerCallback args);
     
     public void assignConstantInCurrent(String name);
     
@@ -497,6 +494,8 @@ public interface BodyCompiler {
     
     public void pollThreadEvents();
 
+    public void literal(String value);
+
     /**
      * Push the current back reference
      */
@@ -558,7 +557,7 @@ public interface BodyCompiler {
     public void aryToAry();
     public void toJavaString();
     public void aliasGlobal(String newName, String oldName);
-    public void undefMethod(String name);
+    public void undefMethod(CompilerCallback nameArg);
     public void defineClass(String name, StaticScope staticScope, CompilerCallback superCallback, CompilerCallback pathCallback, CompilerCallback bodyCallback, CompilerCallback receiverCallback, ASTInspector inspector);
     public void defineModule(String name, StaticScope staticScope, CompilerCallback pathCallback, CompilerCallback bodyCallback, ASTInspector inspector);
     public void unwrapPassedBlock();

@@ -645,8 +645,8 @@ public class IR_Builder
     }
 
     public Operand buildAlias(final AliasNode alias, IR_Scope s) {
-        String newName = alias.getNewName();
-        String oldName = alias.getOldName();
+        String newName = "";//TODO: FIX breakage....alias.getNewName();
+        String oldName = "";//TODO: FIX breakage....alias.getOldName();
         Operand[] args = new Operand[] { new MetaObject(s), new MethAddr(newName), new MethAddr(oldName) };
         s.recordMethodAlias(newName, oldName);
         s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, args));
