@@ -37,13 +37,13 @@ import org.jgrapht.graph.*;
 
 public class CFG
 {
-    enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
+    public enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
 
     public static class CFG_Edge
     {
         final public BasicBlock _src;
         final public BasicBlock _dst;
-        CFG_Edge_Type _type;
+        public CFG_Edge_Type _type;
 
         public CFG_Edge(BasicBlock s, BasicBlock d)
         {

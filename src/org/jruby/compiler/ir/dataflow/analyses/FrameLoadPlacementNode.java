@@ -2,6 +2,8 @@ package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.IR_Instr;
@@ -13,6 +15,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
+import org.jruby.compiler.ir.representations.CFG.CFG_Edge_Type;
 
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +47,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
     public void initSolnForNode() 
     {
         if (_bb == _prob.getCFG().getExitBB())
-            _outReqdLoads = ((FrameLoadPlacementProblem)_prob).getNestedProblemInitLoads();
+            _inReqdLoads = ((FrameLoadPlacementProblem)_prob).getLoadsOnScopeExit();
     }
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
@@ -54,11 +57,17 @@ public class FrameLoadPlacementNode extends FlowGraphNode
         //
         // So, take an intersection instead -- but, while adding loads, we have to add the missing
         // loads on individual execution paths -- see addLoads in FrameLoadPlacementProblem 
-		  //
-		  // SSS FIXME: Work through this and see if there are problems with the monotonicity of the lattice value
-		  // With union, the load set keeps increasing till it hits bottom (all variables!)
-		  // But, is there a possibility that with intersection, we get stuck in an infinite loop??
-        _inReqdLoads.retainAll(((FrameLoadPlacementNode)pred)._outReqdLoads);
+        //
+        // SSS FIXME: Work through this and see if there are problems with the monotonicity of the lattice value
+        // With union, the load set keeps increasing till it hits bottom (all variables!)
+        // But, is there a possibility that with intersection, we get stuck in an infinite loop??
+
+        // Dont apply this optimization on dummy edges!
+        FrameLoadPlacementNode n = (FrameLoadPlacementNode)pred;
+        if (edge._type == CFG_Edge_Type.DUMMY_EDGE)
+            _inReqdLoads.addAll(n._outReqdLoads);
+        else
+            _inReqdLoads.retainAll(n._outReqdLoads);
     }
 
     public boolean applyTransferFunction()
@@ -70,6 +79,14 @@ public class FrameLoadPlacementNode extends FlowGraphNode
         ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             IR_Instr i = it.previous();
+            if (i._op == Operation.FRAME_STORE)
+                continue;
+
+            // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
+            Variable r = i.getResult();
+            if (r != null)
+                reqdLoads.remove(r);
+
             // Process calls specially -- these are the sites of frame loads!
             if (i instanceof CALL_Instr) {
                 CALL_Instr call = (CALL_Instr)i;
@@ -78,13 +95,13 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                     IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
                     CFG cl_cfg = cl.getCFG();
                     FrameLoadPlacementProblem cl_flp = new FrameLoadPlacementProblem();
-                    cl_flp.initNestedProblem(reqdLoads);
+                    cl_flp.initLoadsOnScopeExit(reqdLoads);
                     cl_flp.setup(cl_cfg);
                     cl_flp.compute_MOP_Solution();
                     cl_cfg.setDataFlowSolution(cl_flp.getName(), cl_flp);
 
-                    // Only those variables that are defined in the closure, and are in the required loads set 
-                    // will need to be loaded from the frame after the call!
+                    // Variables defined in the closure do not need to be loaded anymore at
+                    // program points before the call.
                     Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
                     for (Variable v: reqdLoads) {
                         if (cl_flp.scopeDefinesVariable(v))
@@ -98,15 +115,14 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                 }
             }
 
-            // The variable used to store the instruction result won't need to be loaded!
-            Variable v = i.getResult();
-            if (v != null)
-                reqdLoads.remove(v);
-
             // The variables used as arguments will need to be loaded
             for (Variable x: i.getUsedVariables())
                 reqdLoads.add(x);
         }
+
+        // At the beginning of the scope, required loads can be discarded.
+        if (_bb == _prob.getCFG().getEntryBB())
+            reqdLoads.clear();
 
         if (_outReqdLoads.equals(reqdLoads)) {
             return false;
@@ -128,6 +144,14 @@ public class FrameLoadPlacementNode extends FlowGraphNode
         Set<Variable>             reqdLoads = new HashSet<Variable>(_inReqdLoads);
         while (it.hasPrevious()) {
             IR_Instr i = it.previous();
+            if (i._op == Operation.FRAME_STORE)
+                continue;
+
+            // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
+            Variable r = i.getResult();
+            if (r != null)
+                reqdLoads.remove(r);
+
             if (i instanceof CALL_Instr) {
                 CALL_Instr call = (CALL_Instr)i;
                 Operand o = call.getClosureArg();
@@ -163,10 +187,6 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                 }
             }
 
-            Variable v = i.getResult();
-            if (v != null)
-                reqdLoads.add(v);
-
             // The variables used as arguments will need to be loaded
             for (Variable x: i.getUsedVariables())
                 reqdLoads.add(x);
@@ -174,7 +194,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
 
         // Load first use of variables in closures
         if ((s instanceof IR_Closure) && (_bb == _prob.getCFG().getEntryBB())) {
-            for (Variable v: _outReqdLoads) {
+            for (Variable v: reqdLoads) {
                 if (flp.scopeUsesVariable(v)) {
                     it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
                 }

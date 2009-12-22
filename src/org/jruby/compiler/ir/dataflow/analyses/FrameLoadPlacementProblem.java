@@ -23,16 +23,16 @@ public class FrameLoadPlacementProblem extends DataFlowProblem
     public FrameLoadPlacementProblem()
     { 
         super(DataFlowProblem.DF_Direction.BACKWARD);
-        _initLoads = new java.util.HashSet<Variable>();
+        _initLoadsOnExit = new java.util.HashSet<Variable>();
         _defVars = new java.util.HashSet<Variable>();
         _usedVars = new java.util.HashSet<Variable>();
     }
 
-    public String getName()                  { return "Frame Loads Placement Analysis"; }
+    public String        getName() { return "Frame Loads Placement Analysis"; }
     public FlowGraphNode buildFlowGraphNode(BasicBlock bb) { return new FrameLoadPlacementNode(this, bb);  }
     public String        getDataFlowVarsForOutput() { return ""; }
-    public void          initNestedProblem(Set<Variable> neededLoads) { _initLoads = neededLoads; }
-    public Set<Variable> getNestedProblemInitLoads() { return _initLoads; }
+    public void          initLoadsOnScopeExit(Set<Variable> loads) { _initLoadsOnExit = loads; }
+    public Set<Variable> getLoadsOnScopeExit() { return _initLoadsOnExit; }
     public void          recordDefVar(Variable v) { _defVars.add(v); }
     public void          recordUsedVar(Variable v) { _usedVars.add(v); }
 
@@ -93,7 +93,8 @@ public class FrameLoadPlacementProblem extends DataFlowProblem
             flpn.addLoads();
 
             Set<Variable> x = null;
-            for (CFG_Edge e: incomingEdgesOf(flpn.getBB())) {  // This is a reverse df problem ==> dataflow successors = cfg incoming
+            BasicBlock bb = flpn.getBB();
+            for (CFG_Edge e: incomingEdgesOf(bb)) {  // This is a reverse df problem ==> dataflow successors = cfg incoming
                 FrameLoadPlacementNode p = (FrameLoadPlacementNode)getFlowGraphNode(e._src);
                 if (x == null)
                     x = new HashSet<Variable>(p._inReqdLoads);
@@ -116,7 +117,7 @@ public class FrameLoadPlacementProblem extends DataFlowProblem
     }
 
 /* ----------- Private Interface ------------ */
-    private Set<Variable> _initLoads;
+    private Set<Variable> _initLoadsOnExit;
     private Set<Variable> _defVars;      // Variables defined in this scope
     private Set<Variable> _usedVars;     // Variables used in this scope
 }

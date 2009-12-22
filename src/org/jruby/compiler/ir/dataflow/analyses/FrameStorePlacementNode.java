@@ -2,6 +2,8 @@ package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
@@ -16,6 +18,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
+import org.jruby.compiler.ir.representations.CFG.CFG_Edge_Type;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -50,26 +53,27 @@ public class FrameStorePlacementNode extends FlowGraphNode
             fsp.recordDefVar(v);
     }
 
-    public void initSolnForNode() 
-    {
-        if (_bb == _prob.getCFG().getEntryBB())
-            _inDirtyVars = ((FrameStorePlacementProblem)_prob).getNestedProblemInitStores();
-    }
+    public void initSolnForNode() { }
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
     {
-        // Intersection of predecessor store sets
-        // We have to take a union of all store sets of flow graph predecessors -- but that can lead
+        // Intersection of predecessor dirty var sets
+        // We have to take a union of all dirty var sets of flow graph predecessors -- but that can lead
         // to useless stores on *all* paths based on stores being required on *some* paths.
         //
         // So, take an intersection instead -- but, while adding stores, we have to add the missing
-        // loads on individual execution paths -- see addStores in FrameStorePlacementProblem 
+        // stores on individual execution paths -- see addStores in FrameStorePlacementProblem 
         //
         // SSS FIXME: Work through this and see if there are problems with the monotonicity of the lattice value
         // With union, the load set keeps increasing till it hits bottom (all variables!)
         // But, is there a possibility that with intersection, we get stuck in an infinite loop??
+
+        // Dont apply this optimization on dummy edges!
         FrameStorePlacementNode n = (FrameStorePlacementNode)pred;
-        _inDirtyVars.retainAll(n._outDirtyVars);
+        if (edge._type == CFG_Edge_Type.DUMMY_EDGE)
+            _inDirtyVars.addAll(n._outDirtyVars);
+        else
+            _inDirtyVars.retainAll(n._outDirtyVars);
 
         // For frame allocation, we are using the and operator -- so only if the frame has been allocated
         // on all incoming paths do we consider that a frame has been allocated 
@@ -84,6 +88,9 @@ public class FrameStorePlacementNode extends FlowGraphNode
         Set<Variable> dirtyVars = new HashSet<Variable>(_inDirtyVars);
 
         for (IR_Instr i: _bb.getInstrs()) {
+            if (i._op == Operation.FRAME_LOAD)
+               continue;
+
             // Process calls specially -- these are the sites of frame stores!
             if (i instanceof CALL_Instr) {
                 CALL_Instr call = (CALL_Instr)i;
@@ -95,20 +102,21 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
                     CFG cl_cfg = cl.getCFG();
                     FrameStorePlacementProblem cl_fsp = new FrameStorePlacementProblem();
-                    cl_fsp.initNestedProblem(dirtyVars);
                     cl_fsp.setup(cl_cfg);
                     cl_fsp.compute_MOP_Solution();
                     cl_cfg.setDataFlowSolution(cl_fsp.getName(), cl_fsp);
 
-                    // If the call is an eval, or if the callee can capture this method's frame,
-                    // we have to spill all variables.
+                    // If the call is an eval, or if the callee can capture this method's frame, we have to spill all variables.
                     boolean spillAllVars = call.canBeEval() || call.canCaptureCallersFrame();
 
-                    // Unless we have to spill everything, spill only those dirty variables that are:
-                    // - used/defined in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
+                    // - If all variables have to be spilled, then those variables will no longer be dirty after the call site
+                    // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site -- 
+                    //   but we dont have this info!), it has to be spilt. So, these variables are no longer dirty after the call site.
+                    // - If a variable is (re)defined in the closure, it will be saved inside the closure.  So, these variables
+                    //   won't be dirty after the call site either!
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v: dirtyVars) {
-                        if (spillAllVars || cl_fsp.scopeDefinesOrUsesVariable(v))
+                        if (spillAllVars || cl_fsp.scopeUsesVariable(v) || cl_fsp.scopeDefinesVariable(v))
                             newDirtyVars.remove(v);
                     }
                     dirtyVars = newDirtyVars;
@@ -116,7 +124,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
                 // Call has no closure && it requires stores
                 else if (call.requiresFrame()) {
                     dirtyVars.clear();
-                     frameAllocated = true;
+                    frameAllocated = true;
                 }
             }
 
@@ -126,6 +134,13 @@ public class FrameStorePlacementNode extends FlowGraphNode
 
             if (i._op.isReturn())
                 dirtyVars.clear();
+        }
+
+        // At the end of the scope, there are no more dirty vars!
+        // Dirty vars at the end of the closure are handled specially by 'addStoreAndFrameAllocInstructions'
+        CFG cfg = _prob.getCFG();
+        if (_bb == cfg.getExitBB()) {
+            dirtyVars.clear();
         }
 
         if (_outDirtyVars.equals(dirtyVars) && (_outFrameAllocated == frameAllocated)) {
@@ -150,6 +165,9 @@ public class FrameStorePlacementNode extends FlowGraphNode
 
         while (instrs.hasNext()) {
             IR_Instr i = instrs.next();
+            if (i._op == Operation.FRAME_LOAD)
+               continue;
+
             if (i instanceof CALL_Instr) {
                 CALL_Instr call = (CALL_Instr)i;
                 Operand o = call.getClosureArg();
@@ -169,11 +187,15 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     boolean spillAllVars = call.canBeEval() || call.canCaptureCallersFrame();
 
                     // Unless we have to spill everything, spill only those dirty variables that are:
-                    // - used/defined in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
+                    // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v: dirtyVars) {
-                        if (spillAllVars || cl_fsp.scopeDefinesOrUsesVariable(v)) {
+                        if (spillAllVars || cl_fsp.scopeUsesVariable(v)) {
                             instrs.add(new STORE_TO_FRAME_Instr(s, v._name, v));
+                            newDirtyVars.remove(v);
+                        }
+                        // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
+                        else if (cl_fsp.scopeDefinesVariable(v)) {
                             newDirtyVars.remove(v);
                         }
                     }

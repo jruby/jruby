@@ -34,7 +34,6 @@ public class FrameStorePlacementProblem extends DataFlowProblem
     public FrameStorePlacementProblem()       
     { 
         super(DataFlowProblem.DF_Direction.FORWARD); 
-        _initStores = new java.util.HashSet<Variable>(); 
         _usedVars = new java.util.HashSet<Variable>(); 
         _defVars = new java.util.HashSet<Variable>();
     }
@@ -42,10 +41,8 @@ public class FrameStorePlacementProblem extends DataFlowProblem
     public String        getName() { return "Frame Stores Placement Analysis"; }
     public FlowGraphNode buildFlowGraphNode(BasicBlock bb) { return new FrameStorePlacementNode(this, bb);  }
     public String        getDataFlowVarsForOutput() { return ""; }
-    public Set<Variable> getNestedProblemInitStores() { return _initStores; }
     public void          recordUsedVar(Variable v) { _usedVars.add(v); }
     public void          recordDefVar(Variable v) { _defVars.add(v); }
-    public void          initNestedProblem(Set<Variable> neededStores) { _initStores = neededStores; }
 
     public boolean scopeDefinesVariable(Variable v) { 
         if (_defVars.contains(v)) {
@@ -62,14 +59,14 @@ public class FrameStorePlacementProblem extends DataFlowProblem
         }
     }
 
-    public boolean scopeDefinesOrUsesVariable(Variable v) { 
-        if (_usedVars.contains(v) || _defVars.contains(v)) {
+    public boolean scopeUsesVariable(Variable v) { 
+        if (_usedVars.contains(v)) {
             return true;
         }
         else {
             for (IR_Closure cl: getCFG().getScope().getClosures()) {
                 FrameStorePlacementProblem nestedProblem = (FrameStorePlacementProblem)cl.getCFG().getDataFlowSolution(DataFlowConstants.FSP_NAME);
-                if (nestedProblem.scopeDefinesOrUsesVariable(v)) 
+                if (nestedProblem.scopeUsesVariable(v)) 
                     return true;
             }
 
@@ -105,7 +102,7 @@ public class FrameStorePlacementProblem extends DataFlowProblem
 
             Set<Variable> x = null;
             for (CFG_Edge e: outgoingEdgesOf(fspn.getBB())) {
-                FrameStorePlacementNode p = (FrameStorePlacementNode)getFlowGraphNode(e._src);
+                FrameStorePlacementNode p = (FrameStorePlacementNode)getFlowGraphNode(e._dst);
                 if (x == null)
                     x = new HashSet<Variable>(p._inDirtyVars);
                 else
@@ -128,7 +125,6 @@ public class FrameStorePlacementProblem extends DataFlowProblem
     }
 
 /* ----------- Private Interface ------------ */
-    private Set<Variable> _initStores;  // Stores that need to be performed at entrance of the cfg -- non-null only for closures 
     private Set<Variable> _usedVars;    // Variables used in this scope
     private Set<Variable> _defVars;     // Variables defined in this scope
 }
