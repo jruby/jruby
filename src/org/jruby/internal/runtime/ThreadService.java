@@ -79,6 +79,8 @@ public class ThreadService {
     }
 
     public void disposeCurrentThread() {
+        RubyThread thread = getCurrentContext().getThread();
+        threadContextMap.remove(thread);
         localContext.set(null);
         rubyThreadMap.remove(Thread.currentThread());
     }
