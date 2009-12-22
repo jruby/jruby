@@ -65,11 +65,13 @@ public class #{StarterName} {
       EOS
     end
     File.open(Manifest, "w") do |f|
-      f.puts "Main-Class: #{StarterName}" 
+      f.puts "Main-Class: #{StarterName}"
       f.puts "Class-Path: #{jruby_jar}"
     end
 
-    `javac -cp #{jruby_jar} #{StarterSource}`
+    javac = ENV['JAVA_HOME'] ? "#{ENV['JAVA_HOME']}/bin/javac" : "javac"
+
+    `#{javac} -cp #{jruby_jar} #{StarterSource}`
     assert_equal 0, $?.exitstatus, "javac failed to compile #{StarterSource}"
     `jar cvfm #{JarFile} #{Manifest} #{StarterClass} #{RubyClass}`
     assert_equal 0, $?.exitstatus, "jar failed to build #{JarFile} from #{RubyClass}"
