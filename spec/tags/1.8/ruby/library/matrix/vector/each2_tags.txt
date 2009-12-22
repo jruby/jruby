@@ -1,0 +1,2 @@
+fails(JRUBY-3716):Vector.each2 given one argument requires the argument to be a Vector or an Array
+fails(JRUBY-3716):Vector.each2 given one argument returns self when given a block
