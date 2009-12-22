@@ -52,22 +52,8 @@ public class FrameLoadPlacementNode extends FlowGraphNode
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
     {
-        // We have to take a union of all load sets of flow graph predecessors -- but that can lead
-        // to useless loads on *all* paths based on loads being required on *some* paths.
-        //
-        // So, take an intersection instead -- but, while adding loads, we have to add the missing
-        // loads on individual execution paths -- see addLoads in FrameLoadPlacementProblem 
-        //
-        // SSS FIXME: Work through this and see if there are problems with the monotonicity of the lattice value
-        // With union, the load set keeps increasing till it hits bottom (all variables!)
-        // But, is there a possibility that with intersection, we get stuck in an infinite loop??
-
-        // Dont apply this optimization on dummy edges!
         FrameLoadPlacementNode n = (FrameLoadPlacementNode)pred;
-        if (edge._type == CFG_Edge_Type.DUMMY_EDGE)
-            _inReqdLoads.addAll(n._outReqdLoads);
-        else
-            _inReqdLoads.retainAll(n._outReqdLoads);
+        _inReqdLoads.addAll(n._outReqdLoads);
     }
 
     public boolean applyTransferFunction()

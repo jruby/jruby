@@ -68,51 +68,9 @@ public class FrameLoadPlacementProblem extends DataFlowProblem
 
     public void addLoads()
     {
-        // In the dataflow problem, compute_MEET has to use Union of load sets of predecessors.
-        // But, we are instead using Intersection of load sets.  
-        //
-        //            A
-        //          /   \
-        //         B     C
-        //
-        // In the above example, A will only add loads that are present at beginning of both B & C
-        // This means that at the beginning of B & C , we need to add any loads that were omitted in A!
-        //
-        // For reducible control flow graphs (I think Ruby only produces such graphs -- unsure),
-        // there will be exactly one df successor for situations where we do need to add these
-        // stores.  In the example above, B & C have exactly one df successor (cfg predecessor) C.
-        //
-        // But, the generic form of the fixup we need to do is as follows:
-        // For every basic block b, compute 
-        //   DIFF = OUT(b) - INTERSECTION(IN(s), for all dataflow successors s of b) 
-        //
-        // For all variables in DIFF, add a load at the beginning of b
-
         for (FlowGraphNode n: _fgNodes) {
             FrameLoadPlacementNode flpn = (FrameLoadPlacementNode)n;
             flpn.addLoads();
-
-            Set<Variable> x = null;
-            BasicBlock bb = flpn.getBB();
-            for (CFG_Edge e: incomingEdgesOf(bb)) {  // This is a reverse df problem ==> dataflow successors = cfg incoming
-                FrameLoadPlacementNode p = (FrameLoadPlacementNode)getFlowGraphNode(e._src);
-                if (x == null)
-                    x = new HashSet<Variable>(p._inReqdLoads);
-                else
-                    x.retainAll(p._inReqdLoads);
-            }
-
-            Set<Variable> diff = new HashSet<Variable>(flpn._outReqdLoads);
-            if (x != null)
-                diff.removeAll(x);
-
-            // Add loads for all variables in ls 
-            if (!diff.isEmpty()) {
-                IR_ExecutionScope s = getCFG().getScope();
-                ListIterator<IR_Instr> instrs = flpn.getBB().getInstrs().listIterator();
-                for (Variable v: diff)
-                    instrs.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
-            }
         }
     }
 

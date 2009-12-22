@@ -76,51 +76,9 @@ public class FrameStorePlacementProblem extends DataFlowProblem
 
     public void addStoreAndFrameAllocInstructions()
     {
-        // In the dataflow problem, compute_MEET has to use Union of store sets of predecessors.
-        // But, we are instead using Intersection of store sets.  
-        //
-        //         A     B
-        //          \   /
-        //            C
-        //
-        // In the above example, C will only add stores that are present at end of both A & B.
-        // This means that at the end of A & B , we need to add any stores that were omitted in C!
-        //
-        // For reducible control flow graphs (I think Ruby only produces such graphs -- unsure),
-        // there will be exactly one df successor for situations where we do need to add these
-        // stores.  In the example above, A & B have exactly one df successor C.
-        //
-        // But, the generic form of the fixup we need to do is as follows:
-        // For a basic block b, compute
-        //   DIFF = OUT(b) - INTERSECTION(IN(s), for all dataflow successors s of b)
-        //
-        // For all variables in DIFF, add a store at the end of b
-
         for (FlowGraphNode n: _fgNodes) {
             FrameStorePlacementNode fspn = (FrameStorePlacementNode)n;
             fspn.addStoreAndFrameAllocInstructions();
-
-            Set<Variable> x = null;
-            for (CFG_Edge e: outgoingEdgesOf(fspn.getBB())) {
-                FrameStorePlacementNode p = (FrameStorePlacementNode)getFlowGraphNode(e._dst);
-                if (x == null)
-                    x = new HashSet<Variable>(p._inDirtyVars);
-                else
-                    x.retainAll(p._inDirtyVars);
-            }
-
-            Set<Variable> diff = new HashSet<Variable>(fspn._outDirtyVars);
-            if (x != null)
-                diff.removeAll(x);
-
-            // Add loads for all variables in diff 
-            if (!diff.isEmpty()) {
-                IR_ExecutionScope s = getCFG().getScope();
-                List<IR_Instr> instrs = fspn.getBB().getInstrs();
-                ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());  // Go to end of BB
-                for (Variable v: diff)
-                    it.add(new STORE_TO_FRAME_Instr(s, v._name, v));
-            }
         }
     }
 

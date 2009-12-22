@@ -57,23 +57,8 @@ public class FrameStorePlacementNode extends FlowGraphNode
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred)
     {
-        // Intersection of predecessor dirty var sets
-        // We have to take a union of all dirty var sets of flow graph predecessors -- but that can lead
-        // to useless stores on *all* paths based on stores being required on *some* paths.
-        //
-        // So, take an intersection instead -- but, while adding stores, we have to add the missing
-        // stores on individual execution paths -- see addStores in FrameStorePlacementProblem 
-        //
-        // SSS FIXME: Work through this and see if there are problems with the monotonicity of the lattice value
-        // With union, the load set keeps increasing till it hits bottom (all variables!)
-        // But, is there a possibility that with intersection, we get stuck in an infinite loop??
-
-        // Dont apply this optimization on dummy edges!
         FrameStorePlacementNode n = (FrameStorePlacementNode)pred;
-        if (edge._type == CFG_Edge_Type.DUMMY_EDGE)
-            _inDirtyVars.addAll(n._outDirtyVars);
-        else
-            _inDirtyVars.retainAll(n._outDirtyVars);
+        _inDirtyVars.addAll(n._outDirtyVars);
 
         // For frame allocation, we are using the and operator -- so only if the frame has been allocated
         // on all incoming paths do we consider that a frame has been allocated 
