@@ -35,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -735,8 +736,16 @@ public class RubyInstanceConfig {
             } else {
                 try {
                     // try loading from classloader resources
-                    jrubyHome = getClass().getResource("/META-INF/jruby.home")
-                        .toURI().getSchemeSpecificPart();
+                    URI jrubyHomeURI = getClass().getResource("/META-INF/jruby.home").toURI();
+                    String scheme = jrubyHomeURI.getScheme();
+                    String path = jrubyHomeURI.getSchemeSpecificPart();
+                    if ("jar".equals(scheme) && path.startsWith("file:")) {
+                        // special case for jar:file (most typical case)
+                        jrubyHome = path;
+                    } else {
+                        jrubyHome = "classpath:/META-INF/jruby.home";
+                        return jrubyHome;
+                    }
                 } catch (Exception e) {}
 
                 if (jrubyHome != null) {
@@ -762,7 +771,7 @@ public class RubyInstanceConfig {
         }
         if (home.startsWith("cp:")) {
             home = home.substring(3);
-        } else if (!home.startsWith("file:")) {
+        } else if (!home.startsWith("file:") && !home.startsWith("classpath:")) {
             NormalizedFile f = new NormalizedFile(home);
             if (!f.isAbsolute()) {
                 home = f.getAbsolutePath();

@@ -48,9 +48,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import java.util.zip.ZipException;
-import org.jruby.CompatVersion;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
@@ -1096,6 +1095,17 @@ public class LoadService {
             classLoader = runtime.getInstanceConfig().getLoader();
         }
 
+        // absolute classpath URI, no need to iterate over loadpaths
+        if (name.startsWith("classpath:/")) {
+            LoadServiceResource foundResource = getClassPathResource(classLoader, name);
+            if (foundResource != null) {
+                return foundResource;
+            }
+        } else if (name.startsWith("classpath:")) {
+            // "relative" classpath URI
+            name = name.substring("classpath:".length());
+        }
+
         for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
             String entry = pathIter.next().toString();
 
@@ -1104,15 +1114,16 @@ public class LoadService {
 
             // if entry starts with a slash, skip it since classloader resources never start with a /
             if (entry.charAt(0) == '/' || (entry.length() > 1 && entry.charAt(1) == ':')) continue;
-            
-            // otherwise, try to load from classpath (Note: Jar resources always uses '/')
-            debugLogTry("fileInClasspath", entry + "/" + name);
-            URL loc = classLoader.getResource(entry + "/" + name);
 
-            // Make sure this is not a directory or unavailable in some way
-            if (isRequireable(loc)) {
-                LoadServiceResource foundResource = new LoadServiceResource(loc, loc.getPath());
-                debugLogFound(foundResource);
+            if (entry.startsWith("classpath:/")) {
+                entry = entry.substring("classpath:/".length());
+            } else if (entry.startsWith("classpath:")) {
+                entry = entry.substring("classpath:".length());
+            }
+
+            // otherwise, try to load from classpath (Note: Jar resources always uses '/')
+            LoadServiceResource foundResource = getClassPathResource(classLoader, entry + "/" + name);
+            if (foundResource != null) {
                 return foundResource;
             }
         }
@@ -1122,12 +1133,8 @@ public class LoadService {
         
         // Try to load from classpath without prefix. "A/b.rb" will not load as 
         // "./A/b.rb" in a jar file.
-        debugLogTry("fileInClasspath", name);
-        URL loc = classLoader.getResource(name);
-
-        if (isRequireable(loc)) {
-            LoadServiceResource foundResource = new LoadServiceResource(loc, loc.getPath());
-            debugLogFound(foundResource);
+        LoadServiceResource foundResource = getClassPathResource(classLoader, name);
+        if (foundResource != null) {
             return foundResource;
         }
 
@@ -1147,6 +1154,36 @@ public class LoadService {
             } catch (Exception e) {}
         }
         return false;
+    }
+
+    protected LoadServiceResource getClassPathResource(ClassLoader classLoader, String name) {
+        boolean isClasspathScheme = false;
+
+        // strip the classpath scheme first
+        if (name.startsWith("classpath:/")) {
+            isClasspathScheme = true;
+            name = name.substring("classpath:/".length());
+        } else if (name.startsWith("classpath:")) {
+            isClasspathScheme = true;
+            name = name.substring("classpath:".length());
+        }
+
+        debugLogTry("fileInClasspath", name);
+        URL loc = classLoader.getResource(name);
+
+        if (loc != null) { // got it
+            String path = "classpath:/" + name;
+            // special case for typical jar:file URLs, but only if the name didn't have
+            // the classpath scheme explicitly
+            if (!isClasspathScheme && loc.toString().startsWith("jar:file:") && isRequireable(loc)) {
+                // Make sure this is not a directory or unavailable in some way
+                path = loc.getPath();
+            }
+            LoadServiceResource foundResource = new LoadServiceResource(loc, path);
+            debugLogFound(foundResource);
+            return foundResource;
+        }
+        return null;
     }
     
     protected String canonicalizePath(String path) {

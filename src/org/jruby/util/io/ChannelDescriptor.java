@@ -28,6 +28,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
+import static java.util.logging.Logger.getLogger;
+import static org.jruby.util.io.ModeFlags.RDONLY;
+import static org.jruby.util.io.ModeFlags.RDWR;
+import static org.jruby.util.io.ModeFlags.WRONLY;
+
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -40,17 +45,15 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
-import static java.util.logging.Logger.getLogger;
 import java.util.zip.ZipEntry;
+
 import org.jruby.RubyIO;
 import org.jruby.ext.posix.POSIX;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
-import static org.jruby.util.io.ModeFlags.*;
 
 /**
  * ChannelDescriptor provides an abstraction similar to the concept of a
@@ -640,6 +643,11 @@ public class ChannelDescriptor {
                 // FIXME: don't use RubyIO for this
                 return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
             }
+        } else if (path.startsWith("classpath:/")) {
+            path = path.substring("classpath:/".length());
+            InputStream is = ByteList.EMPTY_BYTELIST.getClass().getClassLoader().getResourceAsStream(path);
+            // FIXME: don't use RubyIO for this
+            return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
         } else {
             JRubyFile theFile = JRubyFile.create(cwd,path);
 

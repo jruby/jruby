@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import org.jruby.anno.JRubyMethod;
@@ -103,9 +105,14 @@ public class RubyFileTest {
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
+        if (existsOnClasspath(filename)) {
+            return runtime.getTrue();
+        }
+
         if (Ruby.isSecurityRestricted()) {
             return runtime.getFalse();
         }
+
 
         if (file_in_archive(filename) != null) {
             return runtime.getTrue();
@@ -342,6 +349,37 @@ public class RubyFileTest {
         }
 
         return null;
+    }
+
+    private static boolean existsOnClasspath(IRubyObject path) {
+        if (path instanceof RubyFile) {
+            return false;
+        }
+
+        Ruby runtime = path.getRuntime();
+        RubyString pathStr = get_path(runtime.getCurrentContext(), path);
+        String pathJStr = pathStr.getUnicodeValue();
+        if (pathJStr.startsWith("classpath:/")) {
+            pathJStr = pathJStr.substring("classpath:/".length());
+
+            ClassLoader classLoader = runtime.getJRubyClassLoader();
+            // handle security-sensitive case
+            if (Ruby.isSecurityRestricted() && classLoader == null) {
+                classLoader = runtime.getInstanceConfig().getLoader();
+            }
+
+            InputStream is = classLoader.getResourceAsStream(pathJStr);
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ignore) {
+                } catch (NullPointerException wtf) {
+                    // that's what sometimes happens, weird
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void noFileError(IRubyObject filename) {

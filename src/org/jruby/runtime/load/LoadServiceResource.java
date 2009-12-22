@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,8 +36,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
- * Simple struct to capture name seperate from URL.  URL and File have internal 
- * logic which does unexpected things when presenting the resource as a string. 
+ * Simple struct to capture name separate from URL.  URL and File have internal
+ * logic which does unexpected things when presenting the resource as a string.
  */
 public class LoadServiceResource {
     private final URL resource;
