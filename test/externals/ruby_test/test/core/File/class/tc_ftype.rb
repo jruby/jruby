@@ -44,6 +44,12 @@ class TC_File_Ftype_ClassMethod < Test::Unit::TestCase
          elsif File.exists?("/dev/disk0")
             @block = "/dev/disk0"
             @link  = "/tmp"
+         elsif File.exists?("/dev/sda0")
+            @block = "/dev/sda0"
+            @link  = "/tmp"
+         elsif File.exists?("/dev/sda1")
+            @block = "/dev/sda1"
+            @link  = "/tmp"
          else
             @block = nil
             @link  = nil
