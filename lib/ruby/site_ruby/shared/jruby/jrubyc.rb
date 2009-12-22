@@ -78,7 +78,7 @@ module JRubyCompiler
 
     errors = 0
     # Process all the file arguments
-    filenames.each do |filename|
+    Dir[*filenames].each do |filename|
       unless File.exists? filename
         puts "Error -- file not found: #{filename}"
         errors += 1
