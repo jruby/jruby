@@ -53,8 +53,8 @@ public class YieldNode extends Node {
      * @param position position of the node in the source
      * @param argsNode the arguments to the yield
      * @param expandedArguments whether the arguments should be treated as directly-passed args
-     *                          as in yield 1, 2, 3 (expandArguments = true) versus
-     *                          yield [1, 2, 3] (expandArguments = false).
+     *                          as in yield 1, 2, 3 (expandedArguments = true) versus
+     *                          yield [1, 2, 3] (expandedArguments = false).
      */
     public YieldNode(ISourcePosition position, Node argsNode, boolean expandedArguments) {
         super(position);

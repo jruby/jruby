@@ -666,16 +666,19 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.loadBlock();
         methodCompiler.loadThreadContext();
 
-        String signature;
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
-            signature = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class);
         } else {
-            signature = sig(IRubyObject.class, ThreadContext.class, boolean.class);
+            method.aconst_null();
         }
-        method.ldc(unwrap);
 
-        method.invokevirtual(p(Block.class), "yield", signature);
+        if (unwrap) {
+            method.aconst_null();
+            method.aconst_null();
+            method.invokevirtual(p(Block.class), "yieldArray", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class));
+        } else {
+            method.invokevirtual(p(Block.class), "yield", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+        }
     }
 
     public void yieldSpecific(ArgumentsCallback argsCallback) {
