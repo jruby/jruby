@@ -1532,6 +1532,9 @@
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="tool/nailgun/configure"/>
       </zipfileset>
+	  <zipfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
+	    <include name="spi/**"/>
+	  </zipfileset>
     </zip>
 
     <checksum file="${dist.dir}/jruby-src-${version.jruby}.zip" algorithm="md5"/>
