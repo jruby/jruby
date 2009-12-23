@@ -26,40 +26,34 @@ class TC_File_Ftype_ClassMethod < Test::Unit::TestCase
       else
          @char = Pathname.new('/dev/null').realpath
          @fifo = "test_fifo"
+         @link = "/tmp/link_to_lib_#{rand(1_000_000)}"
 
          system("mkfifo #{@fifo}")
+         system("ln -s /lib #{@link}")
 
          if File.exists?("/dev/fd0") &&  File.symlink?("/dev/fd0")
             @block = Pathname.new("/dev/fd0").realpath
-            @link  = "/dev/fd0" if File.symlink?("/dev/fd0")
          elsif File.exists?("/dev/diskette")
             @block = Pathname.new("/dev/diskette").realpath
-            @link  = "/dev/diskette" if File.symlink?("/dev/diskette")
          elsif File.exists?("/dev/cdrom")
             @block = Pathname.new("/dev/cdrom").realpath
-            @link  = "/dev/cdrom" if File.symlink?("/dev/cdrom")
          elsif File.exists?("/dev/sr0") # CDROM
             @block = Pathname.new("/dev/sr0").realpath
-            @link  = "/dev/sr0" if File.symlink?("/dev/sr0") 
          elsif File.exists?("/dev/disk0")
             @block = "/dev/disk0"
-            @link  = "/tmp"
          elsif File.exists?("/dev/sda0")
             @block = "/dev/sda0"
-            @link  = "/tmp"
          elsif File.exists?("/dev/sda1")
             @block = "/dev/sda1"
-            @link  = "/tmp"
          else
             @block = nil
-            @link  = nil
          end
       end
    end
 
    def test_ftype_basic
       assert_respond_to(File, :ftype)
-      assert_nothing_raised{ File.ftype(@file) } 
+      assert_nothing_raised{ File.ftype(@file) }
       assert_kind_of(String, File.ftype(@file))
    end
 
@@ -97,7 +91,8 @@ class TC_File_Ftype_ClassMethod < Test::Unit::TestCase
 
    def teardown
       remove_file(@fifo)
-      
+      system("rm -f #{@link}") if @link
+
       @file   = nil
       @dir    = nil
       @char   = nil
