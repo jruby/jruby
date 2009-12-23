@@ -3,24 +3,24 @@ class org::jruby::ast::Node
   def [](ix)
     self.child_nodes[ix]
   end
-  
+
   def first
     self.child_nodes[0] if self.child_nodes.size > 0
   end
-  
+
   def last
     self.child_nodes[self.child_nodes.size-1] if self.child_nodes.size > 0
   end
-  
+
   def +(other)
     blk = org.jruby.ast.BlockNode.new POS
     blk.add self
     blk.add other
     blk
   end
-  
+
   attr_accessor :locals
-  
+
   def run
     unless defined?(JRuby)
       require 'jruby'
@@ -30,13 +30,13 @@ class org::jruby::ast::Node
       pos = POS
       scope1 = org.jruby.parser.LocalStaticScope.new(nil)
       scope1.setVariables(java.lang.String[self.locals || 40].new)
-      scope = org.jruby.runtime.DynamicScope.new(scope1, nil)
+      scope = org.jruby.runtime.DynamicScope.newDynamicScope(scope1, nil)
       root = org.jruby.ast.RootNode.new(pos, scope, self)
     end
 
-    JRuby::runtime.eval root
+    JRuby::runtime.runInterpreter root
   end
-  
+
   def inspect(indent = 0)
     s = ' '*indent + self.class.name.split('::').last
 
@@ -54,10 +54,10 @@ class org::jruby::ast::Node
     if self.respond_to?(:depth)
       s << " >#{self.depth.inspect}"
     end
-    
+
     [:receiver_node, :args_node, :var_node, :head_node, :value_node, :iter_node, :body_node, :next_node, :condition, :then_body, :else_body].each do |mm|
       if self.respond_to?(mm)
-        begin 
+        begin
           s << "\n#{self.send(mm).inspect(indent+2)}" if self.send(mm)
         rescue
           s << "\n#{' '*(indent+2)}#{self.send(mm).inspect}" if self.send(mm)
@@ -76,7 +76,7 @@ class org::jruby::ast::Node
     end
     s
   end
-  
+
   def to_yaml_node(out)
     content = []
     content << {'name' => self.name} if self.respond_to?(:name)
