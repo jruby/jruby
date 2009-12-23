@@ -232,3 +232,8 @@ f { |re|
 }
 
 test_equal "lib/foo.rb", Regexp.last_match.to_s
+
+# JRUBY-2318
+name = [151, 215, 254, 246, 95, 254, 87, 193, 179, 240, 32, 95].pack('C*')
+name =~ %r(\A[\[\]]*([^\[\]]+)\]*)
+test_no_exception {$1.hash}
