@@ -1475,7 +1475,7 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
         long off = getOffset(offArg);
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().putZeroTerminatedByteArray(off, bl.unsafeBytes(), bl.begin(), bl.length());
+        getMemoryIO().putZeroTerminatedByteArray(off, bl.getUnsafeBytes(), bl.begin(), bl.length());
         return this;
     }
 
@@ -1497,7 +1497,7 @@ abstract public class AbstractMemory extends RubyObject {
         if (len < 0 || len > (bl.length() - idx)) {
             throw context.getRuntime().newRangeError("Invalid length");
         }
-        getMemoryIO().put(off, bl.unsafeBytes(), bl.begin() + idx, len);
+        getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
         return this;
     }
 

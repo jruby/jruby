@@ -203,7 +203,7 @@ public class RubyZlib {
 
         CRC32Ext ext = new CRC32Ext((int)crc);
         if (bytes != null) {
-            ext.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+            ext.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         }
         
         return recv.getRuntime().newFixnum(ext.getValue());
@@ -219,7 +219,7 @@ public class RubyZlib {
 
         Adler32Ext ext = new Adler32Ext(adler);
         if (bytes != null) {
-            ext.update(bytes.unsafeBytes(), bytes.begin(), bytes.length()); // it's safe since adler.update doesn't modify the array
+            ext.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length()); // it's safe since adler.update doesn't modify the array
         }
         return recv.getRuntime().newFixnum(ext.getValue());
     }
@@ -434,9 +434,8 @@ public class RubyZlib {
         }
 
         private IRubyObject flushOutput(Ruby runtime) {
-            if (collected.realSize > 0) {
-                IRubyObject res = RubyString.newString(runtime,
-                        collected.bytes, collected.begin, collected.realSize);
+            if (collected.getRealSize() > 0) {
+                IRubyObject res = RubyString.newString(runtime, collected.getUnsafeBytes(), collected.getBegin(), collected.getRealSize());
                 resetBuffer(collected);
                 return res;
             }
@@ -535,10 +534,10 @@ public class RubyZlib {
                         throw new RaiseException(RubyException.newException(
                                 runtime, errorClass, "need dictionary"));
                     } else {
-                        if (input.realSize > 0) {
+                        if (input.getRealSize() > 0) {
                             int remaining = flater.getRemaining();
                             if (remaining > 0) {
-                                input.view(input.realSize - remaining, remaining);
+                                input.view(input.getRealSize() - remaining, remaining);
                             } else {
                                 resetBuffer(input);
                             }
@@ -558,7 +557,7 @@ public class RubyZlib {
 
             // MRI behavior: in finished mode, we work as pass-through
             if (internalFinished() && finish) {
-                if (input.realSize > 0) {
+                if (input.getRealSize() > 0) {
                     collected.append(input);
                     resetBuffer(input);
                 }
@@ -1448,15 +1447,15 @@ public class RubyZlib {
         @JRubyMethod(name = "write", required = 1)
         public IRubyObject write(IRubyObject p1) throws IOException {
             ByteList bytes = p1.asString().getByteList();
-            io.write(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+            io.write(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return getRuntime().newFixnum(bytes.length());
         }
     }
 
     // utility method
     static void resetBuffer(ByteList l) {
-        l.begin = 0;
-        l.realSize = 0;
+        l.setBegin(0);
+        l.setRealSize(0);
         l.invalidate();
     }
 }

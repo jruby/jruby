@@ -183,8 +183,8 @@ public class JavaCrypt {
     public static final ByteList crypt(ByteList salt, ByteList original) {
         ByteList buffer = new ByteList(new byte[]{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, false);
 
-        byte charZero = salt.bytes[salt.begin];
-        byte charOne = salt.bytes[salt.begin + 1];
+        byte charZero = salt.getUnsafeBytes()[salt.getBegin()];
+        byte charOne = salt.getUnsafeBytes()[salt.getBegin() + 1];
 
         buffer.set(0, charZero);
         buffer.set(1, charOne);
@@ -199,7 +199,7 @@ public class JavaCrypt {
         }
 
         for (int i = 0; i < key.length && i < original.length(); i++) {
-            int iChar = (int) (original.bytes[original.begin + i] & 255);
+            int iChar = (int) (original.getUnsafeBytes()[original.getBegin() + i] & 255);
 
             key[i] = (byte) (iChar << 1);
         }

@@ -1706,7 +1706,7 @@ public class RubyArray extends RubyObject implements List {
         ByteList sepBytes = null;
         if (!sep.isNil()) {
             sepBytes = sep.convertToString().getByteList();
-            len += sepBytes.realSize * (realLength - 1);
+            len += sepBytes.getRealSize() * (realLength - 1);
         }
 
         ByteList buf = new ByteList(len);

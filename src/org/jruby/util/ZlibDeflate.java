@@ -81,7 +81,7 @@ public class ZlibDeflate {
     }
 
     public void append(ByteList obj) throws IOException {
-        flater.setInput(obj.unsafeBytes(), obj.begin, obj.realSize);
+        flater.setInput(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize());
         run();
     }
 

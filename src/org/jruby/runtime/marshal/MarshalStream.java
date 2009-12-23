@@ -429,7 +429,7 @@ public class MarshalStream extends FilterOutputStream {
     public void writeString(ByteList value) throws IOException {
         int len = value.length();
         writeInt(len);
-        out.write(value.unsafeBytes(), value.begin(), len);
+        out.write(value.getUnsafeBytes(), value.begin(), len);
     }
 
     public void dumpSymbol(String value) throws IOException {

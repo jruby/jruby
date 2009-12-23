@@ -867,7 +867,7 @@ public class RubyComplex extends RubyNumeric {
 
     private static boolean lastCharDigit(RubyString str) {
         ByteList bytes = str.getByteList();
-        return ASCIIEncoding.INSTANCE.isDigit(bytes.bytes[bytes.begin + bytes.realSize - 1]);
+        return ASCIIEncoding.INSTANCE.isDigit(bytes.getUnsafeBytes()[bytes.getBegin() + bytes.getRealSize() - 1]);
     }
 
     /** nucomp_marshal_dump
@@ -939,7 +939,7 @@ public class RubyComplex extends RubyNumeric {
         ByteList bytes = s.getByteList();
 
         Ruby runtime = context.getRuntime();
-        if (bytes.realSize == 0) return runtime.newArray(runtime.getNil(), recv);
+        if (bytes.getRealSize() == 0) return runtime.newArray(runtime.getNil(), recv);
 
         IRubyObject sr, si, re;
         sr = si = re = runtime.getNil();

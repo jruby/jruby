@@ -968,7 +968,7 @@ public class RubyRational extends RubyNumeric {
         ByteList bytes = s.getByteList();
 
         Ruby runtime = context.getRuntime();
-        if (bytes.realSize == 0) return runtime.newArray(runtime.getNil(), recv);
+        if (bytes.getRealSize() == 0) return runtime.newArray(runtime.getNil(), recv);
 
         IRubyObject m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).callMethod(context, "match", s);
         
@@ -991,9 +991,9 @@ public class RubyRational extends RubyNumeric {
             if (!fp.isNil()) {
                 bytes = fp.convertToString().getByteList();
                 int count = 0;
-                byte[]buf = bytes.bytes;
-                int i = bytes.begin;
-                int end = i + bytes.realSize;
+                byte[]buf = bytes.getUnsafeBytes();
+                int i = bytes.getBegin();
+                int end = i + bytes.getRealSize();
 
                 while (i < end) {
                     if (ASCIIEncoding.INSTANCE.isDigit(buf[i])) count++;

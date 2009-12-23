@@ -318,7 +318,7 @@ public class RubyIconv extends RubyObject {
             length = bytes.length() - start;
         }
         
-        ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin() + start, length);
+        ByteBuffer buf = ByteBuffer.wrap(bytes.getUnsafeBytes(), bytes.begin() + start, length);
         
         try {
             CharBuffer cbuf = fromEncoding.decode(buf);

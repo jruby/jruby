@@ -295,7 +295,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
 
-        if(sockaddr.path().length() <= path.realSize) {
+        if(sockaddr.path().length() <= path.getRealSize()) {
             throw runtime.newArgumentError("too long unix socket path (max: " + (sockaddr.path().length()-1) + "bytes)");
         }
 

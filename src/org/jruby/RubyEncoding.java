@@ -105,8 +105,8 @@ public class RubyEncoding extends RubyObject {
             Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
             if (enc1 == enc2) return enc1;
 
-            if (obj2 instanceof RubyString && ((RubyString)obj2).getByteList().realSize == 0) return enc1; 
-            if (obj1 instanceof RubyString && ((RubyString)obj1).getByteList().realSize == 0) return enc2;
+            if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
+            if (obj1 instanceof RubyString && ((RubyString) obj1).getByteList().getRealSize() == 0) return enc2;
 
             if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 

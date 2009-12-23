@@ -749,7 +749,7 @@ public final class DefaultMethodFactory {
                 buffer.putAddress(0L);
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
-                buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(), flags | ArrayFlags.NULTERMINATE);
+                buffer.putArray(bl.getUnsafeBytes(), bl.begin(), bl.length(), flags | ArrayFlags.NULTERMINATE);
 
             } else if (parameter.respondsTo("to_ptr")) {
                 final int MAXRECURSE = 4;
@@ -792,7 +792,7 @@ public final class DefaultMethodFactory {
             if (parameter instanceof RubyString) {
                 Util.checkStringSafety(context.getRuntime(), parameter);
                 ByteList bl = ((RubyString) parameter).getByteList();
-                buffer.putArray(bl.unsafeBytes(), bl.begin(), bl.length(),
+                buffer.putArray(bl.getUnsafeBytes(), bl.begin(), bl.length(),
                         ArrayFlags.IN | ArrayFlags.NULTERMINATE);
             } else if (parameter.isNil()) {
                 buffer.putAddress(0);

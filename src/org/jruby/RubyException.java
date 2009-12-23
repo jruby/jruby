@@ -270,7 +270,7 @@ public class RubyException extends RubyObject {
         RubyModule rubyClass = getMetaClass();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.getByteList().realSize == 0) return getRuntime().newString(rubyClass.getName());
+        if (exception.getByteList().getRealSize() == 0) return getRuntime().newString(rubyClass.getName());
         StringBuilder sb = new StringBuilder("#<");
         sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
         return getRuntime().newString(sb.toString());

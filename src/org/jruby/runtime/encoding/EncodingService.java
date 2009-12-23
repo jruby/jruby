@@ -44,11 +44,11 @@ public final class EncodingService {
     }
 
     public Entry findEncodingEntry(ByteList bytes) {
-        return encodings.get(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return encodings.get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     public Entry findAliasEntry(ByteList bytes) {
-        return aliases.get(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return aliases.get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     public Entry findEncodingOrAliasEntry(ByteList bytes) {

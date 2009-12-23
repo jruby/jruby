@@ -294,10 +294,10 @@ public class RubyStringIO extends RubyObject {
 
         Ruby runtime = context.getRuntime();
         ByteList bytes = data.internal.getByteList();
-        int len = bytes.realSize;
+        int len = bytes.getRealSize();
         while (data.pos < len) {
             int pos = (int)this.data.pos;
-            byte c = bytes.bytes[bytes.begin + pos];
+            byte c = bytes.getUnsafeBytes()[bytes.getBegin() + pos];
             int n = runtime.getKCode().getEncoding().length(c);
             if(len < pos + n) {
                 n = len - pos;
@@ -360,19 +360,19 @@ public class RubyStringIO extends RubyObject {
     private IRubyObject internalGets(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
 
-        if (data.pos < data.internal.getByteList().realSize && !data.eof) {
+        if (data.pos < data.internal.getByteList().getRealSize() && !data.eof) {
             boolean isParagraph = false;
 
             ByteList sep;
             if (args.length > 0) {
                 if (args[0].isNil()) {
                     ByteList buf = data.internal.getByteList().makeShared(
-                            (int)data.pos, data.internal.getByteList().realSize - (int)data.pos);
-                    data.pos += buf.realSize;
+                            (int)data.pos, data.internal.getByteList().getRealSize() - (int)data.pos);
+                    data.pos += buf.getRealSize();
                     return RubyString.newString(runtime, buf);
                 }
                 sep = args[0].convertToString().getByteList();
-                if (sep.realSize == 0) {
+                if (sep.getRealSize() == 0) {
                     isParagraph = true;
                     sep = Stream.PARAGRAPH_SEPARATOR;
                 }
@@ -384,7 +384,7 @@ public class RubyStringIO extends RubyObject {
 
             if (isParagraph) {
                 swallowLF(ss);
-                if (data.pos == ss.realSize) {
+                if (data.pos == ss.getRealSize()) {
                     return runtime.getNil();
                 }
             }
@@ -393,7 +393,7 @@ public class RubyStringIO extends RubyObject {
 
             ByteList add;
             if (-1 == ix) {
-                ix = data.internal.getByteList().realSize;
+                ix = data.internal.getByteList().getRealSize();
                 add = ByteList.EMPTY_BYTELIST;
             } else {
                 add = isParagraph? NEWLINE : sep;
@@ -402,7 +402,7 @@ public class RubyStringIO extends RubyObject {
             ByteList line = new ByteList(ix - (int)data.pos + add.length());
             line.append(data.internal.getByteList(), (int)data.pos, ix - (int)data.pos);
             line.append(add);
-            data.pos = ix + add.realSize;
+            data.pos = ix + add.getRealSize();
             data.lineno++;
 
             return RubyString.newString(runtime,line);
@@ -411,7 +411,7 @@ public class RubyStringIO extends RubyObject {
     }
 
     private void swallowLF(ByteList list) {
-        while (data.pos < list.realSize) {
+        while (data.pos < list.getRealSize()) {
             if (list.get((int)data.pos) == '\n') {
                 data.pos++;
             } else {
@@ -611,10 +611,10 @@ public class RubyStringIO extends RubyObject {
                 }
                 if (length > 0 && data.pos >= data.internal.getByteList().length()) {
                     data.eof = true;
-                    if (buf != null) buf.realSize = 0;
+                    if (buf != null) buf.setRealSize(0);
                     return getRuntime().getNil();
                 } else if (data.eof) {
-                    if (buf != null) buf.realSize = 0;
+                    if (buf != null) buf.setRealSize(0);
                     return getRuntime().getNil();
                 }
                 break;
@@ -628,7 +628,7 @@ public class RubyStringIO extends RubyObject {
                 if (buf == null) {
                     buf = new ByteList();
                 } else {
-                    buf.realSize = 0;
+                    buf.setRealSize(0);
                 }
 
                 return getRuntime().newString(buf);
@@ -659,17 +659,17 @@ public class RubyStringIO extends RubyObject {
             if (length > rest) length = rest;
 
             // Yow...this is still ugly
-            byte[] target = buf.bytes;
+            byte[] target = buf.getUnsafeBytes();
             if (target.length > length) {
-                System.arraycopy(data.internal.getByteList().bytes, (int) data.pos, target, 0, length);
-                buf.begin = 0;
-                buf.realSize = length;
+                System.arraycopy(data.internal.getByteList().getUnsafeBytes(), (int) data.pos, target, 0, length);
+                buf.setBegin(0);
+                buf.setRealSize(length);
             } else {
                 target = new byte[length];
-                System.arraycopy(data.internal.getByteList().bytes, (int) data.pos, target, 0, length);
-                buf.begin = 0;
-                buf.realSize = length;
-                buf.bytes = target;
+                System.arraycopy(data.internal.getByteList().getUnsafeBytes(), (int) data.pos, target, 0, length);
+                buf.setBegin(0);
+                buf.setRealSize(length);
+                buf.setUnsafeBytes(target);
             }
         }
 
@@ -822,7 +822,7 @@ public class RubyStringIO extends RubyObject {
         data.internal.modify();
         ByteList buf = data.internal.getByteList();
         if (len < buf.length()) {
-            Arrays.fill(buf.unsafeBytes(), len, buf.length(), (byte) 0);
+            Arrays.fill(buf.getUnsafeBytes(), len, buf.length(), (byte) 0);
         }
         buf.length(len);
         return arg;

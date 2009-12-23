@@ -150,7 +150,7 @@ public class RubyMarshal {
             } else if (in != null && in.respondsTo("to_str")) {
                 RubyString inString = (RubyString) RuntimeHelpers.invoke(context, in, "to_str");
                 ByteList bytes = inString.getByteList();
-                rawInput = new ByteArrayInputStream(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else {
                 throw recv.getRuntime().newTypeError("instance of IO needed");
             }

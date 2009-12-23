@@ -142,7 +142,7 @@ public class ByteArrayLexerSource extends LexerSource {
         while ((c = read()) != RubyYaccLexer.EOF) {
             buf.append(c);
         }
-        return new ByteArrayInputStream(buf.unsafeBytes(), 0, buf.length());
+        return new ByteArrayInputStream(buf.getUnsafeBytes(), 0, buf.length());
     }
 
     private int forward(int c) {

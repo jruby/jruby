@@ -217,7 +217,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         ByteList buf = new ByteList(40);
         
-        byte first = separator.bytes[separator.begin];
+        byte first = separator.getUnsafeBytes()[separator.getBegin()];
 
         LineLoop : while (true) {
             ReadLoop: while (true) {
@@ -247,15 +247,15 @@ public class ChannelStream implements Stream, Finalizable {
             }
             
             // found a match above, check if remaining separator characters match, appending as we go
-            for (int i = 0; i < separator.realSize; i++) {
+            for (int i = 0; i < separator.getRealSize(); i++) {
                 if (c == -1) {
                     break LineLoop;
-                } else if (c != separator.bytes[separator.begin + i]) {
+                } else if (c != separator.getUnsafeBytes()[separator.getBegin() + i]) {
                     buf.append(c);
                     continue LineLoop;
                 }
                 buf.append(c);
-                if (i < separator.realSize - 1) {
+                if (i < separator.getRealSize() - 1) {
                     c = read();
                 }
             }
@@ -263,7 +263,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         if (separatorString == PARAGRAPH_DELIMETER) {
-            while (c == separator.bytes[separator.begin]) {
+            while (c == separator.getUnsafeBytes()[separator.getBegin()]) {
                 c = read();
             }
             ungetc(c);
@@ -379,7 +379,7 @@ public class ChannelStream implements Stream, Finalizable {
             }
 
             ByteList result = new ByteList((int) left);
-            ByteBuffer buf = ByteBuffer.wrap(result.unsafeBytes(), 
+            ByteBuffer buf = ByteBuffer.wrap(result.getUnsafeBytes(),
                     result.begin(), (int) left);
             
             //
@@ -1050,19 +1050,19 @@ public class ChannelStream implements Stream, Finalizable {
             flushWrite(); // ensure nothing left to write
             
 
-            int n = descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+            int n = descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
             if(n != buf.length()) {
                 // TODO: check the return value here
             }
         } else {
             if (buf.length() > buffer.remaining()) flushWrite();
             
-            buffer.put(buf.unsafeBytes(), buf.begin(), buf.length());
+            buffer.put(buf.getUnsafeBytes(), buf.begin(), buf.length());
         }
         
         if (isSync()) flushWrite();
         
-        return buf.realSize;
+        return buf.getRealSize();
     }
 
     /**
@@ -1254,7 +1254,7 @@ public class ChannelStream implements Stream, Finalizable {
                     if (oldBlocking) {
                         selectableChannel.configureBlocking(false);
                     }
-                    return descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+                    return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
                 } finally {
                     if (oldBlocking) {
                         selectableChannel.configureBlocking(oldBlocking);
@@ -1262,7 +1262,7 @@ public class ChannelStream implements Stream, Finalizable {
                 }
             }
         } else {
-            return descriptor.write(ByteBuffer.wrap(buf.unsafeBytes(), buf.begin(), buf.length()));
+            return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
         }
     }
 

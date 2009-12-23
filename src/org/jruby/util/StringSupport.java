@@ -80,7 +80,7 @@ public final class StringSupport {
     }
 
     public static int searchNonAscii(ByteList bytes) { 
-        return searchNonAscii(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return searchNonAscii(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     public static int codeRangeScan(Encoding enc, byte[]bytes, int p, int len) {
@@ -121,7 +121,7 @@ public final class StringSupport {
     }
 
     public static int codeRangeScan(Encoding enc, ByteList bytes) {
-        return codeRangeScan(enc, bytes.bytes, bytes.begin, bytes.realSize);
+        return codeRangeScan(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
     }
 
     public static long codeRangeScanRestartable(Encoding enc, byte[]bytes, int s, int end, int cr) { 
@@ -191,7 +191,7 @@ public final class StringSupport {
     }
 
     public static int utf8Length(ByteList bytes) {
-        return utf8Length(bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return utf8Length(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
@@ -218,7 +218,7 @@ public final class StringSupport {
     }
 
     public static int strLength(ByteList bytes) { 
-        return strLength(bytes.encoding, bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return strLength(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     public static long strLengthWithCodeRange(Encoding enc, byte[]bytes, int p, int end) {
@@ -269,11 +269,11 @@ public final class StringSupport {
     }
 
     public static long strLengthWithCodeRange(ByteList bytes) { 
-        return strLengthWithCodeRange(bytes.encoding, bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return strLengthWithCodeRange(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     public static long strLengthWithCodeRange(ByteList bytes, Encoding enc) { 
-        return strLengthWithCodeRange(enc, bytes.bytes, bytes.begin, bytes.begin + bytes.realSize);
+        return strLengthWithCodeRange(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
     // arg cannot be negative

@@ -76,9 +76,9 @@ public class RubySymbol extends RubyObject {
 
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
-        int length = symbolBytes.begin + symbolBytes.realSize;
-        for (int i = symbolBytes.begin; i < length; i++) {
-            if (symbolBytes.bytes[i] == 0) {
+        int length = symbolBytes.getBegin() + symbolBytes.getRealSize();
+        for (int i = symbolBytes.getBegin(); i < length; i++) {
+            if (symbolBytes.getUnsafeBytes()[i] == 0) {
                 throw runtime.newSyntaxError("symbol cannot contain '\\0'");
             }
         }
@@ -217,7 +217,7 @@ public class RubySymbol extends RubyObject {
         } else {
             bytes = ((RubyString)RubyString.newString(runtime, symbolBytes).dump()).getByteList();
         }
-        ByteList result = new ByteList(bytes.realSize + 1);
+        ByteList result = new ByteList(bytes.getRealSize() + 1);
         result.append((byte)':');
         result.append(bytes);
 
@@ -234,8 +234,8 @@ public class RubySymbol extends RubyObject {
     }
     private final IRubyObject inspect19(Ruby runtime) {
         
-        ByteList result = new ByteList(symbolBytes.realSize + 1);
-        result.encoding = symbolBytes.encoding;
+        ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
+        result.setEncoding(symbolBytes.getEncoding());
         result.append((byte)':');
         result.append(symbolBytes);
 
@@ -394,7 +394,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
-        return context.getRuntime().getEncodingService().getEncoding(symbolBytes.encoding);
+        return context.getRuntime().getEncodingService().getEncoding(symbolBytes.getEncoding());
     }
 
     private static class ToProcCallback implements BlockCallback {
@@ -493,10 +493,10 @@ public class RubySymbol extends RubyObject {
 
     private boolean isPrintable() {
         Ruby runtime = getRuntime();
-        int p = symbolBytes.begin;
-        int end = p + symbolBytes.realSize;
-        byte[]bytes = symbolBytes.bytes;
-        Encoding enc = symbolBytes.encoding;
+        int p = symbolBytes.getBegin();
+        int end = p + symbolBytes.getRealSize();
+        byte[]bytes = symbolBytes.getUnsafeBytes();
+        Encoding enc = symbolBytes.getEncoding();
 
         while (p < end) {
             int c = codePoint(runtime, enc, bytes, p, end);

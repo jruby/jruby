@@ -418,7 +418,7 @@ public class RubyDigest {
         @JRubyMethod(name = {"update", "<<"}, required = 1)
         public IRubyObject update(IRubyObject obj) {
             ByteList bytes = obj.convertToString().getByteList();
-            algo.update(bytes.bytes, bytes.begin, bytes.realSize);
+            algo.update(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
             return this;
         }
 

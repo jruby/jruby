@@ -627,7 +627,7 @@ public class RubyIO extends RubyObject {
         ByteList separator = separatorValue.isNil() ? null :
             separatorValue.convertToString().getByteList();
 
-        if (separator != null && separator.realSize == 0) separator = Stream.PARAGRAPH_DELIMETER;
+        if (separator != null && separator.getRealSize() == 0) separator = Stream.PARAGRAPH_DELIMETER;
 
         return separator;
     }
@@ -735,7 +735,7 @@ public class RubyIO extends RubyObject {
                         // and we've found at least as many characters as separator length,
                         // and the last n characters of our buffer match the separator, we're done
                         if (c == newline && buf.length() >= separator.length() &&
-                                0 == ByteList.memcmp(buf.unsafeBytes(), buf.begin + buf.realSize - separator.length(), separator.unsafeBytes(), separator.begin, separator.realSize)) {
+                                0 == ByteList.memcmp(buf.getUnsafeBytes(), buf.getBegin() + buf.getRealSize() - separator.length(), separator.getUnsafeBytes(), separator.getBegin(), separator.getRealSize())) {
                             break;
                         }
                     }
@@ -3604,7 +3604,7 @@ public class RubyIO extends RubyObject {
     private static class ByteListCache {
         private byte[] buffer = new byte[0];
         public void release(ByteList l) {
-            buffer = l.bytes;
+            buffer = l.getUnsafeBytes();
         }
 
         public ByteList allocate(int size) {

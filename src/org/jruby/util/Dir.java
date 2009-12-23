@@ -315,7 +315,7 @@ public class Dir {
         int index;
 
         public GlobPattern(ByteList bytelist, int flags) {
-            this(bytelist.bytes, bytelist.begin,  bytelist.begin + bytelist.realSize, flags);
+            this(bytelist.getUnsafeBytes(), bytelist.getBegin(),  bytelist.getBegin() + bytelist.getRealSize(), flags);
         }
         
         public GlobPattern(byte[] bytes, int index, int end, int flags) {
@@ -438,7 +438,7 @@ public class Dir {
             buf.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
             buf.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
             buf.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(cwd, result, new GlobPattern(buf.bytes, buf.begin, buf.realSize, pattern.flags));
+            int status = push_braces(cwd, result, new GlobPattern(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(),pattern.flags));
             if(status != 0) return status;
         }
         
@@ -644,7 +644,7 @@ public class Dir {
                             buf.length(0);
                             buf.append(base);
                             buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
-                            status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, n, flags, func, arg);
+                            status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), n, flags, func, arg);
                             if(status != 0) {
                                 break finalize;
                             }
@@ -666,17 +666,17 @@ public class Dir {
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
                                 buf.append(getBytesInUTF8(dirp[i]));
-                                if (buf.bytes[0] == '/' || (DOSISH && 2<buf.realSize && buf.bytes[1] == ':' && isdirsep(buf.bytes[2]))) {
-                                    st = new JavaSecuredFile(newStringFromUTF8(buf.bytes, buf.begin, buf.realSize));
+                                if (buf.getUnsafeBytes()[0] == '/' || (DOSISH && 2<buf.getRealSize() && buf.getUnsafeBytes()[1] == ':' && isdirsep(buf.getUnsafeBytes()[2]))) {
+                                    st = new JavaSecuredFile(newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 } else {
-                                    st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.bytes, buf.begin, buf.realSize));
+                                    st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 }
                                 if(st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
-                                    int t = buf.realSize;
+                                    int t = buf.getRealSize();
                                     buf.append(SLASH);
                                     buf.append(DOUBLE_STAR);
                                     buf.append(bytes, m, end - m);
-                                    status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
+                                    status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
                                     if(status != 0) {
                                         break;
                                     }
@@ -690,7 +690,7 @@ public class Dir {
                                 buf.append( BASE(base) ? SLASH : EMPTY );
                                 buf.append(getBytesInUTF8(dirp[i]));
                                 if(m == -1) {
-                                    status = func.call(buf.bytes,0,buf.realSize,arg);
+                                    status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
                                     if(status != 0) {
                                         break;
                                     }
@@ -731,11 +731,11 @@ public class Dir {
                                     buf.append(bs, 0, len);
 
                                     if(je.isDirectory()) {
-                                        int t = buf.realSize;
+                                        int t = buf.getRealSize();
                                         buf.append(SLASH);
                                         buf.append(DOUBLE_STAR);
                                         buf.append(bytes, m, end - m);
-                                        status = glob_helper(cwd, buf.bytes, buf.begin, buf.realSize, t, flags, func, arg);
+                                        status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
                                         if(status != 0) {
                                             break;
                                         }
@@ -749,7 +749,7 @@ public class Dir {
                                     buf.append( BASE(base) ? SLASH : EMPTY );
                                     buf.append(bs, 0, len);
                                     if(m == -1) {
-                                        status = func.call(buf.bytes,0,buf.realSize,arg);
+                                        status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
                                         if(status != 0) {
                                             break;
                                         }
@@ -766,18 +766,18 @@ public class Dir {
                 if (link.size() > 0) {
                     for (ByteList b : link) {
                         if (status == 0) {
-                            if(b.bytes[0] == '/'  || (DOSISH && 2<b.realSize && b.bytes[1] == ':' && isdirsep(b.bytes[2]))) {
-                                st = new JavaSecuredFile(newStringFromUTF8(b.bytes, 0, b.realSize));
+                            if(b.getUnsafeBytes()[0] == '/'  || (DOSISH && 2<b.getRealSize() && b.getUnsafeBytes()[1] == ':' && isdirsep(b.getUnsafeBytes()[2]))) {
+                                st = new JavaSecuredFile(newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
                             } else {
-                                st = new JavaSecuredFile(cwd, newStringFromUTF8(b.bytes, 0, b.realSize));
+                                st = new JavaSecuredFile(cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
                             }
 
                             if(st.isDirectory()) {
-                                int len = b.realSize;
+                                int len = b.getRealSize();
                                 buf.length(0);
                                 buf.append(b);
                                 buf.append(bytes, m, end - m);
-                                status = glob_helper(cwd,buf.bytes,0,buf.realSize,len,flags,func,arg);
+                                status = glob_helper(cwd, buf.getUnsafeBytes(),0, buf.getRealSize(),len,flags,func,arg);
                             }
                         }
                     }

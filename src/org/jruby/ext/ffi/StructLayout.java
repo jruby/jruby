@@ -651,7 +651,7 @@ public final class StructLayout extends Type {
             cache.putReference(this, mem);
 
             MemoryIO io = mem.getMemoryIO();
-            io.put(0, bl.unsafeBytes(), bl.begin(), bl.length());
+            io.put(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
             io.putByte(bl.length(), (byte) 0);
 
             getMemoryIO(ptr).putMemoryIO(getOffset(ptr), io);
@@ -747,7 +747,7 @@ public final class StructLayout extends Type {
 
             if (isCharArray() && value instanceof RubyString) {
                 ByteList bl = value.convertToString().getByteList();
-                getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.unsafeBytes(), bl.begin(),
+                getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
                     Math.min(bl.length(), arrayType.length() - 1));
 
             } else {
@@ -814,7 +814,7 @@ public final class StructLayout extends Type {
 
         public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
             ByteList bl = value.convertToString().getByteList();
-            getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.unsafeBytes(), bl.begin(),
+            getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
                     Math.min(bl.length(), length - 1));
         }
 

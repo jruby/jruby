@@ -589,17 +589,17 @@ public class RubyRange extends RubyObject {
             }
             return runtime.getFalse();
         } else if (begin instanceof RubyString && end instanceof RubyString &&
-                ((RubyString)begin).getByteList().realSize == 1 &&
-                ((RubyString)end).getByteList().realSize == 1) {
+                ((RubyString) begin).getByteList().getRealSize() == 1 &&
+                ((RubyString) end).getByteList().getRealSize() == 1) {
             if (obj.isNil()) return runtime.getFalse();
             if (obj instanceof RubyString) {
                 ByteList Vbytes = ((RubyString)obj).getByteList();
-                if (Vbytes.realSize != 1) return runtime.getFalse();
-                int v = Vbytes.bytes[Vbytes.begin] & 0xff;
+                if (Vbytes.getRealSize() != 1) return runtime.getFalse();
+                int v = Vbytes.getUnsafeBytes()[Vbytes.getBegin()] & 0xff;
                 ByteList Bbytes = ((RubyString)begin).getByteList();
-                int b = Bbytes.bytes[Bbytes.begin] & 0xff;
+                int b = Bbytes.getUnsafeBytes()[Bbytes.getBegin()] & 0xff;
                 ByteList Ebytes = ((RubyString)end).getByteList();
-                int e = Ebytes.bytes[Ebytes.begin] & 0xff;
+                int e = Ebytes.getUnsafeBytes()[Ebytes.getBegin()] & 0xff;
                 if (Encoding.isAscii(v) && Encoding.isAscii(b) && Encoding.isAscii(e)) {
                     if ((b <= v && v < e) || (!isExclusive && v == e)) return runtime.getTrue();
                     return runtime.getFalse();

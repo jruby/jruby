@@ -283,8 +283,8 @@ public abstract class RubyInteger extends RubyNumeric {
             throw runtime.newRangeError(this.toString() + " out of char range");
         }
         ByteList bytes = new ByteList(n);
-        enc.codeToMbc((int)value, bytes.bytes, 0);
-        bytes.realSize = n;
+        enc.codeToMbc((int)value, bytes.getUnsafeBytes(), 0);
+        bytes.setRealSize(n);
         return RubyString.newStringNoCopy(runtime, bytes, enc, 0);
     }
 

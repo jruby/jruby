@@ -256,7 +256,7 @@ public class JavaObject extends RubyObject {
     public IRubyObject marshal_load(ThreadContext context, IRubyObject str) {
         try {
             ByteList byteList = str.convertToString().getByteList();
-            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.bytes, byteList.begin, byteList.realSize);
+            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
             ObjectInputStream ois = new ObjectInputStream(bais);
 
             dataWrapStruct(ois.readObject());

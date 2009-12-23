@@ -135,9 +135,9 @@ public class RubyMatchData extends RubyObject {
         Arrays.sort(pairs);
 
         ByteList value = str.getByteList();
-        Encoding enc = value.encoding;
-        byte[]bytes = value.bytes;
-        int p = value.begin;
+        Encoding enc = value.getEncoding();
+        byte[]bytes = value.getUnsafeBytes();
+        int p = value.getBegin();
         int s = p;
 
         int c = 0;
@@ -325,7 +325,7 @@ public class RubyMatchData extends RubyObject {
     private int nameToBackrefNumber(RubyString str) {
         ByteList value = str.getByteList();
         try {
-            return pattern.nameToBackrefNumber(value.bytes, value.begin, value.begin + value.realSize, regs);
+            return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
         } catch (JOniException je) {
             throw getRuntime().newIndexError(je.getMessage());
         }

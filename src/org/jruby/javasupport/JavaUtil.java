@@ -240,10 +240,10 @@ public class JavaUtil {
 
             // 1.9 support for encodings
             if (string.getRuntime().is1_9()) {
-                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
+                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
             }
 
-            return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
         } catch (UnsupportedEncodingException uee) {
             return string.toString();
         }
@@ -866,9 +866,9 @@ public class JavaUtil {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
             ByteList bytes = rubyString.getByteList();
             try {
-                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
             } catch (UnsupportedEncodingException uee) {
-                return new String(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             }
         } else if (javaClass == ByteList.class) {
             return rubyObject.convertToString().getByteList();
@@ -1266,7 +1266,7 @@ public class JavaUtil {
         case ClassIndex.STRING:
             try {
                 ByteList bytes = ((RubyString) object).getByteList();
-                javaObject = new String(bytes.unsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+                javaObject = new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
             } catch (UnsupportedEncodingException uee) {
                 javaObject = object.toString();
             }

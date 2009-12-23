@@ -74,8 +74,8 @@ public abstract class IOChannel implements Channel {
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
-            dst.put(str.bytes, str.begin, str.realSize);
-            returnValue = str.realSize;
+            dst.put(str.getUnsafeBytes(), str.getBegin(), str.getRealSize());
+            returnValue = str.getRealSize();
         }
         return returnValue;
     }

@@ -124,7 +124,7 @@ public class RubyNKF {
             throw runtime.newTypeError("can't convert " + s.getMetaClass() + " into String");
         }
         ByteList bytes = s.convertToString().getByteList();
-        ByteBuffer buf = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), bytes.length());
+        ByteBuffer buf = ByteBuffer.wrap(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         CharsetDecoder decoder = Charset.forName("x-JISAutoDetect").newDecoder();
         try {
             decoder.decode(buf);
@@ -227,7 +227,7 @@ public class RubyNKF {
             throw runtime.newArgumentError("invalid encoding");
         }
         
-        ByteBuffer buf = ByteBuffer.wrap(str.unsafeBytes(), str.begin(), str.length());
+        ByteBuffer buf = ByteBuffer.wrap(str.getUnsafeBytes(), str.begin(), str.length());
         try {
             CharBuffer cbuf = decoder.decode(buf);
             buf = encoder.encode(cbuf);

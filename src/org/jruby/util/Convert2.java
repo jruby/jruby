@@ -22,9 +22,9 @@ public class Convert2 {
     public Convert2(Ruby runtime, ByteList _str, int base, boolean badcheck) {
         this.runtime = runtime;
         this._str = _str;
-        this.str = _str.begin;
-        this.data = _str.bytes;
-        this.end = str + _str.realSize;
+        this.str = _str.getBegin();
+        this.data = _str.getUnsafeBytes();
+        this.end = str + _str.getRealSize();
         this.badcheck = badcheck;
         this.base = base;
     }
@@ -596,7 +596,7 @@ public class Convert2 {
         }
 
         if(badcheck) {
-            if(_str.begin + 1 < str && data[str-1] == '_') {
+            if(_str.getBegin() + 1 < str && data[str-1] == '_') {
                 invalidString("Integer");
             }
             while(str < end && isSpace(str)) {

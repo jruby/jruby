@@ -449,10 +449,10 @@ public class Pack {
         io2Append.ensure(1024);
         int lCurLineLength = 0;
         int lPrevChar = -1;
-        byte[] l2Encode = i2Encode.bytes;
+        byte[] l2Encode = i2Encode.getUnsafeBytes();
         try {
-            int end = i2Encode.begin + i2Encode.realSize;
-            for (int i = i2Encode.begin; i < end; i++) {
+            int end = i2Encode.getBegin() + i2Encode.getRealSize();
+            for (int i = i2Encode.getBegin(); i < end; i++) {
                 int lCurChar = l2Encode[i] & 0xff;
                 if (lCurChar > 126 || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || lCurChar == '=') {
                     io2Append.append('=');
@@ -730,8 +730,8 @@ public class Pack {
     public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
         RubyArray result = runtime.newArray();
         // FIXME: potentially could just use ByteList here?
-        ByteBuffer format = ByteBuffer.wrap(formatString.unsafeBytes(), formatString.begin(), formatString.length());
-        ByteBuffer encode = ByteBuffer.wrap(encodedString.unsafeBytes(), encodedString.begin(), encodedString.length());
+        ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
+        ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.length());
         int type = 0;
         int next = safeGet(format);
 
@@ -1572,7 +1572,7 @@ public class Pack {
      **/
     @SuppressWarnings("fallthrough")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        ByteBuffer format = ByteBuffer.wrap(formatString.unsafeBytes(), formatString.begin(), formatString.length());
+        ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = false;
         int listSize = list.size();
@@ -1673,7 +1673,7 @@ public class Pack {
                             case 'A' :
                             case 'Z' :
                                 if (lCurElemString.length() >= occurrences) {
-                                    result.append(lCurElemString.bytes, lCurElemString.begin, occurrences);
+                                    result.append(lCurElemString.getUnsafeBytes(), lCurElemString.getBegin(), occurrences);
                                 } else {//need padding
                                     //I'm fairly sure there is a library call to create a
                                     //string filled with a given char with a given length but I couldn't find it
@@ -1868,10 +1868,10 @@ public class Pack {
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
                         if (lCurElemString.length() == 0) break;
 
-                        byte[] charsToEncode = lCurElemString.bytes;
+                        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
                         for (int i = 0; i < lCurElemString.length(); i += occurrences) {
                             encodes(runtime, result, charsToEncode,
-                                    i + lCurElemString.begin, lCurElemString.length() - i,
+                                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
                                     occurrences, (byte)type);
                         }
                     }
@@ -1905,8 +1905,8 @@ public class Pack {
                             throw runtime.newRangeError("pack(U): value out of range");
                         }
 
-                        result.ensure(result.realSize + 6);
-                        result.realSize += utf8Decode(runtime, result.bytes, result.begin + result.realSize, code);
+                        result.ensure(result.getRealSize() + 6);
+                        result.setRealSize(result.getRealSize() + utf8Decode(runtime, result.getUnsafeBytes(), result.getBegin() + result.getRealSize(), code));
                     }
                     break;
                 case 'w' :
@@ -1944,17 +1944,17 @@ public class Pack {
                             }
 
                             int left = 0;
-                            int right = buf.realSize - 1;
+                            int right = buf.getRealSize() - 1;
 
                             if(right >= 0)
-                                buf.bytes[0] &= 0x7F;
+                                buf.getUnsafeBytes()[0] &= 0x7F;
                             else
                                 buf.append(0);
 
                             while(left < right) {
-                                byte tmp = buf.bytes[left];
-                                buf.bytes[left] = buf.bytes[right];
-                                buf.bytes[right] = tmp;
+                                byte tmp = buf.getUnsafeBytes()[left];
+                                buf.getUnsafeBytes()[left] = buf.getUnsafeBytes()[right];
+                                buf.getUnsafeBytes()[right] = tmp;
 
                                 left++;
                                 right--;

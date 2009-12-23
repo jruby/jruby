@@ -180,7 +180,7 @@ public final class Util {
             throw runtime.newSecurityError("Unsafe string parameter");
         }
         ByteList bl = s.getByteList();
-        final byte[] array = bl.unsafeBytes();
+        final byte[] array = bl.getUnsafeBytes();
         final int end = bl.length();
         for (int i = bl.begin(); i < end; ++i) {
             if (array[i] == (byte) 0) {

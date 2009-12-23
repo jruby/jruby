@@ -108,8 +108,8 @@ public class IOInputStream extends InputStream {
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
-            System.arraycopy(str.bytes, str.begin, b, 0, str.realSize);
-            returnValue = str.realSize;
+            System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, 0, str.getRealSize());
+            returnValue = str.getRealSize();
         }
         return returnValue;
     }
@@ -122,8 +122,8 @@ public class IOInputStream extends InputStream {
         int returnValue = -1;
         if (!readValue.isNil()) {
             ByteList str = ((RubyString)readValue).getByteList();
-            System.arraycopy(str.bytes, str.begin, b, off, str.realSize);
-            returnValue = str.realSize;
+            System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, str.getRealSize());
+            returnValue = str.getRealSize();
         }
         return returnValue;
      }

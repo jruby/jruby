@@ -50,10 +50,10 @@ public class Convert {
      * @return the converted double value
      */
     public static final double byteListToDouble(ByteList bytes, boolean strict) {
-        return byteArrayToDouble(bytes.unsafeBytes(), bytes.begin(), bytes.length(), strict);
+        return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), strict);
     }
     public static final double byteListToDouble(ByteList bytes) {
-        return byteArrayToDouble(bytes.unsafeBytes(), bytes.begin(), bytes.length(), false);
+        return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), false);
     }
     /**
      * Converts a byte array containing a RubyString representation of a double

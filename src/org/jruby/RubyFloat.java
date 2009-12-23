@@ -222,20 +222,20 @@ public class RubyFloat extends RubyNumeric {
         ByteList buf = new ByteList();
         Sprintf.sprintf(buf, Locale.US, "%#.15g", this);
         int e = buf.indexOf('e');
-        if (e == -1) e = buf.realSize;
+        if (e == -1) e = buf.getRealSize();
         ASCIIEncoding ascii = ASCIIEncoding.INSTANCE; 
 
         if (!ascii.isDigit(buf.get(e - 1))) {
-            buf.realSize = 0;
+            buf.setRealSize(0);
             Sprintf.sprintf(buf, Locale.US, "%#.14e", this);
             e = buf.indexOf('e');
-            if (e == -1) e = buf.realSize;
+            if (e == -1) e = buf.getRealSize();
         }
 
         int p = e;
         while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
-        System.arraycopy(buf.bytes, e, buf.bytes, p, buf.realSize - e);
-        buf.realSize = p + buf.realSize - e;
+        System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
+        buf.setRealSize(p + buf.getRealSize() - e);
         return runtime.newString(buf);
     }
 
