@@ -2926,24 +2926,31 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_sort
      *
      */
-    @JRubyMethod(name = "sort", frame = true)
+    @JRubyMethod(name = "sort", frame = true, compat = CompatVersion.RUBY1_8)
     public RubyArray sort(ThreadContext context, Block block) {
         RubyArray ary = aryDup();
         ary.sort_bang(context, block);
         return ary;
     }
 
+    @JRubyMethod(name = "sort", frame = true, compat = CompatVersion.RUBY1_9)
+    public RubyArray sort19(ThreadContext context, Block block) {
+        RubyArray ary = aryDup();
+        ary.sort_bang19(context, block);
+        return ary;
+    }
+
     /** rb_ary_sort_bang
      *
      */
-    @JRubyMethod(name = "sort!", frame = true)
+    @JRubyMethod(name = "sort!", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject sort_bang(ThreadContext context, Block block) {
         modify();
         if (realLength > 1) {
-            if (!context.getRuntime().is1_9()) flags |= TMPLOCK_ARR_F;
+            flags |= TMPLOCK_ARR_F;
 
             try {
-                return block.isGiven() ? sortInternal(context, block): sortInternal(context);
+                return block.isGiven() ? sortInternal(context, block): sortInternal(context, false);
             } finally {
                 flags &= ~TMPLOCK_ARR_F;
             }
@@ -2951,13 +2958,26 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    private IRubyObject sortInternal(final ThreadContext context) {
+    @JRubyMethod(name = "sort!", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject sort_bang19(ThreadContext context, Block block) {
+        modify();
+        if (realLength > 1) {
+            return block.isGiven() ? sortInternal(context, block) : sortInternal(context, true);
+        }
+        return this;
+    }
+
+    private IRubyObject sortInternal(final ThreadContext context, boolean honorOverride) {
+        // One check per specialized fast-path to make the check invariant.
+        final boolean fixnumBypass = !honorOverride || context.getRuntime().newFixnum(0).isBuiltin("<=>");
+        final boolean stringBypass = !honorOverride || context.getRuntime().newString("").isBuiltin("<=>");
+
         Qsort.sort(values, begin, begin + realLength, new Comparator() {
             public int compare(Object o1, Object o2) {
-                if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                    return compareFixnums((RubyFixnum)o1, (RubyFixnum)o2);
+                if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+                    return compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
                 }
-                if (o1 instanceof RubyString && o2 instanceof RubyString) {
+                if (stringBypass && o1 instanceof RubyString && o2 instanceof RubyString) {
                     return ((RubyString) o1).op_cmp((RubyString) o2);
                 }
                 return compareOthers(context, (IRubyObject)o1, (IRubyObject)o2);
