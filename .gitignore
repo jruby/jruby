@@ -13,6 +13,7 @@ build.properties
 target
 dist
 lib/jruby*.jar
+lib/native
 lib/ruby/gems/1.8/source_cache
 lib/ruby/gems/1.8/doc
 lib/ruby/gems/1.8/gems
