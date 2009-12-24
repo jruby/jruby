@@ -156,6 +156,13 @@ public class OpenFile {
         return (mode & BINMODE) != 0;
     }
 
+    public void setBinmode() {
+        mode |= BINMODE;
+        if (mainStream != null) {
+            mainStream.setBinmode();
+        }
+    }
+
     public boolean isOpen() {
         return mainStream != null || pipeStream != null;
     }

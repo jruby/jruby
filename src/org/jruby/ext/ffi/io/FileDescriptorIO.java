@@ -67,7 +67,7 @@ public class FileDescriptorIO extends RubyIO {
         } catch (InvalidValueException ex) {
             throw new RuntimeException(ex);
         }
-        openFile.setMainStream(new ChannelStream(getRuntime(),
+        openFile.setMainStream(ChannelStream.open(getRuntime(),
                 new ChannelDescriptor(new FileDescriptorByteChannel(RubyNumeric.fix2int(fd)),
                 getNewFileno(), modes, new java.io.FileDescriptor())));
         openFile.setPipeStream(openFile.getMainStream());

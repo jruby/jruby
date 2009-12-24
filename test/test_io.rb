@@ -116,7 +116,7 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_reopen
-    ensure_files @file, @file2    
+    ensure_files @file, @file2
     file = File.open(@file)
     @to_close << file
     file.gets
@@ -129,7 +129,7 @@ class TestIO < Test::Unit::TestCase
     assert(file.fileno != file2.fileno);
     file2.close
     file.close
-    
+
     # reopen of a filename after a close should succeed (JRUBY-1885)
     assert_nothing_raised { file.reopen(@file) }
   end
@@ -144,16 +144,16 @@ class TestIO < Test::Unit::TestCase
     assert_equal(nil, f.read(1))
     f.close
   end
-  
+
   # MRI 1.8.5 and 1.8.6 permit nil buffers with reads.
   def test_file_read_with_nil_buffer
      ensure_files @file
-     
+
      f = File.open(@file)
      @to_close << f
-     assert_equal " ", f.read(1, nil) 
+     assert_equal " ", f.read(1, nil)
   end
-    
+
   def test_open
     ensure_files @file
 
@@ -318,7 +318,7 @@ class TestIO < Test::Unit::TestCase
   # JRUBY-2203
   # unget char should be discarded after position changing calls
   def test_unget_before_position_change
-    File.open(@file, "w+") { |file| file.puts("HELLO") }
+    File.open(@file, "wb+") { |file| file.puts("HELLO") }
     File.open(@file) do |f|
       f.read(3)
       f.ungetc(100)
@@ -328,11 +328,11 @@ class TestIO < Test::Unit::TestCase
       f.ungetc(100)
       f.seek(2)
       assert_equal("LLO", f.read(3))
-      
+
       f.ungetc(100)
       f.rewind
       assert_equal("HELLO", f.read(5))
-      
+
       f.ungetc(100)
       f.seek(-3, IO::SEEK_END)
       assert_equal("LO", f.read(2))
@@ -354,7 +354,7 @@ class TestIO < Test::Unit::TestCase
     out = File.read(@file)
     assert_equal "..", out
   end
-  
+
   # JRUBY-1698
   def test_very_big_read
     # See JRUBY-1686: this caused OOM
@@ -363,7 +363,7 @@ class TestIO < Test::Unit::TestCase
     @to_close << f
     assert_nothing_raised { f.read(1000000000) }
   end
-  
+
   # JRUBY-2023, multithreaded writes
   def test_multithreaded_writes
     f = File.open("__temp1", "w")
@@ -433,7 +433,7 @@ class TestIO < Test::Unit::TestCase
       }
     end
   end
-  
+
   def test_file_constants_included
     assert IO.include?(File::Constants)
     ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
@@ -442,7 +442,7 @@ class TestIO < Test::Unit::TestCase
                    "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
                    "WRONLY"].each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
   end
-  
+
   #JRUBY-3012
   def test_io_reopen
     quiet_script = File.dirname(__FILE__) + '/quiet.rb'

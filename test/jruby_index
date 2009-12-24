@@ -47,6 +47,7 @@ test_iconv
 test_included_in_object_space
 test_ivar_table_integrity
 test_io
+test_line_endings
 test_load
 test_math
 test_method

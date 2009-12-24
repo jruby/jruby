@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 Damian Steer <pldms@mac.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,15 +44,14 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.WritableByteChannel;
 
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 
@@ -61,10 +60,10 @@ import org.jruby.util.JRubyFile;
  */
 public class ChannelStream implements Stream, Finalizable {
     private final static boolean DEBUG = false;
-    
+
     /**
      * The size of the read/write buffer allocated for this stream.
-     * 
+     *
      * This size has been scaled back from its original 16k because although
      * the larger buffer size results in raw File.open times being rather slow
      * (due to the cost of instantiating a relatively large buffer). We should
@@ -72,12 +71,12 @@ public class ChannelStream implements Stream, Finalizable {
      * choose a value based on platform(??), but for now I am reducing it along
      * with changes for the "large read" patch from JRUBY-2657.
      */
-    private final static int BUFSIZE = 4 * 1024;
-    
+    final static int BUFSIZE = 4 * 1024;
+
     /**
      * The size at which a single read should turn into a chunkier bulk read.
      * Currently, this size is about 4x a normal buffer size.
-     * 
+     *
      * This size was not really arrived at experimentally, and could potentially
      * be increased. However, it seems like a "good size" and we should
      * probably only adjust it if it turns out we would perform better with a
@@ -85,11 +84,11 @@ public class ChannelStream implements Stream, Finalizable {
      */
     private final static int BULK_READ_SIZE = 16 * 1024;
     private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
-    
+
     private Ruby runtime;
     protected ModeFlags modes;
     protected boolean sync = false;
-    
+
     protected volatile ByteBuffer buffer; // r/w buffer
     protected boolean reading; // are we reading or writing?
     private ChannelDescriptor descriptor;
@@ -99,24 +98,7 @@ public class ChannelStream implements Stream, Finalizable {
 
     private volatile boolean eof = false;
 
-    public ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, FileDescriptor fileDescriptor) throws InvalidValueException {
-        descriptor.checkNewModes(modes);
-        
-        this.runtime = runtime;
-        this.descriptor = descriptor;
-        this.modes = modes;
-        this.buffer = ByteBuffer.allocate(BUFSIZE);
-        buffer.flip();
-        this.reading = true;
-        
-        // this constructor is used by fdopen, so we don't increment descriptor ref count
-    }
-
-    public ChannelStream(Ruby runtime, ChannelDescriptor descriptor) {
-        this(runtime, descriptor, descriptor.getFileDescriptor());
-    }
-
-    public ChannelStream(Ruby runtime, ChannelDescriptor descriptor, FileDescriptor fileDescriptor) {
+    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor) {
         this.runtime = runtime;
         this.descriptor = descriptor;
         this.modes = descriptor.getOriginalModes();
@@ -125,21 +107,16 @@ public class ChannelStream implements Stream, Finalizable {
         this.reading = true;
     }
 
-    public ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
+    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
+        this(runtime, descriptor);
         descriptor.checkNewModes(modes);
-        
-        this.runtime = runtime;
-        this.descriptor = descriptor;
         this.modes = modes;
-        buffer = ByteBuffer.allocate(BUFSIZE);
-        buffer.flip();
-        this.reading = true;
     }
 
     public Ruby getRuntime() {
         return runtime;
     }
-    
+
     public void checkReadable() throws IOException {
         if (!modes.isReadable()) throw new IOException("not opened for reading");
     }
@@ -151,17 +128,21 @@ public class ChannelStream implements Stream, Finalizable {
     public void checkPermissionsSubsetOf(ModeFlags subsetModes) {
         subsetModes.isSubsetOf(modes);
     }
-    
+
     public ModeFlags getModes() {
     	return modes;
     }
-    
+
     public boolean isSync() {
         return sync;
     }
 
     public void setSync(boolean sync) {
         this.sync = sync;
+    }
+
+    public void setBinmode() {
+        // No-op here, no binmode handling needed.
     }
 
     /**
@@ -175,11 +156,11 @@ public class ChannelStream implements Stream, Finalizable {
             Thread.sleep(10);
         }
     }
-    
+
     public boolean readDataBuffered() {
         return reading && buffer.hasRemaining();
     }
-    
+
     public boolean writeDataBuffered() {
         return !reading && buffer.position() > 0;
     }
@@ -201,22 +182,22 @@ public class ChannelStream implements Stream, Finalizable {
             PARAGRAPH_SEPARATOR : separatorString;
 
         descriptor.checkOpen();
-        
+
         if (feof()) {
             return null;
         }
-        
+
         int c = read();
-        
+
         if (c == -1) {
             return null;
         }
-        
+
         // unread back
         buffer.position(buffer.position() - 1);
 
         ByteList buf = new ByteList(40);
-        
+
         byte first = separator.getUnsafeBytes()[separator.getBegin()];
 
         LineLoop : while (true) {
@@ -224,7 +205,7 @@ public class ChannelStream implements Stream, Finalizable {
                 byte[] bytes = buffer.array();
                 int offset = buffer.position();
                 int max = buffer.limit();
-                
+
                 // iterate over remainder of buffer until we find a match
                 for (int i = offset; i < max; i++) {
                     c = bytes[i];
@@ -239,13 +220,13 @@ public class ChannelStream implements Stream, Finalizable {
                         break ReadLoop;
                     }
                 }
-                
+
                 // no match, append remainder of buffer and continue with next block
                 buf.append(bytes, offset, buffer.remaining());
                 int read = refillBuffer();
                 if (read == -1) break LineLoop;
             }
-            
+
             // found a match above, check if remaining separator characters match, appending as we go
             for (int i = 0; i < separator.getRealSize(); i++) {
                 if (c == -1) {
@@ -271,7 +252,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         return buf;
     }
-    
+
     public synchronized int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();
@@ -315,7 +296,7 @@ public class ChannelStream implements Stream, Finalizable {
         checkReadable();
         ensureRead();
         descriptor.checkOpen();
-        
+
         int totalRead = 0;
         boolean found = false;
         if (ungotc != -1) {
@@ -352,7 +333,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
         return totalRead;
     }
-    
+
     public synchronized ByteList readall() throws IOException, BadDescriptorException {
         final long fileSize = descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel
                 ? ((FileChannel) descriptor.getChannel()).size() : 0;
@@ -362,7 +343,7 @@ public class ChannelStream implements Stream, Finalizable {
         //
         if (fileSize > 0) {
             ensureRead();
-            
+
             FileChannel channel = (FileChannel)descriptor.getChannel();
             final long left = fileSize - channel.position() + bufferedInputBytesRemaining();
             if (left <= 0) {
@@ -381,12 +362,12 @@ public class ChannelStream implements Stream, Finalizable {
             ByteList result = new ByteList((int) left);
             ByteBuffer buf = ByteBuffer.wrap(result.getUnsafeBytes(),
                     result.begin(), (int) left);
-            
+
             //
             // Copy any buffered data (including ungetc byte)
             //
             copyBufferedBytes(buf);
-            
+
             //
             // Now read unbuffered directly from the file
             //
@@ -418,7 +399,7 @@ public class ChannelStream implements Stream, Finalizable {
 
             ByteList byteList = new ByteList();
             ByteList read = fread(BUFSIZE);
-            
+
             if (read == null) {
                 eof = true;
                 return byteList;
@@ -430,7 +411,7 @@ public class ChannelStream implements Stream, Finalizable {
             }
 
             return byteList;
-        } 
+        }
     }
 
     /**
@@ -446,7 +427,7 @@ public class ChannelStream implements Stream, Finalizable {
             dst.put((byte) ungotc);
             ungotc = -1;
         }
-        
+
         if (buffer.hasRemaining() && dst.hasRemaining()) {
 
             if (dst.remaining() >= buffer.remaining()) {
@@ -505,7 +486,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         if (bytesCopied < len && ungotc != -1) {
             ++bytesCopied;
-            dst.append((byte) ungotc);            
+            dst.append((byte) ungotc);
             ungotc = -1;
         }
 
@@ -520,7 +501,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         return bytesCopied;
     }
-    
+
     /**
      * Returns a count of how many bytes are available in the read buffer
      *
@@ -561,9 +542,9 @@ public class ChannelStream implements Stream, Finalizable {
 
     /**
      * <p>Close IO handler resources.</p>
-     * @throws IOException 
-     * @throws BadDescriptorException 
-     * 
+     * @throws IOException
+     * @throws BadDescriptorException
+     *
      * @see org.jruby.util.IOHandler#close()
      */
     public synchronized void fclose() throws IOException, BadDescriptorException {
@@ -589,7 +570,7 @@ public class ChannelStream implements Stream, Finalizable {
         } finally {
             Ruby localRuntime = getRuntime();
             if (!finalizing && localRuntime != null) localRuntime.removeInternalFinalizer(this);
-            
+
             // clear runtime so it doesn't get stuck in memory (JRUBY-2933)
             runtime = null;
         }
@@ -598,7 +579,7 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * Internal close, to safely work for finalizing.
      * @param finalizing true if this is in a finalizing context
-     * @throws IOException 
+     * @throws IOException
      * @throws BadDescriptorException
      */
     private void closeForFinalize() {
@@ -612,8 +593,8 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     /**
-     * @throws IOException 
-     * @throws BadDescriptorException 
+     * @throws IOException
+     * @throws BadDescriptorException
      * @see org.jruby.util.IOHandler#flush()
      */
     public synchronized int fflush() throws IOException, BadDescriptorException {
@@ -625,14 +606,14 @@ public class ChannelStream implements Stream, Finalizable {
         }
         return 0;
     }
-    
+
     /**
      * Flush the write buffer to the channel (if needed)
      * @throws IOException
      */
     private void flushWrite() throws IOException, BadDescriptorException {
         if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
-        
+
         int len = buffer.position();
         buffer.flip();
         int n = descriptor.write(buffer);
@@ -642,7 +623,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
         buffer.clear();
     }
-    
+
     /**
      * Flush the write buffer to the channel (if needed)
      * @throws IOException
@@ -694,28 +675,28 @@ public class ChannelStream implements Stream, Finalizable {
     public OutputStream newOutputStream() {
         return new OutputStreamAdapter(this);
     }
-    
+
     public void clearerr() {
         eof = false;
     }
-    
+
     /**
-     * @throws IOException 
-     * @throws BadDescriptorException 
+     * @throws IOException
+     * @throws BadDescriptorException
      * @see org.jruby.util.IOHandler#isEOF()
      */
     public boolean feof() throws IOException, BadDescriptorException {
         checkReadable();
-        
+
         if (eof) {
             return true;
         } else {
             return false;
         }
     }
-    
+
     /**
-     * @throws IOException 
+     * @throws IOException
      * @see org.jruby.util.IOHandler#pos()
      */
     public synchronized long fgetpos() throws IOException, PipeException, InvalidValueException, BadDescriptorException {
@@ -736,14 +717,14 @@ public class ChannelStream implements Stream, Finalizable {
             throw new PipeException();
         }
     }
-    
+
     /**
      * Implementation of libc "lseek", which seeks on seekable streams, raises
      * EPIPE if the fd is assocated with a pipe, socket, or FIFO, and doesn't
      * do anything for other cases (like stdio).
-     * 
-     * @throws IOException 
-     * @throws InvalidValueException 
+     *
+     * @throws IOException
+     * @throws InvalidValueException
      * @see org.jruby.util.IOHandler#seek(long, int)
      */
     public synchronized void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
@@ -827,7 +808,7 @@ public class ChannelStream implements Stream, Finalizable {
             reading = true;
         }
     }
-    
+
     private void resetForWrite() throws IOException {
         if (descriptor.isSeekable()) {
             FileChannel fileChannel = (FileChannel)descriptor.getChannel();
@@ -839,7 +820,7 @@ public class ChannelStream implements Stream, Finalizable {
         buffer.clear();
         reading = false;
     }
-    
+
     /**
      * Ensure buffer is ready for writing.
      * @throws IOException
@@ -852,16 +833,16 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized ByteList read(int number) throws IOException, BadDescriptorException {
         checkReadable();
         ensureReadNonBuffered();
-        
+
         ByteList byteList = new ByteList(number);
-        
+
         // TODO this should entry into error handling somewhere
         int bytesRead = descriptor.read(number, byteList);
-        
+
         if (bytesRead == -1) {
             eof = true;
         }
-        
+
         return byteList;
     }
 
@@ -872,7 +853,7 @@ public class ChannelStream implements Stream, Finalizable {
         int resultSize = 0;
 
         // 128K seems to be the minimum at which the stat+seek is faster than reallocation
-        final int BULK_THRESHOLD = 128 * 1024; 
+        final int BULK_THRESHOLD = 128 * 1024;
         if (number >= BULK_THRESHOLD && descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
             //
             // If it is a file channel, then we can pre-allocate the output buffer
@@ -893,14 +874,14 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     private int bufferedRead(ByteList dst, int number) throws IOException, BadDescriptorException {
-  
+
         int bytesRead = 0;
-        
+
         //
         // Copy what is in the buffer, if there is some buffered data
         //
         bytesRead += copyBufferedBytes(dst, number);
-        
+
         boolean done = false;
         //
         // Avoid double-copying for reads that are larger than the buffer size
@@ -921,26 +902,26 @@ public class ChannelStream implements Stream, Finalizable {
             }
             bytesRead += n;
         }
-        
+
         //
         // Complete the request by filling the read buffer first
         //
         while (!done && bytesRead < number) {
             int read = refillBuffer();
-            
+
             if (read == -1) {
                 eof = true;
                 break;
             } else if (read == 0) {
                 break;
             }
-            
+
             // append what we read into our buffer and allow the loop to continue
             final int len = Math.min(buffer.remaining(), number - bytesRead);
             dst.append(buffer, len);
             bytesRead += len;
         }
-        
+
         if (bytesRead == 0 && number != 0) {
             if (eof) {
                 throw new EOFException();
@@ -961,7 +942,7 @@ public class ChannelStream implements Stream, Finalizable {
         // Copy what is in the buffer, if there is some buffered data
         //
         bytesRead += copyBufferedBytes(dst);
-        
+
         //
         // Avoid double-copying for reads that are larger than the buffer size, or
         // the destination is a direct buffer.
@@ -1021,7 +1002,7 @@ public class ChannelStream implements Stream, Finalizable {
 
     private int bufferedRead() throws IOException, BadDescriptorException {
         ensureRead();
-        
+
         if (!buffer.hasRemaining()) {
             int len = refillBuffer();
             if (len == -1) {
@@ -1033,22 +1014,22 @@ public class ChannelStream implements Stream, Finalizable {
         }
         return buffer.get() & 0xFF;
     }
-    
+
     /**
-     * @throws IOException 
-     * @throws BadDescriptorException 
+     * @throws IOException
+     * @throws BadDescriptorException
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
         checkWritable();
         ensureWrite();
-        
+
         // Ruby ignores empty syswrites
         if (buf == null || buf.length() == 0) return 0;
-        
+
         if (buf.length() > buffer.capacity()) { // Doesn't fit in buffer. Write immediately.
             flushWrite(); // ensure nothing left to write
-            
+
 
             int n = descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
             if(n != buf.length()) {
@@ -1056,12 +1037,12 @@ public class ChannelStream implements Stream, Finalizable {
             }
         } else {
             if (buf.length() > buffer.remaining()) flushWrite();
-            
+
             buffer.put(buf.getUnsafeBytes(), buf.begin(), buf.length());
         }
-        
+
         if (isSync()) flushWrite();
-        
+
         return buf.getRealSize();
     }
 
@@ -1093,10 +1074,10 @@ public class ChannelStream implements Stream, Finalizable {
 
         return nbytes - buf.remaining();
     }
-    
+
     /**
-     * @throws IOException 
-     * @throws BadDescriptorException 
+     * @throws IOException
+     * @throws BadDescriptorException
      * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(int c) throws IOException, BadDescriptorException {
@@ -1104,14 +1085,14 @@ public class ChannelStream implements Stream, Finalizable {
         ensureWrite();
 
         if (!buffer.hasRemaining()) flushWrite();
-        
+
         buffer.put((byte) c);
-            
+
         if (isSync()) flushWrite();
-            
+
         return 1;
     }
-    
+
     public synchronized void ftruncate(long newLength) throws IOException,
             BadDescriptorException, InvalidValueException {
         Channel ch = descriptor.getChannel();
@@ -1124,20 +1105,20 @@ public class ChannelStream implements Stream, Finalizable {
             // truncate can't lengthen files, so we save position, seek/write, and go back
             long position = fileChannel.position();
             int difference = (int)(newLength - fileChannel.size());
-            
+
             fileChannel.position(fileChannel.size());
             // FIXME: This worries me a bit, since it could allocate a lot with a large newLength
             fileChannel.write(ByteBuffer.allocate(difference));
             fileChannel.position(position);
         } else {
             fileChannel.truncate(newLength);
-        }        
+        }
     }
-    
+
     /**
      * Invalidate buffer before a position change has occurred (e.g. seek),
      * flushing writes if required, and correcting file position if reading
-     * @throws IOException 
+     * @throws IOException
      */
     private void invalidateBuffer() throws IOException, BadDescriptorException {
         if (!reading) flushWrite();
@@ -1202,13 +1183,13 @@ public class ChannelStream implements Stream, Finalizable {
         if (c == -1) {
             return -1;
         }
-        
+
         // putting a bit back, so we're not at EOF anymore
         eof = false;
 
         // save the ungot
         ungotc = c;
-        
+
         return c;
     }
 
@@ -1216,7 +1197,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (eof) {
             return -1;
         }
-        
+
         checkReadable();
 
         int c = read();
@@ -1225,7 +1206,7 @@ public class ChannelStream implements Stream, Finalizable {
             eof = true;
             return c;
         }
-        
+
         return c & 0xff;
     }
 
@@ -1240,12 +1221,12 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized int writenonblock(ByteList buf) throws IOException, BadDescriptorException {
         checkWritable();
         ensureWrite();
-        
+
         // Ruby ignores empty syswrites
         if (buf == null || buf.length() == 0) return 0;
-        
+
         if (buffer.position() != 0 && !flushWrite(false)) return 0;
-        
+
         if (descriptor.getChannel() instanceof SelectableChannel) {
             SelectableChannel selectableChannel = (SelectableChannel)descriptor.getChannel();
             synchronized (selectableChannel.blockingLock()) {
@@ -1282,7 +1263,7 @@ public class ChannelStream implements Stream, Finalizable {
             return null;
         }
     }
-    
+
     public synchronized ByteList readnonblock(int number) throws IOException, BadDescriptorException, EOFException {
         assert number >= 0;
 
@@ -1324,13 +1305,13 @@ public class ChannelStream implements Stream, Finalizable {
         } else {
             // otherwise, we try an unbuffered read to get whatever's available
             return read(number);
-        }        
+        }
     }
 
     public synchronized int read(ByteBuffer dst) throws IOException, BadDescriptorException, EOFException {
         return read(dst, !(descriptor.getChannel() instanceof FileChannel));
     }
-    
+
     public synchronized int read(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException, EOFException {
         assert dst.hasRemaining();
 
@@ -1340,7 +1321,7 @@ public class ChannelStream implements Stream, Finalizable {
     public synchronized int read() throws IOException, BadDescriptorException {
         try {
             descriptor.checkOpen();
-            
+
             if (ungotc >= 0) {
                 int c = ungotc;
                 ungotc = -1;
@@ -1353,11 +1334,11 @@ public class ChannelStream implements Stream, Finalizable {
             return -1;
         }
     }
-    
+
     public ChannelDescriptor getDescriptor() {
         return descriptor;
     }
-    
+
     public void setBlocking(boolean block) throws IOException {
         if (!(descriptor.getChannel() instanceof SelectableChannel)) {
             return;
@@ -1391,7 +1372,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (descriptor.isOpen()) {
             descriptor.close();
         }
-        
+
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             descriptor = new ChannelDescriptor(new NullChannel(), descriptor.getFileno(), modes, new FileDescriptor());
         } else {
@@ -1415,29 +1396,39 @@ public class ChannelStream implements Stream, Finalizable {
             RandomAccessFile file = new RandomAccessFile(theFile, modes.toJavaModeString());
 
             if (modes.isTruncate()) file.setLength(0L);
-            
+
             descriptor = new ChannelDescriptor(file.getChannel(), descriptor.getFileno(), modes, file.getFD());
-        
+
             if (modes.isAppendable()) lseek(0, SEEK_END);
         }
     }
-    
-    public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
-        String cwd = runtime.getCurrentDirectory();
-        
-        ChannelDescriptor descriptor = ChannelDescriptor.open(cwd, path, modes);
-        
-        Stream stream = fdopen(runtime, descriptor, modes);
-        
-        if (modes.isAppendable()) stream.lseek(0, Stream.SEEK_END);
-        
+
+    public static final Stream open(Ruby runtime, ChannelDescriptor descriptor) {
+        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor), descriptor.getOriginalModes());
+    }
+
+    public static Stream fdopen(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
+        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, modes), modes);
+    }
+
+    private static Stream maybeWrapWithLineEndingWrapper(Stream stream, ModeFlags modes) {
+        if (Platform.IS_WINDOWS && stream.getDescriptor().getChannel() instanceof FileChannel && !modes.isBinary()) {
+            return new CRLFStreamWrapper(stream);
+        }
         return stream;
     }
-    
-    public static Stream fdopen(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
-        Stream handler = new ChannelStream(runtime, descriptor, modes, descriptor.getFileDescriptor());
-        
-        return handler;
+
+    public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+        ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes);
+        Stream stream = fdopen(runtime, descriptor, modes);
+
+        if (modes.isAppendable()) stream.lseek(0, Stream.SEEK_END);
+
+        return stream;
+    }
+
+    public Channel getChannel() {
+        return getDescriptor().getChannel();
     }
 
     private static final class InputStreamAdapter extends java.io.InputStream {

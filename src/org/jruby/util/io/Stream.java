@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 The JRuby Community <www.jruby.org>
- * 
+ * Copyright (C) 2008-2009 The JRuby Community <www.jruby.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,34 +31,35 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.Channel;
 import org.jruby.util.ByteList;
 import org.jruby.Ruby;
 
 /**
  */
 public interface Stream {
-    public static final int SEEK_SET = 0;
-    public static final int SEEK_CUR = 1;
-    public static final int SEEK_END = 2;
-    
-    // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it) 
-    public static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
-    
-    public static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
-    
-    public ChannelDescriptor getDescriptor();
-    
-    public void clearerr();
-    
-    public ModeFlags getModes();
-    
-    public boolean isSync();
+    static final int SEEK_SET = 0;
+    static final int SEEK_CUR = 1;
+    static final int SEEK_END = 2;
 
-    public void setSync(boolean sync);
+    // We use a highly uncommon string to represent the paragraph delimiter (100% soln not worth it)
+    static final ByteList PARAGRAPH_DELIMETER = ByteList.create("PARAGRPH_DELIM_MRK_ER");
 
-    public abstract ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
-    public abstract ByteList readall() throws IOException, BadDescriptorException, EOFException;
-    
+    static final ByteList PARAGRAPH_SEPARATOR = ByteList.create("\n\n");
+
+    ChannelDescriptor getDescriptor();
+
+    void clearerr();
+
+    ModeFlags getModes();
+
+    boolean isSync();
+
+    void setSync(boolean sync);
+
+    ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
+    ByteList readall() throws IOException, BadDescriptorException, EOFException;
+
 
     /**
      * Read all bytes up to and including a terminator byte.
@@ -72,7 +73,7 @@ public interface Stream {
      * @throws java.io.IOException
      * @throws org.jruby.util.io.BadDescriptorException
      */
-    public abstract int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException;
+    int getline(ByteList dst, byte terminator) throws IOException, BadDescriptorException;
 
     /**
      * Reads all bytes up to and including a terminator byte or until limit is reached.
@@ -87,66 +88,66 @@ public interface Stream {
      * @throws java.io.IOException
      * @throws org.jruby.util.io.BadDescriptorException
      */
-    public abstract int getline(ByteList dst, byte terminator, long limit) throws IOException, BadDescriptorException;
-    
+    int getline(ByteList dst, byte terminator, long limit) throws IOException, BadDescriptorException;
+
     // TODO: We overflow on large files...We could increase to long to limit
     // this, but then the impl gets more involved since java io APIs based on
     // int (means we have to chunk up a long into a series of int ops).
 
-    public abstract ByteList fread(int number) throws IOException, BadDescriptorException, EOFException;
-    public abstract int fwrite(ByteList string) throws IOException, BadDescriptorException;
+    ByteList fread(int number) throws IOException, BadDescriptorException, EOFException;
+    int fwrite(ByteList string) throws IOException, BadDescriptorException;
 
-    public abstract int fgetc() throws IOException, BadDescriptorException, EOFException;
-    public abstract int ungetc(int c);
-    public abstract void fputc(int c) throws IOException, BadDescriptorException;
-    
-    public abstract ByteList read(int number) throws IOException, BadDescriptorException, EOFException;
-    
-    public abstract void fclose() throws IOException, BadDescriptorException;
-    public abstract int fflush() throws IOException, BadDescriptorException;
-    
+    int fgetc() throws IOException, BadDescriptorException, EOFException;
+    int ungetc(int c);
+    void fputc(int c) throws IOException, BadDescriptorException;
+
+    ByteList read(int number) throws IOException, BadDescriptorException, EOFException;
+
+    void fclose() throws IOException, BadDescriptorException;
+    int fflush() throws IOException, BadDescriptorException;
+
     /**
      * <p>Flush and sync all writes to the filesystem.</p>
-     * 
+     *
      * @throws IOException if the sync does not work
      */
-    public void sync() throws IOException, BadDescriptorException;
-    
+    void sync() throws IOException, BadDescriptorException;
+
     /**
      * <p>Return true when at end of file (EOF).</p>
-     * 
+     *
      * @return true if at EOF; false otherwise
-     * @throws IOException 
-     * @throws BadDescriptorException 
+     * @throws IOException
+     * @throws BadDescriptorException
      */
-    public boolean feof() throws IOException, BadDescriptorException;
-    
+    boolean feof() throws IOException, BadDescriptorException;
+
     /**
      * <p>Get the current position within the file associated with this
-     * handler.</p>  
-     * 
+     * handler.</p>
+     *
      * @return the current position in the file.
-     * @throws IOException 
-     * @throws PipeException ESPIPE (illegal seek) when not a file 
-     * 
+     * @throws IOException
+     * @throws PipeException ESPIPE (illegal seek) when not a file
+     *
      */
-    public long fgetpos() throws IOException, PipeException, BadDescriptorException, InvalidValueException;
-    
+    long fgetpos() throws IOException, PipeException, BadDescriptorException, InvalidValueException;
+
     /**
-     * <p>Perform a seek based on pos().  </p> 
-     * @throws IOException 
-     * @throws PipeException 
-     * @throws InvalidValueException 
+     * <p>Perform a seek based on pos().  </p>
+     * @throws IOException
+     * @throws PipeException
+     * @throws InvalidValueException
      */
-    public void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException;
-    public void ftruncate(long newLength) throws IOException, PipeException,
+    void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException;
+    void ftruncate(long newLength) throws IOException, PipeException,
             InvalidValueException, BadDescriptorException;
-    
+
     /**
      * Implement IO#ready? as per io/wait in MRI.
      * returns non-nil if input available without blocking, or nil.
      */
-    public int ready() throws IOException;
+    int ready() throws IOException;
 
     /**
      * Implement IO#wait as per io/wait in MRI.
@@ -154,18 +155,21 @@ public interface Stream {
      *
      * The default implementation loops while ready returns 0.
      */
-    public void waitUntilReady() throws IOException, InterruptedException;
+    void waitUntilReady() throws IOException, InterruptedException;
 
-    public boolean readDataBuffered();
-    public boolean writeDataBuffered();
-    
-    public InputStream newInputStream();
-    
-    public OutputStream newOutputStream();
-    
-    public boolean isBlocking();
-    
-    public void setBlocking(boolean blocking) throws IOException;
-    
-    public void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
+    boolean readDataBuffered();
+    boolean writeDataBuffered();
+
+    InputStream newInputStream();
+
+    OutputStream newOutputStream();
+
+    boolean isBlocking();
+
+    void setBlocking(boolean blocking) throws IOException;
+
+    void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
+
+    void setBinmode();
+    Channel getChannel();
 }

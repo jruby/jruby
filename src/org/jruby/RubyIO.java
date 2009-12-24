@@ -146,7 +146,7 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(Channels.newChannel(outputStream), getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream), getNewFileno(), new FileDescriptor())));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -166,7 +166,7 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(Channels.newChannel(inputStream), getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream), getNewFileno(), new FileDescriptor())));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -187,7 +187,7 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(new ChannelStream(runtime, new ChannelDescriptor(channel, getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(channel, getNewFileno(), new FileDescriptor())));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -222,7 +222,7 @@ public class RubyIO extends RubyObject {
                         new FileDescriptor());
                 main.setCanBeSeekable(false);
                 
-                openFile.setMainStream(new ChannelStream(getRuntime(), main));
+                openFile.setMainStream(ChannelStream.open(getRuntime(), main));
                 registerDescriptor(main);
             }
             
@@ -242,9 +242,9 @@ public class RubyIO extends RubyObject {
                 pipe.setCanBeSeekable(false);
                 
                 if (openFile.getMainStream() != null) {
-                    openFile.setPipeStream(new ChannelStream(getRuntime(), pipe));
+                    openFile.setPipeStream(ChannelStream.open(getRuntime(), pipe));
                 } else {
-                    openFile.setMainStream(new ChannelStream(getRuntime(), pipe));
+                    openFile.setMainStream(ChannelStream.open(getRuntime(), pipe));
                 }
                 
                 registerDescriptor(pipe);
@@ -263,26 +263,23 @@ public class RubyIO extends RubyObject {
             switch (stdio) {
             case IN:
                 openFile.setMainStream(
-                        new ChannelStream(
+                        ChannelStream.open(
                             runtime, 
                             // special constructor that accepts stream, not channel
-                            new ChannelDescriptor(runtime.getIn(), 0, new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in),
-                            FileDescriptor.in));
+                            new ChannelDescriptor(runtime.getIn(), 0, new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in)));
                 break;
             case OUT:
                 openFile.setMainStream(
-                        new ChannelStream(
+                        ChannelStream.open(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getOut()), 1, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out),
-                            FileDescriptor.out));
+                            new ChannelDescriptor(Channels.newChannel(runtime.getOut()), 1, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out)));
                 openFile.getMainStream().setSync(true);
                 break;
             case ERR:
                 openFile.setMainStream(
-                        new ChannelStream(
+                        ChannelStream.open(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getErr()), 2, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err), 
-                            FileDescriptor.err));
+                            new ChannelDescriptor(Channels.newChannel(runtime.getErr()), 2, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err)));
                 openFile.getMainStream().setSync(true);
                 break;
             }
@@ -358,19 +355,15 @@ public class RubyIO extends RubyObject {
     }
 
     public OutputStream getOutStream() {
-        return getOpenFileChecked().getMainStream().newOutputStream();
+        return getHandler().newOutputStream();
     }
 
     public InputStream getInStream() {
-        return getOpenFileChecked().getMainStream().newInputStream();
+        return getHandler().newInputStream();
     }
 
     public Channel getChannel() {
-        if (getOpenFileChecked().getMainStream() instanceof ChannelStream) {
-            return ((ChannelStream) openFile.getMainStream()).getDescriptor().getChannel();
-        } else {
-            return null;
-        }
+        return getHandler().getChannel();
     }
     
     public Stream getHandler() {
@@ -449,7 +442,7 @@ public class RubyIO extends RubyObject {
                             selfFile.setPipeStream(pipeFile);
                         } else {
                             selfFile.setMainStream(
-                                    new ChannelStream(
+                                    ChannelStream.open(
                                         runtime,
                                         originalDescriptor.dup2(selfDescriptor.getFileno())));
                             
@@ -1158,12 +1151,12 @@ public class RubyIO extends RubyObject {
         return runtime.newFixnum(fileno);
     }
 
-    // This appears to be some windows-only mode.  On a java platform this is a no-op
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
         if (isClosed()) {
             throw getRuntime().newIOError("closed stream");
         }
+        openFile.setBinmode();
         return this;
     }
 
