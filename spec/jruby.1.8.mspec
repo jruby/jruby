@@ -77,9 +77,6 @@ class MSpecScript
     get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
     get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
-    # library
-    get(:library) << '^' + SPEC_DIR + '/library/ftools'   # many failures
-
     # exclude specs tagged with 'windows' keyword
     set :xtags, ['windows']
   end
