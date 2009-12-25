@@ -78,9 +78,7 @@ class MSpecScript
     get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
     # library
-    get(:library) << '^' + SPEC_DIR + '/library/logger'   # many failures
     get(:library) << '^' + SPEC_DIR + '/library/ftools'   # many failures
-    get(:library) << '^' + SPEC_DIR + '/library/resolv'   # many failures
     get(:library) << '^' + SPEC_DIR + '/library/tempfile' # many failures
 
     # exclude specs tagged with 'windows' keyword
