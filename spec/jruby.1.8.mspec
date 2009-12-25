@@ -79,7 +79,6 @@ class MSpecScript
 
     # library
     get(:library) << '^' + SPEC_DIR + '/library/ftools'   # many failures
-    get(:library) << '^' + SPEC_DIR + '/library/tempfile' # many failures
 
     # exclude specs tagged with 'windows' keyword
     set :xtags, ['windows']
