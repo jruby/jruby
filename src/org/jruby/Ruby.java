@@ -2971,6 +2971,15 @@ public final class Ruby {
         return newRaiseException(getErrno(getPosix().errno()), null);
     }
 
+    public RaiseException newErrnoFromInt(int errno, String message) {
+        RubyClass errnoClass = getErrno(errno);
+        if (errnoClass != null) {
+            return newRaiseException(errnoClass, message);
+        } else {
+            return newSystemCallError("Unknown Error (" + errno + ") - " + message);
+        }
+    }
+
     public RaiseException newTypeError(String message) {
         return newRaiseException(getTypeError(), message);
     }

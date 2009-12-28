@@ -1451,24 +1451,22 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 2, meta = true)
+    @JRubyMethod(required = 2, meta = true, backtrace = true)
     public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
         RubyString toStr = RubyString.stringValue(to);
-        
-        try {
-            if (runtime.getPosix().link(
-                    fromStr.getUnicodeValue(),toStr.getUnicodeValue()) == -1) {
-                // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw runtime.newErrnoEEXISTError("File exists - " 
-                               + fromStr + " or " + toStr);
-            }
-        } catch (java.lang.UnsatisfiedLinkError ule) {
-            throw runtime.newNotImplementedError("link() function is unimplemented on this machine");
+
+        int ret = runtime.getPosix().link(fromStr.getUnicodeValue(), toStr.getUnicodeValue());
+        if (ret != 0) {
+            // In most cases, when there is an error during the call,
+            // the POSIX handler throws an exception, but not in case
+            // with pure Java POSIX layer (when native support is disabled),
+            // so we deal with it like this:
+            throw runtime.newErrnoEEXISTError("File exists - "
+                           + fromStr + " or " + toStr);
         }
-        
-        return runtime.newFixnum(0);
+        return runtime.newFixnum(ret);
     }
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
