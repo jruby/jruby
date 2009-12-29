@@ -1,16 +1,13 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.lang.reflect.Member;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -20,64 +17,33 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     private Constructor[] ctors;
     
     public ConstructorInvoker(RubyModule host, List<Constructor> ctors) {
-        super(host);
-        this.ctors = ctors.toArray(new Constructor[ctors.size()]);
+        super(host, ctors.toArray(new Constructor[ctors.size()]));
 
-        trySetAccessible(this.ctors);
+        trySetAccessible(getAccessibleObjects());
     }
 
-    // TODO: varargs?
-    synchronized void createJavaCallables(Ruby runtime) {
-        if (!initialized) { // read-volatile
-            if (ctors != null) {
-                if (ctors.length == 1) {
-                    javaCallable = JavaConstructor.create(runtime, ctors[0]);
-                    if (javaCallable.isVarArgs()) {
-                        javaVarargsCallables = new JavaConstructor[] {(JavaConstructor)javaCallable};
-                    }
-                } else {
-                    Map methodsMap = new HashMap();
-                    List<JavaConstructor> varargsMethods = new ArrayList();
-                    int maxArity = 0;
-                    for (Constructor ctor: ctors) {
-                        // TODO: deal with varargs
-                        int arity = ctor.getParameterTypes().length;
-                        maxArity = Math.max(arity, maxArity);
-                        List<JavaConstructor> methodsForArity = (ArrayList<JavaConstructor>)methodsMap.get(arity);
-                        if (methodsForArity == null) {
-                            methodsForArity = new ArrayList<JavaConstructor>();
-                            methodsMap.put(arity,methodsForArity);
-                        }
-                        JavaConstructor javaConstructor = JavaConstructor.create(runtime,ctor);
-                        methodsForArity.add(javaConstructor);
+    protected JavaCallable createCallable(Ruby ruby, Member member) {
+        return JavaConstructor.create(ruby, (Constructor)member);
+    }
 
-                        if (ctor.isVarArgs()) {
-                            minVarargsArity = Math.min(arity - 1, minVarargsArity);
-                            varargsMethods.add(javaConstructor);
-                        }
-                    }
-                    javaCallables = new JavaConstructor[maxArity + 1][];
-                    for (Iterator<Map.Entry> iter = methodsMap.entrySet().iterator(); iter.hasNext();) {
-                        Map.Entry entry = iter.next();
-                        List<JavaConstructor> ctorsForArity = (List<JavaConstructor>)entry.getValue();
+    protected JavaCallable[] createCallableArray(JavaCallable callable) {
+        return new JavaConstructor[] {(JavaConstructor)callable};
+    }
 
-                        JavaConstructor[] methodsArray = ctorsForArity.toArray(new JavaConstructor[ctorsForArity.size()]);
-                        javaCallables[((Integer)entry.getKey()).intValue()] = methodsArray;
-                    }
+    protected JavaCallable[] createCallableArray(int size) {
+        return new JavaConstructor[size];
+    }
 
-                    if (varargsMethods.size() > 0) {
-                        // have at least one varargs, build that map too
-                        javaVarargsCallables = new JavaConstructor[varargsMethods.size()];
-                        varargsMethods.toArray(javaVarargsCallables);
-                    }
-                }
-                ctors = null;
+    protected JavaCallable[][] createCallableArrayArray(int size) {
+        return new JavaConstructor[size][];
+    }
 
-                // initialize cache of parameter types to method
-                cache = new ConcurrentHashMap(0, 0.75f, 1);
-            }
-            initialized = true; // write-volatile
-        }
+    protected Class[] getMemberParameterTypes(Member member) {
+        return ((Constructor)member).getParameterTypes();
+    }
+
+    protected boolean isMemberVarArgs(Member member) {
+        return ((Constructor)member).isVarArgs();
     }
     
     @Override

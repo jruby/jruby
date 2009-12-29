@@ -21,7 +21,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        createJavaMethods(context.getRuntime());
+        createJavaCallables(context.getRuntime());
         JavaProxy proxy = castJavaProxy(self);
 
         int len = args.length;
@@ -45,7 +45,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        createJavaMethods(self.getRuntime());
+        createJavaCallables(self.getRuntime());
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
         return method.invokeDirect(proxy.getObject());
@@ -53,7 +53,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        createJavaMethods(self.getRuntime());
+        createJavaCallables(self.getRuntime());
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0});
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
@@ -63,7 +63,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        createJavaMethods(self.getRuntime());
+        createJavaCallables(self.getRuntime());
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, arg1);
@@ -74,7 +74,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        createJavaMethods(self.getRuntime());
+        createJavaCallables(self.getRuntime());
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, arg2);
@@ -86,7 +86,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
-            createJavaMethods(self.getRuntime());
+            createJavaCallables(self.getRuntime());
             JavaProxy proxy = castJavaProxy(self);
             int len = args.length;
             // these extra arrays are really unfortunate; split some of these paths out to eliminate?
@@ -107,7 +107,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (block.isGiven()) {
-            createJavaMethods(self.getRuntime());
+            createJavaCallables(self.getRuntime());
             JavaProxy proxy = castJavaProxy(self);
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
@@ -121,7 +121,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
-            createJavaMethods(self.getRuntime());
+            createJavaCallables(self.getRuntime());
             JavaProxy proxy = castJavaProxy(self);
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, proc);
@@ -136,7 +136,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (block.isGiven()) {
-            createJavaMethods(self.getRuntime());
+            createJavaCallables(self.getRuntime());
             JavaProxy proxy = castJavaProxy(self);
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, proc);
@@ -152,7 +152,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) {
-            createJavaMethods(self.getRuntime());
+            createJavaCallables(self.getRuntime());
             JavaProxy proxy = castJavaProxy(self);
             RubyProc proc = RubyProc.newProc(self.getRuntime(), block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityFour(self, name, arg0, arg1, arg2, proc);

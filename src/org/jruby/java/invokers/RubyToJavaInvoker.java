@@ -2,19 +2,25 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
-import org.jruby.javasupport.*;
+import java.lang.reflect.Member;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaCallable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.methods.JavaMethod {
+public abstract class RubyToJavaInvoker extends JavaMethod {
     protected static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     protected JavaCallable javaCallable;
     protected JavaCallable[][] javaCallables;
@@ -22,11 +28,86 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     protected int minVarargsArity = Integer.MAX_VALUE;
     protected Map cache;
     protected volatile boolean initialized;
+    private Member[] members;
     
-    RubyToJavaInvoker(RubyModule host) {
+    RubyToJavaInvoker(RubyModule host, Member[] members) {
         super(host, Visibility.PUBLIC);
+        this.members = members;
         // we set all Java methods to optional, since many/most have overloads
         setArity(Arity.OPTIONAL);
+    }
+
+    protected Member[] getMembers() {
+        return members;
+    }
+
+    protected AccessibleObject[] getAccessibleObjects() {
+        return (AccessibleObject[])getMembers();
+    }
+
+    protected abstract JavaCallable createCallable(Ruby ruby, Member member);
+
+    protected abstract JavaCallable[] createCallableArray(JavaCallable callable);
+
+    protected abstract JavaCallable[] createCallableArray(int size);
+
+    protected abstract JavaCallable[][] createCallableArrayArray(int size);
+
+    protected abstract Class[] getMemberParameterTypes(Member member);
+
+    protected abstract boolean isMemberVarArgs(Member member);
+
+    synchronized void createJavaCallables(Ruby runtime) {
+        if (!initialized) { // read-volatile
+            if (members != null) {
+                if (members.length == 1) {
+                    javaCallable = createCallable(runtime, members[0]);
+                    if (javaCallable.isVarArgs()) {
+                        javaVarargsCallables = createCallableArray(javaCallable);
+                    }
+                } else {
+                    Map<Integer, List<JavaCallable>> methodsMap = new HashMap<Integer, List<JavaCallable>>();
+                    List<JavaCallable> varargsMethods = new ArrayList();
+                    int maxArity = 0;
+                    for (Member method: members) {
+                        int currentArity = getMemberParameterTypes(method).length;
+                        maxArity = Math.max(currentArity, maxArity);
+                        List<JavaCallable> methodsForArity = (ArrayList<JavaCallable>)methodsMap.get(currentArity);
+                        if (methodsForArity == null) {
+                            methodsForArity = new ArrayList<JavaCallable>();
+                            methodsMap.put(currentArity,methodsForArity);
+                        }
+                        JavaCallable javaMethod = createCallable(runtime,method);
+                        methodsForArity.add(javaMethod);
+
+                        if (isMemberVarArgs(method)) {
+                            minVarargsArity = Math.min(currentArity - 1, minVarargsArity);
+                            varargsMethods.add(javaMethod);
+                        }
+                    }
+
+                    javaCallables = createCallableArrayArray(maxArity + 1);
+                    for (Map.Entry<Integer,List<JavaCallable>> entry : methodsMap.entrySet()) {
+                        List<JavaCallable> methodsForArity = (List<JavaCallable>)entry.getValue();
+
+                        JavaCallable[] methodsArray = methodsForArity.toArray(createCallableArray(methodsForArity.size()));
+                        javaCallables[((Integer)entry.getKey()).intValue()] = methodsArray;
+                    }
+
+                    if (varargsMethods.size() > 0) {
+                        // have at least one varargs, build that map too
+                        javaVarargsCallables = createCallableArray(varargsMethods.size());
+                        varargsMethods.toArray(javaVarargsCallables);
+                    }
+                }
+                members = null;
+
+                // initialize cache of parameter types to method
+                // FIXME: No real reason to use CHM, is there?
+                cache = new ConcurrentHashMap(0, 0.75f, 1);
+            }
+            initialized = true; // write-volatile
+        }
     }
 
     static Object convertArg(ThreadContext context, IRubyObject arg, JavaCallable method, int index) {
@@ -74,7 +155,6 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     protected JavaCallable findCallable(IRubyObject self, String name, IRubyObject[] args, int arity) {
         JavaCallable callable;
         if ((callable = javaCallable) == null) {
-            // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (arity >= javaCallables.length || (callablesForArity = javaCallables[arity]) == null) {
                 if (javaVarargsCallables != null) {
