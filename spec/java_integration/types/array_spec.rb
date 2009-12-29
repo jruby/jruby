@@ -9,16 +9,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::boolean[0].new
       arr.java_class.to_s.should == "[Z"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::boolean[10].new
       arr.java_class.to_s.should == "[Z"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::boolean[10,10].new
       arr.java_class.to_s.should == "[[Z"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -71,16 +74,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::byte[0].new
       arr.java_class.to_s.should == "[B"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::byte[10].new
       arr.java_class.to_s.should == "[B"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::byte[10,10].new
       arr.java_class.to_s.should == "[[B"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -135,16 +141,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::char[0].new
       arr.java_class.to_s.should == "[C"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::char[10].new
       arr.java_class.to_s.should == "[C"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::char[10,10].new
       arr.java_class.to_s.should == "[[C"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -199,16 +208,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::double[0].new
       arr.java_class.to_s.should == "[D"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::double[10].new
       arr.java_class.to_s.should == "[D"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::double[10,10].new
       arr.java_class.to_s.should == "[[D"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -263,16 +275,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::float[0].new
       arr.java_class.to_s.should == "[F"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::float[10].new
       arr.java_class.to_s.should == "[F"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::float[10,10].new
       arr.java_class.to_s.should == "[[F"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -331,16 +346,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::int[0].new
       arr.java_class.to_s.should == "[I"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::int[10].new
       arr.java_class.to_s.should == "[I"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::int[10,10].new
       arr.java_class.to_s.should == "[[I"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -395,16 +413,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::long[0].new
       arr.java_class.to_s.should == "[J"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::long[10].new
       arr.java_class.to_s.should == "[J"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::long[10,10].new
       arr.java_class.to_s.should == "[[J"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -459,16 +480,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = Java::short[0].new
       arr.java_class.to_s.should == "[S"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = Java::short[10].new
       arr.java_class.to_s.should == "[S"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = Java::short[10,10].new
       arr.java_class.to_s.should == "[[S"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -523,16 +547,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = java.lang.String[0].new
       arr.java_class.to_s.should == "[Ljava.lang.String;"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = java.lang.String[10].new
       arr.java_class.to_s.should == "[Ljava.lang.String;"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = java.lang.String[10,10].new
       arr.java_class.to_s.should == "[[Ljava.lang.String;"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do 
@@ -587,16 +614,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = java.util.HashMap[0].new
       arr.java_class.to_s.should == "[Ljava.util.HashMap;"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = java.util.HashMap[10].new
       arr.java_class.to_s.should == "[Ljava.util.HashMap;"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = java.util.HashMap[10,10].new
       arr.java_class.to_s.should == "[[Ljava.util.HashMap;"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do
@@ -688,16 +718,19 @@ describe "A Java primitive Array of type" do
     it "should be possible to create empty array" do 
       arr = java.lang.Class[0].new
       arr.java_class.to_s.should == "[Ljava.lang.Class;"
+      arr.should be_empty
     end
     
     it "should be possible to create uninitialized single dimensional array" do 
       arr = java.lang.Class[10].new
       arr.java_class.to_s.should == "[Ljava.lang.Class;"
+      arr.should_not be_empty
     end
     
     it "should be possible to create uninitialized multi dimensional array" do 
       arr = java.lang.Class[10,10].new
       arr.java_class.to_s.should == "[[Ljava.lang.Class;"
+      arr.should_not be_empty
     end
 
     it "should be possible to create primitive array from Ruby array" do

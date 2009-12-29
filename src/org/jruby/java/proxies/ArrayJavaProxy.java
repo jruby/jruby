@@ -54,6 +54,11 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject length() {
         return getJavaArray().length();
     }
+
+    @JRubyMethod(name = "empty?", backtrace = true)
+    public IRubyObject empty(ThreadContext context) {
+        return RubyFixnum.zero(context.getRuntime()).eql_p(getJavaArray().length());
+    }
     
     @JRubyMethod(name = "[]", backtrace = true)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
