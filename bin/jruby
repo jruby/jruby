@@ -204,7 +204,7 @@ do
        ;;
      # Run with JMX management enabled
      --manage)
-        java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote") ;;
+        java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote -Djruby.management.enabled=true") ;;
      # Don't launch a GUI window, no matter what
      --headless)
         java_args=("${java_args[@]}" "-Djava.awt.headless=true") ;;

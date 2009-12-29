@@ -168,7 +168,7 @@ public class RubyInstanceConfig {
     private String recordSeparator = "\n";
     private boolean shouldCheckSyntax = false;
     private String inputFieldSeparator = null;
-    private boolean managementEnabled = true;
+    private boolean managementEnabled = false;
     private String inPlaceBackupExtension = null;
     private boolean parserDebug = false;
     private String threadDumpSignal = null;
@@ -332,7 +332,7 @@ public class RubyInstanceConfig {
                 for (String element : elements) excludedMethods.add(element);
             }
             
-            managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", true);
+            managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", false);
             runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
             boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
             if (jitProperty) {
@@ -518,7 +518,7 @@ public class RubyInstanceConfig {
                 .append("    jruby.bytecode.version=1.5|1.6\n")
                 .append("       Set bytecode version for JRuby to generate. Default is current JVM version.\n")
                 .append("    jruby.management.enabled=true|false\n")
-                .append("       Set whether JMX management is enabled. Default is true.\n")
+                .append("       Set whether JMX management is enabled. Default is false.\n")
                 .append("    jruby.jump.backtrace=true|false\n")
                 .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
                 .append("\nDEBUGGING/LOGGING:\n")
