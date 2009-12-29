@@ -1,6 +1,7 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
 import org.jruby.javasupport.*;
 import java.util.Arrays;
 import java.util.Map;
@@ -17,6 +18,8 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
     protected static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     protected JavaCallable javaCallable;
     protected JavaCallable[][] javaCallables;
+    protected JavaCallable[] javaVarargsCallables;
+    protected int minVarargsArity = Integer.MAX_VALUE;
     protected Map cache;
     protected volatile boolean initialized;
     
@@ -28,6 +31,19 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
 
     static Object convertArg(ThreadContext context, IRubyObject arg, JavaCallable method, int index) {
         return arg.toJava(method.getParameterTypes()[index]);
+    }
+
+    static Object convertVarargs(ThreadContext context, IRubyObject[] args, JavaCallable method) {
+        Class[] types = method.getParameterTypes();
+        Class varargType = types[types.length - 1].getComponentType();
+        int varargsStart = types.length - 1;
+        int varargsCount = args.length - varargsStart;
+        Object varargs = Array.newInstance(varargType, varargsCount);
+
+        for (int i = 0; i < varargsCount; i++) {
+            Array.set(varargs, i, args[varargsStart + i].toJava(varargType));
+        }
+        return varargs;
     }
 
     static JavaProxy castJavaProxy(IRubyObject self) {
@@ -61,11 +77,29 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (arity >= javaCallables.length || (callablesForArity = javaCallables[arity]) == null) {
-                throw self.getRuntime().newArgumentError(args.length, javaCallables.length - 1);
+                if (javaVarargsCallables != null) {
+                    callable = CallableSelector.matchingCallableArityN(self, cache, javaVarargsCallables, args, arity);
+                    if (callable == null) {
+                        throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, javaVarargsCallables, (Object[])args);
+                    }
+                    return callable;
+                } else {
+                    throw self.getRuntime().newArgumentError(args.length, javaCallables.length - 1);
+                }
             }
             callable = CallableSelector.matchingCallableArityN(self, cache, callablesForArity, args, arity);
+            if (callable == null && javaVarargsCallables != null) {
+                callable = CallableSelector.matchingCallableArityN(self, cache, javaVarargsCallables, args, arity);
+                if (callable == null) {
+                    throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, javaVarargsCallables, (Object[])args);
+                }
+                return callable;
+            }
+            if (callable == null) {
+                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, (Object[])args);
+            }
         } else {
-            if (callable.getParameterTypes().length != args.length) {
+            if (!callable.isVarArgs() && callable.getParameterTypes().length != args.length) {
                 throw self.getRuntime().newArgumentError(args.length, callable.getParameterTypes().length);
             }
         }
@@ -98,6 +132,9 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 throw self.getRuntime().newArgumentError(1, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityOne(self, cache, callablesForArity, arg0);
+            if (callable == null) {
+                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0);
+            }
         } else {
             if (callable.getParameterTypes().length != 1) {
                 throw self.getRuntime().newArgumentError(1, callable.getParameterTypes().length);
@@ -115,6 +152,9 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 throw self.getRuntime().newArgumentError(2, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityTwo(self, cache, callablesForArity, arg0, arg1);
+            if (callable == null) {
+                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0, arg1);
+            }
         } else {
             if (callable.getParameterTypes().length != 2) {
                 throw self.getRuntime().newArgumentError(2, callable.getParameterTypes().length);
@@ -132,6 +172,9 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 throw self.getRuntime().newArgumentError(3, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityThree(self, cache, callablesForArity, arg0, arg1, arg2);
+            if (callable == null) {
+                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0, arg1, arg2);
+            }
         } else {
             if (callable.getParameterTypes().length != 3) {
                 throw self.getRuntime().newArgumentError(3, callable.getParameterTypes().length);
@@ -149,6 +192,9 @@ public abstract class RubyToJavaInvoker extends org.jruby.internal.runtime.metho
                 throw self.getRuntime().newArgumentError(4, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityFour(self, cache, callablesForArity, arg0, arg1, arg2, arg3);
+            if (callable == null) {
+                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0, arg1, arg2, arg3);
+            }
         } else {
             if (callable.getParameterTypes().length != 4) {
                 throw self.getRuntime().newArgumentError(4, callable.getParameterTypes().length);

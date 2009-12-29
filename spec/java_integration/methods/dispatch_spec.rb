@@ -1,5 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
+import "java_integration.fixtures.ClassWithVarargs"
 import "java_integration.fixtures.CoreTypeMethods"
 import "java_integration.fixtures.StaticMethodSelection"
 
@@ -118,5 +119,190 @@ describe "An overloaded Java instance method" do
         CoreTypeMethods.new.getTypeInstance()
       end.should raise_error(ArgumentError)
     end
+  end
+end
+
+describe "A class with varargs constructors" do
+  it "should be called with the most exact overload" do
+    lambda do
+      obj = ClassWithVarargs.new(1)
+      obj.constructor.should == 0;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new(1,2)
+      obj.constructor.should == 0;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new(1,2,3)
+      obj.constructor.should == 0;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new(1,2,3,4)
+      obj.constructor.should == 0;
+    end.should_not raise_error
+
+    lambda do
+      obj = ClassWithVarargs.new('foo', 1)
+      obj.constructor.should == 1;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 1, 2)
+      obj.constructor.should == 1;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 1, 2, 3)
+      obj.constructor.should == 1;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 1, 2, 3, 4)
+      obj.constructor.should == 1;
+    end.should_not raise_error
+
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 1)
+      obj.constructor.should == 2;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 1, 2)
+      obj.constructor.should == 2;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 1, 2, 3)
+      obj.constructor.should == 2;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 1, 2, 3, 4)
+      obj.constructor.should == 2;
+    end.should_not raise_error
+
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 'baz', 1)
+      obj.constructor.should == 3;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 'baz', 1, 2)
+      obj.constructor.should == 3;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 'baz', 1, 2, 3)
+      obj.constructor.should == 3;
+    end.should_not raise_error
+    lambda do
+      obj = ClassWithVarargs.new('foo', 'bar', 'baz', 1, 2, 3, 4)
+      obj.constructor.should == 3;
+    end.should_not raise_error
+  end
+end
+
+describe "A class with varargs instance methods" do
+  it "should be called with the most exact overload" do
+    obj = ClassWithVarargs.new(1)
+    lambda do
+      obj.varargs(1).should == 0;
+    end.should_not raise_error
+    lambda do
+      obj.varargs(1,2).should == 0;
+    end.should_not raise_error
+    lambda do
+      obj.varargs(1,2,3).should == 0;
+    end.should_not raise_error
+    lambda do
+      obj.varargs(1,2,3,4).should == 0;
+    end.should_not raise_error
+
+    lambda do
+      obj.varargs('foo', 1).should == 1;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 1, 2).should == 1;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 1, 2, 3).should == 1;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 1, 2, 3, 4).should == 1;
+    end.should_not raise_error
+
+    lambda do
+      obj.varargs('foo', 'bar', 1).should == 2;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 'bar', 1, 2).should == 2;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 'bar', 1, 2, 3).should == 2;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 'bar', 1, 2, 3, 4).should == 2;
+    end.should_not raise_error
+
+    lambda do
+      obj.varargs('foo', 'bar', 'baz', 1).should == 3;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 'bar', 'baz', 1, 2).should == 3;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 'bar', 'baz', 1, 2, 3).should == 3;
+    end.should_not raise_error
+    lambda do
+      obj.varargs('foo', 'bar', 'baz', 1, 2, 3, 4).should == 3;
+    end.should_not raise_error
+  end
+end
+
+describe "A class with varargs static methods" do
+  it "should be called with the most exact overload" do
+    lambda do
+      ClassWithVarargs.varargs_static(1).should == 0;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static(1,2).should == 0;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static(1,2,3).should == 0;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static(1,2,3,4).should == 0;
+    end.should_not raise_error
+
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 1).should == 1;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 1, 2).should == 1;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 1, 2, 3).should == 1;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 1, 2, 3, 4).should == 1;
+    end.should_not raise_error
+
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 1).should == 2;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 1, 2).should == 2;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 1, 2, 3).should == 2;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 1, 2, 3, 4).should == 2;
+    end.should_not raise_error
+
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 'baz', 1).should == 3;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 'baz', 1, 2).should == 3;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 'baz', 1, 2, 3).should == 3;
+    end.should_not raise_error
+    lambda do
+      ClassWithVarargs.varargs_static('foo', 'bar', 'baz', 1, 2, 3, 4).should == 3;
+    end.should_not raise_error
   end
 end

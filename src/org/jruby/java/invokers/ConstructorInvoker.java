@@ -32,8 +32,12 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             if (ctors != null) {
                 if (ctors.length == 1) {
                     javaCallable = JavaConstructor.create(runtime, ctors[0]);
+                    if (javaCallable.isVarArgs()) {
+                        javaVarargsCallables = new JavaConstructor[] {(JavaConstructor)javaCallable};
+                    }
                 } else {
                     Map methodsMap = new HashMap();
+                    List<JavaConstructor> varargsMethods = new ArrayList();
                     int maxArity = 0;
                     for (Constructor ctor: ctors) {
                         // TODO: deal with varargs
@@ -44,7 +48,13 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
                             methodsForArity = new ArrayList<JavaConstructor>();
                             methodsMap.put(arity,methodsForArity);
                         }
-                        methodsForArity.add(JavaConstructor.create(runtime,ctor));
+                        JavaConstructor javaConstructor = JavaConstructor.create(runtime,ctor);
+                        methodsForArity.add(javaConstructor);
+
+                        if (ctor.isVarArgs()) {
+                            minVarargsArity = Math.min(arity - 1, minVarargsArity);
+                            varargsMethods.add(javaConstructor);
+                        }
                     }
                     javaCallables = new JavaConstructor[maxArity + 1][];
                     for (Iterator<Map.Entry> iter = methodsMap.entrySet().iterator(); iter.hasNext();) {
@@ -54,11 +64,17 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
                         JavaConstructor[] methodsArray = ctorsForArity.toArray(new JavaConstructor[ctorsForArity.size()]);
                         javaCallables[((Integer)entry.getKey()).intValue()] = methodsArray;
                     }
+
+                    if (varargsMethods.size() > 0) {
+                        // have at least one varargs, build that map too
+                        javaVarargsCallables = new JavaConstructor[varargsMethods.size()];
+                        varargsMethods.toArray(javaVarargsCallables);
+                    }
                 }
                 ctors = null;
 
                 // initialize cache of parameter types to method
-                cache = new ConcurrentHashMap();
+                cache = new ConcurrentHashMap(0, 0.75f, 1);
             }
             initialized = true; // write-volatile
         }
@@ -73,8 +89,18 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         int len = args.length;
         Object[] convertedArgs = new Object[len];
         JavaConstructor constructor = (JavaConstructor)findCallable(self, name, args, len);
-        for (int i = 0; i < len; i++) {
-            convertedArgs[i] = convertArg(context, args[i], constructor, i);
+        if (constructor.isVarArgs()) {
+            len = constructor.getParameterTypes().length - 1;
+            convertedArgs = new Object[len + 1];
+            for (int i = 0; i < len; i++) {
+                convertedArgs[i] = convertArg(context, args[i], constructor, i);
+            }
+            convertedArgs[len] = convertVarargs(context, args, constructor);
+        } else {
+            convertedArgs = new Object[len];
+            for (int i = 0; i < len; i++) {
+                convertedArgs[i] = convertArg(context, args[i], constructor, i);
+            }
         }
         
         proxy.setObject(constructor.newInstanceDirect(convertedArgs));
@@ -98,6 +124,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         Ruby runtime = context.getRuntime();
         createJavaCallables(runtime);
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0});
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(context, arg0, constructor, 0);
@@ -111,6 +138,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.getRuntime();
         createJavaCallables(runtime);
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityTwo(self, name, arg0, arg1);
         Object cArg0 = convertArg(context, arg0, constructor, 0);
@@ -125,6 +153,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
         createJavaCallables(runtime);
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityThree(self, name, arg0, arg1, arg2);
         Object cArg0 = convertArg(context, arg0, constructor, 0);

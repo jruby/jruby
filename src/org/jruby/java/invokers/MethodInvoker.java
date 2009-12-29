@@ -26,17 +26,19 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
         trySetAccessible(methods);
     }
 
-    // TODO: varargs?
     synchronized void createJavaMethods(Ruby runtime) {
         if (!initialized) { // read-volatile
             if (methods != null) {
                 if (methods.length == 1) {
                     javaCallable = JavaMethod.create(runtime, methods[0]);
+                    if (javaCallable.isVarArgs()) {
+                        javaVarargsCallables = new JavaMethod[] {(JavaMethod)javaCallable};
+                    }
                 } else {
-                    Map methodsMap = new HashMap();
+                    Map<Integer, List<JavaMethod>> methodsMap = new HashMap();
+                    List<JavaMethod> varargsMethods = new ArrayList();
                     int maxArity = 0;
                     for (Method method: methods) {
-                        // TODO: deal with varargs
                         int arity = method.getParameterTypes().length;
                         maxArity = Math.max(arity, maxArity);
                         List<JavaMethod> methodsForArity = (ArrayList<JavaMethod>)methodsMap.get(arity);
@@ -44,21 +46,34 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
                             methodsForArity = new ArrayList<JavaMethod>();
                             methodsMap.put(arity,methodsForArity);
                         }
-                        methodsForArity.add(JavaMethod.create(runtime,method));
+                        JavaMethod javaMethod = JavaMethod.create(runtime,method);
+                        methodsForArity.add(javaMethod);
+                        
+                        if (method.isVarArgs()) {
+                            minVarargsArity = Math.min(arity - 1, minVarargsArity);
+                            varargsMethods.add(javaMethod);
+                        }
                     }
+                    
                     javaCallables = new JavaMethod[maxArity + 1][];
-                    for (Iterator<Map.Entry> iter = methodsMap.entrySet().iterator(); iter.hasNext();) {
-                        Map.Entry entry = iter.next();
+                    for (Map.Entry<Integer,List<JavaMethod>> entry : methodsMap.entrySet()) {
                         List<JavaMethod> methodsForArity = (List<JavaMethod>)entry.getValue();
 
                         JavaMethod[] methodsArray = methodsForArity.toArray(new JavaMethod[methodsForArity.size()]);
                         javaCallables[((Integer)entry.getKey()).intValue()] = methodsArray;
                     }
+
+                    if (varargsMethods.size() > 0) {
+                        // have at least one varargs, build that map too
+                        javaVarargsCallables = new JavaMethod[varargsMethods.size()];
+                        varargsMethods.toArray(javaVarargsCallables);
+                    }
                 }
                 methods = null;
 
                 // initialize cache of parameter types to method
-                cache = new ConcurrentHashMap();
+                // FIXME: No real reason to use CHM, is there?
+                cache = new ConcurrentHashMap(0, 0.75f, 1);
             }
             initialized = true; // write-volatile
         }

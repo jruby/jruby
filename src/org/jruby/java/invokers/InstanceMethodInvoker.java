@@ -27,8 +27,18 @@ public class InstanceMethodInvoker extends MethodInvoker {
         int len = args.length;
         Object[] convertedArgs = new Object[len];
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
-        for (int i = 0; i < len; i++) {
-            convertedArgs[i] = convertArg(context, args[i], method, i);
+        if (method.isVarArgs()) {
+            len = method.getParameterTypes().length - 1;
+            convertedArgs = new Object[len + 1];
+            for (int i = 0; i < len; i++) {
+                convertedArgs[i] = convertArg(context, args[i], method, i);
+            }
+            convertedArgs[len] = convertVarargs(context, args, method);
+        } else {
+            convertedArgs = new Object[len];
+            for (int i = 0; i < len; i++) {
+                convertedArgs[i] = convertArg(context, args[i], method, i);
+            }
         }
         return method.invokeDirect(proxy.getObject(), convertedArgs);
     }
@@ -44,6 +54,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         createJavaMethods(self.getRuntime());
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0});
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(context, arg0, method, 0);
@@ -53,6 +64,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         createJavaMethods(self.getRuntime());
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, arg1);
         Object cArg0 = convertArg(context, arg0, method, 0);
@@ -63,6 +75,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         createJavaMethods(self.getRuntime());
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, arg2);
         Object cArg0 = convertArg(context, arg0, method, 0);
