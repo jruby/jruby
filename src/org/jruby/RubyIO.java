@@ -675,7 +675,7 @@ public class RubyIO extends RubyObject {
             } else if (limit == 0) {
                 return RubyString.newEmptyString(runtime);
             } else if (separator.length() == 1 && limit < 0) {
-                return getlineFast(runtime, separator.get(0), cache);
+                return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
                 Stream readStream = myOpenFile.getMainStream();
                 int c = -1;
