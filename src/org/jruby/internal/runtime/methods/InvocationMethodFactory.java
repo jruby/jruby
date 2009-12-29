@@ -245,6 +245,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
                         mv.start();
+                        mv.line(0);
                         
                         // check arity
                         mv.aloadMany(0, 1, 4, 5); // method, context, name, args, required
@@ -295,6 +296,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         }
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                         mv.start();
+                        mv.line(0);
 
                         mv.aloadMany(0, 1, 2, 3, 4);
                         for (int i = 1; i <= scope.getRequiredArgs(); i++) {
@@ -809,6 +811,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (c == null) {
                     ClassWriter cw = createBlockCtor(mnamePath, typeClass);
                     SkinnyMethodAdapter mv = startBlockCall(cw);
+                    mv.line(0);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
                     mv.aloadMany(1, 2, 3);
@@ -842,6 +845,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (c == null) {
                     ClassWriter cw = createBlockCtor19(mnamePath, typeClass);
                     SkinnyMethodAdapter mv = startBlockCall19(cw);
+                    mv.line(0);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
                     mv.aloadMany(1, 2, 3, 4);
@@ -888,6 +892,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
+        mv.line(0);
         mv.aload(0);
         mv.invokespecial(p(CompiledBlockCallback.class), "<init>", sig(void.class));
         mv.aloadMany(0, 1);
@@ -905,6 +910,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
+        mv.line(0);
         mv.aload(0);
         mv.invokespecial(p(Object.class), "<init>", sig(void.class));
         mv.aloadMany(0, 1);
