@@ -214,6 +214,10 @@
                     <ide-action name="run"/>
                     <ide-action name="test"/>
                     <ide-action name="debug"/>
+                    <action>
+                        <label>Findbugs</label>
+                        <target>findbugs</target>
+                    </action>
                 </context-menu>
             </view>
             <subprojects/>
