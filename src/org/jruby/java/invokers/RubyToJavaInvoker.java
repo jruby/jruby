@@ -13,6 +13,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.dispatch.CallableSelector;
+import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.runtime.Arity;
@@ -116,13 +117,21 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     static Object convertVarargs(ThreadContext context, IRubyObject[] args, JavaCallable method) {
         Class[] types = method.getParameterTypes();
-        Class varargType = types[types.length - 1].getComponentType();
+        Class varargArrayType = types[types.length - 1];
+        Class varargType = varargArrayType.getComponentType();
         int varargsStart = types.length - 1;
         int varargsCount = args.length - varargsStart;
-        Object varargs = Array.newInstance(varargType, varargsCount);
 
-        for (int i = 0; i < varargsCount; i++) {
-            Array.set(varargs, i, args[varargsStart + i].toJava(varargType));
+        Object varargs;
+        if (varargsCount == 1 && args[varargsStart] instanceof ArrayJavaProxy) {
+            // we may have a pre-created array to pass; try that first
+            varargs = args[varargsStart].toJava(varargArrayType);
+        } else {
+            varargs = Array.newInstance(varargType, varargsCount);
+
+            for (int i = 0; i < varargsCount; i++) {
+                Array.set(varargs, i, args[varargsStart + i].toJava(varargType));
+            }
         }
         return varargs;
     }

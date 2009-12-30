@@ -1,46 +1,48 @@
 package java_integration.fixtures;
 
+import java.util.Arrays;
+
 public class ClassWithVarargs {
-    private int constructor;
+    private String constructor;
     public ClassWithVarargs(Object... args) {
-        constructor = 0;
+        constructor = "0: " + Arrays.toString(args);
     }
     public ClassWithVarargs(String a, Object... args) {
-        constructor = 1;
+        constructor = "1: " + Arrays.toString(args);
     }
     public ClassWithVarargs(String a, String b, Object... args) {
-        constructor = 2;
+        constructor = "2: " + Arrays.toString(args);
     }
     public ClassWithVarargs(String a, String b, String c, Object... args) {
-        constructor = 3;
+        constructor = "3: " + Arrays.toString(args);
     }
-    public int getConstructor() {
+    public String getConstructor() {
         return constructor;
     }
 
-    public static int varargsStatic(Object... args) {
-        return 0;
+    public static String varargsStatic(Object... args) {
+        return "0: " + Arrays.toString(args);
     }
-    public static int varargsStatic(String a, Object... args) {
-        return 1;
+    public static String varargsStatic(String a, Object... args) {
+        return "1: " + Arrays.toString(args);
     }
-    public static int varargsStatic(String a, String b, Object... args) {
-        return 2;
+    public static String varargsStatic(String a, String b, Object... args) {
+        return "2: " + Arrays.toString(args);
     }
-    public static int varargsStatic(String a, String b, String c, Object... args) {
-        return 3;
+    public static String varargsStatic(String a, String b, String c, Object... args) {
+        return "3: " + Arrays.toString(args);
     }
 
-    public int varargs(Object... args) {
-        return 0;
+    public String varargs(Object... args) {
+        return "0: " + Arrays.toString(args);
     }
-    public int varargs(String a, Object... args) {
-        return 1;
+    public String varargs(String a, Object... args) {
+        return "1: " + Arrays.toString(args);
     }
-    public int varargs(String a, String b, Object... args) {
-        return 2;
+    public String varargs(String a, String b, Object... args) {
+        return "2: " + Arrays.toString(args);
     }
-    public int varargs(String a, String b, String c, Object... args) {
-        return 3;
+    public String varargs(String a, String b, String c, Object... args) {
+        return "3: " + Arrays.toString(args);
     }
 }

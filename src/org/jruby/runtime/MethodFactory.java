@@ -30,6 +30,7 @@ package org.jruby.runtime;
 
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -189,9 +190,7 @@ public abstract class MethodFactory {
         if (Ruby.isSecurityRestricted()) {
             reflection_ = true;
         } else {
-            if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
-                reflection_ = true;
-            }
+            reflection_ = RubyInstanceConfig.REFLECTED_HANDLES;
             if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
                 dumping_ = true;
                 dumpingPath_ = SafePropertyAccessor.getProperty("jruby.dump_invocations");

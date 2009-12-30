@@ -32,6 +32,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
@@ -242,9 +243,7 @@ public abstract class CallbackFactory {
         if (Ruby.isSecurityRestricted()) {
             reflection_ = true;
         } else {
-            if (SafePropertyAccessor.getProperty("jruby.reflection") != null && SafePropertyAccessor.getBoolean("jruby.reflection")) {
-                reflection_ = true;
-            }
+            reflection_ = RubyInstanceConfig.REFLECTED_HANDLES;
             if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
                 dumping_ = true;
             }

@@ -637,8 +637,8 @@ public class RubyModule extends RubyObject {
     public void defineAnnotatedMethodsIndividually(Class clazz) {
         TypePopulator populator;
         
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // we need full traces, use default (slow) populator
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
+            // we want reflected invokers or need full traces, use default (slow) populator
             if (DEBUG) System.out.println("trace mode, using default populator");
             populator = TypePopulator.DEFAULT;
         } else {
