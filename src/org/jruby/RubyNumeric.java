@@ -54,8 +54,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.Convert;
-import org.jruby.util.Convert2;
+import org.jruby.util.ConvertDouble;
+import org.jruby.util.ConvertBytes;
 
 /**
  * Base class for all numerical types in ruby.
@@ -327,7 +327,7 @@ public class RubyNumeric extends RubyObject {
      */
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
         ByteList s = str.getByteList();
-        return Convert2.byteListToInum(runtime, s, base, strict);
+        return ConvertBytes.byteListToInum(runtime, s, base, strict);
     }
 
     public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {
@@ -356,7 +356,7 @@ public class RubyNumeric extends RubyObject {
         final double ZERO = 0.0;
         
         try {
-            return new RubyFloat(runtime,Convert.byteListToDouble(arg.getByteList(),strict));
+            return new RubyFloat(runtime,ConvertDouble.byteListToDouble(arg.getByteList(),strict));
         } catch (NumberFormatException e) {
             if (strict) {
                 throw runtime.newArgumentError("invalid value for Float(): "

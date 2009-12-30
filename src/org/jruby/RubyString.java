@@ -96,7 +96,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.Convert2;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.string.JavaCrypt;
 
 /**
@@ -3989,15 +3989,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public IRubyObject stringToInum(int base, boolean badcheck) {
         ByteList s = this.value;
-        return Convert2.byteListToInum(getRuntime(), s, base, badcheck);
-    }
-
-    /** rb_str_to_dbl
-     * 
-     */
-    public double stringToDouble(boolean badcheck) {
-        ByteList s = this.value;
-        return Convert2.byteListToDouble(getRuntime(), s, badcheck);
+        return ConvertBytes.byteListToInum(getRuntime(), s, base, badcheck);
     }
 
     /** rb_str_oct

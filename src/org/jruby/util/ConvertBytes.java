@@ -5,12 +5,11 @@ import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class Convert2 {
+public class ConvertBytes {
     private final Ruby runtime;
     private final ByteList _str;
     private int str;
@@ -19,7 +18,7 @@ public class Convert2 {
     private int base;
     private final boolean badcheck;
 
-    public Convert2(Ruby runtime, ByteList _str, int base, boolean badcheck) {
+    public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck) {
         this.runtime = runtime;
         this._str = _str;
         this.str = _str.getBegin();
@@ -175,15 +174,7 @@ public class Convert2 {
      */
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
         //System.err.println("byteListToInum(" + str + ")");
-        return new Convert2(runtime, str, base, badcheck).byteListToInum();
-    }
-
-    /** rb_cstr_to_dbl
-     *
-     */
-    public static double byteListToDouble(Ruby runtime, ByteList str, boolean badcheck) {
-        //System.err.println("byteListToInum(" + str + ")");
-        return new Convert2(runtime, str, -1, badcheck).byteListToDouble();
+        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
     }
 
     private final static byte[] conv_digit = new byte[128];
@@ -623,277 +614,6 @@ public class Convert2 {
         public Kind getKind() {
             return kind;
         }
-    }
-
-    public static double stringToDouble(Ruby runtime, String number) {
-        ByteList s = new ByteList(ByteList.plain(number), false);
-        return new Convert2(runtime, s, -1, false).stringToDouble(0, null);
-    }
-
-    private double fallbackParsing(int s, int sign, int[] endptr) {
-        int start = s;
-        int add = 0;
-        if(sign == -1) {
-            add = 1;
-        }
-        char[] buf = new char[(end-s) + add];
-        int index = 0;
-        if(sign == -1) {
-            buf[index++] = '-';
-        }
-        boolean hasDot = false;
-        while(s < end) {
-            if('0' <= data[s] && data[s] <= '9') {
-                buf[index++] = (char)data[s];
-            } else if(!hasDot && data[s] == '.') {
-                buf[index++] = '.';
-                hasDot = true;
-            } else {
-                break;
-            }
-            s++;
-        }
-
-        if(s < end && (data[s] == 'e' || data[s] == 'E')) {
-            ++s;
-            buf[index++] = 'e';
-            if(s < end && (data[s] == '+' || data[s] == '-')) {
-                buf[index++] = (char)data[s];
-                ++s;
-            }
-            while(s < end) {
-                if('0' <= data[s] && data[s] <= '9') {
-                    buf[index++] = (char)data[s];
-                    s++;  
-                } else {
-                    break;
-                }
-            }
-        }
-
-        if(endptr != null) {
-            endptr[0] = s;
-        }
-
-        return Double.parseDouble(new String(buf, 0, index));
-    }
-
-    private double stringToDouble(int nptr, int[] endptr) {
-        double num;
-        boolean got_dot, got_digit;
-        long exponent;
-        
-        int s = nptr;
-        while(isSpace(s)) {
-            s++;
-        }
-
-        int sign = (s < end && data[s] == '-') ? -1 : 1;
-        if(s < end && (data[s] == '-' || data[s] == '+')) {
-            ++s;
-        }
-        int saveFallback = s;
-        num = 0.0;
-        got_dot = false;
-        got_digit = false;
-        exponent = 0;
-        int digits = 0;
-
-        while(s < end) {
-            if('0' <= data[s] && data[s] <= '9') {
-                got_digit = true;
-                digits++;
-                if(digits > 15) {
-                    return fallbackParsing(saveFallback, sign, endptr);
-                }
-                
-                if(num > Double.MAX_VALUE * 0.1) {
-                    ++exponent;
-                } else {
-                    int n = data[s] - '0';
-                    num = (10.0*num) + n;
-                }
-                
-                if(got_dot) {
-                    --exponent;
-                }
-            } else if(!got_dot && data[s] == '.') {
-                got_dot = true;
-            } else {
-                break;
-            }
-            ++s;
-        }
-
-        if(!got_digit) {
-            if(s+2 < end && 
-               (data[s] == 'n' || data[s] == 'N') &&
-               (data[s+1] == 'a' || data[s+1] == 'A') &&
-               (data[s+2] == 'n' || data[s+2] == 'N')) {
-                
-                if(endptr != null) {
-                    endptr[0] = s+3;
-                }
-                return Double.NaN;
-            } else if(s+7 < end &&
-               (data[s] == 'i' || data[s] == 'I') &&
-               (data[s+1] == 'n' || data[s+1] == 'N') &&
-               (data[s+2] == 'f' || data[s+2] == 'F') &&
-               (data[s+3] == 'i' || data[s+3] == 'I') &&
-               (data[s+4] == 'n' || data[s+4] == 'N') &&
-               (data[s+5] == 'i' || data[s+5] == 'I') &&
-               (data[s+6] == 't' || data[s+6] == 'T') &&
-               (data[s+7] == 'y' || data[s+7] == 'Y')) {
-
-                if(endptr != null) {
-                    endptr[0] = s+8;
-                }
-                return sign == -1 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-            }
-            
-            if(endptr != null) {
-                endptr[0] = nptr;
-            }
-            return 0.0;
-        }
-
-        if(s < end && (data[s] == 'e' || data[s] == 'E')) {
-            ++s;
-            long exp = 0;
-            int[] endx = new int[]{0};
-            try {
-                exp = stringToLong(s, endx, 10);
-            } catch(ERange e) {
-                if(endptr != null) {
-                    endptr[0] = endx[0];
-                }
-                throw e;
-            }
-            if(endx[0] == s) {
-                endx[0] = s-1;
-            }
-            
-            s = endx[0];
-            exponent += exp;
-        }
-
-        if(endptr != null) {
-            endptr[0] = s;
-        }
-
-        if(num == 0.0) {
-            return 0.0 * sign;
-        }
-
-        if(exponent < 0) {
-            if(num < Double.MIN_VALUE * Math.pow(10.0, (double) -exponent)) {
-                throw new ERange(ERange.Kind.Underflow);
-            } 
-        } else if(exponent > 0) {
-            if(num > Double.MAX_VALUE * Math.pow(10.0, (double) -exponent)) {
-                throw new ERange(ERange.Kind.Overflow);
-            } 
-        }
-
-        num *= Math.pow(10.0, (double)exponent);
-        return num * sign;
-    }
-
-    public double byteListToDouble() {
-        if(_str == null) {
-            return 0.0;
-        }
-
-        int q = str;
-        ignoreLeadingWhitespace();
-
-        int[] endPlace = new int[]{str};
-        double d = 0.0;
-        
-        try {
-            d = stringToDouble(str, endPlace);
-        } catch(ERange e) {
-            d = e.getKind() == ERange.Kind.Overflow ? Double.MAX_VALUE : Double.MIN_VALUE;
-            int w = endPlace[0] - str;
-            String ellipsis = "";
-            if(w > 20) {
-                w = 20;
-                ellipsis = "...";
-            } else {
-                ellipsis = "";
-            }
-            try {
-                runtime.getWarnings().warn("Float " + new String(data, str, w, "ISO-8859-1") + ellipsis +" out of range");
-            } catch(java.io.UnsupportedEncodingException ex) {}
-        }
-        
-        if(str == endPlace[0]) {
-            if(badcheck) {
-                invalidString("Float()");
-            }
-            return d;
-        }
-        if(endPlace[0]<end) {
-            byte[] buf = new byte[end-str];
-            int n =0;
-            System.arraycopy(data, str, buf, 0, endPlace[0]-str);
-            n = endPlace[0] - str;
-            str = endPlace[0];
-            while(str < end) {
-                if(data[str] == '_') {
-                    if(badcheck) {
-                        if(n == 0 || !isDigit(buf, n-1)) {
-                            invalidString("Float()");
-                        }
-                        str++;
-                        if(!isDigit(data, str)) {
-                            invalidString("Float()");
-                        }
-                    } else {
-                        str++;
-                        while(str < end && data[str] == '_') {
-                            str++;
-                        }
-                        continue;
-                    }
-                }
-                buf[n++] = data[str++];
-            }
-            data = buf;
-            str = 0;
-            end = buf.length;
-
-            try {
-                d = stringToDouble(str, endPlace);
-            } catch(ERange e) {
-                d = e.getKind() == ERange.Kind.Overflow ? Double.MAX_VALUE : Double.MIN_VALUE;
-                int w = endPlace[0] - str;
-                String ellipsis = "";
-                if(w > 20) {
-                    w = 20;
-                    ellipsis = "...";
-                } else {
-                    ellipsis = "";
-                }
-                try {
-                    runtime.getWarnings().warn("Float " + new String(data, str, w, "ISO-8859-1") + ellipsis +" out of range");
-                } catch(java.io.UnsupportedEncodingException ex) {}
-            }
-
-            if(badcheck) {
-                if(str == endPlace[0]) {
-                    invalidString("Float()");
-                }
-                while(endPlace[0] < end && isSpace(endPlace[0])) {
-                    endPlace[0]++;
-                }
-                if(endPlace[0] < end) {
-                    invalidString("Float()");
-                }
-            }
-        }
-
-        return d;
     }
 
     /** rb_invalid_str

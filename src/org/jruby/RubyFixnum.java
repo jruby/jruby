@@ -49,7 +49,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Convert2;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
 
@@ -283,7 +283,7 @@ public class RubyFixnum extends RubyInteger {
     @Override
     public RubyString to_s() {
         int base = 10;
-        return getRuntime().newString(Convert2.longToByteList(value, base));
+        return getRuntime().newString(ConvertBytes.longToByteList(value, base));
     }
     
     @JRubyMethod
@@ -292,7 +292,7 @@ public class RubyFixnum extends RubyInteger {
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-        return getRuntime().newString(Convert2.longToByteList(value, base));
+        return getRuntime().newString(ConvertBytes.longToByteList(value, base));
     }
 
     /** fix_id2name

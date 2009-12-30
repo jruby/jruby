@@ -53,7 +53,6 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
-import org.jruby.util.Convert2;
 
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.

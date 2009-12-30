@@ -37,7 +37,7 @@ import org.jruby.RubyNumeric.NumberTooLargeException;
  * Primitive conversions adapted from java.lang.Integer/Long/Double (C) Sun Microsystems, Inc.
  *
  */
-public class Convert {
+public class ConvertDouble {
     /**
      * Converts a ByteList containing a RubyString representation of a double
      * value to a double.  Equivalent to Double.parseDouble(String s), but accounts for
@@ -52,9 +52,7 @@ public class Convert {
     public static final double byteListToDouble(ByteList bytes, boolean strict) {
         return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), strict);
     }
-    public static final double byteListToDouble(ByteList bytes) {
-        return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), false);
-    }
+
     /**
      * Converts a byte array containing a RubyString representation of a double
      * value to a double.  Equivalent to Double.parseDouble(String s), but accounts for
@@ -67,7 +65,7 @@ public class Convert {
      *               otherwise, the laxer rules of str.to_f are employed.
      * @return the converted double value
      */
-    public static final double byteArrayToDouble(byte[] bytes, int begin, int buflen, boolean strict) {
+    private static final double byteArrayToDouble(byte[] bytes, int begin, int buflen, boolean strict) {
         // Simple cases  ( abs(exponent) <= 22 [up to 37 depending on significand length])
         // are converted directly, which is considerably faster than creating a Java
         // String and passing it to Double.parseDouble() (which in turn passes it to
