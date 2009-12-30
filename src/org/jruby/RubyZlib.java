@@ -68,6 +68,7 @@ import org.jruby.util.CRC32Ext;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.ZlibDeflate;
+import org.jruby.util.io.Stream;
 
 @JRubyModule(name="Zlib")
 public class RubyZlib {
@@ -959,36 +960,42 @@ public class RubyZlib {
         public RubyGzipReader(Ruby runtime, RubyClass type) {
             super(runtime, type);
         }
-        
+
         private int line;
         private int position;
         private InputStream io;
+        private CountingIOInputStream countingStream;
         
         @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject io, Block unusedBlock) {
             realIo = io;
             try {
-                this.io = new BufferedInputStream(new GZIPInputStream(new IOInputStream(io)));
+                countingStream = new CountingIOInputStream(realIo);
+                this.io = new BufferedInputStream(new GZIPInputStream(countingStream));
             } catch (IOException e) {
                 Ruby runtime = io.getRuntime();
                 RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("GzipReader").fastGetClass("Error");
                 throw new RaiseException(RubyException.newException(runtime, errorClass, e.getMessage()));
             }
 
-            line = 1;
-            position= 0;
+            line = 0;
+            position = 0;
             
             return this;
         }
-        
+
         @JRubyMethod(name = "rewind")
         public IRubyObject rewind() {
-            this.position= 0;
-            // should invoke seek on realIo
-            realIo.callMethod(getRuntime().getCurrentContext(), "seek", getRuntime().newFixnum(0));
+            Ruby rt = getRuntime();
+            int intPos = countingStream.bytesRead;
+            // should invoke seek on realIo...
+            realIo.callMethod(rt.getCurrentContext(), "seek",
+                    new IRubyObject[] { rt.newFixnum(-intPos), rt.newFixnum(Stream.SEEK_CUR)});
+            // ... and then reinitialize
+            initialize(realIo, Block.NULL_BLOCK);
             return getRuntime().getNil();
         }
-        
+
         @JRubyMethod(name = "lineno")
         public IRubyObject lineno() {
             return getRuntime().newFixnum(line);
@@ -1024,7 +1031,7 @@ public class RubyZlib {
               return getRuntime().getNil();
             }
             line++;
-            this.position= result.length();
+            this.position = result.length();
             result.append(sep);
             return RubyString.newString(getRuntime(),result);
         }
@@ -1092,7 +1099,7 @@ public class RubyZlib {
         public IRubyObject pos() {
             return RubyFixnum.int2fix(getRuntime(), position);
         }
-        
+
         @JRubyMethod(name = "readchar")
         public IRubyObject readchar() throws IOException {
             int value = io.read();
@@ -1106,7 +1113,11 @@ public class RubyZlib {
         @JRubyMethod(name = "getc")
         public IRubyObject getc() throws IOException {
             int value = io.read();
-            return value == -1 ? getRuntime().getNil() : getRuntime().newFixnum(value);
+            if (value == -1) {
+                return getRuntime().getNil();
+            }
+            position++;
+            return getRuntime().newFixnum(value);
         }
 
         private boolean isEof() throws IOException {
@@ -1203,11 +1214,47 @@ public class RubyZlib {
             int value = io.read();
 
             while (value != -1) {
+                position++;
                 block.yield(context, getRuntime().newFixnum(value));
                 value = io.read();
             }
             
             return getRuntime().getNil();
+        }
+
+        private static class CountingIOInputStream extends IOInputStream {
+            int bytesRead;
+            public CountingIOInputStream(IRubyObject io) {
+                super(io);
+                bytesRead = 0;
+            }
+
+            @Override
+            public int read() throws IOException {
+                int ret = super.read();
+                if (ret != -1) {
+                    bytesRead++;
+                }
+                return ret;
+            }
+
+            @Override
+            public int read(byte[] b) throws IOException {
+                int ret = super.read(b);
+                if (ret != -1) {
+                    bytesRead += ret;
+                }
+                return ret;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                int ret = super.read(b, off, len);
+                if (ret != -1) {
+                    bytesRead += ret;
+                }
+                return ret;
+            }
         }
     }
 
