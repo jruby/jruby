@@ -568,6 +568,7 @@ public class RubyModule extends RubyObject {
         Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_8 = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> annotatedMethods1_9 = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_9 = new HashMap<String, List<JavaMethodDescriptor>>();
+        Map<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
         
         public void clump(Class cls) {
             Method[] declaredMethods = cls.getDeclaredMethods();
@@ -598,7 +599,8 @@ public class RubyModule extends RubyObject {
                         methodsHash = annotatedMethods;
                     }
                 }
-                
+
+                // add to specific
                 methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
                     methodDescs = new ArrayList<JavaMethodDescriptor>();
@@ -606,7 +608,20 @@ public class RubyModule extends RubyObject {
                 }
                 
                 methodDescs.add(desc);
+
+                // add to general
+                methodDescs = allAnnotatedMethods.get(name);
+                if (methodDescs == null) {
+                    methodDescs = new ArrayList<JavaMethodDescriptor>();
+                    allAnnotatedMethods.put(name, methodDescs);
+                }
+
+                methodDescs.add(desc);
             }
+        }
+
+        public Map<String, List<JavaMethodDescriptor>> getAllAnnotatedMethods() {
+            return allAnnotatedMethods;
         }
 
         public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods() {

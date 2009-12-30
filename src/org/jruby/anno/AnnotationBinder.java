@@ -220,8 +220,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             frameMethodsString.append('"').append(name).append('"');
                         }
                         out.println("    static {");
-                        out.println("        ASTInspector.FRAME_AWARE_METHODS.addAll((List<String>)Arrays.asList(" + frameMethodsString + "));");
-                        out.println("        ASTInspector.SCOPE_AWARE_METHODS.addAll((List<String>)Arrays.asList(" + frameMethodsString + "));");
+                        out.println("        ASTInspector.addFrameAwareMethods(" + frameMethodsString + ");");
+                        out.println("        ASTInspector.addScopeAwareMethods(" + frameMethodsString + ");");
                         out.println("     }");
                     }
 

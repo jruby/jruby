@@ -33,6 +33,7 @@ import java.lang.reflect.Modifier;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -124,7 +125,11 @@ public class ReflectedJavaMethod extends JavaMethod {
                 }
                 if (required < 4 && optional == 0 && !rest) {
                     for (int i = 0; i < args.length; i++) {
-                        params[offset++] = args[i];
+                        if (method.getParameterTypes()[offset] == RubyString.class) {
+                            params[offset++] = args[i].convertToString();
+                        } else {
+                            params[offset++] = args[i];
+                        }
                     }
                 } else {
                     params[offset++] = args;
@@ -153,7 +158,6 @@ public class ReflectedJavaMethod extends JavaMethod {
                 }
             }
         } catch (IllegalArgumentException e) {
-            System.out.println(method);
             throw RaiseException.createNativeRaiseException(runtime, e, method);
         } catch (IllegalAccessException e) {
             throw RaiseException.createNativeRaiseException(runtime, e, method);

@@ -29,6 +29,7 @@
 
 package org.jruby.compiler;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -136,7 +137,15 @@ public class ASTInspector {
     
     public static Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     public static Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+
+    public static void addFrameAwareMethods(String... methods) {
+        FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
+    }
     
+    public static void addScopeAwareMethods(String... methods) {
+        SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
+    }
+
     public static Set<String> PRAGMAS = Collections.synchronizedSet(new HashSet<String>());
     
     static {
