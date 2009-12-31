@@ -1580,7 +1580,7 @@
   </target>
 
   <target name="dist-snapshot-install-stuff">
-    <unzip dest="${snapshot.install.dir}" src="jruby-bin-${version.jruby}.zip"/>
+    <unzip dest="${snapshot.install.dir}" src="${dist.dir}/jruby-bin-${version.jruby}.zip"/>
     <chmod perm="755" file="${snapshot.install.dir}/jruby-${version.jruby}/bin/jruby"/>
     <exec executable="${snapshot.install.dir}/jruby-${version.jruby}/bin/jruby"
       dir="${snapshot.install.dir}/jruby-${version.jruby}">
