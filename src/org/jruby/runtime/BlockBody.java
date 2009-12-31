@@ -72,16 +72,31 @@ public abstract class BlockBody implements JumpTarget {
         return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
     }
 
-    // This should only be called by 1.8 (1.9 subclasses this to handle unusedBlock).
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
-            Block.Type type, Block unusedBlock) {
-        return call(context, args, binding, type);
+            Block.Type type, Block block) {
+        args = prepareArgumentsForCall(context, args, type);
+
+        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type, block);
     }
 
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);
 
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type);
+
+    // FIXME: This should replace blockless abstract versions of yield above and become abstract.
+    // Here to allow incremental replacement. Overriden by subclasses which support it.
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
+            RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
+        return yield(context, value, self, klass, aValue, binding, type);
+    }
+
+    // FIXME: This should replace blockless abstract versions of yield above and become abstract.
+    // Here to allow incremental replacement. Overriden by subclasses which support it.
+    public IRubyObject yield(ThreadContext context, IRubyObject value,
+            Binding binding, Block.Type type, Block block) {
+        return yield(context, value, binding, type);
+    }
 
     public int getArgumentType() {
         return argumentType;

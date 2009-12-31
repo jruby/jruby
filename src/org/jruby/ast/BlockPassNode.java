@@ -41,14 +41,19 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Block passed explicitly as an argument in a method call.
- * A block passing argument in a method call (last argument prefixed by an ampersand).
+ * Explicit block argument (on caller side):
+ *   foobar(1, 2, &foo)
+ *   foobar(1, 2, &lhs_which_returns_something_block/proc_like)
+ *
+ * bodyNode is any expression which can return something which is ultimately
+ * coercible to a proc.
  */
 public class BlockPassNode extends Node {
     private final Node bodyNode;
 
     /** Used by the arg_blk_pass and new_call, new_fcall and new_super
-     * methods in ParserSupport to temporary save the args node.
+     * methods in ParserSupport to temporary save the args node.  This should
+     * not be used directly by compiler or interpreter.
      */
     private Node argsNode;
 

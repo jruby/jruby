@@ -290,6 +290,7 @@ public final class Block {
         this.escaped[0] = true;
     }
 
+    @Override
     public boolean equals(Object other) {
         if(this == other) {
             return true;

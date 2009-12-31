@@ -1276,16 +1276,13 @@ block_var     : block_par {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, null);
               }
               | block_par ',' tAMPER lhs {
-                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), $1, null), 
-                                            new BlockPassNode(getPosition($3), $4));
+                  $$ = support.newBlockArg18(getPosition($3), $4, new MultipleAsgnNode(getPosition($1), $1, null));
               }
               | block_par ',' tSTAR lhs ',' tAMPER lhs {
-                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), $1, $4), 
-                                            new BlockPassNode(getPosition($6), $7));
+                  $$ = support.newBlockArg18(getPosition($6), $7, new MultipleAsgnNode(getPosition($1), $1, $4));
               }
               | block_par ',' tSTAR ',' tAMPER lhs {
-                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition())), 
-                                            new BlockPassNode(getPosition($5), $6));
+                  $$ = support.newBlockArg18(getPosition($5), $6, new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition())));
               }
               | block_par ',' tSTAR lhs {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, $4);
@@ -1294,12 +1291,10 @@ block_var     : block_par {
                   $$ = new MultipleAsgnNode(getPosition($1), $1, new StarNode(getPosition()));
               }
               | tSTAR lhs ',' tAMPER lhs {
-                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($2), null, $2), 
-                                            new BlockPassNode(getPosition($4), $5));
+                  $$ = support.newBlockArg18(getPosition($4), $5, new MultipleAsgnNode(getPosition($2), null, $2));
               }
               | tSTAR ',' tAMPER lhs {
-                  $$ = support.arg_blk_pass(new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition($1))), 
-                                            new BlockPassNode(getPosition($3), $4));
+                  $$ = support.newBlockArg18($3.getPosition(), $4, new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition($1))));
               }
               | tSTAR lhs {
                   $$ = new MultipleAsgnNode(getPosition($2), null, $2);
@@ -1308,7 +1303,7 @@ block_var     : block_par {
                   $$ = new MultipleAsgnNode(getPosition($1), null, new StarNode(getPosition($1)));
               }
               | tAMPER lhs {
-                  $$ = new BlockPassNode(getPosition($1), $2);
+                  $$ = support.newBlockArg18(getPosition($1), $2, null);
               }
 
 opt_block_var : none
@@ -1803,12 +1798,7 @@ blkarg_mark   : tAMPER2 | tAMPER
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg   : blkarg_mark tIDENTIFIER {
-                  String identifier = (String) $2.getValue();
-
-                  if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
-                      yyerror("duplicate block argument name");
-                  }
-                  $$ = new BlockArgNode(getPosition($1), support.getCurrentScope().getLocalScope().addVariable(identifier), identifier);
+                  $$ = support.newBlockArg($1.getPosition(), $2);
               }
 
 opt_f_block_arg: ',' f_block_arg {

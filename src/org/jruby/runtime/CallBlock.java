@@ -58,18 +58,28 @@ public class CallBlock extends BlockBody {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
 
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
+            Block.Type type, Block block) {
+        return callback.call(context, args, block);
+    }
+
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
         return callback.call(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[] {arg0}, Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[] {RubyArray.newArrayLight(context.getRuntime(), arg0, arg1)}, Block.NULL_BLOCK);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         return callback.call(context, new IRubyObject[] {RubyArray.newArrayLight(context.getRuntime(), arg0, arg1, arg2)}, Block.NULL_BLOCK);
     }

@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class PostExeNode extends IterNode {
     public PostExeNode(ISourcePosition position, Node body) {
-        super(position, null, null, body);
+        super(position, null, null, null, body);
     }
 
     public NodeType getNodeType() {

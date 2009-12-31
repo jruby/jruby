@@ -54,6 +54,7 @@ import org.jruby.ast.AttrAssignTwoArgNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
+import org.jruby.ast.BlockArg18Node;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
@@ -126,7 +127,6 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
-import org.jruby.ast.LiteralNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
@@ -1293,12 +1293,14 @@ public class ParserSupport {
 
     public IterNode new_iter(ISourcePosition position, Node vars, 
             StaticScope scope, Node body) {
-        // FIXME: JRUBY-4180: We throw away block arg here while we should be
-        //   passing it through.  Temporary until block unification of 1.8/1.9
         if (vars != null && vars instanceof BlockPassNode) {
-            vars = ((BlockPassNode) vars).getArgsNode();
+            BlockPassNode blockPass = (BlockPassNode) vars;
+
+            return new IterNode(position, blockPass.getArgsNode(), blockPass,
+                    scope, body);
         }
-        return new IterNode(position, vars, scope, body);
+        
+        return new IterNode(position, vars, null, scope, body);
     }
     
     public Node new_yield(ISourcePosition position, Node node) {
@@ -1409,5 +1411,20 @@ public class ParserSupport {
 
     public Node newUndef(ISourcePosition position, Node nameNode) {
         return new UndefNode(position, nameNode);
+    }
+
+    public BlockArg18Node newBlockArg18(ISourcePosition position, Node blockValue, Node args) {
+        return new BlockArg18Node(position, blockValue, args);
+    }
+
+    public BlockArgNode newBlockArg(ISourcePosition position, Token nameToken) {
+        String identifier = (String) nameToken.getValue();
+
+        if (getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
+            throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
+                    "duplicate block argument name");
+        }
+
+        return new BlockArgNode(position, getCurrentScope().getLocalScope().addVariable(identifier), identifier);
     }
 }

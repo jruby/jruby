@@ -200,6 +200,10 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
     }
 
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+        return call(context, args, null, block);
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         return call(context, args, null, Block.NULL_BLOCK);
     }

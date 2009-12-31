@@ -45,16 +45,27 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.assigner.Assigner;
 import org.jruby.runtime.assigner.Pre0Rest0Post0Assigner;
+import org.jruby.runtime.assigner.Pre0Rest0Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre0Rest1Post0Assigner;
+import org.jruby.runtime.assigner.Pre0Rest1Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre1ExpandedRest0Post0Assigner;
+import org.jruby.runtime.assigner.Pre1ExpandedRest0Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre1Rest0Post0Assigner;
+import org.jruby.runtime.assigner.Pre1Rest0Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre1Rest1Post0Assigner;
+import org.jruby.runtime.assigner.Pre1Rest1Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre2Rest0Post0Assigner;
+import org.jruby.runtime.assigner.Pre2Rest0Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre2Rest1Post0Assigner;
+import org.jruby.runtime.assigner.Pre2Rest1Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre3Rest0Post0Assigner;
+import org.jruby.runtime.assigner.Pre3Rest0Post0BlockAssigner;
 import org.jruby.runtime.assigner.Pre3Rest1Post0Assigner;
+import org.jruby.runtime.assigner.Pre3Rest1Post0BlockAssigner;
 import org.jruby.runtime.assigner.PreManyRest0Post0Assigner;
+import org.jruby.runtime.assigner.PreManyRest0Post0BlockAssigner;
 import org.jruby.runtime.assigner.PreManyRest1Post0Assigner;
+import org.jruby.runtime.assigner.PreManyRest1Post0BlockAssigner;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -117,10 +128,13 @@ public class InterpretedBlock extends BlockBody {
      */
     private void assignerFor(IterNode iter) {
         Node varNode = iter.getVarNode();
+        Node block = iter.getBlockVarNode();
+        boolean hasBlock = block != null;
 
         if (varNode == null || varNode instanceof ZeroArgNode) { // No argument blocks
-            assigner = new Pre0Rest0Post0Assigner();
-            noargblock = true;
+            noargblock = !hasBlock;
+            assigner = hasBlock ? new Pre0Rest0Post0BlockAssigner(block) :
+                new Pre0Rest0Post0Assigner();
         } else if (varNode instanceof MultipleAsgnNode) {
             MultipleAsgnNode masgn = (MultipleAsgnNode) varNode;
             int preCount = masgn.getPreCount();
@@ -132,30 +146,59 @@ public class InterpretedBlock extends BlockBody {
             switch(preCount) {
                 case 0:  // Not sure if this is actually possible, but better safe than sorry
                     if (isRest) {
-                        assigner = new Pre0Rest1Post0Assigner(rest);
+                        assigner = hasBlock ? new Pre0Rest1Post0BlockAssigner(rest, block) :
+                            new Pre0Rest1Post0Assigner(rest);
+                    } else if (hasBlock) {
+                        assigner = new Pre0Rest0Post0BlockAssigner(block);
                     } else {
                         noargblock = true;
                         assigner = new Pre0Rest0Post0Assigner();
                     }
                     break;
                 case 1:
-                    assigner = isRest ? new Pre1Rest1Post0Assigner(pre.get(0), rest) :
-                        new Pre1Rest0Post0Assigner(pre.get(0));
+                    if (isRest) {
+                        assigner = hasBlock ? new Pre1Rest1Post0BlockAssigner(pre.get(0), rest, block) :
+                            new Pre1Rest1Post0Assigner(pre.get(0), rest);
+                    } else if (hasBlock) {
+                        assigner = new Pre1Rest0Post0BlockAssigner(pre.get(0), block);
+                    } else {
+                        assigner = new Pre1Rest0Post0Assigner(pre.get(0));
+                    }
                     break;
                 case 2:
-                    assigner = isRest ? new Pre2Rest1Post0Assigner(pre.get(0), pre.get(1), rest) :
-                        new Pre2Rest0Post0Assigner(pre.get(0), pre.get(1));
+                    if (isRest) {
+                        assigner = hasBlock ? new Pre2Rest1Post0BlockAssigner(pre.get(0), pre.get(1), rest, block) :
+                            new Pre2Rest1Post0Assigner(pre.get(0), pre.get(1), rest);
+                    } else if (hasBlock) {
+                        assigner = new Pre2Rest0Post0BlockAssigner(pre.get(0), pre.get(1), block);
+                    } else {
+                        assigner = new Pre2Rest0Post0Assigner(pre.get(0), pre.get(1));
+                    }
                     break;
                 case 3:
-                    assigner = isRest ? new Pre3Rest1Post0Assigner(pre.get(0), pre.get(1), pre.get(2), rest) :
-                        new Pre3Rest0Post0Assigner(pre.get(0), pre.get(1), pre.get(2));
+                    if (isRest) {
+                        assigner = hasBlock ? new Pre3Rest1Post0BlockAssigner(pre.get(0), pre.get(1), pre.get(2), rest, block) :
+                            new Pre3Rest1Post0Assigner(pre.get(0), pre.get(1), pre.get(2), rest);
+                    } else if (hasBlock) {
+                        assigner = new Pre3Rest0Post0BlockAssigner(pre.get(0), pre.get(1), pre.get(2), block);
+                    } else {
+                        assigner = new Pre3Rest0Post0Assigner(pre.get(0), pre.get(1), pre.get(2));
+                    }
                     break;
                 default:
-                    assigner = isRest ? new PreManyRest1Post0Assigner(pre, preCount, rest) : new PreManyRest0Post0Assigner(pre, preCount);
+                    if (isRest) {
+                        assigner = hasBlock ? new PreManyRest1Post0BlockAssigner(pre, preCount, rest, block) :
+                            new PreManyRest1Post0Assigner(pre, preCount, rest);
+                    } else if (hasBlock) {
+                        assigner = new PreManyRest0Post0BlockAssigner(pre, preCount, block);
+                    } else {
+                        assigner = new PreManyRest0Post0Assigner(pre, preCount);
+                    }
                     break;
             }
         } else {
-            assigner =  new Pre1ExpandedRest0Post0Assigner(varNode);
+            assigner = hasBlock ? new Pre1ExpandedRest0Post0BlockAssigner(varNode, block) :
+                 new Pre1ExpandedRest0Post0Assigner(varNode);
         }
     }
 
@@ -257,14 +300,49 @@ public class InterpretedBlock extends BlockBody {
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, binding, type, Block.NULL_BLOCK);
+
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
+            RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type, Block block) {
+        if (klass == null) {
+            self = prepareSelf(binding);
+        }
+
+        Visibility oldVis = binding.getFrame().getVisibility();
+        Frame lastFrame = pre(context, klass, binding);
+        Ruby runtime = context.getRuntime();
+
+        try {
+            if (!noargblock) {
+                value = alreadyArray ? assigner.convertIfAlreadyArray(runtime, value) :
+                    assigner.convertToArray(runtime, value);
+
+                assigner.assignArray(runtime, context, self, value, block);
+            }
+
+            // This while loop is for restarting the block call in case a 'redo' fires.
+            return evalBlockBody(context, self);
+        } catch (JumpException.NextJump nj) {
+            return handleNextJump(context, nj, type);
+        } finally {
+            post(context, binding, oldVis, lastFrame);
+        }
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value,
+            Binding binding, Block.Type type, Block block) {
         IRubyObject self = prepareSelf(binding);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, null, binding);
 
         try {
             if (!noargblock) assigner.assignArray(context.getRuntime(), context, self,
-                    assigner.convertToArray(context.getRuntime(), value), Block.NULL_BLOCK);
-            
+                    assigner.convertToArray(context.getRuntime(), value), block);
+
             return evalBlockBody(context, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
@@ -285,29 +363,7 @@ public class InterpretedBlock extends BlockBody {
      */
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
             RubyModule klass, boolean alreadyArray, Binding binding, Block.Type type) {
-        if (klass == null) {
-            self = prepareSelf(binding);
-        }
-        
-        Visibility oldVis = binding.getFrame().getVisibility();
-        Frame lastFrame = pre(context, klass, binding);
-        Ruby runtime = context.getRuntime();
-
-        try {
-            if (!noargblock) {
-                value = alreadyArray ? assigner.convertIfAlreadyArray(runtime, value) :
-                    assigner.convertToArray(runtime, value);
-            
-                assigner.assignArray(runtime, context, self, value, Block.NULL_BLOCK);
-            }
-            
-            // This while loop is for restarting the block call in case a 'redo' fires.
-            return evalBlockBody(context, self);
-        } catch (JumpException.NextJump nj) {
-            return handleNextJump(context, nj, type);
-        } finally {
-            post(context, binding, oldVis, lastFrame);
-        }
+        return yield(context, value, self, klass, alreadyArray, binding, type, Block.NULL_BLOCK);
     }
     
     private IRubyObject evalBlockBody(ThreadContext context, IRubyObject self) {

@@ -39,7 +39,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
