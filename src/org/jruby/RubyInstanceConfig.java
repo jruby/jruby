@@ -246,7 +246,7 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.jit.cache", true);
 
     public static final boolean REFLECTED_HANDLES
-            = SafePropertyAccessor.getBoolean("jruby.reflected.handles", true)
+            = SafePropertyAccessor.getBoolean("jruby.reflected.handles", false)
             || SafePropertyAccessor.getBoolean("jruby.reflection", false);
 
     public static interface LoadServiceCreator {
