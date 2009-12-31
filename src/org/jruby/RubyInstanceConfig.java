@@ -31,11 +31,13 @@ package org.jruby;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,7 +115,7 @@ public class RubyInstanceConfig {
             return this == FORCE;
         }
     }
-    private InputStream input          = System.in;
+    private InputStream input          = new FileInputStream(FileDescriptor.in);
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;

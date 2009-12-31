@@ -1,8 +1,14 @@
 package org.jruby.java.addons;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.javasupport.*;
 import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -25,5 +31,45 @@ public class KernelJavaAddons {
         } else {
             return RubyKernel.raise(context, recv, args, block);
         }
+    }
+
+    @JRubyMethod(backtrace = true)
+    public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject) {
+        if (fromObject instanceof RubyArray) {
+            return context.getRuntime().getJavaSupport().getObjectJavaClass().javaArrayFromRubyArray(context, fromObject);
+        } else {
+            return Java.getInstance(context.getRuntime(), fromObject.toJava(Object.class));
+        }
+    }
+    
+    @JRubyMethod(backtrace = true)
+    public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject, IRubyObject type) {
+        if (type.isNil()) {
+            return to_java(context, fromObject);
+        }
+
+        Ruby runtime = context.getRuntime();
+        JavaClass targetType = getTargetType(context, runtime, type);
+
+        if (fromObject instanceof RubyArray) {
+            return targetType.javaArrayFromRubyArray(context, fromObject);
+        } else {
+            return Java.getInstance(runtime, fromObject.toJava(targetType.javaClass()));
+        }
+    }
+
+    private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
+        JavaClass targetType;
+
+        if (type instanceof RubyString || type instanceof RubySymbol) {
+            targetType = runtime.getJavaSupport().getNameClassMap().get(type.asJavaString());
+            if (targetType == null) targetType = JavaClass.forNameVerbose(runtime, type.asJavaString());
+        } else if (type instanceof RubyModule && type.respondsTo("java_class")) {
+            targetType = (JavaClass)RuntimeHelpers.invoke(context, type, "java_class");
+        } else {
+            throw runtime.newTypeError("unable to convert array to type: " + type);
+        }
+
+        return targetType;
     }
 }
