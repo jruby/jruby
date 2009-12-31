@@ -101,6 +101,7 @@ public class ReflectionMethodFactory extends MethodFactory {
             Method method = desc.getDeclaringClass().getDeclaredMethod(desc.name, desc.getParameterClasses());
             JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, desc.anno);
 
+            ic.setIsBuiltin(true);
             ic.setJavaName(method.getName());
             ic.setSingleton(Modifier.isStatic(method.getModifiers()));
             ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
@@ -134,6 +135,7 @@ public class ReflectionMethodFactory extends MethodFactory {
             
             JavaMethod ic = new ReflectedJavaMultiMethod(implementationClass, methods, annotations);
 
+            ic.setIsBuiltin(true);
             ic.setJavaName(method0.getName());
             ic.setSingleton(Modifier.isStatic(method0.getModifiers()));
             ic.setCallConfig(CallConfiguration.getCallConfigByAnno(anno0));

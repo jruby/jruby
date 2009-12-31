@@ -115,7 +115,7 @@ public class RubyInstanceConfig {
             return this == FORCE;
         }
     }
-    private InputStream input          = new FileInputStream(FileDescriptor.in);
+    private InputStream input          = System.in;
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;

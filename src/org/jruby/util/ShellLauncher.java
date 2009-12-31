@@ -1103,8 +1103,8 @@ public class ShellLauncher {
         private final Ruby runtime;
 
         StreamPumper(Ruby runtime, InputStream in, OutputStream out, boolean avail, Slave slave, Object sync) {
-            this.in = in;
-            this.out = out;
+            this.in = unwrapBufferedStream(in);
+            this.out = unwrapBufferedStream(out);
             this.onlyIfAvailable = avail;
             this.slave = slave;
             this.sync = sync;
