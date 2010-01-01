@@ -1259,8 +1259,29 @@
       <sysproperty key="jruby.launch.inproc" value="false"/>
       <arg line="${mspec.dir}/bin/mspec"/>
       <arg line="-f s -g fails --dry-run"/>
-      <arg line="-B ${spec.dir}/default.mspec"/>
-      <arg value="${rubyspec.dir}/1.8"/>
+      <arg line="-B ${spec.dir}/jruby.1.8.mspec"/>
+      <arg value="${rubyspec.dir}"/>
+    </java>
+  </target>
+
+  <target name="spec-show-excludes-1.9" depends="prepare"
+    description="Prints out all currently excluded rubyspecs in 1.9 mode.">
+
+    <available property="mspec-available"
+      file="${mspec.dir}/bin/mspec"/>
+    <fail unless="mspec-available"
+      message="No rubyspecs found. Download them via 'ant spec'."/>
+
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <sysproperty key="jruby.launch.inproc" value="false"/>
+      <arg line="${mspec.dir}/bin/mspec"/>
+      <arg line="-f s -g fails --dry-run"/>
+      <arg line="-T--1.9"/>
+      <arg line="-B ${spec.dir}/jruby.1.9.mspec"/>
+      <arg value="${rubyspec.dir}"/>
     </java>
   </target>
 
