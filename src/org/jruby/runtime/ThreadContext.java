@@ -58,11 +58,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class ThreadContext {
-    public static synchronized ThreadContext newContext(Ruby runtime) {
+    public static ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
-        //        if(runtime.getInstanceConfig().isSamplingEnabled()) {
-        //    org.jruby.util.SimpleSampler.registerThreadContext(context);
-        //}
 
         return context;
     }
@@ -81,11 +78,9 @@ public final class ThreadContext {
     private RubyThread thread;
     private Fiber fiber;
     
-    //private UnsynchronizedStack parentStack;
     private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
     private int parentIndex = -1;
     
-    //private UnsynchronizedStack frameStack;
     private Frame[] frameStack = new Frame[INITIAL_SIZE];
     private int frameIndex = -1;
     
@@ -93,8 +88,9 @@ public final class ThreadContext {
     // to implement closures.
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
-    
-    private CatchTarget[] catchStack = new CatchTarget[INITIAL_SIZE];
+
+    private static final CatchTarget[] EMPTY_CATCHTARGET_STACK = new CatchTarget[0];
+    private CatchTarget[] catchStack = EMPTY_CATCHTARGET_STACK;
     private int catchIndex = -1;
     
     // File where current executing unit is being evaluated
@@ -121,9 +117,11 @@ public final class ThreadContext {
         // away and then pass it into top-level parse so it ends up being the top level.
         StaticScope topStaticScope = new LocalStaticScope(null);
         pushScope(new ManyVarsDynamicScope(topStaticScope, null));
-            
-        for (int i = 0; i < frameStack.length; i++) {
-            frameStack[i] = new Frame();
+
+        Frame[] stack = frameStack;
+        int length = stack.length;
+        for (int i = 0; i < length; i++) {
+            stack[i] = new Frame();
         }
     }
 
@@ -265,20 +263,10 @@ public final class ThreadContext {
         this.fiber = fiber;
     }
     
-//    public IRubyObject getLastline() {
-//        IRubyObject value = getCurrentScope().getLastLine();
-//        
-//        // DynamicScope does not preinitialize these values since they are virtually never used.
-//        return value == null ? runtime.getNil() : value;
-//    }
-//    
-//    public void setLastline(IRubyObject value) {
-//        getCurrentScope().setLastLine(value);
-//    }
-    
     //////////////////// CATCH MANAGEMENT ////////////////////////
     private void expandCatchIfNecessary() {
         int newSize = catchStack.length * 2;
+        if (newSize == 0) newSize = 1;
         CatchTarget[] newCatchStack = new CatchTarget[newSize];
 
         System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
@@ -287,11 +275,10 @@ public final class ThreadContext {
     
     public void pushCatch(CatchTarget catchTarget) {
         int index = ++catchIndex;
-        CatchTarget[] stack = catchStack;
-        stack[index] = catchTarget;
-        if (index + 1 == stack.length) {
+        if (index == catchStack.length) {
             expandCatchIfNecessary();
         }
+        catchStack[index] = catchTarget;
     }
     
     public void popCatch() {
