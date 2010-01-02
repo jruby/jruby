@@ -39,11 +39,13 @@
 # it to the next release.
 #
 
-
-require 'rdoc/ri/ri_driver'
-
-######################################################################
-
-ri = RiDriver.new
-ri.process_args
-
+begin
+  # Ruby 1.8 mode
+  require 'rdoc/ri/ri_driver'
+  ri = RiDriver.new
+  ri.process_args
+rescue LoadError
+  # Ruby 1.9 mode
+  require 'rdoc/ri/driver'
+  RDoc::RI::Driver.run
+end
