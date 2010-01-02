@@ -93,13 +93,21 @@ JRUBY_SHELL=/bin/sh
 
 CP_DELIMITER=":"
 
-# add jruby jars for command-line execution
-for j in "$JRUBY_HOME"/lib/jruby.jar; do
+# add main jruby jar to the bootclasspath
+for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
+    if [ ! -e "$j" ]; then
+      continue
+    fi
     if [ "$JRUBY_CP" ]; then
         JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
         else
         JRUBY_CP="$j"
     fi
+    if [ $JRUBY_ALREADY_ADDED ]; then
+        echo "ERROR: more than one JRuby JAR found in lib directory"
+        exit 10
+    fi
+    JRUBY_ALREADY_ADDED=true
 done
 
 if $cygwin; then
@@ -113,7 +121,13 @@ if [ "$JRUBY_PARENT_CLASSPATH" != "" ]; then
     CP=$JRUBY_PARENT_CLASSPATH
 else
     # add other jars in lib to CP for command-line execution
-    for j in "$JRUBY_HOME"/lib/profile.jar; do
+    for j in "$JRUBY_HOME"/lib/*.jar; do
+        if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
+          continue
+        fi
+        if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
+          continue
+        fi
         if [ "$CP" ]; then
             CP="$CP$CP_DELIMITER$j"
             else
