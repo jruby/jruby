@@ -466,3 +466,87 @@ describe "Java types with protected constructors" do
     lambda { ProtectedConstructor.new }.should raise_error(TypeError)
   end
 end
+
+describe "Fixnum\#to_java" do
+  it "should coerce to java.lang.Long by default" do
+    long = 123.to_java
+    long.class.should == java.lang.Long
+  end
+
+  it "should allow coercing to other primitive types using symbolic names" do
+    byte = 123.to_java :byte
+    short = 123.to_java :short
+    char = 123.to_java :char
+    int = 123.to_java :int
+    long = 123.to_java :long
+    float = 123.to_java :float
+    double = 123.to_java :double
+
+    byte.class.should == java.lang.Byte
+    short.class.should == java.lang.Short
+    char.class.should == java.lang.Character
+    int.class.should == java.lang.Integer
+    long.class.should == java.lang.Long
+    float.class.should == java.lang.Float
+    double.class.should == java.lang.Double
+  end
+  
+  it "coerces to java.lang.Long when asked to coerce to java.lang.Object" do
+    obj = 123.to_java java.lang.Object
+    obj2 = 123.to_java :object
+
+    obj.class.should == java.lang.Long
+    obj2.class.should == java.lang.Long
+  end
+
+  it "should allow coercing to other primitive types using boxed classes" do
+    byte = 123.to_java java.lang.Byte
+    short = 123.to_java java.lang.Short
+    char = 123.to_java java.lang.Character
+    int = 123.to_java java.lang.Integer
+    long = 123.to_java java.lang.Long
+    float = 123.to_java java.lang.Float
+    double = 123.to_java java.lang.Double
+
+    byte.class.should == java.lang.Byte
+    short.class.should == java.lang.Short
+    char.class.should == java.lang.Character
+    int.class.should == java.lang.Integer
+    long.class.should == java.lang.Long
+    float.class.should == java.lang.Float
+    double.class.should == java.lang.Double
+  end
+
+  it "should allow coercing to other primitive types using boxed classes" do
+    byte = 123.to_java Java::byte
+    short = 123.to_java Java::short
+    char = 123.to_java Java::char
+    int = 123.to_java Java::int
+    long = 123.to_java Java::long
+    float = 123.to_java Java::float
+    double = 123.to_java Java::double
+
+    byte.class.should == java.lang.Byte
+    short.class.should == java.lang.Short
+    char.class.should == java.lang.Character
+    int.class.should == java.lang.Integer
+    long.class.should == java.lang.Long
+    float.class.should == java.lang.Float
+    double.class.should == java.lang.Double
+  end
+end
+
+describe "String\#to_java" do
+  it "coerces to java.lang.String by default" do
+    str = "123".to_java
+    str.class.should == java.lang.String
+  end
+  
+  it "coerces to java.lang.String when Object or CharSequence are requested" do
+    obj = "123".to_java java.lang.Object
+    cs = "123".to_java java.lang.CharSequence
+
+    obj.class.should == java.lang.String
+    cs.class.should == java.lang.String
+  end
+end
