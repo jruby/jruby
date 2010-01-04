@@ -1332,7 +1332,7 @@
         <arg line="-f s -g fails -g critical -g windows --dry-run"/>
         <arg line="-T--@{spec.mode}"/>
         <arg line="-B ${spec.dir}/jruby.@{spec.mode}.mspec"/>
-        <arg value="${rubyspec.dir}"/>
+        <arg value=":ci_files"/>
       </java>
     </sequential>
   </macrodef>
