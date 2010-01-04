@@ -223,8 +223,7 @@ module RI
     end
 
     def initialize
-      # JRUBY-3413: ri/rdoc do not page correctly (also JRUBY-4231)
-      @use_stdout   = true
+      @use_stdout   = !STDOUT.tty?
       @width        = 72
       @formatter    = RI::TextFormatter.for("plain") 
       @list_classes = false

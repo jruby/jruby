@@ -39,6 +39,9 @@
 # it to the next release.
 #
 
+# JRUBY-3413 and JRUBY-4231
+ARGV << "--no-pager"
+
 begin
   # Ruby 1.8 mode
   require 'rdoc/ri/ri_driver'
