@@ -18,6 +18,12 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         super(scriptCompiler, closureMethodName, inspector, scope);
     }
 
+    @Override
+    protected int getActualArgsCount(StaticScope scope) {
+        // always 1, since we pass in an Array (1.8) or an IRubyObject[] (1.9)
+        return 1;
+    }
+
     protected String getSignature() {
         return StandardASMCompiler.getStaticClosureSignature(script.getClassname());
     }
@@ -65,7 +71,7 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
         method.aload(StandardASMCompiler.THIS);
 
         // load all arguments straight through
-        for (int i = 1; i <= 3; i++) {
+        for (int i = 1; i <= 4; i++) {
             method.aload(i);
         }
         // we append an index to ensure two identical method names will not conflict

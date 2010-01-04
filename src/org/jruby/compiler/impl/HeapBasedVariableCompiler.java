@@ -30,6 +30,7 @@ package org.jruby.compiler.impl;
 import org.jruby.Ruby;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
@@ -190,10 +191,14 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
                 methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
             }
         }
-        
+
         if (argsCallback != null) {
-            // in 1.8 mode, this will be a RubyArray containing the arguments
-            // in 1.9 mode, this will be an IRubyObject[]
+            // load block
+            methodCompiler.loadRuntime();
+            method.aload(methodCompiler.getClosureIndex());
+            methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
+
+            // load args (the IRubyObject representing incoming normal args)
             method.aload(argsIndex);
             argsCallback.call(methodCompiler);
         }
@@ -214,7 +219,12 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         // no variable initialization, because we're reusing parent's scope (flat)
 
         if (argsCallback != null) {
-            // load args[0] which will be the IRubyObject representing block args
+            // load block
+            methodCompiler.loadRuntime();
+            method.aload(methodCompiler.getClosureIndex());
+            methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
+
+            // load args (the IRubyObject representing incoming normal args)
             method.aload(argsIndex);
             argsCallback.call(methodCompiler);
         }

@@ -187,7 +187,8 @@ public class ASTCompiler19 extends ASTCompiler {
                 // FIXME: This is temporary since the variable compilers assume we want
                 // args already on stack for assignment. We just pop and continue with
                 // 1.9 args logic.
-                context.consumeCurrentValue();
+                context.consumeCurrentValue(); // args value
+                context.consumeCurrentValue(); // passed block
                 if (iterNode.getVarNode() != null) {
                     if (iterNode instanceof LambdaNode) {
                         final int required = argsNode.getRequiredArgsCount();

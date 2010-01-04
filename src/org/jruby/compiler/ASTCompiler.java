@@ -563,7 +563,8 @@ public class ASTCompiler {
                 compileMultipleAsgnAssignment(node, context, expr);
                 break;
             case ZEROARGNODE:
-                throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
+                context.consumeCurrentValue();;
+                break;
             default:
                 throw new NotCompilableException("Can't compile assignment node: " + node);
         }
@@ -2361,6 +2362,9 @@ public class ASTCompiler {
                     public void call(BodyCompiler context) {
                         if (forNode.getVarNode() != null) {
                             compileAssignment(forNode.getVarNode(), context, false);
+
+                            // consume the block, since for loops can't receive block
+                            context.consumeCurrentValue();
                         }
                     }
                 };
@@ -2382,14 +2386,8 @@ public class ASTCompiler {
         // force heap-scope behavior, since it uses parent's scope
         inspector.setFlag(ASTInspector.CLOSURE);
 
-        if (argsNodeId == null) {
-            // no args, do not pass args processor
-            context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
-        } else {
-            context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
-        }
+        context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
+                closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
     }
 
     public void compileGlobalAsgn(Node node, BodyCompiler context, boolean expr) {
@@ -2598,13 +2596,20 @@ public class ASTCompiler {
 
         // create the closure class and instantiate it
         final CompilerCallback closureArgs = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                if (iterNode.getVarNode() != null) {
+                    compileAssignment(iterNode.getVarNode(), context, false);
+                } else {
+                    context.consumeCurrentValue();
+                }
 
-                    public void call(BodyCompiler context) {
-                        if (iterNode.getVarNode() != null) {
-                            compileAssignment(iterNode.getVarNode(), context, false);
-                        }
-                    }
-                };
+                if (iterNode.getBlockVarNode() != null) {
+                    compileAssignment(iterNode.getBlockVarNode(), context, false);
+                } else {
+                    context.consumeCurrentValue();
+                }
+            }
+        };
 
         boolean hasMultipleArgsHead = false;
         if (iterNode.getVarNode() instanceof MultipleAsgnNode) {
@@ -2617,14 +2622,8 @@ public class ASTCompiler {
         inspector.inspect(iterNode.getBodyNode());
         inspector.inspect(iterNode.getVarNode());
         
-        if (argsNodeId == null) {
-            // no args, do not pass args processor
-            context.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
-        } else {
-            context.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
-        }
+        context.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+                closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
     }
 
     public void compileLiteral(LiteralNode literal, BodyCompiler context) {

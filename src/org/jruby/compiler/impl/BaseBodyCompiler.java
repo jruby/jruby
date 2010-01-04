@@ -98,11 +98,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         this.scope = scope;
         this.inspector = inspector;
         this.methodName = methodName;
-        if (shouldUseBoxedArgs(scope)) {
-            argParamCount = 1; // use IRubyObject[]
-        } else {
-            argParamCount = scope.getRequiredArgs(); // specific arity
-        }
+        this.argParamCount = getActualArgsCount(scope);
 
         method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, methodName, getSignature(), null, null));
 
@@ -125,6 +121,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     protected boolean shouldUseBoxedArgs(StaticScope scope) {
         return scope.getRestArg() >= 0 || scope.getRestArg() == -2 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3;
+    }
+
+    protected int getActualArgsCount(StaticScope scope) {
+        if (shouldUseBoxedArgs(scope)) {
+            return 1; // use IRubyObject[]
+        } else {
+            return scope.getRequiredArgs(); // specific arity
+        }
     }
 
     protected abstract String getSignature();

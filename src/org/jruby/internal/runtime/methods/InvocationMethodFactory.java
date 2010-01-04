@@ -124,7 +124,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     private final static String BLOCK_CALL_SIG = sig(RubyKernel.IRUBY_OBJECT, params(
-            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject.class));
+            ThreadContext.class, RubyKernel.IRUBY_OBJECT, IRubyObject.class, Block.class));
     private final static String BLOCK_CALL_SIG19 = sig(RubyKernel.IRUBY_OBJECT, params(
             ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
     
@@ -814,10 +814,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     mv.line(0);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
-                    mv.aloadMany(1, 2, 3);
+                    mv.aloadMany(1, 2, 3, 4);
                     mv.invokestatic(typePathString, method, sig(
-                            RubyKernel.IRUBY_OBJECT, "L" + typePathString + ";", ThreadContext.class,
-                                    RubyKernel.IRUBY_OBJECT, IRubyObject.class));
+                            IRubyObject.class, "L" + typePathString + ";", ThreadContext.class,
+                                    IRubyObject.class, IRubyObject.class, Block.class));
                     mv.areturn();
 
                     mv.visitMaxs(2, 3);

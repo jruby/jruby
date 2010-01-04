@@ -107,7 +107,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public static String getStaticClosureSignature(String classdesc) {
-        return sig(IRubyObject.class, "L" + classdesc + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class);
+        return sig(IRubyObject.class, "L" + classdesc + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
     }
 
     public static String getStaticClosure19Signature(String classdesc) {
@@ -115,7 +115,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public static String getClosureSignature() {
-        return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+        return sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
     }
 
     public static String getClosure19Signature() {

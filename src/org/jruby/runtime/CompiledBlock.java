@@ -95,14 +95,24 @@ public class CompiledBlock extends BlockBody {
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
+        return yield(context, value, binding, type, Block.NULL_BLOCK);
+    }
+    
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+        return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
+    }
+
+    // FIXME: These two duplicate overrides should go away
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type, Block block) {
         IRubyObject self = prepareSelf(binding);
 
-        IRubyObject realArg = setupBlockArg(context.getRuntime(), value, self); 
+        IRubyObject realArg = setupBlockArg(context.getRuntime(), value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, null, binding);
-        
+
         try {
-            return callback.call(context, self, realArg);
+            return callback.call(context, self, realArg, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
             return handleNextJump(context, nj, type);
@@ -110,19 +120,20 @@ public class CompiledBlock extends BlockBody {
             post(context, binding, oldVis, lastFrame);
         }
     }
-    
-    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
         }
 
-        IRubyObject realArg = aValue ? 
-                setupBlockArgs(context, args, self) : setupBlockArg(context.getRuntime(), args, self); 
+        IRubyObject realArg = aValue ?
+                setupBlockArgs(context, args, self) : setupBlockArg(context.getRuntime(), args, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, klass, binding);
-        
+
         try {
-            return callback.call(context, self, realArg);
+            return callback.call(context, self, realArg, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
             return handleNextJump(context, nj, type);

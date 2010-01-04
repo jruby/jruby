@@ -150,9 +150,9 @@ public class ReflectionMethodFactory extends MethodFactory {
             Class scriptClass = scriptObject.getClass();
             final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class);
             return new CompiledBlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args) {
+                public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args, Block block) {
                     try {
-                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args);
+                        return (IRubyObject)blockMethod.invoke(null, scriptObject, context, self, args, block);
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     } catch (IllegalArgumentException ex) {

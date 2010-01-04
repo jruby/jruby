@@ -334,6 +334,20 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
             blockAssignment.call(methodCompiler);
         }
     }
+
+    public void assignClosureArguments(CompilerCallback masgnCallback, CompilerCallback blockAssignment) {
+        // args are already on stack, call masgnCallback
+        masgnCallback.call(methodCompiler);
+
+        // block argument assignment, if there's a block arg
+        if (blockAssignment != null) {
+            methodCompiler.loadRuntime();
+            method.aload(methodCompiler.getClosureIndex());
+
+            methodCompiler.invokeUtilityMethod("processBlockArgument", sig(IRubyObject.class, params(Ruby.class, Block.class)));
+            blockAssignment.call(methodCompiler);
+        }
+    }
         
     public int grabTempLocal() {
         return tempVariableIndex++;
