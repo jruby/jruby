@@ -73,7 +73,6 @@ class MSpecScript
     get(:core) << '^' + SPEC_DIR + '/core/env'           # many failures
     get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
     get(:core) << '^' + SPEC_DIR + '/core/filetest'      # many failures
-    get(:core) << '^' + SPEC_DIR + '/core/io'            # many failures
     get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
     get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
