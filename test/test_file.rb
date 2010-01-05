@@ -940,4 +940,20 @@ class TestFile < Test::Unit::TestCase
     filename = 'dir/a ⼈〉〃〄⨶↖.pdf'
     assert_equal("a \342\274\210\343\200\211\343\200\203\343\200\204\342\250\266\342\206\226.pdf", File.basename(filename))
   end
+
+  #JRUBY-4387, JRUBY-4416
+  def test_file_gets_separator
+    filename = 'gets.out'
+    begin
+      File.open(filename, "wb") do |file|
+        file.print "this is a test\xFFit is only a test\ndoes it work?"
+      end
+
+      file = File.open("gets.out", "rb") do |file|
+        assert_equal("this is a test\377", file.gets("\xFF"))
+      end
+    ensure
+      File.unlink(filename)
+    end
+  end
 end
