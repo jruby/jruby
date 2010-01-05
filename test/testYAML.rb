@@ -607,3 +607,18 @@ test_equal YAML.load(y)['production'], {"ABQIAAAAinq15RDnRyoOaQwM_PoC4RTJQa0g3IQ
 # JRUBY-3412
 y = "--- 2009-02-16 22::40:26.574754 -05:00\n"
 test_equal YAML.load(y).to_yaml, y
+
+# JRUBY-4345
+class Node4345
+  def initialize(parent = nil)
+    @parent = parent
+  end
+
+  def add_child
+    @child = Node4345.new(self)
+  end
+end
+
+ruby_object = Node4345.new
+ruby_object.add_child
+test_equal ruby_object.to_yaml, YAML.load(ruby_object.to_yaml).to_yaml
