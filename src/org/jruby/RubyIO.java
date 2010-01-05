@@ -3305,9 +3305,8 @@ public class RubyIO extends RubyObject {
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length, IRubyObject offset) {
         RubyIO file = newFile(context, recv, path);
 
-        if (!offset.isNil()) file.seek(context, offset);
-
         try {
+            if (!offset.isNil()) file.seek(context, offset);
             return !length.isNil() ? file.read(context, length) : file.read(context);
         } finally  {
             file.close();
@@ -3325,9 +3324,8 @@ public class RubyIO extends RubyObject {
 
         RubyIO file = newFile(context, recv, path);
 
-        if (!offset.isNil()) file.seek(context, offset);
-
         try {
+            if (!offset.isNil()) file.seek(context, offset);
             return !length.isNil() ? file.read(context, length) : file.read(context);
         } finally  {
             file.close();
