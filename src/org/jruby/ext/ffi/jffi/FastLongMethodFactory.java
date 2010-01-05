@@ -28,7 +28,8 @@ public class FastLongMethodFactory {
                 return false;
             }
         }
-        return parameterTypes.length <= 3 && isFastLongResult(returnType);
+        return parameterTypes.length <= 3 && isFastLongResult(returnType)
+                && Platform.getPlatform().getCPU() == Platform.CPU.X86_64;
     }
     
     

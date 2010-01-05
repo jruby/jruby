@@ -32,8 +32,13 @@ public class FastIntMethodFactory extends MethodFactory {
                 return false;
             }
         }
-        return parameterTypes.length <= 3 && isFastIntResult(returnType);
+
+        return parameterTypes.length <= 3 && isFastIntResult(returnType)
+                && (Platform.getPlatform().getCPU() == Platform.CPU.I386
+                    || Platform.getPlatform().getCPU() == Platform.CPU.X86_64);
     }
+
+    
     final boolean isFastIntResult(Type type) {
         if (type instanceof Type.Builtin) {
             switch (type.getNativeType()) {

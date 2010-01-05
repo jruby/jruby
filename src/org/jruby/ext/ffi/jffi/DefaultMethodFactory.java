@@ -81,7 +81,8 @@ public final class DefaultMethodFactory {
         // This just applies to buffer/pointer types.
         //
         FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
-        boolean canBeFastInt = enums.isNil() && parameterTypes.length <= 3 && fastIntFactory.isFastIntResult(returnType);
+        boolean canBeFastInt = enums.isNil() && parameterTypes.length <= 3 
+                && fastIntFactory.isFastIntResult(returnType) && convention == CallingConvention.DEFAULT;
         for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
             if (!(parameterTypes[i] instanceof Type.Builtin) || marshallers[i].needsInvocationSession()) {
                 canBeFastInt = false;
