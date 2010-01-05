@@ -1281,7 +1281,7 @@ public class ScriptingContainerTest {
             "put_all__method", "reduce", "reject", "remove", "remove__method", "respond_to?",
             "reverse_each", "select", "send", "singleton_methods", "size", "size__method",
             "sort", "sort_by", "synchronized", "taint", "tainted?", "take", "take_while",
-            "tap", "toString", "toString__method", "to_a", "to_enum", "to_java_object",
+            "tap", "toString", "toString__method", "to_a", "to_enum", "to_java", "to_java_object",
             "to_s", "to_string", "to_string__method", "type", "untaint", "values",
             "values__method", "wait", "wait__method", "zip"
         };
