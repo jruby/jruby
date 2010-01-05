@@ -1,1 +1,3 @@
 fails(JRUBY-3357):Marshal::load loads an Array with proc
+fails(JRUBY-4414):Marshal::load returns a tainted object if source is tainted
+fails(JRUBY-4414):Marshal::load preserves taintedness of nested structure

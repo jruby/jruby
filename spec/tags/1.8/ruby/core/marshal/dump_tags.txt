@@ -1,1 +1,3 @@
 fails(JRUBY-4335):Marshal.dump dumps a Float 8323434.342
+fails(JRUBY-4414):Marshal.dump returns a tainted string if object is tainted
+fails(JRUBY-4414):Marshal.dump returns a tainted string if object is tainted deep in nested structure
