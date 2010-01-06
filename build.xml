@@ -1199,13 +1199,13 @@
   <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
 
   <target name="run-specs-compiled" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0"/>
+    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
   </target>
   <target name="run-specs-precompiled" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0"/>
+    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
   </target>
   <target name="run-specs-interpreted" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF"/>
+    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.8.mspec"/>
   </target>
 
   <target name="run-specs-compiled-short" depends="jar">
@@ -1305,7 +1305,7 @@
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
     <attribute name="mode.name"/>
-    <attribute name="spec.config" default="${spec.dir}/default.mspec"/>
+    <attribute name="spec.config"/>
     <attribute name="compat" default="RUBY1_8"/>
 
     <sequential>
