@@ -520,51 +520,39 @@ public class RealClassGenerator {
             // TODO: move the bulk of this logic to utility methods
             if (returnType.isPrimitive()) {
                 if (returnType == boolean.class) {
-                    mv.ldc(Type.getType(Boolean.class));
+                    mv.getstatic(p(Boolean.class), "TYPE", ci(Class.class));
                     mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                     mv.checkcast(p(Boolean.class));
                     mv.invokevirtual(p(Boolean.class), "booleanValue", sig(boolean.class));
                     mv.ireturn();
                 } else {
+                    mv.getstatic(p(getBoxType(returnType)), "TYPE", ci(Class.class));
+                    mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                     if (returnType == byte.class) {
-                        mv.ldc(Type.getType(Byte.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                         mv.checkcast(p(Number.class));
                         mv.invokevirtual(p(Number.class), "byteValue", sig(byte.class));
                         mv.ireturn();
                     } else if (returnType == short.class) {
-                        mv.ldc(Type.getType(Short.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                         mv.checkcast(p(Number.class));
                         mv.invokevirtual(p(Number.class), "shortValue", sig(short.class));
                         mv.ireturn();
                     } else if (returnType == char.class) {
-                        mv.ldc(Type.getType(Character.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
-                        mv.checkcast(p(Number.class));
-                        mv.invokevirtual(p(Number.class), "charValue", sig(char.class));
+                        mv.checkcast(p(Character.class));
+                        mv.invokevirtual(p(Character.class), "charValue", sig(char.class));
                         mv.ireturn();
                     } else if (returnType == int.class) {
-                        mv.ldc(Type.getType(Integer.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                         mv.checkcast(p(Number.class));
                         mv.invokevirtual(p(Number.class), "intValue", sig(int.class));
                         mv.ireturn();
                     } else if (returnType == long.class) {
-                        mv.ldc(Type.getType(Long.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                         mv.checkcast(p(Number.class));
                         mv.invokevirtual(p(Number.class), "longValue", sig(long.class));
                         mv.lreturn();
                     } else if (returnType == float.class) {
-                        mv.ldc(Type.getType(Float.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                         mv.checkcast(p(Number.class));
                         mv.invokevirtual(p(Number.class), "floatValue", sig(float.class));
                         mv.freturn();
                     } else if (returnType == double.class) {
-                        mv.ldc(Type.getType(Double.class));
-                        mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                         mv.checkcast(p(Number.class));
                         mv.invokevirtual(p(Number.class), "doubleValue", sig(double.class));
                         mv.dreturn();

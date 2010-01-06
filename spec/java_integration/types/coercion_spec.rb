@@ -351,12 +351,10 @@ describe "Java String, primitive, and object-typed interface methods" do
     vri_handler.receiveShort(obj).should == obj
     vri.result.should == obj
     vri.result.class.should == Fixnum
-    
-    pending "char appears to be getting signed/unsigned-garbled" do
-      vri_handler.receiveChar(obj).should == obj
-      vri.result.should == obj
-      vri.result.class.should == Fixnum
-    end
+
+    vri_handler.receiveChar(obj).should == obj
+    vri.result.should == obj
+    vri.result.class.should == Fixnum
     
     vri_handler.receiveInt(obj).should == obj
     vri.result.should == obj
@@ -389,6 +387,63 @@ describe "Java String, primitive, and object-typed interface methods" do
     vri_handler.receiveLongAndDouble(1, 1.0).should == "2.0"
     vri.result.should == "2.0"
     vri.result.class.should == String
+  end
+end
+
+describe "Java primitive-typed interface methods" do
+  it "should coerce nil to zero-magnitude primitives" do
+    impl = Class.new {
+      attr_accessor :result
+      include ValueReceivingInterface
+
+      def receive_primitive(obj)
+        self.result = obj
+        nil
+      end
+
+      %w[Byte Short Char Int Long Float Double Null True False].each do |type|
+        alias_method "receive#{type}".intern, :receive_primitive
+      end
+    }
+    
+    vri = impl.new
+    vri_handler = ValueReceivingInterfaceHandler.new(vri);
+
+    vri_handler.receiveByte(nil).should == 0
+    vri.result.should == 0
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveShort(nil).should == 0
+    vri.result.should == 0
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveChar(nil).should == 0
+    vri.result.should == 0
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveInt(nil).should == 0
+    vri.result.should == 0
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveLong(nil).should == 0
+    vri.result.should == 0
+    vri.result.class.should == Fixnum
+
+    vri_handler.receiveFloat(nil).should == 0.0
+    vri.result.should == 0.0
+    vri.result.class.should == Float
+
+    vri_handler.receiveDouble(nil).should == 0.0
+    vri.result.should == 0.0
+    vri.result.class.should == Float
+
+    vri_handler.receiveTrue(nil).should == false
+    vri.result.should == false
+    vri.result.class.should == FalseClass
+
+    vri_handler.receiveFalse(nil).should == false
+    vri.result.should == false
+    vri.result.class.should == FalseClass
   end
 end
 
@@ -451,6 +506,63 @@ describe "Java primitive-box-typed interface methods" do
     vri_handler.receiveFalseObj(false).should == false
     vri.result.should == false
     vri.result.class.should == FalseClass
+  end
+
+  it "should coerce to null" do
+    impl = Class.new {
+      attr_accessor :result
+      include ValueReceivingInterface
+
+      def receive_primitive_box(obj)
+        self.result = obj
+        nil
+      end
+
+      %w[Byte Short Char Int Long Float Double True False].each do |type|
+        alias_method :"receive#{type}Obj", :receive_primitive_box
+      end
+    }
+
+    vri = impl.new
+    vri_handler = ValueReceivingInterfaceHandler.new(vri);
+
+    obj = 1
+
+    vri_handler.receiveByteObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveShortObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveCharObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveIntObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveLongObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveFloatObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveDoubleObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveTrueObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
+
+    vri_handler.receiveFalseObj(nil).should == nil
+    vri.result.should == nil
+    vri.result.class.should == NilClass
   end
 end
 

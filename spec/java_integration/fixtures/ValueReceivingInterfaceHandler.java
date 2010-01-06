@@ -43,7 +43,7 @@ public class ValueReceivingInterfaceHandler {
         return vri.receiveDouble(d);
     }
 
-    public boolean recieveTrue(boolean t) {
+    public boolean receiveTrue(boolean t) {
         return vri.receiveTrue(t);
     }
 
