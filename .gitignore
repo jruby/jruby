@@ -1,0 +1,16 @@
+*.orig
+*/nbproject/private
+*/build
+*/dist
+pkg
+*.class
+*.orig
+*.rej
+*.patch
+*.diff
+build
+*.so
+*.[oa]
+core
+*~
+.dep.inc

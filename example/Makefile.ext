@@ -1,0 +1,37 @@
+TOPDIR = ../..
+CFLAGS += -I$(TOPDIR)/jruby-cext-native/src
+
+OS = $(shell uname -s | tr '[A-Z]' '[a-z]')
+CFLAGS += -fexceptions
+CFLAGS += -fno-omit-frame-pointer -fno-strict-aliasing -DNDEBUG
+CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
+CFLAGS += -O2
+CFLAGS += $(PICFLAGS)
+
+ifeq ($(OS), darwin)
+  CFLAGS += -isysroot /Developer/SDKs/MacOSX10.4u.sdk -DTARGET_RT_MAC_CFM=0
+  CFLAGS += -arch i386 -arch x86_64
+  LDFLAGS += -arch i386 -arch x86_64 -bundle -framework JavaVM \
+	-Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup
+  LIBEXT = bundle
+  PICFLAGS =
+  SOFLAGS =
+endif
+
+ifeq ($(OS), linux)
+  LIBEXT = so
+  PICFLAGS = -fPIC
+  SOFLAGS = -shared -mimpure-text -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
+endif
+
+
+all:	$(MODNAME).$(LIBEXT)
+
+clean::
+	$(RM) $(MODNAME).$(LIBEXT) $(OBJS)
+
+$(MODNAME).$(LIBEXT):	$(OBJS)
+	$(CC) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+
+%.o:	%.c
+	$(CC) $(CFLAGS) -o $@ -c $<

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="62">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <itemPath>src/Handle.cpp</itemPath>
+      <itemPath>src/Handle.h</itemPath>
+      <itemPath>src/JLocalEnv.cpp</itemPath>
+      <itemPath>src/JLocalEnv.h</itemPath>
+      <itemPath>src/JString.cpp</itemPath>
+      <itemPath>src/JString.h</itemPath>
+      <itemPath>src/JUtil.cpp</itemPath>
+      <itemPath>src/JUtil.h</itemPath>
+      <itemPath>src/JavaException.cpp</itemPath>
+      <itemPath>src/JavaException.h</itemPath>
+      <itemPath>src/Type.cpp</itemPath>
+      <itemPath>src/array.cpp</itemPath>
+      <itemPath>src/class.cpp</itemPath>
+      <itemPath>src/data-object.cpp</itemPath>
+      <itemPath>src/funcall.cpp</itemPath>
+      <itemPath>src/hash.cpp</itemPath>
+      <itemPath>src/invoke.cpp</itemPath>
+      <itemPath>src/jruby-cext.cpp</itemPath>
+      <itemPath>src/jruby.cpp</itemPath>
+      <itemPath>src/jruby.h</itemPath>
+      <itemPath>src/malloc.cpp</itemPath>
+      <itemPath>src/module.cpp</itemPath>
+      <itemPath>src/numeric.cpp</itemPath>
+      <itemPath>src/raise.cpp</itemPath>
+      <itemPath>src/ruby.cpp</itemPath>
+      <itemPath>src/ruby.h</itemPath>
+      <itemPath>src/string.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="2">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <incDir>
+            <pElem>/usr/local/jdk/include</pElem>
+          </incDir>
+        </cTool>
+        <ccTool>
+          <incDir>
+            <pElem>/usr/local/jdk/include/linux</pElem>
+            <pElem>/usr/local/jdk/include</pElem>
+            <pElem>build</pElem>
+          </incDir>
+        </ccTool>
+        <linkerTool>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libjruby-cext.so</output>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+    </conf>
+    <conf name="Release" type="2">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <developmentMode>5</developmentMode>
+        </cTool>
+        <ccTool>
+          <developmentMode>5</developmentMode>
+        </ccTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+    </conf>
+  </confs>
+</configurationDescriptor>

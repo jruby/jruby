@@ -1,0 +1,12 @@
+This is just barely proof of concept for loading native modules under jruby
+
+To run the one example that works currently, do:
+  LD_LIBRARY_PATH=example/MyTest:jruby-cext-native/dist \
+  CLASSPATH=jruby-cext-java/build/classes \
+  ../jruby.git/bin/jruby -J-Djava.library.path=jruby-cext-native/dist \
+  example/MyTest/MyTest.rb
+
+  LD_LIBRARY_PATH=example/DefineClass:jruby-cext-native/dist \
+  CLASSPATH=jruby-cext-java/build/classes \
+  ../jruby.git/bin/jruby -J-Djava.library.path=jruby-cext-native/dist \
+  example/DefineClass/DefineClass.rb
