@@ -1,0 +1,2 @@
+fails:File#to_path does not expand the path it returns
+fails:File#to_path does not preserve the encoding of the path

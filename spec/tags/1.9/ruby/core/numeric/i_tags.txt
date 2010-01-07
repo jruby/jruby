@@ -1,0 +1,3 @@
+fails:Numeric#i returns a Complex object
+fails:Numeric#i sets the real part to 0
+fails:Numeric#i sets the imaginary part to self

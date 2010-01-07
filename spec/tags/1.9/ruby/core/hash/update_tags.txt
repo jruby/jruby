@@ -1,0 +1,1 @@
+fails:Hash#update raises a RuntimeError if called on a frozen instance

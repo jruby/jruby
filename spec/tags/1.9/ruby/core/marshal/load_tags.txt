@@ -1,0 +1,8 @@
+fails:Marshal::load returns the value of the proc when called with a proc
+fails:Marshal::load calls the proc for recursively visited data
+fails:Marshal::load loads a array containing objects having _dump method, and with proc
+fails:Marshal::load loads an array containing objects having marshal_dump method, and with proc
+fails:Marshal::load loads an Array with proc
+fails:Marshal::load returns a tainted object if source is tainted
+fails:Marshal::load preserves taintedness of nested structure
+fails:Marshal::load returns an untrusted object if source is untrusted

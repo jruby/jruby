@@ -1,1 +1,2 @@
 fails(crashes):File#flock should lock a file
+fails:File#flock returns false if trying to lock an exclusively locked file

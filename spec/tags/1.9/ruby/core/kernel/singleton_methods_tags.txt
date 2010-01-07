@@ -1,0 +1,1 @@
+fails:Kernel#singleton_methods returns a list of names of singleton methods in object and superclasses when passed true

@@ -1,0 +1,5 @@
+fails:Enumerator#peek returns the next element in self
+fails:Enumerator#peek does not advance the position of the current element
+fails:Enumerator#peek can be called repeatedly without advancing the position of the current element
+fails:Enumerator#peek works in concert with #rewind
+fails:Enumerator#peek raises StopIteration if called on a finished enumerator

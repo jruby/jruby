@@ -1,0 +1,1 @@
+fails:Array#compact does not return self

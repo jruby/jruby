@@ -1,0 +1,1 @@
+fails:ENV.values_at uses the locale encoding

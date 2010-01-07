@@ -1,0 +1,1 @@
+fails:Object =~ returns nil matching any object

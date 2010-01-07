@@ -1,0 +1,2 @@
+fails:Kernel#equal? returns true only if obj and other are the same object
+fails:Kernel#equal? is unaffected by overriding ==

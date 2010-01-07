@@ -1,0 +1,2 @@
+fails:Bignum#% raises a ZeroDivisionError when the given argument is 0 and a Float
+fails:Bignum#modulo raises a ZeroDivisionError when the given argument is 0 and a Float

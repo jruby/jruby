@@ -1,0 +1,3 @@
+fails:Encoding::UndefinedConversionError#source_encoding returns an Encoding object
+fails:Encoding::UndefinedConversionError#source_encoding is equal to the source encoding of the object that raised it
+fails:Encoding::UndefinedConversionError#source_encoding is equal to the source encoding at the stage of the conversion path where the error occured

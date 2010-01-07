@@ -1,0 +1,2 @@
+fails:BigDecimal#>= properly handles NaN values
+fails:BigDecimal#>= returns nil if the argument is nil

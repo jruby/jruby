@@ -1,0 +1,10 @@
+fails:File.new returns a new File with mode num
+fails:File.new returns a new File with modus num and permissions
+fails:File.new creates a new file when use File::EXCL mode 
+fails:File.new raises an Errorno::EEXIST if the file exists when create a new file with File::CREAT|File::EXCL
+fails:File.new creates a new file when use File::WRONLY|File::APPEND mode
+fails:File.new raises an Errno::EINVAL error with File::APPEND
+fails:File.new raises an Errno::EINVAL error with File::RDONLY|File::APPEND
+fails:File.new raises an Errno::EINVAL error with File::RDONLY|File::WRONLY
+fails:File.new creates a new file when use File::WRONLY|File::TRUNC mode
+fails:File.new opens directories

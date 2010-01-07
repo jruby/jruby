@@ -663,15 +663,16 @@ public class RubyFixnum extends RubyInteger {
 
     @JRubyMethod(name = "**", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_pow_19(ThreadContext context, IRubyObject other) {
-        double d_other = ((RubyNumeric) other).getDoubleValue();
-        if (value < 0 && (d_other != Math.round(d_other))) {
-            return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
+        if (other instanceof RubyNumeric) {
+            double d_other = ((RubyNumeric) other).getDoubleValue();
+            if (value < 0 && (d_other != Math.round(d_other))) {
+                return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
+            }
+            if (other instanceof RubyFixnum) {
+                return powerFixnum19(context, other);
+            }
         }
-        if (other instanceof RubyFixnum) {
-            return powerFixnum19(context, other);
-        } else {
-            return powerOther19(context, other);
-        }
+        return powerOther19(context, other);
     }
 
     private IRubyObject powerOther19(ThreadContext context, IRubyObject other) {

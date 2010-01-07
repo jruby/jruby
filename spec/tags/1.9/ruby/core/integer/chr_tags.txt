@@ -1,0 +1,11 @@
+fails:Integer#chr without argument returns a new String for each call
+fails:Integer#chr without argument infers the encoding from Encoding.default_internal
+fails:Integer#chr with an encoding argument returns a String
+fails:Integer#chr with an encoding argument returns a new String for each call
+fails:Integer#chr with an encoding argument accepts an Encoding object as an argument
+fails:Integer#chr with an encoding argument returns characters in the specified encoding even if they exist in US-ASCII
+fails:Integer#chr with an encoding argument behaves as called with no argument if encoding is specified as US-ASCII and self is less than 128
+fails:Integer#chr with an encoding argument behaves as called with no argument if encoding is specified as ASCII-8BIT and self is between 128 and 255
+fails:Integer#chr with an encoding argument interprets self as a codepoint in the corresponding character set
+fails:Integer#chr with an encoding argument raises a RangeError if self is an invalid codepoint for the given encoding
+fails:Integer#chr with an encoding argument raises a RangeError is self is less than 0

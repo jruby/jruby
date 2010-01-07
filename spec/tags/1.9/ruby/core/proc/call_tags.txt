@@ -1,0 +1,3 @@
+fails:Proc#call on a Proc created with Proc.new auto-explodes a single Array argument
+fails:Proc#call on a Proc created with Kernel#lambda or Kernel#proc raises an ArgumentError on excess arguments when self is a lambda
+fails:Proc#call on a Proc created with Kernel#lambda or Kernel#proc raises an ArgumentError on missing arguments when self is a lambda

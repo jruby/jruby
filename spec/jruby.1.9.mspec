@@ -11,13 +11,18 @@ TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS__DIR)
 
 class MSpecScript
   # Language features specs
-  set :language, [ SPEC_DIR + '/language' ]
+  set :language, [
+    SPEC_DIR + '/language',
+
+    '^' + SPEC_DIR + '/language/symbol_spec.rb'
+  ]
 
   # Core library specs
   set :core, [
     SPEC_DIR + '/core',
 
-    '^' + SPEC_DIR + '/core/continuation'
+    '^' + SPEC_DIR + '/core/continuation',
+    '^' + SPEC_DIR + '/core/module/name_spec.rb'
   ]
 
   # Standard library specs

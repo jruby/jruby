@@ -1,0 +1,1 @@
+fails:The for expression yields only as many values as there are arguments

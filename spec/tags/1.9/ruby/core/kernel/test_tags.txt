@@ -1,0 +1,3 @@
+fails:Kernel#test calls #to_path on second argument when passed ?f and a filename
+fails:Kernel#test calls #to_path on second argument when passed ?e and a filename
+fails:Kernel#test calls #to_path on second argument when passed ?d and a directory

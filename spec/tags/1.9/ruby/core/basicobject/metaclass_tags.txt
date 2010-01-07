@@ -1,0 +1,2 @@
+fails:BasicObject#metaclass returns the basic object's metaclass
+fails:BasicObject#metaclass does the job of a metaclass

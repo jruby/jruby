@@ -1,0 +1,7 @@
+fails:Encoding.default_internal returns the default internal encoding
+fails:Encoding.default_internal returns Encoding::UTF_8 if ruby was invoked with -U
+fails:Encoding.default_internal uses the encoding specified when ruby is invoked with an '-E :internal' argument
+fails:Encoding.default_internal uses the encoding specified when ruby is invoked with an '-E external:internal' argument
+fails:Encoding.default_internal= sets the default internal encoding
+fails:Encoding.default_internal= can accept a name of an encoding as a String
+fails:Encoding.default_internal= calls #to_s on arguments that are neither Strings nor Encodings

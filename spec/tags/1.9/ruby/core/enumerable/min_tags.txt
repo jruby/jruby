@@ -1,0 +1,1 @@
+fails:Enumerable#min raises a NoMethodError for elements without #<=>

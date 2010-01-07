@@ -1,0 +1,3 @@
+fails:IO.read calls #to_path on non-String arguments
+fails:IO#read strips the BOM when given 'rb:utf-7-bom' as the mode
+fails:IO#read with 1.9 encodings strips the BOM when given 'rb:utf-7-bom' as the mode

@@ -1,0 +1,3 @@
+fails:Fiber#alive? returns true for a Fiber that hasn't had #resume called
+fails:Fiber#alive? returns false for a Fiber that's dead
+fails:Fiber#alive? always returns false for a dead Fiber

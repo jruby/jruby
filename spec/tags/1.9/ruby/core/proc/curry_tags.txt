@@ -1,0 +1,19 @@
+fails:Proc#curry returns a Proc when called on a proc
+fails:Proc#curry returns a Proc when called on a lambda
+fails:Proc#curry calls the curried proc with the arguments if sufficient arguments have been given
+fails:Proc#curry returns a Proc that consumes the remainder of the arguments unless sufficient arguments have been given
+fails:Proc#curry can be called multiple times on the same Proc
+fails:Proc#curry can be passed superfluous arguments if created from a proc
+fails:Proc#curry raises an ArgumentError if passed superfluous arguments when created from a lambda
+fails:Proc#curry returns Procs with arities of -1
+fails:Proc#curry with arity argument accepts an optional Integer argument for the arity
+fails:Proc#curry with arity argument returns a Proc when called on a proc
+fails:Proc#curry with arity argument returns a Proc when called on a lambda
+fails:Proc#curry with arity argument retains the lambda-ness of the Proc on which its called
+fails:Proc#curry with arity argument raises an ArgumentError if called on a lambda that requires more than _arity_ arguments
+fails:Proc#curry with arity argument raises an ArgumentError if called on a lambda that requires fewer than _arity_ arguments
+fails:Proc#curry with arity argument calls the curried proc with the arguments if _arity_ arguments have been given
+fails:Proc#curry with arity argument returns a Proc that consumes the remainder of the arguments when fewer than _arity_ arguments are given
+fails:Proc#curry with arity argument can be specified multiple times on the same Proc
+fails:Proc#curry with arity argument raises an ArgumentError if passed more than _arity_ arguments when created from a lambda
+fails:Proc#curry with arity argument returns Procs with arities of -1 regardless of the value of _arity_

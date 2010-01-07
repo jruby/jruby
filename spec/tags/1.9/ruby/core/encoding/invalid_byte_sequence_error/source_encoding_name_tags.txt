@@ -1,0 +1,3 @@
+fails:Encoding::UndefinedConversionError#source_encoding_name returns a String
+fails:Encoding::UndefinedConversionError#source_encoding_name is equal to the source encoding name of the object that raised it
+fails:Encoding::UndefinedConversionError#source_encoding_name is equal to the source encoding at the stage of the conversion path where the error occured

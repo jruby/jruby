@@ -1,0 +1,4 @@
+fails:Encoding#replicate returns a replica of ASCII
+fails:Encoding#replicate returns a replica of UTF-8
+fails:Encoding#replicate returns a replica of UTF-16BE
+fails:Encoding#replicate returns a replica of ISO-2022-JP

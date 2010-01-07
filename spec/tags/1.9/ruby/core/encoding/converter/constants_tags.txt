@@ -1,0 +1,26 @@
+fails:Encoding::Converter::INVALID_MASK exists
+fails:Encoding::Converter::INVALID_MASK has a Fixnum value
+fails:Encoding::Converter::INVALID_REPLACE exists
+fails:Encoding::Converter::INVALID_REPLACE has a Fixnum value
+fails:Encoding::Converter::UNDEF_MASK exists
+fails:Encoding::Converter::UNDEF_MASK has a Fixnum value
+fails:Encoding::Converter::UNDEF_REPLACE exists
+fails:Encoding::Converter::UNDEF_REPLACE has a Fixnum value
+fails:Encoding::Converter::UNDEF_HEX_CHARREF exists
+fails:Encoding::Converter::UNDEF_HEX_CHARREF has a Fixnum value
+fails:Encoding::Converter::PARTIAL_INPUT exists
+fails:Encoding::Converter::PARTIAL_INPUT has a Fixnum value
+fails:Encoding::Converter::AFTER_OUTPUT exists
+fails:Encoding::Converter::AFTER_OUTPUT has a Fixnum value
+fails:Encoding::Converter::UNIVERSAL_NEWLINE_DECORATOR exists
+fails:Encoding::Converter::UNIVERSAL_NEWLINE_DECORATOR has a Fixnum value
+fails:Encoding::Converter::CRLF_NEWLINE_DECORATOR exists
+fails:Encoding::Converter::CRLF_NEWLINE_DECORATOR has a Fixnum value
+fails:Encoding::Converter::CR_NEWLINE_DECORATOR exists
+fails:Encoding::Converter::CR_NEWLINE_DECORATOR has a Fixnum value
+fails:Encoding::Converter::XML_TEXT_DECORATOR exists
+fails:Encoding::Converter::XML_TEXT_DECORATOR has a Fixnum value
+fails:Encoding::Converter::XML_ATTR_CONTENT_DECORATOR exists
+fails:Encoding::Converter::XML_ATTR_CONTENT_DECORATOR has a Fixnum value
+fails:Encoding::Converter::XML_ATTR_QUOTE_DECORATOR exists
+fails:Encoding::Converter::XML_ATTR_QUOTE_DECORATOR has a Fixnum value

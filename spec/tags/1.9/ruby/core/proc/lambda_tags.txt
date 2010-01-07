@@ -1,0 +1,4 @@
+fails:Proc#lambda? returns true if the object was created with the lambda keyword
+fails:Proc#lambda? returns false if the object was created with the proc keyword
+fails:Proc#lambda? returns false if the object was created with Proc.new
+fails:Proc#lambda? returns true if the object was created with Proc#curry

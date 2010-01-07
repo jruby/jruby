@@ -1,0 +1,1 @@
+fails:ENV.[] uses the locale encoding

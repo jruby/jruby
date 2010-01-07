@@ -1,0 +1,2 @@
+fails:A class definition stores instance variables defined in the class body in the class object
+fails:A class definition allows the definition of class-level instance variables in a class method

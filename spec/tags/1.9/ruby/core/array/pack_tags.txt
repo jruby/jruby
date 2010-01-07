@@ -1,0 +1,50 @@
+fails:Array#pack returns a tainted string when the format is tainted
+fails:Array#pack returns a tainted string when the format is tainted even if the given format is empty
+fails:Array#pack returns a untrusted string when the format is untrusted
+fails:Array#pack returns a untrusted string when the format is untrusted even if the given format is empty
+fails:Array#pack returns a untrusted string when a pack argument is untrusted
+fails:Array#pack with the empty format returns an empty String in US-ASCII
+fails:Array#pack with format 'A' treats a multibyte character just as a byte sequence
+fails:Array#pack with format 'A' returns result in ASCII-8BIT
+fails:Array#pack with format 'A' cuts byte sequence even if it breaks a multibyte character
+fails:Array#pack with format 'a' treats a multibyte character just as a byte sequence
+fails:Array#pack with format 'a' returns result in ASCII-8BIT
+fails:Array#pack with format 'a' cuts byte sequence even if it breaks a multibyte character
+fails:Array#pack with format 'Z' treats a multibyte character just as a byte sequence
+fails:Array#pack with format 'Z' returns result in ASCII-8BIT
+fails:Array#pack with format 'Z' cuts byte sequence even if it breaks a multibyte character
+fails:Array#pack with format 'n' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 'n' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 'v' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 'v' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 's' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 's' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 'S' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 'S' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 'q' drops higher bytes when a pack argument is >= 2**64
+fails:Array#pack with format 'q' drops higher bytes when a pack argument is < -2**64
+fails:Array#pack with format 'Q' drops higher bytes when a pack argument is >= 2**64
+fails:Array#pack with format 'Q' drops higher bytes when a pack argument is < -2**64
+fails:Array#pack with format 's!' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 's!' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 's_' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 's_' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 'S!' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 'S!' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 'S_' does not raise a RangeError even when a pack argument is >= 2**64
+fails:Array#pack with format 'S_' does not raise a RangeError even when a pack argument is <= -2**64
+fails:Array#pack with format 'l!' drops higher bytes when a pack argument is >= 2**64
+fails:Array#pack with format 'l!' drops higher bytes when a pack argument is < -2**64
+fails:Array#pack with format 'l_' drops higher bytes when a pack argument is >= 2**64
+fails:Array#pack with format 'l_' drops higher bytes when a pack argument is < -2**64
+fails:Array#pack with format 'L!' drops higher bytes when a pack argument is >= 2**64
+fails:Array#pack with format 'L!' drops higher bytes when a pack argument is < -2**64
+fails:Array#pack with format 'L_' drops higher bytes when a pack argument is >= 2**64
+fails:Array#pack with format 'L_' drops higher bytes when a pack argument is < -2**64
+fails:Array#pack with format 'M' returns an US-ASCII string
+fails:Array#pack with format 'm' does not append newline if line length parameter is 0
+fails:Array#pack with format 'm' returns an US-ASCII string
+fails:Array#pack with format 'U' regards a integer as a Unicode codepoint and encodes into UTF-8 byte sequence
+fails:Array#pack with format 'U' returns a UTF-8 string
+fails:Array#pack with format 'u' returns an US-ASCII string
+fails:Array#pack with format 'x' returns an US-ASCII string

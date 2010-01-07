@@ -1,0 +1,1 @@
+fails:Enumerable#sort raises a NoMethodError if elements do not define <=>

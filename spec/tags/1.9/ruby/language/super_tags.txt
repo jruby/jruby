@@ -1,0 +1,1 @@
+fails:The super keyword can't be used with implicit arguments from a method defined with define_method

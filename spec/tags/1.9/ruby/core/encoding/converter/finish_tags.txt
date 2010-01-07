@@ -1,0 +1,6 @@
+fails:Encoding::Converter#finish returns a String
+fails:Encoding::Converter#finish returns an empty String if there is nothing more to convert
+fails:Encoding::Converter#finish returns the last part of the converted String if it hasn't already
+fails:Encoding::Converter#finish returns a String in the destination encoding
+fails:Encoding::Converter#finish returns an empty String if self was not given anything to convert
+fails:Encoding::Converter#finish returns an empty String on subsequent invocations

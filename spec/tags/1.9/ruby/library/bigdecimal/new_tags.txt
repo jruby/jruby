@@ -1,0 +1,1 @@
+fails:BigDecimal.new creates a new object of class BigDecimal

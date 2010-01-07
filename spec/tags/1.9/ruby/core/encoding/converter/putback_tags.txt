@@ -1,0 +1,6 @@
+fails:Encoding::Converter#putback returns a String
+fails:Encoding::Converter#putback returns a String in the source encoding
+fails:Encoding::Converter#putback returns the bytes buffered due to an :invalid_byte_sequence error
+fails:Encoding::Converter#putback allows conversion to be resumed after an :invalid_byte_sequence
+fails:Encoding::Converter#putback returns an empty String when there are no more bytes to put back
+fails:Encoding::Converter#putback accepts an integer argument corresponding to the number of bytes to be put back

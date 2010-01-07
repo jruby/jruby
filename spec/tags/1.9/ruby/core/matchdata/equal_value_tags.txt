@@ -1,0 +1,1 @@
+fails:MatchData#== returns true if both operands have equal target strings, patterns, and match positions

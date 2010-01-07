@@ -1,0 +1,6 @@
+fails:Method#eql? returns true if methods are the same
+fails:Method#eql? returns true on aliased methods
+fails:Method#eql? returns true if the two core methods are aliases
+fails:Method#eql? returns true if a method was defined using the other one
+fails:Method#eql? returns true for methods defined using the same block/proc
+fails:Method#eql? returns true for the same method missing

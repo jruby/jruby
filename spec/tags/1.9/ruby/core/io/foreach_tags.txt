@@ -1,0 +1,2 @@
+fails:IO::foreach converts second parameter to string and uses as separator, with each to_str calling for each lines of the IOs
+fails:IO::foreach calls #to_path on non-String arguments

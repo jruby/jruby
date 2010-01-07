@@ -1,0 +1,1 @@
+fails:Method#source_location returns the location of the original method even if it was aliased

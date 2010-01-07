@@ -1,0 +1,3 @@
+fails:Encoding::InvalidByteSequenceError#readagain_bytes returns a String
+fails:Encoding::InvalidByteSequenceError#readagain_bytes returns the bytes to be read again
+fails:Encoding::InvalidByteSequenceError#readagain_bytes uses ASCII-8BIT as the encoding

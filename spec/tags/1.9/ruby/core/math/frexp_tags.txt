@@ -1,0 +1,1 @@
+fails:Math.frexp raises a TypeError if the argument cannot be coerced with Float()

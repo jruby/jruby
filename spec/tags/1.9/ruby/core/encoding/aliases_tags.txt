@@ -1,0 +1,2 @@
+fails:Encoding.aliases has an 'external' key with the external default encoding as its value
+fails:Encoding.aliases has a 'locale' key with the locale charmap encoding as its value

@@ -1,0 +1,6 @@
+fails:Calling a method accepts additional arguments after splat expansion
+fails:Calling a method accepts multiple splat expansions in the same argument list
+fails:Calling a method expands an array to arguments grouped in parentheses
+fails:Calling a method expands an array to arguments grouped in parentheses and ignores any rest arguments in the array
+fails:Calling a method expands an array to arguments grouped in parentheses and sets not specified arguments to nil
+fails:Calling a method expands an array to arguments grouped in parentheses which in turn takes rest arguments

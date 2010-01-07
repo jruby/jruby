@@ -1,0 +1,1 @@
+fails:Numeric#polar returns [NaN, NaN] if self is NaN

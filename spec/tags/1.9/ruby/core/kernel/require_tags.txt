@@ -1,0 +1,8 @@
+fails:Kernel#require does not resolve completely unqualified filenames against the current working directory unless it appears in $LOAD_PATH
+fails:Kernel#require collapses '../' inside an absolute path
+fails:Kernel#require stores relative paths as absolute paths in $LOADED_FEATURES
+fails:Kernel#require stores ./file paths as absolute paths in $LOADED_FEATURES
+fails:Kernel#require performs tilde expansion before storing paths in $LOADED_FEATURES
+fails:Kernel#require collapses multiple consecutive path separators before storing in $LOADED_FEATURES
+fails:Kernel#require collapses '../' inside an absolute path before storing in $LOADED_FEATURES
+fails:Kernel#require produces __FILE__ as the given filename and __LINE__ as the source line number

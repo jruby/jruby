@@ -1,0 +1,2 @@
+fails:Encoding::InvalidByteSequenceError#destination_encoding returns an Encoding object
+fails:Encoding::InvalidByteSequenceError#destination_encoding is equal to the destination encoding of the object that raised it

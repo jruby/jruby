@@ -1,0 +1,1 @@
+fails:Enumerable#max raises a NoMethodError for elements without #<=>

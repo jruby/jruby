@@ -1,0 +1,1 @@
+fails:IO#ungetc returns nil when invoked on stream that was not yet read

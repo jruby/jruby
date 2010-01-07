@@ -1,0 +1,5 @@
+fails:Encoding.default_external returns the default external encoding
+fails:Encoding.default_external= sets the default external encoding
+fails:Encoding.default_external= can accept a name of an encoding as a String
+fails:Encoding.default_external= calls #to_s on arguments that are neither Strings nor Encodings
+fails:Encoding.default_external= raises an ArgumentError if the argument is nil

@@ -1,0 +1,2 @@
+fails:BasicObject's subclasses behave privately
+fails:BasicObject's subclasses behave publically

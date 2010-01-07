@@ -1,0 +1,3 @@
+fails:->(){} returns a lambda
+fails:->(){} can be assigned to a variable
+fails:->(){} uses lambda's 'rigid' argument handling

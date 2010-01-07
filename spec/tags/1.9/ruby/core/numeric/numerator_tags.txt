@@ -1,0 +1,1 @@
+fails:Numeric#numerator works with Numeric subclasses

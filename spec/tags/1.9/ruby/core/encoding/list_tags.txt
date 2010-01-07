@@ -1,0 +1,1 @@
+fails:Encoding.list includes the default external encoding

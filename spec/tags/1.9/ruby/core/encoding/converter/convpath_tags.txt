@@ -1,0 +1,7 @@
+fails:Encoding::Converter#convpath returns an Array
+fails:Encoding::Converter#convpath returns each encoding pair as a sub-Array
+fails:Encoding::Converter#convpath returns each encoding as an Encoding object
+fails:Encoding::Converter#convpath returns multiple encoding pairs when direct conversion is impossible
+fails:Encoding::Converter#convpath sets the last element of each pair to the first element of the next
+fails:Encoding::Converter#convpath only lists a source encoding once
+fails:Encoding::Converter#convpath indicates if crlf_newline conversion would occur

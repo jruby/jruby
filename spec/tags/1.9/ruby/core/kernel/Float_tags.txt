@@ -1,0 +1,2 @@
+fails:Kernel.Float returns the identical NaN if to_f is called and it returns NaN
+fails:Kernel#Float returns the identical NaN if to_f is called and it returns NaN

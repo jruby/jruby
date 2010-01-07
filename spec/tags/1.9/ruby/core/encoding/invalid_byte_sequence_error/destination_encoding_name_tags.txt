@@ -1,0 +1,2 @@
+fails:Encoding::InvalidByteSequenceError#destination_encoding_name returns a String
+fails:Encoding::InvalidByteSequenceError#destination_encoding_name is equal to the destination encoding name of the object that raised it

@@ -1,0 +1,3 @@
+fails:Encoding::InvalidByteSequenceError#incomplete_input? returns nil by default
+fails:Encoding::InvalidByteSequenceError#incomplete_input? returns true if #primitive_convert returned :incomplete_input for the same data
+fails:Encoding::InvalidByteSequenceError#incomplete_input? returns false if #primitive_convert returned :invalid_byte_sequence for the same data

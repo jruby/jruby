@@ -1,0 +1,2 @@
+fails:ObjectSpace.define_finalizer calls finalizer on process termination
+fails:ObjectSpace.define_finalizer doesn't call self-referencing finalizers

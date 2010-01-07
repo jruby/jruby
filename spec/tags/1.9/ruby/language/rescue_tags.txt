@@ -1,0 +1,1 @@
+fails:The rescue keyword parses  'a += b rescue c' as 'a += (b rescue c)'

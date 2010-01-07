@@ -1,0 +1,2 @@
+fails:Array#sort does not return self even if the array would be already sorted
+fails:Array#sort! ignores any changes of self which would take place during sort!ing
