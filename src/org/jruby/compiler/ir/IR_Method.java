@@ -25,8 +25,8 @@ public class IR_Method extends IR_ExecutionScope {
         super(lexicalParent, container);
         _name = name;
         _isInstanceMethod = isInstanceMethod;
-        _startLabel = getNewLabel("_METH_START_");
-        _endLabel   = getNewLabel("_METH_END_");
+        _startLabel = getNewLabel("_METH_START");
+        _endLabel   = getNewLabel("_METH_END");
         _callArgs = new ArrayList<Operand>();
         _token = CodeVersion.getVersionToken();
     }

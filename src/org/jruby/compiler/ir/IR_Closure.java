@@ -17,8 +17,8 @@ public class IR_Closure extends IR_ExecutionScope {
 
     public IR_Closure(IR_Scope lexicalParent) {
         super(lexicalParent, new MetaObject(lexicalParent));
-        _startLabel = getNewLabel("_CLOSURE_START_");
-        _endLabel = getNewLabel("_CLOSURE_END_");
+        _startLabel = getNewLabel("_CLOSURE_START");
+        _endLabel = getNewLabel("_CLOSURE_END");
         _closureId = getNextClosureId();
         _name = "_CLOSURE_" + _closureId;
     }

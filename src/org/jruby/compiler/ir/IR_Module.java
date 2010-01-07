@@ -87,7 +87,7 @@ public class IR_Module extends IR_ScopeImpl
 
     public IR_Method getInstanceMethod(String name)
     {
-        for (IR_Method m: _methods) {
+        for (IR_Method m: methods) {
             if (m._isInstanceMethod && m._name.equals(name))
                 return m;
         }
@@ -97,7 +97,7 @@ public class IR_Module extends IR_ScopeImpl
 
     public IR_Method getClassMethod(String name)
     {
-        for (IR_Method m: _methods)
+        for (IR_Method m: methods)
             if (!m._isInstanceMethod && _name.equals(name))
                 return m;
 
