@@ -3441,7 +3441,81 @@ public class RubyIO extends RubyObject {
     public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
 
-        try {        
+        try {
+            POpenTuple tuple = popenSpecial(context, args);
+
+            RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
+                    tuple.output,
+                    tuple.input,
+                    tuple.error);
+            
+            if (block.isGiven()) {
+                try {
+                    return block.yield(context, yieldArgs);
+                } finally {
+                    cleanupPOpen(tuple);
+                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
+                }
+            }
+            return yieldArgs;
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
+
+    @JRubyMethod(required = 1, rest = true, frame = true, meta = true)
+    public static IRubyObject popen4(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+
+        try {
+            POpenTuple tuple = popenSpecial(context, args);
+
+            RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
+                    runtime.newFixnum(ShellLauncher.getPidFromProcess(tuple.process)),
+                    tuple.output,
+                    tuple.input,
+                    tuple.error);
+
+            if (block.isGiven()) {
+                try {
+                    return block.yield(context, yieldArgs);
+                } finally {
+                    cleanupPOpen(tuple);
+                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
+                }
+            }
+            return yieldArgs;
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
+
+    private static void cleanupPOpen(POpenTuple tuple) {
+        if (tuple.input.openFile.isOpen()) {
+            tuple.input.close();
+        }
+        if (tuple.output.openFile.isOpen()) {
+            tuple.output.close();
+        }
+        if (tuple.error.openFile.isOpen()) {
+            tuple.error.close();
+        }
+    }
+
+    private static class POpenTuple {
+        public POpenTuple(RubyIO i, RubyIO o, RubyIO e, Process p) {
+            input = i; output = o; error = e; process = p;
+        }
+        public final RubyIO input;
+        public final RubyIO output;
+        public final RubyIO error;
+        public final Process process;
+    }
+
+    public static POpenTuple popenSpecial(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+
+        try {
             ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args);
             RubyIO input = process.getInput() != null ?
                 new RubyIO(runtime, process.getInput()) :
@@ -3460,28 +3534,9 @@ public class RubyIO extends RubyObject {
             error.getOpenFile().getMainStream().getDescriptor().
               setCanBeSeekable(false);
 
-            RubyArray yieldArgs = RubyArray.newArrayLight(runtime, output, input, error);
-            if (block.isGiven()) {
-                try {
-                    return block.yield(context, yieldArgs);
-                } finally {
-                    if (input.openFile.isOpen()) {
-                        input.close();
-                    }
-                    if (output.openFile.isOpen()) {
-                        output.close();
-                    }
-                    if (error.openFile.isOpen()) {
-                        error.close();
-                    }
-                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor() * 256)));
-                }
-            }
-            return yieldArgs;
+            return new POpenTuple(input, output, error, process);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-        } catch (InterruptedException e) {
-            throw runtime.newThreadError("unexpected interrupt");
         }
     }
 
