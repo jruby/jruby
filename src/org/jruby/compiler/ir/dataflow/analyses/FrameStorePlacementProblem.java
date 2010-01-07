@@ -1,23 +1,12 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IR_Closure;
-import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.CALL_Instr;
-import org.jruby.compiler.ir.instructions.STORE_TO_FRAME_Instr;
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Set;
 
 // This problem tries to find places to insert frame stores -- for spilling local variables onto a heap store
@@ -40,6 +29,7 @@ public class FrameStorePlacementProblem extends DataFlowProblem
 
     public String        getName() { return "Frame Stores Placement Analysis"; }
     public FlowGraphNode buildFlowGraphNode(BasicBlock bb) { return new FrameStorePlacementNode(this, bb);  }
+    @Override
     public String        getDataFlowVarsForOutput() { return ""; }
     public void          recordUsedVar(Variable v) { _usedVars.add(v); }
     public void          recordDefVar(Variable v) { _defVars.add(v); }

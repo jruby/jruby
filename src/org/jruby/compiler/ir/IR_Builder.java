@@ -104,7 +104,7 @@ import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
-import org.jruby.compiler.ir.instructions.CALL_Instr;
+import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
@@ -762,7 +762,7 @@ public class IR_Builder
         List<Operand> args         = setupCallArgs(receiverNode, callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewVariable();
-        IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
+        IR_Instr      callInstr    = new CallInstruction(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -989,7 +989,7 @@ public class IR_Builder
             List<Operand> args       = setupCallArgs(null, s);
             Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewVariable();
-            IR_Instr      callInstr  = new CALL_Instr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
+            IR_Instr      callInstr  = new CallInstruction(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
             s.addInstr(callInstr);
             return callResult;
         }
@@ -1727,7 +1727,7 @@ public class IR_Builder
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewVariable();
-        IR_Instr      callInstr    = new CALL_Instr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
+        IR_Instr      callInstr    = new CallInstruction(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -2176,18 +2176,18 @@ public class IR_Builder
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
         Variable      getResult   = s.getNewVariable();
-        IR_Instr      callInstr    = new CALL_Instr(getResult, new MethAddr(opAsgnNode.getVariableName()), new Operand[] {v1}, null);
+        IR_Instr      callInstr    = new CallInstruction(getResult, new MethAddr(opAsgnNode.getVariableName()), new Operand[] {v1}, null);
         s.addInstr(callInstr);
 
         // call operator
         Operand  v2 = build(opAsgnNode.getValueNode(), s);
         Variable      setValue   = s.getNewVariable();
-        callInstr    = new CALL_Instr(setValue, new MethAddr(opAsgnNode.getOperatorName()), new Operand[] {getResult, v2}, null);
+        callInstr    = new CallInstruction(setValue, new MethAddr(opAsgnNode.getOperatorName()), new Operand[] {getResult, v2}, null);
         s.addInstr(callInstr);
 
         // set attr
         Variable      setResult   = s.getNewVariable();
-        callInstr    = new CALL_Instr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), new Operand[] {v1, setValue}, null);
+        callInstr    = new CallInstruction(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), new Operand[] {v1, setValue}, null);
         s.addInstr(callInstr);
 
         return setResult;
@@ -2397,7 +2397,7 @@ public class IR_Builder
             allArgs[i] = x;
             i++;
         }
-        s.addInstr(new CALL_Instr(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new CallInstruction(elt, new MethAddr("[]"), allArgs, null));
         s.addInstr(new IS_TRUE_Instr(f, elt));
         s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
@@ -2409,7 +2409,7 @@ public class IR_Builder
             i++;
         }
         allArgs[i] = value;
-        s.addInstr(new CALL_Instr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new CallInstruction(elt, new MethAddr("[]="), allArgs, null));
         s.addInstr(new COPY_Instr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2430,7 +2430,7 @@ public class IR_Builder
             allArgs[i] = x;
             i++;
         }
-        s.addInstr(new CALL_Instr(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new CallInstruction(elt, new MethAddr("[]"), allArgs, null));
         s.addInstr(new IS_TRUE_Instr(f, elt));
         s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
@@ -2442,7 +2442,7 @@ public class IR_Builder
             i++;
         }
         allArgs[i] = value;
-        s.addInstr(new CALL_Instr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new CallInstruction(elt, new MethAddr("[]="), allArgs, null));
         s.addInstr(new COPY_Instr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2798,7 +2798,7 @@ public class IR_Builder
     public Operand buildVCall(VCallNode node, IR_Scope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
         Variable      callResult = s.getNewVariable();
-        IR_Instr      callInstr  = new CALL_Instr(callResult, new MethAddr(node.getName()), args.toArray(new Operand[args.size()]), null);
+        IR_Instr      callInstr  = new CallInstruction(callResult, new MethAddr(node.getName()), args.toArray(new Operand[args.size()]), null);
         s.addInstr(callInstr);
         return callResult;
     }

@@ -9,8 +9,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.jruby.runtime.Frame;
+
+import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -188,11 +189,11 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl {
                 receivesClosureArg = true;
 
             // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
-            if ((i instanceof RUBY_INTERNALS_CALL_Instr) && (((CALL_Instr)i).getMethodAddr() == MethAddr.ZSUPER))
+            if ((i instanceof RUBY_INTERNALS_CALL_Instr) && (((CallInstruction) i).getMethodAddr() == MethAddr.ZSUPER))
                 _canCaptureCallersFrame = true;
 
-            if (i instanceof CALL_Instr) {
-                CALL_Instr call = (CALL_Instr)i;
+            if (i instanceof CallInstruction) {
+                CallInstruction call = (CallInstruction) i;
                 if (call.requiresFrame())
                     _requiresFrame = true;
 

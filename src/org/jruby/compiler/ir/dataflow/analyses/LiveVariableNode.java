@@ -4,8 +4,8 @@ import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
+import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.CALL_Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -24,6 +24,7 @@ public class LiveVariableNode extends FlowGraphNode
 /* ---------- Public fields, methods --------- */
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) { super(prob, n); }
 
+    @Override
     public void init()
     {
         _setSize = _prob.getDFVarsCount();
@@ -104,8 +105,8 @@ public class LiveVariableNode extends FlowGraphNode
 
             // Check if 'i' is a call and uses a closure!
             // If so, we need to process the closure for live variable info.
-            if (i instanceof CALL_Instr) {
-                CALL_Instr c = (CALL_Instr)i;
+            if (i instanceof CallInstruction) {
+                CallInstruction c = (CallInstruction) i;
                 // SSS FIXME: This relies on the local opt. pass having run already
                 // so that the built closure from the previous istnr. is propagated to the call site here.
                 // Formalize this dependency somewhere?
@@ -182,6 +183,7 @@ public class LiveVariableNode extends FlowGraphNode
         }
     }
 
+    @Override
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
@@ -250,8 +252,8 @@ public class LiveVariableNode extends FlowGraphNode
 //                System.out.println("IGNORING! No result!");
             }
 
-            if (i instanceof CALL_Instr) {
-                CALL_Instr c = (CALL_Instr)i;
+            if (i instanceof CallInstruction) {
+                CallInstruction c = (CallInstruction) i;
                 if (c.isLVADataflowBarrier()) {
                     // Mark all variables live if 'c' is a dataflow barrier!
                     for (int j = 0; j < _setSize; j++)

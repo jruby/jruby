@@ -3,6 +3,9 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Variable;
 
+/*
+ * Assign Argument passed into scope/method to destination Variable
+ */
 public class ReceiveArgumentInstruction extends NoOperandInstr {
     int argIndex;
     boolean restOfArgArray;

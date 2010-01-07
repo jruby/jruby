@@ -12,13 +12,12 @@ import java.util.Stack;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyObject;
 import org.jruby.compiler.ir.CompilerTarget;
-import org.jruby.compiler.ir.IR_Builder;
 import org.jruby.compiler.ir.IR_Class;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Script;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
-import org.jruby.compiler.ir.instructions.CALL_Instr;
+import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
@@ -194,7 +193,7 @@ public class JVM implements CompilerTarget {
         case BEQ:
             emitBEQ((BEQ_Instr)instr); break;
         case CALL:
-            emitCALL((CALL_Instr)instr); break;
+            emitCALL((CallInstruction) instr); break;
         case COPY:
             emitCOPY((COPY_Instr)instr); break;
         case DEF_INST_METH:
@@ -248,7 +247,7 @@ public class JVM implements CompilerTarget {
         method().storeLocal(index);
     }
 
-    public void emitCALL(CALL_Instr call) {
+    public void emitCALL(CallInstruction call) {
         for (Operand operand : call.getCallArgs()) {
             emit(operand);
         }

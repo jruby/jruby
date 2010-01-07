@@ -11,10 +11,8 @@ import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Method;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_ScopeImpl;
 import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
-import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
-import org.jruby.compiler.ir.instructions.CALL_Instr;
+import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
@@ -25,7 +23,6 @@ import org.jruby.compiler.ir.operands.BreakResult;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Float;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Constant;
 import org.jruby.compiler.ir.operands.Variable;
@@ -102,7 +99,7 @@ public class LocalOptimizationPass implements CompilerPass
             // Optimize some core class method calls for constant values
             else if (iop.isCall()) {
                 val = null;
-                CALL_Instr call = ((CALL_Instr)i);
+                CallInstruction call = (CallInstruction) i;
                 Operand    r    = call.getReceiver(); 
                 // SSS FIXME: r can be null for ruby/jruby internal call instructions!
                 // Cannot optimize them as of now.
