@@ -151,7 +151,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                     it.next();
                     for (Variable v: reqdLoads) {
                         if (cl_flp.scopeDefinesVariable(v)) {
-                            it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                            it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -165,7 +165,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
                 else if (call.requiresFrame()) {
                     it.next();
                     for (Variable v: reqdLoads) {
-                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
                         it.previous();
                     }
                     it.previous();
@@ -182,7 +182,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode
         if ((s instanceof IR_Closure) && (_bb == _prob.getCFG().getEntryBB())) {
             for (Variable v: reqdLoads) {
                 if (flp.scopeUsesVariable(v)) {
-                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v._name));
+                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
                 }
             }
         }

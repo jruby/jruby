@@ -110,7 +110,7 @@ import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
-import org.jruby.compiler.ir.instructions.FILE_NAME_Instr;
+import org.jruby.compiler.ir.instructions.FilenameInstruction;
 import org.jruby.compiler.ir.instructions.GET_ARRAY_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
@@ -127,7 +127,7 @@ import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.PUT_GLOBAL_VAR_Instr;
-import org.jruby.compiler.ir.instructions.RECV_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
@@ -162,7 +162,6 @@ import org.jruby.compiler.ir.operands.Range;
 import org.jruby.compiler.ir.operands.Regexp;
 import org.jruby.compiler.ir.operands.SValue;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.compiler.ir.operands.StandardError;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.Variable;
@@ -1573,7 +1572,7 @@ public class IR_Builder
         // s.getVariableCompiler().checkMethodArity(required, opt, rest);
 
             // self = args[0]
-        s.addInstr(new RECV_ARG_Instr(s.getSelf(), 0));
+        s.addInstr(new ReceiveArgumentInstruction(s.getSelf(), 0));
 
             // Other args begin at index 1
         int argIndex = 1;
@@ -1586,7 +1585,7 @@ public class IR_Builder
                 TypedArgumentNode t = (TypedArgumentNode)a;
                 s.addInstr(new DECLARE_LOCAL_TYPE_Instr(argIndex, buildType(t.getTypeNode())));
             }
-            s.addInstr(new RECV_ARG_Instr(new Variable(a.getName()), argIndex));
+            s.addInstr(new ReceiveArgumentInstruction(new Variable(a.getName()), argIndex));
         }
 
             // IMPORTANT: Receive the block argument before the opt and splat args
@@ -1608,7 +1607,7 @@ public class IR_Builder
             }
 
             if (rest > -1) {
-                s.addInstr(new RECV_ARG_Instr(new Variable(argsNode.getRestArgNode().getName()), argIndex, true));
+                s.addInstr(new ReceiveArgumentInstruction(new Variable(argsNode.getRestArgNode().getName()), argIndex, true));
                 argIndex++;
             }
         }
@@ -2680,11 +2679,11 @@ public class IR_Builder
         IR_Method rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name
-        rootMethod.addInstr(new FILE_NAME_Instr(node.getPosition().getFile()));
+        rootMethod.addInstr(new FilenameInstruction(node.getPosition().getFile()));
 
         // add a "self" recv here
         // TODO: is this right?
-        rootMethod.addInstr(new RECV_ARG_Instr(rootClass.getSelf(), 0));
+        rootMethod.addInstr(new ReceiveArgumentInstruction(rootClass.getSelf(), 0));
 
         RootNode rootNode = (RootNode) node;
         build(rootNode.getBodyNode(), rootMethod);

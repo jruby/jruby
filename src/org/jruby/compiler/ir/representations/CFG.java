@@ -35,25 +35,22 @@ import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
 
-public class CFG
-{
+public class CFG {
     public enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
 
-    public static class CFG_Edge
-    {
+    public static class CFG_Edge {
         final public BasicBlock _src;
         final public BasicBlock _dst;
         public CFG_Edge_Type _type;
 
-        public CFG_Edge(BasicBlock s, BasicBlock d)
-        {
+        public CFG_Edge(BasicBlock s, BasicBlock d) {
             _src = s;
             _dst = d;
             _type = CFG_Edge_Type.UNKNOWN;   // Unknown type to start with
         }
 
-        public String toString()
-        {
+        @Override
+        public String toString() {
             return "<" + _src.getID() + " --> " + _dst.getID() + ">";
         }
     }
@@ -68,8 +65,7 @@ public class CFG
     Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
     BasicBlock[]                        _bbArray;       // Array indexed by bb id
 
-    public CFG(IR_ExecutionScope s)
-    {
+    public CFG(IR_ExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
         _postOrderList = null;
@@ -77,90 +73,74 @@ public class CFG
         _bbMap = new HashMap<Label, BasicBlock>();
     }
 
-    public DirectedGraph getGraph()
-    {
+    public DirectedGraph getGraph() {
         return _cfg;
     }
 
-    public IR_ExecutionScope getScope()
-    {
+    public IR_ExecutionScope getScope() {
         return _scope;
     }
 
-    public BasicBlock getEntryBB()
-    {
+    public BasicBlock getEntryBB() {
         return _entryBB;
     }
 
-    public BasicBlock getExitBB()
-    {
+    public BasicBlock getExitBB() {
         return _exitBB;
     }
 
-    public int getNextBBID()
-    {
-       _nextBBId++;
-       return _nextBBId;
+    public int getNextBBID() {
+        _nextBBId++;
+        return _nextBBId;
     }
 
-    public int getMaxNodeID()
-    {
-       return _nextBBId;
+    public int getMaxNodeID() {
+        return _nextBBId;
     }
 
-    public Set<CFG_Edge> incomingEdgesOf(BasicBlock bb)
-    {
+    public Set<CFG_Edge> incomingEdgesOf(BasicBlock bb) {
         return _cfg.incomingEdgesOf(bb);
     }
 
-    public Set<CFG_Edge> outgoingEdgesOf(BasicBlock bb)
-    {
+    public Set<CFG_Edge> outgoingEdgesOf(BasicBlock bb) {
         return _cfg.outgoingEdgesOf(bb);
     }
 
-    public Set<BasicBlock> getNodes()
-    {
+    public Set<BasicBlock> getNodes() {
         return _cfg.vertexSet();
     }
 
     // SSS FIXME: This is only valid temporarily while the cfg blocks
     // haven't been reordered around.  This code is there temporarily
     // to get Tom & Charlie started on the IR interpreter.
-    public BasicBlock getFallThroughBB(BasicBlock bb)
-    {
+    public BasicBlock getFallThroughBB(BasicBlock bb) {
         return _bbArray[bb.getID()];
     }
 
-    public BasicBlock getTargetBB(Label l)
-    {
+    public BasicBlock getTargetBB(Label l) {
         return _bbMap.get(l);
     }
 
-    private Label getNewLabel()
-    {
+    private Label getNewLabel() {
         return _scope.getNewLabel();
     }
 
-    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap)
-    {
+    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap) {
         BasicBlock b = new BasicBlock(this, l);
         bbMap.put(b._label, b);
         g.addVertex(b);
         return b;
     }
 
-    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap)
-    {
+    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap) {
         return createNewBB(getNewLabel(), g, bbMap);
     }
 
-    private void addEdge(DirectedGraph<BasicBlock, CFG_Edge> g, BasicBlock src, Label tgt, Map<Label, BasicBlock> bbMap, Map<Label, List<BasicBlock>> forwardRefs)
-    {
+    private void addEdge(DirectedGraph<BasicBlock, CFG_Edge> g, BasicBlock src, Label tgt, Map<Label, BasicBlock> bbMap, Map<Label, List<BasicBlock>> forwardRefs) {
         BasicBlock tgtBB = bbMap.get(tgt);
         if (tgtBB != null) {
             g.addEdge(src, tgtBB);
-        }
-        else {
+        } else {
             // Add a forward reference from tgt -> src
             List<BasicBlock> frefs = forwardRefs.get(tgt);
             if (frefs == null) {
@@ -171,8 +151,7 @@ public class CFG
         }
     }
 
-    public void build(List<IR_Instr> instrs)
-    {
+    public void build(List<IR_Instr> instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
 
@@ -186,9 +165,12 @@ public class CFG
         Map<RESCUED_BODY_END_MARKER_Instr, BasicBlock> rbeMarkers = new HashMap<RESCUED_BODY_END_MARKER_Instr, BasicBlock>();
 
         DirectedGraph<BasicBlock, CFG_Edge> g = new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
-                                                    new EdgeFactory<BasicBlock, CFG_Edge>() {
-                                                        public CFG_Edge createEdge(BasicBlock s, BasicBlock d) { return new CFG_Edge(s, d); }
-                                                    });
+                new EdgeFactory<BasicBlock, CFG_Edge>() {
+
+                    public CFG_Edge createEdge(BasicBlock s, BasicBlock d) {
+                        return new CFG_Edge(s, d);
+                    }
+                });
 
         // Dummy entry basic block (see note at end to see why)
         _entryBB = createNewBB(g, _bbMap);
@@ -197,95 +179,90 @@ public class CFG
         BasicBlock firstBB = createNewBB(g, _bbMap);
 
         // Build the rest!
-        BasicBlock prevBB  = null;
-        BasicBlock currBB  = firstBB;
-        BasicBlock newBB   = null;
-        boolean    bbEnded = false;
-        boolean    bbEndedWithControlXfer = false;
-        for (IR_Instr i: instrs) {
+        BasicBlock prevBB = null;
+        BasicBlock currBB = firstBB;
+        BasicBlock newBB = null;
+        boolean bbEnded = false;
+        boolean bbEndedWithControlXfer = false;
+        for (IR_Instr i : instrs) {
             Operation iop = i._op;
             if (iop == Operation.LABEL) {
-                Label l = ((LABEL_Instr)i)._lbl;
+                Label l = ((LABEL_Instr) i)._lbl;
                 prevBB = currBB;
                 newBB = createNewBB(l, g, _bbMap);
-                if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
-                   g.addEdge(currBB, newBB);
+                if (!bbEndedWithControlXfer) // Jump instruction bbs dont add an edge to the succeeding bb by default
+                {
+                    g.addEdge(currBB, newBB);
+                }
                 currBB = newBB;
 
                 // Add forward reference edges
                 List<BasicBlock> frefs = forwardRefs.get(l);
                 if (frefs != null) {
-                    for (BasicBlock b: frefs)
+                    for (BasicBlock b : frefs) {
                         g.addEdge(b, newBB);
+                    }
                 }
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
-            }
-            else if (bbEnded && (iop != Operation.RESCUE_BODY_END)) {
+            } else if (bbEnded && (iop != Operation.RESCUE_BODY_END)) {
                 prevBB = currBB;
                 newBB = createNewBB(g, _bbMap);
-                if (!bbEndedWithControlXfer)  // Jump instruction bbs dont add an edge to the succeeding bb by default
+                if (!bbEndedWithControlXfer) // Jump instruction bbs dont add an edge to the succeeding bb by default
+                {
                     g.addEdge(currBB, newBB); // currBB cannot be null!
+                }
                 currBB = newBB;
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
             }
 
             if (i instanceof RESCUED_BODY_START_MARKER_Instr) {
-                ((RESCUED_BODY_START_MARKER_Instr)i).setRescuedBodyStartBB(currBB);
-            }
-            else if (i instanceof RESCUED_BODY_END_MARKER_Instr) {
-					 currBB.addInstr(i);
-                rbeMarkers.put((RESCUED_BODY_END_MARKER_Instr)i, currBB);
-            }
-            else if (iop.endsBasicBlock()) {
+                ((RESCUED_BODY_START_MARKER_Instr) i).setRescuedBodyStartBB(currBB);
+            } else if (i instanceof RESCUED_BODY_END_MARKER_Instr) {
+                currBB.addInstr(i);
+                rbeMarkers.put((RESCUED_BODY_END_MARKER_Instr) i, currBB);
+            } else if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
                 Label tgt;
                 if (i instanceof BRANCH_Instr) {
-                    tgt = ((BRANCH_Instr)i).getJumpTarget();
-                }
-                else if (i instanceof JUMP_Instr) {
-                    tgt = ((JUMP_Instr)i).getJumpTarget();
+                    tgt = ((BRANCH_Instr) i).getJumpTarget();
+                } else if (i instanceof JUMP_Instr) {
+                    tgt = ((JUMP_Instr) i).getJumpTarget();
                     bbEndedWithControlXfer = true;
-                }
-                // CASE IR instructions are dummy instructions 
+                } // CASE IR instructions are dummy instructions
                 // -- all when/then clauses have been converted into if-then-else blocks
                 else if (i instanceof CASE_Instr) {
                     tgt = null;
-                }
-                // SSS FIXME: To be done
+                } // SSS FIXME: To be done
                 else if (i instanceof BREAK_Instr) {
                     tgt = null;
                     bbEndedWithControlXfer = true;
-                }
-                else if (i instanceof RETURN_Instr) {
+                } else if (i instanceof RETURN_Instr) {
                     tgt = null;
                     retBBs.add(currBB);
                     bbEndedWithControlXfer = true;
-                }
-                else if (i instanceof THROW_EXCEPTION_Instr) {
+                } else if (i instanceof THROW_EXCEPTION_Instr) {
                     tgt = null;
                     retBBs.add(currBB);
                     bbEndedWithControlXfer = true;
-                }
-                else if (i instanceof JUMP_INDIRECT_Instr) {
+                } else if (i instanceof JUMP_INDIRECT_Instr) {
                     tgt = null;
                     bbEndedWithControlXfer = true;
-                    Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr)i)._target);
-                    for (Label l: retAddrs)
+                    Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr) i)._target);
+                    for (Label l : retAddrs) {
                         addEdge(g, currBB, l, _bbMap, forwardRefs);
-                }
-                else {
+                    }
+                } else {
                     tgt = null;
                 }
 
                 if (tgt != null) {
                     addEdge(g, currBB, tgt, _bbMap, forwardRefs);
                 }
-            }
-            else if (iop != Operation.LABEL) {
-               currBB.addInstr(i);
+            } else if (iop != Operation.LABEL) {
+                currBB.addInstr(i);
             }
 
             if (i instanceof SET_RETADDR_Instr) {
@@ -295,19 +272,18 @@ public class CFG
                     addrs = new HashSet<Label>();
                     retAddrMap.put(v, addrs);
                 }
-                addrs.add(((SET_RETADDR_Instr)i).getReturnAddr());
-            }
-				else if (i instanceof BUILD_CLOSURE_Instr) { // Build CFG for the closure!
-                ((BUILD_CLOSURE_Instr)i).getClosure().buildCFG();
+                addrs.add(((SET_RETADDR_Instr) i).getReturnAddr());
+            } else if (i instanceof BUILD_CLOSURE_Instr) { // Build CFG for the closure!
+                ((BUILD_CLOSURE_Instr) i).getClosure().buildCFG();
             }
         }
 
         // Hook up the first bb of all the rescue blocks with the last bb of the rescued body
-        for (RESCUED_BODY_END_MARKER_Instr rbEnd: rbeMarkers.keySet()) {
+        for (RESCUED_BODY_END_MARKER_Instr rbEnd : rbeMarkers.keySet()) {
             BasicBlock rbEndBB = rbeMarkers.get(rbEnd);
             RESCUED_BODY_START_MARKER_Instr rbStart = rbEnd._rbStartInstr;
             rbStart.setRescuedBodyEndBB(rbEndBB);
-            for (Label l: rbStart._rescueBlockLabels) {
+            for (Label l : rbStart._rescueBlockLabels) {
                 BasicBlock rescueBlockStartBB = getTargetBB(l);
                 rescueBlockStartBB.setRescuedBodyEndBB(rbEndBB);
                 g.addEdge(rbEndBB, rescueBlockStartBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
@@ -327,27 +303,29 @@ public class CFG
         _exitBB = createNewBB(g, _bbMap);
         g.addEdge(_entryBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         g.addEdge(_entryBB, firstBB)._type = CFG_Edge_Type.DUMMY_EDGE;
-        for (BasicBlock rb: retBBs)
+        for (BasicBlock rb : retBBs) {
             g.addEdge(rb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
-        if (!bbEndedWithControlXfer)
+        }
+        if (!bbEndedWithControlXfer) {
             g.addEdge(currBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
+        }
 
         // Set up the bb array
         int n = getMaxNodeID();
         _bbArray = new BasicBlock[n];
-        for (BasicBlock x: _bbMap.values())
-            _bbArray[x.getID()-1] = x;
+        for (BasicBlock x : _bbMap.values()) {
+            _bbArray[x.getID() - 1] = x;
+        }
 
         _cfg = g;
     }
 
-    private void buildPostOrderTraversal()
-    {
+    private void buildPostOrderTraversal() {
         _postOrderList = new LinkedList<BasicBlock>();
         BasicBlock root = getEntryBB();
         Stack<BasicBlock> stack = new Stack<BasicBlock>();
         stack.push(root);
-        BitSet bbSet = new BitSet(1+getMaxNodeID());
+        BitSet bbSet = new BitSet(1 + getMaxNodeID());
         bbSet.set(root.getID());
 
         // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
@@ -355,7 +333,7 @@ public class CFG
             // Check if all children of the top of the stack have been added
             BasicBlock b = stack.peek();
             boolean allChildrenDone = true;
-            for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+            for (CFG_Edge e : _cfg.outgoingEdgesOf(b)) {
                 BasicBlock dst = e._dst;
                 int dstID = dst.getID();
                 if (!bbSet.get(dstID)) {
@@ -373,24 +351,23 @@ public class CFG
         }
     }
 
-    public ListIterator<BasicBlock> getPostOrderTraverser()
-    {
-        if (_postOrderList == null)
+    public ListIterator<BasicBlock> getPostOrderTraverser() {
+        if (_postOrderList == null) {
             buildPostOrderTraversal();
+        }
 
         return _postOrderList.listIterator();
     }
 
-    public ListIterator<BasicBlock> getReversePostOrderTraverser()
-    {
-        if (_postOrderList == null)
+    public ListIterator<BasicBlock> getReversePostOrderTraverser() {
+        if (_postOrderList == null) {
             buildPostOrderTraversal();
+        }
 
         return _postOrderList.listIterator(getMaxNodeID());
     }
 
-    private Integer intersectDomSets(Integer[] idomMap, Integer nb1, Integer nb2)
-    {
+    private Integer intersectDomSets(Integer[] idomMap, Integer nb1, Integer nb2) {
         while (nb1 != nb2) {
             while (nb1 < nb2) {
                 nb1 = idomMap[nb1];
@@ -403,13 +380,12 @@ public class CFG
         return nb1;
     }
 
-    public void buildDominatorTree()
-    {
-        int maxNodeId = getMaxNodeID();  
+    public void buildDominatorTree() {
+        int maxNodeId = getMaxNodeID();
 
         // Set up a map of bbid -> post order numbering
-        Integer[]    bbToPoNumbers = new Integer[maxNodeId+1];
-        BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId+1];
+        Integer[] bbToPoNumbers = new Integer[maxNodeId + 1];
+        BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId + 1];
         ListIterator<BasicBlock> it = getPostOrderTraverser();
         int n = 0;
         while (it.hasNext()) {
@@ -427,10 +403,10 @@ public class CFG
         //
         // This maps a bb's post-order number to the bb's idom post-order number.
         // We convert this po-number -> po-number map to a bb -> bb map later on!
-        Integer[] idoms = new Integer[maxNodeId+1];
+        Integer[] idoms = new Integer[maxNodeId + 1];
 
         BasicBlock root = getEntryBB();
-        Integer    rootPoNumber = bbToPoNumbers[root.getID()];
+        Integer rootPoNumber = bbToPoNumbers[root.getID()];
         idoms[rootPoNumber] = rootPoNumber;
         boolean changed = true;
         while (changed) {
@@ -438,8 +414,9 @@ public class CFG
             it = getReversePostOrderTraverser();
             while (it.hasPrevious()) {
                 BasicBlock b = it.previous();
-                if (b == root)
+                if (b == root) {
                     continue;
+                }
 
                 // Non-root -- process it
                 Integer bPoNumber = bbToPoNumbers[b.getID()];
@@ -447,7 +424,7 @@ public class CFG
                 Integer newBIdom = null;
 
                 // newBIdom is initialized to be some (first-encountered, for ex.) processed predecessor of 'b'.
-                for (CFG_Edge e: _cfg.incomingEdgesOf(b)) {
+                for (CFG_Edge e : _cfg.incomingEdgesOf(b)) {
                     BasicBlock src = e._src;
                     Integer srcPoNumber = bbToPoNumbers[src.getID()];
                     if (idoms[srcPoNumber] != null) {
@@ -462,7 +439,7 @@ public class CFG
 
                 // Now, intersect dom sets of all of b's predecessors 
                 Integer processedPred = newBIdom;
-                for (CFG_Edge e: _cfg.incomingEdgesOf(b)) {
+                for (CFG_Edge e : _cfg.incomingEdgesOf(b)) {
                     // Process b's predecessors except the initialized bidom value
                     BasicBlock src = e._src;
                     Integer srcPoNumber = bbToPoNumbers[src.getID()];
@@ -491,24 +468,29 @@ public class CFG
         }
     }
 
-    public String toStringInstrs()
-    {
+    public String toStringInstrs() {
         StringBuffer buf = new StringBuffer();
-        for (BasicBlock b: getNodes())
+        for (BasicBlock b : getNodes()) {
             buf.append(b.toStringInstrs());
+        }
 
         List<IR_Closure> closures = _scope.getClosures();
         if (!closures.isEmpty()) {
             buf.append("\n\n------ Closures encountered in this scope ------\n");
-            for (IR_Closure c: closures)
+            for (IR_Closure c : closures) {
                 buf.append(c.toStringBody());
+            }
             buf.append("------------------------------------------------\n");
         }
 
         return buf.toString();
     }
 
-    public void setDataFlowSolution(String name, DataFlowProblem p) { _dfProbs.put(name, p); }
+    public void setDataFlowSolution(String name, DataFlowProblem p) {
+        _dfProbs.put(name, p);
+    }
 
-    public DataFlowProblem getDataFlowSolution(String name) { return _dfProbs.get(name); }
+    public DataFlowProblem getDataFlowSolution(String name) {
+        return _dfProbs.get(name);
+    }
 }

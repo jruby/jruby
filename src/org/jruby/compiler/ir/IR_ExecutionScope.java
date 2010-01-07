@@ -17,12 +17,10 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 
 /* IR_Method and IR_Closure -- basically scopes that represent execution contexts.
  * This is just an abstraction over methods and closures */
-public abstract class IR_ExecutionScope extends IR_ScopeImpl
-{
+public abstract class IR_ExecutionScope extends IR_ScopeImpl {
     private Frame            _frame;    // Heap frame for this execution scope -- allocated on demand.
     private List<IR_Instr>   _instrs;   // List of IR instructions for this method
     private CFG              _cfg;      // Control flow graph for this scope
@@ -105,6 +103,7 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
         _closures.add(c);
     }
 
+    @Override
     public void addInstr(IR_Instr i) { 
         _instrs.add(i); 
     }
@@ -126,6 +125,7 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
     }
 
     // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
+    @Override
     public List<IR_Instr> getInstrs() { 
         return _instrs;
     }
@@ -205,6 +205,7 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
         }
     }
 
+    @Override
     public String toStringInstrs() {
         StringBuilder b = new StringBuilder();
 
@@ -228,6 +229,7 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl
         return b.toString();
     }
 
+    @Override
     public String toStringVariables() {
         StringBuilder sb = new StringBuilder();
         Map<Variable, Integer> ends = new HashMap<Variable, Integer>();

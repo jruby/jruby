@@ -17,7 +17,7 @@ public class IR_MetaClass extends IR_Class
         // SSS FIXME: class name -- can be unknown at compile time ... How do we handle this? 
         super(s, null, new MetaObject(CLASS_METACLASS), "<FIXME>");
 
-        if ((receiver instanceof Variable) && ((Variable)receiver)._name.equals("self")) {
+        if ((receiver instanceof Variable) && ((Variable)receiver).name.equals("self")) {
             IR_Method classRootMethod = (IR_Method)s;
             _metaClassedObject = (MetaObject)classRootMethod.getContainer();
         }

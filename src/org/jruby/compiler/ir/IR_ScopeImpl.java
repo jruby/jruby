@@ -5,17 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
-import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
@@ -46,18 +41,17 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
  *
  * and so on ...
  */
-public abstract class IR_ScopeImpl implements IR_Scope
-{
+public abstract class IR_ScopeImpl implements IR_Scope {
     Operand  _container;      // Parent container for this context
     IR_Scope _lexicalParent;  // Lexical parent scope
 
-        // Map of constants defined in this scope (not valid for methods!)
+    // Map of constants defined in this scope (not valid for methods!)
     private Map<String, Operand> _constMap;
 
-        // Map keep track of the next available variable index for a particular prefix
+    // Map keep track of the next available variable index for a particular prefix
     private Map<String, Integer> _nextVarIndex;
 
-        // Map recording method aliases oldName -> newName maps
+    // Map recording method aliases oldName -> newName maps
     private Map<String, String> _methodAliases;
 
     private int _nextMethodIndex;
@@ -83,7 +77,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         init(lexicalParent, container);
     }
 
-        // Returns the containing scope!
+    // Returns the containing scope!
     public Operand getContainer() {
         return _container;
     }
@@ -97,24 +91,32 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return _nextClosureIndex;
     }
 
+    /**
+     * Provide a prefix (like 'v' or 'cl_1_v') to allocate a new internal
+     * variable with a non-colliding index.  If you have already allocated
+     * %v_0, %v_1, then the next allocated variable will be the next value
+     * %v_2.  Note that each prefix will get a '%' on the front and also
+     * will allocate indexes based on the prefix provided.
+     *
+     * @param prefix
+     * @return a unique variable based on the prefix provided
+     */
     public Variable getNewVariable(String prefix) {
-        if (prefix == null)
-            prefix = "%v_";
+        assert prefix != null : "Invalid variable prefix";
 
-        // We need to ensure that the variable names generated here cannot conflict with ruby variable names!
-        // Hence the "%" that is appended to the beginning!
-        if (!prefix.startsWith("%"))
-            prefix += "%";
+        // Variable names stored here cannot conflict with regular variable names.
+        // We are using '%' as a prefix to prevent name collisions.
+        prefix = "%" + prefix;
 
-        Integer idx = _nextVarIndex.get(prefix);
-        if (idx == null)
-            idx = 0;
-        _nextVarIndex.put(prefix, idx+1);
+        Integer index = _nextVarIndex.get(prefix);
+        if (index == null) index = 0;
+        
+        _nextVarIndex.put(prefix, index+1);
 
-        return new Variable(prefix + idx);
+        return new Variable(prefix + "_" + index);
     }
 
-    public Variable getNewVariable() { return getNewVariable("%v_"); }
+    public Variable getNewVariable() { return getNewVariable("v"); }
 
     public Label getNewLabel(String lblPrefix) {
         Integer idx = _nextVarIndex.get(lblPrefix);
@@ -238,6 +240,7 @@ public abstract class IR_ScopeImpl implements IR_Scope
         return Collections.unmodifiableMap(_constMap);
     }
 
+    @Override
     public String toString() {
         return (_constMap.isEmpty() ? "" : "\n  constants: " + _constMap);
     }

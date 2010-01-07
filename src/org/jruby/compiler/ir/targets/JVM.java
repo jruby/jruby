@@ -27,7 +27,7 @@ import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
-import org.jruby.compiler.ir.instructions.RECV_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.operands.FieldRef;
 import org.jruby.compiler.ir.operands.Fixnum;
@@ -208,7 +208,7 @@ public class JVM implements CompilerTarget {
         case GET_FIELD:
             emitGET_FIELD((GET_FIELD_Instr)instr); break;
         case RECV_ARG:
-            emitRECV_ARG((RECV_ARG_Instr)instr); break;
+            emitRECV_ARG((ReceiveArgumentInstruction)instr); break;
         case RETURN:
             emitRETURN((RETURN_Instr) instr); break;
         default:
@@ -300,7 +300,7 @@ public class JVM implements CompilerTarget {
         method().returnValue();
     }
 
-    public void emitRECV_ARG(RECV_ARG_Instr recvArg) {
+    public void emitRECV_ARG(ReceiveArgumentInstruction recvArg) {
         int index = getVariableIndex(recvArg._result);
         // TODO: need to get this back into the method signature...now is too late...
     }

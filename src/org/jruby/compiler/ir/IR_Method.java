@@ -3,14 +3,12 @@ package org.jruby.compiler.ir;
 import java.util.List;
 import java.util.ArrayList;
 import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.RECV_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.Variable;
 
-public class IR_Method extends IR_ExecutionScope
-{
+public class IR_Method extends IR_ExecutionScope {
     public final String  _name;     // Ruby name 
     public final boolean _isInstanceMethod;
 
@@ -33,9 +31,10 @@ public class IR_Method extends IR_ExecutionScope
         _token = CodeVersion.getVersionToken();
     }
 
+    @Override
     public void addInstr(IR_Instr i) {
         // Accumulate call arguments
-        if (i instanceof RECV_ARG_Instr)
+        if (i instanceof ReceiveArgumentInstruction)
             _callArgs.add(i._result);
 
         super.addInstr(i);
@@ -45,6 +44,7 @@ public class IR_Method extends IR_ExecutionScope
         return _callArgs.toArray(new Operand[_callArgs.size()]);
     }
 
+    @Override
     public void setConstantValue(String constRef, Operand val) {
         if (isAClassRootMethod())
             ((MetaObject)_container)._scope.setConstantValue(constRef, val);
@@ -70,6 +70,7 @@ public class IR_Method extends IR_ExecutionScope
         return _token; 
     }
 
+    @Override
     public String toString() {
         return "Method: " + _name + super.toString();
     }

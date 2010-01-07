@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.instructions.RECV_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 
 public class IR_Module extends IR_ScopeImpl
 {
@@ -70,7 +70,7 @@ public class IR_Module extends IR_ScopeImpl
         //
         String n = ROOT_METHOD_PREFIX + _name;
         _rootMethod = new IR_Method(this, new MetaObject(this), n, false);
-        _rootMethod.addInstr(new RECV_ARG_Instr(_rootMethod.getSelf(), 0));	// Set up self!
+        _rootMethod.addInstr(new ReceiveArgumentInstruction(_rootMethod.getSelf(), 0));	// Set up self!
         addMethod(_rootMethod);
     }
 

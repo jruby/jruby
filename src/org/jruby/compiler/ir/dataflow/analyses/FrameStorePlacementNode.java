@@ -176,7 +176,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v: dirtyVars) {
                         if (spillAllVars || cl_fsp.scopeUsesVariable(v)) {
-                            instrs.add(new STORE_TO_FRAME_Instr(s, v._name, v));
+                            instrs.add(new STORE_TO_FRAME_Instr(s, v.name, v));
                             newDirtyVars.remove(v);
                         }
                         // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
@@ -198,7 +198,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
                         frameAllocated = true;
                     }
                     for (Variable v: dirtyVars)
-                        instrs.add(new STORE_TO_FRAME_Instr(s, v._name, v));
+                        instrs.add(new STORE_TO_FRAME_Instr(s, v.name, v));
                     instrs.next();
                     dirtyVars.clear();
                 }
@@ -219,7 +219,7 @@ public class FrameStorePlacementNode extends FlowGraphNode
 
                 instrs.previous();
                 for (Variable v: dirtyVars) {
-                    instrs.add(new STORE_TO_FRAME_Instr(s, v._name, v));
+                    instrs.add(new STORE_TO_FRAME_Instr(s, v.name, v));
                 }
                 instrs.next();
             }

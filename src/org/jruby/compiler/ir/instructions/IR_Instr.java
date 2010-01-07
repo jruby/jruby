@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,65 +20,68 @@ import org.jruby.compiler.ir.operands.Variable;
 //
 // Ex: v = BOXED_FIXNUM(n)
 //     v = HAS_TYPE(Fixnum)
-
-public abstract class IR_Instr
-{
+public abstract class IR_Instr {
     public final Operation _op;
-    public final Variable  _result; 
-
-        // Used during optimization passes to propagate type and other information
+    public final Variable _result;
+    // Used during optimization passes to propagate type and other information
     private Attribute[] _attributes;
-
-        // Is this instruction live or dead?  During optimization passes, if this instruction
-        // causes no side-effects and the result of the instruction is not needed by anyone else,
-        // we can remove this instruction altogether without affecting program correctness.
+    // Is this instruction live or dead?  During optimization passes, if this instruction
+    // causes no side-effects and the result of the instruction is not needed by anyone else,
+    // we can remove this instruction altogether without affecting program correctness.
     private boolean _isDead;
 
-    public IR_Instr(Operation op)
-    {
-       _op = op;
-       _result = null;
+    public IR_Instr(Operation op) {
+        _op = op;
+        _result = null;
     }
 
-    public IR_Instr(Operation op, Variable res)
-    {
+    public IR_Instr(Operation op, Variable res) {
         _op = op;
         _result = res;
         _attributes = null;
         _isDead = false;
     }
 
+    @Override
     public String toString() {
         return "\t" + (isDead() ? "[DEAD]" : "") + (_result == null ? "" : _result + " = ") + _op;
     }
 
-    public Variable getResult() { return _result; }
+    public Variable getResult() {
+        return _result;
+    }
 
-        // Does this instruction have side effects as a result of its operation
-        // This information is used in optimization phases to impact dead code elimination
-        // and other optimization passes
-    public boolean hasSideEffects() { return _op.hasSideEffects(); }
+    // Does this instruction have side effects as a result of its operation
+    // This information is used in optimization phases to impact dead code elimination
+    // and other optimization passes
+    public boolean hasSideEffects() {
+        return _op.hasSideEffects();
+    }
 
-    public void markDead() { _isDead = true; }
-    public boolean isDead() { return _isDead; }
+    public void markDead() {
+        _isDead = true;
+    }
 
-/* --------- "Abstract"/"please-override" methods --------- */
+    public boolean isDead() {
+        return _isDead;
+    }
+
+    /* --------- "Abstract"/"please-override" methods --------- */
 
     /* Array of all operands for this instruction */
     public abstract Operand[] getOperands();
 
     /* List of all variables used by all operands of this instruction */
-    public List<Variable> getUsedVariables()
-    {
+    public List<Variable> getUsedVariables() {
         ArrayList<Variable> vars = new ArrayList<Variable>();
-        for (Operand o: getOperands()) {
+        for (Operand o : getOperands()) {
             o.addUsedVariables(vars);
         }
 
         return vars;
     }
 
-    /* 
+    /**
      * This method takes as input a map of operands to their values, and outputs
      *
      * If the value map provides a value for any of the instruction's operands
@@ -89,7 +91,7 @@ public abstract class IR_Instr
      */
     public abstract void simplifyOperands(Map<Operand, Operand> valueMap);
 
-    /* 
+    /**
      * This method takes as input a map of operands to their values, and outputs
      * the result of this instruction.
      *
@@ -101,10 +103,9 @@ public abstract class IR_Instr
      * @param valueMap Mapping from operands to their simplified values
      * @returns simplified result / output of this instruction
      */
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
-    {
+    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-        // By default, no simplifications!
-        return null;
+
+        return null; // By default, no simplifications!
     }
 }
