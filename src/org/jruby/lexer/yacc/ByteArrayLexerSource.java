@@ -40,8 +40,15 @@ public class ByteArrayLexerSource extends LexerSource {
             }
             matchPos++;
         }
-        if (withNewline && readCursor.at(matchPos++) != '\n') {
-            return false;
+        if (withNewline) {
+            int c = readCursor.at(matchPos++);
+            if (c == '\r') {
+                // skip
+                c = readCursor.at(matchPos);
+            }
+            if (c != '\n') {
+                return false;
+            }
         }
         for (int i = 0; i < matchPos; i++) {
             readCursor.read();

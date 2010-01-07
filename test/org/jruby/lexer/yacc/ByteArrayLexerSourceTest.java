@@ -151,6 +151,18 @@ public class ByteArrayLexerSourceTest extends TestCase {
         assertReadShouldProduce(src, "=end");
     }
 
+    public void testMatchMarkerShouldVerifyEndOfLineCRLF() throws IOException {
+        final LexerSource src = newSource("=begin\r\n=end\r\n");
+        assertTrue(src.matchMarker(new ByteList(safeGetBytes("=begin")), false, true));
+        assertReadShouldProduce(src, "=end");
+    }
+
+    public void testMatchMarkerShouldVerifyEndOfLineCRLFWithIndent() throws IOException {
+        final LexerSource src = newSource("  =begin\r\n=end\r\n");
+        assertTrue(src.matchMarker(new ByteList(safeGetBytes("=begin")), true, true));
+        assertReadShouldProduce(src, "=end");
+    }
+
     public void testMatchMarkerAcrossUnreadBuffers() throws IOException {
         final LexerSource src = newSource("in\n=end");
         src.unreadMany("=beg");

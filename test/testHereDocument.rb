@@ -82,6 +82,12 @@ EOT
 end
 test_equal('#$1 other #$3', value.chomp)
 
+data_file = File.expand_path(File.join(File.dirname(__FILE__), 'heredoc_CRLF_data.rb'))
+load(data_file)
+test_equal("  Multiline\n  text\n", $HEREDOC)
+
+test_equal("  Line1\n  Line2\n", $HEREDOC_WITH_INDENT)
+
 # Note: This test must be last test of this file and the EOF beneath it must
 # not end in a newline.  Test HEREDOC terminating without newline.
 str = <<EOF
