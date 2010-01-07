@@ -66,6 +66,9 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/rubygems',
   ]
 
+  # Command Line specs
+  set :command_line, [ SPEC_DIR + '/command_line' ]
+
   if WINDOWS
     # core
     get(:core) << '^' + SPEC_DIR + '/core/argf'          # hangs
@@ -73,7 +76,6 @@ class MSpecScript
     get(:core) << '^' + SPEC_DIR + '/core/env'           # many failures
     get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
     get(:core) << '^' + SPEC_DIR + '/core/filetest'      # many failures
-    get(:core) << '^' + SPEC_DIR + '/core/io'            # many failures
     get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
     get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
@@ -81,7 +83,7 @@ class MSpecScript
     set :xtags, ['windows']
   end
 
-  set :ci_files, get(:language) + get(:core) + get(:library)
+  set :ci_files, get(:language) + get(:core) + get(:library) + get(:command_line)
 
   # The default implementation to run the specs.
   set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name'] + Config::CONFIG['EXEEXT']

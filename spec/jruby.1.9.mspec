@@ -36,9 +36,12 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/ping',
   ]
 
+  # Command Line specs
+  set :command_line, [ SPEC_DIR + '/command_line' ]
+
   # An ordered list of the directories containing specs to run
   # FIXME: add 1.9 library back at a later date
-  set :files, get(:language) + get(:core) #+ get(:library)
+  set :files, get(:language) + get(:core) + get(:command_line) #+ get(:library)
 
   # This set of files is run by mspec ci
   set :ci_files, get(:files)

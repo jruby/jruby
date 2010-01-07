@@ -196,6 +196,23 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_match /(tiered|server|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler)/, result.downcase
   end
 
+  # JRUBY-3962
+  def test_args_with_rubyopt
+    rubyopt_org = ENV['RUBYOPT']
+    args = "-e 'puts ARGV.join' a b c"
+
+    ENV['RUBYOPT'] = '-rrubygems'
+    assert_equal 'abc', jruby(args).chomp
+
+    ENV.delete 'RUBYOPT'
+    assert_equal 'abc', jruby(args).chomp
+
+    if rubyopt_org
+      ENV['RUBYOPT'] = rubyopt_org
+    end
+  end
+
+
   # JRUBY-2648 [Note: Originally these tests had tests for default vm and
   # also for -J options in addition to jruby options (-J-client versus 
   # --client).  In other tests we test that -J works and passes thru and

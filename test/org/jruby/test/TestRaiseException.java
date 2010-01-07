@@ -32,6 +32,8 @@ import org.jruby.Ruby;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import org.jruby.RubyRuntimeAdapter;
+import org.jruby.javasupport.JavaEmbedUtils;
 
 public class TestRaiseException extends TestRubyBase {
     public static class ThrowFromJava {
@@ -86,6 +88,17 @@ public class TestRaiseException extends TestRubyBase {
              re.printStackTrace(new PrintStream(baos));
              //String trace = baos.toString();
              // System.out.println(trace);
+        }
+    }
+
+    public void testRubyExceptionWithoutCause() throws Exception {
+        try {
+            RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
+
+            evaler.eval(runtime, "no_method_with_this_name");
+            fail("Expected ScriptException");
+        } catch (RaiseException re) {
+            assertEquals("undefined local variable or method `no_method_with_this_name' for main:Object", re.getMessage());
         }
     }
 }

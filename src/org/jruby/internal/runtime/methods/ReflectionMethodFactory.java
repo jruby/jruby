@@ -148,7 +148,7 @@ public class ReflectionMethodFactory extends MethodFactory {
     public CompiledBlockCallback getBlockCallback(String method, final Object scriptObject) {
         try {
             Class scriptClass = scriptObject.getClass();
-            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+            final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
             return new CompiledBlockCallback() {
                 public IRubyObject call(ThreadContext context, IRubyObject self, IRubyObject args, Block block) {
                     try {

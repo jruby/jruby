@@ -153,7 +153,7 @@ public class RubyObject extends RubyBasicObject {
      * @see RubyKernel
      */
     public static class ObjectMethods {
-        @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
         public static IRubyObject intialize(IRubyObject self) {
             return self.getRuntime().getNil();
         }

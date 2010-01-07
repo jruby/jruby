@@ -237,28 +237,6 @@ public class HandleFactory {
         return createHandle(classLoader, method, DEBUG);
     }
     
-    protected static Class getBoxType(Class type) {
-        if (type == int.class) {
-            return Integer.class;
-        } else if (type == byte.class) {
-            return Byte.class;
-        } else if (type == short.class) {
-            return Short.class;
-        } else if (type == char.class) {
-            return Character.class;
-        } else if (type == long.class) {
-            return Long.class;
-        } else if (type == float.class) {
-            return Float.class;
-        } else if (type == double.class) {
-            return Double.class;
-        } else if (type == boolean.class) {
-            return Boolean.class;
-        } else {
-            throw new RuntimeException("Not a native type: " + type);
-        }
-    }
-    
     public static void main(String[] args) {
         try {
             Method method = HandleFactory.class.getMethod("dummy", new Class[] {String.class});
