@@ -83,6 +83,8 @@ public class RubyFloat extends RubyNumeric {
     public static final int MAX_10_EXP = 308;
     public static final int MIN_10_EXP = -307;
     public static final double EPSILON = 2.2204460492503131e-16;
+    public static final double INFINITY = Double.POSITIVE_INFINITY;
+    public static final double NAN = Double.NaN;
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -118,7 +120,12 @@ public class RubyFloat extends RubyNumeric {
         floatc.defineConstant("MIN", RubyFloat.newFloat(runtime, Double.MIN_VALUE));
         floatc.defineConstant("MAX", RubyFloat.newFloat(runtime, Double.MAX_VALUE));
         floatc.defineConstant("EPSILON", RubyFloat.newFloat(runtime, EPSILON));
-        
+
+        if (runtime.is1_9()) {
+            floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
+            floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
+        }
+
         floatc.defineAnnotatedMethods(RubyFloat.class);
 
         return floatc;
