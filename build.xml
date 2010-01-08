@@ -20,6 +20,7 @@
   <property name="rake.gem" value="rake-0.8.7.gem"/>
   <property name="ruby-debug.gem" value="ruby-debug-0.10.3.gem"/>
   <property name="ruby-debug-base.gem" value="ruby-debug-base-0.10.3.1-java.gem"/>
+  <property name="columnize.gem" value="columnize-0.3.1.gem"/>
 
   <property name="shared.lib.dir" value="lib/ruby/site_ruby/shared"/>
 
@@ -456,6 +457,7 @@
         <arg value="${build.lib.dir}/${rake.gem}"/>
         <arg value="${build.lib.dir}/${ruby-debug-base.gem}"/>
         <arg value="${build.lib.dir}/${ruby-debug.gem}"/>
+        <arg value="${build.lib.dir}/${columnize.gem}"/>
         <arg value="--no-ri"/>
         <arg value="--no-rdoc"/>
         <arg value="--ignore-dependencies"/>
@@ -553,6 +555,7 @@
         <arg value="${build.lib.dir}/${rake.gem}"/>
         <arg value="${build.lib.dir}/${ruby-debug-base.gem}"/>
         <arg value="${build.lib.dir}/${ruby-debug.gem}"/>
+        <arg value="${build.lib.dir}/${columnize.gem}"/>
         <arg value="--no-ri"/>
         <arg value="--no-rdoc"/>
         <arg value="--ignore-dependencies"/>
@@ -666,6 +669,7 @@
       <arg value="${build.lib.dir}/${rake.gem}"/>
       <arg value="${build.lib.dir}/${ruby-debug-base.gem}"/>
       <arg value="${build.lib.dir}/${ruby-debug.gem}"/>
+      <arg value="${build.lib.dir}/${columnize.gem}"/>
       <arg value="${install.ri}"/>
       <arg value="${install.rdoc}"/>
       <arg value="--ignore-dependencies"/>
