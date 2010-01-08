@@ -51,12 +51,16 @@ namespace jruby {
     jmethodID RubyData_newRubyData_method;
     jmethodID RubyObject_getNativeTypeIndex_method;
     jmethodID RubyNumeric_num2long_method;
+    jmethodID RubyString_newStringNoCopy;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
     jfieldID Handle_address_field;
     jobject runtime;
+    jobject nilRef;
+    jobject trueRef;
+    jobject falseRef;
 };
 
 using namespace jruby;
@@ -156,14 +160,28 @@ loadIds(JNIEnv* env)
 
     ThreadContext_getRuntime_method = getMethodID(env, ThreadContext_class, "getRuntime", "()Lorg/jruby/Ruby;");
     RubyData_newRubyData_method = getStaticMethodID(env, RubyData_class, "newRubyData", "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;J)Lorg/jruby/cext/RubyData;");
+    RubyString_newStringNoCopy = getStaticMethodID(env, RubyString_class,
+            "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
 }
 
-JNIEXPORT void JNICALL
+static jobject
+callObjectMethod(JNIEnv* env, jobject recv, jmethodID mid)
+{
+    jobject result = env->CallObjectMethod(recv, mid);
+    jruby::checkExceptions(env);
+    return result;
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime)
 {
     try {
         loadIds(env);
         jruby::runtime = env->NewGlobalRef(runtime);
+        jruby::nilRef = env->NewGlobalRef(callObjectMethod(env, runtime, Ruby_getNil_method));
+        jruby::trueRef = env->NewGlobalRef(callObjectMethod(env, runtime, Ruby_getTrue_method));
+        jruby::falseRef = env->NewGlobalRef(callObjectMethod(env, runtime, Ruby_getFalse_method));
+
         initRubyClasses(env, runtime);
     } catch (JavaException& ex) {
         return;

@@ -101,7 +101,7 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
 static VALUE
 dispatch(void* func, int arity, int argCount, VALUE recv, VALUE* v)
 {
-    printf("calling %p with arity=%d\n", func, arity);
+//    printf("calling %p with arity=%d\n", func, arity);
     if (arity < 0) {
         return ((VALUE (*)(int, VALUE*, VALUE)) func)(argCount, v, recv);
     }

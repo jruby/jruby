@@ -35,11 +35,9 @@ static VALUE
 newString(const char* ptr, int len, int capacity = 0, bool tainted = false)
 {
     JLocalEnv env;
+
     jbyteArray bytes = env->NewByteArray(capacity > len ? capacity : len);
     checkExceptions(env);
-
-    jmethodID RubyString_newStringNoCopy = getStaticMethodID(env, RubyString_class,
-            "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
 
     if (len > 0 && ptr != NULL) {
         env->SetByteArrayRegion(bytes, 0, len, (jbyte *) ptr);

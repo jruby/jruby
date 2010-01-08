@@ -20,13 +20,15 @@ package org.jruby.cext;
 
 import com.kenai.jffi.Library;
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ModuleLoader {
     public static final String libext = Platform.IS_MAC ? "bundle" : "so";
-
+    private static final Set<Library> modules = new HashSet<Library>();
     
     public void load(IRubyObject recv, String name) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
@@ -45,11 +47,12 @@ public class ModuleLoader {
         if (init == 0) {
             throw new UnsatisfiedLinkError("Could not locate Init_" + initName + " module entry point");
         }
-        System.out.println("calling init");
-
+        
         ExecutionLock.lock(context);
         try {
+            System.out.printf("calling init (%x)\n", init);
             n.callInit(context, init);
+            modules.add(lib);
         } finally {
             ExecutionLock.unlock(context);
         }

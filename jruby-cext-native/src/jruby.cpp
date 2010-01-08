@@ -81,19 +81,19 @@ static jobject callObjectMethod(JNIEnv* env, jobject recv, jmethodID mid)
 jobject
 jruby::getNilRef(JNIEnv* env)
 {
-    return callObjectMethod(env, getRuntime(), Ruby_getNil_method);
+    return jruby::nilRef;
 }
 
 jobject
 jruby::getFalseRef(JNIEnv* env)
 {
-    return callObjectMethod(env, getRuntime(), Ruby_getFalse_method);
+    return jruby::falseRef;
 }
 
 jobject
 jruby::getTrueRef(JNIEnv* env)
 {
-    return callObjectMethod(env, getRuntime(), Ruby_getTrue_method);
+    return jruby::trueRef;
 }
 
 VALUE

@@ -55,10 +55,11 @@ namespace jruby {
     extern jmethodID RubyData_newRubyData_method;
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
+    extern jmethodID RubyString_newStringNoCopy;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jfieldID Handle_address_field;
-    extern jobject runtime;
+    extern jobject runtime, nilRef, trueRef, falseRef;
 
     void initRubyClasses(JNIEnv* env, jobject runtime);
 

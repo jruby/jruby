@@ -26,6 +26,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 final class Native {
     private static Native INSTANCE;
+    private static Library shim = null; // keep a hard ref to avoid GC
 
     public synchronized static final Native getInstance(Ruby runtime) {
         if (INSTANCE == null) {
@@ -40,8 +41,8 @@ final class Native {
     private void load(Ruby runtime) {
 
         // Force the shim library to load into the global namespace
-        if (Library.openLibrary(System.mapLibraryName("jruby-cext"), Library.NOW | Library.GLOBAL) == null) {
-            throw new UnsatisfiedLinkError("failed to load shim library" + Library.getLastError());
+        if ((shim = Library.openLibrary(System.mapLibraryName("jruby-cext"), Library.NOW | Library.GLOBAL)) == null) {
+            throw new UnsatisfiedLinkError("failed to load shim library, error: " + Library.getLastError());
         }
         
         System.loadLibrary("jruby-cext");
