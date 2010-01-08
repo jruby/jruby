@@ -135,7 +135,15 @@ class TestDir < Test::Unit::TestCase
     end
     assert_equal ["#{jar_file}/abc"], Dir["#{jar_file}/abc"]
   end
-  
+
+  # JRUBY-4177
+  def test_mktmpdir
+    require 'tmpdir'
+    assert_nothing_raised do
+      Dir.mktmpdir('xx') {}
+    end
+  end
+
   if WINDOWS
     def test_chdir_slash_windows
       @orig_pwd = Dir.pwd
