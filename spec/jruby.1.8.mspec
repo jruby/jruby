@@ -72,7 +72,6 @@ class MSpecScript
   if WINDOWS
     # core
     get(:core) << '^' + SPEC_DIR + '/core/argf'          # hangs
-    get(:core) << '^' + SPEC_DIR + '/core/dir'           # many failures
     get(:core) << '^' + SPEC_DIR + '/core/env'           # many failures
     get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
     get(:core) << '^' + SPEC_DIR + '/core/filetest'      # many failures
