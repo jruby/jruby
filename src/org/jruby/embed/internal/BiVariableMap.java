@@ -256,7 +256,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
     public V put (K key, V value) {
-        String name = (String)key;
+        String name = ((String)key).intern();
         BiVariable v = getVariable(name);
         Object oldValue = null;
         if (v != null) {
