@@ -38,3 +38,5 @@ tool/nailgun/config.log
 jruby-findbugs.html
 .debug.properties
 test/testapp/testapp
+glob_test
+spaces test
