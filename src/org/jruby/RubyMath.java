@@ -616,9 +616,18 @@ public class RubyMath {
          * when value is an integer less than 1.
          * We treat 0 as a special case to avoid Domain error.
          */
-        if (Double.isInfinite(result) && value < 0) {
-            result = Double.NaN;
+        if (Double.isInfinite(result)) {
+            if (value < 0) {
+                result = Double.NaN;
+            } else {
+                result = Double.POSITIVE_INFINITY;
+            }
         }
+
+        if (Double.isNaN(value)) {
+            return RubyFloat.newFloat(recv.getRuntime(), Double.NaN);
+        }
+
         domainCheck(recv, result, "gamma");
         return RubyFloat.newFloat(recv.getRuntime(), result);
 
@@ -661,9 +670,19 @@ public class RubyMath {
      */
     private static class NemesLogGamma {
         double value;
-        double sign;
+        double sign = 1;
 
         private NemesLogGamma(double x) {
+            if (Double.isInfinite(x)) {
+                value = Double.POSITIVE_INFINITY;
+                return;
+            }
+
+            if (Double.isNaN(x)) {
+                value = Double.NaN;
+                return;
+            }
+
             double int_part = (int) x;
             sign = (int_part % 2 == 0 && (x - int_part) != 0.0 && (x < 0)) ? -1 : 1;
             if ((x - int_part) == 0.0 && 0 < int_part && int_part <= FACTORIAL.length) {
