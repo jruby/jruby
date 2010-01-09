@@ -78,6 +78,7 @@
             <incDir>
               <pElem>/usr/local/jdk/include</pElem>
               <pElem>/usr/local/jdk/include/linux</pElem>
+              <pElem>build</pElem>
             </incDir>
           </ccTool>
         </makeTool>
