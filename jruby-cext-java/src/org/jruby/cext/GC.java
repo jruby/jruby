@@ -20,6 +20,7 @@ package org.jruby.cext;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.jruby.runtime.ThreadContext;
@@ -29,11 +30,13 @@ import org.jruby.util.WeakIdentityHashMap;
 
 public class GC {
     private static final Map<IRubyObject, Boolean> permRefs = new IdentityHashMap<IRubyObject, Boolean>();
-    private static final Map<IRubyObject, Boolean> strongRefs = new IdentityHashMap<IRubyObject, Boolean>();
+    
     @SuppressWarnings(value="unchecked")
     private static final Map<IRubyObject, Handle> allRefs = new WeakIdentityHashMap();
     @SuppressWarnings(value="unchecked")
     private static final Map<IRubyObject, Handle> dataRefs = new WeakIdentityHashMap();
+
+    private static List<IRubyObject> strongRefs = new LinkedList<IRubyObject>();
 
     /**
      * This is an upcall from the C++ stub to mark objects that are only strongly 
@@ -43,7 +46,7 @@ public class GC {
      */
 
     public static final void mark(IRubyObject obj) {
-        strongRefs.put(obj, Boolean.TRUE);
+        strongRefs.add(obj);
     }
 
     static final Handle lookup(IRubyObject obj) {
@@ -61,7 +64,7 @@ public class GC {
             dataRefs.put(obj, h);
         }
 
-        strongRefs.put(obj, Boolean.TRUE);
+        strongRefs.add(obj);
     }
 
     static final void cleanup(ThreadContext context) {
@@ -69,8 +72,8 @@ public class GC {
 
         // Keep temporary strong refs on the java stack, so all objects remain alive
         // until the GC has completed.
-        List<IRubyObject> tmp = new ArrayList<IRubyObject>(strongRefs.keySet());
-        strongRefs.clear();
+        List<IRubyObject> tmp = strongRefs;
+        strongRefs = new LinkedList<IRubyObject>();
 
         //
         // Iterate over all the registered references, calling down to C++
@@ -84,7 +87,7 @@ public class GC {
         // Clear the mark flag on all handles, so rb_gc_mark can avoid
         // circular references by setting the mark flag for objects it has marked.
         //
-        for (IRubyObject obj : strongRefs.keySet()) {
+        for (IRubyObject obj : strongRefs) {
             n.unmarkHandle(allRefs.get(obj).getAddress());
         }
     }
