@@ -17,6 +17,7 @@
       <in>class.cpp</in>
       <in>data-object.cpp</in>
       <in>funcall.cpp</in>
+      <in>gc.cpp</in>
       <in>hash.cpp</in>
       <in>invoke.cpp</in>
       <in>jruby-cext.cpp</in>

@@ -20,6 +20,7 @@ package org.jruby.cext;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,16 +65,27 @@ public class GC {
     }
 
     static final void cleanup(ThreadContext context) {
-        Map<IRubyObject, Boolean> tmp = new IdentityHashMap<IRubyObject, Boolean>(strongRefs);
+        final Native n = Native.getInstance(context.getRuntime());
 
+        // Keep temporary strong refs on the java stack, so all objects remain alive
+        // until the GC has completed.
+        List<IRubyObject> tmp = new ArrayList<IRubyObject>(strongRefs.keySet());
         strongRefs.clear();
-        
+
         //
         // Iterate over all the registered references, calling down to C++
         // to mark any objects only reachable from C code.
         //
         for (Handle h : new ArrayList<Handle>(dataRefs.values())) {
-            Native.getInstance(context.getRuntime()).markHandle(h.getAddress());
+            n.markHandle(h.getAddress());
+        }
+
+        //
+        // Clear the mark flag on all handles, so rb_gc_mark can avoid
+        // circular references by setting the mark flag for objects it has marked.
+        //
+        for (IRubyObject obj : strongRefs.keySet()) {
+            n.unmarkHandle(allRefs.get(obj).getAddress());
         }
     }
 }

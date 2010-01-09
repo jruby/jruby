@@ -37,6 +37,7 @@ namespace jruby {
     extern jclass RubyNumeric_class;
     extern jclass RubyString_class;
     extern jclass IRubyObject_class;
+    extern jclass GC_class;
     extern jclass Handle_class;
     extern jclass ThreadContext_class;
     extern jclass Symbol_class;
@@ -56,6 +57,7 @@ namespace jruby {
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyString_newStringNoCopy;
+    extern jmethodID GC_mark;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jfieldID Handle_address_field;

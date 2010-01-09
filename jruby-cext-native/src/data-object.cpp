@@ -41,7 +41,7 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     h->type = T_DATA;
 
     jobject obj = env->CallStaticObjectMethod(RubyData_class, RubyData_newRubyData_method, getRuntime(), 
-            valueToObject(env, klass), h);
+            valueToObject(env, klass), (jlong) h);
     checkExceptions(env);
     h->obj = env->NewWeakGlobalRef(obj);
     checkExceptions(env);

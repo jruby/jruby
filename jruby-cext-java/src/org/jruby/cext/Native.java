@@ -58,4 +58,5 @@ final class Native {
     public final native long newHandle(IRubyObject obj);
     public final native void freeHandle(long handle);
     public final native void markHandle(long handle);
+    public final native void unmarkHandle(long handle);
 }

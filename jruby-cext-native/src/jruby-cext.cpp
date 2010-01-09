@@ -34,6 +34,7 @@ namespace jruby {
     jclass RubyNumeric_class;
     jclass RubyString_class;
     jclass Handle_class;
+    jclass GC_class;
     jclass NativeMethod_class;
     jclass NativeObjectAllocator_class;
     jclass ThreadContext_class;
@@ -56,6 +57,7 @@ namespace jruby {
     jmethodID IRubyObject_asJavaString_method;
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
+    jmethodID GC_mark;
     jfieldID Handle_address_field;
     jobject runtime;
     jobject nilRef;
@@ -132,6 +134,7 @@ loadIds(JNIEnv* env)
     RubyString_class = loadClass(env, "org/jruby/RubyString");
     IRubyObject_class = loadClass(env, "org/jruby/runtime/builtin/IRubyObject");
     Handle_class = loadClass(env, "org/jruby/cext/Handle");
+    GC_class = loadClass(env, "org/jruby/cext/GC");
     NativeMethod_class = loadClass(env, "org/jruby/cext/NativeMethod");
     NativeObjectAllocator_class = loadClass(env, "org/jruby/cext/NativeObjectAllocator");
     ObjectAllocator_class = loadClass(env, "org/jruby/runtime/ObjectAllocator");
@@ -153,7 +156,10 @@ loadIds(JNIEnv* env)
     RubyObject_getNativeTypeIndex_method = getMethodID(env, RubyObject_class, "getNativeTypeIndex", "()I");
     RubyNumeric_num2long_method = getStaticMethodID(env, RubyNumeric_class, "num2long",
             "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
+
+    GC_mark = getStaticMethodID(env, GC_class, "mark", "(Lorg/jruby/runtime/builtin/IRubyObject;)V");
     Handle_valueOf = getStaticMethodID(env, Handle_class, "valueOf", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/cext/Handle;");
+
     IRubyObject_callMethod = getMethodID(env, IRubyObject_class, "callMethod",
             "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     IRubyObject_asJavaString_method = getMethodID(env, IRubyObject_class, "asJavaString", "()Ljava/lang/String;");

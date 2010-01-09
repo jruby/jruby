@@ -95,6 +95,10 @@ void *xrealloc(void*,size_t);
 void *xrealloc2(void*,size_t,size_t);
 void xfree(void*);
 
+#define ALLOC_N(type,n) (type*)xmalloc(sizeof(type)*(n))
+#define ALLOC(type) (type*)xmalloc(sizeof(type))
+#define REALLOC_N(var,type,n) (var)=(type*)xrealloc((char*)(var),sizeof(type)*(n))
+
 
 
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
@@ -277,7 +281,8 @@ VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUNC);
     sval = (type*)DATA_PTR(obj);\
 } while (0
 
-
+void rb_gc_mark_locations(VALUE*, VALUE*);
+void rb_gc_mark(VALUE);
 
 
 extern VALUE rb_mKernel;

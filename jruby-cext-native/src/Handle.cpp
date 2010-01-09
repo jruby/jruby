@@ -27,11 +27,22 @@
 
 using namespace jruby;
 
+Handle::Handle()
+{
+    obj = NULL;
+    flags = 0;
+    type = 0;
+    finalize = NULL;
+    dmark = dfree = NULL;
+    data = NULL;
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
 {
     Handle* h = new Handle();
     h->obj = env->NewWeakGlobalRef(obj);
+    h->flags = 0;
     h->type = T_NONE;
     h->finalize = NULL;
     h->dmark = h->dfree = NULL;
@@ -67,9 +78,25 @@ Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
         return;
     }
 
-    if (h->dmark != NULL) {
-       (*h->dmark)(h->data);
+    // Only mark if not already marked
+    if ((h->flags & FL_MARK) == 0) {
+        h->flags |= FL_MARK;
+        if (h->dmark != NULL) {
+            (*h->dmark)(h->data);
+        }
     }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_jruby_cext_Native_unmarkHandle(JNIEnv* env, jobject self, jlong address)
+{
+    Handle* h = (Handle *) jruby::j2p(address);
+    if (h == NULL) {
+        jruby::throwExceptionByName(env, NullPointerException, "null handle");
+        return;
+    }
+
+    h->flags &= ~FL_MARK;
 }
 
 jobject
