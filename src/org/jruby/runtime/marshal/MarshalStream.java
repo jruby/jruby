@@ -72,6 +72,7 @@ public class MarshalStream extends FilterOutputStream {
     private final Ruby runtime;
     private final MarshalCache cache;
     private final int depthLimit;
+    private boolean tainted = false;
     
     private int depth = 0;
 
@@ -98,6 +99,10 @@ public class MarshalStream extends FilterOutputStream {
             throw runtime.newArgumentError("exceed depth limit");
         }
         
+        if(!tainted && value.isTaint()) {
+            tainted = true;
+        }
+
         writeAndRegister(value);
 
         depth--;
@@ -464,5 +469,9 @@ public class MarshalStream extends FilterOutputStream {
 
     public void writeByte(int value) throws IOException {
         out.write(value);
+    }
+
+    public boolean isTainted() {
+        return tainted;
     }
 }

@@ -102,10 +102,13 @@ public class RubyMarshal {
             }
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            dumpToStream(objectToDump, stringOutput, depthLimit);
+            boolean taint = dumpToStream(objectToDump, stringOutput, depthLimit);
 
-            return RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
-
+            RubyString result = RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
+            if(taint) {
+                result.setTaint(true);
+            }
+            return result;
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);
         }
@@ -171,10 +174,11 @@ public class RubyMarshal {
         return new IOInputStream(in);
     }
 
-    private static void dumpToStream(IRubyObject object, OutputStream rawOutput, int depthLimit)
+    private static boolean dumpToStream(IRubyObject object, OutputStream rawOutput, int depthLimit)
         throws IOException
     {
         MarshalStream output = new MarshalStream(object.getRuntime(), rawOutput, depthLimit);
         output.dumpObject(object);
+        return output.isTainted();
     }
 }
