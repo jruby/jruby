@@ -968,25 +968,31 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return (int)callMethod(getRuntime().getCurrentContext(), "<=>", other).convertToInteger().getLongValue();
     }
 
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        // Remain unimplemented due to problems with the double java hierarchy
+        return context.getRuntime().getNil();
+    }
+
     /** rb_obj_equal
      *
      * Will by default use identity equality to compare objects. This
      * follows the Ruby semantics.
+     *
+     * The name of this method doesn't follow the convention because hierarchy problems
      */
     @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
         return this == obj ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
     }
 
-    /** rb_equal
-     *
-     * The Ruby "===" method is used by default in case/when
-     * statements. The Object implementation first checks Java identity
-     * equality and then calls the "==" method too.
-     */
-    @JRubyMethod(name = "equal?", required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);
+        // Remain unimplemented due to problems with the double java hierarchy
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "equal?", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject equal_p19(ThreadContext context, IRubyObject other) {
+        return op_equal_19(context, other);
     }
 
     /**

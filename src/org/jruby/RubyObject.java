@@ -526,7 +526,7 @@ public class RubyObject extends RubyBasicObject {
     @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return super.op_equal(context, obj);
+        return super.op_equal_19(context, obj);
     }
 
     /** rb_obj_equal
