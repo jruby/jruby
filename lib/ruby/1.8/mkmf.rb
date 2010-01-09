@@ -4,7 +4,7 @@ enabled=false
 
 # JRuby does not support mkmf yet, so we fail hard here with a useful message
 if !enabled
-  warn "WARNING: JRuby does not support native extensions or the `mkmf' library.\n         Check wiki.jruby.org for alternatives."
+  warn "WARNING: JRuby does not support native extensions or the `mkmf' library.\n         Check http://kenai.com/projects/jruby/pages/Home for alternatives."
 else
 
 # We're missing this in our rbconfig
