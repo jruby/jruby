@@ -17,4 +17,4 @@ More info about RubySpec can be found here:
 http://rubyspec.org/projects/show/rubyspec
 
 JRuby-specific info can be found here:
-http://wiki.jruby.org/wiki/JRuby_and_RubySpecs
+http://kenai.com/projects/jruby/pages/JRubyAndRubySpecs
