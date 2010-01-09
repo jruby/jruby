@@ -22,6 +22,8 @@
 #include "org_jruby_runtime_ClassIndex.h"
 #include "JLocalEnv.h"
 
+using namespace jruby;
+
 extern "C" int
 rb_type(VALUE val)
 {
@@ -44,7 +46,19 @@ rb_type(VALUE val)
         }
     }
 
-    return ((Handle *) val)->type;
+    Handle* h = (Handle *) val;
+    if (h->type != T_NONE) {
+        return h->type;
+    }
+
+    // Lazy lookup the type
+    JLocalEnv env;
+    jobject obj = env->NewLocalRef(h->obj);
+    if (env->IsSameObject(obj, NULL)) {
+        rb_raise(rb_eRuntimeError, "failed to get type of NULL object");
+    }
+
+    return h->type = typeOf(env, obj);
 }
 
 static struct types {

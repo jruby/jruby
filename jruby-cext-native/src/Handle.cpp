@@ -32,7 +32,7 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
 {
     Handle* h = new Handle();
     h->obj = env->NewWeakGlobalRef(obj);
-    h->type = typeOf(env, obj);
+    h->type = T_NONE;
     h->finalize = NULL;
     h->dmark = h->dfree = NULL;
     h->data = NULL;
