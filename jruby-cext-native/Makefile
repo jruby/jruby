@@ -1,119 +1,248 @@
+# -*- makefile -*-
+
+JRUBY_DIR = ../../jruby.git
+JRUBY_JAR = $(JRUBY_DIR)/lib/jruby.jar
+CEXT_JAVA = ../jruby-cext-java
+
+BUILD_OS := $(strip $(shell uname -s | tr '[:upper:]' '[:lower:]'))
+OS ?= $(BUILD_OS)
+ifeq ($(OS),sunos)
+  OS = solaris
+endif
+
+# Default value of $OS on Windows is Windows_NT
+ifeq ($(OS), Windows_NT)
+    # that's how we detect x64...
+    ifneq ($(findstring 64, $(BUILD_OS)),)
+      OS = win64
+    else
+      OS = win32
+    endif
+endif
+
+ifneq ($(findstring cygwin, $(BUILD_OS)),)
+  # cygwin is always x32
+  OS = win32
+endif
+
+LIBCEXT = $(BUILD_DIR)/$(PREFIX)$(LIBNAME).$(JNIEXT)
+
+CPU ?= $(shell uname -m | sed -e 's/i[345678]86/i386/')
+MODEL = 32 # Default to 32bit compiles
+PLATFORM = $(CPU)-$(OS)
+
+JDK_HOME=$(shell if [ -d "$(JAVA_HOME)"/include ];then echo "$(JAVA_HOME)"; else echo "$(JAVA_HOME)"/..; fi)
+# Set defaults to unix (linux/solaris/bsd)
+PREFIX = lib
+JNIEXT = so
+
+export MACOSX_DEPLOYMENT_TARGET=10.4
+
+CCACHE := $(strip $(realpath $(shell which ccache 2> /dev/null)))
+SRC_DIR ?= $(shell pwd)/src
+JNI_DIR ?= $(shell pwd)/src
+BUILD_DIR ?= $(shell pwd)/build
+
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
+
+CXXOBJS += $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(notdir $(wildcard $(SRC_DIR)/*.cpp)))
+
+vpath %.h $(SRC_DIR)
+
+LIBNAME = jruby-cext
+
 #
-#  There exist several targets which are by default empty and which can be 
-#  used for execution of your targets. These targets are usually executed 
-#  before and after some main targets. They are: 
-#
-#     .build-pre:              called before 'build' target
-#     .build-post:             called after 'build' target
-#     .clean-pre:              called before 'clean' target
-#     .clean-post:             called after 'clean' target
-#     .clobber-pre:            called before 'clobber' target
-#     .clobber-post:           called after 'clobber' target
-#     .all-pre:                called before 'all' target
-#     .all-post:               called after 'all' target
-#     .help-pre:               called before 'help' target
-#     .help-post:              called after 'help' target
-#
-#  Targets beginning with '.' are not intended to be called on their own.
-#
-#  Main targets can be executed directly, and they are:
-#  
-#     build                    build a specific configuration
-#     clean                    remove built files from a configuration
-#     clobber                  remove all built files
-#     all                      build all configurations
-#     help                     print help mesage
-#  
-#  Targets .build-impl, .clean-impl, .clobber-impl, .all-impl, and
-#  .help-impl are implemented in nbproject/makefile-impl.mk.
-#
-#  Available make variables:
-#
-#     CND_BASEDIR                base directory for relative paths
-#     CND_DISTDIR                default top distribution directory (build artifacts)
-#     CND_BUILDDIR               default top build directory (object files, ...)
-#     CONF                       name of current configuration
-#     CND_PLATFORM_${CONF}       platform name (current configuration)
-#     CND_ARTIFACT_DIR_${CONF}   directory of build artifact (current configuration)
-#     CND_ARTIFACT_NAME_${CONF}  name of build artifact (current configuration)
-#     CND_ARTIFACT_PATH_${CONF}  path to build artifact (current configuration)
-#     CND_PACKAGE_DIR_${CONF}    directory of package (current configuration)
-#     CND_PACKAGE_NAME_${CONF}   name of package (current configuration)
-#     CND_PACKAGE_PATH_${CONF}   path to package (current configuration)
-#
-# NOCDDL
+# Compiler/linker flags from:
+#   http://weblogs.java.net/blog/kellyohair/archive/2006/01/compilation_of_1.html
+JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing -DNDEBUG
+OFLAGS = -O2 $(JFLAGS)
+
+# MacOS headers aren't completely warning free, so turn them off
+ifneq ($(OS),darwin)
+  WFLAGS = -W -Werror -Wall -Wno-unused -Wno-parentheses -Wundef
+endif
+
+PICFLAGS = -fPIC
+SOFLAGS = # Filled in for each OS specifically
+FFI_MMAP_EXEC = -DFFI_MMAP_EXEC_WRIT
+
+STRIP = strip -S
 
 
-# Environment 
-MKDIR=mkdir
-CP=cp
-CCADMIN=CCadmin
-RANLIB=ranlib
+JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
+IFLAGS = -I"$(BUILD_DIR)" -I"$(BUILD_DIR)"/jni -I$(SRC_DIR) -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/include
+CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
+CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
+CXXFLAGS = $(OFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
+
+ifeq ($(OS), win64)
+  override CPU = x86_64
+  JDK_INCLUDES=-I$(JNI_DIR)/win32/include -I$(JNI_DIR)/win32/include/win32
+  CC = x86_64-w64-mingw32-gcc -m64
+  PICFLAGS =
+  ifneq ($(findstring cygwin, $(BUILD_OS)),)
+    CC += -mno-cygwin
+    LDFLAGS += -mno-cygwin
+  endif
+  CFLAGS += -mwin32 -D_JNI_IMPLEMENTATION_
+  LDFLAGS += -Wl,--add-stdcall-alias
+  PICFLAGS=
+  SOFLAGS += -shared -mimpure-text -static-libgcc
+  PREFIX =
+  JNIEXT=dll
+  CXX = x86_64-w64-mingw32-g++ -m64
+  AR = x86_64-w64-mingw32-ar
+  LD = x86_64-w64-mingw32-ld
+  STRIP = x86_64-w64-mingw32-strip --strip-debug
+  CONFIGURE_BUILD = x86_64-w64-mingw32
+endif
+
+ifeq ($(OS),cross-mingw32)
+  override OS = win32
+  override CPU = i386
+  JDK_INCLUDES=-I$(JNI_DIR)/win32/include -I$(JNI_DIR)/win32/include/win32
+  CC = i386-mingw32-gcc
+  CXX = i386-mingw32-g++
+  LD = i386-mingw32-ld
+  STRIP = i386-mingw32-strip --strip-debug
+  CONFIGURE_HOST = i386-mingw32
+endif
+
+ifneq ($(findstring cygwin,$(BUILD_OS)),)
+  OS = win32
+  JAVA_HOME := $(shell cygpath -u $(JAVA_HOME))
+endif
+
+ifeq ($(OS), win32)
+  ifneq ($(findstring cygwin, $(BUILD_OS)),)
+    CC += -mno-cygwin
+    LDFLAGS += -mno-cygwin
+  endif
+  CFLAGS += -mwin32 -D_JNI_IMPLEMENTATION_
+  LDFLAGS += -Wl,--add-stdcall-alias
+  PICFLAGS=
+  SOFLAGS += -shared -mimpure-text -static-libgcc
+  PREFIX =
+  JNIEXT=dll
+endif
+
+ifeq ($(OS), darwin)
+  PLATFORM = darwin
+  ARCHES = ppc
+  ifneq ($(findstring $(CPU), i386 x86_64),)
+    ARCHES= i386 x86_64
+  endif
+  MACSDK = /Developer/SDKs/MacOSX10.5.sdk
+  CFLAGS += -isysroot $(MACSDK) -DTARGET_RT_MAC_CFM=0
+  CFLAGS += $(foreach arch, $(ARCHES),-arch $(arch))
+  LDFLAGS = $(foreach arch, $(ARCHES),-arch $(arch)) -dynamiclib -framework JavaVM \
+	-Wl,-syslibroot,$(MACSDK) -mmacosx-version-min=10.5
+  JNIEXT = jnilib
+  #CFLAGS += -I$(MACSDK)/System/Library/Frameworks/Kernel.framework/Versions/A/Headers
+  FFI_CFLAGS += -isysroot $(MACSDK)
+  PICFLAGS =
+  SOFLAGS =
+endif
+
+ifeq ($(OS), linux)
+  SOFLAGS = -shared -mimpure-text -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
+  CFLAGS += -pthread
+endif
+
+ifeq ($(OS), solaris)
+  CC = gcc
+  CFLAGS += -D__EXTENSIONS__ -std=c99
+  LD = /usr/ccs/bin/ld
+  SOFLAGS = -shared -static-libgcc -mimpure-text
+  LIBS += -ldl
+endif
+
+ifeq ($(OS), aix)
+  SOFLAGS = -shared -static-libgcc
+  CFLAGS += -pthread
+  LDFLAGS += -pthread
+  JNIEXT = a
+  STRIP = strip
+endif
+
+ifneq ($(findstring bsd, $(OS)),)
+  SOFLAGS = -shared -static-libgcc
+  CFLAGS += -pthread
+  LDFLAGS += -pthread
+endif
+
+ifeq ($(CPU), sparcv9)
+  MODEL = 64
+endif
+
+ifeq ($(CPU), i386)
+  MODEL = 32
+  ifeq ($(findstring $(OS), openbsd darwin mingw32 win32),)
+    CFLAGS += -march=i586 -mtune=generic
+  endif
+endif
+
+ifeq ($(CPU), amd64)
+  MODEL = 64
+endif
+
+ifeq ($(CPU), x86_64)
+  MODEL = 64
+endif
+
+ifeq ($(CPU), s390x)
+  MODEL = 64
+endif
+
+# On platforms (linux, solaris) that support both 32bit and 64bit, force building for one or the other
+ifneq ($(strip $(findstring $(OS), linux solaris)),)
+  # Change the CC/LD instead of CFLAGS/LDFLAGS, incase other things in the flags
+  # makes the libffi build choke
+  CC += -m$(MODEL)
+  CXX += -m$(MODEL)
+  LD += -m$(MODEL)
+endif
 
 
-# build
-build: .build-post
+JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
 
-.build-pre:
-# Add your pre 'build' code here...
-	javah -classpath ../jruby-cext-java/build/classes:../../jruby.git/lib/jruby-complete.jar \
-		-d ${CND_BUILDDIR} org.jruby.cext.Native \
-			org.jruby.cext.GC \
-			org.jruby.runtime.ClassIndex
+all:	$(LIBCEXT)
 
-.build-post: .build-impl
-# Add your post 'build' code here...
-	ln -fs ${CND_BASEDIR}/${CND_ARTIFACT_PATH_${CONF}} ${CND_DISTDIR}
-	#@echo "CONF=${CONF} CND_PLATFORM_${CONF}=${CND_PLATFORM_${CONF}}"
-	#@echo "CND_ARTIFACT_DIR=$(CND_ARTIFACT_DIR_$(CONF))"
-	#@echo "CND_ARTIFACT_NAME=$(CND_ARTIFACT_NAME_$(CONF))"
-	#@echo "CND_ARTIFACT_PATH=$(CND_ARTIFACT_PATH_$(CONF))"
+debug:
+	@echo OS="$(OS)"
+	@echo BUILD_OS="$(BUILD_OS)"
+	@echo BUILD_DIR="$(BUILD_DIR)"
+	@echo CPU="$(CPU)"
+	@echo JAVA_HOME="$(JAVA_HOME)"
+	@echo JDK_HOME="$(JDK_HOME)"
+	@echo JAVA_HDRS="$(JAVA_HDRS)"
+	@echo CEXT_JAVA="$(CEXT_JAVA)"
+	@echo "PLATFORM=$(PLATFORM)"
+	@echo "OBJS=$(OBJS)"
 
+$(LIBCEXT):  $(OBJS) $(CXXOBJS)
+	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
+	
 
-# clean
-clean: .clean-post
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+	@mkdir -p $(@D)
+	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
 
-.clean-pre:
-# Add your pre 'clean' code here...
-
-.clean-post: .clean-impl
-# Add your post 'clean' code here...
-	${RM} ${CND_BUILDDIR}/*.h
-
-
-# clobber
-clobber: .clobber-post
-
-.clobber-pre:
-# Add your pre 'clobber' code here...
-
-.clobber-post: .clobber-impl
-# Add your post 'clobber' code here...
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+	@mkdir -p $(@D)
+	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
 
 
-# all
-all: .all-post
+.SECONDARY: $(JAVA_HDRS)
+$(BUILD_DIR)/org_jruby_cext_%.h:	$(JRUBY_JAR) $(CEXT_JAVA)/build/classes/org/jruby/cext/%.class
+	javah -classpath $(CEXT_JAVA)/build/classes:$(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
 
-.all-pre:
-# Add your pre 'all' code here...
-
-.all-post: .all-impl
-# Add your post 'all' code here...
+$(BUILD_DIR)/org_jruby_%.h:	$(JRUBY_JAR)
+	javah -classpath $(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
 
 
-# help
-help: .help-post
+.PHONY: clean
+clean:
+	$(RM) -rf build
 
-.help-pre:
-# Add your pre 'help' code here...
-
-.help-post: .help-impl
-# Add your post 'help' code here...
-
-
-
-# include project implementation makefile
-include nbproject/Makefile-impl.mk
-
-# include project make variables
-include nbproject/Makefile-variables.mk
