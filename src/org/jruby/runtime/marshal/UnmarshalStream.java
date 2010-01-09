@@ -69,12 +69,14 @@ public class UnmarshalStream extends InputStream {
     private final UnmarshalCache cache;
     private final IRubyObject proc;
     private final InputStream inputStream;
+    private final boolean taint;
 
-    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc) throws IOException {
+    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
         this.runtime = runtime;
         this.cache = new UnmarshalCache(runtime);
         this.proc = proc;
         this.inputStream = in;
+        this.taint = taint;
 
         int major = in.read(); // Major
         int minor = in.read(); // Minor
@@ -96,6 +98,11 @@ public class UnmarshalStream extends InputStream {
         } else {
             result = unmarshalObjectDirectly(type);
         }
+
+        if(taint) {
+            result.setTaint(true);
+        }
+
         return result;
     }
 
