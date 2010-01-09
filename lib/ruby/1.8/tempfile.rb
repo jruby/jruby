@@ -1,7 +1,7 @@
 #
 # tempfile - manipulates temporary files
 #
-# $Id: tempfile.rb 16127 2008-04-21 09:43:44Z knu $
+# $Id$
 #
 
 require 'delegate'

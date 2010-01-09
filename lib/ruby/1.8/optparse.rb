@@ -203,7 +203,8 @@
 #
 class OptionParser
   # :stopdoc:
-  RCSID = %w$Id: optparse.rb 22469 2009-02-20 11:43:35Z shyouhei $[1..-1].each {|s| s.freeze}.freeze
+  # This is faked to avoid revision changes on every update
+  RCSID = %w[Id: optparse.rb 99999 2009-02-20 11:43:35Z shyouhei ][1..-1].each {|s| s.freeze}.freez
   Version = (RCSID[1].split('.').collect {|s| s.to_i}.extend(Comparable).freeze if RCSID[1])
   LastModified = (Time.gm(*RCSID[2, 2].join('-').scan(/\d+/).collect {|s| s.to_i}) if RCSID[2])
   Release = RCSID[2]

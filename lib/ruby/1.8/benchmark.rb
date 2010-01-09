@@ -2,7 +2,7 @@
 #
 # benchmark.rb - a performance benchmarking library 
 # 
-# $Id: benchmark.rb 15425 2008-02-10 15:24:56Z naruse $
+# $Id$
 # 
 # Created by Gotoken (gotoken@notwork.org). 
 #

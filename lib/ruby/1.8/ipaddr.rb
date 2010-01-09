@@ -7,7 +7,7 @@
 #
 # You can redistribute and/or modify it under the same terms as Ruby.
 #
-# $Id: ipaddr.rb 18049 2008-07-12 15:08:29Z shyouhei $
+# $Id$
 #
 # Contact:
 #   - Akinori MUSHA <knu@iDaemons.org> (current maintainer)
