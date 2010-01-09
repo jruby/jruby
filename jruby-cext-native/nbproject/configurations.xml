@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="62">
   <logicalFolder name="root" displayName="root" projectFiles="true">
-    <df name="src" root="/home/wayne/src/jruby-cext.new/jruby-cext-native/src">
+    <df name="src" root="src">
       <in>Handle.cpp</in>
       <in>Handle.h</in>
       <in>JLocalEnv.cpp</in>
@@ -38,7 +38,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>/home/wayne/src/jruby-cext.new/jruby-cext-native/src</Elem>
+    <Elem>src</Elem>
   </sourceRootList>
   <projectmakefile>jruby-cext-native-Makefile.mk</projectmakefile>
   <confs>
