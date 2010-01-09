@@ -1,1 +1,0 @@
-fails:Hash#compare_by_identity uses the semantics of BasicObject#equal? to determine key identity

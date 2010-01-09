@@ -13,7 +13,6 @@ fails:File.open can't write in a block when call open with File::WRONLY||File::R
 fails:File.open can't read in a block when call open with File::WRONLY||File::RDONLY mode
 fails:File.open can write in a block when call open with WRONLY mode
 fails:File.open raises an IOError when read in a block opened with WRONLY mode
-fails:File.open raises an IOError when read in a block opened with 'a' mode
 fails:File.open raises an IOError when read in a block opened with File::WRONLY|File::APPEND mode
 fails:File.open raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode
 fails:File.open can read and write in a block when call open with RDWR mode
@@ -30,3 +29,4 @@ fails:File.open opens a file when use File::WRONLY|File::TRUNC mode
 fails:File.open can't write in a block when call open with File::TRUNC mode
 fails:File.open raises an Errorno::EEXIST if the file exists when open with File::RDONLY|File::TRUNC
 fails:File.open opens directories
+fails:File.open raises an IOError when read in a block opened with 'a' mode

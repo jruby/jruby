@@ -16,7 +16,5 @@ fails:Marshal.dump dumps a _dump object extended
 fails:Marshal.dump dumps a marshal_dump object
 fails:Marshal.dump dumps a Regexp
 fails:Marshal.dump dumps a Regexp subclass /i
-fails:Marshal.dump returns a tainted string if object is tainted
-fails:Marshal.dump returns a tainted string if object is tainted deep in nested structure
 fails:Marshal.dump returns an untrusted string if object is untrusted
 fails:Marshal.dump returns an untrusted string if object is untrusted deep in nested structure

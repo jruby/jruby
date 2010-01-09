@@ -1,1 +1,0 @@
-fails:Proc#dup returns a copy of self

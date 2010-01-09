@@ -1,1 +1,0 @@
-fails:Array#shift passed a number n as an argument returns a new empty array if there are no more elements

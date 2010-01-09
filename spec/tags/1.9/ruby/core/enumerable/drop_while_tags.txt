@@ -1,1 +1,0 @@
-fails:Enumerable#drop_while doesn't return self when it could

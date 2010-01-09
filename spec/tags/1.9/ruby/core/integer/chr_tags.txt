@@ -1,4 +1,3 @@
-fails:Integer#chr without argument returns a new String for each call
 fails:Integer#chr without argument infers the encoding from Encoding.default_internal
 fails:Integer#chr with an encoding argument returns a String
 fails:Integer#chr with an encoding argument returns a new String for each call

@@ -1,1 +1,0 @@
-fails:Kernel#=== for a class with #== overridden to consider other object's class returns true if #== returns true even if #equal? is false
