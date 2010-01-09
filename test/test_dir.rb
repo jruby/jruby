@@ -137,7 +137,8 @@ class TestDir < Test::Unit::TestCase
   end
 
   # JRUBY-4177
-  def test_mktmpdir
+  # FIXME: Excluded due to JRUBY-4082
+  def xxx_test_mktmpdir
     require 'tmpdir'
     assert_nothing_raised do
       Dir.mktmpdir('xx') {}
@@ -367,7 +368,7 @@ class TestDir < Test::Unit::TestCase
     def test_mkdir_on_protected_directory_fails
       Dir.mkdir("testDir_5") unless File.exists?("testDir_5")
       File.chmod(0400, 'testDir_5')
-      assert_raises(SystemCallError) do 
+      assert_raises(Errno::EACCES) do
         Dir.mkdir("testDir_5/another_dir")
       end
     end
