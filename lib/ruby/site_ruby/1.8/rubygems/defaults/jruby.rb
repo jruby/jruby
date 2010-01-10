@@ -8,7 +8,7 @@ module Gem
   class << self
     alias_method :original_ensure_gem_subdirectories, :ensure_gem_subdirectories
     def ensure_gem_subdirectories(gemdir)
-      original_ensure_gem_subdirectories(gemdir) if writable_path? gemdir.to_s
+      original_ensure_gem_subdirectories(gemdir) unless jarred_path? gemdir.to_s
     end
 
     alias_method :original_set_paths, :set_paths
@@ -17,12 +17,21 @@ module Gem
       @gem_path.reject! {|p| !readable_path? p }
     end
 
+    alias_method :original_ruby, :ruby
+    def ruby
+      ruby_path = original_ruby
+      if jarred_path?(ruby_path)
+        ruby_path = "java -jar #{ruby_path.sub(/^file:/,"").sub(/!.*/,"")}"
+      end
+      ruby_path
+    end
+
     def readable_path?(p)
       p =~ /^file:/ || File.exists?(p)
     end
 
-    def writable_path?(p)
-      p !~ /^file:/ && File.exists?(p)
+    def jarred_path?(p)
+      p =~ /^file:/
     end
   end
 
