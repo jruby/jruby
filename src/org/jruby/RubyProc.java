@@ -226,7 +226,7 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(getRuntime(), newBlock, bj, jumpTarget);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturnJump(getRuntime(), rj, jumpTarget);
+            return handleReturnJump(context, rj, jumpTarget);
         } catch (JumpException.RetryJump rj) {
             return handleRetryJump(getRuntime(), rj);
         }
@@ -249,14 +249,28 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
         }
     }
 
-    private IRubyObject handleReturnJump(Ruby runtime, JumpException.ReturnJump rj, JumpTarget jumpTarget) {
+    private IRubyObject handleReturnJump(ThreadContext context, JumpException.ReturnJump rj, JumpTarget jumpTarget) {
         Object target = rj.getTarget();
+        Ruby runtime = context.getRuntime();
 
-        if (target == jumpTarget && block.type == Block.Type.LAMBDA) return (IRubyObject) rj.getValue();
+        // lambda always just returns the value
+        if (target == jumpTarget && block.type == Block.Type.LAMBDA) {
+            return (IRubyObject) rj.getValue();
+        }
 
+        // returns can't propagate out of threads
         if (type == Block.Type.THREAD) {
             throw runtime.newThreadError("return can't jump across threads");
         }
+
+        // If the block-receiving method is not still active and the original
+        // enclosing frame is no longer on the stack, it's a bad return.
+        // FIXME: this is not very efficient for cases where it won't error
+        if (getBlock().isEscaped() && !context.isJumpTargetAlive(rj.getTarget())) {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
+        }
+
+        // otherwise, let it propagate
         throw rj;
     }
 
