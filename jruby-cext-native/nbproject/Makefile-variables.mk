@@ -22,3 +22,11 @@ CND_ARTIFACT_PATH_X86_64-Linux=
 CND_PACKAGE_DIR_X86_64-Linux=dist/X86_64-Linux/GNU-Linux-x86/package
 CND_PACKAGE_NAME_X86_64-Linux=jruby-cext-native.tar
 CND_PACKAGE_PATH_X86_64-Linux=dist/X86_64-Linux/GNU-Linux-x86/package/jruby-cext-native.tar
+# MacOS configuration
+CND_PLATFORM_MacOS=GNU-MacOSX
+CND_ARTIFACT_DIR_MacOS=
+CND_ARTIFACT_NAME_MacOS=
+CND_ARTIFACT_PATH_MacOS=
+CND_PACKAGE_DIR_MacOS=dist/MacOS/GNU-MacOSX/package
+CND_PACKAGE_NAME_MacOS=jruby-cext-native.tar
+CND_PACKAGE_PATH_MacOS=dist/MacOS/GNU-MacOSX/package/jruby-cext-native.tar

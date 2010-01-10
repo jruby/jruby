@@ -31,7 +31,7 @@ DEFAULTCONF=Default
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=Default X86_64-Linux 
+ALLCONFS=Default X86_64-Linux MacOS 
 
 
 # build

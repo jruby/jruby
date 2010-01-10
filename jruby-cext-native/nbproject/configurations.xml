@@ -39,7 +39,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>src</Elem>
+    <Elem>/Users/wayne/src/jruby-cext/jruby-cext-native/src</Elem>
   </sourceRootList>
   <projectmakefile>jruby-cext-native-Makefile.mk</projectmakefile>
   <confs>
@@ -79,6 +79,28 @@
             <incDir>
               <pElem>/usr/local/jdk/include</pElem>
               <pElem>/usr/local/jdk/include/linux</pElem>
+              <pElem>build</pElem>
+            </incDir>
+          </ccTool>
+        </makeTool>
+      </makefileType>
+    </conf>
+    <conf name="MacOS" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>4</platform>
+      </toolsSet>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE}</buildCommand>
+          <cleanCommand>${MAKE} clean</cleanCommand>
+          <executablePath></executablePath>
+          <ccTool>
+            <incDir>
+              <pElem>/Developer/SDKs/MacOSX10.5.sdk/System/Library/Frameworks/JavaVM.framework/Headers</pElem>
+              <pElem>src</pElem>
               <pElem>build</pElem>
             </incDir>
           </ccTool>

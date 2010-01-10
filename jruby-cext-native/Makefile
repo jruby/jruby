@@ -74,7 +74,7 @@ JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
 IFLAGS = -I"$(BUILD_DIR)" -I"$(BUILD_DIR)"/jni -I$(SRC_DIR) -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/include
 CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
 CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
-CXXFLAGS = $(OFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
+CXXFLAGS = $(CFLAGS)
 
 ifeq ($(OS), win64)
   override CPU = x86_64
@@ -128,19 +128,20 @@ ifeq ($(OS), win32)
 endif
 
 ifeq ($(OS), darwin)
+  MACSDK = /Developer/SDKs/MacOSX10.5.sdk
+  JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
   PLATFORM = darwin
   ARCHES = ppc
   ifneq ($(findstring $(CPU), i386 x86_64),)
     ARCHES= i386 x86_64
   endif
-  MACSDK = /Developer/SDKs/MacOSX10.5.sdk
+  
   CFLAGS += -isysroot $(MACSDK) -DTARGET_RT_MAC_CFM=0
   CFLAGS += $(foreach arch, $(ARCHES),-arch $(arch))
   LDFLAGS = $(foreach arch, $(ARCHES),-arch $(arch)) -dynamiclib -framework JavaVM \
 	-Wl,-syslibroot,$(MACSDK) -mmacosx-version-min=10.5
   JNIEXT = jnilib
   #CFLAGS += -I$(MACSDK)/System/Library/Frameworks/Kernel.framework/Versions/A/Headers
-  FFI_CFLAGS += -isysroot $(MACSDK)
   PICFLAGS =
   SOFLAGS =
 endif
