@@ -194,6 +194,25 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
     }
 }
 
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_jruby_cext_Native_getNil(JNIEnv* env, jobject self)
+{
+    return Qnil;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_jruby_cext_Native_getTrue(JNIEnv* env, jobject self)
+{
+    return Qtrue;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_jruby_cext_Native_getFalse(JNIEnv* env, jobject self)
+{
+    return Qfalse;
+}
+
 extern "C" JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {

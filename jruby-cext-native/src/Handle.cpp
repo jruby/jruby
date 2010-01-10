@@ -27,6 +27,8 @@
 
 using namespace jruby;
 
+#define IS_CONST(x) (((x) & ~0x7L) == 0L)
+
 Handle::Handle()
 {
     obj = NULL;
@@ -54,6 +56,10 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jobject self, jlong address)
 {
+    if (IS_CONST(address)) {
+        return; // special constant, ignore
+    }
+
     Handle* h = (Handle *) jruby::j2p(address);
     if (h == NULL) {
         jruby::throwExceptionByName(env, NullPointerException, "null handle");
@@ -72,6 +78,10 @@ Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jobject self, jlong address)
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
 {
+    if (IS_CONST(address)) {
+        return; // special constant, ignore
+    }
+    
     Handle* h = (Handle *) jruby::j2p(address);
     if (h == NULL) {
         jruby::throwExceptionByName(env, NullPointerException, "null handle");
@@ -87,6 +97,10 @@ Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_unmarkHandle(JNIEnv* env, jobject self, jlong address)
 {
+    if (IS_CONST(address)) {
+        return; // special constant, ignore
+    }
+
     Handle* h = (Handle *) jruby::j2p(address);
     if (h == NULL) {
         jruby::throwExceptionByName(env, NullPointerException, "null handle");
@@ -99,8 +113,8 @@ Java_org_jruby_cext_Native_unmarkHandle(JNIEnv* env, jobject self, jlong address
 jobject
 jruby::valueToObject(JNIEnv* env, VALUE v)
 {
-    if ((v & ~0x7UL) == 0) {
-        switch (v & 0x7UL) {
+    if (IS_CONST(v)) {
+        switch (v) {
             case Qnil:
                 return getNilRef(env);
 
@@ -110,6 +124,7 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
             case Qtrue:
                 return getTrueRef(env);
         }
+        rb_raise(rb_eRuntimeError, "invalid C ext constant");
 
         return NULL;
     } else {
@@ -126,21 +141,10 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
 VALUE
 jruby::objectToValue(JNIEnv* env, jobject obj)
 {
-    JLocalEnv env_(env); // Ensure any temporary objects are popped
-
-    // Convert to one of the special constants
-    if (env->IsSameObject(obj, getNilRef(env)) || env->IsSameObject(obj, NULL)) {
+    // Should never get null from JRuby, but check it anyway
+    if (env->IsSameObject(obj, NULL)) {
     
         return Qnil;
-
-    } else if (env->IsSameObject(obj, getFalseRef(env))) {
-
-        return Qfalse;
-
-    } else if (env->IsSameObject(obj, getTrueRef(env))) {
-
-        return Qtrue;
-
     }
 
     jobject handleObject = env->CallStaticObjectMethod(Handle_class, Handle_valueOf, obj);
@@ -148,7 +152,9 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
 
     VALUE v = (VALUE) env->GetLongField(handleObject, Handle_address_field);
     checkExceptions(env);
-    
+
+    env->DeleteLocalRef(handleObject);
+
     return v;
 }
 

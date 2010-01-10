@@ -46,7 +46,12 @@ final class Native {
         }
         
         System.loadLibrary("jruby-cext");
-        initNative(runtime);
+        // Register Qfalse, Qtrue, Qnil constants to avoid reverse lookups in native code
+        GC.register(runtime.getFalse(), new Handle(runtime, getFalse()));
+        GC.register(runtime.getTrue(), new Handle(runtime, getTrue()));
+        GC.register(runtime.getNil(), new Handle(runtime, getNil()));
+
+        initNative(runtime);        
     }
 
 
@@ -59,4 +64,8 @@ final class Native {
     public final native void freeHandle(long handle);
     public final native void markHandle(long handle);
     public final native void unmarkHandle(long handle);
+
+    private final native int getNil();
+    private final native int getTrue();
+    private final native int getFalse();
 }
