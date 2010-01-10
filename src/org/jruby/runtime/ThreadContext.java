@@ -413,6 +413,13 @@ public final class ThreadContext {
         }
         return frames;
     }
+
+    public boolean isJumpTargetAlive(JumpTarget target) {
+        for (int i = frameIndex; i >= 0; i--) {
+            if (frameStack[i].getJumpTarget() == target) return true;
+        }
+        return false;
+    }
     
     public String getFrameName() {
         return getCurrentFrame().getName();
