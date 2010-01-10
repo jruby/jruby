@@ -84,7 +84,7 @@ public class UnmarshalStream extends InputStream {
         if(major == -1 || minor == -1) {
             throw new EOFException("Unexpected end of stream");
         }
-        
+
         if(major != Constants.MARSHAL_MAJOR || minor > Constants.MARSHAL_MINOR) {
             throw runtime.newTypeError(String.format("incompatible marshal file format (can't be read)\n\tformat version %d.%d required; %d.%d given", Constants.MARSHAL_MAJOR, Constants.MARSHAL_MINOR, major, minor));
         }
@@ -124,17 +124,17 @@ public class UnmarshalStream extends InputStream {
         return (RubyClass)value;
     }
 
-    boolean ivarsWaiting = false;
+    private int ivarBlocksWaiting = 0;
 
     private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
-    	IRubyObject rubyObj = null;
+        IRubyObject rubyObj = null;
         switch (type) {
             case 'I':
-                ivarsWaiting = true;
+                ++ivarBlocksWaiting;
                 rubyObj = unmarshalObject();
-                if (ivarsWaiting) {
+                if (ivarBlocksWaiting > 0) {
                     defaultVariablesUnmarshal(rubyObj);
-                    ivarsWaiting = false;
+                    --ivarBlocksWaiting;
                 }
                 break;
             case '0' :
@@ -153,8 +153,8 @@ public class UnmarshalStream extends InputStream {
                 rubyObj = RubyFixnum.unmarshalFrom(this);
                 break;
             case 'f' :
-            	rubyObj = RubyFloat.unmarshalFrom(this);
-            	break;
+                rubyObj = RubyFloat.unmarshalFrom(this);
+                break;
             case '/' :
                 rubyObj = RubyRegexp.unmarshalFrom(this);
                 break;
@@ -190,7 +190,7 @@ public class UnmarshalStream extends InputStream {
                 }
 
                 rubyObj = unmarshalObject();
-                
+
                 tp.extend_object(rubyObj);
                 tp.callMethod(runtime.getCurrentContext(),"extended", rubyObj);
                 break;
@@ -210,12 +210,12 @@ public class UnmarshalStream extends InputStream {
                 rubyObj = userNewUnmarshal();
                 break;
             case 'C' :
-            	rubyObj = uclassUnmarshall();
-            	break;
+                rubyObj = uclassUnmarshall();
+                break;
             default :
                 throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
-        
+
         if (proc != null && type != ':') {
             // call the proc, but not for symbols
             RuntimeHelpers.invoke(getRuntime().getCurrentContext(), proc, "call", rubyObj);
@@ -241,7 +241,7 @@ public class UnmarshalStream extends InputStream {
         if (b > 127) {
             return (byte) (b - 256);
         }
-		return (byte) b;
+        return (byte) b;
     }
 
     public ByteList unmarshalString() throws IOException {
@@ -257,7 +257,7 @@ public class UnmarshalStream extends InputStream {
             }
             readLength += read;
         }
-        
+
         return new ByteList(buffer,false);
     }
 
@@ -296,8 +296,8 @@ public class UnmarshalStream extends InputStream {
         } catch (RaiseException e) {
             if (runtime.fastGetModule("NameError").isInstance(e.getException())) {
                 throw runtime.newArgumentError("undefined class/module " + className.asJavaString());
-            } 
-                
+            }
+
             throw e;
         }
 
@@ -307,33 +307,32 @@ public class UnmarshalStream extends InputStream {
 
         return result;
     }
-    
+
     public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
         int count = unmarshalInt();
-        
+
         List<Variable<Object>> attrs = new ArrayList<Variable<Object>>(count);
-        
+
         for (int i = count; --i >= 0; ) {
             String name = unmarshalObject().asJavaString();
             IRubyObject value = unmarshalObject();
             attrs.add(new VariableEntry<Object>(name, value));
         }
-        
+
         object.syncVariables(attrs);
     }
-    
-    
+
     private IRubyObject uclassUnmarshall() throws IOException {
-    	RubySymbol className = (RubySymbol)unmarshalObject();
-    	
-    	RubyClass type = (RubyClass)runtime.getClassFromPath(className.asJavaString());
-    	
+        RubySymbol className = (RubySymbol)unmarshalObject();
+
+        RubyClass type = (RubyClass)runtime.getClassFromPath(className.asJavaString());
+
         // All "C" marshalled objects descend from core classes, which are all RubyObject
-    	RubyObject result = (RubyObject)unmarshalObject();
-    	
-    	result.setMetaClass(type);
-    	
-    	return result;
+        RubyObject result = (RubyObject)unmarshalObject();
+
+        result.setMetaClass(type);
+
+        return result;
     }
 
     private IRubyObject userUnmarshal() throws IOException {
@@ -344,9 +343,9 @@ public class UnmarshalStream extends InputStream {
             throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
         }
         RubyString data = RubyString.newString(getRuntime(), marshaled);
-        if (ivarsWaiting) {
+        if (ivarBlocksWaiting > 0) {
             defaultVariablesUnmarshal(data);
-            ivarsWaiting = false;
+            --ivarBlocksWaiting;
         }
         IRubyObject result = classInstance.callMethod(getRuntime().getCurrentContext(),
             "_load", data);
