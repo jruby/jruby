@@ -618,6 +618,10 @@ public class RubyProcess {
         return gid(context.getRuntime());
     }
     public static IRubyObject gid(Ruby runtime) {
+        if (Platform.IS_WINDOWS) {
+            // MRI behavior on Windows
+            return RubyFixnum.zero(runtime);
+        }
         return runtime.newFixnum(runtime.getPosix().getgid());
     }
 
@@ -808,6 +812,10 @@ public class RubyProcess {
         return egid(context.getRuntime());
     }
     public static IRubyObject egid(Ruby runtime) {
+        if (Platform.IS_WINDOWS) {
+            // MRI behavior on Windows
+            return RubyFixnum.zero(runtime);
+        }
         return runtime.newFixnum(runtime.getPosix().getegid());
     }
     
