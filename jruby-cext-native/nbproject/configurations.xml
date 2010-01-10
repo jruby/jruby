@@ -39,7 +39,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>/Users/wayne/src/jruby-cext/jruby-cext-native/src</Elem>
+    <Elem>src</Elem>
   </sourceRootList>
   <projectmakefile>jruby-cext-native-Makefile.mk</projectmakefile>
   <confs>
