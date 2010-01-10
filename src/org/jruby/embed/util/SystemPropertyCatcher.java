@@ -29,15 +29,18 @@
  */
 package org.jruby.embed.util;
 
+import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import org.jruby.embed.PropertyName;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.CompatVersion;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInstanceConfig.CompileMode;
-import org.jruby.embed.LocalContextProvider;
+import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
@@ -132,6 +135,7 @@ public class SystemPropertyCatcher {
      * @param container ScriptingContainer to be set jruby home.
      * @throws URISyntaxException exceptions thrown while inspecting jruby-complete.jar
      */
+    @Deprecated
     public static void setJRubyHome(ScriptingContainer container) throws URISyntaxException {
         String jrubyhome = findJRubyHome(container);
         if (jrubyhome != null) {
@@ -139,21 +143,30 @@ public class SystemPropertyCatcher {
         }
     }
 
-    private static String findJRubyHome(ScriptingContainer container) throws URISyntaxException {
+    /**
+     * Tries to find JRuby home from the order of JRUBY_HOME environment variable,
+     * jruby.home System property, then "/META-INF/jruby.home" if jruby-complete.jar
+     * is used.
+     *
+     * @param instance any instance to get a resource
+     * @return JRuby home path if exists, null when failed to fint it.
+     * @throws URISyntaxException
+     */
+    public static String findJRubyHome(Object instance) throws URISyntaxException {
         String jrubyhome;
         if ((jrubyhome = System.getenv("JRUBY_HOME")) != null) {
             return jrubyhome;
         } else if ((jrubyhome = System.getProperty("jruby.home")) != null) {
             return jrubyhome;
-        } else if ((jrubyhome = findFromJar(container)) != null) {
+        } else if ((jrubyhome = findFromJar(instance)) != null) {
             return jrubyhome;
         } else {
             return null;
         }
     }
 
-    private static String findFromJar(ScriptingContainer container) throws URISyntaxException {
-        URL resource = container.getClass().getResource("/META-INF/jruby.home/bin/jruby");
+    private static String findFromJar(Object instance) throws URISyntaxException {
+        URL resource = instance.getClass().getResource("/META-INF/jruby.home/bin/jruby");
         if (resource == null) {
             return null;
         }
@@ -168,6 +181,21 @@ public class SystemPropertyCatcher {
             return location;
         }
         return null;
+    }
+
+    /**
+     * Tries to find load paths for ruby files and/or libraries. This methods
+     * sees org.jruby.embed.class.path system property first, then java.class.path.
+     *
+     * @return a list of load paths.
+     */
+    public static List<String> findLoadPaths() {
+        String paths = System.getProperty(PropertyName.CLASSPATH.toString());
+        if (paths == null) {
+            paths = System.getProperty("java.class.path");
+        }
+        List<String> loadPaths = Arrays.asList(paths.split(File.pathSeparator));
+        return loadPaths;
     }
 
     /**

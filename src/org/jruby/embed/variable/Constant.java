@@ -33,6 +33,7 @@ import org.jruby.embed.internal.BiVariableMap;
 import java.util.Collection;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -89,18 +90,26 @@ public class Constant extends AbstractVariable {
         if (receiver == null) {
             receiver = runtime.getTopSelf();
         }
+        IRubyObject irobj = runtime.getTopSelf().getMetaClass().fastGetConstant("ARGV");
+        if (irobj != null) {
+            updateVarMap(vars, "ARGV", irobj);
+        }
         Collection<String> names = receiver.getMetaClass().getConstantNames();
         for (String name : names) {
-            BiVariable var;
             IRubyObject value = receiver.getMetaClass().getConstant(name);
-            if (vars.containsKey((Object)name)) {
-                var = vars.getVariable(name);
-                var.setRubyObject(value);
-            } else {
-                var = new Constant(name, value);
-                ((Constant)var).markInitialized();
-                vars.update(name, var);
-            }
+            updateVarMap(vars, name, value);
+        }
+    }
+
+    private static void updateVarMap(BiVariableMap vars, String name, IRubyObject value) {
+        BiVariable var;
+        if (vars.containsKey((Object) name)) {
+            var = vars.getVariable(name);
+            var.setRubyObject(value);
+        } else {
+            var = new Constant(name, value);
+            ((Constant) var).markInitialized();
+            vars.update(name, var);
         }
     }
 

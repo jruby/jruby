@@ -29,14 +29,9 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.File;
-import java.util.Arrays;
-import org.jruby.embed.LocalContextProvider;
 import java.util.List;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.embed.PropertyName;
 import org.jruby.util.ClassCache;
 
 /**
@@ -44,17 +39,22 @@ import org.jruby.util.ClassCache;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public abstract class AbstractLocalContextProvider implements LocalContextProvider {
-    protected List loadPaths = null;
-    protected ClassCache classCache = null;
     protected RubyInstanceConfig config = new RubyInstanceConfig();
     protected LocalVariableBehavior behavior = LocalVariableBehavior.TRANSIENT;
 
+    @Deprecated
     public void setLoadPaths(List loadPaths) {
-        this.loadPaths = loadPaths;
+        if (config != null) {
+            config.setLoadPaths(loadPaths);
+        }
+        
     }
 
+    @Deprecated
     public void setClassCache(ClassCache classCache) {
-        this.classCache = classCache;
+        if (config != null) {
+            config.setClassCache(classCache);
+        }
     }
 
     public RubyInstanceConfig getRubyInstanceConfig() {
@@ -62,20 +62,6 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
     }
 
     protected LocalContext getInstance() {
-        if (loadPaths == null) {
-            String paths = System.getProperty(PropertyName.CLASSPATH.toString());
-            if (paths == null) {
-                paths = System.getProperty("java.class.path");
-            }
-            loadPaths = Arrays.asList(paths.split(File.pathSeparator));
-        }
-        if (config == null) {
-            config = new RubyInstanceConfig();
-            config.setCompileMode(CompileMode.OFF);
-        }
-        if (classCache != null) {
-            config.setClassCache(classCache);
-        }
-        return new LocalContext(loadPaths, config, behavior);
+        return new LocalContext(config, behavior);
     }
 }

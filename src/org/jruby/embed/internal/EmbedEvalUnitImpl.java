@@ -101,21 +101,21 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         BiVariableMap vars = container.getVarMap();
         try {
             vars.inject(scope, 0, null);
-            container.getRuntime().getCurrentContext().pushScope(scope);
+            container.getProvider().getRuntime().getCurrentContext().pushScope(scope);
             IRubyObject ret;
-            CompileMode mode = container.getRuntime().getInstanceConfig().getCompileMode();
+            CompileMode mode = container.getProvider().getRuntime().getInstanceConfig().getCompileMode();
             if (mode == CompileMode.FORCE || mode == CompileMode.JIT) {
-                ret = container.getRuntime().runScript(script);
+                ret = container.getProvider().getRuntime().runScript(script);
             } else {
-                ret = container.getRuntime().runInterpreter(node);
+                ret = container.getProvider().getRuntime().runInterpreter(node);
             }
             vars.retrieve(ret);
             return ret;
         } catch (RaiseException e) {
-            container.getRuntime().printError(e.getException());
+            container.getProvider().getRuntime().printError(e.getException());
             throw new EvalFailedException(e.getMessage(), e);
         } catch (StackOverflowError soe) {
-            throw container.getRuntime().newSystemStackError("stack level too deep", soe);
+            throw container.getProvider().getRuntime().newSystemStackError("stack level too deep", soe);
         } catch (Throwable e) {
             Writer w = container.getErrorWriter();
             if (w instanceof PrintWriter) {
@@ -129,8 +129,8 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             }
             throw new EvalFailedException(e);
         } finally {
-            container.getRuntime().getCurrentContext().popScope();
-            JavaEmbedUtils.terminate(container.getRuntime());
+            container.getProvider().getRuntime().getCurrentContext().popScope();
+            JavaEmbedUtils.terminate(container.getProvider().getRuntime());
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
             ClassCache classCache = JavaEmbedUtils.createClassCache(getRuntime().getClassLoader());

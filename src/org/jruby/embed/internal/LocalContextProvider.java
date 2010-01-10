@@ -27,9 +27,8 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  * **** END LICENSE BLOCK *****
  */
-package org.jruby.embed;
+package org.jruby.embed.internal;
 
-import org.jruby.embed.internal.BiVariableMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -50,6 +49,7 @@ public interface LocalContextProvider {
      *
      * @param loadPaths is a list of paths to load scritps
      */
+	@Deprecated
     void setLoadPaths(List loadPaths);
 
     /**
@@ -57,6 +57,7 @@ public interface LocalContextProvider {
      * 
      * @param classCache is a class cache option
      */
+	@Deprecated
     void setClassCache(ClassCache classCache);
 
     /**

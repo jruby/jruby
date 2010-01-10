@@ -29,56 +29,30 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.util.ClassCache;
 
 /**
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class LocalContext {
-    private List loadPaths;
     private RubyInstanceConfig config;
     private LocalVariableBehavior behavior;
     private Ruby runtime = null;
     private BiVariableMap varMap = null;
     private HashMap attribute;
 
-    public LocalContext() {
-        String loadPath = System.getProperty("org.jruby.embed.class.path");
-        if (loadPath == null) {
-            loadPath = System.getProperty("java.class.path");
-        }
-        List list = Arrays.asList(loadPath.split(File.pathSeparator));
-        initialize(list, new RubyInstanceConfig(), LocalVariableBehavior.TRANSIENT);
+    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
+        initialize(config, behavior);
     }
 
-    public LocalContext(List loadPaths) {
-        initialize(loadPaths, new RubyInstanceConfig(), LocalVariableBehavior.TRANSIENT);
-    }
-
-    public LocalContext(List loadPaths, ClassCache classCache) {
-        config = new RubyInstanceConfig();
-        config.setClassCache(classCache);
-        initialize(loadPaths, config, LocalVariableBehavior.TRANSIENT);
-    }
-
-    public LocalContext(List loadPaths, RubyInstanceConfig config, LocalVariableBehavior behavior) {
-        initialize(loadPaths, config, behavior);
-    }
-
-    private void initialize(List loadPaths, RubyInstanceConfig config, LocalVariableBehavior behavior) {
-        this.loadPaths = loadPaths;
+    private void initialize(RubyInstanceConfig config, LocalVariableBehavior behavior) {
         this.config = config;
         this.behavior = behavior;
 
@@ -90,12 +64,9 @@ public class LocalContext {
 
     public Ruby getRuntime() {
         if (runtime == null) {
-            // stopped executing runtime.getLoadService().require("java");
-            // during the intialization process. This results in the same
-            // behavior as "jruby -e ..."
-            //runtime = JavaEmbedUtils.initialize(loadPaths, config);
+            // stopped loading java library (runtime.getLoadService().require("java");)
+            // during the intialization process.
             runtime = Ruby.newInstance(config);
-            runtime.getLoadService().init(loadPaths);
         }
         return runtime;
     }

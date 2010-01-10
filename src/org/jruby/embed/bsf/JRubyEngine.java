@@ -78,7 +78,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
     @Override
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
-        ThreadContext context = container.getRuntime().getCurrentContext();
+        ThreadContext context = container.getProvider().getRuntime().getCurrentContext();
         try {
             if (paramNames != null && args != null) {
                 for (int i = 0; i < paramNames.size(); i++) {
@@ -150,11 +150,11 @@ public class JRubyEngine extends BSFEngineImpl {
         LocalVariableBehavior behavior = LocalVariableBehavior.BSF;
         container = new ScriptingContainer(scope, behavior, bsfProps);
         SystemPropertyCatcher.setConfiguration(container);
-        container.getProvider().setLoadPaths(getClassPath(manager));
+        //container.getProvider().setLoadPaths(getClassPath(manager));
         if (SystemPropertyCatcher.isRuby19(language)) {
             container.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
         }
-        Ruby runtime = container.getRuntime();
+        Ruby runtime = container.getProvider().getRuntime();
 
         if (someDeclaredBeans != null && someDeclaredBeans.size() > 0) {
             VariableInterceptor interceptor = container.getVarMap().getVariableInterceptor();
@@ -174,7 +174,7 @@ public class JRubyEngine extends BSFEngineImpl {
         if (!name.startsWith("$")) {
             name = "$".concat(name);
         }
-        BiVariable v = interceptor.getVariableInstance(container.getRuntime(), name, bean.bean, bean.type);
+        BiVariable v = interceptor.getVariableInstance(container.getProvider().getRuntime(), name, bean.bean, bean.type);
         container.getVarMap().setVariable(v);
     }
 
@@ -205,7 +205,7 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     public void handleException(BSFException bsfExcptn) {
-        printException(container.getRuntime(), (Exception) bsfExcptn.getTargetException());
+        printException(container.getProvider().getRuntime(), (Exception) bsfExcptn.getTargetException());
     }
 
     /**
@@ -256,7 +256,7 @@ public class JRubyEngine extends BSFEngineImpl {
     @Override
     public void terminate() {
         container.getVarMap().clear();
-        Ruby runtime = container.getRuntime();
+        Ruby runtime = container.getProvider().getRuntime();
     	JavaEmbedUtils.terminate(runtime);
         runtime = null;
         super.terminate();

@@ -30,6 +30,7 @@
 package org.jruby.embed.variable;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.parser.StaticScope;
@@ -96,7 +97,11 @@ abstract class AbstractVariable implements BiVariable {
             javaObject = javaType.cast(JavaEmbedUtils.rubyToJava(rt, irubyObject, javaType));
         } else {
             // Ruby originated variables
-            javaObject = JavaEmbedUtils.rubyToJava(irubyObject);
+            if (irubyObject instanceof RubyArray) {
+                javaObject = ((RubyArray)irubyObject).toArray();
+            } else {
+                javaObject = JavaEmbedUtils.rubyToJava(irubyObject);
+            }
             if (javaObject != null) {
                 javaType = javaObject.getClass();
             }
