@@ -130,10 +130,10 @@ public class RubyInstanceConfig {
 
     private final boolean jitLogging;
     private final boolean jitLoggingVerbose;
-    private final int jitLogEvery;
-    private final int jitThreshold;
-    private final int jitMax;
-    private final int jitMaxSize;
+    private int jitLogEvery;
+    private int jitThreshold;
+    private int jitMax;
+    private int jitMaxSize;
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
 
@@ -619,6 +619,10 @@ public class RubyInstanceConfig {
         return jitLogEvery;
     }
 
+    public void setJitLogEvery(int jitLogEvery) {
+        this.jitLogEvery = jitLogEvery;
+    }
+
     public boolean isSamplingEnabled() {
         return samplingEnabled;
     }
@@ -627,12 +631,24 @@ public class RubyInstanceConfig {
         return jitThreshold;
     }
 
+    public void setJitThreshold(int jitThreshold) {
+        this.jitThreshold = jitThreshold;
+    }
+
     public int getJitMax() {
         return jitMax;
     }
 
+    public void setJitMax(int jitMax) {
+        this.jitMax = jitMax;
+    }
+
     public int getJitMaxSize() {
         return jitMaxSize;
+    }
+
+    public void setJitMaxSize(int jitMaxSize) {
+        this.jitMaxSize = jitMaxSize;
     }
 
     public boolean isRunRubyInProcess() {
@@ -1196,6 +1212,10 @@ public class RubyInstanceConfig {
         return loadPaths;
     }
 
+    public void setLoadPaths(List<String> loadPaths) {
+        this.loadPaths = loadPaths;
+    }
+
     public boolean shouldRunInterpreter() {
         if(isShowVersion() && (hasInlineScript || scriptFileName != null)) {
             return true;
@@ -1282,7 +1302,7 @@ public class RubyInstanceConfig {
         }
     }
 
-    private void setScriptFileName(String scriptFileName) {
+    public void setScriptFileName(String scriptFileName) {
         this.scriptFileName = scriptFileName;
     }
 
@@ -1320,6 +1340,10 @@ public class RubyInstanceConfig {
 
     public boolean isDebug() {
         return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     public boolean isParserDebug() {
@@ -1364,6 +1388,10 @@ public class RubyInstanceConfig {
 
     public KCode getKCode() {
         return kcode;
+    }
+
+    public void setKCode(KCode kcode) {
+        this.kcode = kcode;
     }
 
     public String getRecordSeparator() {
