@@ -10,6 +10,7 @@ pkg
 *.diff
 build
 *.so
+*.bundle
 *.[oa]
 core
 *~
