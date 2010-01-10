@@ -3,6 +3,7 @@
 JRUBY_DIR = ../../jruby.git
 JRUBY_JAR = $(JRUBY_DIR)/lib/jruby.jar
 CEXT_JAVA = ../jruby-cext-java
+CEXT_JAR = $(CEXT_JAVA)/dist/jruby-cext-java.jar
 
 BUILD_OS := $(strip $(shell uname -s | tr '[:upper:]' '[:lower:]'))
 OS ?= $(BUILD_OS)
@@ -210,6 +211,8 @@ JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_Native.h org_jruby_
 
 all:	$(LIBCEXT)
 
+compile:	all
+
 debug:
 	@echo OS="$(OS)"
 	@echo BUILD_OS="$(BUILD_OS)"
@@ -236,12 +239,13 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 
 
 .SECONDARY: $(JAVA_HDRS)
-$(BUILD_DIR)/org_jruby_cext_%.h:	$(JRUBY_JAR) $(CEXT_JAVA)/build/classes/org/jruby/cext/%.class
-	javah -classpath $(CEXT_JAVA)/build/classes:$(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
 
-$(BUILD_DIR)/org_jruby_%.h:	$(JRUBY_JAR)
-	javah -classpath $(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
+$(BUILD_DIR)/org_jruby_%.h:	$(JRUBY_JAR) $(CEXT_JAR)
+	javah -classpath $(CEXT_JAR):$(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
 
+
+$(CEXT_JAR):	$(wildcard $(CEXT_JAVA)/src/org/jruby/cext/*.java)
+	cd $(CEXT_JAVA) && ant jar
 
 .PHONY: clean
 clean:
