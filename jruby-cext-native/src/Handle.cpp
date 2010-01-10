@@ -78,12 +78,9 @@ Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
         return;
     }
 
-    // Only mark if not already marked
-    if ((h->flags & FL_MARK) == 0) {
-        h->flags |= FL_MARK;
-        if (h->dmark != NULL) {
-            (*h->dmark)(h->data);
-        }
+    // Mark this handle's children
+    if (h->dmark != NULL) {
+        (*h->dmark)(h->data);
     }
 }
 
