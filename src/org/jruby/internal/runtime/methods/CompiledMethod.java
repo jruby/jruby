@@ -28,7 +28,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -39,10 +38,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
 
-public abstract class CompiledMethod extends JavaMethod implements JumpTarget, Cloneable {
+public abstract class CompiledMethod extends JavaMethod implements Cloneable {
     protected Object $scriptObject;
     
-    public static class LazyCompiledMethod extends DynamicMethod implements JumpTarget, Cloneable {
+    public static class LazyCompiledMethod extends DynamicMethod implements Cloneable {
         private final String method;
         private final Arity arity;
         private final StaticScope scope;

@@ -11,7 +11,6 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -23,7 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public enum CallConfiguration {
     FrameFullScopeFull(Framing.Full, Scoping.Full) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodFrameAndScope(implementer, name, self, block, scope);
         }
         void post(ThreadContext context) {
@@ -31,7 +30,7 @@ public enum CallConfiguration {
         }
     },
     FrameFullScopeDummy(Framing.Full, Scoping.Dummy) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodFrameAndDummyScope(implementer, name, self, block, scope);
         }
         void post(ThreadContext context) {
@@ -39,7 +38,7 @@ public enum CallConfiguration {
         }
     },
     FrameFullScopeNone (Framing.Full, Scoping.None) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodFrameOnly(implementer, name, self, block);
         }
         void post(ThreadContext context) {
@@ -47,7 +46,7 @@ public enum CallConfiguration {
         }
     },
     FrameBacktraceScopeFull (Framing.Backtrace, Scoping.Full) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodBacktraceAndScope(name, implementer, scope);
         }
         void post(ThreadContext context) {
@@ -55,7 +54,7 @@ public enum CallConfiguration {
         }
     },
     FrameBacktraceScopeDummy (Framing.Backtrace, Scoping.Dummy) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodBacktraceDummyScope(implementer, name, scope);
         }
         void post(ThreadContext context) {
@@ -63,7 +62,7 @@ public enum CallConfiguration {
         }
     },
     FrameBacktraceScopeNone (Framing.Backtrace, Scoping.None) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodBacktraceOnly(name);
         }
         void post(ThreadContext context) {
@@ -71,7 +70,7 @@ public enum CallConfiguration {
         }
     },
     FrameNoneScopeFull(Framing.None, Scoping.Full) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodScopeOnly(implementer, scope);
         }
         void post(ThreadContext context) {
@@ -79,7 +78,7 @@ public enum CallConfiguration {
         }
     },
     FrameNoneScopeDummy(Framing.None, Scoping.Dummy) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
             context.preMethodNoFrameAndDummyScope(implementer, scope);
         }
         void post(ThreadContext context) {
@@ -87,7 +86,7 @@ public enum CallConfiguration {
         }
     },
     FrameNoneScopeNone(Framing.None, Scoping.None) {
-        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget) {
+        void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {
         }
         void post(ThreadContext context) {
         }
@@ -147,7 +146,7 @@ public enum CallConfiguration {
     public final Framing framing() {return framing;}
     public final Scoping scoping() {return scoping;}
     
-    abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope, JumpTarget jumpTarget);
+    abstract void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope);
     abstract void post(ThreadContext context);
     boolean isNoop() { return framing == Framing.None && scoping == Scoping.None; }
 }

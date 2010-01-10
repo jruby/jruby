@@ -58,7 +58,6 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -1046,44 +1045,39 @@ public class RubyKernel {
 
     @JRubyMethod(name = "catch", required = 1, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        CatchTarget target = new CatchTarget(tag.asJavaString());
+        RubyContinuation rbContinuation = new RubyContinuation(context.getRuntime(), tag.asJavaString());
         try {
-            context.pushCatch(target);
-            return block.yield(context, tag);
-        } catch (JumpException.ThrowJump tj) {
-            if (tj.getTarget() == target) return (IRubyObject) tj.getValue();
-            
-            throw tj;
+            context.pushCatch(rbContinuation.getContinuation());
+            return rbContinuation.enter(context, block);
         } finally {
             context.popCatch();
         }
     }
-    
-    public static class CatchTarget implements JumpTarget {
-        private final String tag;
-        public CatchTarget(String tag) { this.tag = tag; }
-        public String getTag() { return tag; }
+
+    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE)
+    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
+        return rbThrowInternal(context, tag.asJavaString(), IRubyObject.NULL_ARRAY, block);
     }
 
-    @JRubyMethod(name = "throw", required = 1, frame = true, optional = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE)
+    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
+        return rbThrowInternal(context, tag.asJavaString(), new IRubyObject[] {arg}, block);
+    }
+
+    public static IRubyObject rbThrowInternal(ThreadContext context, String tag, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
 
-        String tag = args[0].asJavaString();
-        CatchTarget[] catches = context.getActiveCatches();
+        RubyContinuation.Continuation continuation = context.getActiveCatch(tag.intern());
 
-        String message = "uncaught throw `" + tag + "'";
-
-        // Ordering of array traversal not important, just intuitive
-        for (int i = catches.length - 1 ; i >= 0 ; i--) {
-            if (tag.equals(catches[i].getTag())) {
-                //Catch active, throw for catch to handle
-                throw new JumpException.ThrowJump(catches[i], args.length > 1 ? args[1] : runtime.getNil());
-            }
+        if (continuation != null) {
+            continuation.args = args;
+            throw continuation;
         }
 
         // No catch active for this throw
+        String message = "uncaught throw `" + tag + "'";
         RubyThread currentThread = context.getThread();
+
         if (currentThread == runtime.getThreadService().getMainThread()) {
             throw runtime.newNameError(message, tag);
         } else {

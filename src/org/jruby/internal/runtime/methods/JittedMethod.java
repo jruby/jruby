@@ -31,7 +31,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -49,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method.
  *
  */
-public class JittedMethod extends DynamicMethod implements JumpTarget, PositionAware {
+public class JittedMethod extends DynamicMethod implements PositionAware {
     private final StaticScope staticScope;
     private final Script jitCompiledScript;
     private final ISourcePosition position;
@@ -247,7 +246,7 @@ public class JittedMethod extends DynamicMethod implements JumpTarget, PositionA
     }
 
     protected void pre(ThreadContext context, IRubyObject self, String name, Block block, int argsLength) {
-        callConfig.pre(context, self, getImplementationClass(), name, block, staticScope, this);
+        callConfig.pre(context, self, getImplementationClass(), name, block, staticScope);
 
         getArity().checkArity(context.getRuntime(), argsLength);
     }

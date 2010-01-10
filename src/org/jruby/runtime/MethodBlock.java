@@ -123,9 +123,9 @@ public abstract class MethodBlock extends BlockBody {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo
                 } catch (JumpException.BreakJump bj) {
-                    if (bj.getTarget() == null) {
-                        bj.setTarget(this);                            
-                    }                        
+//                    if (bj.getTarget() == 0) {
+//                        bj.setTarget(this);
+//                    }                  
                     throw bj;
                 }
             }

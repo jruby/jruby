@@ -32,7 +32,6 @@
 package org.jruby.exceptions;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.internal.runtime.JumpTarget;
 
 /**
  * This class should be used for performance reasons if the
@@ -44,30 +43,29 @@ public class JumpException extends RuntimeException {
     private static final long serialVersionUID = -228162532535826617L;
     
     public static class FlowControlException extends JumpException {
-        protected JumpTarget target;
+        protected int target;
         protected Object value;
 
         public FlowControlException() {}
-        public FlowControlException(JumpTarget target, Object value) {
+        public FlowControlException(int target, Object value) {
             this.target = target;
             this.value = value;
         }
-        public JumpTarget getTarget() { return target; }
-        public void setTarget(JumpTarget target) { this.target = target; }
+        public int getTarget() { return target; }
+        public void setTarget(int target) { this.target = target; }
         public Object getValue() { return value; }
         public void setValue(Object value) { this.value = value; }
     }
     
-    public static class BreakJump extends FlowControlException { public BreakJump(JumpTarget t, Object v) { super(t, v); }}
-    public static class NextJump extends FlowControlException { public NextJump(Object v) { super(null, v); }}
+    public static class BreakJump extends FlowControlException { public BreakJump(int t, Object v) { super(t, v); }}
+    public static class NextJump extends FlowControlException { public NextJump(Object v) { super(0, v); }}
     public static class RetryJump extends FlowControlException {}
     public static final RetryJump RETRY_JUMP = new RetryJump();
-    public static class ThrowJump extends FlowControlException { public ThrowJump(JumpTarget t, Object v) { super(t, v); }}
     public static class RedoJump extends FlowControlException {}
     public static final RedoJump REDO_JUMP = new RedoJump();
     public static class SpecialJump extends FlowControlException {}
     public static final SpecialJump SPECIAL_JUMP = new SpecialJump();
-    public static class ReturnJump extends FlowControlException { public ReturnJump(JumpTarget t, Object v) { target = t; value = v; }}
+    public static class ReturnJump extends FlowControlException { public ReturnJump(int t, Object v) { target = t; value = v; }}
     
     /**
      * Constructor for flow-control-only JumpExceptions.
@@ -91,6 +89,7 @@ public class JumpException extends RuntimeException {
      *
      * @see Throwable#fillInStackTrace()
      */
+    @Override
     public Throwable fillInStackTrace() {
         if (RubyInstanceConfig.JUMPS_HAVE_BACKTRACE) {
             return originalFillInStackTrace();

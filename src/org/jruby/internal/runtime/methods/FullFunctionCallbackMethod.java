@@ -34,7 +34,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.RubyEvent;
@@ -45,7 +44,7 @@ import org.jruby.runtime.callback.Callback;
 
 /**
  */
-public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTarget {
+public class FullFunctionCallbackMethod extends DynamicMethod {
     private Callback callback;
 
     public FullFunctionCallbackMethod(RubyModule implementationClass, Callback callback, Visibility visibility) {
@@ -55,7 +54,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTar
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            callConfig.pre(context, self, clazz, name, block, null, this);
+            callConfig.pre(context, self, clazz, name, block, null);
             
             assert args != null;
             Ruby runtime = context.getRuntime();
@@ -68,7 +67,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod implements JumpTar
             try {
                 return callback.execute(self, args, block);
             } catch (JumpException.ReturnJump rj) {
-                if (rj.getTarget() == this) return (IRubyObject)rj.getValue();
+                if (rj.getTarget() == context.getFrameJumpTarget()) return (IRubyObject)rj.getValue();
 
                 throw rj;
             } finally {

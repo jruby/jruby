@@ -40,7 +40,6 @@ import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -58,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method.
  *
  */
-public class DefaultMethod extends DynamicMethod implements JumpTarget, MethodArgs, PositionAware {
+public class DefaultMethod extends DynamicMethod implements MethodArgs, PositionAware {
 
     private static class DynamicMethodBox {
         public DynamicMethod actualMethod;

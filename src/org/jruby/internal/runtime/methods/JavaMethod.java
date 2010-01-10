@@ -26,7 +26,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -37,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  */
-public abstract class JavaMethod extends DynamicMethod implements JumpTarget, Cloneable {
+public abstract class JavaMethod extends DynamicMethod implements Cloneable {
     protected int arityValue;
     protected Arity arity = Arity.OPTIONAL;
     private String javaName;

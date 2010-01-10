@@ -42,7 +42,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="Continuation")
 public class RubyContinuation extends RubyObject {
     public static class Continuation extends Error {
-        public IRubyObject[] args;
+        public Continuation() {tag = null;}
+        public Continuation(String tag) {
+            this.tag = tag.intern();
+        }
+        public IRubyObject[] args = IRubyObject.NULL_ARRAY;
+        public final String tag;
         
         @Override
         public synchronized Throwable fillInStackTrace() {
@@ -68,6 +73,21 @@ public class RubyContinuation extends RubyObject {
     public RubyContinuation(Ruby runtime) {
         super(runtime, runtime.getContinuation());
         this.continuation = new Continuation();
+    }
+
+    /**
+     * A RubyContinuation used for catch/throw, which have a tag associated
+     *
+     * @param runtime Current JRuby runtime
+     * @param tag The tag to use
+     */
+    public RubyContinuation(Ruby runtime, String tag) {
+        super(runtime, runtime.getContinuation());
+        this.continuation = new Continuation(tag);
+    }
+
+    public Continuation getContinuation() {
+        return continuation;
     }
 
     @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)

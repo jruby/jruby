@@ -35,6 +35,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -42,13 +44,12 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyKernel.CatchTarget;
+import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
@@ -65,6 +66,9 @@ public final class ThreadContext {
     }
     
     private final static int INITIAL_SIZE = 10;
+    
+    /** The number of calls after which to do a thread event poll */
+    private final static int CALL_POLL_COUNT = 0xFFF;
     private final static String UNKNOWN_NAME = "(unknown)";
     
     private final Ruby runtime;
@@ -89,8 +93,8 @@ public final class ThreadContext {
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
 
-    private static final CatchTarget[] EMPTY_CATCHTARGET_STACK = new CatchTarget[0];
-    private CatchTarget[] catchStack = EMPTY_CATCHTARGET_STACK;
+    private static final Continuation[] EMPTY_CATCHTARGET_STACK = new Continuation[0];
+    private Continuation[] catchStack = EMPTY_CATCHTARGET_STACK;
     private int catchIndex = -1;
     
     // File where current executing unit is being evaluated
@@ -267,13 +271,13 @@ public final class ThreadContext {
     private void expandCatchIfNecessary() {
         int newSize = catchStack.length * 2;
         if (newSize == 0) newSize = 1;
-        CatchTarget[] newCatchStack = new CatchTarget[newSize];
+        Continuation[] newCatchStack = new Continuation[newSize];
 
         System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
         catchStack = newCatchStack;
     }
     
-    public void pushCatch(CatchTarget catchTarget) {
+    public void pushCatch(Continuation catchTarget) {
         int index = ++catchIndex;
         if (index == catchStack.length) {
             expandCatchIfNecessary();
@@ -284,14 +288,20 @@ public final class ThreadContext {
     public void popCatch() {
         catchIndex--;
     }
-    
-    public CatchTarget[] getActiveCatches() {
-        int index = catchIndex;
-        if (index < 0) return new CatchTarget[0];
-        
-        CatchTarget[] activeCatches = new CatchTarget[index + 1];
-        System.arraycopy(catchStack, 0, activeCatches, 0, index + 1);
-        return activeCatches;
+
+    /**
+     * Find the active Continuation for the given tag. Must be called with an
+     * interned string.
+     *
+     * @param tag The interned string to search for
+     * @return The continuation associated with this tag
+     */
+    public Continuation getActiveCatch(String tag) {
+        for (int i = catchIndex; i >= 0; i--) {
+            Continuation c = catchStack[i];
+            if (c.tag == tag) return c;
+        }
+        return null;
     }
     
     //////////////////// FRAME MANAGEMENT ////////////////////////
@@ -319,7 +329,7 @@ public final class ThreadContext {
                                IRubyObject self, Block block) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
-        stack[index].updateFrame(clazz, self, name, block, file, line);
+        stack[index].updateFrame(clazz, self, name, block, file, line, callNumber);
         if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
@@ -328,7 +338,7 @@ public final class ThreadContext {
     private void pushEvalFrame(IRubyObject self) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
-        stack[index].updateFrameForEval(self, file, line);
+        stack[index].updateFrameForEval(self, file, line, callNumber);
         if (index + 1 == stack.length) {
             expandFramesIfNecessary();
         }
@@ -414,8 +424,17 @@ public final class ThreadContext {
         return frames;
     }
 
-    public boolean isJumpTargetAlive(JumpTarget target) {
-        for (int i = frameIndex; i >= 0; i--) {
+    /**
+     * Search the frame stack for the given JumpTarget. Return true if it is
+     * found and false otherwise. Skip the given number of frames before
+     * beginning the search.
+     * 
+     * @param target The JumpTarget to search for
+     * @param skipFrames The number of frames to skip before searching
+     * @return
+     */
+    public boolean isJumpTargetAlive(int target, int skipFrames) {
+        for (int i = frameIndex - skipFrames; i >= 0; i--) {
             if (frameStack[i].getJumpTarget() == target) return true;
         }
         return false;
@@ -429,12 +448,8 @@ public final class ThreadContext {
         return getCurrentFrame().getSelf();
     }
     
-    public JumpTarget getFrameJumpTarget() {
+    public int getFrameJumpTarget() {
         return getCurrentFrame().getJumpTarget();
-    }
-    
-    @Deprecated
-    public void setFrameJumpTarget(JumpTarget target) {
     }
     
     public RubyModule getFrameKlazz() {
@@ -492,14 +507,18 @@ public final class ThreadContext {
         thread.pollThreadEvents(this);
     }
     
-    int calls = 0;
+    public int callNumber = 0;
+
+    public int getCurrentTarget() {
+        return callNumber;
+    }
     
     public void callThreadPoll() {
-        if ((calls++ & 0xFF) == 0) pollThreadEvents();
+        if ((callNumber++ & CALL_POLL_COUNT) == 0) pollThreadEvents();
     }
 
     public static void callThreadPoll(ThreadContext context) {
-        if ((context.calls++ & 0xFF) == 0) context.pollThreadEvents();
+        if ((context.callNumber++ & CALL_POLL_COUNT) == 0) context.pollThreadEvents();
     }
     
     public void trace(RubyEvent event, String name, RubyModule implClass) {

@@ -37,7 +37,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -52,7 +51,7 @@ import org.jruby.runtime.marshal.DataType;
  * @author  jpetersen
  */
 @JRubyClass(name="Proc")
-public class RubyProc extends RubyObject implements JumpTarget, DataType {
+public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;
     private String file;
@@ -217,7 +216,7 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
         assert args != null;
         
         Block newBlock = block.cloneBlock();
-        JumpTarget jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
+        int jumpTarget = newBlock.getBinding().getFrame().getJumpTarget();
         
         try {
             if (self != null) newBlock.getBinding().setSelf(self);
@@ -232,7 +231,7 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
         }
     }
 
-    private IRubyObject handleBreakJump(Ruby runtime, Block newBlock, JumpException.BreakJump bj, JumpTarget jumpTarget) {
+    private IRubyObject handleBreakJump(Ruby runtime, Block newBlock, JumpException.BreakJump bj, int jumpTarget) {
         switch(newBlock.type) {
         case LAMBDA: if (bj.getTarget() == jumpTarget) {
             return (IRubyObject) bj.getValue();
@@ -249,8 +248,8 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
         }
     }
 
-    private IRubyObject handleReturnJump(ThreadContext context, JumpException.ReturnJump rj, JumpTarget jumpTarget) {
-        Object target = rj.getTarget();
+    private IRubyObject handleReturnJump(ThreadContext context, JumpException.ReturnJump rj, int jumpTarget) {
+        int target = rj.getTarget();
         Ruby runtime = context.getRuntime();
 
         // lambda always just returns the value
@@ -266,7 +265,7 @@ public class RubyProc extends RubyObject implements JumpTarget, DataType {
         // If the block-receiving method is not still active and the original
         // enclosing frame is no longer on the stack, it's a bad return.
         // FIXME: this is not very efficient for cases where it won't error
-        if (getBlock().isEscaped() && !context.isJumpTargetAlive(rj.getTarget())) {
+        if (target == jumpTarget && !context.isJumpTargetAlive(target, 1)) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
         }
 

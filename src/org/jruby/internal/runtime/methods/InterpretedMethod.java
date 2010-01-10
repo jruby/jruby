@@ -42,7 +42,6 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -55,7 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class InterpretedMethod extends DynamicMethod implements JumpTarget, MethodArgs, PositionAware {
+public class InterpretedMethod extends DynamicMethod implements MethodArgs, PositionAware {
     private StaticScope staticScope;
     private Node body;
     private ArgsNode argsNode;

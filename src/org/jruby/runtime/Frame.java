@@ -33,7 +33,6 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -61,7 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @see ThreadContext
  */
-public final class Frame implements JumpTarget {
+public final class Frame {
     /** The class against which this call is executing. */
     private RubyModule klazz;
     
@@ -86,7 +85,7 @@ public final class Frame implements JumpTarget {
     private Visibility visibility = Visibility.PUBLIC;
     
     /** The target for non-local jumps, like return from a block */
-    private final JumpTarget jumpTarget;
+    private int jumpTarget;
     
     /** The filename where the calling method is located */
     private String fileName;
@@ -99,7 +98,6 @@ public final class Frame implements JumpTarget {
      * when needed.
      */
     public Frame() {
-        jumpTarget = this;
     }
     
     /**
@@ -128,7 +126,7 @@ public final class Frame implements JumpTarget {
      * @param line The line number in the calling method where the call is made
      */
     public void updateFrame(String fileName, int line) {
-        updateFrame(null, null, null, Block.NULL_BLOCK, fileName, line); 
+        updateFrame(null, null, null, Block.NULL_BLOCK, fileName, line, 0);
     }
 
     /**
@@ -162,6 +160,7 @@ public final class Frame implements JumpTarget {
         this.block = frame.block;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
+        this.jumpTarget = jumpTarget;
     }
 
     /**
@@ -176,7 +175,7 @@ public final class Frame implements JumpTarget {
      * @param jumpTarget The target for non-local jumps (return in block)
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name,
-                 Block block, String fileName, int line) {
+                 Block block, String fileName, int line, int jumpTarget) {
         assert block != null : "Block uses null object pattern.  It should NEVER be null";
 
         this.self = self;
@@ -187,6 +186,7 @@ public final class Frame implements JumpTarget {
         this.block = block;
         this.visibility = Visibility.PUBLIC;
         this.isBindingFrame = false;
+        this.jumpTarget = jumpTarget;
     }
 
     /**
@@ -200,13 +200,14 @@ public final class Frame implements JumpTarget {
      * @param line The line number where the call is being made
      * @param jumpTarget The target for non-local jumps (return in block)
      */
-    public void updateFrameForEval(IRubyObject self, String fileName, int line) {
+    public void updateFrameForEval(IRubyObject self, String fileName, int line, int jumpTarget) {
         this.self = self;
         this.name = null;
         this.fileName = fileName;
         this.line = line;
         this.visibility = Visibility.PRIVATE;
         this.isBindingFrame = false;
+        this.jumpTarget = jumpTarget;
     }
 
     /**
@@ -248,17 +249,8 @@ public final class Frame implements JumpTarget {
      * 
      * @return The jump target for non-local returns
      */
-    public JumpTarget getJumpTarget() {
+    public int getJumpTarget() {
         return jumpTarget;
-    }
-
-    /**
-     * Set the jump target for non-local returns in this frame.
-     * 
-     * @param jumpTarget The new jump target for non-local returns
-     */
-    @Deprecated
-    public void setJumpTarget(JumpTarget jumpTarget) {
     }
 
     /**

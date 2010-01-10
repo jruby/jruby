@@ -47,14 +47,13 @@ import org.jruby.ast.IterNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * The executable body portion of a closure.
  */
-public abstract class BlockBody implements JumpTarget {
+public abstract class BlockBody {
     // FIXME: Maybe not best place, but move it to a good home
     public static final int ZERO_ARGS = 0;
     public static final int MULTIPLE_ASSIGNMENT = 1;

@@ -32,7 +32,6 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
-import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -43,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class ProcMethod extends DynamicMethod implements JumpTarget {
+public class ProcMethod extends DynamicMethod {
     private RubyProc proc;
 
     /**

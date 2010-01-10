@@ -49,7 +49,6 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
@@ -158,8 +157,6 @@ public class JRubyEngine extends BSFEngineImpl {
             JumpException je = (JumpException)exception;
             if (je instanceof RaiseException) {
                 runtime.printError(((RaiseException)je).getException());
-            } else if (je instanceof JumpException.ThrowJump) {
-                runtime.getErrorStream().println("internal error: throw jump caught");
             } else if (je instanceof JumpException.BreakJump) {
                 runtime.getErrorStream().println("break without block.");
             } else if (je instanceof JumpException.ReturnJump) {
