@@ -8,6 +8,7 @@ import "java_integration.fixtures.PackageStaticMethod"
 import "java_integration.fixtures.PrivateInstanceMethod"
 import "java_integration.fixtures.PrivateStaticMethod"
 import "java_integration.fixtures.ConcreteWithVirtualCall"
+import "java_integration.fixtures.ComplexPrivateConstructor"
 
 describe "A Ruby subclass of a Java concrete class" do
   it "should allow access to the proxy object for the class" do
@@ -20,17 +21,7 @@ describe "A Ruby subclass of a Java concrete class" do
     class_name = my_arraylist.java_proxy_class.to_s
     class_name.index('Proxy').should_not == -1
   end
-end
 
-describe "A final Java class" do
-  it "should not be allowed as a superclass" do
-    lambda do
-      substring = Class.new(java.lang.String)
-    end.should raise_error(TypeError)
-  end
-end
-
-describe "A Ruby subclass of a Java class" do
   it "can invoke protected methods of the superclass" do
     subtype = Class.new(ProtectedInstanceMethod) do
       def go; theProtectedMethod; end
@@ -42,6 +33,7 @@ describe "A Ruby subclass of a Java class" do
     end
     subtype.new.go.should == "42"
   end
+
   it "can not invoke package-visible methods of the superclass" do
     subtype = Class.new(PackageInstanceMethod) do
       def go; thePackageMethod; end
@@ -59,12 +51,22 @@ describe "A Ruby subclass of a Java class" do
     end
     lambda {subtype.new.go}.should raise_error
   end
+
+  # JRUBY-4451
+  it "does not bind subclass constructors to match private superclass constructors" do
+    subtype = Class.new(ComplexPrivateConstructor)
+
+    obj = subtype.new("foo", 1, 2)
+    obj.result.should == "String: foo, int: 1, int: 2"
+  end
+
   it "can override methods that return void and return non-void value" do
     subtype = Class.new(PackageInstanceMethod) do
       def voidMethod; 123; end
     end
     subtype.new.invokeVoidMethod.should == nil
   end
+
   it "can not invoke private methods of the superclass" do
     subtype = Class.new(PrivateInstanceMethod) do
       def go; thePrivateMethod; end
@@ -82,9 +84,7 @@ describe "A Ruby subclass of a Java class" do
     end
     lambda {subtype.new.go}.should raise_error
   end
-end
 
-describe "A Ruby subclass of a Java concrete class" do
   it "can override virtually-invoked methods from super" do
     my_arraylist = Class.new(ConcreteWithVirtualCall) {
       def virtualMethod
@@ -92,5 +92,13 @@ describe "A Ruby subclass of a Java concrete class" do
       end
     }
     my_arraylist.new.callVirtualMethod.should == "derived"
+  end
+end
+
+describe "A final Java class" do
+  it "should not be allowed as a superclass" do
+    lambda do
+      substring = Class.new(java.lang.String)
+    end.should raise_error(TypeError)
   end
 end

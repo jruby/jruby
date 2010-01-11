@@ -342,7 +342,10 @@ public class JavaProxyClassFactory {
         for (int i = 0; i < cons.length; i++) {
             Constructor constructor = cons[i];
 
-            // We generate all constructors and let some fail during invocation later
+            // if the constructor is private, pretend it doesn't exist
+            if (Modifier.isPrivate(constructor.getModifiers())) continue;
+
+            // otherwise, define everything and let some of them fail at invocation
             generateConstructor(selfType, constructor, cw);
         }
     }
