@@ -1,1 +1,0 @@
-fails:Math.ldexp raises a TypeError if the first argument cannot be coerced with Float()

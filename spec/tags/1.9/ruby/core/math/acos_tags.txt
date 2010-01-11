@@ -1,1 +1,0 @@
-fails:Math.acos raises a TypeError if the string argument cannot be coerced with Float()

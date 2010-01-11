@@ -1,1 +1,0 @@
-fails:Math.cos raises a TypeError unless the argument is Numeric and has #to_f

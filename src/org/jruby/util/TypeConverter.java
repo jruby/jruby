@@ -212,7 +212,7 @@ public class TypeConverter {
         return val;
     }
 
-    private static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
+    public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
         if (raise) {
             String type;
             if (obj.isNil()) {
