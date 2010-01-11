@@ -328,7 +328,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().index) {
         case ClassIndex.FIXNUM:
@@ -349,10 +349,22 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
+    /** flo_mod
+     * 
+     */
+    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+        if (!other.isNil() && other instanceof RubyNumeric
+            && ((RubyNumeric)other).getDoubleValue() == 0) {
+            throw context.getRuntime().newZeroDivisionError(); 
+        }
+        return op_mod(context, other);
+    }
+
     /** flo_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", required = 1)
+    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().index) {
@@ -379,6 +391,18 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceBin(context, "divmod", other);
         }
+    }
+    	
+    /** flo_divmod
+     * 
+     */
+    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        if (!other.isNil() && other instanceof RubyNumeric
+            && ((RubyNumeric)other).getDoubleValue() == 0) {
+            throw context.getRuntime().newZeroDivisionError(); 
+        }
+        return divmod(context, other);
     }
     	
     /** flo_pow
