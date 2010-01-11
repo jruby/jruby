@@ -155,6 +155,14 @@ public class RubyEncoding extends RubyObject {
         return RubyArray.newArrayNoCopy(runtime, runtime.getEncodingService().getEncodingList(), 0);
     }
 
+    @JRubyMethod(name = "locale_charmap", meta = true)
+    public static IRubyObject locale_charmap(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        EncodingService service = runtime.getEncodingService();
+        Entry entry = service.findEncodingOrAliasEntry(new ByteList(Charset.defaultCharset().name().getBytes()));
+        return RubyString.newUsAsciiStringNoCopy(runtime, new ByteList(entry.getEncoding().getName()));
+    }
+
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "name_list", meta = true)
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
