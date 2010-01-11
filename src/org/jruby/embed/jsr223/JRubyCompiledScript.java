@@ -38,10 +38,9 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.jruby.RubyNil;
-import org.jruby.embed.EvalFailedException;
+import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -51,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JRubyCompiledScript extends CompiledScript {
     private ScriptingContainer container;
     private JRubyEngine engine;
-    private final EvalUnit unit;
+    private final EmbedEvalUnit unit;
 
     JRubyCompiledScript(ScriptingContainer container,
             JRubyEngine engine, String script) {
