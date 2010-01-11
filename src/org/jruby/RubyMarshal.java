@@ -128,6 +128,8 @@ public class RubyMarshal {
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, frame = true, module = true)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        IRubyObject in = null;
+        IRubyObject proc = null;
         try {
             if (args.length < 1) {
                 throw recv.getRuntime().newArgumentError("wrong number of arguments (0 for 1)");
@@ -137,9 +139,6 @@ public class RubyMarshal {
             	throw recv.getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
             }
             
-            IRubyObject in = null;
-            IRubyObject proc = null;
-
             switch (args.length) {
             case 2:
             	proc = args[1];
@@ -166,6 +165,9 @@ public class RubyMarshal {
             return input.unmarshalObject();
 
         } catch (EOFException ee) {
+          if (in != null && in.respondsTo("to_str"))
+            throw recv.getRuntime().newArgumentError("marshal data too short");
+          else
             throw recv.getRuntime().newEOFError();
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);
