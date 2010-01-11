@@ -1,4 +1,0 @@
-fails:Enumerable#collect_concat returns a new array with the results of passing each element to block, flattened one level
-fails:Enumerable#collect_concat skips elements that are empty Arrays
-fails:Enumerable#collect_concat calls to_ary but not to_a
-fails:Enumerable#collect_concat returns an enumerator when no block given

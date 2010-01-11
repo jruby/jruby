@@ -1,4 +1,0 @@
-fails:Enumerable#flat_map returns a new array with the results of passing each element to block, flattened one level
-fails:Enumerable#flat_map skips elements that are empty Arrays
-fails:Enumerable#flat_map calls to_ary but not to_a
-fails:Enumerable#flat_map returns an enumerator when no block given

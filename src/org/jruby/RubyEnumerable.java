@@ -706,6 +706,42 @@ public class RubyEnumerable {
         return result;
     }
 
+    @JRubyMethod(name = {"flat_map"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject flat_map19(ThreadContext context, IRubyObject self, final Block block) {
+        return flatMapCommon19(context, self, block, "flat_map");
+    }
+
+    @JRubyMethod(name = {"collect_concat"}, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject collect_concat19(ThreadContext context, IRubyObject self, final Block block) {
+        return flatMapCommon19(context, self, block, "collect_concat");
+    }
+
+    private static IRubyObject flatMapCommon19(ThreadContext context, IRubyObject self, final Block block, String methodName) {
+        final Ruby runtime = context.getRuntime();
+        if(block.isGiven()) {
+            final RubyArray ary = runtime.newArray();
+
+            callEach(runtime, context, self, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(runtime, largs);
+                    IRubyObject i = block.yield(ctx, larg);
+                    IRubyObject tmp = i.checkArrayType();
+                    synchronized(ary) {
+                        if(tmp.isNil()) {
+                            ary.append(i);
+                        } else {
+                            ary.concat(tmp);
+                        }
+                    }
+                    return runtime.getNil();
+                }
+            });
+            return ary;
+        } else {
+            return enumeratorize(runtime, self, methodName);
+        }
+    }
+
     public static IRubyObject injectCommon(ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
         final Ruby runtime = context.getRuntime();
         final IRubyObject result[] = new IRubyObject[] { init };
