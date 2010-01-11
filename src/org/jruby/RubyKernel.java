@@ -407,9 +407,14 @@ public class RubyKernel {
         throw context.getRuntime().newArgumentError("base specified for non string value");
     }
 
-    @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject new_string(ThreadContext context, IRubyObject recv, IRubyObject object) {
         return TypeConverter.convertToType(object, context.getRuntime().getString(), "to_s");
+    }
+
+    @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
+        return TypeConverter.convertToType19(object, context.getRuntime().getString(), "to_s");
     }
 
     @JRubyMethod(name = "p", rest = true, module = true, visibility = PRIVATE)

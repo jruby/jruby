@@ -45,6 +45,7 @@ import java.util.Set;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
+import org.jruby.exceptions.RaiseException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -526,6 +527,31 @@ public class RubyClass extends RubyModule {
         DynamicMethod method = searchMethod(name);
         if (shouldCallMethodMissing(method)) {
             return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), name, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name);
+    }
+
+    public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
+        DynamicMethod method = searchMethod(name);
+        if(method.isUndefined()) {
+            DynamicMethod methodMissing = searchMethod("method_missing");
+            if(methodMissing.isUndefined() || methodMissing == context.getRuntime().getDefaultMethodMissing()) {
+                return null;
+            }
+
+            try {
+                return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), name, CallType.FUNCTIONAL, Block.NULL_BLOCK);
+            } catch(RaiseException e) {
+                if(context.getRuntime().getNoMethodError().isInstance(e.getException())) {
+                    if(self.respondsTo(name)) {
+                        throw e;
+                    } else {
+                        return null;
+                    }
+                } else {
+                    throw e;
+                }
+            }
         }
         return method.call(context, self, this, name);
     }

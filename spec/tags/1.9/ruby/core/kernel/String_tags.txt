@@ -1,4 +1,0 @@
-fails:Kernel.String doesn't raise a TypeError even if respond_to? returns false for #to_s
-fails:Kernel.String raises a TypeError if #to_s is not defined, even though #respond_to?(:to_s) returns true
-fails:Kernel#String doesn't raise a TypeError even if respond_to? returns false for #to_s
-fails:Kernel#String raises a TypeError if #to_s is not defined, even though #respond_to?(:to_s) returns true

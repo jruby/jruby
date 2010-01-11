@@ -66,6 +66,8 @@ public interface IRubyObject {
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
     @Deprecated
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
+
+    public IRubyObject checkCallMethod(ThreadContext context, String name);
     
     /**
      * RubyMethod isNil.

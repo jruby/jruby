@@ -50,6 +50,7 @@ public class TypeConverter {
         
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
+
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
      *
@@ -66,6 +67,24 @@ public class TypeConverter {
         }
         
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
+    }
+
+    /**
+     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type 1.9).
+     *
+     * @param obj the object to convert
+     * @param targetType is the type we are trying to convert to
+     * @param convertMethodIndex the fast index to use for calling the method
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @param raiseOnError will throw an Error if conversion does not work
+     * @return the converted value
+     */
+    public static final IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
+        IRubyObject r = obj.checkCallMethod(obj.getRuntime().getCurrentContext(), convertMethod);
+        if (r == null) {
+            return handleUncoercibleObject(raise, obj, target);
+        }
+        return r;
     }
 
     /**
@@ -97,6 +116,24 @@ public class TypeConverter {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(obj, target, convertMethod, true);
         if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        return val;
+    }
+
+    /**
+     * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type in 1.9).
+     *
+     * @param obj the object to convert
+     * @param targetType is the type we are trying to convert to
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @return the converted value
+     */
+    public static final IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
+        if (target.isInstance(obj)) return obj;
+        IRubyObject val = convertToType19(obj, target, convertMethod, true);
+        if (!target.isInstance(val)) {
+            String cname = obj.getMetaClass().toString();
+            throw obj.getRuntime().newTypeError("can't convert " + cname + " to " + target.getName() + " (" + cname + "#" + convertMethod + " gives " + val.getMetaClass() + ")");
+        }
         return val;
     }
 

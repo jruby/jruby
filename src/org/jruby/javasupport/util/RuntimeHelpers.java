@@ -471,6 +471,10 @@ public class RuntimeHelpers {
         return asClass.finvoke(context, self, name, arg0, arg1, arg2, block);
     }
 
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
+        return self.getMetaClass().finvokeChecked(context, self, name);
+    }
+
     /**
      * The protocol for super method invocation is a bit complicated
      * in Ruby. In real terms it involves first finding the real

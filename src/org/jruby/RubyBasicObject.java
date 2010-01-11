@@ -304,6 +304,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
+     * Will invoke a named method with no arguments and no block if that method or a custom
+     * method missing exists. Otherwise returns null. 1.9: rb_check_funcall
+     */
+    public final IRubyObject checkCallMethod(ThreadContext context, String name) {
+        return RuntimeHelpers.invokeChecked(context, this, name);
+    }
+
+    /**
      * Will invoke a named method with no arguments and no block.
      */
     public final IRubyObject callMethod(ThreadContext context, String name) {
