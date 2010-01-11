@@ -40,17 +40,25 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.CompatVersion;
+import org.jruby.Profile;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.ast.Node;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.internal.SingleThreadLocalContextProvider;
 import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassCache;
+import org.jruby.util.KCode;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -149,7 +157,7 @@ public class ScriptingContainerTest {
         System.out.println("getRuntime");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         Ruby runtime  = JavaEmbedUtils.initialize(new ArrayList());
-        Ruby result = instance.getRuntime();
+        Ruby result = instance.getProvider().getRuntime();
         Class expClazz = runtime.getClass();
         Class resultClazz = result.getClass();
         assertEquals(expClazz, resultClazz);
@@ -463,7 +471,7 @@ public class ScriptingContainerTest {
         String basedir = System.getProperty("user.dir");
         String[] paths = {basedir + "/lib/ruby/1.8"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.getProvider().setLoadPaths(Arrays.asList(paths));
+        instance.getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(paths));
         EmbedEvalUnit result;
         try {
             result = instance.parse(type, filename, lines);
@@ -663,7 +671,7 @@ public class ScriptingContainerTest {
         String basedir = System.getProperty("user.dir");
         String[] paths = {basedir + "/lib/ruby/1.8"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.getProvider().setLoadPaths(Arrays.asList(paths));
+        instance.getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(paths));
         Object expResult = null;
         Object result;
         try {
@@ -760,7 +768,7 @@ public class ScriptingContainerTest {
         String basedir = System.getProperty("user.dir");
         String[] paths = {basedir + "/lib/ruby/1.8"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.getProvider().setLoadPaths(Arrays.asList(paths));
+        instance.getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(paths));
         Object expResult = null;
         Object result = instance.callMethod(receiver, methodName, returnType);
         assertEquals(expResult, result);
@@ -1115,7 +1123,7 @@ public class ScriptingContainerTest {
     public void testGetIn() {
         System.out.println("getIn");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        InputStream result = instance.getIn();
+        InputStream result = instance.getInput();
         assertFalse(result == null);
 
         instance = null;
@@ -1176,7 +1184,7 @@ public class ScriptingContainerTest {
     public void testGetOut() {
         System.out.println("getOut");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        PrintStream result = instance.getOut();
+        PrintStream result = instance.getOutput();
         assertFalse(result == null);
 
         instance = null;
@@ -1234,7 +1242,7 @@ public class ScriptingContainerTest {
     public void testGetErr() {
         System.out.println("getErr");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        PrintStream result = instance.getErr();
+        PrintStream result = instance.getError();
         assertFalse(result == null);
 
         instance = null;
@@ -1296,4 +1304,831 @@ public class ScriptingContainerTest {
         instance = null;
     }
 
+    /**
+     * Test of getLoadPaths method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetLoadPaths() {
+        System.out.println("getLoadPaths");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        List result = instance.getLoadPaths();
+        assertTrue(result != null);
+        assertTrue(result.size() > 0);
+        
+        instance = null;
+    }
+
+    /**
+     * Test of setloadPaths method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetloadPaths() {
+        System.out.println("setloadPaths");
+        List<String> paths = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setloadPaths(paths);
+        List<String> expResult = null;
+        assertEquals(expResult, instance.getLoadPaths());
+        paths = Arrays.asList(new String[]{"abc", "def"});
+        instance.setloadPaths(paths);
+        assertArrayEquals(paths.toArray(), instance.getLoadPaths().toArray());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getInput method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetInput() {
+        System.out.println("getInput");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        InputStream expResult = System.in;
+        InputStream result = instance.getInput();
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of setInput method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetInput_InputStream() {
+        System.out.println("setInput");
+        InputStream istream = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setInput(istream);
+        assertEquals(istream, instance.getInput());
+        istream = System.in;
+        instance.setInput(istream);
+        assertTrue(instance.getInput() instanceof InputStream);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setInput method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetInput_Reader() {
+        System.out.println("setInput");
+        Reader reader = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setInput(reader);
+        assertEquals(reader, instance.getInput());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getOutput method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetOutput() {
+        System.out.println("getOutput");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        PrintStream expResult = System.out;
+        PrintStream result = instance.getOutput();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setOutput method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetOutput_PrintStream() {
+        System.out.println("setOutput");
+        PrintStream pstream = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setOutput(pstream);
+        assertEquals(pstream, instance.getOutput());
+
+        instance = null;
+    }
+
+    /**
+     * Test of setOutput method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetOutput_Writer() {
+        System.out.println("setOutput");
+        Writer writer = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setOutput(writer);
+        assertEquals(writer, instance.getOutput());
+        writer = new StringWriter();
+        instance.setOutput(writer);
+        assertTrue(instance.getOutput() instanceof PrintStream);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getError method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetError() {
+        System.out.println("getError");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        PrintStream expResult = System.err;
+        PrintStream result = instance.getError();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setError method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetError_PrintStream() {
+        System.out.println("setError");
+        PrintStream pstream = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setError(pstream);
+        assertEquals(pstream, instance.getError());
+
+        instance = null;
+    }
+
+    /**
+     * Test of setError method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetError_Writer() {
+        System.out.println("setError");
+        Writer writer = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setError(writer);
+        assertEquals(writer, instance.getError());
+        writer = new StringWriter();
+        instance.setError(writer);
+        assertTrue(instance.getError() instanceof PrintStream);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getCompileMode method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetCompileMode() {
+        System.out.println("getCompileMode");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        CompileMode expResult = CompileMode.OFF;
+        CompileMode result = instance.getCompileMode();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setCompileMode method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetCompileMode() {
+        System.out.println("setCompileMode");
+        CompileMode mode = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setCompileMode(mode);
+        assertEquals(mode, instance.getCompileMode());
+
+        mode = CompileMode.FORCE;
+        instance.setCompileMode(mode);
+        assertEquals(mode, instance.getCompileMode());
+
+        instance = null;
+    }
+
+    /**
+     * Test of isRunRubyInProcess method, of class ScriptingContainer.
+     */
+    @Test
+    public void testIsRunRubyInProcess() {
+        System.out.println("isRunRubyInProcess");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        boolean expResult = true;
+        boolean result = instance.isRunRubyInProcess();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setRunRubyInProcess method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetRunRubyInProcess() {
+        System.out.println("setRunRubyInProcess");
+        boolean inprocess = false;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setRunRubyInProcess(inprocess);
+        assertEquals(inprocess, instance.isRunRubyInProcess());
+
+        inprocess = true;
+        instance.setRunRubyInProcess(inprocess);
+        assertEquals(inprocess, instance.isRunRubyInProcess());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getCompatVersion method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetCompatVersion() {
+        System.out.println("getCompatVersion");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        CompatVersion expResult = CompatVersion.RUBY1_8;
+        CompatVersion result = instance.getCompatVersion();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setCompatVersion method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetCompatVersion() {
+        System.out.println("setCompatVersion");
+        CompatVersion version = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setCompatVersion(version);
+        assertEquals(CompatVersion.RUBY1_8, instance.getCompatVersion());
+
+        version = CompatVersion.RUBY1_9;
+        instance.setCompatVersion(version);
+        assertEquals(version, instance.getCompatVersion());
+
+        String result = (String)instance.runScriptlet(PathType.CLASSPATH, "org/jruby/embed/ruby/block-param-scope.rb");
+        String expResult = "bear";
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of isObjectSpaceEnabled method, of class ScriptingContainer.
+     */
+    @Test
+    public void testIsObjectSpaceEnabled() {
+        System.out.println("isObjectSpaceEnabled");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        boolean expResult = false;
+        boolean result = instance.isObjectSpaceEnabled();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setObjectSpaceEnabled method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetObjectSpaceEnabled() {
+        System.out.println("setObjectSpaceEnabled");
+        boolean enable = false;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setObjectSpaceEnabled(enable);
+        assertEquals(enable, instance.isObjectSpaceEnabled());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getEnvironment method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetEnvironment() {
+        System.out.println("getEnvironment");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        Map expResult = null;
+        Map result = instance.getEnvironment();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setEnvironment method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetEnvironment() {
+        System.out.println("setEnvironment");
+        Map environment = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setEnvironment(environment);
+        assertEquals(environment, instance.getEnvironment());
+
+        environment = new HashMap();
+        environment.put("abc", "def");
+
+        instance.setEnvironment(environment);
+        assertEquals(environment, instance.getEnvironment());
+        
+        instance = null;
+    }
+
+    /**
+     * Test of getCurrentDirectory method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetCurrentDirectory() {
+        System.out.println("getCurrentDirectory");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String expResult = System.getProperty("user.dir");
+        String result = instance.getCurrentDirectory();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setCurrentDirectory method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetCurrentDirectory() {
+        System.out.println("setCurrentDirectory");
+        String directory = "";
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setCurrentDirectory(directory);
+        assertEquals(directory, instance.getCurrentDirectory());
+
+        directory = "abc";
+        instance.setCurrentDirectory(directory);
+        assertEquals(directory, instance.getCurrentDirectory());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getHomeDirectory method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetHomeDirectory() {
+        System.out.println("getHomeDirectory");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String expResult = System.getenv("JRUBY_HOME");
+        if (expResult == null) {
+            expResult = System.getProperty("jruby.home");
+        }
+        if (expResult == null) {
+            expResult = System.getProperty("java.io.tmpdir");
+        }
+        String result = instance.getHomeDirectory();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setHomeDirectory method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetHomeDirectory() {
+        System.out.println("setHomeDirectory");
+        String home = ".";
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setHomeDirectory(home);
+        assertEquals(System.getProperty("user.dir"), instance.getHomeDirectory());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getClassCache method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetClassCache() {
+        System.out.println("getClassCache");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ClassCache result = instance.getClassCache();
+        assertTrue(result.getMax() == instance.getJitMax());
+
+        instance = null;
+    }
+
+    /**
+     * Test of setClassCache method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetClassCache() {
+        System.out.println("setClassCache");
+        ClassCache cache = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setClassCache(cache);
+        assertEquals(cache, instance.getClassCache());
+
+        cache = new ClassCache(instance.getProvider().getRuntime().getJRubyClassLoader(), 30);
+        instance.setClassCache(cache);
+        assertEquals(cache, instance.getClassCache());
+        assertTrue(instance.getClassCache().getMax() == 30);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getClassLoader method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetClassLoader() {
+        System.out.println("getClassLoader");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ClassLoader expResult = this.getClass().getClassLoader();
+        ClassLoader result = instance.getClassLoader();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setClassLoader method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetClassLoader() {
+        System.out.println("setClassLoader");
+        ClassLoader loader = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setClassLoader(loader);
+        assertEquals(loader, instance.getClassLoader());
+
+        loader = instance.getProvider().getRuntime().getJRubyClassLoader();
+        instance.setClassLoader(loader);
+        assertEquals(loader, instance.getClassLoader());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getProfile method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetProfile() {
+        System.out.println("getProfile");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        Profile expResult = Profile.DEFAULT;
+        Profile result = instance.getProfile();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setProfile method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetProfile() {
+        System.out.println("setProfile");
+        Profile profile = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setProfile(profile);
+        assertEquals(profile, instance.getProfile());
+
+        profile = Profile.ALL;
+        instance.setProfile(profile);
+        assertEquals(profile, instance.getProfile());
+        
+        instance = null;
+    }
+
+    /**
+     * Test of getLoadServiceCreator method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetLoadServiceCreator() {
+        System.out.println("getLoadServiceCreator");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        LoadServiceCreator expResult = LoadServiceCreator.DEFAULT;
+        LoadServiceCreator result = instance.getLoadServiceCreator();
+        assertEquals(expResult, result);
+
+
+        instance = null;
+    }
+
+    /**
+     * Test of setLoadServiceCreator method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetLoadServiceCreator() {
+        System.out.println("setLoadServiceCreator");
+        LoadServiceCreator creator = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setLoadServiceCreator(creator);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getArgv method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetArgv() {
+        System.out.println("getArgv");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String[] expResult = new String[]{};
+        String[] result = instance.getArgv();
+        assertArrayEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setArgv method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetArgv() {
+        System.out.println("setArgv");
+        String[] argv = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setArgv(argv);
+        assertArrayEquals(argv, instance.getArgv());
+
+        instance = null;
+
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        argv = new String[] {"tree", "woods", "forest"};
+        instance.setArgv(argv);
+        String script = 
+                "def print_argv\n" +
+                  "all_of_them = \"\"\n" +
+                  "ARGV.each { |item| all_of_them += item }\n" +
+                  "return all_of_them\n" +
+                "end\n" +
+                "print_argv";
+        String ret = (String)instance.runScriptlet(script);
+        String expResult = "treewoodsforest";
+        assertEquals(expResult, ret);
+
+        Object[] params = (Object[])instance.get("ARGV");
+        assertArrayEquals(argv, params);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getScriptFilename method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetScriptFilename() {
+        System.out.println("getScriptFilename");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String expResult = "<script>";
+        String result = instance.getScriptFilename();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setScriptFilename method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetScriptFilename() {
+        System.out.println("setScriptFilename");
+        String filename = "";
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setScriptFilename(filename);
+
+        instance = null;
+
+        filename = "["+this.getClass().getCanonicalName()+"]";
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setScriptFilename(filename);
+        StringWriter writer = new StringWriter();
+        instance.setErrorWriter(writer);
+        try {
+            instance.runScriptlet("puts \"Hello");
+        } catch (RuntimeException e) {
+            assertTrue(writer.toString().contains(filename));
+        }
+
+        instance = null;
+    }
+
+    /**
+     * Test of getRecordSeparator method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetRecordSeparator() {
+        System.out.println("getRecordSeparator");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String expResult = "\n";
+        String result = instance.getRecordSeparator();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setRecordSeparator method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetRecordSeparator() {
+        System.out.println("setRecordSeparator");
+        String separator = "";
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setRecordSeparator(separator);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getKCode method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetKCode() {
+        System.out.println("getKCode");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        KCode expResult = KCode.NONE;
+        KCode result = instance.getKCode();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setKCode method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetKCode() {
+        System.out.println("setKCode");
+        KCode kcode = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setKCode(kcode);
+
+        instance = null;
+
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        kcode = KCode.UTF8;
+        instance.setKCode(kcode);
+        StringWriter writer = new StringWriter();
+        instance.setWriter(writer);
+        instance.runScriptlet("p \"Résumé\"");
+        String expResult = "\"Résumé\"";
+        assertEquals(expResult, writer.toString().trim());
+
+        instance = null;
+    }
+
+    /**
+     * Test of getJitLogEvery method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetJitLogEvery() {
+        System.out.println("getJitLogEvery");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        int expResult = 0;
+        int result = instance.getJitLogEvery();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setJitLogEvery method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetJitLogEvery() {
+        System.out.println("setJitLogEvery");
+        int logEvery = 0;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setJitLogEvery(logEvery);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getJitThreshold method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetJitThreshold() {
+        System.out.println("getJitThreshold");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        int expResult = 50;
+        int result = instance.getJitThreshold();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setJitThreshold method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetJitThreshold() {
+        System.out.println("setJitThreshold");
+        int threshold = 0;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setJitThreshold(threshold);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getJitMax method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetJitMax() {
+        System.out.println("getJitMax");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        int expResult = 4096;
+        int result = instance.getJitMax();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setJitMax method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetJitMax() {
+        System.out.println("setJitMax");
+        int max = 0;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setJitMax(max);
+
+        instance = null;
+    }
+
+    /**
+     * Test of getJitMaxSize method, of class ScriptingContainer.
+     */
+    @Test
+    public void testGetJitMaxSize() {
+        System.out.println("getJitMaxSize");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        int expResult = 10000;
+        int result = instance.getJitMaxSize();
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of setJitMaxSize method, of class ScriptingContainer.
+     */
+    @Test
+    public void testSetJitMaxSize() {
+        System.out.println("setJitMaxSize");
+        int maxSize = 0;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setJitMaxSize(maxSize);
+
+        instance = null;
+    }
+
+    /**
+     * Test of removeAttribute method, of class ScriptingContainer.
+     */
+    @Test
+    public void testRemoveAttribute() {
+        System.out.println("removeAttribute");
+        Object key = null;
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        Object expResult = null;
+        Object result = instance.removeAttribute(key);
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of remove method, of class ScriptingContainer.
+     */
+    @Test
+    public void testRemove() {
+        System.out.println("remove");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        String key = "abc";
+        String value = "def";
+        instance.put(key, value);
+        Object expResult = "def";
+        Object result = instance.remove(key);
+        assertEquals(expResult, result);
+
+        instance = null;
+    }
+
+    /**
+     * Test of clear method, of class ScriptingContainer.
+     */
+    @Test
+    public void testClear() {
+        System.out.println("clear");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.clear();
+        instance.put("abc", "local_def");
+        instance.put("$abc", "global_def");
+        instance.put("@abc", "instance_def");
+        assertEquals(3, instance.getProvider().getVarMap().size());
+
+        instance.clear();
+        assertEquals(0, instance.getProvider().getVarMap().size());
+
+        instance = null;
+    }
 }

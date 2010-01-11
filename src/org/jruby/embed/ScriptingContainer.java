@@ -29,6 +29,7 @@
  */
 package org.jruby.embed;
 
+import org.jruby.embed.internal.LocalContextProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -38,13 +39,18 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.PropertyResourceBundle;
+import org.jruby.CompatVersion;
+import org.jruby.Profile;
 import org.jruby.Ruby;
 import org.jruby.RubyGlobal.InputGlobalVariable;
 import org.jruby.RubyGlobal.OutputGlobalVariable;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.internal.EmbedRubyInterfaceAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
@@ -58,6 +64,8 @@ import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassCache;
+import org.jruby.util.KCode;
 
 /**
  * ScipritngContainer provides various methods and resources that are useful
@@ -96,7 +104,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Produces:
  * 11000000111001</pre>
  *
- * The third examples shows how to keep local variables across mutilple evalucations.
+ * The third examples shows how to keep local variables across multiple evaluations.
  * This feature simulates BSF engine for JRuby. In terms of Ruby semantics,
  * local variables should not survive after the evaluation has completed. Thus,
  * this behavior is optional, and users need to specify LocalVariableBehvior.PERSISTENT
@@ -119,7 +127,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Unicode Escape Sequence can be included in Ruby scripts.
  *
  * <p>In addition, ScriptingContainer supports a parse-once-eval-many-times feature,
- * invoking methods defined by Ruby, and getting an instance of a specifed interface
+ * invoking methods defined by Ruby, and getting an instance of a specified interface
  * that has been implemented by Ruby.
  *
  * <pre>Example 4:
@@ -150,7 +158,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
-public class ScriptingContainer {
+public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     private static final String defaultProps = "org/jruby/embed/jruby-embed.properties";
     private final Map<String, String[]> properties;
     private LocalContextProvider provider = null;
@@ -179,7 +187,7 @@ public class ScriptingContainer {
 
     /**
      * Constructs a ScriptingContainer with a specified local context scope,
-     * local variabe behavior and property file.
+     * local variable behavior and property file.
      *
      * <p>A property file can have key-values pairs. If multiple values are
      * associated to a key, each value is separated by comma.
@@ -189,7 +197,7 @@ public class ScriptingContainer {
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
-     * @param propertyname is a propert file name
+     * @param propertyname is a property file name
      */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, String propertyname) {
         provider = getProviderInstance(scope, behavior);
@@ -200,7 +208,7 @@ public class ScriptingContainer {
         }
         prepareProperties(propertyname, map);
         try {
-            SystemPropertyCatcher.setJRubyHome(this);
+            initConfig();
         } catch (URISyntaxException ex) {
             ex.printStackTrace();
             throw new RuntimeException(ex);
@@ -237,8 +245,679 @@ public class ScriptingContainer {
         }
     }
 
+    private void initConfig() throws URISyntaxException {
+        List<String> paths = SystemPropertyCatcher.findLoadPaths();
+        provider.getRubyInstanceConfig().setLoadPaths(paths);
+        String home = SystemPropertyCatcher.findJRubyHome(this);
+        if (home != null) {
+        	provider.getRubyInstanceConfig().setJRubyHome(home);
+        }
+        provider.getRubyInstanceConfig().setCompileMode(CompileMode.OFF);
+        provider.getRubyInstanceConfig().setScriptFileName("<script>");
+    }
+
     /**
-     * Returns an array of values associated to a key
+     * Returns a list of load paths for Ruby scripts/libraries. If no paths is
+     * given, the list is created from java.class.path System property.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a list of load paths.
+     */
+    public List<String> getLoadPaths() {
+        return provider.getRubyInstanceConfig().loadPaths();
+    }
+
+    /**
+     * Changes a list of load paths Ruby scripts/libraries. The default value
+     * is an empty array. If no paths is given, the list is created from
+     * java.class.path System property. This value can be set by
+     * org.jruby.embed.class.path System property.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param paths a new list of load paths.
+     */
+    public void setloadPaths(List<String> paths) {
+        provider.getRubyInstanceConfig().setLoadPaths(paths);
+    }
+
+    /**
+     * Returns an input stream assigned to STDIN and $stdin.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return input stream of STDIN and $stdin
+     */
+    public InputStream getInput() {
+        return provider.getRubyInstanceConfig().getInput();
+    }
+
+    /**
+     * Changes STDIN and $stdin to a given input stream. The default standard input
+     * is java.lang.System.in.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param istream an input stream to be set
+     */
+    public void setInput(InputStream istream) {
+        provider.getRubyInstanceConfig().setInput(istream);
+    }
+
+    /**
+     * Changes STDIN and $stdin to a given reader. No reader is set by default.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param reader a reader to be set
+     */
+    public void setInput(Reader reader) {
+        if (reader == null) {
+            provider.getRubyInstanceConfig().setInput(null);
+        } else {
+            ReaderInputStream istream = new ReaderInputStream(reader);
+            provider.getRubyInstanceConfig().setInput(istream);
+        }
+    }
+
+    /**
+     * Returns an output stream assigned to STDOUT and $stdout.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return an output stream of STDOUT and $stdout
+     */
+    public PrintStream getOutput() {
+        return provider.getRubyInstanceConfig().getOutput();
+    }
+
+    /**
+     * Changes STDOUT and $stdout to a given output stream. The default standard
+     * output is java.lang.System.out.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param pstream an output stream to be set
+     */
+    public void setOutput(PrintStream pstream) {
+        provider.getRubyInstanceConfig().setOutput(pstream);
+    }
+
+    /**
+     * Changes STDOUT and $stdout to a given writer. No writer is set by default.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param writer a writer to be set
+     */
+    public void setOutput(Writer writer) {
+        if (writer == null) {
+            provider.getRubyInstanceConfig().setOutput(null);
+        } else {
+            WriterOutputStream ostream = new WriterOutputStream(writer);
+            PrintStream pstream = new PrintStream(ostream);
+            provider.getRubyInstanceConfig().setOutput(pstream);
+        }
+    }
+
+    /**
+     * Returns an error stream assigned to STDERR and $stderr.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return output stream for error stream
+     */
+    public PrintStream getError() {
+        return provider.getRubyInstanceConfig().getError();
+    }
+
+    /**
+     * Changes STDERR and $stderr to a given print stream. The default standard error
+     * is java.lang.System.err.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param pstream a print stream to be set
+     */
+    public void setError(PrintStream pstream) {
+        provider.getRubyInstanceConfig().setError(pstream);
+    }
+
+    /**
+     * Changes STDERR and $stderr to a given writer. No writer is set by default.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param writer a writer to be set
+     */
+    public void setError(Writer writer) {
+        if (writer == null) {
+            provider.getRubyInstanceConfig().setError(null);
+        } else {
+            WriterOutputStream ostream = new WriterOutputStream(writer);
+            PrintStream pstream = new PrintStream(ostream);
+            provider.getRubyInstanceConfig().setError(pstream);
+        }
+    }
+
+    /**
+     * Returns a compile mode currently chosen, which is one of CompileMode.JIT,
+     * CompileMode.FORCE, CompileMode.OFF. The default mode is CompileMode.OFF
+     * if CompatVersion.RUBY1_9 is chosen, otherwise, CompileMode.JIT. Also,
+     * ComileMode.OFF is chosen when a security restriction is set.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a compile mode.
+     */
+    public CompileMode getCompileMode() {
+        return provider.getRubyInstanceConfig().getCompileMode();
+    }
+
+    /**
+     * Changes a compile mode to a given mode, which should be one of CompileMode.JIT,
+     * CompileMode.FORCE, CompileMode.OFF.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param mode compile mode
+     */
+    public void setCompileMode(CompileMode mode) {
+        provider.getRubyInstanceConfig().setCompileMode(mode);
+    }
+
+    /**
+     * Tests whether Ruby runs in a process or not.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return true if Ruby is configured to run in a process, otherwise, false.
+     */
+    public boolean isRunRubyInProcess() {
+        return provider.getRubyInstanceConfig().isRunRubyInProcess();
+    }
+
+    /**
+     * Changes the value to determine whether Ruby runs in a process or not. The
+     * default value is true.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param inprocess true when Ruby is set to run in the process, or false not to
+     * run in the process.
+     */
+    public void setRunRubyInProcess(boolean inprocess) {
+        provider.getRubyInstanceConfig().setRunRubyInProcess(inprocess);
+    }
+
+    /**
+     * Returns a Ruby version currently chosen, which is one of CompatVersion.RUBY1_8,
+     * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
+     * CompatVersion.RUBY1_8.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a Ruby version
+     */
+    public CompatVersion getCompatVersion() {
+        return provider.getRubyInstanceConfig().getCompatVersion();
+    }
+
+    /**
+     * Changes a Ruby version to be evaluated into one of CompatVersion.RUBY1_8,
+     * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
+     * CompatVersion.RUBY1_8.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param version a Ruby version
+     */
+    public void setCompatVersion(CompatVersion version) {
+        provider.getRubyInstanceConfig().setCompatVersion(version);
+    }
+
+    /**
+     * Tests whether the Object Space is enabled or not.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return true if the Object Space is able to use, otherwise, false.
+     */
+    public boolean isObjectSpaceEnabled() {
+        return provider.getRubyInstanceConfig().isObjectSpaceEnabled();
+    }
+
+    /**
+     * Changes the value to determine whether the Object Space is enabled or not. The
+     * default value is false.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * This value can be set by jruby.objectspace.enabled system property.
+     *
+     * @param enable true to enable the Object Space, or false to disable.
+     */
+    public void setObjectSpaceEnabled(boolean enable) {
+        provider.getRubyInstanceConfig().setObjectSpaceEnabled(enable);
+    }
+
+    /**
+     * Returns a map of environment variables.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a map that has environment variables' key-value pairs.
+     */
+    public Map getEnvironment() {
+        return provider.getRubyInstanceConfig().getEnvironment();
+    }
+
+    /**
+     * Changes an environment variables' map.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param environment a new map of environment variables.
+     */
+    public void setEnvironment(Map environment) {
+        provider.getRubyInstanceConfig().setEnvironment(environment);
+    }
+
+    /**
+     * Returns a current directory.
+     *
+     * The default current directory is identical to a value of "user.dir" system
+     * property if no security restriction is set. If the "user.dir" directory is
+     * protected by the security restriction, the default value is "/".
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a current directory.
+     */
+    public String getCurrentDirectory() {
+        return provider.getRubyInstanceConfig().getCurrentDirectory();
+    }
+
+    /**
+     * Changes a current directory to a given directory.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param directory a new directory to be set.
+     */
+    public void setCurrentDirectory(String directory) {
+        provider.getRubyInstanceConfig().setCurrentDirectory(directory);
+    }
+
+    /**
+     * Returns a JRuby home directory.
+     *
+     * The default JRuby home is the value of JRUBY_HOME environment variable,
+     * or "jruby.home" system property when no security restriction is set to
+     * those directories. If none of JRUBY_HOME or jruby.home is set and jruby-complete.jar
+     * is used, the default JRuby home is "/META-INF/jruby.home" in the jar archive.
+     * Otherwise, "java.io.tmpdir" system property is the default value.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a JRuby home directory.
+     */
+    public String getHomeDirectory() {
+        return provider.getRubyInstanceConfig().getJRubyHome();
+    }
+
+    /**
+     * Changes a JRuby home directory to a directory of a given name.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param home a name of new JRuby home directory.
+     */
+    public void setHomeDirectory(String home) {
+        provider.getRubyInstanceConfig().setJRubyHome(home);
+    }
+
+    /**
+     * Returns a ClassCache object that is tied to a class loader. The default ClassCache
+     * object is tied to a current thread' context loader if it exists. Otherwise, it is
+     * tied to the class loader that loaded RubyInstanceConfig.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a ClassCache object.
+     */
+    public ClassCache getClassCache() {
+        return provider.getRubyInstanceConfig().getClassCache();
+    }
+
+    /**
+     * Changes a ClassCache object to a given one.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param cache a new ClassCache object to be set.
+     */
+    public void setClassCache(ClassCache cache) {
+        provider.getRubyInstanceConfig().setClassCache(cache);
+    }
+
+    /**
+     * Returns a class loader object that is currently used. This loader loads
+     * Ruby files and libraries.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a class loader object that is currently used.
+     */
+    public ClassLoader getClassLoader() {
+        return provider.getRubyInstanceConfig().getLoader();
+    }
+
+    /**
+     * Changes a class loader to a given loader.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param loader a new class loader to be set.
+     */
+    public void setClassLoader(ClassLoader loader) {
+        provider.getRubyInstanceConfig().setLoader(loader);
+    }
+
+    /**
+     * Returns a profiler currently used. The default profiler is Profile.DEFAULT,
+     * which has the same behavior to Profile.ALL.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a current profiler.
+     */
+    public Profile getProfile() {
+        return provider.getRubyInstanceConfig().getProfile();
+    }
+
+    /**
+     * Changes a profiler to a given one.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param profile a new profiler to be set.
+     */
+    public void setProfile(Profile profile) {
+        provider.getRubyInstanceConfig().setProfile(profile);
+    }
+
+    /**
+     * Returns a LoadServiceCreator currently used.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a current LoadServiceCreator.
+     */
+    public LoadServiceCreator getLoadServiceCreator() {
+        return provider.getRubyInstanceConfig().getLoadServiceCreator();
+    }
+
+    /**
+     * Changes a LoadServiceCreator to a given one.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param creator a new LoadServiceCreator
+     */
+    public void setLoadServiceCreator(LoadServiceCreator creator) {
+        provider.getRubyInstanceConfig().setLoadServiceCreator(creator);
+    }
+
+    /**
+     * Returns an arguments' list.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return an arguments' list.
+     */
+    public String[] getArgv() {
+        return provider.getRubyInstanceConfig().getArgv();
+    }
+
+    /**
+     * Changes values of the arguments' list.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param argv a new arguments' list.
+     */
+    public void setArgv(String[] argv) {
+        provider.getRubyInstanceConfig().setArgv(argv);
+    }
+
+    /**
+     * Returns a script filename to run. The default value is "<script>".
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a script filename.
+     */
+    public String getScriptFilename() {
+        return provider.getRubyInstanceConfig().getScriptFileName();
+    }
+
+    /**
+     * Changes a script filename to run. The default value is "<script>".
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param filename a new script filename.
+     */
+    public void setScriptFilename(String filename) {
+        provider.getRubyInstanceConfig().setScriptFileName(filename);
+    }
+
+    /**
+     * Returns a record separator. The default value is "\n".
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a record separator.
+     */
+    public String getRecordSeparator() {
+        return provider.getRubyInstanceConfig().getRecordSeparator();
+    }
+
+    /**
+     * Changes a record separator to a given value. If "0" is given, the record
+     * separator goes to "\n\n", "777" goes to "\uFFFF", otherwise, an octal value
+     * of the given number.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param separator a new record separator value, "0" or "777"
+     */
+    public void setRecordSeparator(String separator) {
+        provider.getRubyInstanceConfig().setRecordSeparator(separator);
+    }
+
+    /**
+     * Returns a value of KCode currently used. The default value is KCode.NONE.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a KCode value.
+     */
+    public KCode getKCode() {
+        return provider.getRubyInstanceConfig().getKCode();
+    }
+
+    /**
+     * Changes a value of KCode to a given value. The default value is KCode.NONE.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param kcode a new KCode value.
+     */
+    public void setKCode(KCode kcode) {
+        provider.getRubyInstanceConfig().setKCode(kcode);
+    }
+
+    /**
+     * Returns the value of n, which means that jitted methods are logged in
+     * every n methods. The default value is 0.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a value that determines how often jitted methods are logged.
+     */
+    public int getJitLogEvery() {
+        return provider.getRubyInstanceConfig().getJitLogEvery();
+    }
+
+    /**
+     * Changes a value of n, so that jitted methods are logged in every n methods.
+     * The default value is 0. This value can be set by the jruby.jit.logEvery System
+     * property.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param logEvery a new number of methods.
+     */
+    public void setJitLogEvery(int logEvery) {
+        provider.getRubyInstanceConfig().setJitLogEvery(logEvery);
+    }
+
+    /**
+     * Returns a value of the threshold that determines whether jitted methods'
+     * call reached to the limit or not. The default value is -1 when security
+     * restriction is applied, or 50 when no security restriction exists.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a value of the threshold.
+     */
+    public int getJitThreshold() {
+        return provider.getRubyInstanceConfig().getJitThreshold();
+    }
+
+    /**
+     * Changes a value of the threshold that determines whether jitted methods'
+     * call reached to the limit or not. The default value is -1 when security
+     * restriction is applied, or 50 when no security restriction exists. This
+     * value can be set by jruby.jit.threshold System property.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param threshold a new value of the threshold.
+     */
+    public void setJitThreshold(int threshold) {
+        provider.getRubyInstanceConfig().setJitThreshold(threshold);
+    }
+
+    /**
+     * Returns a value of a max class cache size. The default value is 0 when
+     * security restriction is applied, or 4096 when no security restriction exists.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a value of a max class cache size.
+     */
+    public int getJitMax() {
+        return provider.getRubyInstanceConfig().getJitMax();
+    }
+
+    /**
+     * Changes a value of a max class cache size. The default value is 0 when
+     * security restriction is applied, or 4096 when no security restriction exists.
+     * This value can be set by jruby.jit.max System property.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param max a new value of a max class cache size.
+     */
+    public void setJitMax(int max) {
+        provider.getRubyInstanceConfig().setJitMax(max);
+    }
+
+    /**
+     * Returns a value of a max size of the bytecode generated by compiler. The
+     * default value is -1 when security restriction is applied, or 10000 when
+     * no security restriction exists.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @return a value of a max size of the bytecode.
+     */
+    public int getJitMaxSize() {
+        return provider.getRubyInstanceConfig().getJitMaxSize();
+    }
+
+    /**
+     * Changes a value of a max size of the bytecode generated by compiler. The
+     * default value is -1 when security restriction is applied, or 10000 when
+     * no security restriction exists. This value can be set by jruby.jit.maxsize
+     * System property.
+     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * @since JRuby 1.5.0.
+     *
+     * @param maxSize a new value of a max size of the bytecode.
+     */
+    public void setJitMaxSize(int maxSize) {
+        provider.getRubyInstanceConfig().setJitMaxSize(maxSize);
+    }
+
+    /**
+     * Returns an array of values associated to a key.
      *
      * @param key is a key in a property file
      * @return values associated to the key
@@ -248,12 +927,12 @@ public class ScriptingContainer {
     }
 
     /**
-     * Returns a version of JRuby that gets ScriptingContainer started
+     * Returns a version of JRuby that gets ScriptingContainer started.
      *
      * @return a JRuby version
      */
     public String getSupportedRubyVersion() {
-        Ruby ruby = getRuntime();
+        Ruby ruby = provider.getRuntime();
         RubyInstanceConfig config = ruby.getInstanceConfig();
         return config.getVersionString().trim();
     }
@@ -271,10 +950,13 @@ public class ScriptingContainer {
     }
 
     /**
-     * Returns a Ruby runtime in one of {@link LocalContextScope}
+     * Returns a Ruby runtime in one of {@link LocalContextScope}.
      *
-     * @return Ruby runtime of a spcifed local context
+     * @deprecated As of JRuby 1.5.0. Use getProvider().getRuntime() method instead.
+     *
+     * @return Ruby runtime of a specified local context
      */
+    @Deprecated
     public Ruby getRuntime() {
         return provider.getRuntime();
     }
@@ -282,7 +964,7 @@ public class ScriptingContainer {
     /**
      * Returns a variable map in one of {@link LocalContextScope}. Variables
      * in this map is used to share between Java and Ruby. Map keys are Ruby's
-     * variable names, thus they must be vaild Ruby names.
+     * variable names, thus they must be valid Ruby names.
      * 
      * @return a variable map specific to the current thread
      */
@@ -668,7 +1350,7 @@ public class ScriptingContainer {
      * variables' values from Java.
      *
      * @param receiver is an instance that will receive this method call
-     * @param methodName is a method name to be calleid
+     * @param methodName is a method name to be called
      * @param args is an array of method arguments
      * @param returnType is the type we want it to convert to
      * @param unit is parsed unit
@@ -684,7 +1366,7 @@ public class ScriptingContainer {
      * inject Ruby's local variables' values from Java.
      *
      * @param receiver is an instance that will receive this method call
-     * @param methodName is a method name to be calleid
+     * @param methodName is a method name to be called
      * @param args is an array of method arguments except a block
      * @param block is a block to be executed in this method
      * @param returnType is the type we want it to convert to
@@ -771,7 +1453,7 @@ public class ScriptingContainer {
     }
 
     /**
-     * Replaces a standard input by a specifed reader
+     * Replaces a standard input by a specified reader
      * 
      * @param reader is a reader to be set
      */
@@ -788,7 +1470,7 @@ public class ScriptingContainer {
         }
         map.put(AttributeName.READER, reader);
         InputStream istream = new ReaderInputStream(reader);
-        Ruby runtime = getRuntime();
+        Ruby runtime = provider.getRuntime();
         RubyIO io = new RubyIO(runtime, istream);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", io));
@@ -811,17 +1493,20 @@ public class ScriptingContainer {
     /**
      * Returns an input stream that Ruby runtime has. The stream is set when
      * Ruby runtime is initialized.
+     *
+     * @deprecated As of JRuby 1.5.0, replaced by getInput().
      * 
      * @return an input stream that Ruby runtime has.
      */
+    @Deprecated
     public InputStream getIn() {
-        return getRuntime().getIn();
+        return getInput();
     }
 
     /**
-     * Replaces a standard output by a specifed writer.
+     * Replaces a standard output by a specified writer.
      *
-     * @param writer is a wrtier to be set
+     * @param writer is a writer to be set
      */
     public void setWriter(Writer writer) {
         if (writer == null) {
@@ -843,7 +1528,7 @@ public class ScriptingContainer {
         if (pstream == null) {
             return;
         }
-        Ruby runtime = getRuntime();
+        Ruby runtime = provider.getRuntime();
         RubyIO io = new RubyIO(runtime, pstream);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io));
@@ -858,7 +1543,7 @@ public class ScriptingContainer {
     }
 
     /**
-     * Returns a wrtier set in an attribute map.
+     * Returns a writer set in an attribute map.
      * 
      * @return a writer in a attribute map
      */
@@ -873,17 +1558,20 @@ public class ScriptingContainer {
     /**
      * Returns an output stream that Ruby runtime has. The stream is set when
      * Ruby runtime is initialized.
+     *
+     * @deprecated As of JRuby 1.5.0, replaced by getOutput().
      * 
      * @return an output stream that Ruby runtime has
      */
+    @Deprecated
     public PrintStream getOut() {
-        return getRuntime().getOut();
+        return getOutput();
     }
 
     /**
-     * Replaces a standard error by a specifed writer.
+     * Replaces a standard error by a specified writer.
      * 
-     * @param errorWriter is a wrtier to be set
+     * @param errorWriter is a writer to be set
      */
     public void setErrorWriter(Writer errorWriter) {
         if (errorWriter == null) {
@@ -905,7 +1593,7 @@ public class ScriptingContainer {
         if (error == null) {
             return;
         }
-        Ruby runtime = getRuntime();
+        Ruby runtime = provider.getRuntime();
         RubyIO io = new RubyIO(runtime, error);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io));
@@ -919,7 +1607,7 @@ public class ScriptingContainer {
     }
 
     /**
-     * Returns an error wrtier set in an attribute map.
+     * Returns an error writer set in an attribute map.
      *
      * @return an error writer in a attribute map
      */
@@ -934,10 +1622,13 @@ public class ScriptingContainer {
     /**
      * Returns an error output stream that Ruby runtime has. The stream is set when
      * Ruby runtime is initialized.
+     *
+     * @deprecated As of JRuby 1.5.0, Replaced by getError()
      * 
      * @return an error output stream that Ruby runtime has
      */
+    @Deprecated
     public PrintStream getErr() {
-        return getRuntime().getErr();
+        return getError();
     }
 }

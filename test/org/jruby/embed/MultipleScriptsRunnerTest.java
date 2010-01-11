@@ -101,7 +101,7 @@ public class MultipleScriptsRunnerTest {
                 String testname = (String) itr.next();
                 System.out.println("\n[" + testname + "]");
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-                instance.getProvider().setLoadPaths(loadPaths);
+                instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setObjectSpaceEnabled(true);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 // test_backquote.rb fails when the current directory is set.
@@ -231,7 +231,7 @@ public class MultipleScriptsRunnerTest {
             System.out.println("\n[" + testname + "]");
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-                instance.getProvider().setLoadPaths(ruby19loadPaths);
+                instance.getProvider().getRubyInstanceConfig().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.runScriptlet(PathType.CLASSPATH, testname);
@@ -261,7 +261,7 @@ public class MultipleScriptsRunnerTest {
             System.out.println("[" + testnames[i] + "]");
             String testname = basedir + "/test/" + testnames[i];
             ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-            instance.getProvider().setLoadPaths(loadPaths);
+            instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
             instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
             instance.runScriptlet(PathType.ABSOLUTE, testname);
 
@@ -281,7 +281,7 @@ public class MultipleScriptsRunnerTest {
             ScriptingContainer instance;
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-                instance.getProvider().setLoadPaths(ruby19loadPaths);
+                instance.getProvider().getRubyInstanceConfig().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
                 instance.runScriptlet(PathType.ABSOLUTE, testname);
@@ -308,7 +308,7 @@ public class MultipleScriptsRunnerTest {
             System.out.println("[" + testnames[i] + "]");
             String testname = testnames[i];
             ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-            instance.getProvider().setLoadPaths(loadPaths);
+            instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
             instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
             instance.runScriptlet("require 'java'");
             instance.runScriptlet(PathType.CLASSPATH, testname);

@@ -32,7 +32,6 @@ package org.jruby.embed.internal;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -370,7 +369,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         if (methodName == null || methodName.length()==0) {
             return null;
         }
-        Ruby runtime = container.getRuntime();
+        Ruby runtime = container.getProvider().getRuntime();
         IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
         try {
             ManyVarsDynamicScope scope = unit != null ? unit.getScope() : null;
@@ -405,7 +404,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     }
 
     private IRubyObject callEachType(MethodType type, IRubyObject rubyReceiver, String methodName, Block block, Object... args) {
-        Ruby runtime = container.getRuntime();
+        Ruby runtime = container.getProvider().getRuntime();
         IRubyObject[] rubyArgs = null;
         if (args != null && args.length > 0) {
             rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);

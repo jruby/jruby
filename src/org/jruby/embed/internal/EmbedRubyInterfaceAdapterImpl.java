@@ -65,7 +65,7 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
         if (clazz == null || !clazz.isInterface()) {
             return null;
         }
-        Ruby runtime = container.getRuntime();
+        Ruby runtime = container.getProvider().getRuntime();
         Object o;
         if (receiver == null || receiver instanceof RubyNil) {
             o = JavaEmbedUtils.rubyToJava(runtime, runtime.getTopSelf(), clazz);

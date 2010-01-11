@@ -123,7 +123,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                     istream = new FileInputStream(absolutePath);
                     break;
                 case CLASSPATH:
-                    istream = container.getRuntime().getJRubyClassLoader().getResourceAsStream(filename);
+                    istream = container.getProvider().getRuntime().getJRubyClassLoader().getResourceAsStream(filename);
                     break;
             }
             return parse(istream, filename, lines);
@@ -155,24 +155,24 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             return null;
         }
         if (filename == null || filename.length() == 0) {
-            filename = "<script>";
+            filename = container.getScriptFilename();
         }
-        IAccessor d = new ValueAccessor(RubyString.newString(container.getRuntime(), filename));
-        container.getRuntime().getGlobalVariables().define("$PROGRAM_NAME", d);
-        container.getRuntime().getGlobalVariables().define("$0", d);
+        IAccessor d = new ValueAccessor(RubyString.newString(container.getProvider().getRuntime(), filename));
+        container.getProvider().getRuntime().getGlobalVariables().define("$PROGRAM_NAME", d);
+        container.getProvider().getRuntime().getGlobalVariables().define("$0", d);
 
         int line = 0;
         if (lines != null && lines.length > 0) {
             line = lines[0];
         }
         try {
-            Ruby runtime = container.getRuntime();
+            Ruby runtime = container.getProvider().getRuntime();
             ManyVarsDynamicScope scope = getManyVarsDynamicScope(runtime, 0);
             Node node = null;
             if (input instanceof String) {
-                node = container.getRuntime().parseEval((String)input, filename, scope, line);
+                node = container.getProvider().getRuntime().parseEval((String)input, filename, scope, line);
             } else {
-                node = container.getRuntime().parseFile((InputStream)input, filename, scope, line);
+                node = container.getProvider().getRuntime().parseFile((InputStream)input, filename, scope, line);
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.JIT || compileMode == CompileMode.FORCE) {
@@ -181,7 +181,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return new EmbedEvalUnitImpl(container, node, scope);
         } catch (RaiseException e) {
-            container.getRuntime().printError(e.getException());
+            container.getProvider().getRuntime().printError(e.getException());
             throw new ParseFailedException(e.getMessage(), e);
         } catch (Throwable e) {
             Writer w = container.getErrorWriter();
