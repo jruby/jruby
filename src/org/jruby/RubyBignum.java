@@ -435,7 +435,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_modulo
      * 
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
         if (other instanceof RubyFixnum) {
@@ -451,7 +451,18 @@ public class RubyBignum extends RubyInteger {
         BigInteger result = value.mod(otherValue.abs());
         if (otherValue.signum() == -1 && result.signum() != 0) result = otherValue.add(result);
         return bignorm(runtime, result);
+    }
 
+    /** rb_big_modulo
+     * 
+     */
+    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+        if (!other.isNil() && other instanceof RubyFloat
+                && ((RubyFloat)other).getDoubleValue() == 0) {
+            throw context.getRuntime().newZeroDivisionError(); 
+        }
+        return op_mod(context, other);
     }
 
     /** rb_big_remainder
