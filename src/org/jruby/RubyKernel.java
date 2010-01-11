@@ -333,7 +333,7 @@ public class RubyKernel {
         return RuntimeHelpers.invoke(context, context.getRuntime().getRational(), "convert", arg0, arg1);
     }
 
-    @JRubyMethod(name = "Float", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "Float", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
         if(object instanceof RubyFixnum){
             return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
@@ -351,6 +351,27 @@ public class RubyKernel {
         } else {
             RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType(object, recv.getRuntime().getFloat(), "to_f");
             if (Double.isNaN(rFloat.getDoubleValue())) throw recv.getRuntime().newArgumentError("invalid value for Float()");
+            return rFloat;
+        }
+    }
+
+    @JRubyMethod(name = "Float", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
+        if(object instanceof RubyFixnum){
+            return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
+        }else if(object instanceof RubyFloat){
+            return (RubyFloat)object;
+        }else if(object instanceof RubyBignum){
+            return RubyFloat.newFloat(object.getRuntime(), RubyBignum.big2dbl((RubyBignum)object));
+        }else if(object instanceof RubyString){
+            if(((RubyString) object).getByteList().getRealSize() == 0){ // rb_cstr_to_dbl case
+                throw recv.getRuntime().newArgumentError("invalid value for Float(): " + object.inspect());
+            }
+            return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
+        }else if(object.isNil()){
+            throw recv.getRuntime().newTypeError("can't convert nil into Float");
+        } else {
+            RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType19(object, recv.getRuntime().getFloat(), "to_f");
             return rFloat;
         }
     }
