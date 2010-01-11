@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007-2009 Koichiro Ohba <koichiro@meadowy.org>
+ * Copyright (C) 2007-2010 Koichiro Ohba <koichiro@meadowy.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -125,7 +125,12 @@ public class RubyNKF {
         }
         ByteList bytes = s.convertToString().getByteList();
         ByteBuffer buf = ByteBuffer.wrap(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-        CharsetDecoder decoder = Charset.forName("x-JISAutoDetect").newDecoder();
+        CharsetDecoder decoder;
+        try {
+            decoder = Charset.forName("x-JISAutoDetect").newDecoder();
+        } catch (UnsupportedCharsetException e) {
+            throw runtime.newStandardError("charsets.jar is required to use NKF#guess. Please install JRE which supports m17n.");
+        }
         try {
             decoder.decode(buf);
         } catch (CharacterCodingException e) {
