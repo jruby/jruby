@@ -61,6 +61,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -422,6 +423,10 @@ public class JavaUtil {
 
         if (object instanceof IRubyObject) {
             return (IRubyObject) object;
+        }
+
+        if (object instanceof RubyObjectHolderProxy) {
+            return ((RubyObjectHolderProxy) object).__ruby_object();
         }
 
         if (object instanceof InternalJavaProxy) {

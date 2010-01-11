@@ -92,6 +92,7 @@ import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -980,7 +981,12 @@ public class Java implements Library {
 
     public static IRubyObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
-        
+
+        Class[] tmp_interfaces = interfaces;
+        interfaces = new Class[tmp_interfaces.length + 1];
+        System.arraycopy(tmp_interfaces, 0, interfaces, 0, tmp_interfaces.length);
+        interfaces[tmp_interfaces.length] = RubyObjectHolderProxy.class;
+
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
         if (!SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy")) {
@@ -1035,6 +1041,8 @@ public class Java implements Library {
                         if (parameterTypes[0].equals(Object.class)) {
                             return Boolean.valueOf(proxy == nargs[0]);
                         }
+                    } else if (methodName == "__ruby_object" && length == 0) {
+                        return wrapper;
                     }
 
                     IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);

@@ -7,6 +7,7 @@ import "java_integration.fixtures.UsesDescendantOfSingleMethodInterface"
 import "java_integration.fixtures.BeanLikeInterface"
 import "java_integration.fixtures.BeanLikeInterfaceHandler"
 import "java_integration.fixtures.ConstantHoldingInterface"
+import "java_integration.fixtures.CoerceToInterface"
 import "java_integration.fixtures.ReturnsInterface"
 import "java_integration.fixtures.ReturnsInterfaceConsumer"
 import "java_integration.fixtures.AnotherRunnable"
@@ -36,7 +37,7 @@ describe "Single-method Java interfaces implemented in Ruby" do
       end
     end
   end
- 
+
   it "should be kind_of? the interface" do
     @value_holder1.new(1).should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === @value_holder1.new(1)
@@ -51,11 +52,11 @@ describe "Single-method Java interfaces implemented in Ruby" do
     UsesSingleMethodInterface.castAndCallIt(@value_holder1.new(2)).should == 2
     UsesSingleMethodInterface.castAndCallIt(@value_holder2.new(2)).should == 2
   end
-  
+
   it "should allow implementation using the underscored version" do
     UsesSingleMethodInterface.callIt(@value_holder2.new(3)).should == 3
   end
-  
+
   it "should allow reopening implementations" do
     @value_holder3 = Class.new do
       include SingleMethodInterface
@@ -74,7 +75,7 @@ describe "Single-method Java interfaces implemented in Ruby" do
       end
     end
     UsesSingleMethodInterface.callIt(obj).should == 8
-    
+
     @value_holder3 = Class.new do
       include SingleMethodInterface
       def initialize(val)
@@ -93,8 +94,8 @@ describe "Single-method Java interfaces implemented in Ruby" do
     end
     UsesSingleMethodInterface.callIt(obj).should == 8
   end
-  
-  it "should use Object#equals if there is no Ruby equals defined" do 
+
+  it "should use Object#equals if there is no Ruby equals defined" do
     c = Class.new
     c.send :include, java.util.Map
     arr = java.util.ArrayList.new
@@ -103,13 +104,13 @@ describe "Single-method Java interfaces implemented in Ruby" do
     arr.contains(v).should be_true
   end
 
-  it "should use Object#hashCode if there is no Ruby hashCode defined" do 
+  it "should use Object#hashCode if there is no Ruby hashCode defined" do
     c = Class.new
     c.send :include, java.util.Map
     UsesSingleMethodInterface.hashCode(c.new)
   end
 
-  it "should use Object#toString if there is no Ruby toString defined" do 
+  it "should use Object#toString if there is no Ruby toString defined" do
     c = Class.new
     c.send :include, java.util.Map
     UsesSingleMethodInterface.toString(c.new)
@@ -140,7 +141,7 @@ describe "Single-method Java interfaces" do
     # 3 normal args is our cutoff for specific-arity optz, so test four
     UsesSingleMethodInterface.new(nil, nil, nil, nil) { 1 }.result.should == 1
   end
-  
+
   it "can be coerced from a block passed to a static method" do
     UsesSingleMethodInterface.callIt { 1 }.should == 1
     UsesSingleMethodInterface.callIt(nil) { 1 }.should == 1
@@ -149,7 +150,7 @@ describe "Single-method Java interfaces" do
     # 3 normal args is our cutoff for specific-arity optz, so test four
     UsesSingleMethodInterface.callIt(nil, nil, nil, nil) { 1 }.should == 1
   end
-  
+
   it "can be coerced from a block passed to a instance method" do
     UsesSingleMethodInterface.new.callIt2 do 1 end.should == 1
     UsesSingleMethodInterface.new.callIt2(nil) do 1 end.should == 1
@@ -158,12 +159,12 @@ describe "Single-method Java interfaces" do
     # 3 normal args is our cutoff for specific-arity optz, so test four
     UsesSingleMethodInterface.new.callIt2(nil, nil, nil, nil) do 1 end.should == 1
   end
-  
+
   it "should be implementable with .impl" do
     impl = SingleMethodInterface.impl {|name| name}
     impl.should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === impl
-    
+
     UsesSingleMethodInterface.callIt(impl).should == :callIt
   end
 
@@ -208,7 +209,7 @@ describe "A bean-like Java interface" do
       end.should_not raise_error
     end
   end
-  
+
   it "allows implementing boolean methods with ? names" do
     # Java name before Ruby name (un-beaned)
     myimpl1 = Class.new do
@@ -280,7 +281,7 @@ describe "A bean-like Java interface" do
     end
     BeanLikeInterfaceHandler.new(myimpl4.new).supahFriendly().should == true
   end
-  
+
   it "searches for implementation names in a predictable order" do
     myimpl1 = Class.new do
       include BeanLikeInterface
@@ -323,7 +324,7 @@ describe "A bean-like Java interface" do
       end.should_not raise_error
     end
   end
-  
+
   it "does not honor beanified implementations of methods that don't match javabean spec" do
     myimpl1 = Class.new do
       include BeanLikeInterface
@@ -356,13 +357,13 @@ describe "A Ruby class including a descendant interface" do
   it "implements all methods from that interface and parents" do
     impl = Class.new do
       include DescendantOfSingleMethodInterface
-      
+
       def callIt; "foo"; end
       def callThat; "bar"; end
     end
-    
+
     dosmi = impl.new
-    
+
     UsesSingleMethodInterface.callIt(dosmi).should == "foo"
     UsesDescendantOfSingleMethodInterface.callThat(dosmi).should == "bar"
   end
@@ -370,15 +371,15 @@ describe "A Ruby class including a descendant interface" do
   it "inherits implementation of super-interface methods from superclass" do
     super_impl = Class.new do
       include SingleMethodInterface
-      
+
       def callIt; "foo"; end
     end
-    
+
     impl = Class.new(super_impl) do
       include DescendantOfSingleMethodInterface
       def callThat; "bar"; end
     end
-    
+
     dosmi = impl.new
 
     UsesSingleMethodInterface.callIt(dosmi).should == "foo"
@@ -386,20 +387,20 @@ describe "A Ruby class including a descendant interface" do
   end
 end
 
-describe "Single object implementing methods of interface" do 
-  before(:each) do 
-    @impl = Class.new do 
+describe "Single object implementing methods of interface" do
+  before(:each) do
+    @impl = Class.new do
       include SingleMethodInterface
     end
   end
-  
-  it "should not be possible to call methods on instances of class from Java" do 
-    proc do 
+
+  it "should not be possible to call methods on instances of class from Java" do
+    proc do
       SingleMethodInterface::Caller.call(@impl.new)
     end.should raise_error(NoMethodError)
   end
-  
-  it "should be possible to call methods on specific object that implements a method" do 
+
+  it "should be possible to call methods on specific object that implements a method" do
     obj = @impl.new
     def obj.callIt
       "foo"
@@ -498,7 +499,7 @@ describe "A ruby module used as a carrier for Java interfaces" do
 
     obj = c.new
     blih = BeanLikeInterfaceHandler.new(obj)
-    
+
     SingleMethodInterface::Caller.call(obj).should == "bar"
     blih.value.should == 1
   end
@@ -510,6 +511,33 @@ describe "Coercion of normal ruby objects" do
     consumer = ReturnsInterfaceConsumer.new
     consumer.set_returns_interface ri
     ri.should be_kind_of(ReturnsInterface)
+  end
+
+
+  it "should return the original ruby object when returned back to Ruby" do
+    obj = mock "ruby object"
+    cti = CoerceToInterface.new
+    result = cti.returnArgumentBackToRuby(JRuby.runtime, obj)
+    obj.should be_kind_of(Java::JavaLang::Runnable)
+    result.should == obj
+    obj.should == result
+  end
+
+  it "should return the original ruby object when converted back to Ruby" do
+    obj = mock "ruby object"
+    cti = CoerceToInterface.new
+    result = cti.coerceArgumentBackToRuby(JRuby.runtime, obj)
+    obj.should be_kind_of(Java::JavaLang::Runnable)
+    result.should == obj
+  end
+
+  it "should pass the original ruby object when converted back to Ruby and used as an argument to another Ruby object" do
+    obj = mock "ruby object"
+    callable = mock "callable"
+    callable.should_receive(:call).with(obj)
+    cti = CoerceToInterface.new
+    cti.passArgumentToInvokableRubyObject(callable, obj)
+    obj.should be_kind_of(Java::JavaLang::Runnable)
   end
 
   it "should allow an object passed to a java constructor to be coerced to the interface" do
@@ -547,24 +575,24 @@ describe "Calling methods through interface on Ruby objects with methods defined
     @klass = Class.new do
       include SingleMethodInterface
     end
-    
+
     @obj1 = @klass.new
     @obj2 = @klass.new
   end
-  
+
   it "should handle one object using instance_eval" do
     @obj1.instance_eval("def callIt; return :ok; end;")
-    
+
     UsesSingleMethodInterface.callIt(@obj1).should == :ok
   end
-  
+
   it "should handle one object extending module" do
     @module = Module.new { def callIt; return :ok; end; }
     @obj1.extend(@module)
-    
+
     UsesSingleMethodInterface.callIt(@obj1).should == :ok
   end
-  
+
   it "should handle two object with combo of instance_eval and module extension" do
     @obj1.instance_eval("def callIt; return :one; end;")
     @module = Module.new { def callIt; return :two; end; }
@@ -573,7 +601,7 @@ describe "Calling methods through interface on Ruby objects with methods defined
     UsesSingleMethodInterface.callIt(@obj1).should == :one
     UsesSingleMethodInterface.callIt(@obj2).should == :two
   end
-  
+
   it "should handle two object with combo of instance_eval and module extension in opposite order" do
     @obj1.instance_eval("def callIt; return :one; end;")
     @module = Module.new { def callIt; return :two; end; }

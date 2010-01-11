@@ -162,6 +162,10 @@ public class RealClassGenerator {
                     mv.aload(0);
                     mv.invokespecial(p(Object.class), "toString", sig(String.class));
                     mv.areturn();
+                } else if (simpleName.equals("__ruby_object") && paramTypes.length == 0 && returnType == IRubyObject.class) {
+                    mv.aload(0);
+                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                    mv.areturn();
                 } else {
                     mv.line(5);
 
