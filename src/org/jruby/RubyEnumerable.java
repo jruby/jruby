@@ -1333,7 +1333,7 @@ public class RubyEnumerable {
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(runtime, self, "group_by");
+        if (!block.isGiven()) return enumeratorize(runtime, self, "group_by");
         
         final RubyHash result = new RubyHash(runtime);
 
@@ -1355,6 +1355,112 @@ public class RubyEnumerable {
         });
 
         return result;
+    }
+
+    @JRubyMethod(name = "chunk", required = 0, optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject chunk(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
+        IRubyObject initialState = context.getRuntime().getNil();
+        if(!block.isGiven()) {
+            throw context.getRuntime().newArgumentError("no block given");
+        }
+
+        if(args.length > 0) {
+            initialState = args[0];
+        }
+
+        IRubyObject enumerator = context.getRuntime().getEnumerator().allocate();
+        enumerator.getInstanceVariables().setInstanceVariable("chunk_enumerable", self);
+        enumerator.getInstanceVariables().setInstanceVariable("chunk_categorize", RubyProc.newProc(context.getRuntime(), block, block.type));
+        enumerator.getInstanceVariables().setInstanceVariable("chunk_initial_state", initialState);
+
+        RuntimeHelpers.invoke(context, enumerator, "initialize", 
+                              CallBlock.newCallClosure(self, context.getRuntime().getEnumerable(), Arity.noArguments(), 
+                                                       new ChunkedBlockCallback(context.getRuntime(), enumerator), context));
+        return enumerator;
+    }
+
+    static class ChunkArg {
+        public IRubyObject categorize;
+        public IRubyObject state;
+        public IRubyObject prev_value;
+        public IRubyObject prev_elts;
+        public IRubyObject yielder;
+    }
+
+    // chunk_i
+    public static final class ChunkedBlockCallback implements BlockCallback {
+        private final Ruby runtime;
+        private final IRubyObject enumerator;
+
+        public ChunkedBlockCallback(Ruby runtime, IRubyObject enumerator) {
+            this.runtime = runtime;
+            this.enumerator = enumerator;
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            IRubyObject args = checkArgs(runtime, largs);
+            final ChunkArg arg = new ChunkArg();
+            IRubyObject enumerable = enumerator.getInstanceVariables().getInstanceVariable("chunk_enumerable");
+            arg.categorize = enumerator.getInstanceVariables().getInstanceVariable("chunk_categorize");
+            arg.state = enumerator.getInstanceVariables().getInstanceVariable("chunk_initial_state");
+            arg.prev_value = runtime.getNil();
+            arg.prev_elts = runtime.getNil();
+            arg.yielder = args;
+
+            if(!arg.state.isNil()) {
+                arg.state = arg.state.dup();
+            }
+
+            final IRubyObject alone = runtime.newSymbol("_alone");
+            final IRubyObject separator = runtime.newSymbol("_separator");
+
+            callEach(runtime, context, enumerable, new BlockCallback() {
+                    public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                        IRubyObject i = checkArgs(runtime, largs);
+                        IRubyObject v;
+                        if(arg.state.isNil()) {
+                            v = arg.categorize.callMethod(ctx, "call", i);
+                        } else {
+                            v = arg.categorize.callMethod(ctx, "call", new IRubyObject[]{i, arg.state});  
+                        }
+                        
+                        if(v == alone) {
+                            if(!arg.prev_value.isNil()) {
+                                arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+                                arg.prev_value = arg.prev_elts = runtime.getNil();
+                            }
+                            arg.yielder.callMethod(ctx, "<<", runtime.newArray(v, runtime.newArray(i)));
+                        } else if(v.isNil() || v == separator) {
+                            if(!arg.prev_value.isNil()) {
+                                arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+                                arg.prev_value = arg.prev_elts = runtime.getNil();
+                            }
+                        } else if((v instanceof RubySymbol) && v.toString().charAt(0) == '_') {
+                            throw runtime.newRuntimeError("symbol begins with an underscore is reserved");
+                        } else {
+                            if(arg.prev_value.isNil()) {
+                                arg.prev_value = v;
+                                arg.prev_elts = runtime.newArray(i);
+                            } else {
+                                if(arg.prev_value.equals(v)) {
+                                    ((RubyArray)arg.prev_elts).append(i);
+                                } else {
+                                    arg.yielder.callMethod(ctx, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+                                    arg.prev_value = v;
+                                    arg.prev_elts = runtime.newArray(i);
+                                }
+                            }
+                        }
+                        return runtime.getNil();
+                    }
+                });
+
+            if(!arg.prev_elts.isNil()) {
+                arg.yielder.callMethod(context, "<<", runtime.newArray(arg.prev_value, arg.prev_elts));
+            }
+
+            return runtime.getNil();
+        }
     }
 
     public static final class AppendBlockCallback implements BlockCallback {

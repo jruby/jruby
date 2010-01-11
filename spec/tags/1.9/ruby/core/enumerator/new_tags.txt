@@ -1,1 +1,0 @@
-fails:Enumerator.new accepts a block

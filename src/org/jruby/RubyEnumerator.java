@@ -104,19 +104,56 @@ public class RubyEnumerator extends RubyObject {
         return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(ThreadContext context) {
         throw context.getRuntime().newArgumentError(0, 1);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        if(!block.isGiven()) {
+            throw context.getRuntime().newArgumentError(0, 1);
+        }
+
+        IRubyObject obj = context.getRuntime().getClass("Generator").callMethod(context, "new", new IRubyObject[0], block);
+        return initialize19(context, obj, block);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject object) {
         return initialize(object, context.getRuntime().fastNewSymbol("each"), NULL_ARRAY);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject object, Block block) {
+        return initialize(object, context.getRuntime().fastNewSymbol("each"), NULL_ARRAY);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
         return initialize(object, method, NULL_ARRAY);
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
+        return initialize(object, method, NULL_ARRAY);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
+        return initialize(object, method, new IRubyObject[] { methodArg });
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
+        return initialize(object, method, new IRubyObject[] { methodArg });
+    }
+
+    @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        IRubyObject[] methArgs = new IRubyObject[args.length - 2];
+        System.arraycopy(args, 2, methArgs, 0, methArgs.length);
+        return initialize(args[0], args[1], methArgs);
     }
 
     private IRubyObject initialize(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
@@ -127,18 +164,6 @@ public class RubyEnumerator extends RubyObject {
         setInstanceVariable("@__method__", method);
         setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
         return this;
-    }
-
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
-        return initialize(object, method, new IRubyObject[] { methodArg });
-    }
-
-    @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        IRubyObject[] methArgs = new IRubyObject[args.length - 2];
-        System.arraycopy(args, 2, methArgs, 0, methArgs.length);
-        return initialize(args[0], args[1], methArgs);
     }
 
     /**
