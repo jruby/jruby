@@ -1440,7 +1440,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_update
      *
      */
-    @JRubyMethod(name = {"merge!", "update"}, required = 1, frame = true)
+    @JRubyMethod(name = {"merge!", "update"}, required = 1, frame = true, compat = CompatVersion.RUBY1_8)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
         final RubyHash otherHash = other.convertToHash();
         if (otherHash.empty_p().isTrue()) {
@@ -1448,6 +1448,34 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         modify();
+
+        final Ruby runtime = getRuntime();
+        final RubyHash self = this;
+        otherHash.visitAll(new Visitor() {
+            public void visit(IRubyObject key, IRubyObject value) {
+                if (block.isGiven()) {
+                    IRubyObject existing = self.internalGet(key);
+                    if (existing != null)
+                        value = block.yield(context, RubyArray.newArrayNoCopy(runtime, new IRubyObject[]{key, existing, value}));
+                }
+                self.op_aset(context, key, value);
+            }
+        });
+
+        return this;
+    }
+
+    /** rb_hash_update
+     *
+     */
+    @JRubyMethod(name = {"merge!", "update"}, required = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public RubyHash merge_bang19(final ThreadContext context, final IRubyObject other, final Block block) {
+        final RubyHash otherHash = other.convertToHash();
+        modify();
+
+        if (otherHash.empty_p().isTrue()) {
+            return this;
+        }
 
         final Ruby runtime = getRuntime();
         final RubyHash self = this;
@@ -1476,9 +1504,17 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
         return replace(context, other);
+    }
+
+    /** rb_hash_replace
+     *
+     */
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public RubyHash initialize_copy19(ThreadContext context, IRubyObject other) {
+        return replace19(context, other);
     }
 
     /** rb_hash_replace
@@ -1497,7 +1533,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "replace", required = 1, compat = CompatVersion.RUBY1_9)
     public RubyHash replace19(final ThreadContext context, IRubyObject other) {
         final RubyHash self = this;
-        return replaceCommon(context, other, new Visitor() {
+        return replaceCommon19(context, other, new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 self.op_aset19(context, key, value);
             }
@@ -1510,6 +1546,30 @@ public class RubyHash extends RubyObject implements Map {
         if (this == otherHash) return this;
 
         rb_clear();
+
+        if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
+            setComparedByIdentity(true);
+        }
+
+        otherHash.visitAll(visitor);
+
+        ifNone = otherHash.ifNone;
+
+        if ((otherHash.flags & PROCDEFAULT_HASH_F) != 0) {
+            flags |= PROCDEFAULT_HASH_F;
+        } else {
+            flags &= ~PROCDEFAULT_HASH_F;
+        }
+
+        return this;
+    }
+
+    private RubyHash replaceCommon19(final ThreadContext context, IRubyObject other, Visitor visitor) {
+        final RubyHash otherHash = other.convertToHash();
+
+        rb_clear();
+
+        if (this == otherHash) return this;
 
         if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
             setComparedByIdentity(true);

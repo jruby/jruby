@@ -1,5 +1,0 @@
-fails:Hash#default_proc= replaces the block passed to Hash.new
-fails:Hash#default_proc= uses :to_proc on its argument
-fails:Hash#default_proc= overrides the static default
-fails:Hash#default_proc= raises an error if passed stuff not convertible to procs
-fails:Hash#default_proc= raises a TypeError if passed a lambda with an arity other than 2
