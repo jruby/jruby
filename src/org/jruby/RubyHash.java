@@ -655,6 +655,35 @@ public class RubyHash extends RubyObject implements Map {
         return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : getRuntime().getNil();
     }
 
+    /** default_proc_arity_check
+     *
+     */
+    private void checkDefaultProcArity(IRubyObject proc) {
+        int n = ((RubyProc)proc).getBlock().arity().getValue();
+
+        if(((RubyProc)proc).getBlock().type == Block.Type.LAMBDA && n != 2 && (n >= 0 || n < -3)) {
+            if(n < 0) n = -n-1;
+            throw getRuntime().newTypeError("default_proc takes two arguments (2 for " + n + ")");
+        }
+    }
+
+    /** rb_hash_set_default_proc
+     *
+     */
+    @JRubyMethod(name = "default_proc=", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject set_default_proc(IRubyObject proc) {
+        modify();
+        IRubyObject b = TypeConverter.convertToType(proc, getRuntime().getProc(), "to_proc");
+        if(b.isNil() || !(b instanceof RubyProc)) {
+            throw getRuntime().newTypeError("wrong default_proc type " + proc.getMetaClass() + " (expected Proc)");
+        }
+        proc = b;
+        checkDefaultProcArity(proc);
+        ifNone = proc;
+        flags |= PROCDEFAULT_HASH_F;
+        return proc;
+    }
+
     /** rb_hash_modify
      *
      */
