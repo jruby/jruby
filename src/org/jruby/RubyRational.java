@@ -687,6 +687,8 @@ public class RubyRational extends RubyNumeric {
             return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), other), this);
         } else if (other instanceof RubyFloat) {
             return runtime.newArray(other, f_to_f(context, this));
+        } else if (other instanceof RubyRational) {
+            return runtime.newArray(other, this);
         }
         throw runtime.newTypeError(other.getMetaClass() + " can't be coerced into " + getMetaClass());
     }
@@ -694,27 +696,51 @@ public class RubyRational extends RubyNumeric {
     /** nurat_idiv
      * 
      */
-    @JRubyMethod(name = "div")
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
         return f_floor(context, f_div(context, this, other));
+    }
+
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
+        if (num2dbl(other) == 0.0) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        return op_idiv(context, other);
     }
 
     /** nurat_mod
      * 
      */
-    @JRubyMethod(name = {"modulo", "%"})
+    @JRubyMethod(name = {"modulo", "%"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         IRubyObject val = f_floor(context, f_div(context, this, other));
         return f_sub(context, this, f_mul(context, other, val));
     }
 
+    @JRubyMethod(name = {"modulo", "%"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+        if (num2dbl(other) == 0.0) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        return op_mod(context, other);
+    }
+
     /** nurat_divmod
      * 
      */
-    @JRubyMethod(name = "divmod")
+    @JRubyMethod(name = "divmod", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_divmod(ThreadContext context, IRubyObject other) {
         IRubyObject val = f_floor(context, f_div(context, this, other)); 
         return context.getRuntime().newArray(val, f_sub(context, this, f_mul(context, other, val)));
+    }
+
+    @JRubyMethod(name = "divmod", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_divmod19(ThreadContext context, IRubyObject other) {
+        if (num2dbl(other) == 0.0) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        return op_divmod(context, other);
     }
 
     /** nurat_rem
