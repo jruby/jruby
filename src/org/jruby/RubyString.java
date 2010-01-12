@@ -6167,7 +6167,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         boolean cflag = false;
         if (value.getRealSize() > 1) {
             if (enc.isAsciiCompatible()) {
-                if ((trSrc.buf[trSrc.p] & 0xff) == '^' && trSrc.p + 1 < trSrc.pend) {
+                if (trSrc.buf.length > 0 && (trSrc.buf[trSrc.p] & 0xff) == '^' && trSrc.p + 1 < trSrc.pend) {
                     cflag = true;
                     trSrc.p++;
                 }
