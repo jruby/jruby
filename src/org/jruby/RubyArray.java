@@ -662,7 +662,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_hash
      * 
      */
-    @JRubyMethod(name = "hash")
+    @JRubyMethod(name = "hash", compat = CompatVersion.RUBY1_8)
     public RubyFixnum hash(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (runtime.isInspecting(this)) return  RubyFixnum.zero(runtime);
@@ -686,6 +686,35 @@ public class RubyArray extends RubyObject implements List {
         } finally {
             runtime.unregisterInspecting(this);
         }
+    }
+
+    /** rb_ary_hash
+     * 
+     */
+    @JRubyMethod(name = "hash", compat = CompatVersion.RUBY1_9)
+    public RubyFixnum hash19(final ThreadContext context) {
+        return (RubyFixnum)getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
+                public IRubyObject call(IRubyObject obj, boolean recur) {
+                    int begin = RubyArray.this.begin;
+                    long h = realLength;
+                    if(recur) {
+                        h ^= RubyNumeric.num2long(getRuntime().getArray().callMethod(context, "hash"));
+                    } else {
+                        for(int i = begin; i < begin + realLength; i++) {
+                            h = (h << 1) | (h < 0 ? 1 : 0);
+                            final IRubyObject value;
+                            try {
+                                value = values[i];
+                            } catch (ArrayIndexOutOfBoundsException e) {
+                                concurrentModification();
+                                continue;
+                            }
+                            h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
+                        }
+                    }
+                    return getRuntime().newFixnum(h);
+                }
+            }, this);
     }
 
     /** rb_ary_store

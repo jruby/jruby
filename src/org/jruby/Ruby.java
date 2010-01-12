@@ -3442,6 +3442,11 @@ public final class Ruby {
         return execRecursiveInternal(func, obj, null, false);
     }
 
+    // rb_exec_recursive_outer
+    public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
+        return execRecursiveInternal(func, obj, null, true);
+    }
+
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }

@@ -979,7 +979,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_hash
      * 
      */
-    @JRubyMethod(name = "hash")
+    @JRubyMethod(name = "hash", compat = CompatVersion.RUBY1_8)
     public RubyFixnum hash() {
         final Ruby runtime = getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
@@ -998,6 +998,35 @@ public class RubyHash extends RubyObject implements Map {
             runtime.unregisterInspecting(this);
         }
         return RubyFixnum.newFixnum(runtime, hash[0]);
+    }
+
+    /** rb_hash_hash
+     * 
+     */
+    @JRubyMethod(name = "hash", compat = CompatVersion.RUBY1_9)
+    public RubyFixnum hash19() {
+        final Ruby runtime = getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        return (RubyFixnum)getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
+                public IRubyObject call(IRubyObject obj, boolean recur) {
+                    if(size == 0) {
+                        return RubyFixnum.zero(runtime);
+                    }
+                    final long[] h = new long[]{size};
+                    if(recur) {
+                        h[0] ^= RubyNumeric.num2long(runtime.getHash().callMethod(context, "hash"));
+                    } else {
+                        visitAll(new Visitor() {
+                                public void visit(IRubyObject key, IRubyObject value) {
+                                    h[0] ^= key.callMethod(context, "hash").convertToInteger().getLongValue();
+                                    h[0] ^= value.callMethod(context, "hash").convertToInteger().getLongValue();
+                                }
+                            });
+
+                    }
+                    return runtime.newFixnum(h[0]);
+                }
+            }, this);
     }
 
     /** rb_hash_fetch
