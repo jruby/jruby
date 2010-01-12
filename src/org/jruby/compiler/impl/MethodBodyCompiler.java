@@ -98,7 +98,7 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
             
             method = new SkinnyMethodAdapter(
                     script.getClassVisitor().visitMethod(
-                        ACC_PUBLIC | ACC_STATIC,
+                        ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
                         methodName,
                         StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4),
                         null,
@@ -107,17 +107,13 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
 
             // check arity in the variable-arity version
             method.aload(1);
-            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
             method.aload(3);
             method.pushInt(scope.getRequiredArgs());
-            method.pushInt(scope.getRequiredArgs());
-            method.invokestatic(p(Arity.class), "checkArgumentCount", sig(int.class, Ruby.class, IRubyObject[].class, int.class, int.class));
-            method.pop();
+            invokeUtilityMethod("checkArgumentCount", sig(void.class, ThreadContext.class, IRubyObject[].class, int.class));
 
             loadThis();
             loadThreadContext();
             loadSelf();
-            // FIXME: missing arity check
             for (int i = 0; i < scope.getRequiredArgs(); i++) {
                 method.aload(StandardASMCompiler.ARGS_INDEX);
                 method.ldc(i);

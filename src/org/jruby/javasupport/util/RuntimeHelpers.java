@@ -1752,4 +1752,39 @@ public class RuntimeHelpers {
 
         return name;
     }
+
+    /**
+     * Used by the compiler to simplify arg checking in variable-arity paths
+     *
+     * @param context thread context
+     * @param args arguments array
+     * @param min minimum required
+     * @param max maximum allowed
+     */
+    public static void checkArgumentCount(ThreadContext context, IRubyObject[] args, int min, int max) {
+        checkArgumentCount(context, args.length, min, max);
+    }
+
+    /**
+     * Used by the compiler to simplify arg checking in variable-arity paths
+     *
+     * @param context thread context
+     * @param args arguments array
+     * @param req required number
+     */
+    public static void checkArgumentCount(ThreadContext context, IRubyObject[] args, int req) {
+        checkArgumentCount(context, args.length, req, req);
+    }
+    
+    public static void checkArgumentCount(ThreadContext context, int length, int min, int max) {
+        int expected = 0;
+        if (length < min) {
+            expected = min;
+        } else if (max > -1 && length > max) {
+            expected = max;
+        } else {
+            return;
+        }
+        throw context.getRuntime().newArgumentError(length, expected);
+    }
 }

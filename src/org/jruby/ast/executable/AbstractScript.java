@@ -288,9 +288,8 @@ public abstract class AbstractScript implements Script {
         return runtimeCache. getMethod(context, self, 9, methodName);
     }
 
-    public static ByteList[] createByteList(ByteList[] byteLists, int index, String str) {
-        byteLists[index] = ByteList.create(str);
-        return byteLists;
+    public void setByteList(int index, String str) {
+        runtimeCache.byteLists[index] = ByteList.create(str);
     }
 
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {
@@ -317,5 +316,9 @@ public abstract class AbstractScript implements Script {
         this.filename = filename;
     }
 
-    public String filename;
+    public final void initFromDescriptor(String descriptor) {
+        runtimeCache.initFromDescriptor(descriptor);
+    }
+
+    protected String filename;
 }

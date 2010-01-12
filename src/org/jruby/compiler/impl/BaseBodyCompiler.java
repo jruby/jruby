@@ -61,7 +61,6 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,6 +68,7 @@ import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
 
@@ -961,8 +961,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void getCompiledClass() {
-        method.aload(StandardASMCompiler.THIS);
-        method.getfield(script.getClassname(), "$class", ci(Class.class));
+        method.ldc(Type.getType(script.getClassname()));
     }
 
     public void println() {

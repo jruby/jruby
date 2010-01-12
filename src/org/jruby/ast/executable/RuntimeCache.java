@@ -20,6 +20,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -185,6 +186,114 @@ public class RuntimeCache {
 
     public final void initCallSites(int size) {
         callSites = new CallSite[size];
+    }
+
+    /**
+     * Given a packed descriptor listing methods and their type, populate the
+     * call site cache.
+     *
+     * The format of the methods portion of the descriptor is
+     * name1;type1;name2;type2 where type1 and type2 are a single capital letter
+     * N, F, V, or S for the four main call types. After the method portion,
+     * the other cache sizes are provided as a packed String of char values
+     * representing the numeric sizes. @see RuntimeCache#initOthers.
+     *
+     * @param descriptor The descriptor to use for populating call sites and caches
+     */
+    public final void initFromDescriptor(String descriptor) {
+        String[] pieces = descriptor.split("\uFFFF");
+        CallSite[] sites = new CallSite[pieces.length - 1 / 2];
+
+        // if there's no call sites, don't process it
+        if (pieces[0].length() != 0) {
+            for (int i = 0; i < pieces.length - 1; i+=2) {
+                switch (pieces[i + 1].charAt(0)) {
+                case 'N':
+                    sites[i/2] = MethodIndex.getCallSite(pieces[i]);
+                    break;
+                case 'F':
+                    sites[i/2] = MethodIndex.getFunctionalCallSite(pieces[i]);
+                    break;
+                case 'V':
+                    sites[i/2] = MethodIndex.getVariableCallSite(pieces[i]);
+                    break;
+                case 'S':
+                    sites[i/2] = MethodIndex.getSuperCallSite();
+                    break;
+                default:
+                    throw new RuntimeException("Unknown call type: " + pieces[i + 1] + " for method " + pieces[i]);
+                }
+            }
+
+            this.callSites = sites;
+        }
+
+        initOthers(pieces[pieces.length - 1]);
+    }
+
+    private static final int SCOPE = 0;
+    private static final int SYMBOL = SCOPE + 1;
+    private static final int FIXNUM = SYMBOL + 1;
+    private static final int CONSTANT = FIXNUM + 1;
+    private static final int REGEXP = CONSTANT + 1;
+    private static final int BIGINTEGER = REGEXP + 1;
+    private static final int VARIABLEREADER = BIGINTEGER + 1;
+    private static final int VARIABLEWRITER = VARIABLEREADER + 1;
+    private static final int BLOCKBODY = VARIABLEWRITER + 1;
+    private static final int BLOCKCALLBACK = BLOCKBODY + 1;
+    private static final int METHOD = BLOCKCALLBACK + 1;
+    private static final int STRING = METHOD + 1;
+
+    /**
+     * Given a packed descriptor of other cache sizes, construct the cache arrays
+     *
+     * The format of the descriptor is the actual size cast to char in this order:
+     * <ol>
+       <li>scopeCount</li>
+       <li>inheritedSymbolCount</li>
+       <li>inheritedFixnumCount</li>
+       <li>inheritedConstantCount</li>
+       <li>inheritedRegexpCount</li>
+       <li>inheritedBigIntegerCount</li>
+       <li>inheritedVariableReaderCount</li>
+       <li>inheritedVariableWriterCount</li>
+       <li>inheritedBlockBodyCount</li>
+       <li>inheritedBlockCallbackCount</li>
+       <li>inheritedMethodCount</li>
+       <li>inheritedStringCount</li>
+     * </ul>
+     *
+     * @param descriptor The descriptor to use for preparing caches
+     */
+    public final void initOthers(String descriptor) {
+        int scopeCount = getDescriptorValue(descriptor, SCOPE);
+        if (scopeCount > 0) initScopes(scopeCount);
+        int symbolCount = getDescriptorValue(descriptor, SYMBOL);
+        if (symbolCount > 0) initSymbols(symbolCount);
+        int fixnumCount = getDescriptorValue(descriptor, FIXNUM);
+        if (fixnumCount > 0) initFixnums(fixnumCount);
+        int constantCount = getDescriptorValue(descriptor, CONSTANT);
+        if (constantCount > 0) initConstants(constantCount);
+        int regexpCount = getDescriptorValue(descriptor, REGEXP);
+        if (regexpCount > 0) initRegexps(regexpCount);
+        int bigIntegerCount = getDescriptorValue(descriptor, BIGINTEGER);
+        if (bigIntegerCount > 0) initBigIntegers(bigIntegerCount);
+        int variableReaderCount = getDescriptorValue(descriptor, VARIABLEREADER);
+        if (variableReaderCount > 0) initVariableReaders(variableReaderCount);
+        int variableWriterCount = getDescriptorValue(descriptor, VARIABLEWRITER);
+        if (variableWriterCount > 0) initVariableWriters(variableWriterCount);
+        int blockBodyCount = getDescriptorValue(descriptor, BLOCKBODY);
+        if (blockBodyCount > 0) initBlockBodies(blockBodyCount);
+        int blockCallbackCount = getDescriptorValue(descriptor, BLOCKCALLBACK);
+        if (blockCallbackCount > 0) initBlockCallbacks(blockCallbackCount);
+        int methodCount = getDescriptorValue(descriptor, METHOD);
+        if (methodCount > 0) initMethodCache(methodCount);
+        int stringCount = getDescriptorValue(descriptor, STRING);
+        if (stringCount > 0) initStrings(stringCount);
+    }
+
+    private static int getDescriptorValue(String descriptor, int type) {
+        return descriptor.charAt(type);
     }
 
     public final void initBlockBodies(int size) {
@@ -499,19 +608,31 @@ public class RuntimeCache {
         return methodCache[index];
     }
 
-    public StaticScope[] scopes;
-    public CallSite[] callSites;
-    public CacheEntry[] methodCache;
-    public BlockBody[] blockBodies;
-    public CompiledBlockCallback[] blockCallbacks;
-    public RubySymbol[] symbols;
-    public ByteList[] byteLists;
-    public RubyFixnum[] fixnums;
-    public RubyRegexp[] regexps;
-    public BigInteger[] bigIntegers;
-    public VariableAccessor[] variableReaders;
-    public VariableAccessor[] variableWriters;
-    public IRubyObject[] constants;
-    public int[] constantGenerations;
-    public int[] constantTargetHashes;
+    private static final StaticScope[] EMPTY_SCOPES = {};
+    public StaticScope[] scopes = EMPTY_SCOPES;
+    private static final CallSite[] EMPTY_CALLSITES = {};
+    public CallSite[] callSites = EMPTY_CALLSITES;
+    private static final CacheEntry[] EMPTY_CACHEENTRIES = {};
+    public CacheEntry[] methodCache = EMPTY_CACHEENTRIES;
+    private static final BlockBody[] EMPTY_BLOCKBODIES = {};
+    public BlockBody[] blockBodies = EMPTY_BLOCKBODIES;
+    private static final CompiledBlockCallback[] EMPTY_COMPILEDBLOCKCALLBACKS = {};
+    public CompiledBlockCallback[] blockCallbacks = EMPTY_COMPILEDBLOCKCALLBACKS;
+    private static final RubySymbol[] EMPTY_RUBYSYMBOLS = {};
+    public RubySymbol[] symbols = EMPTY_RUBYSYMBOLS;
+    private static final ByteList[] EMPTY_BYTELISTS = {};
+    public ByteList[] byteLists = EMPTY_BYTELISTS;
+    private static final RubyFixnum[] EMPTY_FIXNUMS = {};
+    public RubyFixnum[] fixnums = EMPTY_FIXNUMS;
+    private static final RubyRegexp[] EMPTY_RUBYREGEXPS = {};
+    public RubyRegexp[] regexps = EMPTY_RUBYREGEXPS;
+    private static final BigInteger[] EMPTY_BIGINTEGERS = {};
+    public BigInteger[] bigIntegers = EMPTY_BIGINTEGERS;
+    private static final VariableAccessor[] EMPTY_VARIABLE_ACCESSORS = {};
+    public VariableAccessor[] variableReaders = EMPTY_VARIABLE_ACCESSORS;
+    public VariableAccessor[] variableWriters = EMPTY_VARIABLE_ACCESSORS;
+    public IRubyObject[] constants = IRubyObject.NULL_ARRAY;
+    private static final int[] EMPTY_INTS = {};
+    public int[] constantGenerations = EMPTY_INTS;
+    public int[] constantTargetHashes = EMPTY_INTS;
 }

@@ -403,14 +403,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         initMethod.aload(THIS);
         initMethod.invokespecial(p(AbstractScript.class), "<init>", sig(Void.TYPE));
         
-        cv.visitField(ACC_PRIVATE | ACC_FINAL, "$class", ci(Class.class), null, null);
-        
-        // FIXME: this really ought to be in clinit, but it doesn't matter much
-        initMethod.aload(THIS);
-        initMethod.ldc(c(getClassname()));
-        initMethod.invokestatic(p(Class.class), "forName", sig(Class.class, params(String.class)));
-        initMethod.putfield(getClassname(), "$class", ci(Class.class));
-        
         // JRUBY-3014: make __FILE__ dynamically determined at load time, but
         // we provide a reasonable default here
         initMethod.aload(THIS);
