@@ -30,9 +30,16 @@ class ExecutionLock {
     }
 
     public static final void unlock(ThreadContext context) {
-        if (lock.getHoldCount() == 1) {
-            GC.cleanup(context);
+        try {
+            if (lock.getHoldCount() == 1) {
+                GC.cleanup(context);
+            }
+        } finally {
+            lock.unlock();
         }
+    }
+
+    public static final void unlockNoCleanup(ThreadContext context) {
         lock.unlock();
     }
 }
