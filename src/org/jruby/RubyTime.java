@@ -476,6 +476,19 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
+    @JRubyMethod(name = "to_r", backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_r(ThreadContext context) {
+        IRubyObject rational = to_f().to_r(context);
+        if (rational instanceof RubyRational) {
+            IRubyObject denominator = ((RubyRational)rational).denominator(context);
+            if (RubyNumeric.num2long(denominator) == 1) {
+                return ((RubyRational)rational).numerator(context);
+            }
+        }
+
+        return rational;
+    }
+
     @JRubyMethod(name = {"usec", "tv_usec"})
     public RubyInteger usec() {
         return getRuntime().newFixnum(dt.getMillisOfSecond() * 1000 + getUSec());

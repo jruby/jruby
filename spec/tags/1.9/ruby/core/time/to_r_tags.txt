@@ -1,2 +1,0 @@
-fails:Time#to_r returns the rational number of seconds + usecs since the epoch
-fails:Time#to_r returns the numerator of the rational number when the denominator is 1
