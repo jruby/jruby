@@ -1,0 +1,1 @@
+fails:Struct#members returns an array of attribute names

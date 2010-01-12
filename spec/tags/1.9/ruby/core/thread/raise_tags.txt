@@ -1,0 +1,1 @@
+fails:Thread#raise on a sleeping thread raises a RuntimeError when called with no arguments

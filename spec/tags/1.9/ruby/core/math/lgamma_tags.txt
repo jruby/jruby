@@ -1,0 +1,1 @@
+fails:Math.lgamma returns correct values only given - infinity
