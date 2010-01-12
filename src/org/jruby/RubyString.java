@@ -2294,9 +2294,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = {"concat", "<<"}, compat = CompatVersion.RUBY1_9)
     public RubyString concat19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
+            Ruby runtime = context.getRuntime();
+
             Encoding enc = value.getEncoding();
             int c = RubyNumeric.num2int(other);
-            int cl = codeLength(context.getRuntime(), enc, c);
+            if (c < 0) {
+                throw runtime.newArgumentError("negative string size (or size too big)");
+            }
+
+            int cl = codeLength(runtime, enc, c);
             modify19(value.getRealSize() + cl);
             enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
             value.setRealSize(value.getRealSize() + cl);
