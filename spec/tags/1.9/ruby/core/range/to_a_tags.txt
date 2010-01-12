@@ -1,0 +1,1 @@
+critical:Range#to_a works with Ranges of Symbols

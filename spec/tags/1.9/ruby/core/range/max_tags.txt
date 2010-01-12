@@ -1,0 +1,2 @@
+fails:Range#max returns nil when the endpoint is less than the start point
+fails:Range#max returns nil when the endpoint is less than the start point in a Float range
