@@ -1,0 +1,1 @@
+fails:Regexp.compile given a Regexp enables multibyte support if given in the literal

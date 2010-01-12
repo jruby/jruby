@@ -1,0 +1,10 @@
+fails(JRUBY-4457):Proc#parameters returns an empty Array for a proc expecting no parameters
+fails(JRUBY-4457):Proc#parameters returns an Array of Arrays for a proc expecting parameters
+fails(JRUBY-4457):Proc#parameters sets the first element of each sub-Array to :opt for optional arguments
+fails(JRUBY-4457):Proc#parameters regards named parameters in procs as optional
+fails(JRUBY-4457):Proc#parameters regards parameters with default values as optional
+fails(JRUBY-4457):Proc#parameters sets the first element of each sub-Array to :req for required arguments
+fails(JRUBY-4457):Proc#parameters regards named parameters in lambdas as required
+fails(JRUBY-4457):Proc#parameters sets the first element of each sub-Array to :rest for parameters prefixed with asterisks
+fails(JRUBY-4457):Proc#parameters sets the first element of each sub-Array to :block for parameters prefixed with ampersands
+fails(JRUBY-4457):Proc#parameters sets the second element of each sub-Array to the name of the argument

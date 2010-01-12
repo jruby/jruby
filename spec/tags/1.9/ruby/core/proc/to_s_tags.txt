@@ -1,0 +1,1 @@
+fails(JRUBY-4457):Proc#to_s returns a description of self
