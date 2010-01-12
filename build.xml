@@ -214,6 +214,7 @@
       <!-- uncomment this line when building on a JVM with invokedynamic
       <jvmarg line="-XX:+InvokeDynamic"/>
       -->
+      <sysproperty key="jruby.bytecode.version" value="${javac.version}"/>
       <arg value="src_gen/annotated_classes.txt"/>
       <arg value="${jruby.classes.dir}"/>
     </java>
