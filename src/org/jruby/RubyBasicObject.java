@@ -707,6 +707,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return str;
     }
 
+    /** rb_check_string_type
+     *
+     * Tries to return a coerced string representation of this object,
+     * using "to_str". If that returns something other than a String
+     * or nil, an empty String will be returned.
+     *
+     */
+    public IRubyObject checkStringType19() {
+        IRubyObject str = TypeConverter.convertToTypeWithCheck19(this, getRuntime().getString(), "to_str");
+        if(!str.isNil() && !(str instanceof RubyString)) {
+            str = RubyString.newEmptyString(getRuntime());
+        }
+        return str;
+    }
+
     /** rb_check_array_type
     *
     * Returns the result of trying to convert this object to an Array

@@ -1280,6 +1280,7 @@ public final class Ruby {
                 undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
             }
+            recursiveKey = newSymbol("__recursive_key__");
         }
 
         initErrno();
@@ -3282,6 +3283,163 @@ public final class Ruby {
     public void unregisterInspecting(Object obj) {
         Map<Object, Object> val = inspect.get();
         if (val != null ) val.remove(obj);
+    }
+
+    public static interface RecursiveFunction {
+        IRubyObject call(IRubyObject obj, boolean recur);
+    }
+
+    private static class RecursiveError extends Error {
+        public RecursiveError(Object tag) {
+            this.tag = tag;
+        }
+        public final Object tag;
+        
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
+    private IRubyObject recursiveListAccess() {
+        Map<String, RubyHash> hash = recursive.get();
+        String sym = getCurrentContext().getFrameName();
+        IRubyObject list = getNil();
+        if(hash == null) {
+            hash = new HashMap<String, RubyHash>();
+            recursive.set(hash);
+        } else {
+            list = hash.get(sym);
+        }
+        if(list == null || list.isNil()) {
+            list = RubyHash.newHash(this);
+            list.setUntrusted(true);
+            hash.put(sym, (RubyHash)list);
+        }
+        return list;
+    }
+
+    private RubySymbol recursiveKey;
+
+    private static class ExecRecursiveParams {
+        public ExecRecursiveParams() {}
+        public RecursiveFunction func;
+        public IRubyObject list;
+        public IRubyObject obj;
+        public IRubyObject objid;
+        public IRubyObject pairid;
+    }
+
+    private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
+        IRubyObject pair_list;
+        if(paired_obj == null) {
+            ((RubyHash)list).op_aset(getCurrentContext(), obj, getTrue());
+        } else if((pair_list = ((RubyHash)list).fastARef(obj)) == null) {
+            ((RubyHash)list).op_aset(getCurrentContext(), obj, paired_obj);
+        } else {
+            if(!(pair_list instanceof RubyHash)) {
+                IRubyObject other_paired_obj = pair_list;
+                pair_list = RubyHash.newHash(this);
+                pair_list.setUntrusted(true);
+                ((RubyHash)pair_list).op_aset(getCurrentContext(), other_paired_obj, getTrue());
+                ((RubyHash)list).op_aset(getCurrentContext(), obj, pair_list);
+            }
+            ((RubyHash)pair_list).op_aset(getCurrentContext(), paired_obj, getTrue());
+        }
+    }
+
+    private void recursivePop(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
+        if(paired_obj != null) {
+            IRubyObject pair_list = ((RubyHash)list).fastARef(obj);
+            if(pair_list == null) {
+                throw newTypeError("invalid inspect_tbl pair_list for " + getCurrentContext().getFrameName());
+            }
+            if(pair_list instanceof RubyHash) {
+                ((RubyHash)pair_list).delete(getCurrentContext(), paired_obj, Block.NULL_BLOCK);
+                if(!((RubyHash)pair_list).isEmpty()) {
+                    return;
+                }
+            }
+        }
+        ((RubyHash)list).delete(getCurrentContext(), obj, Block.NULL_BLOCK);
+    }
+
+    private boolean recursiveCheck(IRubyObject list, IRubyObject obj_id, IRubyObject paired_obj_id) {
+        IRubyObject pair_list = ((RubyHash)list).fastARef(obj_id);
+        if(pair_list == null) {
+            return false;
+        }
+        if(paired_obj_id != null) {
+            if(!(pair_list instanceof RubyHash)) {
+                if(pair_list != paired_obj_id) {
+                    return false;
+                }
+            } else {
+                IRubyObject paired_result = ((RubyHash)pair_list).fastARef(paired_obj_id);
+                if(paired_result == null || paired_result.isNil()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // exec_recursive_i
+    private IRubyObject execRecursiveI(ExecRecursiveParams p) {
+        IRubyObject result = null;
+        recursivePush(p.list, p.objid, p.pairid);
+        try {
+            result = p.func.call(p.obj, false);
+        } finally {
+            recursivePop(p.list, p.objid, p.pairid);
+        }
+        return result;
+    }
+
+    // exec_recursive
+    private IRubyObject execRecursiveInternal(RecursiveFunction func, IRubyObject obj, IRubyObject pairid, boolean outer) {
+        ExecRecursiveParams p = new ExecRecursiveParams();
+        p.list = recursiveListAccess();
+        p.objid = obj.id();
+        boolean outermost = outer && !recursiveCheck(p.list, recursiveKey, null);
+        if(recursiveCheck(p.list, p.objid, pairid)) {
+            if(outer && !outermost) {
+                throw new RecursiveError(p.list);
+            }
+            return func.call(obj, true); 
+        } else {
+            IRubyObject result = null;
+            p.func = func;
+            p.obj = obj;
+            p.pairid = pairid;
+
+            if(outermost) {
+                recursivePush(p.list, recursiveKey, null);
+                try {
+                    result = execRecursiveI(p);
+                } catch(RecursiveError e) {
+                    if(e.tag != p.list) {
+                        throw e;
+                    } else {
+                        result = p.list;
+                    }
+                }
+                recursivePop(p.list, recursiveKey, null);
+                if(result == p.list) {
+                    result = func.call(obj, true);
+                }
+            } else {
+                result = execRecursiveI(p);
+            }
+
+            return result;
+        }
+    }
+
+    // rb_exec_recursive
+    public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
+        return execRecursiveInternal(func, obj, null, false);
     }
 
     public boolean isObjectSpaceEnabled() {

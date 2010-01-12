@@ -1,9 +1,0 @@
-fails:Enumerable#join returns an empty string if the Array is empty
-fails:Enumerable#join returns a string formed by concatenating each element.to_str separated by separator without trailing separator
-fails:Enumerable#join uses the same separator with nested arrays
-fails:Enumerable#join tries to convert the passed separator to a String using #to_str
-fails:Enumerable#join raises an ArgumentError when the Array is recursive
-fails:Enumerable#join does not consider taint of either the array or the separator when the array is empty
-fails:Enumerable#join returns a string which would be infected with taint of the array, its elements or the separator when the array is not empty
-fails:Enumerable#join does not consider untrustworthiness of either the array or the separator when the array is empty
-fails:Enumerable#join returns a string which would be infected with untrustworthiness of the array, its elements or the separator when the array is not empty

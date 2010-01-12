@@ -70,6 +70,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.TypeConverter;
 
 /**
  * The implementation of the built-in class Array in Ruby.
@@ -1678,7 +1679,7 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_join
      *
      */
-    @JRubyMethod(name = "join")
+    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_8)
     public IRubyObject join(ThreadContext context, IRubyObject sep) {
         final Ruby runtime = context.getRuntime();
         if (realLength == 0) return RubyString.newEmptyString(runtime);
@@ -1691,10 +1692,6 @@ public class RubyArray extends RubyObject implements List {
             IRubyObject value;
             try {
                 value = values[i];
-                
-                if (runtime.is1_9() && equalInternal(context, this, value)) {
-                    throw runtime.newArgumentError("recursive array join");
-                }
             } catch (ArrayIndexOutOfBoundsException e) {
                 concurrentModification();
                 return RubyString.newEmptyString(runtime);
@@ -1744,10 +1741,162 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
-    @JRubyMethod(name = "join")
+    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_8)
     public IRubyObject join(ThreadContext context) {
         return join(context, context.getRuntime().getGlobalVariables().get("$,"));
     }
+
+    private boolean[] join0(ThreadContext context, ByteList sep, int max, ByteList result) {
+        boolean t = false;
+        boolean u = false;
+        for(int i = begin; i < max; i++) {
+            IRubyObject val;
+            try {
+                val = values[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+                return new boolean[] {t,u};
+            }
+
+            if(i > begin && sep != null) {
+                result.append(sep);
+            }
+            
+            result.append(((RubyString)val).getByteList());
+            if(val.isTaint()) {
+                t = true;
+            }
+            if(val.isUntrusted()) {
+                u = true;
+            }
+        }
+        return new boolean[]{t,u};
+    }
+
+    private void join1(final ThreadContext context, IRubyObject obj, final ByteList sep, int i, final ByteList result) {
+        for(; i < begin + realLength; i++) {
+            if(i > begin && sep != null) {
+                result.append(sep);
+            }
+
+            IRubyObject val;
+            try {
+                val = values[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+                return;
+            }
+
+            if(val instanceof RubyString) {
+                result.append(((RubyString)val).getByteList());
+            } else if(val instanceof RubyArray) {
+                obj = val;
+                if(val == this) {
+                    throw getRuntime().newArgumentError("recursive array join");
+                } else {
+                    final RubyArray ary = (RubyArray)val;
+                    final IRubyObject outobj = obj;
+                    getRuntime().execRecursive(new Ruby.RecursiveFunction() {
+                            public IRubyObject call(IRubyObject obj, boolean recur) {
+                                if(recur) {
+                                    throw getRuntime().newArgumentError("recursive array join");
+                                } else {
+                                    ((RubyArray)ary).join1(context, outobj, sep, 0, result);
+                                }
+                                return getRuntime().getNil();
+                            }
+                        }, obj);
+                }
+            } else {
+                IRubyObject tmp = val.checkStringType19();
+                if(!tmp.isNil()) {
+                    val = tmp;
+                    result.append(((RubyString)val).getByteList());
+                } else {
+                    tmp = TypeConverter.convertToTypeWithCheck(val, getRuntime().getArray(), "to_a");
+                    if(!tmp.isNil()) {
+                        obj = val;
+                        val = tmp;
+                        if(val == this) {
+                            throw getRuntime().newArgumentError("recursive array join");
+                        } else {
+                            final RubyArray ary = (RubyArray)val;
+                            final IRubyObject outobj = obj;
+                            getRuntime().execRecursive(new Ruby.RecursiveFunction() {
+                                    public IRubyObject call(IRubyObject obj, boolean recur) {
+                                        if(recur) {
+                                            throw getRuntime().newArgumentError("recursive array join");
+                                        } else {
+                                            ((RubyArray)ary).join1(context, outobj, sep, 0, result);
+                                        }
+                                        return getRuntime().getNil();
+                                    }
+                                }, obj);
+                        }
+                    } else {
+                        val = RubyString.objAsString(context, val);
+                        result.append(((RubyString)val).getByteList());
+                    }
+                }
+            }
+        }
+    }
+
+    /** rb_ary_join
+     *
+     */
+    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_9)
+    public IRubyObject join19(ThreadContext context, IRubyObject sep) {
+        final Ruby runtime = context.getRuntime();
+        if (realLength == 0) return RubyString.newEmptyString(runtime);
+
+        boolean taint = isTaint() || sep.isTaint();
+        boolean untrusted = isUntrusted() || sep.isUntrusted();
+
+        int len = 1;
+        ByteList sepBytes = null;
+        if (!sep.isNil()) {
+            sepBytes = sep.convertToString().getByteList();
+            len += sepBytes.getRealSize() * (realLength - 1);
+        }
+
+        for (int i = begin; i < begin + realLength; i++) {            
+            IRubyObject val;
+            try {
+                val = values[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
+                return RubyString.newEmptyString(runtime);
+            }
+            IRubyObject tmp = val.checkStringType19();
+            if(tmp.isNil() || tmp != val) {
+                ByteList buf = new ByteList(len + ((begin + realLength) - i) * 10);
+                boolean[] tu = join0(context, sepBytes, i, buf);
+                join1(context, this, sepBytes, i, buf);
+                RubyString result = runtime.newString(buf); 
+                if (taint || tu[0]) result.setTaint(true);
+                if (untrusted || tu[1]) result.untrust(context);
+                return result;
+            }
+
+            len += ((RubyString) tmp).getByteList().length();
+        }
+
+        ByteList buf = new ByteList(len);
+        boolean[] tu = join0(context, sepBytes, begin + realLength, buf);
+
+        RubyString result = runtime.newString(buf); 
+        if (taint || tu[0]) result.setTaint(true);
+        if (untrusted || tu[1]) result.untrust(context);
+        
+        return result;
+    }
+
+    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_9)
+    public IRubyObject join19(ThreadContext context) {
+        return join19(context, context.getRuntime().getGlobalVariables().get("$,"));
+    }
+
 
     /** rb_ary_to_a
      *

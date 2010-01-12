@@ -227,6 +227,12 @@ public interface IRubyObject {
      * @return
      */
     IRubyObject checkStringType();
+
+    /**
+     *
+     * @return
+     */
+    IRubyObject checkStringType19();
     
     /**
      *

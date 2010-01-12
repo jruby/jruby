@@ -201,6 +201,24 @@ public class TypeConverter {
      *
      * @param obj the object to convert
      * @param targetType is the type we are trying to convert to
+     * @param convertMethodIndex the fast index to use for calling the method
+     * @param convertMethod is the method to be called to try and convert to targeType
+     * @return the converted value
+     */
+    public static final IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
+        if (target.isInstance(obj)) return obj;
+        IRubyObject val = TypeConverter.convertToType19(obj, target, convertMethod, false);
+        if (val.isNil()) return val;
+        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        return val;
+    }
+
+    /**
+     * Higher level conversion utility similar to convertToType but it can throw an
+     * additional TypeError during conversion (MRI: rb_check_convert_type).
+     *
+     * @param obj the object to convert
+     * @param targetType is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */

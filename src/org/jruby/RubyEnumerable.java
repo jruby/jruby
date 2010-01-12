@@ -337,7 +337,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"})
+    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
@@ -345,12 +345,31 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"}, rest = true)
+    @JRubyMethod(name = {"to_a", "entries"}, rest = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         RubyArray result = runtime.newArray();
         RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
                 Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
+        return result;
+    }
+
+    @JRubyMethod(name = {"to_a", "entries"}, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject to_a19(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
+        RubyArray result = runtime.newArray();
+        callEach(runtime, context, self, new AppendBlockCallback(runtime, result));
+        result.infectBy(self);
+        return result;
+    }
+
+    @JRubyMethod(name = {"to_a", "entries"}, rest = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject to_a19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        RubyArray result = runtime.newArray();
+        RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), 
+                Arity.OPTIONAL, new AppendBlockCallback(runtime, result), context));
+        result.infectBy(self);
         return result;
     }
 
@@ -1476,5 +1495,15 @@ public class RubyEnumerable {
             result.append(checkArgs(runtime, largs));
             return runtime.getNil();
         }
+    }
+
+    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_9)
+    public static IRubyObject join(ThreadContext context, IRubyObject self) {
+        return join(context, self, context.getRuntime().getGlobalVariables().get("$,"));
+    }
+
+    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_9)
+    public static IRubyObject join(ThreadContext context, IRubyObject self, final IRubyObject sep) {
+        return ((RubyArray)to_a19(context, self)).join19(context, sep);
     }
 }

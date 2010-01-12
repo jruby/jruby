@@ -824,6 +824,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
+    @Override
+    public IRubyObject checkStringType19() {
+        return this;
+    }
+
     @JRubyMethod(name = "try_convert", meta = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject str) {
         return str.checkStringType();
