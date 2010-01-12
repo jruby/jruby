@@ -1,0 +1,7 @@
+fails(JRUBY-4456):Random.new returns a new instance of Random
+fails(JRUBY-4456):Random.new uses a random seed value if none is supplied
+fails(JRUBY-4456):Random.new accepts an Integer seed value as an argument
+fails(JRUBY-4456):Random.new accepts (and truncates) a Float seed value as an argument
+fails(JRUBY-4456):Random.new accepts (and converts to Integer) a Rational seed value as an argument
+fails(JRUBY-4456):Random.new accepts (and converts to Integer) a Complex (w/ imaginary part) seed value as an argument
+fails(JRUBY-4456):Random.new raises a RangeError if passed a Complex (with imaginary part) seed value as an argument

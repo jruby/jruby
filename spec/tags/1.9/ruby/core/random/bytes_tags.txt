@@ -1,0 +1,5 @@
+fails(JRUBY-4456):Random#bytes returns a String
+fails(JRUBY-4456):Random#bytes returns a String of the length given as argument
+fails(JRUBY-4456):Random#bytes returns an ASCII-8BIT String
+fails(JRUBY-4456):Random#bytes returns the same output for a given seed
+fails(JRUBY-4456):Random#bytes returns a random binary String
