@@ -2898,11 +2898,48 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_times
      *
      */
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_times(ThreadContext context, IRubyObject times) {
         IRubyObject tmp = times.checkStringType();
 
         if (!tmp.isNil()) return join(context, tmp);
+
+        long len = RubyNumeric.num2long(times);
+        Ruby runtime = context.getRuntime();
+        if (len == 0) return new RubyArray(runtime, getMetaClass(), IRubyObject.NULL_ARRAY).infectBy(this);
+        if (len < 0) throw runtime.newArgumentError("negative argument");
+
+        if (Long.MAX_VALUE / len < realLength) {
+            throw runtime.newArgumentError("argument too big");
+        }
+
+        len *= realLength;
+
+        checkLength(runtime, len);
+        RubyArray ary2 = new RubyArray(runtime, getMetaClass(), (int)len);
+        ary2.realLength = ary2.values.length;
+
+        try {
+            for (int i = 0; i < len; i += realLength) {
+                System.arraycopy(values, begin, ary2.values, i, realLength);
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+        }
+
+        ary2.infectBy(this);
+
+        return ary2;
+    }
+
+    /** rb_ary_times
+     *
+     */
+    @JRubyMethod(name = "*", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_times19(ThreadContext context, IRubyObject times) {
+        IRubyObject tmp = times.checkStringType();
+
+        if (!tmp.isNil()) return join19(context, tmp);
 
         long len = RubyNumeric.num2long(times);
         Ruby runtime = context.getRuntime();

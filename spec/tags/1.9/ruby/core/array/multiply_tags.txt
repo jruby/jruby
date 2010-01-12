@@ -1,1 +1,0 @@
-fails:Array#* with a string returns a string formed by concatenating each element.to_str separated by separator without trailing separator
