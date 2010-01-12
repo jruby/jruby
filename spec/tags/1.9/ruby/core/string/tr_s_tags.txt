@@ -1,0 +1,1 @@
+critical(JRUBY-4464):String#tr_s! does not modify self if from_str is empty

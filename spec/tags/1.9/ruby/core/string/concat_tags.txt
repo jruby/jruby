@@ -1,0 +1,1 @@
+critical(JRUBY-4463):String#concat raises ArgumentError for negative length argument

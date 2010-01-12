@@ -1,0 +1,1 @@
+critical(crashes when executed along with ascii_only_spec.rb):String#clear preserves its encoding

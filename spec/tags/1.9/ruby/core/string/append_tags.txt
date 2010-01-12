@@ -1,0 +1,1 @@
+critical(JRUBY-4463):String#<< raises ArgumentError for negative length argument
