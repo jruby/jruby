@@ -148,11 +148,6 @@ describe "Java instance method names" do
     obj.__id__.should_not == "foo"
     lambda {obj.__send__}.should raise_error(ArgumentError)
   end
-
-  it "should be able to access Java methods of core Ruby Methods via $method" do
-    MethodNames.new.initialize__method.should == "foo"
-    MethodNames.inspect__method.should == "foo"
-  end
 end
 
 describe "Needed implementation methods for concrete classes" do 
