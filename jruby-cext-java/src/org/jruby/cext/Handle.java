@@ -18,12 +18,16 @@
 
 package org.jruby.cext;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class Handle {
     private final Ruby runtime;
     private final long address;
+
+    private List<IRubyObject> linkedObjects = null;
 
     Handle(Ruby runtime, long address) {
         this.runtime = runtime;
@@ -56,6 +60,11 @@ public final class Handle {
     @Override
     public String toString() {
         return "Native ruby object " + Long.toString(address);
+    }
+
+
+    void link(List<IRubyObject> fields) {
+        this.linkedObjects = new ArrayList<IRubyObject>(fields);
     }
 
     @Override

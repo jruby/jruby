@@ -45,6 +45,9 @@ extern "C" {
 #define FL_EXIVAR    (1<<9)
 #define FL_FREEZE    (1<<10)
 
+#define CONST_MASK (0x7UL)
+#define IS_CONST(x) (((x) & ~CONST_MASK) == 0L)
+    
 #ifdef	__cplusplus
 }
 #endif

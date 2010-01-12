@@ -27,13 +27,12 @@
 
 using namespace jruby;
 
-#define IS_CONST(x) (((x) & ~0x7L) == 0L)
 
 Handle::Handle()
 {
     obj = NULL;
     flags = 0;
-    type = 0;
+    type = T_NONE;
     finalize = NULL;
     dmark = dfree = NULL;
     data = NULL;

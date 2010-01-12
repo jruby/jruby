@@ -30,5 +30,6 @@ iter = 100_000
    bm.report("C") { iter.times { h.get_hello } }
    bm.report("FFI") { iter.times { Foreign.get_hello } }
    bm.report("Ruby") { iter.times { ruby_hello } }
+   bm.report("Hello.new") { iter.times { Hello.new } }
  end
 end

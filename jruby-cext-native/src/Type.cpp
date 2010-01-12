@@ -27,8 +27,8 @@ using namespace jruby;
 extern "C" int
 rb_type(VALUE val)
 {
-    if ((val & ~0x7UL) == 0) {
-        switch (val & 0x7) {
+    if (IS_CONST(val)) {
+        switch (val) {
             case Qnil:
                 return T_NIL;
 
@@ -42,7 +42,7 @@ rb_type(VALUE val)
                 return T_UNDEF;
 
             default:
-                rb_raise(rb_eTypeError, "not a type");
+                rb_raise(rb_eTypeError, "invalid constant");
         }
     }
 

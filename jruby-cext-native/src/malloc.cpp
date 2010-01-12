@@ -27,11 +27,6 @@ static size_t checkOverflow(size_t n, size_t size, const char*);
 extern "C" void *
 xmalloc(size_t size)
 {
-    if (size < 0) {
-        rb_raise(rb_eArgError, "malloc: negative size allocation");
-        return NULL;
-    }
-
     void* ptr = malloc(size);
     if (ptr == NULL) {
         rb_raise(rb_eNoMemError, "malloc(3) failed: %s", strerror(errno));

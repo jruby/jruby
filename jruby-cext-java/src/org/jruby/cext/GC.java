@@ -18,7 +18,6 @@
 
 package org.jruby.cext;
 
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,9 +33,10 @@ public class GC {
     @SuppressWarnings(value="unchecked")
     private static final Map<IRubyObject, Handle> allRefs = new WeakIdentityHashMap();
     @SuppressWarnings(value="unchecked")
-    private static final Map<IRubyObject, Handle> dataRefs = new WeakIdentityHashMap();
+    private static final Map<RubyData, Handle> dataRefs = new WeakIdentityHashMap();
 
-    private static List<IRubyObject> strongRefs = new LinkedList<IRubyObject>();
+    private static List<IRubyObject> tmpStrongRefs = new LinkedList<IRubyObject>();
+    private static List<IRubyObject> markedRefs = new LinkedList<IRubyObject>();
 
     /**
      * This is an upcall from the C++ stub to mark objects that are only strongly 
@@ -46,7 +46,7 @@ public class GC {
      */
 
     public static final void mark(IRubyObject obj) {
-        strongRefs.add(obj);
+        markedRefs.add(obj);
     }
 
     static final Handle lookup(IRubyObject obj) {
@@ -61,34 +61,35 @@ public class GC {
         allRefs.put(obj, h);
 
         if (obj instanceof RubyData) {
-            dataRefs.put(obj, h);
+            dataRefs.put((RubyData) obj, h);
         }
 
-        strongRefs.add(obj);
+        tmpStrongRefs.add(obj);
     }
 
     static final void cleanup(ThreadContext context) {
         final Native n = Native.getInstance(context.getRuntime());
 
-        // Keep temporary strong refs on the java stack, so all objects remain alive
-        // until the GC has completed.
-        List<IRubyObject> tmp = strongRefs;
-        strongRefs = new LinkedList<IRubyObject>();
-
         //
         // Iterate over all the registered references, calling down to C++
         // to mark any objects only reachable from C code.
         //
-        for (Handle h : new ArrayList<Handle>(dataRefs.values())) {
+        for (Handle h : dataRefs.values()) {
+            markedRefs = new LinkedList<IRubyObject>();
             n.markHandle(h.getAddress());
+
+            // We store all the objects marked via this data object as a field
+            // in the java handle, so they will not be collected until it is.
+            h.link(markedRefs);
+
+            // clean the mark off any handles just marked
+            for (IRubyObject obj : markedRefs) {
+                n.unmarkHandle(Handle.valueOf(obj).getAddress());
+            }
+
+            markedRefs = null;
         }
 
-        //
-        // Clear the mark flag on all handles, so rb_gc_mark can avoid
-        // circular references by setting the mark flag for objects it has marked.
-        //
-        for (IRubyObject obj : strongRefs) {
-            n.unmarkHandle(allRefs.get(obj).getAddress());
-        }
+        tmpStrongRefs = new LinkedList<IRubyObject>();
     }
 }
