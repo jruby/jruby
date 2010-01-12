@@ -2817,7 +2817,7 @@ public class RubyArray extends RubyObject implements List {
         return flatten_bang(context, arg);
     }
 
-    @JRubyMethod(name = "flatten")
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_8)
     public IRubyObject flatten(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
@@ -2827,11 +2827,33 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
-    @JRubyMethod(name = "flatten")
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_8)
     public IRubyObject flatten(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         int level = RubyNumeric.num2int(arg);
         if (level == 0) return this;
+
+        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
+        flatten(context, level, result);
+        result.infectBy(this);
+        return result;
+    }
+
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+
+        RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
+        flatten(context, -1, result);
+        result.infectBy(this);
+        return result;
+    }
+
+    @JRubyMethod(name = "flatten", compat = CompatVersion.RUBY1_9)
+    public IRubyObject flatten19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        int level = RubyNumeric.num2int(arg);
+        if (level == 0) return makeShared();
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         flatten(context, level, result);
