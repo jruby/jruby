@@ -1,0 +1,11 @@
+fails:Process.setrlimit requires at least two arguments
+fails:Process.setrlimit and Process.getrlimit limit and get core size (bytes)
+fails:Process.setrlimit and Process.getrlimit limit and get CPU time (seconds)
+fails:Process.setrlimit and Process.getrlimit limit and get data segment (bytes)
+fails:Process.setrlimit and Process.getrlimit limit and get file size (bytes)
+fails:Process.setrlimit and Process.getrlimit limit and get file descriptors (number)
+fails:Process.setrlimit and Process.getrlimit limit and get stack size (bytes)
+fails:Process.setrlimit and Process.getrlimit limit and get total available memory (bytes)
+fails:Process.setrlimit and Process.getrlimit limit and get total size for mlock(2) (bytes)
+fails:Process.setrlimit and Process.getrlimit limit and get number of processes for the user (number)
+fails:Process.setrlimit and Process.getrlimit limit and get resident memory size (bytes)

@@ -1,0 +1,2 @@
+fails:Process#detach returns a thread
+fails:Process#detach reaps the child process's status automatically

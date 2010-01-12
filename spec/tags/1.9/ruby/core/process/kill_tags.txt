@@ -1,0 +1,6 @@
+fails:Process.kill tests for the existence of a process without sending a signal
+fails:Process.kill raises an EPERM if permission is denied
+fails:Process.kill sends the given signal to the specified process
+fails:Process.kill kills process groups if signal is negative
+fails:Process.kill kills process groups if signal starts with a minus sign
+fails:Process.kill kills process groups if signal starts with a minus sign and 'SIG'
