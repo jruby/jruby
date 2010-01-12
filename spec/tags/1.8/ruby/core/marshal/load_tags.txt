@@ -1,1 +1,2 @@
 fails(JRUBY-3357):Marshal::load loads an Array with proc
+fails(JRUBY-3786):Marshal::load raises an ArgumentError when the dumped data is truncated

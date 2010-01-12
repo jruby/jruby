@@ -4,3 +4,4 @@ fails:Marshal::load loads a array containing objects having _dump method, and wi
 fails:Marshal::load loads an array containing objects having marshal_dump method, and with proc
 fails:Marshal::load loads an Array with proc
 fails:Marshal::load returns an untrusted object if source is untrusted
+fails(JRUBY-3786):Marshal::load raises an ArgumentError when the dumped data is truncated
