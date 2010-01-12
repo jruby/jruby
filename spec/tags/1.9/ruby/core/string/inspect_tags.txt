@@ -1,0 +1,3 @@
+fails:String#inspect returns a string with nonprinting, non-ASCII characters replaced by \u notation for Unicode strings
+fails:String#inspect produces different output based on #force_encoding
+fails:String#inspect can handle malformed UTF-8 string for #force_encoding('UTF-8')

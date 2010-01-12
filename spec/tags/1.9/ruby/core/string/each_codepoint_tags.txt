@@ -1,0 +1,3 @@
+fails:String#each_codepoint works for multibyte characters
+fails:String#each_codepoint returns the codepoint corresponding to the character's position in the String's encoding
+fails:String#each_codepoint round-trips to the original String using Integer#chr

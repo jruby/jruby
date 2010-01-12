@@ -1,0 +1,1 @@
+fails:String#delete raises if the given ranges are invalid

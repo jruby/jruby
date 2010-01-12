@@ -1,1 +1,3 @@
 critical(JRUBY-4464):String#tr! does not modify self if from_str is empty
+fails:String#tr translates chars not in from_string when it starts with a ^
+fails:String#tr can replace a 7-bit ASCII character with a multibyte one

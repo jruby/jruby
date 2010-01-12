@@ -1,0 +1,1 @@
+fails:String#lstrip! raises a RuntimeError if self is frozen

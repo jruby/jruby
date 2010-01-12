@@ -1,0 +1,1 @@
+fails:String#reverse! raises a RuntimeError if self is frozen

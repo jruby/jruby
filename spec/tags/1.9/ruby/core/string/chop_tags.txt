@@ -1,0 +1,1 @@
+fails:String#chop! raises a RuntimeError when self is frozen

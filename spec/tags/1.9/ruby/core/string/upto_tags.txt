@@ -1,0 +1,1 @@
+fails:String#upto doesn't call block with self even if self is less than stop but stop length is less than self length

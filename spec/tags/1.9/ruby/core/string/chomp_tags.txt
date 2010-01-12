@@ -1,0 +1,1 @@
+fails:String#chomp! with separator raises a RuntimeError when self is frozen

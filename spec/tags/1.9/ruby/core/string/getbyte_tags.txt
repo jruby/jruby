@@ -1,0 +1,2 @@
+fails:String#getbyte regards a multi-byte character as having multiple bytes
+fails:String#getbyte interprets bytes relative to the String's encoding

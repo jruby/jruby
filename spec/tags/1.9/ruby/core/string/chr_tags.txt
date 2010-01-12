@@ -1,0 +1,2 @@
+fails:String#chr understands multi-byte characters
+fails:String#chr understands Strings that contain a mixture of character widths

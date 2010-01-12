@@ -1,0 +1,3 @@
+fails:String#force_encoding tags the String with the given encoding
+fails:String#force_encoding does not care if self would be invalid in given encoding
+fails:String#force_encoding does not care if self is already tagged with the given encoding

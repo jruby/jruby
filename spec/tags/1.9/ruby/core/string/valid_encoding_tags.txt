@@ -1,0 +1,2 @@
+fails:String#valid_encoding? returns true for all encodings self is valid in
+fails:String#valid_encoding? returns false if self is valid in one encoding, but invalid in the one it's tagged with

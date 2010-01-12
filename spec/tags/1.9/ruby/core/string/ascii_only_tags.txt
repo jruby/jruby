@@ -1,0 +1,6 @@
+fails:String#ascii_only? returns false if the String contains only non-US-ASCII characters
+fails:"String#ascii_only? returns false if the String contains only non-US-ASCII characters\n    and is encoded as UTF-8"
+fails:"String#ascii_only? returns false if the String contains only non-ASCII characters\n    and is encoded as US-ASCII"
+fails:String#ascii_only? returns false if the String contains US-ASCII and non-US-ASCII characters
+fails:"String#ascii_only? returns false if the String contains US-ASCII and non-US-ASCII characters\n    and is encoded as US-ASCII"
+fails:"String#ascii_only? returns false if the String contains US-ASCII and non-US-ASCII characters\n    and is encoded as UTF-8"

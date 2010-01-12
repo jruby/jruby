@@ -1,0 +1,1 @@
+fails:String#next returns subclass instances when called on a subclass

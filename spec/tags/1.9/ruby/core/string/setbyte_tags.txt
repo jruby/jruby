@@ -1,0 +1,2 @@
+fails:String#setbyte can invalidate a String's encoding
+fails:String#setbyte raises a RuntimeError if self is frozen

@@ -1,0 +1,1 @@
+fails:String#hex returns 0 if sequence begins with underscore

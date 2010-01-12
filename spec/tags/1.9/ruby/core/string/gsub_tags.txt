@@ -1,0 +1,2 @@
+fails:String#gsub! with pattern and replacement raises a RuntimeError when self is frozen
+fails:String#gsub! with pattern and block raises a RuntimeError when self is frozen
