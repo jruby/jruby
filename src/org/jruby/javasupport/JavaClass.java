@@ -50,6 +50,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -758,6 +759,7 @@ public class JavaClass extends JavaObject {
             // install the ones that are named in this class
             Method method = methods[i];
             String name = method.getName();
+
             if (Modifier.isStatic(method.getModifiers())) {
                 // Install direct java methods with mangled name so 'send' can call them directly.
                 installStaticMethods(staticCallbacks, javaClass, method, name + METHOD_MANGLE);
@@ -1773,28 +1775,71 @@ public class JavaClass extends JavaObject {
         }
     }
     
+    private static boolean methodsAreEquivalent(Method child, Method parent) {
+        return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
+                && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes())
+                && child.getReturnType() == parent.getReturnType()
+                && child.isVarArgs() == parent.isVarArgs()
+                && Modifier.isPublic(child.getModifiers()) == Modifier.isPublic(parent.getModifiers())
+                && Modifier.isProtected(child.getModifiers()) == Modifier.isProtected(parent.getModifiers())
+                && Modifier.isStatic(child.getModifiers()) == Modifier.isStatic(parent.getModifiers());
+    }
+    
     private static Method[] getMethods(Class<?> javaClass) {
-        HashMap<String, Method> nameMethods = new HashMap<String, Method>();
+        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>();
+        ArrayList<Method> list2 = new ArrayList<Method>();
+
+        // aggregate all candidate method names from child, with their method objects
+
+        // instance methods only; static methods are local to the class and always bound
+        for (Method m: javaClass.getDeclaredMethods()) {
+            int modifiers = m.getModifiers();
+            if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+                if (Modifier.isStatic(modifiers)) {
+                    // static methods are always bound
+                    list2.add(m);
+                } else {
+                    List<Method> methods = nameMethods.get(m.getName());
+                    if (methods == null) {
+                        nameMethods.put(m.getName(), methods = new ArrayList<Method>());
+                    }
+                    methods.add(m);
+                }
+            }
+        }
 
         // we all all superclasses, but avoid adding superclass methods with same name+signature as subclass methods
         // see JRUBY-3130
-        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+        for (Class c = javaClass.getSuperclass(); c != null; c = c.getSuperclass()) {
             try {
-                for (Method m : c.getDeclaredMethods()) {
-                    int modifiers = m.getModifiers();
-                    if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
-                        String namePlusSig = m.getName() + CodegenUtils.sigParams(m.getParameterTypes());
-                        if (nameMethods.containsKey(namePlusSig)) continue;
-                        nameMethods.put(namePlusSig, m);
+                Methods: for (Method m : c.getDeclaredMethods()) {
+                    List<Method> childMethods = nameMethods.get(m.getName());
+                    if (childMethods == null) continue;
+                    
+                    for (Method m2 : childMethods) {
+                        if (methodsAreEquivalent(m2, m)) {
+                            childMethods.remove(m2);
+                            if (childMethods.isEmpty()) nameMethods.remove(m.getName());
+                            continue Methods;
+                        }
                     }
                 }
             } catch (SecurityException e) {
             }
         }
-
-        ArrayList<Method> list2 = new ArrayList<Method>();
-        for (Map.Entry<String, Method> entry : nameMethods.entrySet()) {
-            list2.add(entry.getValue());
+        
+        // now only bind the ones that remain
+        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+            try {
+                for (Method m : c.getDeclaredMethods()) {
+                    int modifiers = m.getModifiers();
+                    if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+                        if (!nameMethods.containsKey(m.getName())) continue;
+                        list2.add(m);
+                    }
+                }
+            } catch (SecurityException e) {
+            }
         }
         
         return list2.toArray(new Method[list2.size()]);
