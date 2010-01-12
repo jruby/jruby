@@ -78,7 +78,7 @@ public class JRubyEngineTest {
 
     @Before
     public void setUp() {
-        System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+        System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
         basedir = System.getProperty("user.dir");
     }
 
@@ -640,5 +640,27 @@ public class JRubyEngineTest {
             "end";
         instance.put(ScriptEngine.ARGV,new String[]{"one param"});
         instance.eval(script);
+
+        instance = null;
+    }
+
+    /*
+     * Test of ScriptEngine.ARGV, JRUBY-4090
+     */
+    @Test
+    public void testARGV_2() throws ScriptException {
+        System.out.println("ScriptEngine.ARGV before initialization");
+        ScriptEngineManager manager = new ScriptEngineManager();
+        JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
+        Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
+        bindings.put(ScriptEngine.ARGV, new String[]{"init params"});
+        String script = "" +
+//            "ARGV << 'foo' \n" +
+            "if ARGV.length == 0\n" +
+            "  raise 'Error No argv passed'\n" +
+            "end";
+        instance.eval(script);
+
+        instance = null;
     }
 }

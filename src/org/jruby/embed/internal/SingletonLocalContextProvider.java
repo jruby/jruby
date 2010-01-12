@@ -66,4 +66,8 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         }
         return localContext.getAttributeMap();
     }
+
+    public boolean isRuntimeInitialized() {
+        return localContext.initialized;
+    }
 }

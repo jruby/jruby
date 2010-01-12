@@ -62,4 +62,8 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
     public Map getAttributeMap() {
         return contextHolder.get().getAttributeMap();
     }
+
+    public boolean isRuntimeInitialized() {
+        return contextHolder.get().initialized;
+    }
 }

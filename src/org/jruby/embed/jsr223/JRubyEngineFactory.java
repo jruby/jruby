@@ -53,10 +53,11 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     private final String engineVersion;
     private final List<String> extensions;
     private final String languageName;
-    private final String languageVersion;
+    //setting this in constructor causes runtime initialization before setting all configs.
+    private String languageVersion;
     private final List<String> mimeTypes;
     private final List<String> engineIds;
-    private final Map<String, Object> parameters;
+    private Map<String, Object> parameters;
     //private final ScriptEngine engine;
 
     public JRubyEngineFactory() {
@@ -69,10 +70,10 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
         engineVersion = getSingleValue("engine.version").trim();
         extensions = Collections.unmodifiableList(getMultipleValue("language.extension"));
         languageName = getSingleValue("language.name").trim();
-        languageVersion = container.getSupportedRubyVersion();
         mimeTypes = Collections.unmodifiableList(getMultipleValue("language.mimetypes"));
         engineIds = Collections.unmodifiableList(getMultipleValue("engine.ids"));
-        parameters = getParameters();
+        // does followings on demand to avoid runtime initialization
+        //languageVersion = container.getSupportedRubyVersion();
     }
 
     private String getSingleValue(String key) {
@@ -95,15 +96,14 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
         return list;
     }
 
-    private Map<String, Object> getParameters() {
-        Map map = new HashMap();
-        map.put(ScriptEngine.ENGINE, getEngineName());
-        map.put(ScriptEngine.ENGINE_VERSION, getEngineVersion());
-        map.put(ScriptEngine.NAME, getEngineName());
-        map.put(ScriptEngine.LANGUAGE, getLanguageName());
-        map.put(ScriptEngine.LANGUAGE_VERSION, getLanguageVersion());
-        map.put("THREADING", "THREAD-ISOLATED");
-        return map;
+    private void initParameters() {
+        parameters = new HashMap();
+        parameters.put(ScriptEngine.ENGINE, getEngineName());
+        parameters.put(ScriptEngine.ENGINE_VERSION, getEngineVersion());
+        parameters.put(ScriptEngine.NAME, getEngineName());
+        parameters.put(ScriptEngine.LANGUAGE, getLanguageName());
+        parameters.put(ScriptEngine.LANGUAGE_VERSION, getLanguageVersion());
+        parameters.put("THREADING", "THREAD-ISOLATED");
     }
 
     public String getEngineName() {
@@ -123,6 +123,9 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     }
 
     public String getLanguageVersion() {
+        if (languageVersion == null) {
+            languageVersion = container.getSupportedRubyVersion();
+        }
         return languageVersion;
     }
 
@@ -166,6 +169,9 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     }
 
     public Object getParameter(String key) {
+        if (parameters == null) {
+            initParameters();
+        }
         return parameters.get(key);
     }
 

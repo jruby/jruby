@@ -47,6 +47,7 @@ public class LocalContext {
     private Ruby runtime = null;
     private BiVariableMap varMap = null;
     private HashMap attribute;
+    boolean initialized = false;
 
     public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
         initialize(config, behavior);
@@ -67,6 +68,7 @@ public class LocalContext {
             // stopped loading java library (runtime.getLoadService().require("java");)
             // during the intialization process.
             runtime = Ruby.newInstance(config);
+            initialized = true;
         }
         return runtime;
     }

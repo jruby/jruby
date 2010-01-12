@@ -68,7 +68,14 @@ public interface LocalContextProvider {
     RubyInstanceConfig getRubyInstanceConfig();
 
     /**
-     * Returend a Ruby runtime of a specified scope.
+     * Tests whether Ruby runtime has been initialized or not.
+     *
+     * @return true if initialized, false otherwise.
+     */
+    boolean isRuntimeInitialized();
+
+    /**
+     * Returns a Ruby runtime of a specified scope.
      *
      * @return a Ruby runtime
      */

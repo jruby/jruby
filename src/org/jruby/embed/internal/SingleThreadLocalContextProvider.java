@@ -67,4 +67,8 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
         }
         return localContext.getAttributeMap();
     }
+
+    public boolean isRuntimeInitialized() {
+        return localContext.initialized;
+    }
 }
