@@ -926,6 +926,15 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
+     * Returns version information about JRuby and Ruby supported by this platform.
+     *
+     * @return version information.
+     */
+    public String getSupportedRubyVersion() {
+        return provider.getRubyInstanceConfig().getVersionString().trim();
+    }
+
+    /**
      * Returns an array of values associated to a key.
      *
      * @param key is a key in a property file
@@ -933,17 +942,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public String[] getProperty(String key) {
         return properties.get(key);
-    }
-
-    /**
-     * Returns a version of JRuby that gets ScriptingContainer started.
-     *
-     * @return a JRuby version
-     */
-    public String getSupportedRubyVersion() {
-        Ruby ruby = provider.getRuntime();
-        RubyInstanceConfig config = ruby.getInstanceConfig();
-        return config.getVersionString().trim();
     }
 
     /**

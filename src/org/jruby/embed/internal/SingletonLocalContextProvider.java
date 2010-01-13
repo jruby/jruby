@@ -31,7 +31,6 @@ package org.jruby.embed.internal;
 
 import java.util.Map;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
@@ -43,7 +42,6 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
         this.behavior = behavior;
-        config.setCompileMode(CompileMode.OFF);
     }
     
     public Ruby getRuntime() {

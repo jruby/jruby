@@ -475,4 +475,11 @@ public interface EmbedRubyInstanceConfigAdapter {
      * @param maxSize a new value of a max size of the bytecode.
      */
     public void setJitMaxSize(int maxSize);
+
+    /**
+     * Returns version information about JRuby and Ruby supported by this platform.
+     *
+     * @return version information.
+     */
+    public String getSupportedRubyVersion();
 }
