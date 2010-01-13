@@ -280,7 +280,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param paths a new list of load paths.
      */
-    public void setloadPaths(List<String> paths) {
+    public void setLoadPaths(List<String> paths) {
         provider.getRubyInstanceConfig().setLoadPaths(paths);
     }
 
