@@ -819,7 +819,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original){
-        if (superClass != null) throw runtime.newTypeError("already initialized class");
+        checkNotInitialized();
         if (original instanceof MetaClass) throw runtime.newTypeError("can't copy singleton class");        
         
         super.initialize_copy(original);
@@ -984,7 +984,9 @@ public class RubyClass extends RubyModule {
     }
 
     private void checkNotInitialized() {
-        if (superClass != null) throw runtime.newTypeError("already initialized class");
+        if (superClass != null || (runtime.is1_9() && this == runtime.getBasicObject())) {
+            throw runtime.newTypeError("already initialized class");
+        }
     }
     /** rb_check_inheritable
      * 
