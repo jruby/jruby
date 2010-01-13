@@ -1326,11 +1326,11 @@ public class ScriptingContainerTest {
         System.out.println("setloadPaths");
         List<String> paths = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setloadPaths(paths);
+        instance.setLoadPaths(paths);
         List<String> expResult = null;
         assertEquals(expResult, instance.getLoadPaths());
         paths = Arrays.asList(new String[]{"abc", "def"});
-        instance.setloadPaths(paths);
+        instance.setLoadPaths(paths);
         assertArrayEquals(paths.toArray(), instance.getLoadPaths().toArray());
 
         instance = null;
