@@ -69,6 +69,7 @@ public class JRubyCompiledScript extends CompiledScript {
     
     public Object eval(ScriptContext context) throws ScriptException {
         try {
+            engine.setContext(context);
             IRubyObject ret = unit.run();
             if (!(ret instanceof RubyNil)) {
                 return JavaEmbedUtils.rubyToJava(ret);
