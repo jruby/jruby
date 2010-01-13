@@ -38,8 +38,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * {@link BiVariableMap} after a variable is set to the map. Users can set variables
  * in Java program explicitly through put() methods in {@link ScriptingContainer}
  * and {@link BiVariableMap} or equivalents. However, variables in Ruby scripts are
- * set in the map implicitly. When varibles and constants
- * are used in the script, thoses are automatically saved in the map converting to this type.
+ * set in the map implicitly. When variables and constants
+ * are used in the script, those are automatically saved in the map converting to this type.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -111,7 +111,7 @@ public interface BiVariable {
     /**
      * Removes this object from {@link BiVariableMap}.
      *
-     * @param runtime enviroment where a variabe is removed.
+     * @param runtime environment where a variable is removed.
      */
     public void remove(Ruby runtime);
 }

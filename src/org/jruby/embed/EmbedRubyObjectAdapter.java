@@ -35,7 +35,7 @@ import org.jruby.runtime.Block;
 /**
  * Wrapper interface of RubyObjectAdapter for embedding. Methods' arguments can have
  * simple Java objects for easiness. Each methods converts returned object
- * to a Java type specifed in the argumnet.
+ * to a Java type specified in the argument.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -129,7 +129,7 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * variables' values from Java.
      * 
      * @param receiver is an instance that will receive this method call
-     * @param methodName is a method name to be calleid
+     * @param methodName is a method name to be called
      * @param args is an array of method arguments
      * @param returnType is the type we want it to convert to
      * @param unit is parsed unit
@@ -143,7 +143,7 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * inject Ruby's local variables' values from Java.
      * 
      * @param receiver is an instance that will receive this method call
-     * @param methodName is a method name to be calleid
+     * @param methodName is a method name to be called
      * @param args is an array of method arguments except a block
      * @param block is a block to be executed in this method
      * @param returnType is the type we want it to convert to

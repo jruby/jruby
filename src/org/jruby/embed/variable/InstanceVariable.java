@@ -140,7 +140,7 @@ public class InstanceVariable extends AbstractVariable {
     /**
      * Removes this object from {@link BiVariableMap}.
      *
-     * @param runtime enviroment where a variabe is removed.
+     * @param runtime environment where a variable is removed.
      */
     public void remove(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();

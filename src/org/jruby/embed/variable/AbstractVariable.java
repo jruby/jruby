@@ -93,7 +93,7 @@ abstract class AbstractVariable implements BiVariable {
         }
         Ruby rt = irubyObject.getRuntime();
         if (javaType != null) {
-            // Java originated varibales
+            // Java originated variables
             javaObject = javaType.cast(JavaEmbedUtils.rubyToJava(rt, irubyObject, javaType));
         } else {
             // Ruby originated variables

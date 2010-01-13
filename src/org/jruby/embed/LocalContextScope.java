@@ -47,7 +47,7 @@ public enum LocalContextScope {
     SINGLETHREAD,
 
     /**
-     * Specifes that an instance of {@link org.jruby.embed.internal.LocalContext} is a thread local.
+     * Specified that an instance of {@link org.jruby.embed.internal.LocalContext} is a thread local.
      */
     THREADSAFE
 }

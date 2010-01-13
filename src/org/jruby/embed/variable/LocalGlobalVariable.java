@@ -36,8 +36,8 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * An implementation of BiVariable for JSR223 style global variable. The assigend
- * name is like a local vars in Java, but a global in Ruby.
+ * An implementation of BiVariable for JSR223 style global variable. The assigned
+ * name is like a local variables in Java, but a global in Ruby.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -127,7 +127,7 @@ public class LocalGlobalVariable extends GlobalVariable {
     /**
      * Removes this object from {@link BiVariableMap}.
      *
-     * @param runtime enviroment where a variabe is removed.
+     * @param runtime environment where a variable is removed.
      */
     @Override
     public void remove(Ruby runtime) {

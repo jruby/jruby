@@ -46,7 +46,7 @@ public enum LocalVariableBehavior {
     PERSISTENT,
 
     /**
-     * Specifies that Ruby's local variables have faithful behaivor to its semantics.
+     * Specifies that Ruby's local variables have faithful behavior to its semantics.
      * Local variables do not survive over an evaluation. All local variables
      * will vanish after every evaluation.
      */

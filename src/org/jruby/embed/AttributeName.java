@@ -76,16 +76,16 @@ public enum AttributeName {
     /**
      * Creates an AttributeName Enum type instance.
      *
-     * @param fqan a fully qualified attriute name
+     * @param fqan a fully qualified attribute name
      */
     AttributeName(String fqpn) {
         this.fqpn = fqpn;
     }
 
     /**
-     * Returns the fully qualified attriute name of this enum constant.
+     * Returns the fully qualified attribute name of this enum constant.
      *
-     * @return a fully qualified attriute name
+     * @return a fully qualified attribute name
      */
     @Override
     public String toString() {
@@ -93,10 +93,10 @@ public enum AttributeName {
     }
 
     /**
-     * Returns a fully qualified attriute name that corresponds to a given
+     * Returns a fully qualified attribute name that corresponds to a given
      * enumerated type identifier.
      *
-     * @param fqan fully qualified attriute name
+     * @param fqan fully qualified attribute name
      * @return a matched enumerated type identifier
      */
     public static AttributeName getType(String fqpn) {

@@ -30,7 +30,7 @@
 package org.jruby.embed;
 
 /**
- * This class is a generaic uncehcked exception raised during parsing.
+ * This class is a generic unchecked exception raised during parsing.
  * Checked exceptions, for example, java.io.FileNotFoundException, are also wrapped
  * by this exception.
  *

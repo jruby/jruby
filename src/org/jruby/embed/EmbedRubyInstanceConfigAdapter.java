@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009, 2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -151,14 +151,14 @@ public interface EmbedRubyInstanceConfigAdapter {
     public void setCompileMode(CompileMode mode);
 
     /**
-     * Tests whether Ruby runs in a proces or not.
+     * Tests whether Ruby runs in a process or not.
      *
-     * @return true if Ruby is configured to run in a process, othereise, false.
+     * @return true if Ruby is configured to run in a process, otherwise, false.
      */
     public boolean isRunRubyInProcess();
 
     /**
-     * Chnages the value to determine whether Ruby runs in a process or not. The
+     * Changes the value to determine whether Ruby runs in a process or not. The
      * default value is true.
      * 
      * @param inprocess true when Ruby is set to run in the process, or false not to
@@ -236,7 +236,7 @@ public interface EmbedRubyInstanceConfigAdapter {
     /**
      * Returns a JRuby home directory.
      *
-     * The default JRuby home is the value of JRUBY_HOME environmnet variable,
+     * The default JRuby home is the value of JRUBY_HOME environmet variable,
      * or "jruby.home" system property when no security restriction is set to
      * those directories. If none of JRUBY_HOME or jruby.home is set and jruby-complete.jar
      * is used, the default JRuby home is "/META-INF/jruby.home" in the jar archive.
@@ -382,7 +382,7 @@ public interface EmbedRubyInstanceConfigAdapter {
     public String getRecordSeparator();
 
     /**
-     * Changes a record separator to a given value. If "0" is given, the recoed
+     * Changes a record separator to a given value. If "0" is given, the record
      * separator goes to "\n\n", "777" goes to "\uFFFF", otherwise, an octal value
      * of the given number.
      *
@@ -391,7 +391,7 @@ public interface EmbedRubyInstanceConfigAdapter {
     public void setRecordSeparator(String separator);
 
     /**
-     * Returns a value of KCode currenty used. The default value is KCode.NONE.
+     * Returns a value of KCode currently used. The default value is KCode.NONE.
      *
      * @return a KCode value.
      */
@@ -441,7 +441,7 @@ public interface EmbedRubyInstanceConfigAdapter {
     public void setJitThreshold(int threshold);
 
     /**
-     * Returns a value of a max class cahce size. The default value is 0 when
+     * Returns a value of a max class cache size. The default value is 0 when
      * security restriction is applied, or 4096 when no security restriction exists.
      * 
      * @return a value of a max class cache size.

@@ -168,7 +168,7 @@ public class GlobalVariable extends AbstractVariable {
 
     /**
      * A global variable is injected when it is set. This method does nothing.
-     * Instaed injection is done by tryEagerInjection.
+     * Instead injection is done by tryEagerInjection.
      *
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
@@ -191,7 +191,7 @@ public class GlobalVariable extends AbstractVariable {
     /**
      * Removes this object from {@link BiVariableMap}.
      *
-     * @param runtime enviroment where a variabe is removed.
+     * @param runtime environment where a variable is removed.
      */
     public void remove(Ruby runtime) {
         setJavaObject(runtime, null);

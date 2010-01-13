@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
- * This class is responsible to local variable behavior dependent processings.
+ * This class is responsible to local variable behavior dependent processing.
  * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -46,7 +46,7 @@ public class VariableInterceptor {
     private LocalVariableBehavior behavior;
 
     /**
-     * Contructs an instance with a given local variable behavior.
+     * Constructs an instance with a given local variable behavior.
      *
      * @param behavior local variable behavior
      */
@@ -138,7 +138,7 @@ public class VariableInterceptor {
      * Retrieves variable/constant names and values after the evaluation or method
      * invocation.
      *
-     * @param map varible map that holds retrieved name-value pairs.
+     * @param map variable map that holds retrieved name-value pairs.
      * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
      */
@@ -165,7 +165,7 @@ public class VariableInterceptor {
      * Retrieves specified variable/constant name and value after the evaluation
      * or method invocation only when it is requested.
      *
-     * @param map varible map that holds retrieved name-value pairs.
+     * @param map variable map that holds retrieved name-value pairs.
      * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
      * @
@@ -224,7 +224,7 @@ public class VariableInterceptor {
      * Checks the given name is whether a legal Ruby variable/constant name or not.
      *
      * @param name a given name to be checked
-     * @return true when the name is a lega Ruby variable/constant name, otherwise false.
+     * @return true when the name is a legal Ruby variable/constant name, otherwise false.
      */
     public boolean isKindOfRubyVariable(String name) {
         switch (behavior) {

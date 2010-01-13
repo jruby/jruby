@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -658,8 +658,11 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns a profiler currently used. The default profiler is Profile.DEFAULT,
+     * Returns a Profile currently used. The default value is Profile.DEFAULT,
      * which has the same behavior to Profile.ALL.
+     * Profile allows you to define a restricted subset of code to be loaded during
+     * the runtime initialization. When you use JRuby in restricted environment
+     * such as Google App Engine, Profile is a helpful option.
      *
      * @since JRuby 1.5.0.
      *
@@ -670,9 +673,15 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Changes a profiler to a given one.
+     * Changes a Profile to a given one. The default value is Profile.DEFAULT,
+     * which has the same behavior to Profile.ALL.
      * Call this before you use put/get, runScriptlet, and parse methods so that
      * initial configurations will work.
+     *
+     * Profile allows you to define a restricted subset of code to be loaded during
+     * the runtime initialization. When you use JRuby in restricted environment
+     * such as Google App Engine, Profile is a helpful option. For example,
+     * Profile.NO_FILE_CLASS doesn't load File class.
      *
      * @since JRuby 1.5.0.
      *

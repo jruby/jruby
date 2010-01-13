@@ -30,7 +30,7 @@
 package org.jruby.embed;
 
 /**
- * This class is a generaic uncehcked exception raised during calling methods and
+ * This class is a generic unchecked exception raised during calling methods and
  * invoking interface methods which are implemented by Ruby scripts.
  * 
  * @author Yoko Harada <yokolet@gmail.com>

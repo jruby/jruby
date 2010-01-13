@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -157,7 +157,7 @@ public class Constant extends AbstractVariable {
     /**
      * Removes this object from {@link BiVariableMap}.
      *
-     * @param runtime enviroment where a variabe is removed.
+     * @param runtime environment where a variable is removed.
      */
     public void remove(Ruby runtime) {
         /* Like this? - from RubyModule

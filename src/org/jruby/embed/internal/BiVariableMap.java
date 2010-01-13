@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -72,7 +72,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     private VariableInterceptor interceptor;
 
     /**
-     * Constructs an empy map. Users do not instantiate this map. The map is created
+     * Constructs an empty map. Users do not instantiate this map. The map is created
      * internally.
      *
      * @param runtime is environment where variables are used to execute Ruby scripts.
@@ -83,7 +83,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
 
 
     /**
-     * Constructs an empy map. Users do not instantiate this map. The map is created
+     * Constructs an empty map. Users do not instantiate this map. The map is created
      * internally.
      * 
      * @param runtime is environment where variables are used to execute Ruby scripts.
@@ -170,7 +170,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * Returns <tt>true</tt> if this map contains a mapping for the specified
      * key.
      * 
-     * @param key is a key to be tested its presense
+     * @param key is a key to be tested its presence
      * @return <tt>true</tt> if this map contains a mapping for the specified key
      */
     public boolean containsKey(Object key) {
@@ -182,7 +182,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.
      * 
-     * @param value is a Java object to be tested it presense
+     * @param value is a Java object to be tested it presence
      * @return Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.
      */
@@ -274,7 +274,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
 
     /**
      * Returns Ruby's local variable names this map has. The returned array is mainly
-     * used to inject local variables to Ruby scripts while parseing.
+     * used to inject local variables to Ruby scripts while parsing.
      *
      * @return String array of Ruby's local variable names
      */

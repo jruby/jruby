@@ -39,7 +39,7 @@ public interface EmbedRubyInterfaceAdapter {
     /**
      * Returns a instance of requested interface type from a previously evaluated script.
      *
-     * @param receiver a reveiver of the previously evaluated script.
+     * @param receiver a receiver of the previously evaluated script.
      * @param clazz an interface type of the returning instance.
      * @return an instance of requested interface type.
      */

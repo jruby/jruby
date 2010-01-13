@@ -54,12 +54,12 @@ public enum PropertyName {
     LOCALVARIABLE_BEHAVIOR("org.jruby.embed.localvariable.behavior"),
 
     /**
-     * A key to get/set compile mode. The assigend value is one of jit or force.
+     * A key to get/set compile mode. The assigned value is one of jit or force.
      */
     COMPILEMODE("org.jruby.embed.compilemode"),
 
     /**
-     * A key to get/set compatible version to Ruby. If the assigend value matches
+     * A key to get/set compatible version to Ruby. If the assigned value matches
      * "[jJ]?(r|R)(u|U)(b|B)(y|Y)1[\\._]?9", then Ruby 1.9 will be chosen.
      */
     COMPATVERSION("org.jruby.embed.compat.version");

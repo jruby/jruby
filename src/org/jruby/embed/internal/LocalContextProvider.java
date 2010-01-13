@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -37,7 +37,7 @@ import org.jruby.util.ClassCache;
 
 /**
  * LocalContextProvider provides an instance of {@link org.jruby.embed.internal.LocalContext} from
- * a specifed scope defined by {@link LocalContextScope}. Users can configure
+ * a specified scope defined by {@link LocalContextScope}. Users can configure
  * Ruby runtime by using methods of this interface before Ruby runtime is used.
  * Default scope is LocalContextScope.THREADSAFE.
  * 
@@ -82,7 +82,7 @@ public interface LocalContextProvider {
     Ruby getRuntime();
 
     /**
-     * Returns a {@link BiVariableMap} of a specifed scope.
+     * Returns a {@link BiVariableMap} of a specified scope.
      * 
      * @return a variable map
      */

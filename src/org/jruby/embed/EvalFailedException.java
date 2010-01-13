@@ -32,7 +32,7 @@ package org.jruby.embed;
 import org.jruby.exceptions.RaiseException;
 
 /**
- * This class is a generaic uncehcked exception raised during evaluating.
+ * This class is a generic unchecked exception raised during evaluating.
  * 
  * @author Yoko Harada <yokolet@gmail.com>
  */

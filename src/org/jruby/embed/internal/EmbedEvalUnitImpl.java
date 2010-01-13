@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
- * Implementation of org.jruby.javasupport.JavaEmbedUtils.EvalUnit for Embeddiing.
+ * Implementation of org.jruby.javasupport.JavaEmbedUtils.EvalUnit for embeddiing.
  * This class is created when a Ruby script has been parsed. Once parsed, the script
  * is ready to run many times without parsing.
  *
