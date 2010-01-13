@@ -440,6 +440,8 @@ public class RubyRange extends RubyObject {
             fixnumEach(context, runtime, block);
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).uptoCommon19(context, end, isExclusive, block);
+        } else if (begin instanceof RubySymbol) {
+            begin.asString().uptoCommon19(context, end.asString(), isExclusive, block, true);
         } else {
             if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
                     "can't iterate from " + begin.getMetaClass().getName());

@@ -3894,6 +3894,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
+        return uptoCommon19(context, arg, excl, block, false);
+    }
+
+    final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asASymbol) {
         Ruby runtime = context.getRuntime();
         RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);
@@ -3907,7 +3911,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 RubyString s = new RubyString(runtime, runtime.getString(), RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff],
                                                                             enc, CR_7BIT);
                 s.shareLevel = SHARE_LEVEL_BYTELIST;
-                block.yield(context, s); 
+                IRubyObject argument = s;
+                if (asASymbol) {
+                    argument = runtime.newSymbol(s.toString());
+                }
+                block.yield(context, argument);
 
                 if (!excl && c == e) break;
                 c++;
@@ -3920,7 +3928,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject afterEnd = end.callMethod(context, "succ");
             RubyString current = this;
             while (!current.op_equal19(context, afterEnd).isTrue()) {
-                block.yield(context, current);
+                IRubyObject argument = current;
+                if (asASymbol) {
+                    argument = runtime.newSymbol(current.toString());
+                }
+                block.yield(context, argument);
                 if (!excl && current.op_equal19(context, end).isTrue()) break;
                 current = current.callMethod(context, "succ").convertToString();
                 if (excl && current.op_equal19(context, end).isTrue()) break;
