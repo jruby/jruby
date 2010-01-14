@@ -1,2 +1,1 @@
-fails:Numeric#phase returns NaN if self is NaN
 fails:Numeric#phase returns Pi if -0.0

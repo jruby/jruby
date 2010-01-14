@@ -1,2 +1,1 @@
-fails:Numeric#angle returns NaN if self is NaN
 fails:Numeric#angle returns Pi if -0.0

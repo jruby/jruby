@@ -902,7 +902,12 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"arg", "angle", "phase"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject arg(ThreadContext context) {
-        if (!f_negative_p(context, this)) return RubyFixnum.zero(context.getRuntime());
+        if (Double.isNaN(this.getDoubleValue())) {
+            return RubyFloat.newFloat(context.getRuntime(), Double.NaN);
+        }
+        if (!f_negative_p(context, this)) {
+            return RubyFixnum.zero(context.getRuntime());
+        }
         return context.getRuntime().getMath().fastFetchConstant("PI");
     }    
 
