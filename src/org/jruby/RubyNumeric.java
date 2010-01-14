@@ -523,6 +523,14 @@ public class RubyNumeric extends RubyObject {
         return this;
     }
 
+    /** num_imaginary
+     *
+     */
+    @JRubyMethod(name = "i", compat = CompatVersion.RUBY1_9)
+    public IRubyObject num_imaginary(ThreadContext context) {
+        return RubyComplex.newComplexRaw(context.getRuntime(), RubyFixnum.zero(context.getRuntime()), this);
+    }
+
     /** num_uminus
      *
      */
