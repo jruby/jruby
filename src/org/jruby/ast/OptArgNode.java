@@ -29,6 +29,7 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -39,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class OptArgNode extends Node {
+public class OptArgNode extends Node implements INameNode {
     private Node value;
 
     public OptArgNode(ISourcePosition position, Node value) {
@@ -73,6 +74,13 @@ public class OptArgNode extends Node {
     @Override
     public List<Node> childNodes() {
         return Node.createList(value);
+    }
+
+    public String getName() {
+        if (value instanceof INameNode) {
+            return ((INameNode)value).getName();
+        }
+        return null;
     }
 
 }

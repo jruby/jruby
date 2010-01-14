@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MethodArgs;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
@@ -291,6 +292,11 @@ public class RubyMethod extends RubyObject implements DataType {
         }
 
         return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
+    public IRubyObject parameters(ThreadContext context) {
+        return RubyJRuby.MethodExtensions.methodArgs(this);
     }
 }
 

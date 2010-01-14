@@ -695,31 +695,36 @@ public class RubyJRuby {
             DynamicMethod method = rubyMethod.method;
             
             if (method instanceof MethodArgs) {
+                RubySymbol req = runtime.newSymbol("req");
+                RubySymbol opt = runtime.newSymbol("opt");
+                RubySymbol rest = runtime.newSymbol("rest");
+                RubySymbol block = runtime.newSymbol("block");
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
                 RubyArray argsArray = RubyArray.newArray(runtime);
                 
-                RubyArray reqArray = RubyArray.newArray(runtime);
                 ListNode requiredArgs = args.getPre();
                 for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
-                    reqArray.append(getNameFrom(runtime, (INameNode) requiredArgs.get(i)));
+                    argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgs.get(i))));
                 }
-                argsArray.append(reqArray);
                 
-                RubyArray optArray = RubyArray.newArray(runtime);
                 ListNode optArgs = args.getOptArgs();
                 for (int i = 0; optArgs != null && i < optArgs.size(); i++) {
-                    optArray.append(getNameFrom(runtime, (INameNode) optArgs.get(i)));
+                    argsArray.append(RubyArray.newArray(runtime, opt, getNameFrom(runtime, (INameNode) optArgs.get(i))));
                 }
-                argsArray.append(optArray);
+                
+                ListNode requiredArgsPost = args.getPost();
+                for (int i = 0; requiredArgs != null && i < requiredArgsPost.size(); i++) {
+                    argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgsPost.get(i))));
+                }
 
-                argsArray.append(getNameFrom(runtime, args.getRestArgNode()));
-                argsArray.append(getNameFrom(runtime, args.getBlock()));
+                argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
+                argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
                 
                 return argsArray;
             }
             
-            throw runtime.newTypeError("Method args are only available for standard interpreted or jitted methods");
+            return runtime.getNil();
         }
     }
 
