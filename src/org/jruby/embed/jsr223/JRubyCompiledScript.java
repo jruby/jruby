@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -66,6 +67,28 @@ public class JRubyCompiledScript extends CompiledScript {
         String filename = System.getProperty(ScriptEngine.FILENAME);
         unit = container.parse(reader, filename, Utils.getLineNumber(engine));
     }
+
+    public Object eval() throws ScriptException {
+        try {
+            IRubyObject ret = unit.run();
+            return JavaEmbedUtils.rubyToJava(ret);
+        } catch (Exception e) {
+            throw wrapException(e);
+        }
+    }
+
+    public Object eval(Bindings bindings) throws ScriptException {
+        if (bindings == null) {
+            throw new NullPointerException("bindings is null");
+        }
+        engine.getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        try {
+            IRubyObject ret = unit.run();
+            return JavaEmbedUtils.rubyToJava(ret);
+        } catch (Exception e) {
+            throw wrapException(e);
+        }
+    }
     
     public Object eval(ScriptContext context) throws ScriptException {
         try {
@@ -76,21 +99,25 @@ public class JRubyCompiledScript extends CompiledScript {
             }
             return null;
         } catch (Exception e) {
-            Writer w = container.getErrorWriter();
-            if (w instanceof PrintWriter) {
-                e.printStackTrace((PrintWriter)w);
-            } else {
-                try {
-                    w.write(e.getMessage());
-                } catch (IOException ex) {
-                    throw new ScriptException(ex);
-                }
+            throw wrapException(e);
+        }
+    }
+
+    private ScriptException wrapException(Exception e) throws ScriptException {
+        Writer w = container.getErrorWriter();
+        if (w instanceof PrintWriter) {
+            e.printStackTrace((PrintWriter) w);
+        } else {
+            try {
+                w.write(e.getMessage());
+            } catch (IOException ex) {
+                return new ScriptException(ex);
             }
-            if (e.getCause() instanceof Exception) {
-                throw new ScriptException((Exception)e.getCause());
-            } else {
-                throw new ScriptException(e);
-            }
+        }
+        if (e.getCause() instanceof Exception) {
+            return new ScriptException((Exception) e.getCause());
+        } else {
+            return new ScriptException(e);
         }
     }
 
