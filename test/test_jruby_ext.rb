@@ -10,8 +10,8 @@ class TestJrubyExt < Test::Unit::TestCase
   define_method(:foo3) {}
   
   def test_method_args
-    assert_equal([[:a, :b], [:c, :d], :e, :f], method(:foo1).args)
-    assert_equal([[], [], nil, nil], method(:foo2).args)
-    assert_raise(TypeError) { method(:foo3).args }
+    assert_equal([[:req, :a], [:req, :b], [:opt, :c], [:opt, :d], [:rest, :e], [:block, :f]], method(:foo1).args)
+    assert_equal([], method(:foo2).args)
+    assert_equal(nil, method(:foo3).args)
   end
 end

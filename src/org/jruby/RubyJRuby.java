@@ -714,12 +714,17 @@ public class RubyJRuby {
                 }
                 
                 ListNode requiredArgsPost = args.getPost();
-                for (int i = 0; requiredArgs != null && i < requiredArgsPost.size(); i++) {
+                for (int i = 0; requiredArgsPost != null && i < requiredArgsPost.size(); i++) {
                     argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgsPost.get(i))));
                 }
 
-                argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
-                argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
+                if (args.getRestArg() >= 0) {
+                    argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
+                }
+
+                if (args.getBlock() != null) {
+                    argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
+                }
                 
                 return argsArray;
             }
