@@ -157,6 +157,7 @@ module JRuby::Compiler
     end
 
     def to_s
+      str = ""
       @classes.each do |cls|
         str << cls.to_s
       end
