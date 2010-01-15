@@ -59,6 +59,7 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
@@ -668,7 +669,7 @@ public class JavaMethod extends JavaCallable {
         return runtime.newNameError("java method not found: " + target.getName() + "." + prettyName, simpleName);
     }
 
-    public static RaiseException newArgSizeMismatchError(Ruby runtime, int typeCount, int argCount) {
-        return runtime.newArgumentError("arg type count (" + typeCount + ") != arg count (" + argCount + ")");
+    public static RaiseException newArgSizeMismatchError(Ruby runtime, Class ... argTypes) {
+        return runtime.newArgumentError("argument count mismatch for method signature " + CodegenUtils.prettyParams(argTypes));
     }
 }

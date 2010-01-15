@@ -9,6 +9,10 @@ describe "A Java object's java_send method" do
   it "works with name only for no-arg methods" do
     m = @list.java_send(:toString).should == "[]"
   end
+
+  it "works with name plus empty arg list for no-arg methods" do
+    m = @list.java_send(:toString, []).should == "[]"
+  end
   
   it "works with a signature" do
     @list.java_send :add, [Java::int, java.lang.Object], 0, 'foo'

@@ -10,6 +10,11 @@ describe "A Java object's java_method method" do
     m = @list.java_method :toString
     m.call.should == "[]"
   end
+
+  it "works with name plus empty array for no-arg methods" do
+    m = @list.java_method :toString, []
+    m.call.should == "[]"
+  end
   
   it "works with a signature" do
     m = @list.java_method :add, [Java::int, java.lang.Object]

@@ -10,6 +10,22 @@ describe "A Java object's java_send method" do
   before :each do
     @list = java.util.ArrayList.new
   end
+
+  it "allows wiring a no-arg method with just name" do
+    lambda do
+      class java::util::ArrayList
+        java_alias :blah, :toString
+      end
+    end.should_not raise_error
+  end
+
+  it "allows wiring a no-arg method with name plus empty array" do
+    lambda do
+      class java::util::ArrayList
+        java_alias :blah, :toString, []
+      end
+    end.should_not raise_error
+  end
   
   it "allows calling a specific overload" do
     @list.add_int_object 0, 'foo'
