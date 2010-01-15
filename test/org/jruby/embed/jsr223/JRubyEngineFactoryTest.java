@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -86,7 +86,7 @@ public class JRubyEngineFactoryTest {
     public void testGetEngineVersion() {
         System.out.println("getEngineVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        String expResult = "0.1.2";
+        String expResult = "0.2.1";
         String result = instance.getEngineVersion();
         assertEquals(expResult, result);
 
@@ -218,7 +218,7 @@ public class JRubyEngineFactoryTest {
         assertEquals(expResult, result);
 
         key = ScriptEngine.ENGINE_VERSION;
-        expResult = "0.1.2";
+        expResult = "0.2.1";
         result = instance.getParameter(key);
         assertEquals(expResult, result);
 

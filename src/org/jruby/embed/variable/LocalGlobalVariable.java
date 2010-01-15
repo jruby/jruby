@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -99,6 +99,31 @@ public class LocalGlobalVariable extends GlobalVariable {
                 vars.update(javaName, var);
             }
         }
+    }
+
+    private static void updateMap(BiVariableMap vars, String name, IRubyObject value) {
+        BiVariable var;
+        if (vars.containsKey((Object) name)) {
+            var = vars.getVariable(name);
+            var.setRubyObject(value);
+        } else {
+            var = new LocalGlobalVariable(name, value);
+            vars.update(name, var);
+        }
+    }
+
+    /**
+     * Retrieves a global variable by key from Ruby after the evaluation.
+     *
+     * @param runtime Ruby runtime
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save a retrieved global variable.
+     * @param key name of the global variable
+     */
+    public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
+        GlobalVariables gvars = runtime.getGlobalVariables();
+        IRubyObject value = gvars.get("$" + key);
+        updateMap(vars, key, value);
     }
 
     /**

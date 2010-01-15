@@ -43,7 +43,8 @@ import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.util.SystemPropertyCatcher;
 
 /**
- *
+ * This class implements javax.script.ScriptEngineFactory.
+ * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class JRubyEngineFactory implements ScriptEngineFactory {
@@ -53,15 +54,15 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     private final String engineVersion;
     private final List<String> extensions;
     private final String languageName;
-    //setting this in constructor causes runtime initialization before setting all configs.
+    //setting languageVersion in constructor causes runtime initialization before setting all configs.
+    //changed to get info on demand.
     private String languageVersion;
     private final List<String> mimeTypes;
     private final List<String> engineIds;
     private Map<String, Object> parameters;
-    //private final ScriptEngine engine;
 
     public JRubyEngineFactory() {
-        LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.THREADSAFE);
+        LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
         LocalVariableBehavior behavior = SystemPropertyCatcher.getBehavior(LocalVariableBehavior.GLOBAL);
         container = new ScriptingContainer(scope, behavior, jsr223Props);
         SystemPropertyCatcher.setConfiguration(container);

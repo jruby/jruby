@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -145,7 +145,7 @@ public class VariableInterceptor {
     public void retrieve(BiVariableMap map, Ruby runtime, IRubyObject receiver) {
         switch (behavior) {
             case GLOBAL:
-                LocalGlobalVariable.retrieve(runtime, receiver, map);
+                //LocalGlobalVariable.retrieve(runtime, receiver, map); // do tryLazyRetrieval
                 break;
             case BSF:
                 PersistentLocalVariable.retrieve(runtime, receiver, map);
@@ -173,6 +173,9 @@ public class VariableInterceptor {
     public void tryLazyRetrieval(BiVariableMap map, Ruby runtime, IRubyObject receiver, Object key) {
         switch (behavior) {
             case GLOBAL:
+                if (LocalGlobalVariable.isValidName(key)) {
+                    LocalGlobalVariable.retrieveByKey(runtime, map, (String)key);
+                }
                 break;
             case BSF:
                 break;

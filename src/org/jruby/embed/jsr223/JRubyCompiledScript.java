@@ -45,7 +45,8 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
+ * This is a concrete class for javax.script.CompiledScript.
+ * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class JRubyCompiledScript extends CompiledScript {

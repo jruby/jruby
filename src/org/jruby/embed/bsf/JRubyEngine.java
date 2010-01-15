@@ -146,7 +146,7 @@ public class JRubyEngine extends BSFEngineImpl {
     @Override
     public void initialize(BSFManager manager, String language, Vector someDeclaredBeans) throws BSFException {
         super.initialize(manager, language, someDeclaredBeans);
-        LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.THREADSAFE);
+        LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
         LocalVariableBehavior behavior = LocalVariableBehavior.BSF;
         container = new ScriptingContainer(scope, behavior, bsfProps);
         SystemPropertyCatcher.setConfiguration(container);

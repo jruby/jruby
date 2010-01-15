@@ -42,6 +42,12 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
 /**
+ * This is a substitute of javax.script.ScriptEngineManager.
+ * 
+ * With this script engine manager, you can avoid two known troubles. One this
+ * happens on OS X JDK 5 which tries to load AppleScriptEngine and ends up in the
+ * exception. Anoher one happens when you use livetribe version of javax.script
+ * and GLOBAL_SCOPE. The livetribe javax.script has a bug to handle GLOBAL_SCOPE.
  *
  * @author Yoko Harada <yokolet@gmail.com>
  */
