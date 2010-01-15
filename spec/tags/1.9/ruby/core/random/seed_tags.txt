@@ -1,5 +1,0 @@
-fails(JRUBY-4456):Random#seed returns an Integer
-fails(JRUBY-4456):Random#seed returns an arbitrary seed if the constructor was called without arguments
-fails(JRUBY-4456):Random#seed returns the same generated seed when repeatedly called on the same object
-fails(JRUBY-4456):Random#seed returns the seed given in the constructor
-fails(JRUBY-4456):Random#seed returns the given seed coerced with #to_int

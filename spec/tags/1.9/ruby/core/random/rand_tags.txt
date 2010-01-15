@@ -29,5 +29,3 @@ fails(JRUBY-4456):Random#rand with Range works with inclusive ranges
 fails(JRUBY-4456):Random#rand with Range works with exclusive ranges
 fails(JRUBY-4456):Random#rand with Range returns the same sequence for a given seed
 fails(JRUBY-4456):Random#rand with Range allows the startpoint to be an object of a different class to the endpoint
-fails(JRUBY-4456):Random#rand with Range raises an ArgumentError when the startpoint lacks #+ and #- methods
-fails(JRUBY-4456):Random#rand with Range raises an ArgumentError when the endpoint lacks #+ and #- methods

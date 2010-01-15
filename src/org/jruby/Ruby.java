@@ -1098,6 +1098,8 @@ public final class Ruby {
             RubyEncoding.createEncodingClass(this);
             RubyConverter.createConverterClass(this);
             encodingService = new EncodingService(this);
+
+            RubyRandom.createRandomClass(this);
         }
 
         RubySymbol.createSymbolClass(this);
@@ -2064,6 +2066,14 @@ public final class Ruby {
 
     public RubyClass getInvalidByteSequenceError() {
         return invalidByteSequenceError;
+    }
+
+    public RubyClass getRandomClass() {
+        return randomClass;
+    }
+
+    public void setRandomClass(RubyClass randomClass) {
+        this.randomClass = randomClass;
     }
 
     private RubyHash charsetMap;
@@ -3638,7 +3648,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError;
+            invalidByteSequenceError, randomClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and
