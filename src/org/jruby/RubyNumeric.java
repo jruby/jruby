@@ -902,13 +902,15 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"arg", "angle", "phase"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject arg(ThreadContext context) {
-        if (Double.isNaN(this.getDoubleValue())) {
+        double value = this.getDoubleValue();
+        if (Double.isNaN(value)) {
             return RubyFloat.newFloat(context.getRuntime(), Double.NaN);
         }
-        if (!f_negative_p(context, this)) {
-            return RubyFixnum.zero(context.getRuntime());
+        if (f_negative_p(context, this) || (value == 0.0 && 1/value == Double.NEGATIVE_INFINITY)) {
+            // negative or -0.0
+            return context.getRuntime().getMath().fastGetConstant("PI");
         }
-        return context.getRuntime().getMath().fastFetchConstant("PI");
+        return RubyFixnum.zero(context.getRuntime());
     }    
 
     /** numeric_rect
