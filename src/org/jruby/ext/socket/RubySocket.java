@@ -36,9 +36,7 @@ import static com.kenai.constantine.platform.ProtocolFamily.PF_INET;
 import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
 import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -53,6 +51,8 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,6 +81,10 @@ import org.jruby.util.io.ModeFlags;
 
 import com.kenai.constantine.platform.AddressFamily;
 import com.kenai.constantine.platform.Sock;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ConnectionPendingException;
+import java.nio.channels.spi.AbstractSelectableChannel;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -347,6 +351,93 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(backtrace = true)
+    public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
+        Channel socketChannel = getChannel();
+        try {
+            if (socketChannel instanceof AbstractSelectableChannel) {
+                ((AbstractSelectableChannel) socketChannel).configureBlocking(false);
+                connect(context, arg);
+            } else {
+                throw getRuntime().newErrnoENOPROTOOPTError();
+            }
+        } catch(ClosedChannelException e) {
+            throw context.getRuntime().newErrnoECONNREFUSEDError();
+        } catch(IOException e) {
+            e.printStackTrace();
+            throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+        } catch (Error e) {
+            // Workaround for a bug in Sun's JDK 1.5.x, see
+            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
+            Throwable cause = e.getCause();
+            if (cause instanceof SocketException) {
+                handleSocketException(context.getRuntime(), "connect", (SocketException)cause);
+            } else {
+                throw e;
+            }
+        }
+
+        return RubyFixnum.zero(context.getRuntime());
+    }
+
+    @JRubyMethod(backtrace = true)
+    public IRubyObject connect(ThreadContext context, IRubyObject arg) {
+        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, this, arg);
+
+        try {
+            IRubyObject addr = sockaddr.pop(context);
+            IRubyObject port = sockaddr.pop(context);
+            InetSocketAddress iaddr = new InetSocketAddress(
+                    addr.convertToString().toString(), RubyNumeric.fix2int(port));
+
+            Channel socketChannel = getChannel();
+            if (socketChannel instanceof SocketChannel) {
+                if(!((SocketChannel) socketChannel).connect(iaddr)) {
+                    throw context.getRuntime().newErrnoEINPROGRESSError();
+                }
+            } else if (socketChannel instanceof DatagramChannel) {
+                ((DatagramChannel)socketChannel).connect(iaddr);
+            } else {
+                throw getRuntime().newErrnoENOPROTOOPTError();
+            }
+        } catch(AlreadyConnectedException e) {
+            throw context.getRuntime().newErrnoEISCONNError();
+        } catch(ConnectionPendingException e) {
+            Channel socketChannel = getChannel();
+            if (socketChannel instanceof SocketChannel) {
+                try {
+                    if (((SocketChannel) socketChannel).finishConnect()) {
+                        throw context.getRuntime().newErrnoEISCONNError();
+                    }
+                    throw context.getRuntime().newErrnoEINPROGRESSError();
+                } catch (IOException ex) {
+                    e.printStackTrace();
+                    throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+                }
+            }
+            throw context.getRuntime().newErrnoEINPROGRESSError();
+        } catch(UnknownHostException e) {
+            throw sockerr(context.getRuntime(), "connect(2): unknown host");
+        } catch(SocketException e) {
+            handleSocketException(context.getRuntime(), "connect", e);
+        } catch(IOException e) {
+            e.printStackTrace();
+            throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+        } catch (IllegalArgumentException iae) {
+            throw sockerr(context.getRuntime(), iae.getMessage());
+        } catch (Error e) {
+            // Workaround for a bug in Sun's JDK 1.5.x, see
+            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
+            Throwable cause = e.getCause();
+            if (cause instanceof SocketException) {
+                handleSocketException(context.getRuntime(), "connect", (SocketException)cause);
+            } else {
+                throw e;
+            }
+        }
+        return RubyFixnum.zero(context.getRuntime());
+    }
+
+    @JRubyMethod(backtrace = true)
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
         RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, this, arg);
 
@@ -369,7 +460,7 @@ public class RubySocket extends RubyBasicSocket {
         } catch(UnknownHostException e) {
             throw sockerr(context.getRuntime(), "bind(2): unknown host");
         } catch(SocketException e) {
-            handleSocketException(context.getRuntime(), e);
+            handleSocketException(context.getRuntime(), "bind", e);
         } catch(IOException e) {
             e.printStackTrace();
             throw sockerr(context.getRuntime(), "bind(2): name or service not known");
@@ -380,7 +471,7 @@ public class RubySocket extends RubyBasicSocket {
             // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
             Throwable cause = e.getCause();
             if (cause instanceof SocketException) {
-                handleSocketException(context.getRuntime(), (SocketException)cause);
+                handleSocketException(context.getRuntime(), "bind", (SocketException)cause);
             } else {
                 throw e;
             }
@@ -388,7 +479,7 @@ public class RubySocket extends RubyBasicSocket {
         return RubyFixnum.zero(context.getRuntime());
     }
 
-    private void handleSocketException(Ruby runtime, SocketException e) {
+    private void handleSocketException(Ruby runtime, String caller, SocketException e) {
         // e.printStackTrace();
         String msg = formatMessage(e, "bind");
 

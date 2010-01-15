@@ -2874,6 +2874,14 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EBADF"), "Bad file descriptor");
     }
 
+    public RaiseException newErrnoEISCONNError() {
+        return newRaiseException(getErrno().fastGetClass("EISCONN"), "Socket is already connected");
+    }
+
+    public RaiseException newErrnoEINPROGRESSError() {
+        return newRaiseException(getErrno().fastGetClass("EINPROGRESS"), "Operation now in progress");
+    }
+
     public RaiseException newErrnoENOPROTOOPTError() {
         return newRaiseException(getErrno().fastGetClass("ENOPROTOOPT"), "Protocol not available");
     }
@@ -2928,6 +2936,14 @@ public final class Ruby {
 
     public RaiseException newErrnoEBADFError(String message) {
         return newRaiseException(getErrno().fastGetClass("EBADF"), message);
+    }
+
+    public RaiseException newErrnoEINPROGRESSError(String message) {
+        return newRaiseException(getErrno().fastGetClass("EINPROGRESS"), message);
+    }
+
+    public RaiseException newErrnoEISCONNError(String message) {
+        return newRaiseException(getErrno().fastGetClass("EISCONN"), message);
     }
 
     public RaiseException newErrnoEINVALError(String message) {
