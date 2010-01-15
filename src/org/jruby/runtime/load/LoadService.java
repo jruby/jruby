@@ -914,10 +914,11 @@ public class LoadService {
             return null;
         }
         
-        Outer: for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
+        Outer: for (int i = 0; i < loadPath.size(); i++) {
             // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
-            String loadPathEntry = pathIter.next().toString();
+            RubyString entryString = loadPath.eltInternal(i).convertToString();
+            String loadPathEntry = entryString.asJavaString();
 
             if (loadPathEntry.equals(".") || loadPathEntry.equals("")) {
                 foundResource = tryResourceFromCWD(state, baseName, suffixType);
@@ -1106,8 +1107,11 @@ public class LoadService {
             name = name.substring("classpath:".length());
         }
 
-        for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
-            String entry = pathIter.next().toString();
+        for (int i = 0; i < loadPath.size(); i++) {
+            // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
+            // we should try to make LoadPath a special array object.
+            RubyString entryString = loadPath.eltInternal(i).convertToString();
+            String entry = entryString.asJavaString();
 
             // if entry is an empty string, skip it
             if (entry.length() == 0) continue;
