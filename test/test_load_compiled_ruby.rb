@@ -12,7 +12,7 @@ class TestLoadCompiledRuby < Test::Unit::TestCase
       end
       assert File.exist? FILENAME
 
-      JRubyCompiler::compile_argv([FILENAME])
+      JRuby::Compiler::compile_argv([FILENAME])
       FileUtils.rm_f(FILENAME)
       assert !(File.exist? FILENAME)
       assert File.exist? COMPILED

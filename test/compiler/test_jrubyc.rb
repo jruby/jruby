@@ -20,7 +20,7 @@ class TestJrubyc < Test::Unit::TestCase
 
   def test_basic
     begin
-      JRubyCompiler::compile_argv([__FILE__])
+      JRuby::Compiler::compile_argv([__FILE__])
       output = File.read(@tempfile.path)
 
       assert_equal(
@@ -35,7 +35,7 @@ class TestJrubyc < Test::Unit::TestCase
   
   def test_target
     tempdir = File.dirname(@tempfile.path)
-    JRubyCompiler::compile_argv(["-t", tempdir, __FILE__])
+    JRuby::Compiler::compile_argv(["-t", tempdir, __FILE__])
     output = File.read(@tempfile.path)
 
     assert_equal(
@@ -48,7 +48,7 @@ class TestJrubyc < Test::Unit::TestCase
   
   def test_bad_target
     begin
-      JRubyCompiler::compile_argv(["-t", "does_not_exist", __FILE__])
+      JRuby::Compiler::compile_argv(["-t", "does_not_exist", __FILE__])
     rescue Exception => e
     end
 
@@ -59,7 +59,7 @@ class TestJrubyc < Test::Unit::TestCase
   end
   
   def test_prefix
-    JRubyCompiler::compile_argv(["-p", "foo", __FILE__])
+    JRuby::Compiler::compile_argv(["-p", "foo", __FILE__])
     output = File.read(@tempfile.path)
 
     assert_equal(
@@ -73,7 +73,7 @@ class TestJrubyc < Test::Unit::TestCase
     $compile_test = false
     File.open("test_file1.rb", "w") {|file| file.write("$compile_test = true")}
     
-    JRubyCompiler::compile_argv(["test_file1.rb"])
+    JRuby::Compiler::compile_argv(["test_file1.rb"])
     output = File.read(@tempfile.path)
 
     assert_equal(
