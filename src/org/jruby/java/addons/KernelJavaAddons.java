@@ -58,6 +58,12 @@ public class KernelJavaAddons {
         }
     }
 
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_signature(IRubyObject recv, IRubyObject[] args) {
+        // empty stub for now
+        return recv.getRuntime().getNil();
+    }
+
     private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
         JavaClass targetType;
 

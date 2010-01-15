@@ -2,7 +2,7 @@
 
 require 'jruby/jrubyc'
 
-status =  JRubyCompiler::compile_argv(ARGV)
+status =  JRuby::Compiler::compile_argv(ARGV)
 
 if (status != 0)
   puts "Compilation FAILED: #{status} error(s) encountered"
