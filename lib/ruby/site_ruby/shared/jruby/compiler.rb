@@ -119,7 +119,10 @@ module JRuby::Compiler
 
     if java
       files_string = files.join(' ')
-      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/jruby.jar:. #{files_string}"
+      jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
+        File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
+      end
+      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:. #{files_string}"
       puts compile_string
       system compile_string
     end
@@ -236,7 +239,8 @@ EOJ
       signature &&= signature.dup
       ret = signature ? signature.shift : 'Object'
       args_string = args.map {|a| "#{signature ? signature.shift : 'Object'} #{a}"}.join(',')
-      passed_args_string = args.map {|a| "ruby_" + a}.join(',')
+      passed_args = args.map {|a| "ruby_" + a}.join(',')
+      passed_args = "," + passed_args if args.size > 0
       conv_string = args.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
       ret_string = case ret
       when 'void'
@@ -264,7 +268,7 @@ EOJ
       method_string = <<EOJ
   public #{static ? 'static ' : ''}#{ret} #{name}(#{args_string}) {
 #{conv_string}
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\", #{passed_args_string});
+    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
     #{ret_string}
   }
 EOJ
