@@ -47,7 +47,7 @@ public class Colon2ConstNode extends Colon2Node {
     }
 
     private boolean isModuleAndHasConstant(IRubyObject left) {
-        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantAt(name) != null;
+        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantFromNoConstMissing(name) != null;
     }
 
     public IRubyObject getValue(ThreadContext context, RubyModule target) {

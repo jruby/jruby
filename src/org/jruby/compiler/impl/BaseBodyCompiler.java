@@ -1821,7 +1821,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 method.visitTypeInsn(CHECKCAST, p(RubyModule.class));
                 method.dup(); //[C, C]
                 method.ldc(name); //[C, C, String]
-                method.invokevirtual(p(RubyModule.class), "fastGetConstantAt", sig(IRubyObject.class, params(String.class))); //[C, null|C]
+                method.invokevirtual(p(RubyModule.class), "fastGetConstantFromNoConstMissing", sig(IRubyObject.class, params(String.class))); //[C, null|C]
                 method.dup();
                 method.ifnull(nextJmpPop);
                 method.pop();
