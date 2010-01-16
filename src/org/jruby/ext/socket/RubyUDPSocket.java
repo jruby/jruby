@@ -30,7 +30,6 @@ package org.jruby.ext.socket;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -43,6 +42,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -114,10 +114,17 @@ public class RubyUDPSocket extends RubyIPSocket {
         InetSocketAddress addr = null;
         try {
             if (host.isNil()
-		|| ((host instanceof RubyString)
-		    && ((RubyString) host).isEmpty())) {
-		// host is nil or the empty string, bind to INADDR_ANY
+                || ((host instanceof RubyString)
+                && ((RubyString) host).isEmpty())) {
+                // host is nil or the empty string, bind to INADDR_ANY
                 addr = new InetSocketAddress(RubyNumeric.fix2int(port));
+            } else if (host instanceof RubyFixnum) {
+                // passing in something like INADDR_ANY
+                int intAddr = RubyNumeric.fix2int(host);
+                RubyModule socketMod = context.getRuntime().getModule("Socket");
+                if (intAddr == RubyNumeric.fix2int(socketMod.fastGetConstant("INADDR_ANY"))) {
+                    addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), RubyNumeric.fix2int(port));
+                }
             } else {
                 addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
             }
