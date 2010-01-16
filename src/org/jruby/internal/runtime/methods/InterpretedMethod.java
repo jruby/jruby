@@ -37,6 +37,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
@@ -114,6 +115,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -138,6 +141,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -157,6 +162,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -175,6 +182,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -194,6 +203,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -212,6 +223,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -231,6 +244,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -249,6 +264,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -268,6 +285,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -286,6 +305,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -305,6 +326,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -323,6 +346,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -342,6 +367,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -360,6 +387,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -379,6 +408,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -397,6 +428,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -416,6 +449,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -434,6 +469,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -453,6 +490,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -471,6 +510,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -490,6 +531,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -508,6 +551,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }
@@ -527,6 +572,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
             return handleReturn(context, rj);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreak(context, runtime, bj);
         } finally {
             post(runtime, context, name);
         }

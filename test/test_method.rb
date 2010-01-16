@@ -7,4 +7,12 @@ class TestMethod < Test::Unit::TestCase
       String.method(:new).arity
     end
   end
+
+  def test_function_break
+    obj = Object.new
+    def obj.broken_method
+      break
+    end
+    assert_raise(LocalJumpError){obj.broken_method}
+  end
 end

@@ -445,4 +445,11 @@ public abstract class DynamicMethod {
         }
         throw rj;
     }
+
+    protected IRubyObject handleBreak(ThreadContext context, Ruby runtime, JumpException.BreakJump bj) {
+        if (bj.getTarget() == context.getFrameJumpTarget()) {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, runtime.getNil(), "unexpected break");
+        }
+        throw bj;
+    }
 }
