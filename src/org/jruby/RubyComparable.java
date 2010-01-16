@@ -117,6 +117,8 @@ public class RubyComparable {
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                // clear error info resulting from failure to compare (JRUBY-3292)
+                context.setErrorInfo(runtime.getNil());
                 return returnValueOnError;
             } else {
                 throw e;
