@@ -196,7 +196,7 @@ module JRuby::Compiler
         static_init << "    __ruby__.getLoadService().lockAndRequire(\"#{script_name}\");\n"
       end
       static_init << "    RubyClass metaclass = __ruby__.getClass(\"#{name}\");\n"
-      static_init << "    metaClass.setClassAllocator(#{name}.class);\n"
+      static_init << "    metaclass.setClassAllocator(#{name}.class);\n"
       static_init << "    if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");\n"
       static_init << "        __metaclass__ = metaclass;\n"
       static_init << "  }\n"
@@ -341,9 +341,9 @@ EOJ
       method_stack.pop
     end
 
-    def build_signature(args)
+    def build_signature(signature_args)
       # assumes hash node
-      ary = args.child_nodes[0].child_nodes
+      ary = signature_args.child_nodes[0].child_nodes
       params = ary[0]
       ret = ary[1]
 
@@ -358,12 +358,31 @@ EOJ
       sig
     end
 
+    def build_args_signature(params)
+      sig = ["Object"]
+      param_strings = params.child_nodes.map do |param|
+        if param.respond_to? :type_node
+          type_node = param.type_node
+          next type_node.name if defined? type_node.name
+          next type_node.value if defined? type_node.value
+        end
+        raise 'unknown signature element: ' + param.to_s
+      end
+      sig.concat(param_strings)
+
+      sig
+    end
+
     def method_missing(name, *args)
       if name.to_s =~ /^visit/
         node = args[0]
         puts "* entering: #{node.node_type}" if $VERBOSE
         case node.node_type
         when NodeType::ARGSNODE
+          # Duby-style arg specification, only pre supported for now
+          if node.pre && node.pre.child_nodes.find {|pre_arg| pre_arg.respond_to? :type_node}
+            current_method.java_signature = build_args_signature(node.pre)
+          end
           node.pre && node.pre.child_nodes.each do |pre_arg|
             current_method.args << pre_arg.name
           end
