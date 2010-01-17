@@ -196,6 +196,7 @@ module JRuby::Compiler
         static_init << "    __ruby__.getLoadService().lockAndRequire(\"#{script_name}\");\n"
       end
       static_init << "    RubyClass metaclass = __ruby__.getClass(\"#{name}\");\n"
+      static_init << "    metaClass.setClassAllocator(#{name}.class);\n"
       static_init << "    if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");\n"
       static_init << "        __metaclass__ = metaclass;\n"
       static_init << "  }\n"

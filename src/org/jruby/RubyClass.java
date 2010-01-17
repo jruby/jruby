@@ -139,6 +139,8 @@ public class RubyClass extends RubyModule {
                 }
             }
         };
+        
+        this.reifiedClass = cls;
     }
 
     public void setRubyClassAllocator(final Class cls) {
@@ -158,6 +160,8 @@ public class RubyClass extends RubyModule {
                     }
                 }
             };
+
+            this.reifiedClass = cls;
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
