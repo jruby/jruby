@@ -50,7 +50,11 @@ public class ConvertDouble {
      * @return the converted double value
      */
     public static final double byteListToDouble(ByteList bytes, boolean strict) {
-        return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), strict);
+        return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), strict, false);
+    }
+
+    public static final double byteListToDouble19(ByteList bytes, boolean strict) {
+        return byteArrayToDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), strict, true);
     }
 
     /**
@@ -65,7 +69,7 @@ public class ConvertDouble {
      *               otherwise, the laxer rules of str.to_f are employed.
      * @return the converted double value
      */
-    private static final double byteArrayToDouble(byte[] bytes, int begin, int buflen, boolean strict) {
+    private static final double byteArrayToDouble(byte[] bytes, int begin, int buflen, boolean strict, boolean is19) {
         // Simple cases  ( abs(exponent) <= 22 [up to 37 depending on significand length])
         // are converted directly, which is considerably faster than creating a Java
         // String and passing it to Double.parseDouble() (which in turn passes it to
@@ -140,7 +144,7 @@ public class ConvertDouble {
                 if (strict) {
                     for (; i < buflen && isWhitespace(bytes[i]); i++) ;
                 } else {
-                    for (; i < buflen && (isWhitespace(ival = bytes[i]) || ival == '_'); i++) ;
+                    for (; i < buflen && (isWhitespace(ival = bytes[i]) || (!is19 && ival == '_')); i++) ;
                 }
                 if ( i >= buflen) {
                     state = strict ? SERR_NOT_STRICT : SCOMPLETE;

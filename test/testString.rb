@@ -840,3 +840,18 @@ str.split( "\\n" )
 str.split( "\\n" )
 str.split( "\n" )
 test_equal(["a", "b", "c"], str.split( "\\n" ))
+
+# JRUBY-4424
+def assert_converted_to_fixnum(float_expected, hex_expected, int_expected, actual)
+  test_equal(float_expected, actual.to_f)
+  test_equal(hex_expected, actual.hex)
+  test_equal(int_expected, actual.to_i)
+end
+
+assert_converted_to_fixnum(9.0, 9, 9, "_9")
+assert_converted_to_fixnum(19.0, 25, 19, "1_9")
+assert_converted_to_fixnum(19.0, 25, 19, "19_")
+assert_converted_to_fixnum(19.0, 1, 1, "1__9")
+assert_converted_to_fixnum(1.9, 1, 1, "1_._9")
+assert_converted_to_fixnum(1.9, 1, 1, "1_.9")
+assert_converted_to_fixnum(1.9, 1, 1, "1._9")

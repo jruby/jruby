@@ -17,8 +17,13 @@ public class ConvertBytes {
     private byte[] data;
     private int base;
     private final boolean badcheck;
+    private final boolean is19;
 
     public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck) {
+        this(runtime, _str, base, badcheck, false);
+    }
+
+    public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck, boolean is19) {
         this.runtime = runtime;
         this._str = _str;
         this.str = _str.getBegin();
@@ -26,6 +31,7 @@ public class ConvertBytes {
         this.end = str + _str.getRealSize();
         this.badcheck = badcheck;
         this.base = base;
+        this.is19 = is19;
     }
 
     public static final byte[] intToBinaryBytes(int i) {
@@ -173,8 +179,11 @@ public class ConvertBytes {
      *
      */
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        //System.err.println("byteListToInum(" + str + ")");
         return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+    }
+
+    public static RubyInteger byteListToInum19(Ruby runtime, ByteList str, int base, boolean badcheck) {
+        return new ConvertBytes(runtime, str, base, badcheck, true).byteListToInum();
     }
 
     private final static byte[] conv_digit = new byte[128];
@@ -275,7 +284,7 @@ public class ConvertBytes {
     }
 
     private void ignoreLeadingWhitespace() {
-        if(badcheck) {
+        if(badcheck || is19) {
             while(isSpace(str)) {
                 str++;
             }

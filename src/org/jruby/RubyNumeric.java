@@ -353,10 +353,17 @@ public class RubyNumeric extends RubyObject {
      *          will be 0.0 if the conversion failed.
      */
     public static RubyFloat str2fnum(Ruby runtime, RubyString arg, boolean strict) {
+        return str2fnumCommon(runtime, arg, strict, biteListCaller18);
+    }
+    
+    public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
+        return str2fnumCommon(runtime, arg, strict, biteListCaller19);
+    }
+
+    private static RubyFloat str2fnumCommon(Ruby runtime, RubyString arg, boolean strict, ByteListCaller caller) {
         final double ZERO = 0.0;
-        
         try {
-            return new RubyFloat(runtime,ConvertDouble.byteListToDouble(arg.getByteList(),strict));
+            return new RubyFloat(runtime, caller.yield(arg, strict));
         } catch (NumberFormatException e) {
             if (strict) {
                 throw runtime.newArgumentError("invalid value for Float(): "
@@ -365,6 +372,25 @@ public class RubyNumeric extends RubyObject {
             return new RubyFloat(runtime,ZERO);
         }
     }
+
+    private static interface ByteListCaller {
+        public double yield(RubyString arg, boolean strict);
+    }
+
+    private static class ByteListCaller18 implements ByteListCaller {
+        public double yield(RubyString arg, boolean strict) {
+            return ConvertDouble.byteListToDouble(arg.getByteList(),strict);
+        }
+    }
+    private static final ByteListCaller18 biteListCaller18 = new ByteListCaller18();
+
+    private static class ByteListCaller19 implements ByteListCaller {
+        public double yield(RubyString arg, boolean strict) {
+            return ConvertDouble.byteListToDouble19(arg.getByteList(),strict);
+        }
+    }
+    private static final ByteListCaller19 biteListCaller19 = new ByteListCaller19();
+
     
     /** Numeric methods. (num_*)
      *

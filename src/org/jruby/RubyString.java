@@ -3989,7 +3989,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_to_i
      *
      */
-    @JRubyMethod(name = "to_i")
+    @JRubyMethod(name = "to_i", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_i() {
         return stringToInum(10, false);
     }
@@ -3997,15 +3997,29 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** rb_str_to_i
      *
      */
-    @JRubyMethod(name = "to_i")
+    @JRubyMethod(name = "to_i", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_i(IRubyObject arg0) {
-        long base = arg0.convertToInteger().getLongValue();
+        long base = checkBase(arg0);
+        return stringToInum((int)base, false);
+    }
 
+    @JRubyMethod(name = "to_i", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_i19() {
+        return stringToInum19(10, false);
+    }
+
+    @JRubyMethod(name = "to_i", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_i19(IRubyObject arg0) {
+        long base = checkBase(arg0);
+        return stringToInum19((int)base, false);
+    }
+
+    private long checkBase(IRubyObject arg0) {
+        long base = arg0.convertToInteger().getLongValue();
         if(base < 0) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-
-        return stringToInum((int)base, false);
+        return base;
     }
 
     /** rb_str_to_inum
@@ -4014,6 +4028,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject stringToInum(int base, boolean badcheck) {
         ByteList s = this.value;
         return ConvertBytes.byteListToInum(getRuntime(), s, base, badcheck);
+    }
+
+    public IRubyObject stringToInum19(int base, boolean badcheck) {
+        ByteList s = this.value;
+        return ConvertBytes.byteListToInum19(getRuntime(), s, base, badcheck);
     }
 
     /** rb_str_oct
@@ -4045,15 +4064,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (!value.getEncoding().isAsciiCompatible()) {
             throw context.getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
         }
-        return hex(context);
+        return stringToInum19(16, false);
     }
 
     /** rb_str_to_f
      *
      */
-    @JRubyMethod(name = "to_f")
+    @JRubyMethod(name = "to_f", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_f() {
         return RubyNumeric.str2fnum(getRuntime(), this);
+    }
+
+    @JRubyMethod(name = "to_f", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_f19() {
+        return RubyNumeric.str2fnum19(getRuntime(), this, false);
     }
 
     /** rb_str_split_m
