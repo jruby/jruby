@@ -29,6 +29,10 @@
 package org.jruby.compiler;
 
 
+import java.io.File;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
@@ -124,11 +128,8 @@ public class JITCompiler implements JITCompilerMBean {
                 }
             }
 
-
-
-            JITClassGenerator generator = new JITClassGenerator(name, context.getRuntime(), method, context);
-
             String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
+            JITClassGenerator generator = new JITClassGenerator(name, key, context.getRuntime(), method, context);
 
             Class<Script> sourceClass = (Class<Script>)instanceConfig.getClassCache().cacheClassByKey(key, generator);
 
@@ -172,26 +173,37 @@ public class JITCompiler implements JITCompilerMBean {
     
     public class JITClassGenerator implements ClassCache.ClassGenerator {
         private StandardASMCompiler asmCompiler;
-        private DefaultMethod method;
         private StaticScope staticScope;
         private Node bodyNode;
         private ArgsNode argsNode;
         private CallConfiguration jitCallConfig;
+        private String digestString;
         
         private byte[] bytecode;
         private String name;
         private Ruby ruby;
         
-        public JITClassGenerator(String name, Ruby ruby, DefaultMethod method, ThreadContext context) {
-            this.method = method;
-            String packageName = "ruby/jit/" + JavaNameMangler.mangleFilenameForClasspath(method.getPosition().getFile());
-            String cleanName = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+        public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context) {
+            String packageName = "ruby/jit";
+            try {
+                MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+                sha1.update(key.getBytes());
+                byte[] digest = sha1.digest();
+                char[] digestChars = new char[digest.length * 2];
+                for (int i = 0; i < digest.length; i++) {
+                    digestChars[i * 2] = Character.forDigit(digest[i] & 0xF, 16);
+                    digestChars[i * 2 + 1] = Character.forDigit((digest[i] & 0xF0) >> 4, 16);
+                }
+                this.digestString = new String(digestChars).toUpperCase();
+            } catch (NoSuchAlgorithmException nsae) {
+                throw new NotCompilableException(nsae.getLocalizedMessage());
+            }
+            String cleanName = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "_" + digestString;
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
             final String filename = calculateFilename(argsNode, bodyNode);
             staticScope = method.getStaticScope();
-            asmCompiler = new StandardASMCompiler(cleanName + 
-                    method.hashCode() + "_" + context.hashCode(), filename);
+            asmCompiler = new StandardASMCompiler(cleanName, filename);
             this.ruby = ruby;
         }
         
