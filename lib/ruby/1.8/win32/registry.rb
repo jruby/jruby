@@ -338,7 +338,7 @@ module Win32
       def initialize(code)
         @code = code
         msg = "\0" * 1024
-        len = FormatMessageA.call(0x1200, nil, code, 0, msg, 1024, nil)
+        len = FormatMessageA.call(0x1200, 0, code, 0, msg, 1024, 0)
         super msg[0, len].tr("\r", '').chomp
       end
       attr_reader :code
@@ -447,7 +447,7 @@ module Win32
       def QueryValue(hkey, name)
         type = packdw(0)
         size = packdw(0)
-        check RegQueryValueExA.call(hkey, name, nil, type, nil, size)
+        check RegQueryValueExA.call(hkey, name, 0, type, 0, size)
         data = ' ' * unpackdw(size)
         check RegQueryValueExA.call(hkey, name, 0, type, data, size)
         [ unpackdw(type), data[0, unpackdw(size)] ]
