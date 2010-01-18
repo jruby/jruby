@@ -1398,9 +1398,9 @@ public class RubyEnumerable {
         }
 
         IRubyObject enumerator = context.getRuntime().getEnumerator().allocate();
-        enumerator.getInstanceVariables().setInstanceVariable("chunk_enumerable", self);
-        enumerator.getInstanceVariables().setInstanceVariable("chunk_categorize", RubyProc.newProc(context.getRuntime(), block, block.type));
-        enumerator.getInstanceVariables().setInstanceVariable("chunk_initial_state", initialState);
+        enumerator.getInternalVariables().setInternalVariable("chunk_enumerable", self);
+        enumerator.getInternalVariables().setInternalVariable("chunk_categorize", RubyProc.newProc(context.getRuntime(), block, block.type));
+        enumerator.getInternalVariables().setInternalVariable("chunk_initial_state", initialState);
 
         RuntimeHelpers.invoke(context, enumerator, "initialize", 
                               CallBlock.newCallClosure(self, context.getRuntime().getEnumerable(), Arity.noArguments(), 
@@ -1429,9 +1429,9 @@ public class RubyEnumerable {
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
             IRubyObject args = checkArgs(runtime, largs);
             final ChunkArg arg = new ChunkArg();
-            IRubyObject enumerable = enumerator.getInstanceVariables().getInstanceVariable("chunk_enumerable");
-            arg.categorize = enumerator.getInstanceVariables().getInstanceVariable("chunk_categorize");
-            arg.state = enumerator.getInstanceVariables().getInstanceVariable("chunk_initial_state");
+            IRubyObject enumerable = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_enumerable");
+            arg.categorize = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_categorize");
+            arg.state = (IRubyObject)enumerator.getInternalVariables().getInternalVariable("chunk_initial_state");
             arg.prev_value = runtime.getNil();
             arg.prev_elts = runtime.getNil();
             arg.yielder = args;

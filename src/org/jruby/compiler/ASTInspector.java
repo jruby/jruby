@@ -437,6 +437,8 @@ public class ASTInspector {
         case ENSURENODE:
             disable();
             break;
+        case ENCODINGNODE:
+            break;
         case EVSTRNODE:
             inspect(((EvStrNode)node).getBody());
             break;

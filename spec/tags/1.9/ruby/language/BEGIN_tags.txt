@@ -1,0 +1,1 @@
+fails:The BEGIN keyword runs in a shared scope

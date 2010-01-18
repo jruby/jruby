@@ -1075,7 +1075,7 @@
   <!-- stable specs -->
   <target name="spec" depends="fetch-stable-specs, run-specs"
       description="Runs known good version of rubyspecs."/>
-  <target name="spec-short" depends="fetch-stable-specs, run-specs-short"
+  <target name="spec-short" depends="fetch-stable-specs, run-specs-short, run-specs-short-1.9"
       description="Runs known good version of rubyspecs, excluding unstable library specs."/>
   <target name="spec-short-1.9" depends="fetch-stable-specs, run-specs-short-1.9"
       description="Runs known good version of rubyspecs, excluding unstable library specs."/>

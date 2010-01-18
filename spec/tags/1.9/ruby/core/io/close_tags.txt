@@ -1,1 +1,2 @@
-fails:IO#close on an IO.popen stream sets $?
+critical(hangs):IO#close on an IO.popen stream clears #pid
+critical(hangs):IO#close on an IO.popen stream waits for the child to exit

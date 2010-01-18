@@ -8,3 +8,4 @@ fails:String#encode replaces xml characters and quotes the result
 fails:String#encode returns a copy of self when called with only a target encoding
 fails:String#encode returns self when called with only a target encoding
 fails:String#encode returns a String with the given encoding
+fails:String#encode raises an Encoding::InvalidByteSequenceError for invalid byte sequences

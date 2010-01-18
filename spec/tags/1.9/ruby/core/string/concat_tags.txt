@@ -1,0 +1,1 @@
+fails:String#concat raises RangeError for negative length argument

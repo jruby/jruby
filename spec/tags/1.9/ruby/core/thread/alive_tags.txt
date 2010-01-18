@@ -1,0 +1,1 @@
+fails:Thread#alive? reports aborting on a killed thread

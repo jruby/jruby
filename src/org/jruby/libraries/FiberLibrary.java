@@ -38,8 +38,10 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
@@ -80,6 +82,7 @@ public class FiberLibrary implements Library {
         private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
         private Block block;
         private IRubyObject result;
+        private RubyThread parent;
         private Runnable runnable;
         private boolean alive = false;
 
@@ -87,6 +90,7 @@ public class FiberLibrary implements Library {
         public IRubyObject initialize(ThreadContext context, final IRubyObject[] args, Block block) {
             this.block = block;
             final Ruby runtime = context.getRuntime();
+            this.parent = context.getThread();
             this.result = runtime.getNil();
             this.runnable = new Runnable() {
                 public void run() {
@@ -96,6 +100,9 @@ public class FiberLibrary implements Library {
                         context.setFiber(Fiber.this);
                         try {
                             result = Fiber.this.block.yieldArray(runtime.getCurrentContext(), result, null, null);
+                        } catch (RaiseException re) {
+                            // re-raise exception in parent thread
+                            parent.raise(new IRubyObject[] {re.getException()}, Block.NULL_BLOCK);
                         } finally {
                             yieldLock.notify();
                         }
