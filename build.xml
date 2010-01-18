@@ -293,7 +293,6 @@
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
@@ -322,10 +321,8 @@
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
-        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-        <zipfileset src="${build.lib.dir}/emma.jar"/>
         <metainf dir="${base.dir}/spi">
           <include name="services/**"/>
         </metainf>
@@ -370,7 +367,6 @@
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
@@ -399,7 +395,6 @@
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
-        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -473,7 +468,6 @@
           <exclude name="META-INF/jruby.home/lib/ruby/1.9/**"/>
         </fileset>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
@@ -502,7 +496,6 @@
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
-        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
@@ -570,7 +563,6 @@
           <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
         </fileset>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
@@ -599,7 +591,6 @@
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
-        <zipfileset src="${build.lib.dir}/dynalang-0.3.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
