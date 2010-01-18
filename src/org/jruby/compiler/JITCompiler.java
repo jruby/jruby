@@ -30,9 +30,10 @@ package org.jruby.compiler;
 
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
@@ -53,9 +54,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.SafePropertyAccessor;
+import org.objectweb.asm.ClassReader;
 
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
+    public static final boolean DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
     
     private AtomicLong compiledCount = new AtomicLong(0);
     private AtomicLong successCount = new AtomicLong(0);
@@ -163,6 +167,7 @@ public class JITCompiler implements JITCompilerMBean {
             method.switchToJitted(jitCompiledScript, generator.callConfig());
             return null;
         } catch (Throwable t) {
+            if (context.getRuntime().getDebug().isTrue()) t.printStackTrace();
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
 
             failCount.incrementAndGet();
@@ -182,9 +187,12 @@ public class JITCompiler implements JITCompilerMBean {
         private byte[] bytecode;
         private String name;
         private Ruby ruby;
+        private String packageName;
+        private String className;
+        private String filename;
         
         public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context) {
-            String packageName = "ruby/jit";
+            this.packageName = "ruby/jit";
             try {
                 MessageDigest sha1 = MessageDigest.getInstance("SHA1");
                 sha1.update(key.getBytes());
@@ -198,12 +206,13 @@ public class JITCompiler implements JITCompilerMBean {
             } catch (NoSuchAlgorithmException nsae) {
                 throw new NotCompilableException(nsae.getLocalizedMessage());
             }
-            String cleanName = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "_" + digestString;
+            this.className = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "_" + digestString;
+            this.name = className.replaceAll("/", ".");
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
-            final String filename = calculateFilename(argsNode, bodyNode);
+            filename = calculateFilename(argsNode, bodyNode);
             staticScope = method.getStaticScope();
-            asmCompiler = new StandardASMCompiler(cleanName, filename);
+            asmCompiler = new StandardASMCompiler(className, filename);
             this.ruby = ruby;
         }
         
@@ -211,9 +220,31 @@ public class JITCompiler implements JITCompilerMBean {
         protected void compile() {
             if (bytecode != null) return;
             
+            // check if we have a cached compiled version on disk
+            String codeCache = RubyInstanceConfig.JIT_CODE_CACHE;
+            File cachedClassFile = new File(codeCache + "/" + className + ".class");
+
+            if (codeCache != null &&
+                    cachedClassFile.exists()) {
+                FileInputStream fis = null;
+                try {
+                    if (DEBUG) System.err.println("loading cached code from: " + cachedClassFile);
+                    fis = new FileInputStream(cachedClassFile);
+                    bytecode = new byte[(int)fis.getChannel().size()];
+                    fis.read(bytecode);
+                    name = new ClassReader(bytecode).getClassName();
+                    return;
+                } catch (Exception e) {
+                    // ignore and proceed to compile
+                } finally {
+                    try {fis.close();} catch (Exception e) {}
+                }
+            }
+            
             // Time the compilation
             long start = System.nanoTime();
-            
+
+            asmCompiler = new StandardASMCompiler(className, filename);
             asmCompiler.startScript(staticScope);
             final ASTCompiler compiler = ruby.getInstanceConfig().newCompiler();
 
@@ -256,13 +287,33 @@ public class JITCompiler implements JITCompilerMBean {
             }
             
             bytecode = asmCompiler.getClassByteArray();
-            name = CodegenUtils.c(asmCompiler.getClassname());
             
             if (bytecode.length > ruby.getInstanceConfig().getJitMaxSize()) {
                 bytecode = null;
                 throw new NotCompilableException(
                         "JITed method size exceeds configured max of " +
                         ruby.getInstanceConfig().getJitMaxSize());
+            }
+
+            if (codeCache != null && new File(codeCache).isDirectory()) {
+                if (!new File(codeCache, packageName).isDirectory()) {
+                    boolean createdDirs = new File(codeCache, packageName).mkdirs();
+                    if (!createdDirs) {
+                        ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
+                    }
+                }
+                // write to code cache
+                FileOutputStream fos = null;
+                try {
+                    if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
+                    fos = new FileOutputStream(cachedClassFile);
+                    fos.write(bytecode);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // ignore
+                } finally {
+                    try {fos.close();} catch (Exception e) {}
+                }
             }
             
             compiledCount.incrementAndGet();
@@ -276,14 +327,16 @@ public class JITCompiler implements JITCompilerMBean {
                 }
             }
         }
+
+        public void generate() {
+            compile();
+        }
         
         public byte[] bytecode() {
-            compile();
             return bytecode;
         }
 
         public String name() {
-            compile();
             return name;
         }
         
