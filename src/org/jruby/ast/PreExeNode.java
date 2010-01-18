@@ -58,14 +58,19 @@ public class PreExeNode extends IterNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // ensure the scope has a module associated (thish will usualy just ==
+        // whatever the toplevel module is).
+        getScope().determineModule();
+
         DynamicScope scope = DynamicScope.newDynamicScope(getScope());
+
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);
 
         // FIXME: I use a for block to implement END node because we need a proc which captures
         // its enclosing scope.   ForBlock now represents these node and should be renamed.
         Block block = InterpretedBlock.newInterpretedClosure(context, this, self);
-        
+
         try {
             block.yield(context, null);
         } finally {
