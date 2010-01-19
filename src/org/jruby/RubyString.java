@@ -78,7 +78,6 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -92,12 +91,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.ConvertBytes;
 import org.jruby.util.string.JavaCrypt;
 
 /**
@@ -2291,7 +2290,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return append(other);
     }
 
-    @JRubyMethod(name = {"concat", "<<"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"concat", "<<"}, backtrace = true, compat = CompatVersion.RUBY1_9)
     public RubyString concat19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum) {
@@ -2299,7 +2298,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (c < 0) {
                 throw runtime.newRangeError("negative string size (or size too big)");
             }
-
             return concatNumeric(runtime, c);
         } else if (other instanceof RubyBignum) {
             if (((RubyBignum) other).getBigIntegerValue().signum() < 0) {
