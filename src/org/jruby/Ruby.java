@@ -1407,7 +1407,10 @@ public final class Ruby {
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
 
         if(is1_9()) {
+            // see ruby.c's ruby_init_gems function
+            defineModule("Gem"); // dummy Gem module for prelude
             getLoadService().require("builtin/prelude.rb");
+            getLoadService().require("builtin/gem_prelude.rb");
         }
 
         getLoadService().require("builtin/core_ext/symbol");

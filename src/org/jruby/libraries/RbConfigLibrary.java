@@ -176,6 +176,7 @@ public class RbConfigLibrary implements Library {
         String shareDir = new NormalizedFile(normalizedHome, "share").getPath();
 
         setConfig(configHash, "libdir", libdir);
+        if (runtime.is1_9()) setConfig(configHash, "rubylibprefix",     libdir + "/ruby");
         setConfig(configHash, "rubylibdir",     rubyLibDir);
         setConfig(configHash, "sitedir",        siteDir);
         setConfig(configHash, "sitelibdir",     siteLibDir);
