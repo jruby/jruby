@@ -26,4 +26,12 @@ class TestString19 < Test::Unit::TestCase
     assert_equal(hex_expected, actual.hex)
     assert_equal(int_expected, actual.to_i)
   end
+
+  #JRUBY-4463
+  def test_concat
+    assert_raise(RangeError) {'test' << -1}
+    assert_raise(RangeError) {'test' << -2}
+    assert_raise(RangeError) {'test' << -3}
+    assert_raise(RangeError) {'test' << -2**64}
+  end
 end

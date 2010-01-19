@@ -78,7 +78,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.Java;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -2293,22 +2293,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"concat", "<<"}, compat = CompatVersion.RUBY1_9)
     public RubyString concat19(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum) {
-            Ruby runtime = context.getRuntime();
-
-            Encoding enc = value.getEncoding();
             int c = RubyNumeric.num2int(other);
             if (c < 0) {
-                throw runtime.newArgumentError("negative string size (or size too big)");
+                throw runtime.newRangeError("negative string size (or size too big)");
             }
 
-            int cl = codeLength(runtime, enc, c);
-            modify19(value.getRealSize() + cl);
-            enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
-            value.setRealSize(value.getRealSize() + cl);
-            return this;
+            return concatNumeric(runtime, c);
+        } else if (other instanceof RubyBignum) {
+            if (((RubyBignum) other).getBigIntegerValue().signum() < 0) {
+                throw runtime.newRangeError("negative string size (or size too big)");
+            }
+            long c = ((RubyBignum) other).getLongValue();
+            return concatNumeric(runtime, (int) c);
         }
         return append19(other);
+    }
+
+    private RubyString concatNumeric(Ruby runtime, int c) {
+        Encoding enc = value.getEncoding();
+        int cl = codeLength(runtime, enc, c);
+        modify19(value.getRealSize() + cl);
+        enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
+        value.setRealSize(value.getRealSize() + cl);
+        return this;
     }
 
     /** rb_str_crypt
