@@ -34,7 +34,10 @@ import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
- *
+ * Singleton type local context provider.
+ * As of JRuby 1.5.0 Ruby runtime returned from the getRuntime() method is a
+ * classloader-global runtime.
+ * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
@@ -48,7 +51,10 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         if (localContext == null) {
             localContext = getInstance();
         }
-        return localContext.getRuntime();
+        if (!localContext.initialized) {
+            localContext.getRuntime();
+        }
+        return Ruby.getGlobalRuntime();
     }
 
     public BiVariableMap getVarMap() {

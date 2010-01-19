@@ -301,7 +301,7 @@ public class ScriptingContainerTest {
         instance.getVarMap().clear();
         instance = null;
 
-        instance = new ScriptingContainer(LocalVariableBehavior.PERSISTENT);
+        instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
         instance.runScriptlet("ivalue = 200000");
         assertEquals(200000L, instance.get("ivalue"));
         
