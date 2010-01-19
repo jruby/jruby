@@ -12,7 +12,7 @@ class TC_Dir_Entries_Class < Test::Unit::TestCase
    def setup
       @pwd = Dir.pwd
       if WINDOWS
-         @entries = `dir /A /B`.split("\n").push('.', '..')
+         @entries = `dir /A /B`.split(/\r?\n/).push('.', '..')
       else
          @entries = `ls -a1`.split("\n")
          @entries.push('.') unless @entries.include?('.')

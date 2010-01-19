@@ -26,7 +26,7 @@ module Test
          MAX_PATH = 260
          WINDOWS = true
          
-         unless JRUBY
+         #unless JRUBY
             require 'Win32API'
 
             CreateFile  = Win32API.new('kernel32', 'CreateFile', 'PLLPLLL', 'L')
@@ -41,7 +41,7 @@ module Test
                'GetWindowsDirectory', 'PL', 'L')
             
             Umask = Win32API.new('msvcrt', '_umask', 'I', 'I')
-         end
+         #end
       else
          WINDOWS = false
          require 'etc'

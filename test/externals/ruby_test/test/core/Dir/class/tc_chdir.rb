@@ -37,8 +37,12 @@ class TC_Dir_Chdir_Class < Test::Unit::TestCase
       assert_raise(ArgumentError){ Dir.chdir(@pwd, @pwd) }
       assert_raise(TypeError){ Dir.chdir(1) }
 
-      ENV["HOME"] = "bogus"
-      assert_raise_kind_of(SystemCallError){ Dir.chdir }
+      orig_home, ENV["HOME"] = ENV["HOME"], 'bogus'
+      begin
+        assert_raise_kind_of(SystemCallError){ Dir.chdir }
+      ensure
+        ENV["HOME"] = orig_home
+      end
    end
 
    def teardown

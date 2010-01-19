@@ -996,13 +996,13 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_sysread
-    File.open(@file) do |file|
+    File.open(@file, 'rb') do |file|
       assert_equal("", file.sysread(0))
       assert_equal("0", file.sysread(1))
       assert_equal("0:", file.sysread(2))
       assert_equal(" Thi", file.sysread(4))
       rest = file.sysread(100000)
-      assert_equal(SAMPLE.length*10 - (1+2+4), rest.length)
+      assert_equal(LINE_LENGTH*10 - (1+2+4), rest.length)
       assert_raise(EOFError) { file.sysread(1) }
     end
   end
@@ -1070,7 +1070,7 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_write
-    File.open(@file, "w") do |file|
+    File.open(@file, "wb") do |file|
       assert_equal(10, file.write('*' * 10))
       assert_equal(5,  file.write('!' * 5))
       assert_equal(0,  file.write(''))
