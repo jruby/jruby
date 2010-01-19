@@ -53,6 +53,11 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
      protected String jrubyLaunchMemory = "384m";
 
     /**
+     * @parameter expression="${jruby.launch.jvmArgs}"
+     */
+    protected String jvmArgs = null;
+
+    /**
      * The project compile classpath.
      *
      * @parameter default-value="${project.compileClasspathElements}"
@@ -90,8 +95,22 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
             java.setFork(true);
             java.setDir(launchDirectory);
 
-            arg = java.createJvmarg();
-            arg.setValue("-Xmx" + jrubyLaunchMemory);
+            if (jvmArgs != null) {
+                String[] splitArgs = jvmArgs.split("\\s+");
+                for (int i = 0; i < splitArgs.length; i++) {
+                    arg = java.createJvmarg();
+                    arg.setValue(splitArgs[i]);
+                    if (splitArgs[i].startsWith("-Xmx")) {
+                        jrubyLaunchMemory = null;
+                    }
+                }
+            }
+
+            if (jrubyLaunchMemory != null) {
+                arg = java.createJvmarg();
+                arg.setValue("-Xmx" + jrubyLaunchMemory);
+            }
+
             Variable classpath = new Variable();
 
             Path p = new Path(java.getProject());
@@ -99,7 +118,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
             p.add((Path) project.getReference("maven.compile.classpath"));
             classpath.setKey("JRUBY_PARENT_CLASSPATH");
             classpath.setValue(p.toString());
-            
+
             java.addEnv(classpath);
         }
 
@@ -114,7 +133,7 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         p.add((Path) project.getReference("maven.plugin.classpath"));
         p.add((Path) project.getReference("maven.compile.classpath"));
         getLog().debug("java classpath: " + p.toString());
-        
+
         for (int i = 0; i < args.length; i++) {
             arg = java.createArg();
             arg.setValue(args[i]);
@@ -169,9 +188,9 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
 
         Path p = new Path(project);
         p.setPath(StringUtils.join(list.iterator(), File.pathSeparator));
-        project.addReference(reference, p);        
+        project.addReference(reference, p);
     }
-    
+
     public class LogAdapter implements BuildListener {
         public void buildStarted(BuildEvent event) {
             log(event);

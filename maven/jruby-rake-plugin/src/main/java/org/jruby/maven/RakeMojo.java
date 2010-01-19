@@ -17,7 +17,7 @@ public class RakeMojo extends AbstractJRubyMojo {
      * @parameter expression="${jruby.rakefile}"
      */
     private String rakefile = null;
-    
+
     /**
      * @parameter expression="${project.build.directory}"
      * @required
@@ -38,6 +38,7 @@ public class RakeMojo extends AbstractJRubyMojo {
         outputDirectory.mkdirs();
         ensureGem("rake");
         List allArgs = new ArrayList();
+
         allArgs.add("-S");
         allArgs.add("rake");
         if (script != null) {
