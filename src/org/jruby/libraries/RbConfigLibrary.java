@@ -104,7 +104,13 @@ public class RbConfigLibrary implements Library {
         configModule.defineConstant("CONFIG", configHash);
         runtime.getObject().defineConstant("RbConfig", configModule);
 
-        String[] versionParts = Constants.RUBY_VERSION.split("\\.");
+        String[] versionParts;
+        if (runtime.is1_9()) {
+            versionParts = Constants.RUBY1_9_VERSION.split("\\.");
+        } else {
+            versionParts = Constants.RUBY_VERSION.split("\\.");
+        }
+        
         setConfig(configHash, "MAJOR", versionParts[0]);
         setConfig(configHash, "MINOR", versionParts[1]);
         setConfig(configHash, "TEENY", versionParts[2]);
