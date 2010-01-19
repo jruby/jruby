@@ -250,6 +250,9 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.reflected.handles", false)
             || SafePropertyAccessor.getBoolean("jruby.reflection", false);
 
+    public static final boolean NO_UNWRAP_PROCESS_STREAMS
+            = SafePropertyAccessor.getBoolean("jruby.process.noUnwrap", false);
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 
@@ -528,6 +531,8 @@ public class RubyInstanceConfig {
                 .append("       Set whether JMX management is enabled. Default is false.\n")
                 .append("    jruby.jump.backtrace=true|false\n")
                 .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
+                .append("    jruby.process.noUnwrap=true|false\n")
+                .append("       Do not unwrap process streams (IBM Java 6 issue). Default is false.\n")
                 .append("\nDEBUGGING/LOGGING:\n")
                 .append("    jruby.debug.loadService=true|false\n")
                 .append("       LoadService logging\n")

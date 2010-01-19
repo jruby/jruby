@@ -398,7 +398,7 @@ public class ShellLauncher {
 
     public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
         try {
-            POpenProcess aProcess = new POpenProcess(popenShared(runtime, rawArgs), runtime);
+            POpenProcess aProcess = new POpenProcess(popenShared(runtime, rawArgs));
             return getPidFromProcess(aProcess);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
@@ -524,7 +524,7 @@ public class ShellLauncher {
     }
 
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
-        return new POpenProcess(popenShared(runtime, strings), runtime);
+        return new POpenProcess(popenShared(runtime, strings));
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
@@ -558,6 +558,7 @@ public class ShellLauncher {
      * @return An unwrapped stream, presumably unbuffered
      */
     public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
+        if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
         while (filteredStream instanceof FilterOutputStream) {
             try {
                 filteredStream = (OutputStream)
@@ -579,6 +580,7 @@ public class ShellLauncher {
      * @return An unwrapped stream, presumably unbuffered
      */
     public static InputStream unwrapBufferedStream(InputStream filteredStream) {
+        if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
         while (filteredStream instanceof FilterInputStream) {
             try {
                 filteredStream = (InputStream)
@@ -593,8 +595,11 @@ public class ShellLauncher {
 
     public static class POpenProcess extends Process {
         private final Process child;
-        private final Ruby runtime;
-        private final ModeFlags modes;
+
+        // real stream references, to keep them from being GCed prematurely
+        private InputStream realInput;
+        private OutputStream realOutput;
+        private InputStream realInerr;
 
         private InputStream input;
         private OutputStream output;
@@ -608,8 +613,6 @@ public class ShellLauncher {
 
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
-            this.runtime = runtime;
-            this.modes = modes;
 
             if (modes.isWritable()) {
                 prepareOutput(child);
@@ -629,10 +632,8 @@ public class ShellLauncher {
             pumpInerr(child, runtime);
         }
 
-        public POpenProcess(Process child, Ruby runtime) {
+        public POpenProcess(Process child) {
             this.child = child;
-            this.runtime = runtime;
-            this.modes = null;
 
             prepareOutput(child);
             prepareInput(child);
@@ -721,7 +722,8 @@ public class ShellLauncher {
 
         private void prepareInput(Process child) {
             // popen callers wants to be able to read, provide subprocess in directly
-            input = unwrapBufferedStream(child.getInputStream());
+            realInput = child.getInputStream();
+            input = unwrapBufferedStream(realInput);
             if (input instanceof FileInputStream) {
                 inputChannel = ((FileInputStream) input).getChannel();
             } else {
@@ -732,7 +734,8 @@ public class ShellLauncher {
 
         private void prepareInerr(Process child) {
             // popen callers wants to be able to read, provide subprocess in directly
-            inerr = unwrapBufferedStream(child.getErrorStream());
+            realInerr = child.getErrorStream();
+            inerr = unwrapBufferedStream(realInerr);
             if (inerr instanceof FileInputStream) {
                 inerrChannel = ((FileInputStream) inerr).getChannel();
             } else {
@@ -743,7 +746,8 @@ public class ShellLauncher {
 
         private void prepareOutput(Process child) {
             // popen caller wants to be able to write, provide subprocess out directly
-            output = unwrapBufferedStream(child.getOutputStream());
+            realOutput = child.getOutputStream();
+            output = unwrapBufferedStream(realOutput);
             if (output instanceof FileOutputStream) {
                 outputChannel = ((FileOutputStream) output).getChannel();
             } else {
