@@ -1245,6 +1245,8 @@ public class ASTCompiler {
         case CONSTNODE:
         case FCALLNODE:
         case CLASSVARNODE:
+        case COLON2NODE:
+        case COLON3NODE:
             // these are all simple cases that don't require the heavier defined logic
             compileGetDefinition(node, context);
             break;
@@ -1485,25 +1487,7 @@ public class ASTCompiler {
                                     }
                                 }
                             };
-                    BranchCallback isConstant = new BranchCallback() {
-
-                                public void branch(BodyCompiler context) {
-                                    context.pushString("constant");
-                                }
-                            };
-                    BranchCallback isMethod = new BranchCallback() {
-
-                                public void branch(BodyCompiler context) {
-                                    context.pushString("method");
-                                }
-                            };
-                    BranchCallback none = new BranchCallback() {
-
-                                public void branch(BodyCompiler context) {
-                                    context.pushNull();
-                                }
-                            };
-                    context.isConstantBranch(setup, isConstant, isMethod, none, name);
+                    context.isConstantBranch(setup, name);
                     break;
                 }
             case CALLNODE:

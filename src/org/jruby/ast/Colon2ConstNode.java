@@ -40,14 +40,10 @@ public class Colon2ConstNode extends Colon2Node {
     @Override
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
        try {
-            if (isModuleAndHasConstant(leftNode.interpret(runtime, context, self, aBlock))) return "constant";
+            if (RuntimeHelpers.isModuleAndHasConstant(leftNode.interpret(runtime, context, self, aBlock), name)) return "constant";
         } catch (JumpException e) {}
 
         return null;
-    }
-
-    private boolean isModuleAndHasConstant(IRubyObject left) {
-        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantFromNoConstMissing(name) != null;
     }
 
     public IRubyObject getValue(ThreadContext context, RubyModule target) {

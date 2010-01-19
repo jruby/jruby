@@ -1787,4 +1787,14 @@ public class RuntimeHelpers {
         }
         throw context.getRuntime().newArgumentError(length, expected);
     }
+
+    public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
+        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantFromNoConstMissing(name) != null;
+    }
+
+    public static String getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
+        if (isModuleAndHasConstant(left, name)) return "constant";
+        if (left.getMetaClass().isMethodBound(name, true)) return "method";
+        return null;
+    }
 }

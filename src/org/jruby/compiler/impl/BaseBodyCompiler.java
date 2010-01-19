@@ -1804,53 +1804,108 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.go_to((Label) gotoToken);
     }
 
-    public void isConstantBranch(final BranchCallback setup, final BranchCallback isConstant, final BranchCallback isMethod, final BranchCallback none, final String name) {
-        rescue(new BranchCallback() {
-
+    public void isConstantBranch(final BranchCallback setup, final String name) {
+        BranchCallback catchCode = new BranchCallback() {
+            public void branch(BodyCompiler context) {
+                pushNull();
+            }
+        };
+        BranchCallback regularCode = new BranchCallback() {
             public void branch(BodyCompiler context) {
                 setup.branch(BaseBodyCompiler.this);
-                method.dup(); //[C,C]
-                method.instance_of(p(RubyModule.class)); //[C, boolean]
-
-                Label falseJmp = new Label();
-                Label afterJmp = new Label();
-                Label nextJmp = new Label();
-                Label nextJmpPop = new Label();
-
-                method.ifeq(nextJmp); // EQ == 0 (i.e. false)   //[C]
-                method.visitTypeInsn(CHECKCAST, p(RubyModule.class));
-                method.dup(); //[C, C]
                 method.ldc(name); //[C, C, String]
-                method.invokevirtual(p(RubyModule.class), "fastGetConstantFromNoConstMissing", sig(IRubyObject.class, params(String.class))); //[C, null|C]
-                method.dup();
-                method.ifnull(nextJmpPop);
-                method.pop();
-                method.pop();
-
-                isConstant.branch(BaseBodyCompiler.this);
-
-                method.go_to(afterJmp);
-
-                method.label(nextJmpPop);
-                method.pop();
-
-                method.label(nextJmp); //[C]
-
-                metaclass();
-                method.ldc(name);
-                method.iconst_1(); // push true
-                method.invokevirtual(p(RubyClass.class), "isMethodBound", sig(boolean.class, params(String.class, boolean.class)));
-                method.ifeq(falseJmp); // EQ == 0 (i.e. false)
-
-                isMethod.branch(BaseBodyCompiler.this);
-                method.go_to(afterJmp);
-
-                method.label(falseJmp);
-                none.branch(BaseBodyCompiler.this);
-
-                method.label(afterJmp);
+                invokeUtilityMethod("getDefinedConstantOrBoundMethod", sig(String.class, IRubyObject.class, String.class));
             }
-        }, JumpException.class, none, String.class);
+        };
+        String mname = getNewRescueName();
+        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
+                script.getClassVisitor().visitMethod(
+                    ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
+                    mname,
+                    sig(String.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
+                    null,
+                    null));
+        SkinnyMethodAdapter old_method = null;
+        SkinnyMethodAdapter var_old_method = null;
+        SkinnyMethodAdapter inv_old_method = null;
+        Label exitRescue = new Label();
+        boolean oldWithinProtection = inNestedMethod;
+        inNestedMethod = true;
+        Label[] oldLoopLabels = currentLoopLabels;
+        currentLoopLabels = null;
+        int oldArgCount = argParamCount;
+        argParamCount = 0; // synthetic methods always have zero arg parameters
+        try {
+            old_method = this.method;
+            var_old_method = getVariableCompiler().getMethodAdapter();
+            inv_old_method = getInvocationCompiler().getMethodAdapter();
+            this.method = mv;
+            getVariableCompiler().setMethodAdapter(mv);
+            getInvocationCompiler().setMethodAdapter(mv);
+
+            mv.start();
+
+            // set up a local IRuby variable
+            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
+            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+            mv.astore(getRuntimeIndex());
+
+            // grab nil for local variables
+            loadRuntime();
+            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+            mv.astore(getNilIndex());
+
+            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
+            mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
+            mv.astore(getDynamicScopeIndex());
+
+            // if more than 4 vars, get values array too
+            if (scope.getNumberOfVariables() > 4) {
+                mv.aload(getDynamicScopeIndex());
+                mv.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+                mv.astore(getVarsArrayIndex());
+            }
+
+            Label beforeBody = new Label();
+            Label afterBody = new Label();
+            Label catchBlock = new Label();
+            mv.trycatch(beforeBody, afterBody, catchBlock, p(JumpException.class));
+            mv.label(beforeBody);
+
+            regularCode.branch(this);
+
+            mv.label(afterBody);
+            mv.go_to(exitRescue);
+            mv.label(catchBlock);
+            mv.astore(getExceptionIndex());
+
+            catchCode.branch(this);
+
+            mv.label(exitRescue);
+
+            mv.areturn();
+            mv.end();
+        } finally {
+            inNestedMethod = oldWithinProtection;
+            this.method = old_method;
+            getVariableCompiler().setMethodAdapter(var_old_method);
+            getInvocationCompiler().setMethodAdapter(inv_old_method);
+            currentLoopLabels = oldLoopLabels;
+            argParamCount = oldArgCount;
+        }
+
+        method.aload(StandardASMCompiler.THIS);
+        loadThreadContext();
+        loadSelf();
+        if (this instanceof ChildScopedBodyCompiler) {
+            pushNull();
+        } else {
+            loadBlock();
+        }
+        method.invokestatic(
+                script.getClassname(),
+                mname,
+                sig(String.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
     }
 
     public void metaclass() {
