@@ -137,14 +137,10 @@ public class JavaClass extends JavaObject {
         RESERVED_NAMES.put("private", new AssignedName("private", Priority.RESERVED));
         RESERVED_NAMES.put("protected", new AssignedName("protected", Priority.RESERVED));
         RESERVED_NAMES.put("public", new AssignedName("public", Priority.RESERVED));
-
-        // weakly reserved names
-        RESERVED_NAMES.put("id", new AssignedName("id", Priority.WEAKLY_RESERVED));
     }
     private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
-        STATIC_RESERVED_NAMES.put("inspect", new AssignedName("inspect", Priority.RESERVED));
     }
     private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
 
