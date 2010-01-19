@@ -1,0 +1,1 @@
+windows:FileTest.grpowned? returns false if the file exist

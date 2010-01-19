@@ -1,0 +1,2 @@
+windows:Dir.home returns the named user's home directory as a string if called with an argument
+windows:Dir.home raises an ArgumentError if the named user doesn't exist

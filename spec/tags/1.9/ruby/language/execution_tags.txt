@@ -1,0 +1,2 @@
+windows:`` returns the output of the executed sub-process
+windows:%x is the same as ``

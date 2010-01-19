@@ -1,1 +1,2 @@
 fails:FileTest.zero? accepts an object that has a #to_path method
+windows:FileTest.zero? returns true for NUL

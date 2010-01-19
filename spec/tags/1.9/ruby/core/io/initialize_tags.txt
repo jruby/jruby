@@ -1,0 +1,1 @@
+windows:IO#initialize ignores the :internal_encoding option when the same as the external encoding

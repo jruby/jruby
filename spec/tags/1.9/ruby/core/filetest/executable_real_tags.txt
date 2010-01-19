@@ -1,0 +1,1 @@
+windows:FileTest.executable_real? returns true if named file is readable by the real user id of the process, otherwise false

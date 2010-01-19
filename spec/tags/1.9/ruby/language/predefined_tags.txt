@@ -1,1 +1,2 @@
 fails:Execution variable $: does not include the current directory
+windows:Execution variable $: does not include '.' when the taint check level > 1

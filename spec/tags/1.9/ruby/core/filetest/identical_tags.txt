@@ -1,0 +1,1 @@
+windows:FileTest.identical? returns true if both named files are identical
