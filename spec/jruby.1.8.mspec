@@ -1,4 +1,4 @@
-# default RubySpec/CI settings for JRuby.
+# Default RubySpec/CI settings for JRuby.
 
 # detect windows platform:
 require 'rbconfig'
@@ -78,10 +78,10 @@ class MSpecScript
     get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
     # exclude specs tagged with 'windows' keyword
-    set :xtags, ['windows']
+    set :ci_xtags, ['windows']
   end
 
-  set :ci_files, get(:language) + get(:core) + get(:library) + get(:command_line)
+  set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
 
   # The default implementation to run the specs.
   set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name'] + Config::CONFIG['EXEEXT']

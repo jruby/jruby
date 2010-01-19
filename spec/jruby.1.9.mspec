@@ -1,13 +1,15 @@
-# Configuration file for Ruby 1.9-compatible Ruby implementations.
-#
-# Unless you passed to --config (or -B) to MSpec, MSpec will automatically
-# use this config file if the Ruby interpreter with which MSpec advertises
-# itself with RUBY_VERSION =~ /1.9/
+# Default RubySpec/CI settings for JRuby in 1.9 mode.
 
+# detect windows platform:
 require 'rbconfig'
+require 'java'
+require 'jruby'
+
+IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
+WINDOWS = Config::CONFIG['host_os'] =~ /mswin/
 
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
-TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS__DIR)
+TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
 
 class MSpecScript
   # Language features specs
@@ -25,9 +27,31 @@ class MSpecScript
     '^' + SPEC_DIR + '/core/module/name_spec.rb'
   ]
 
-  # Standard library specs
+  # Filter out ObjectSpace specs if ObjectSpace is disabled
+  unless JRuby.objectspace
+    get(:core) << '^' + SPEC_DIR + '/core/objectspace/_id2ref'
+    get(:core) << '^' + SPEC_DIR + '/core/objectspace/each_object'
+  end
+
+  if IKVM
+    # ftype_spec freezes for some reason under IKVM
+    set(:core, get(:core) + ['^' + SPEC_DIR + '/core/file'])
+    # Process.kill spec hangs
+    set(:core, get(:core) + ['^' + SPEC_DIR + '/core/process'])
+  end
+
+  # An ordered list of the directories containing specs to run
+  # as the CI process.
   set :library, [
     SPEC_DIR + '/library',
+
+    # excluded for some reason, see JRUBY-4020
+    '^' + SPEC_DIR + '/library/drb',
+    '^' + SPEC_DIR + '/library/etc',
+    '^' + SPEC_DIR + '/library/net',
+    '^' + SPEC_DIR + '/library/openssl',
+    '^' + SPEC_DIR + '/library/ping',
+    '^' + SPEC_DIR + '/library/readline',
 
     # unstable
     '^' + SPEC_DIR + '/library/socket',
@@ -44,12 +68,20 @@ class MSpecScript
   # Command Line specs
   set :command_line, [ SPEC_DIR + '/command_line' ]
 
-  # An ordered list of the directories containing specs to run
-  # FIXME: add 1.9 library back at a later date
-  set :files, get(:language) + get(:core) + get(:command_line) #+ get(:library)
+  if WINDOWS
+    # core
+    get(:core) << '^' + SPEC_DIR + '/core/argf'          # hangs
+    get(:core) << '^' + SPEC_DIR + '/core/env'           # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
-  # This set of files is run by mspec ci
-  set :ci_files, get(:files)
+    # exclude specs tagged with 'windows' keyword
+    set :ci_xtags, ['windows']
+  end
+
+  # FIXME: add 1.9 library back at a later date
+  set :ci_files, get(:language) + get(:core) + get(:command_line) #+ get(:library)
 
   # Optional library specs
   set :ffi, SPEC_DIR + '/optional/ffi'
@@ -57,7 +89,7 @@ class MSpecScript
   # A list of _all_ optional library specs
   set :optional, [get(:ffi)]
 
-  set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name']
+  set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name'] + Config::CONFIG['EXEEXT']
 
   set :backtrace_filter, /mspec\//
 
