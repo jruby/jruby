@@ -160,7 +160,7 @@ public final class Frame {
         this.block = frame.block;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
-        this.jumpTarget = jumpTarget;
+        this.jumpTarget = frame.jumpTarget;
     }
 
     /**

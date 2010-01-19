@@ -1101,6 +1101,7 @@ public final class ThreadContext {
         pushFrameCopy();
         getCurrentFrame().setSelf(type);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
+
         pushScope(DynamicScope.newDynamicScope(staticScope, null));
     }
     
