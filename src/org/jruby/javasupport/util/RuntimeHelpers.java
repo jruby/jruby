@@ -1709,10 +1709,11 @@ public class RuntimeHelpers {
      * @param b
      * @return
      */
-    public static IRubyObject rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
+    public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
         Ruby runtime = context.getRuntime();
         if (a == b) return runtime.getTrue();
-        return a.callMethod(context, "==", b);
+        IRubyObject res = a.callMethod(context, "==", b);
+        return runtime.newBoolean(res.isTrue());
     }
 
     public static void traceLine(ThreadContext context) {

@@ -1977,12 +1977,17 @@ public class RubyArray extends RubyObject implements List {
         return RecursiveComparator.compare(context, "==", this, obj, null);
     }
 
-    public RubyBoolean compare(ThreadContext context, String method, IRubyObject other, Set<RecursiveComparator.Pair> seen)
-    {
+    public RubyBoolean compare(ThreadContext context, String method,
+            IRubyObject other, Set<RecursiveComparator.Pair> seen) {
+
         Ruby runtime = context.getRuntime();
 
         if (!(other instanceof RubyArray)) {
-            return runtime.getFalse();
+            if (!other.respondsTo("to_ary")) {
+                return runtime.getFalse();
+            } else {
+                return RuntimeHelpers.rbEqual(context, other, this);
+            }
         }
 
         RubyArray ary = (RubyArray) other;
