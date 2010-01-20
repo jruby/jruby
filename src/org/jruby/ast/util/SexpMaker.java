@@ -20,6 +20,7 @@ import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.FileNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.FloatNode;
@@ -239,7 +240,13 @@ public class SexpMaker {
     }
 
     private void strNode(StrNode node) {
-        sb.append(" '").append(node.getValue()).append("'");
+        if (node instanceof FileNode) {
+            // don't put the filename in, since it can vary based on filesystem
+            // layout and does not change behavior directly
+            sb.append(" __FILE__");
+        } else {
+            sb.append(" '").append(node.getValue()).append("'");
+        }
     }
 
     private void regexpNode(RegexpNode node) {
