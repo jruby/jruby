@@ -60,6 +60,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyClassPathVariable;
 import org.jruby.RubyException;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -989,7 +990,7 @@ public class Java implements Library {
 
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
-        if (!SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy")) {
+        if (!RubyInstanceConfig.INTERFACES_USE_PROXY) {
             int interfacesHashCode = interfacesHashCode(interfaces);
             // if it's a singleton class and the real class is proc, we're doing closure conversion
             // so just use Proc's hashcode
@@ -1020,7 +1021,7 @@ public class Java implements Library {
                 throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
             }
         } else {
-            return JavaObject.wrap(runtime, Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
+            Object proxyObject = Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
                 private Map parameterTypeCache = new ConcurrentHashMap();
 
                 public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
@@ -1050,7 +1051,8 @@ public class Java implements Library {
                         return RuntimeHelpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs).toJava(method.getReturnType());
                     } catch (RuntimeException e) { e.printStackTrace(); throw e; }
                 }
-            }));
+            });
+            return JavaObject.wrap(runtime, proxyObject);
         }
     }
 

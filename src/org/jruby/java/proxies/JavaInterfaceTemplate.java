@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -132,7 +133,9 @@ public class JavaInterfaceTemplate {
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
 
-            if (!Java.NEW_STYLE_EXTENSION && clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class")) {
+            if (
+                    (!Java.NEW_STYLE_EXTENSION && clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class"))
+                    || RubyInstanceConfig.INTERFACES_USE_PROXY) {
                 // superclass is a Java class...use old style impl for now
 
                 // The replacement "new" allocates and inits the Ruby object as before, but

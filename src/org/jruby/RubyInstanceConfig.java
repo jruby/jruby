@@ -253,6 +253,9 @@ public class RubyInstanceConfig {
     public static final boolean NO_UNWRAP_PROCESS_STREAMS
             = SafePropertyAccessor.getBoolean("jruby.process.noUnwrap", false);
 
+    public static final boolean INTERFACES_USE_PROXY
+            = SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy");
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 
