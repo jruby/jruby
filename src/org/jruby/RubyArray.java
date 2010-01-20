@@ -1968,6 +1968,9 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        if (this == obj) {
+            return context.getRuntime().getTrue();
+        }
         if (!(obj instanceof RubyArray)) {
             if (!obj.respondsTo("to_ary")) {
                 return context.getRuntime().getFalse();
