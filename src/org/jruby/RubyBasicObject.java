@@ -41,6 +41,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -914,7 +915,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return runtime.newFixnum(runtime.getObjectSpace().idOf(this));
             }
         } else {
-            return runtime.newFixnum(System.identityHashCode(this));
+            // use identity * 2, since fixnums get the odd IDs
+            return runtime.newFixnum(ObjectSpace.calculateObjectID(this));
         }
     }
 

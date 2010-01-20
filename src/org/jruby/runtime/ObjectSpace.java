@@ -58,8 +58,6 @@ public class ObjectSpace {
     private final Map identities = new HashMap();
     private final Map identitiesByObject = new WeakIdentityHashMap();
 
-    private long maxId = 4; // Highest reserved id
-
     public long idOf(IRubyObject rubyObject) {
         synchronized (identities) {
             Long longId = (Long) identitiesByObject.get(rubyObject);
@@ -70,13 +68,17 @@ public class ObjectSpace {
         }
     }
 
+    public static long calculateObjectID(Object object) {
+        // Fixnums get all the odd IDs, so we use identityHashCode * 2
+        return System.identityHashCode(object) * 2;
+    }
+
     private Long createId(IRubyObject object) {
         cleanIdentities();
-        maxId += 2; // id must always be even
-        Long longMaxId = Long.valueOf(maxId);
-        identities.put(longMaxId, new IdReference(object, maxId, deadIdentityReferences));
-        identitiesByObject.put(object, longMaxId);
-        return longMaxId;
+        long id = calculateObjectID(object);
+        identities.put(id, new IdReference(object, id, deadIdentityReferences));
+        identitiesByObject.put(object, id);
+        return id;
     }
 
     public IRubyObject id2ref(long id) {
