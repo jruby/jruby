@@ -1,5 +1,6 @@
 package org.jruby.ast.util;
 
+import java.io.File;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.AttrAssignNode;
@@ -66,7 +67,7 @@ public class SexpMaker {
     private void processMethod(String methodName, Node argsNode, Node body) {
         sb.append("(method ").append(methodName).append(' ');
         // JRUBY-4301, include filename and line in sexp
-        sb.append("(file ").append(body.getPosition().getFile()).append(") ");
+        sb.append("(file ").append(new File(body.getPosition().getFile()).getName()).append(") ");
         sb.append("(line ").append(body.getPosition().getStartLine()).append(") ");
         process(argsNode);
         sb.append(" ");
