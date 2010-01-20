@@ -115,7 +115,7 @@ public class ClassCache<T> {
             }
         } catch (ClassNotFoundException cnfe) {
             if (JITCompiler.DEBUG) {
-                System.err.println("no jitted code in classloader: " + className);
+                System.err.println("no jitted code in classloader for method " + classGenerator + " at class: " + className);
             }
             // proceed to define in-memory
         }

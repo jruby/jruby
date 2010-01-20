@@ -52,7 +52,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.ClassReader;
@@ -190,6 +189,7 @@ public class JITCompiler implements JITCompilerMBean {
         private String packageName;
         private String className;
         private String filename;
+        private String methodName;
         
         public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context) {
             this.packageName = "ruby/jit";
@@ -210,6 +210,7 @@ public class JITCompiler implements JITCompilerMBean {
             this.name = className.replaceAll("/", ".");
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
+            this.methodName = name;
             filename = calculateFilename(argsNode, bodyNode);
             staticScope = method.getStaticScope();
             asmCompiler = new StandardASMCompiler(className, filename);
@@ -295,24 +296,33 @@ public class JITCompiler implements JITCompilerMBean {
                         ruby.getInstanceConfig().getJitMaxSize());
             }
 
-            if (codeCache != null && new File(codeCache).isDirectory()) {
-                if (!new File(codeCache, packageName).isDirectory()) {
-                    boolean createdDirs = new File(codeCache, packageName).mkdirs();
-                    if (!createdDirs) {
-                        ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
+            if (codeCache != null) {
+                File codeCacheDir = new File(codeCache);
+                if (!codeCacheDir.exists()) {
+                    ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " does not exist");
+                } else if (!codeCacheDir.isDirectory()) {
+                    ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not a directory");
+                } else if (!codeCacheDir.canWrite()) {
+                    ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not writable");
+                } else {
+                    if (!new File(codeCache, packageName).isDirectory()) {
+                        boolean createdDirs = new File(codeCache, packageName).mkdirs();
+                        if (!createdDirs) {
+                            ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
+                        }
                     }
-                }
-                // write to code cache
-                FileOutputStream fos = null;
-                try {
-                    if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
-                    fos = new FileOutputStream(cachedClassFile);
-                    fos.write(bytecode);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    // ignore
-                } finally {
-                    try {fos.close();} catch (Exception e) {}
+                    // write to code cache
+                    FileOutputStream fos = null;
+                    try {
+                        if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
+                        fos = new FileOutputStream(cachedClassFile);
+                        fos.write(bytecode);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // ignore
+                    } finally {
+                        try {fos.close();} catch (Exception e) {}
+                    }
                 }
             }
             
@@ -343,6 +353,10 @@ public class JITCompiler implements JITCompilerMBean {
         public CallConfiguration callConfig() {
             compile();
             return jitCallConfig;
+        }
+
+        public String toString() {
+            return methodName + "() at " + bodyNode.getPosition().getFile() + ":" + bodyNode.getPosition().getLine();
         }
     }
     
