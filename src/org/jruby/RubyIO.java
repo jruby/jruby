@@ -2447,7 +2447,15 @@ public class RubyIO extends RubyObject {
         if (value instanceof RubyString) {
             RubyString str = (RubyString) value;
             if (str.isEmpty()) {
-                throw context.getRuntime().newErrnoEAGAINError("");
+                Ruby ruby = context.getRuntime();
+                RaiseException eagain = ruby.newErrnoEAGAINError("");
+
+                // FIXME: *oif* 1.9 actually does this
+                if (ruby.is1_9()) {
+                    eagain.getException().extend(new IRubyObject[] {ruby.getIO().getConstant("WaitReadable")});
+                }
+
+                throw eagain;
             }
         }
 
