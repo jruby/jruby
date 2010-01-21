@@ -1,1 +1,0 @@
-fails:Thread#stop? reports aborting on a killed thread
