@@ -32,8 +32,11 @@ package org.jruby.compiler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
@@ -195,14 +198,18 @@ public class JITCompiler implements JITCompilerMBean {
             this.packageName = "ruby/jit";
             try {
                 MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-                sha1.update(key.getBytes());
+                try {
+                    sha1.update(key.getBytes("UTF-8"));
+                } catch (UnsupportedEncodingException uee) {
+                    throw new RuntimeException("fatal error: missing encoding UTF-8", uee);
+                }
                 byte[] digest = sha1.digest();
                 char[] digestChars = new char[digest.length * 2];
                 for (int i = 0; i < digest.length; i++) {
                     digestChars[i * 2] = Character.forDigit(digest[i] & 0xF, 16);
                     digestChars[i * 2 + 1] = Character.forDigit((digest[i] & 0xF0) >> 4, 16);
                 }
-                this.digestString = new String(digestChars).toUpperCase();
+                this.digestString = new String(digestChars).toUpperCase(Locale.ENGLISH);
             } catch (NoSuchAlgorithmException nsae) {
                 throw new NotCompilableException(nsae.getLocalizedMessage());
             }
