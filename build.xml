@@ -806,10 +806,9 @@
   <target name="run-junit-embed" depends="copy-test-files" description="Runs unit embedding API tests."><run-junit-embed-all/></target>
 
   <path id="test.class.path">
-    <fileset dir="${build.lib.dir}" includes="*.jar">
-      <exclude name="jcodings.jar"/>
-      <exclude name="joni.jar"/>
-    </fileset>
+    <pathelement path="${build.lib.dir}/junit.jar"/>
+    <pathelement path="${build.lib.dir}/bsf.jar"/>
+    <pathelement path="${build.lib.dir}/commons-logging-1.1.1.jar"/>
     <pathelement path="${java.class.path}"/>
     <pathelement path="${lib.dir}/jruby.jar"/>
     <pathelement location="${test.classes.dir}"/>
