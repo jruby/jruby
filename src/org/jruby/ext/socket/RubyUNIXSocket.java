@@ -282,6 +282,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
         int status;
         fd = -1;
+
+        ByteList path = _path.convertToString().getByteList();
+        fpath = path.toString();
+        
         try {
             fd = INSTANCE.socket(AF_UNIX.value(), SOCK_STREAM.value(), 0);
         } catch (UnsatisfiedLinkError ule) { }
@@ -291,9 +295,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         LibCSocket.sockaddr_un sockaddr = LibCSocket.sockaddr_un.newInstance();
         sockaddr.setFamily(AF_UNIX.value());
-
-        ByteList path = _path.convertToString().getByteList();
-        fpath = path.toString();
 
         if(sockaddr.path().length() <= path.getRealSize()) {
             throw runtime.newArgumentError("too long unix socket path (max: " + (sockaddr.path().length()-1) + "bytes)");
