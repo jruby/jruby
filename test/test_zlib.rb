@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'zlib'
+require 'stringio'
 
 class TestZlib < Test::Unit::TestCase
   def teardown;  File.unlink @filename if @filename; end
@@ -25,9 +26,6 @@ class TestZlib < Test::Unit::TestCase
   # after decompressing the full contents of an unwrapped input stream.
   #
   def test_inflate_should_be_finished_after_decompressing_full_unwrapped_stream
-      require 'base64'
-      require 'stringio'
-      
       actual = "test compression string\n" * 5
 
       # This is a base64-encoded representation of a zipped text file.
@@ -37,7 +35,7 @@ class TestZlib < Test::Unit::TestCase
               
       inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
       
-      stream = StringIO.new(Base64.decode64(data))
+      stream = StringIO.new(data.unpack('m*')[0])
       assert_equal(actual, inflater.inflate(stream.read(nil, '')), "Unexpected result of decompression.")
       assert(inflater.finished?, "Inflater should be finished after inflating all input.")
   end
@@ -75,7 +73,6 @@ class TestZlib < Test::Unit::TestCase
   end
   
   def test_native_exception_from_zlib_on_broken_header
-    require 'stringio'
     corrupt = StringIO.new
     corrupt.write('borkborkbork')
     begin
@@ -254,4 +251,22 @@ class TestZlib < Test::Unit::TestCase
     assert (!z.sync_point?)
   end
 
+  # JRUBY-4502: 1.4 raises native exception at gz.read
+  def test_corrupted_data
+    data = '12345abcde'
+    zip = "\037\213\b\000,\334\321G\000\005\000\235\005\000$\n\000\000"
+    io = StringIO.new(zip)
+    # JRuby cannot check corrupted data format at GzipReader.new for now
+    # because of different input buffer handling.
+    if defined?(JRUBY_VERSION)
+      assert_raise(IOError) do
+        gz = Zlib::GzipReader.new(io)     # CRuby raises here
+        gz.read                           # JRuby raises here
+      end
+    else
+      assert_raise(Zlib::DataError) do
+        gz = Zlib::GzipReader.new(io)     # CRuby raises here
+      end
+    end
+  end
 end
