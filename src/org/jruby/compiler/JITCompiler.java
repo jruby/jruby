@@ -177,6 +177,61 @@ public class JITCompiler implements JITCompilerMBean {
             return null;
         }
     }
+
+    public static String getHashForString(String str) {
+        try {
+            return getHashForBytes(str.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException uee) {
+            throw new RuntimeException(uee);
+        }
+    }
+
+    public static String getHashForBytes(byte[] bytes) {
+        try {
+            MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+            sha1.update(bytes);
+            byte[] digest = sha1.digest();
+            char[] digestChars = new char[digest.length * 2];
+            for (int i = 0; i < digest.length; i++) {
+                digestChars[i * 2] = Character.forDigit(digest[i] & 0xF, 16);
+                digestChars[i * 2 + 1] = Character.forDigit((digest[i] & 0xF0) >> 4, 16);
+            }
+            return new String(digestChars).toUpperCase(Locale.ENGLISH);
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new RuntimeException(nsae);
+        }
+    }
+
+    public static void saveToCodeCache(Ruby ruby, byte[] bytecode, String packageName, File cachedClassFile) {
+        String codeCache = RubyInstanceConfig.JIT_CODE_CACHE;
+        File codeCacheDir = new File(codeCache);
+        if (!codeCacheDir.exists()) {
+            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " does not exist");
+        } else if (!codeCacheDir.isDirectory()) {
+            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not a directory");
+        } else if (!codeCacheDir.canWrite()) {
+            ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not writable");
+        } else {
+            if (!new File(codeCache, packageName).isDirectory()) {
+                boolean createdDirs = new File(codeCache, packageName).mkdirs();
+                if (!createdDirs) {
+                    ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
+                }
+            }
+            // write to code cache
+            FileOutputStream fos = null;
+            try {
+                if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
+                fos = new FileOutputStream(cachedClassFile);
+                fos.write(bytecode);
+            } catch (Exception e) {
+                e.printStackTrace();
+                // ignore
+            } finally {
+                try {fos.close();} catch (Exception e) {}
+            }
+        }
+    }
     
     public class JITClassGenerator implements ClassCache.ClassGenerator {
         private StandardASMCompiler asmCompiler;
@@ -196,23 +251,7 @@ public class JITCompiler implements JITCompilerMBean {
         
         public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context) {
             this.packageName = "ruby/jit";
-            try {
-                MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-                try {
-                    sha1.update(key.getBytes("UTF-8"));
-                } catch (UnsupportedEncodingException uee) {
-                    throw new RuntimeException("fatal error: missing encoding UTF-8", uee);
-                }
-                byte[] digest = sha1.digest();
-                char[] digestChars = new char[digest.length * 2];
-                for (int i = 0; i < digest.length; i++) {
-                    digestChars[i * 2] = Character.forDigit(digest[i] & 0xF, 16);
-                    digestChars[i * 2 + 1] = Character.forDigit((digest[i] & 0xF0) >> 4, 16);
-                }
-                this.digestString = new String(digestChars).toUpperCase(Locale.ENGLISH);
-            } catch (NoSuchAlgorithmException nsae) {
-                throw new NotCompilableException(nsae.getLocalizedMessage());
-            }
+            this.digestString = getHashForString(key);
             this.className = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "_" + digestString;
             this.name = className.replaceAll("/", ".");
             this.bodyNode = method.getBodyNode();
@@ -304,33 +343,7 @@ public class JITCompiler implements JITCompilerMBean {
             }
 
             if (codeCache != null) {
-                File codeCacheDir = new File(codeCache);
-                if (!codeCacheDir.exists()) {
-                    ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " does not exist");
-                } else if (!codeCacheDir.isDirectory()) {
-                    ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not a directory");
-                } else if (!codeCacheDir.canWrite()) {
-                    ruby.getWarnings().warn("jruby.jit.codeCache directory " + codeCacheDir + " is not writable");
-                } else {
-                    if (!new File(codeCache, packageName).isDirectory()) {
-                        boolean createdDirs = new File(codeCache, packageName).mkdirs();
-                        if (!createdDirs) {
-                            ruby.getWarnings().warn("could not create JIT cache dir: " + new File(codeCache, packageName));
-                        }
-                    }
-                    // write to code cache
-                    FileOutputStream fos = null;
-                    try {
-                        if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
-                        fos = new FileOutputStream(cachedClassFile);
-                        fos.write(bytecode);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        // ignore
-                    } finally {
-                        try {fos.close();} catch (Exception e) {}
-                    }
-                }
+                JITCompiler.saveToCodeCache(ruby, bytecode, packageName, cachedClassFile);
             }
             
             compiledCount.incrementAndGet();
