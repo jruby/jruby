@@ -575,10 +575,6 @@ public class RubyZlib {
 
         @JRubyMethod(name = "inflate", required = 1, backtrace = true)
         public IRubyObject inflate(ThreadContext context, IRubyObject string) {
-            if (internalFinished()) {
-                // follow CRuby's Zlib behavior: return empty String after finished inflating.
-                return RubyString.newEmptyString(context.getRuntime());
-            }
             ByteList data = null;
             if (!string.isNil()) {
                 data = string.convertToString().getByteList();
