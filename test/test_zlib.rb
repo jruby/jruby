@@ -269,4 +269,30 @@ class TestZlib < Test::Unit::TestCase
       end
     end
   end
+
+  def test_inflate_after_finish
+    z = Zlib::Inflate.new
+    data = "x\234c`\200\001\000\000\n\000\001"
+    unzipped = z.inflate data
+    z.finish  # this is a precondition
+
+    out = z.inflate('uncompressed_data')
+    out << z.finish
+    assert_equal('uncompressed_data', out)
+    z << ('uncompressed_data') << nil
+    assert_equal('uncompressed_data', z.finish)
+  end
+
+  def test_inflate_pass_through
+    main_data = "x\234K\313\317\a\000\002\202\001E"
+    result = ""
+    z = Zlib::Inflate.new
+    # add bytes, one by one
+    (main_data * 2).each_byte { |d| result << z.inflate(d.chr)}
+    assert_equal("foo", result)
+    # the first chunk is inflated to its completion,
+    # the second chunk is just passed through.
+    result << z.finish
+    assert_equal("foo" + main_data, result)
+  end
 end
