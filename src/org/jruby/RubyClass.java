@@ -217,12 +217,19 @@ public class RubyClass extends RubyModule {
         if (variableAccessors == Collections.EMPTY_MAP) variableAccessors = new Hashtable<String, VariableAccessor>(1);
         return variableAccessors;
     }
+    
+    private volatile int accessorCount = 0;
+    private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
+
+    private synchronized final VariableAccessor allocateVariableAccessor() {
+        return new VariableAccessor(accessorCount++, this.id);
+    }
 
     public synchronized VariableAccessor getVariableAccessorForWrite(String name) {
         Map<String, VariableAccessor> myVariableAccessors = getVariableAccessorsForWrite();
         VariableAccessor ivarAccessor = myVariableAccessors.get(name);
         if (ivarAccessor == null) {
-            ivarAccessor = new VariableAccessor(myVariableAccessors.size(), this.id);
+            ivarAccessor = allocateVariableAccessor();
             myVariableAccessors.put(name, ivarAccessor);
         }
         return ivarAccessor;
@@ -234,8 +241,21 @@ public class RubyClass extends RubyModule {
         return accessor;
     }
 
+    public synchronized VariableAccessor getObjectIdAccessorForWrite() {
+        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) objectIdAccessor = allocateVariableAccessor();
+        return objectIdAccessor;
+    }
+
+    public VariableAccessor getObjectIdAccessorForRead() {
+        return objectIdAccessor;
+    }
+
     public int getVariableTableSize() {
         return variableAccessors.size();
+    }
+
+    public int getVariableTableSizeWithObjectId() {
+        return variableAccessors.size() + (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1);
     }
 
     public Map<String, VariableAccessor> getVariableTableCopy() {
@@ -1313,6 +1333,11 @@ public class RubyClass extends RubyModule {
 
     @SuppressWarnings("unchecked")
     private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
+
+    private volatile boolean hasObjectID = false;
+    public boolean hasObjectID() {
+        return hasObjectID;
+    }
 
     private Map<String, List<Map<Class, Map<String,Object>>>> parameterAnnotations;
 

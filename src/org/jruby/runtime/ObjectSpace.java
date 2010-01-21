@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,6 +58,7 @@ public class ObjectSpace {
     private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map identities = new HashMap();
     private final Map identitiesByObject = new WeakIdentityHashMap();
+    private static final AtomicLong maxId = new AtomicLong(1000);
 
     public long idOf(IRubyObject rubyObject) {
         synchronized (identities) {
@@ -70,7 +72,7 @@ public class ObjectSpace {
 
     public static long calculateObjectID(Object object) {
         // Fixnums get all the odd IDs, so we use identityHashCode * 2
-        return System.identityHashCode(object) * 2;
+        return maxId.getAndIncrement() * 2;
     }
 
     private Long createId(IRubyObject object) {

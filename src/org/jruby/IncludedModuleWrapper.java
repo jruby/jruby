@@ -199,11 +199,6 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    protected int variableTableGetSize() {
-        return delegate.variableTableGetSize();
-    }
-
-    @Override
     protected void variableTableSync(List<Variable<Object>> vars) {
         delegate.variableTableSync(vars);
     }

@@ -910,14 +910,28 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject id() {
         Ruby runtime = getRuntime();
-        if (runtime.isObjectSpaceEnabled()) {
-            synchronized (this) {
-                return runtime.newFixnum(runtime.getObjectSpace().idOf(this));
+        Long id;
+
+        // The logic here is to use the special objectId accessor slot from the
+        // parent as a lazy store for an object ID. IDs are generated atomically,
+        // in serial, and guaranteed unique for up to 2^63 objects. The special
+        // objectId slot is managed separately from the "normal" vars so it
+        // does not marshal, clone/dup, or refuse to be initially set when the
+        // object is frozen.
+        synchronized (this) {
+            RubyClass.VariableAccessor objectIdAccessor = getMetaClass().getRealClass().getObjectIdAccessorForWrite();
+            id = (Long)objectIdAccessor.get(this);
+            if (id == null) {
+                if (runtime.isObjectSpaceEnabled()) {
+                    id = runtime.getObjectSpace().idOf(this);
+                } else {
+                    id = ObjectSpace.calculateObjectID(this);
+                }
+                // we use a direct path here to avoid frozen checks
+                setObjectId(objectIdAccessor.getIndex(), id);
             }
-        } else {
-            // use identity * 2, since fixnums get the odd IDs
-            return runtime.newFixnum(ObjectSpace.calculateObjectID(this));
         }
+        return runtime.newFixnum(id);
     }
 
     /** rb_obj_inspect
@@ -1064,16 +1078,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private static final Object[] NULL_OBJECT_ARRAY = new Object[0];
     private volatile Object[] varTable = NULL_OBJECT_ARRAY;
 
-    private Object[] getIvarTableForRead() {
+    private Object[] getVariableTableForRead() {
         return varTable;
     }
 
     private synchronized Object[] getVariableTableForWrite(int index) {
         if (varTable == NULL_OBJECT_ARRAY) {
-            varTable = new Object[getMetaClass().getRealClass().getVariableTableSize()];
+            if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+            varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
         } else if (varTable.length <= index) {
-            if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSize());
-            Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSize()];
+            if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+            Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
             System.arraycopy(varTable, 0, newTable, 0, varTable.length);
             varTable = newTable;
         }
@@ -1082,13 +1097,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public Object getVariable(int index) {
         if (index < 0) return null;
-        Object[] ivarTable = getIvarTableForRead();
+        Object[] ivarTable = getVariableTableForRead();
         if (ivarTable.length > index) return ivarTable[index];
         return null;
     }
 
     public synchronized void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
+        if (index < 0) return;
+        Object[] ivarTable = getVariableTableForWrite(index);
+        ivarTable[index] = value;
+    }
+
+    private synchronized void setObjectId(int index, long value) {
         if (index < 0) return;
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
@@ -1109,15 +1130,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if object has any variables, else false
      */
     public boolean hasVariables() {
-        return varTable.length > 0;
+        // we check both to exclude object_id
+        return getMetaClass().getRealClass().getVariableTableSize() > 0 && varTable.length > 0;
     }
 
     /**
      * Returns the amount of instance variables, class variables,
      * constants and internal variables this object has.
      */
+    @Deprecated
     public int getVariableCount() {
-        return varTable.length;
+        // we use min to exclude object_id
+        return Math.min(varTable.length, getMetaClass().getRealClass().getVariableTableSize());
     }
 
     /**
@@ -1212,13 +1236,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, null);
             return value;
         }
-    }
-
-    /**
-     * Get the size of the variable table.
-     */
-    protected int variableTableGetSize() {
-        return getMetaClass().getRealClass().getVariableTableSize();
     }
 
     /**
