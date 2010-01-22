@@ -13,6 +13,7 @@ module JRuby::Compiler
     prefix = ""
     target = Dir.pwd
     java = false
+    classpath = []
 
     opt_parser = OptionParser.new("", 24, '  ') do |opts|
       opts.banner = "jrubyc [options] (FILE|DIRECTORY)"
@@ -34,6 +35,10 @@ module JRuby::Compiler
         java = true
       end
 
+      opts.on("-c", "--classpath CLASSPATH", "Add a jar to the classpath for building") do |cp|
+        classpath.concat cp.split(':')
+      end
+
       opts.parse!(argv)
     end
 
@@ -41,11 +46,11 @@ module JRuby::Compiler
       raise "No files or directories specified"
     end
 
-    compile_files(argv, basedir, prefix, target, java)
+    compile_files(argv, basedir, prefix, target, java, classpath)
   end
   module_function :compile_argv
 
-  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false)
+  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false, classpath = [])
     runtime = JRuby.runtime
 
     unless File.exist? target
@@ -59,8 +64,8 @@ module JRuby::Compiler
       begin
         file = File.open(filename)
 
-        classpath = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
-        puts "Compiling #{filename} to class #{classpath}"
+        pathname = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
+        puts "Compiling #{filename} to class #{pathname}"
 
         inspector = org.jruby.compiler.ASTInspector.new
 
@@ -69,7 +74,7 @@ module JRuby::Compiler
 
         inspector.inspect(node)
 
-        asmCompiler = BytecodeCompiler.new(classpath, filename)
+        asmCompiler = BytecodeCompiler.new(pathname, filename)
         compiler = ASTCompiler.new
         compiler.compile_root(node, asmCompiler, inspector)
 
@@ -122,7 +127,8 @@ module JRuby::Compiler
       jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
       end
-      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:. #{files_string}"
+      classpath_string = classpath.size > 0 ? classpath.join(":") : "."
+      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
       puts compile_string
       system compile_string
     end
@@ -240,7 +246,7 @@ EOJ
   end
 
   class RubyMethod
-    def initialize(name, java_signature = nil, annotations = [], java_name = nil)
+    def initialize(name, java_signature = nil, annotations = [], java_name = name)
       @name = name
       @java_signature = java_signature
       @java_name = java_name
@@ -296,7 +302,7 @@ EOJ
 
       method_string = <<EOJ
 #{anno_string}
-  public #{static ? 'static ' : ''}#{ret} #{name}(#{args_string}) {
+  public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
 #{conv_string}
     IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
     #{ret_string}
@@ -351,9 +357,7 @@ EOJ
         for i in 0...(child_assocs.size / 2)
           key = child_assocs[i * 2]
           value = child_assocs[i * 2 + 1]
-          k_name = key.name if key.respond_to? :name
-          k_name = key.value if key.respond_to? :value
-          raise "unknown annotation key: " + key unless k_name
+          k_name = name_or_value(key)
           v_value = prepare_anno_value(value)
 
           anno_args[k_name] = v_value
@@ -420,9 +424,7 @@ EOJ
 
       sig = [(defined? ret.name) ? ret.name : ret.value]
       param_strings = params.child_nodes.map do |param|
-        next param.name if defined? param.name
-        next param.value if defined? param.value
-        raise 'unknown signature element: ' + param.to_s
+        next name_or_value(param)
       end
       sig.concat(param_strings)
 
@@ -434,14 +436,19 @@ EOJ
       param_strings = params.child_nodes.map do |param|
         if param.respond_to? :type_node
           type_node = param.type_node
-          next type_node.name if defined? type_node.name
-          next type_node.value if defined? type_node.value
+          next name_or_value(type_node)
         end
         raise 'unknown signature element: ' + param.to_s
       end
       sig.concat(param_strings)
 
       sig
+    end
+
+    def name_or_value(node)
+      return node.name if node.respond_to? :name
+      return node.value if node.respond_to? :value
+      raise "unknown node :" + node.to_s
     end
 
     def method_missing(name, *args)
@@ -496,7 +503,7 @@ EOJ
           when 'java_signature'
             set_signature build_signature(node.args_node.child_nodes[0])
           when 'java_name'
-            set_name node.args_node.child_nodes[0].value
+            set_name name_or_value(node.args_node.child_nodes[0])
           when 'java_annotation'
             add_annotation(*node.args_node.child_nodes)
           when 'java_implements'
