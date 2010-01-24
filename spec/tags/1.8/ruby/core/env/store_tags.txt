@@ -1,0 +1,1 @@
+windows(http://rubyspec.org/issues/show/196):ENV.store sets the environment variable to the given value
