@@ -76,7 +76,6 @@ class MSpecScript
     # core
     get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
     get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
-    get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
 
     # exclude specs tagged with 'windows' keyword
     set :ci_xtags, ['windows']
