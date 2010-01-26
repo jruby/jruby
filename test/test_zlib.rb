@@ -295,4 +295,31 @@ class TestZlib < Test::Unit::TestCase
     result << z.finish
     assert_equal("foo" + main_data, result)
   end
+
+  def test_gzip_writer_restricted_io
+    z = Object.new
+    def z.write(arg)
+      (@buf ||= []) << arg
+    end
+    def z.buf
+      @buf
+    end
+    assert_nil z.buf
+    Zlib::GzipWriter.wrap(z) { |io| io.write("hello") }
+    assert_not_nil z.buf
+  end
+
+  def test_gzip_reader_restricted_io
+    z = Object.new
+    def z.read(size)
+      @buf ||= (s = StringIO.new; Zlib::GzipWriter.wrap(s) { |io| io.write("hello") }; s.string)
+      @buf.slice!(0, size)
+    end
+    called = false
+    Zlib::GzipReader.wrap(z) { |io|
+      assert_equal("hello", io.read)
+      called = true
+    }
+    assert(called)
+  end
 end
