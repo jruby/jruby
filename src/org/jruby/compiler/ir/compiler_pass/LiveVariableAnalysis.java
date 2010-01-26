@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.Variable;
@@ -16,16 +16,16 @@ public class LiveVariableAnalysis implements CompilerPass
 
     public void run(IR_Scope s)
     {
-        if (!(s instanceof IR_Method))
+        if (!(s instanceof IRMethod))
             return;
 
-        CFG c = ((IR_Method)s).getCFG();
+        CFG c = ((IRMethod)s).getCFG();
         LiveVariablesProblem lvp = new LiveVariablesProblem();
         lvp.setup(c);
         lvp.compute_MOP_Solution();
         c.setDataFlowSolution(lvp.getName(), lvp);
 //        System.out.println("LVP for " + s + " is: " + lvp);
-        for (IR_Closure x: ((IR_Method)s).getClosures()) {
+        for (IR_Closure x: ((IRMethod)s).getClosures()) {
            lvp = (LiveVariablesProblem)x.getCFG().getDataFlowSolution(lvp.getName());
 /*
            System.out.println("LVP for closure: " + x + " is: " + lvp);

@@ -12,16 +12,19 @@ public class IR_Module extends IR_ScopeImpl {
     private final static String ROOT_METHOD_PREFIX = ":_ROOT_:";
     private static Map<String, IR_Class> _coreClasses;
 
+    public final String _name;
+    private IRMethod _rootMethod; // Dummy top-level method for the class
+
     static {
         bootStrap();
     }
 
     static private IR_Class addCoreClass(String name, IR_Scope parent, String[] coreMethods) {
         IR_Class c = new IR_Class(parent, null, null, name);
-        _coreClasses.put(c._name, c);
+        _coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
             for (String m : coreMethods) {
-                IR_Method meth = new IR_Method(c, null, m, true);
+                IRMethod meth = new IRMethod(c, null, m, true);
                 meth.setCodeModificationFlag(false);
                 c.addMethod(meth);
             }
@@ -48,11 +51,9 @@ public class IR_Module extends IR_ScopeImpl {
     public static IR_Class getCoreClass(String n) {
         return _coreClasses.get(n);
     }
-    public final String _name;
-    private IR_Method _rootMethod; // Dummy top-level method for the class
 
-    public static boolean isAClassRootMethod(IR_Method m) {
-        return m._name.startsWith(ROOT_METHOD_PREFIX);
+    public static boolean isAClassRootMethod(IRMethod m) {
+        return m.getName().startsWith(ROOT_METHOD_PREFIX);
     }
 
     private void addRootMethod() {
@@ -68,7 +69,7 @@ public class IR_Module extends IR_ScopeImpl {
         //    end
         //
         String n = ROOT_METHOD_PREFIX + _name;
-        _rootMethod = new IR_Method(this, new MetaObject(this), n, false);
+        _rootMethod = new IRMethod(this, new MetaObject(this), n, false);
         _rootMethod.addInstr(new ReceiveArgumentInstruction(_rootMethod.getSelf(), 0));	// Set up self!
         addMethod(_rootMethod);
     }
@@ -81,28 +82,32 @@ public class IR_Module extends IR_ScopeImpl {
         addRootMethod();
     }
 
-    public IR_Method getRootMethod() {
+    public IRMethod getRootMethod() {
         return _rootMethod;
     }
 
-    public IR_Method getInstanceMethod(String name) {
-        for (IR_Method m : methods) {
-            if (m._isInstanceMethod && m._name.equals(name)) return m;
+    public IRMethod getInstanceMethod(String name) {
+        for (IRMethod m : methods) {
+            if (m.isInstanceMethod && m.getName().equals(name)) return m;
         }
 
         return null;
     }
 
-    public IR_Method getClassMethod(String name) {
-        for (IR_Method m : methods) {
-            if (!m._isInstanceMethod && _name.equals(name)) return m;
+    public IRMethod getClassMethod(String name) {
+        for (IRMethod m : methods) {
+            if (!m.isInstanceMethod && _name.equals(name)) return m;
         }
 
         return null;
+    }
+
+    public String getName() {
+        return _name;
     }
 
     @Override
     public String toString() {
-        return "Module: " + _name + super.toString();
+        return "Module: " + getName() + super.toString();
     }
 }

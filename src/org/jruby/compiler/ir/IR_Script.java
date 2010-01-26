@@ -18,7 +18,7 @@ public class IR_Script extends IR_ScopeImpl {
         return new StringLiteral(_fileName);
     }
 
-    public IR_Method getRootMethod() {
+    public IRMethod getRootMethod() {
         return _dummyClass.getRootMethod();
     }
 

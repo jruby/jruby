@@ -58,7 +58,7 @@ public abstract class IR_ScopeImpl implements IR_Scope {
     // cases, the lexical scoping and class/method hierarchies are the same.
     final public List<IR_Module> modules = new ArrayList<IR_Module>();
     final public List<IR_Class> classes = new ArrayList<IR_Class>();
-    final public List<IR_Method> methods = new ArrayList<IR_Method>();
+    final public List<IRMethod> methods = new ArrayList<IRMethod>();
     private Map<String, String> aliases; // oldName -> newName for methods
 
     // ENEBO: This is also only for lexical score too right?
@@ -163,18 +163,18 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         classes.add(c);
     }
 
-    public void addMethod(IR_Method m) {
+    public void addMethod(IRMethod m) {
         methods.add(m);
 
         if (IR_Module.isAClassRootMethod(m)) return;
 
-        if ((this instanceof IR_Method) && ((IR_Method) this).isAClassRootMethod()) {
+        if ((this instanceof IRMethod) && ((IRMethod) this).isAClassRootMethod()) {
             IR_Module c = (IR_Module) (((MetaObject) this._container)._scope);
-            c.getRootMethod().addInstr(m._isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
-        } else if (m._isInstanceMethod && (this instanceof IR_Module)) {
+            c.getRootMethod().addInstr(m.isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
+        } else if (m.isInstanceMethod && (this instanceof IR_Module)) {
             IR_Module c = (IR_Module) this;
             c.getRootMethod().addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
-        } else if (!m._isInstanceMethod && (this instanceof IR_Module)) {
+        } else if (!m.isInstanceMethod && (this instanceof IR_Module)) {
             IR_Module c = (IR_Module) this;
             c.getRootMethod().addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
         } else {

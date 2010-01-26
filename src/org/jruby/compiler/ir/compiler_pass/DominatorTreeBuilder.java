@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_ExecutionScope;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
 

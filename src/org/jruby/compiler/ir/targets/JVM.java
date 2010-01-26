@@ -13,7 +13,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyObject;
 import org.jruby.compiler.ir.CompilerTarget;
 import org.jruby.compiler.ir.IR_Class;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.IR_Script;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
@@ -156,7 +156,7 @@ public class JVM implements CompilerTarget {
 
     public void emit(IR_Class cls) {
         pushclass();
-        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls._name, null, p(RubyObject.class), null);
+        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls.getName(), null, p(RubyObject.class), null);
         cls().visitSource(script.getFileName().toString(), null);
 
         // root-level logic
@@ -167,7 +167,7 @@ public class JVM implements CompilerTarget {
         popmethod();
 
         // root-level methods
-        for (IR_Method method : cls.methods) {
+        for (IRMethod method : cls.methods) {
             emit(method);
         }
 
@@ -180,11 +180,13 @@ public class JVM implements CompilerTarget {
         popclass();
     }
 
-    public void emit(IR_Method method) {
-        pushmethod(method._name);
+    public void emit(IRMethod method) {
+        pushmethod(method.getName());
+
         for (IR_Instr instr: method.getInstrs()) {
             emit(instr);
         }
+        
         popmethod();
     }
 
@@ -255,18 +257,18 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitDEF_INST_METH(DEFINE_INSTANCE_METHOD_Instr instr) {
-        IR_Method irMethod = instr._method;
-        GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, Method.getMethod("void " + irMethod._name + " ()"), null, null, cls());
+        IRMethod irMethod = instr._method;
+        GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, Method.getMethod("void " + irMethod.getName() + " ()"), null, null, cls());
         adapter.loadThis();
         adapter.loadArgs();
-        adapter.invokeStatic(Type.getType(Object.class), Method.getMethod("Object __ruby__" + irMethod._name + " (Object)"));
+        adapter.invokeStatic(Type.getType(Object.class), Method.getMethod("Object __ruby__" + irMethod.getName() + " (Object)"));
         adapter.returnValue();
         adapter.endMethod();
     }
 
     public void emitDEF_CLS_METH(DEFINE_CLASS_METHOD_Instr instr) {
-        IR_Method irMethod = instr._method;
-        GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + irMethod._name + " ()"), null, null, cls());
+        IRMethod irMethod = instr._method;
+        GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + irMethod.getName() + " ()"), null, null, cls());
         adapter.returnValue();
         adapter.endMethod();
     }
