@@ -36,6 +36,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.jruby.ext.posix.JavaSecuredFile;
+import org.jruby.platform.Platform;
 
 /**
  * This class exists as a counterpart to the dir.c file in 
@@ -45,7 +46,7 @@ import org.jruby.ext.posix.JavaSecuredFile;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Dir {
-    public final static boolean DOSISH = System.getProperty("os.name").indexOf("Windows") != -1;
+    public final static boolean DOSISH = Platform.IS_WINDOWS;
     public final static boolean CASEFOLD_FILESYSTEM = DOSISH;
 
     public final static int FNM_NOESCAPE = 0x01;
@@ -137,10 +138,8 @@ public class Dir {
                 s++;
                 break;
             case '\\':
-                if(escape &&
-                   (!DOSISH ||
-                    (pat < pend && "*?[]\\".indexOf((char)bytes[pat]) != -1))) {
-                    if(pat >= pend) {
+                if (escape) {
+                    if (pat >= pend) {
                         c = '\\';
                     } else {
                         c = bytes[pat++];
