@@ -154,7 +154,7 @@ public class RubyObjectSpace {
     }
 
     @JRubyMethod(name = "garbage_collect", module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject garbage_collect(IRubyObject recv) {
-        return RubyGC.start(recv);
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
+        return RubyGC.start(context, recv);
     }
 }
