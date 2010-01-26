@@ -18,9 +18,6 @@ class TestLoad < Test::Unit::TestCase
       if (File::Separator == '\\')
         file.gsub!('\\\\', '/')
       end
-      # Load jar file RubyInitTest.java
-      require File::dirname(file) + "/RubyInitTest"
-      assert($ruby_init)
 
       # JRUBY-1229, allow loading jar files without manifest
       assert_nothing_raised {

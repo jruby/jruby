@@ -46,7 +46,7 @@ public class Pointer extends AbstractMemory {
         }
     }
 
-    private Pointer(Ruby runtime, RubyClass klazz) {
+    Pointer(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz, new NullMemoryIO(runtime), 0);
     }
 

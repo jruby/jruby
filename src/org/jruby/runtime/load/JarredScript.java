@@ -30,16 +30,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.BufferedInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 
 import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Loading of Ruby scripts packaged in Jar files.
@@ -64,31 +58,6 @@ public class JarredScript implements Library {
 
             // Make Java class files in the jar reachable from Ruby
             runtime.getJRubyClassLoader().addURL(jarFile);
-
-            JarInputStream in = new JarInputStream(resource.getInputStream());
-
-            Manifest mf = in.getManifest();
-            if (mf != null) {
-                String rubyInit = mf.getMainAttributes().getValue("Ruby-Init");
-                if (rubyInit != null) {
-                    JarEntry entry = in.getNextJarEntry();
-                    while (entry != null && !entry.getName().equals(rubyInit)) {
-                        entry = in.getNextJarEntry();
-                    }
-                    if (entry != null) {
-                        IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
-                        try {
-                            runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
-                            runtime.loadFile("init", in, wrap);
-                        } finally {
-                            runtime.getGlobalVariables().set("$JAR_URL", old);
-                        }
-                    }
-                }
-            }
-            in.close();
-        } catch (FileNotFoundException e) {
-            throw runtime.newIOErrorFromException(e);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }

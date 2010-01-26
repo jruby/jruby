@@ -61,6 +61,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -1364,7 +1365,31 @@ public class RubyKernel {
         }
 
         runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
-        return RubyString.newStringNoCopy(runtime, output.toByteArray());
+
+        byte[] out = output.toByteArray();
+        int length = out.length;
+
+        if (Platform.IS_WINDOWS) {
+            // MRI behavior, replace '\r\n' by '\n'
+            int newPos = 0;
+            byte curr, next;
+            for (int pos = 0; pos < length; pos++) {
+                curr = out[pos];
+                if (pos == length - 1) {
+                    out[newPos++] = curr;
+                    break;
+                }
+                next = out[pos + 1];
+                if (curr != '\r' || next != '\n') {
+                    out[newPos++] = curr;
+                }
+            }
+
+            // trim the length
+            length = newPos;
+        }
+
+        return RubyString.newStringNoCopy(runtime, out, 0, length);
     }
 
     @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)

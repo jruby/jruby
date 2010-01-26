@@ -698,6 +698,14 @@ class TestKernel < Test::Unit::TestCase
     end
   end
 
+  # JRUBY-4518
+  if (WINDOWS)
+    def test_backquote_with_CRLF
+      assert_no_match(/\r/, `cd`)
+      assert_equal 0, $?.exitstatus
+    end
+  end
+
   def test_system_with_executable_in_cwd
     Dir.chdir(TESTAPP_DIR) do
       result = nil

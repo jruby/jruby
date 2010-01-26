@@ -807,6 +807,7 @@
 
   <path id="test.class.path">
     <pathelement path="${build.lib.dir}/junit.jar"/>
+    <pathelement path="${build.lib.dir}/livetribe-jsr223-2.0.6.jar"/>
     <pathelement path="${build.lib.dir}/bsf.jar"/>
     <pathelement path="${build.lib.dir}/commons-logging-1.1.1.jar"/>
     <pathelement path="${java.class.path}"/>

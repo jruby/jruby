@@ -13,6 +13,7 @@ module JRuby::Compiler
     prefix = ""
     target = Dir.pwd
     java = false
+    classpath = []
 
     opt_parser = OptionParser.new("", 24, '  ') do |opts|
       opts.banner = "jrubyc [options] (FILE|DIRECTORY)"
@@ -34,6 +35,10 @@ module JRuby::Compiler
         java = true
       end
 
+      opts.on("-c", "--classpath CLASSPATH", "Add a jar to the classpath for building") do |cp|
+        classpath.concat cp.split(':')
+      end
+
       opts.parse!(argv)
     end
 
@@ -41,11 +46,11 @@ module JRuby::Compiler
       raise "No files or directories specified"
     end
 
-    compile_files(argv, basedir, prefix, target, java)
+    compile_files(argv, basedir, prefix, target, java, classpath)
   end
   module_function :compile_argv
 
-  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false)
+  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false, classpath = [])
     runtime = JRuby.runtime
 
     unless File.exist? target
@@ -59,8 +64,8 @@ module JRuby::Compiler
       begin
         file = File.open(filename)
 
-        classpath = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
-        puts "Compiling #{filename} to class #{classpath}"
+        pathname = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
+        puts "Compiling #{filename} to class #{pathname}"
 
         inspector = org.jruby.compiler.ASTInspector.new
 
@@ -69,7 +74,7 @@ module JRuby::Compiler
 
         inspector.inspect(node)
 
-        asmCompiler = BytecodeCompiler.new(classpath, filename)
+        asmCompiler = BytecodeCompiler.new(pathname, filename)
         compiler = ASTCompiler.new
         compiler.compile_root(node, asmCompiler, inspector)
 
@@ -122,7 +127,8 @@ module JRuby::Compiler
       jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
       end
-      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:. #{files_string}"
+      classpath_string = classpath.size > 0 ? classpath.join(":") : "."
+      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
       puts compile_string
       system compile_string
     end
@@ -153,8 +159,8 @@ module JRuby::Compiler
       @imports << name
     end
 
-    def new_class(name)
-      cls = RubyClass.new(name, imports, script_name)
+    def new_class(name, annotations = [])
+      cls = RubyClass.new(name, imports, script_name, annotations)
       @classes << cls
       cls
     end
@@ -169,25 +175,40 @@ module JRuby::Compiler
   end
 
   class RubyClass
-    def initialize(name, imports = [], script_name = nil)
+    def initialize(name, imports = [], script_name = nil, annotations = [])
       @name = name
       @imports = imports
       @script_name = script_name
       @methods = []
+      @annotations = []
+      @interfaces = []
     end
 
-    attr_accessor :methods, :name, :script_name
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces
 
-    def new_method(name, java_signature = nil, java_name = nil)
-      method = RubyMethod.new(name, java_signature, java_name)
+    def new_method(name, java_signature = nil, annotations = [], java_name = nil)
+      method = RubyMethod.new(name, java_signature, annotations, java_name)
       methods << method
       method
     end
 
-    def to_s
-      class_string = imports_string
+    def add_interface(ifc)
+      @interfaces << ifc
+    end
 
-      class_string << "public class #{name} extends RubyObject {\n"
+    def interface_string
+      if @interfaces.size > 0
+        "implements " + @interfaces.join('.')
+      else
+        ""
+      end
+    end
+
+    def to_s
+      imps_string = imports_string
+      ifc_string = interface_string
+
+      class_string = "#{imps_string}\npublic class #{name} extends RubyObject #{ifc_string} {\n"
       class_string << "  private static final Ruby __ruby__ = Ruby.getGlobalRuntime();\n"
       class_string << "  private static final RubyClass __metaclass__;\n"
 
@@ -225,15 +246,27 @@ EOJ
   end
 
   class RubyMethod
-    def initialize(name, java_signature = nil, java_name = nil)
+    def initialize(name, java_signature = nil, annotations = [], java_name = name)
       @name = name
       @java_signature = java_signature
       @java_name = java_name
       @static = false;
       @args = []
+      @annotations = annotations
     end
 
-    attr_accessor :args, :name, :java_signature, :java_name, :static
+    attr_accessor :args, :name, :java_signature, :java_name, :static, :annotations
+
+    def format_anno_value(value)
+      case value
+      when String
+        %Q["#{value}"]
+      when Fixnum
+        value.to_s
+      when Array
+        "{" + value.map {|v| format_anno_value(v)}.join(',') + "}"
+      end
+    end
 
     def to_s
       signature = java_signature
@@ -243,6 +276,7 @@ EOJ
       passed_args = args.map {|a| "ruby_" + a}.join(',')
       passed_args = "," + passed_args if args.size > 0
       conv_string = args.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+      anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")\n"}.join
       ret_string = case ret
       when 'void'
         ""
@@ -267,7 +301,8 @@ EOJ
       end
 
       method_string = <<EOJ
-  public #{static ? 'static ' : ''}#{ret} #{name}(#{args_string}) {
+#{anno_string}
+  public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
 #{conv_string}
     IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
     #{ret_string}
@@ -286,10 +321,11 @@ EOJ
       @class_stack = []
       @method_stack = []
       @signature = nil
+      @annotations = []
       @name = nil
     end
 
-    attr_accessor :class_stack, :method_stack, :signature, :name, :script
+    attr_accessor :class_stack, :method_stack, :signature, :name, :script, :annotations
 
     def add_import(name)
       @script.add_import(name)
@@ -303,8 +339,44 @@ EOJ
       @name = name
     end
 
+    def prepare_anno_value(value)
+      case value.node_type
+      when NodeType::STRNODE
+        value.value
+      when NodeType::ARRAYNODE
+        value.child_nodes.map {|v| prepare_anno_value(v)}
+      end
+    end
+
+    def add_annotation(*child_nodes)
+      name = child_nodes[0].name
+      args = child_nodes[1]
+      if args && args.list_node.size > 0
+        anno_args = {}
+        child_assocs = args.list_node.child_nodes
+        for i in 0...(child_assocs.size / 2)
+          key = child_assocs[i * 2]
+          value = child_assocs[i * 2 + 1]
+          k_name = name_or_value(key)
+          v_value = prepare_anno_value(value)
+
+          anno_args[k_name] = v_value
+        end
+        @annotations << [name, anno_args]
+      else
+        @annotations << [name]
+      end
+    end
+
+    def add_interface(*ifc_nodes)
+      ifc_nodes.
+        map {|ifc| defined?(ifc.name) ? ifc.name : ifc.value}.
+        each {|ifc| current_class.add_interface(ifc)}
+    end
+
     def new_class(name)
-      cls = @script.new_class(name)
+      cls = @script.new_class(name, @annotations)
+      @annotations = []
 
       class_stack.push(cls)
     end
@@ -316,19 +388,22 @@ EOJ
     def pop_class
       class_stack.pop
       @signature = nil
+      @annotations = []
     end
 
     def new_method(name)
-      method = current_class.new_method(name, @signature, @name)
+      method = current_class.new_method(name, @signature, @annotations, @name)
       @signature = @name = nil
+      @annotations = []
 
       method_stack.push(method)
     end
 
     def new_static_method(name)
-      method = current_class.new_method(name, @signature, @name)
+      method = current_class.new_method(name, @signature, @annotations, @name)
       method.static = true
       @signature = @name = nil
+      @annotations = []
 
       method_stack.push(method)
     end
@@ -349,9 +424,7 @@ EOJ
 
       sig = [(defined? ret.name) ? ret.name : ret.value]
       param_strings = params.child_nodes.map do |param|
-        next param.name if defined? param.name
-        next param.value if defined? param.value
-        raise 'unknown signature element: ' + param.to_s
+        next name_or_value(param)
       end
       sig.concat(param_strings)
 
@@ -363,14 +436,19 @@ EOJ
       param_strings = params.child_nodes.map do |param|
         if param.respond_to? :type_node
           type_node = param.type_node
-          next type_node.name if defined? type_node.name
-          next type_node.value if defined? type_node.value
+          next name_or_value(type_node)
         end
         raise 'unknown signature element: ' + param.to_s
       end
       sig.concat(param_strings)
 
       sig
+    end
+
+    def name_or_value(node)
+      return node.name if node.respond_to? :name
+      return node.value if node.respond_to? :value
+      raise "unknown node :" + node.to_s
     end
 
     def method_missing(name, *args)
@@ -400,6 +478,12 @@ EOJ
           end
         when NodeType::BLOCKNODE
           node.child_nodes.each {|n| n.accept self}
+        when NodeType::CALLNODE
+          case node.name
+          when '+@'
+            add_annotation(node.receiver_node,
+              *(node.args_node ? node.args_node.child_nodes : []))
+          end
         when NodeType::CLASSNODE
           new_class(node.cpath.name)
           node.body_node.accept(self)
@@ -419,7 +503,11 @@ EOJ
           when 'java_signature'
             set_signature build_signature(node.args_node.child_nodes[0])
           when 'java_name'
-            set_name node.args_node.child_nodes[0].value
+            set_name name_or_value(node.args_node.child_nodes[0])
+          when 'java_annotation'
+            add_annotation(*node.args_node.child_nodes)
+          when 'java_implements'
+            add_interface(*node.args_node.child_nodes)
           end
         when NodeType::NEWLINENODE
           node.next_node.accept(self)
