@@ -1275,7 +1275,9 @@ public class RubyZlib {
                     closed = true;
                 }
                 // call IO#close instead.
-                countingStream.io.callMethod(countingStream.getRuntime().getCurrentContext(), "close");
+                if (countingStream.io.respondsTo("close")) {
+                    countingStream.io.callMethod(countingStream.getRuntime().getCurrentContext(), "close");
+                }
                 eof = true;
             }
 
@@ -1773,7 +1775,9 @@ public class RubyZlib {
                     closed = true;
                 }
                 // call IO#close instead.
-                io.callMethod(io.getRuntime().getCurrentContext(), "close");
+                if (io.respondsTo("close")) {
+                    io.callMethod(io.getRuntime().getCurrentContext(), "close");
+                }
             }
 
             @Override
