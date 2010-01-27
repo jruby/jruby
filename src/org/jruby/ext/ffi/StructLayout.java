@@ -750,7 +750,7 @@ public final class StructLayout extends Type {
                 getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
                     Math.min(bl.length(), arrayType.length() - 1));
 
-            } else {
+            } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();
                 if (count > arrayType.length()) {
@@ -768,6 +768,8 @@ public final class StructLayout extends Type {
                     op.put(runtime, memory, offset + (i * arrayType.getComponentType().getNativeSize()),
                             ary.entry(i));
                 }
+            } else {
+                throw runtime.newNotImplementedError("cannot set array field");
             }
         }
 
