@@ -40,6 +40,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -556,6 +557,30 @@ public final class StructLayout extends Type {
             return op.get(runtime, getMemoryIO(ptr), offset);
         }
     }
+
+    /**
+     * Enum (maps :foo => 1, :bar => 2, etc)
+     */
+    static final class EnumMember extends Member {
+        
+        EnumMember(IRubyObject name, org.jruby.ext.ffi.Enum type, int index, long offset) {
+            super(name, type, index, offset);
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            // Upcall to ruby to convert :foo to an int, then write it out
+            getMemoryIO(ptr).putInt(offset,
+                    RubyNumeric.num2int(type.callMethod(runtime.getCurrentContext(), "find", value)));
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            // Read an int from the native memory, then upcall to the ruby value
+            // lookup code to convert it to the appropriate symbol
+            return type.callMethod(runtime.getCurrentContext(), "find",
+                    runtime.newFixnum(getMemoryIO(ptr).getInt(offset)));
+        }
+    }
+
 
     static final class PointerMember extends StructLayout.Member {
 
