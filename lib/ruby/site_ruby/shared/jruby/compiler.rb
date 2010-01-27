@@ -434,7 +434,6 @@ EOJ
         name_or_value(param)
       end
       sig.concat(param_strings)
-      puts signature_args
 
       sig
     end
