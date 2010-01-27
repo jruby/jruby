@@ -161,9 +161,9 @@ public class LocalOptimizationPass implements CompilerPass
     {
         String      fullName     = m.getFullyQualifiedName();
         CodeVersion knownVersion = versionMap.get(fullName);
-        CodeVersion mVersion     = m.getCodeVersionToken();
+        CodeVersion mVersion     = m.getVersion();
         if ((knownVersion == null) || (knownVersion._version != mVersion._version)) {
-            instrs.add(new ASSERT_METHOD_VERSION_Instr(m.getDefiningModule(), m.getName(), m.getCodeVersionToken(), deoptLabel));
+            instrs.add(new ASSERT_METHOD_VERSION_Instr(m.getDefiningModule(), m.getName(), m.getVersion(), deoptLabel));
             versionMap.put(fullName, mVersion);
         }
     }

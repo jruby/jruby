@@ -56,6 +56,10 @@ public class IR_Module extends IR_ScopeImpl {
         return m.getName().startsWith(ROOT_METHOD_PREFIX);
     }
 
+    public final String _name;
+    private IR_Method   _rootMethod; // Dummy top-level method for this module
+    private CodeVersion _version;    // Current code version for this module
+
     private void addRootMethod() {
         // Build a dummy static method for the class -- the scope in which all definitions, and class code executes, equivalent to java clinit
         // SSS FIXME: We have to build different instances of the root method each time we run into a class definition.
@@ -80,6 +84,15 @@ public class IR_Module extends IR_ScopeImpl {
         super(lexicalParent, container);
         _name = name;
         addRootMethod();
+        updateVersion();
+    }
+
+    public void updateVersion() {
+        _version = CodeVersion.getClassVersionToken();
+    }
+
+    public CodeVersion getVersion() {
+        return _version;
     }
 
     public IRMethod getRootMethod() {

@@ -8,16 +8,20 @@ public class CodeVersion {
 
     public static CodeVersion getVersionToken() {
         _nextVersionNumber++;
-
         return new CodeVersion(_nextVersionNumber);
     }
 
-    @Override
-    public String toString() {
-        return _version + "L";
+    protected CodeVersion(long v) { _version = v; }
+
+    static class ClassCodeVersion extends CodeVersion {
+        ClassCodeVersion() { super(_nextVersionNumber+1); _nextVersionNumber++; }
+        public String toString() { return "C_" + super.toString(); }
+        private static long _nextVersionNumber = 0L;
     }
 
-    private CodeVersion(long v) {
-        _version = v;
+    static class MethodCodeVersion extends CodeVersion {
+        MethodCodeVersion() { super(_nextVersionNumber+1); _nextVersionNumber++; }
+        public String toString() { return "M_" + super.toString(); }
+        private static long _nextVersionNumber = 0L;
     }
 }

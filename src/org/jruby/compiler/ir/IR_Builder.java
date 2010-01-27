@@ -2785,7 +2785,7 @@ public class IR_Builder
     }
 
     public Operand buildUntil(final UntilNode untilNode, IR_ExecutionScope s) {
-        return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, !untilNode.evaluateAtStart());
+        return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, untilNode.evaluateAtStart());
     }
 
 /**
@@ -2804,7 +2804,7 @@ public class IR_Builder
     }
 
     public Operand buildWhile(final WhileNode whileNode, IR_ExecutionScope s) {
-        return buildConditionalLoop(s, whileNode.getConditionNode(), whileNode.getBodyNode(), true, !whileNode.evaluateAtStart());
+        return buildConditionalLoop(s, whileNode.getConditionNode(), whileNode.getBodyNode(), true, whileNode.evaluateAtStart());
     }
 
     public Operand buildXStr(XStrNode node, IR_Scope m) {
