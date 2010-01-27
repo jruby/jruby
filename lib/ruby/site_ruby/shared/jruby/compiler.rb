@@ -186,7 +186,7 @@ module JRuby::Compiler
 
     attr_accessor :methods, :name, :script_name, :annotations, :interfaces
 
-    def new_method(name, java_signature = nil, annotations = [], java_name = nil)
+    def new_method(name, java_signature = nil, annotations = [], java_name = name)
       method = RubyMethod.new(name, java_signature, annotations, java_name)
       methods << method
       method
@@ -392,6 +392,7 @@ EOJ
     end
 
     def new_method(name)
+      @name ||= name
       method = current_class.new_method(name, @signature, @annotations, @name)
       @signature = @name = nil
       @annotations = []
@@ -400,6 +401,7 @@ EOJ
     end
 
     def new_static_method(name)
+      @name ||= name
       method = current_class.new_method(name, @signature, @annotations, @name)
       method.static = true
       @signature = @name = nil
