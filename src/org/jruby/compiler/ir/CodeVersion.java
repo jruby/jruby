@@ -6,9 +6,12 @@ public class CodeVersion {
     // SSS FIXME: Does int suffice, or do we need long?
     public final long _version;
 
-    public static CodeVersion getVersionToken() {
-        _nextVersionNumber++;
-        return new CodeVersion(_nextVersionNumber);
+    public static CodeVersion getClassVersionToken()  { 
+        return new ClassCodeVersion();
+    }
+
+    public static CodeVersion getMethodVersionToken() { 
+        return new MethodCodeVersion();
     }
 
     protected CodeVersion(long v) { _version = v; }

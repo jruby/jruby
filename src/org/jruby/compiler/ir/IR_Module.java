@@ -14,6 +14,7 @@ public class IR_Module extends IR_ScopeImpl {
 
     public final String _name;
     private IRMethod _rootMethod; // Dummy top-level method for the class
+    private CodeVersion _version;    // Current code version for this module
 
     static {
         bootStrap();
@@ -55,10 +56,6 @@ public class IR_Module extends IR_ScopeImpl {
     public static boolean isAClassRootMethod(IRMethod m) {
         return m.getName().startsWith(ROOT_METHOD_PREFIX);
     }
-
-    public final String _name;
-    private IR_Method   _rootMethod; // Dummy top-level method for this module
-    private CodeVersion _version;    // Current code version for this module
 
     private void addRootMethod() {
         // Build a dummy static method for the class -- the scope in which all definitions, and class code executes, equivalent to java clinit
