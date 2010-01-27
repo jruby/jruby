@@ -424,11 +424,17 @@ EOJ
       params = ary[0]
       ret = ary[1]
 
+      unless org.jruby.ast.ArrayNode === params
+        raise "signature needs an array of args at " + params.position.to_s
+      end
+      raise unless ret
+
       sig = [(defined? ret.name) ? ret.name : ret.value]
       param_strings = params.child_nodes.map do |param|
-        next name_or_value(param)
+        name_or_value(param)
       end
       sig.concat(param_strings)
+      puts signature_args
 
       sig
     end
