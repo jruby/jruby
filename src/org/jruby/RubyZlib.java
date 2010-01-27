@@ -1205,7 +1205,7 @@ public class RubyZlib {
              * Offers header property in addition to GZIPInputStream.
              */
             public HeaderReadableGZIPInputStream(CountingIOInputStream io) {
-                super(io, new Inflater(true), DEFAULT_BUFFER_SIZE);
+                super(new BufferedInputStream(io), new Inflater(true), DEFAULT_BUFFER_SIZE);
                 this.countingStream = io;
                 readHeader();
                 eof = false;
@@ -1341,7 +1341,7 @@ public class RubyZlib {
             }
 
             private int readUByte() throws IOException {
-                int ret = countingStream.read();
+                int ret = in.read();
                 if (ret == -1) {
                     throw new EOFException();
                 } else {
@@ -1359,19 +1359,21 @@ public class RubyZlib {
             }
 
             private void readBytes(byte[] bytes) throws IOException {
-                readBytes(bytes, 0, bytes.length);
+                readBytes(bytes, 0, bytes.length, true);
             }
 
-            private void readBytes(byte[] bytes, int pos, int len) throws IOException {
+            private void readBytes(byte[] bytes, int pos, int len, boolean updateChecksum) throws IOException {
                 if (bytes.length < pos + len) {
                     throw new IllegalArgumentException();
                 }
                 while (len > 0) {
-                    int ret = countingStream.read(bytes, pos, len);
+                    int ret = in.read(bytes, pos, len);
                     if (ret == -1) {
                         throw new EOFException();
                     } else {
-                        checksum.update(bytes, pos, ret);
+                        if (updateChecksum) {
+                            checksum.update(bytes, pos, ret);
+                        }
                     }
                     pos += ret;
                     len -= ret;
@@ -1389,6 +1391,7 @@ public class RubyZlib {
 
             private void readTrailer() throws IOException {
                 try {
+                    eof = true;
                     int rest = 8;
                     byte[] trailer = new byte[8];
                     int remaining = super.inf.getRemaining();
@@ -1397,7 +1400,8 @@ public class RubyZlib {
                         rest -= remaining;
                     }
                     if (rest > 0) {
-                        readBytes(trailer, rest, 8 - rest);
+                        // Do not update checksum for trailer
+                        readBytes(trailer, 8 - rest, rest, false);
                     }
                     long uint = bytesToUInt(trailer, 0);
                     if (uint != checksum.getValue()) {
