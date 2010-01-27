@@ -296,6 +296,7 @@ class TestZlib < Test::Unit::TestCase
     assert_equal("foo" + main_data, result)
   end
 
+  # JRUBY-4503: cruby-zlib does not require 'close'
   def test_gzip_writer_restricted_io
     z = Object.new
     def z.write(arg)
@@ -309,10 +310,11 @@ class TestZlib < Test::Unit::TestCase
     assert_not_nil z.buf
   end
 
+  # JRUBY-4503: cruby-zlib does not require 'close'
   def test_gzip_reader_restricted_io
     z = Object.new
     def z.read(size)
-      @buf ||= (s = StringIO.new; Zlib::GzipWriter.wrap(s) { |io| io.write("hello") }; s.string)
+      @buf ||= TestZlib.create_gzip_stream("hello")
       @buf.slice!(0, size)
     end
     called = false
@@ -321,5 +323,29 @@ class TestZlib < Test::Unit::TestCase
       called = true
     }
     assert(called)
+  end
+
+  # JRUBY-4503: trailer CRC check failed
+  def test_gzip_reader_trailer_from_buffer
+    z = Object.new
+    def z.read(size)
+      @buf ||= TestZlib.create_gzip_stream("hello")
+      # emulate sliced buffer reading
+      @buf.slice!(0, 1)
+    end
+    called = false
+    Zlib::GzipReader.wrap(z) { |io|
+      assert_equal("hello", io.read)
+      called = true
+    }
+    assert(called)
+  end
+
+  def self.create_gzip_stream(string)
+    s = StringIO.new
+    Zlib::GzipWriter.wrap(s) { |io|
+      io.write("hello")
+    }
+    s.string
   end
 end
