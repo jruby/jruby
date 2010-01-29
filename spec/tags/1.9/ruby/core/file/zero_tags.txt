@@ -1,1 +1,2 @@
 fails:File.zero? accepts an object that has a #to_path method
+windows(JRUBY-4186):File.zero? returns true for NUL

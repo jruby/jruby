@@ -3,7 +3,7 @@
 # detect windows platform:
 require 'rbconfig'
 require 'java'
-require 'jruby'
+require 'jruby/util'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 WINDOWS = Config::CONFIG['host_os'] =~ /mswin/
@@ -69,12 +69,11 @@ class MSpecScript
   set :command_line, [ SPEC_DIR + '/command_line' ]
 
   if WINDOWS
+    # Some specs on Windows will fail in we launch JRuby via
+    # ruby_exe() in-process (see core/argf/gets_spec.rb)
+    JRuby.runtime.instance_config.run_ruby_in_process = false
     # core
-    get(:core) << '^' + SPEC_DIR + '/core/argf'          # hangs
-    get(:core) << '^' + SPEC_DIR + '/core/env'           # many failures
-    get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
-    get(:core) << '^' + SPEC_DIR + '/core/kernel'        # many failures
-    get(:core) << '^' + SPEC_DIR + '/core/process'       # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/file/stat'    # many failures
 
     # exclude specs tagged with 'windows' keyword
     set :ci_xtags, ['windows']

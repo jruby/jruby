@@ -1,0 +1,1 @@
+windows:File::Stat#mode should be able to determine the mode through a File::Stat object

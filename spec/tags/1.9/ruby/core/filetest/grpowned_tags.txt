@@ -1,1 +1,1 @@
-windows:FileTest.grpowned? returns false if the file exist
+windows(JRUBY-4446):FileTest.grpowned? returns false if the file exist
