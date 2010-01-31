@@ -1,0 +1,1 @@
+fails:Encoding.find does NOT accept encoding names as Symbols

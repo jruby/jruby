@@ -1,0 +1,1 @@
+fails:String#each_line raises a TypeError when the separator is a symbol
