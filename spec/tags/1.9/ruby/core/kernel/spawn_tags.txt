@@ -4,5 +4,5 @@ fails:Kernel.spawn uses the given working directory if :chdir => dir is supplied
 fails:Kernel.spawn redirects STDERR to the given file descriptior if if :err => Fixnum
 fails:Kernel.spawn redirects STDERR to the given file if :err => String
 windows:Kernel.spawn executes the given command
-windows:Kernel.spawn joins the current process group by default
-windows:Kernel.spawn uses the current working directory as its working directory
+fails:Kernel.spawn joins the current process group by default
+fails:Kernel.spawn uses the current working directory as its working directory

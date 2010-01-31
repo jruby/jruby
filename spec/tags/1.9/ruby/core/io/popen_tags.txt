@@ -1,1 +1,2 @@
 critical(hangs):IO::popen allows the io to be closed inside the block
+unstable:IO::popen writes to a write-only pipe
