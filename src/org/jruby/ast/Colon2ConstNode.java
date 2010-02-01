@@ -13,6 +13,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 /**
  *
@@ -39,9 +40,13 @@ public class Colon2ConstNode extends Colon2Node {
 
     @Override
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-       try {
+        IRubyObject lastError = context.getErrorInfo();
+        try {
             if (RuntimeHelpers.isModuleAndHasConstant(leftNode.interpret(runtime, context, self, aBlock), name)) return "constant";
-        } catch (JumpException e) {}
+        } catch (JumpException e) {
+            // replace lastError
+            context.setErrorInfo(lastError);
+        }
 
         return null;
     }

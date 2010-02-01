@@ -1807,6 +1807,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void isConstantBranch(final BranchCallback setup, final String name) {
         BranchCallback catchCode = new BranchCallback() {
             public void branch(BodyCompiler context) {
+                // restore the original exception
+                loadThreadContext();
+                method.aload(getPreviousExceptionIndex());
+                invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+                method.pop();
+
                 pushNull();
             }
         };
@@ -1849,6 +1855,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
             mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
             mv.astore(getRuntimeIndex());
+
+            // store previous exception for restoration if we rescue something
+            loadThreadContext();
+            invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
+            mv.astore(getPreviousExceptionIndex());
 
             // grab nil for local variables
             loadRuntime();
