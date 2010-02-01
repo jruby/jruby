@@ -2961,6 +2961,14 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("ENOTSOCK"), message);
     }
 
+    public RaiseException newErrnoENOTCONNError(String message) {
+        return newRaiseException(getErrno().fastGetClass("ENOTCONN"), message);
+    }
+
+    public RaiseException newErrnoENOTCONNError() {
+        return newRaiseException(getErrno().fastGetClass("ENOTCONN"), "Socket is not connected");
+    }
+
     public RaiseException newErrnoENOENTError(String message) {
         return newRaiseException(getErrno().fastGetClass("ENOENT"), message);
     }

@@ -265,5 +265,10 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
+    @Override
+    public IRubyObject gets(ThreadContext context) {
+        throw context.getRuntime().newErrnoENOTCONNError();
+    }
+
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 }
