@@ -1377,7 +1377,7 @@ public class Ruby19Parser implements RubyParser {
       @param expected list of acceptable tokens, if available.
     */
   public void yyerror (String message, String[] expected, String found) {
-    String text = ", unexpected " + found + "\n";
+    String text = message + ", unexpected " + found + "\n";
     //new Exception().printStackTrace();
     throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), text, found);
   }
