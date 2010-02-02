@@ -33,6 +33,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -62,43 +63,48 @@ public class RubyGC {
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject start(IRubyObject recv) {
-        return recv.getRuntime().getNil();
+    public static IRubyObject start(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().getNil();
     }
 
     @JRubyMethod
-    public static IRubyObject garbage_collect(IRubyObject recv) {
-        return recv.getRuntime().getNil();
+    public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().getNil();
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject enable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn(
-                ID.EMPTY_IMPLEMENTATION, "GC.enable will not work on JRuby", "GC.enable");
+    public static IRubyObject enable(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        emptyImplementationWarning(runtime, "GC.enable");
         boolean old = gcDisabled;
         gcDisabled = false;
-        return recv.getRuntime().newBoolean(old);
+        return runtime.newBoolean(old);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject disable(IRubyObject recv) {
-        recv.getRuntime().getWarnings().warn(
-                ID.EMPTY_IMPLEMENTATION, "GC.disable will not work on JRuby", "GC.disable");
+    public static IRubyObject disable(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        emptyImplementationWarning(runtime, "GC.disable");
         boolean old = gcDisabled;
         gcDisabled = true;
-        return recv.getRuntime().newBoolean(old);
+        return runtime.newBoolean(old);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject stress(IRubyObject recv) {
-        return recv.getRuntime().newBoolean(stress);
+    public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
+        return context.getRuntime().newBoolean(stress);
     }
 
     @JRubyMethod(name = "stress=", module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject stress_set(IRubyObject recv, IRubyObject arg) {
-        recv.getRuntime().getWarnings().warn(
-                ID.EMPTY_IMPLEMENTATION, "GC.stress= does nothing on JRuby", "GC.stress=");
+    public static IRubyObject stress_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        emptyImplementationWarning(runtime, "GC.stress=");
         stress = arg.isTrue();
-        return recv.getRuntime().newBoolean(stress);
+        return runtime.newBoolean(stress);
+    }
+
+    private static void emptyImplementationWarning(Ruby runtime, String name) {
+        runtime.getWarnings().warn(ID.EMPTY_IMPLEMENTATION,
+                name + " does nothing on JRuby", name);
     }
 }

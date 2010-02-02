@@ -229,8 +229,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     private void prepareProperties(String propertyname, Map<String, String[]> map) {
         try {
+            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
             PropertyResourceBundle resource =
-                    new PropertyResourceBundle(getClass().getClassLoader().getResourceAsStream(propertyname));
+                    new PropertyResourceBundle(classloader.getResourceAsStream(propertyname));
             Enumeration<String> keys = resource.getKeys();
             while (keys.hasMoreElements()) {
                 String key = keys.nextElement();

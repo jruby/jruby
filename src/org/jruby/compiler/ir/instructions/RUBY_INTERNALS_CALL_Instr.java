@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
@@ -34,7 +34,7 @@ public class RUBY_INTERNALS_CALL_Instr extends CallInstruction {
 
     // SSS FIXME: Dont optimize these yet!
     @Override
-    public IR_Method getTargetMethodWithReceiver(Operand receiver) {
+    public IRMethod getTargetMethodWithReceiver(Operand receiver) {
         return null;
     }
 }

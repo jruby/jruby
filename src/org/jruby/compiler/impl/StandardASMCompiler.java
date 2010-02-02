@@ -279,8 +279,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             sourceNoPath = sourcename;
         }
 
-        
-        classWriter.visitSource(sourceNoPath, null);
+        final File sourceFile = new File(getSourcename());
+        classWriter.visitSource(sourceNoPath, sourceFile.getAbsolutePath());
     }
 
     public void endScript(boolean generateLoad, boolean generateMain) {

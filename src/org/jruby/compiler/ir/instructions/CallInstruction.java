@@ -11,7 +11,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IR_Class;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_Module;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
 
 /*
@@ -93,7 +93,7 @@ public class CallInstruction extends MultiOperandInstr {
     // SSS FIXME: Right now, this code is not very smart!
     // In a JIT context, we might be compiling this call in the context of a surrounding PIC (or a monomorphic IC).
     // If so, the receiver type and hence the target method will be known.
-    public IR_Method getTargetMethodWithReceiver(Operand receiver) {
+    public IRMethod getTargetMethodWithReceiver(Operand receiver) {
         if (!(_methAddr instanceof MethAddr)) return null;
 
         String mname = ((MethAddr) _methAddr).getName();
@@ -113,7 +113,7 @@ public class CallInstruction extends MultiOperandInstr {
         }
     }
 
-    public IR_Method getTargetMethod() {
+    public IRMethod getTargetMethod() {
         return getTargetMethodWithReceiver(getReceiver());
     }
 
@@ -121,7 +121,7 @@ public class CallInstruction extends MultiOperandInstr {
     // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
     // If we do know the target method, we ask the method itself whether it modifies ruby code
     public boolean canModifyCode() {
-        IR_Method method = getTargetMethod();
+        IRMethod method = getTargetMethod();
 
         return method == null ? true : method.modifiesCode();
     }
@@ -221,7 +221,7 @@ public class CallInstruction extends MultiOperandInstr {
         }
          **/
         Operand r = getReceiver();
-        IR_Method rm = getTargetMethodWithReceiver(r);
+        IRMethod rm = getTargetMethodWithReceiver(r);
 
         // If we don't know the method we are dispatching to, or if we know that the method can capture the callers frame,
         // we are in deep doo-doo.  We will need to store all variables in the call frame.

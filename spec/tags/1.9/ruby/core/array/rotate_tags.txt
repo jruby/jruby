@@ -1,0 +1,9 @@
+fails(JRUBY-4508):Array#rotate returns a copy of the array whose first n elements is moved to the last
+fails(JRUBY-4508):Array#rotate returns a copy of the array when the length is one
+fails(JRUBY-4508):Array#rotate returns an empty array when self is empty
+fails(JRUBY-4508):Array#rotate does not return self
+fails(JRUBY-4508):Array#rotate returns subclass instance for Array subclasses
+fails(JRUBY-4508):Array#rotate! moves the first n elements to the last and returns self
+fails(JRUBY-4508):Array#rotate! does nothing and returns self when the length is zero or one
+fails(JRUBY-4508):Array#rotate! returns self
+fails(JRUBY-4508):Array#rotate! raises a RuntimeError on a frozen array

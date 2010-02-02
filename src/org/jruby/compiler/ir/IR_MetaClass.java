@@ -18,7 +18,7 @@ public class IR_MetaClass extends IR_Class
         super(s, null, new MetaObject(CLASS_METACLASS), "<FIXME>");
 
         if ((receiver instanceof Variable) && ((Variable)receiver).name.equals("self")) {
-            IR_Method classRootMethod = (IR_Method)s;
+            IRMethod classRootMethod = (IRMethod)s;
             _metaClassedObject = (MetaObject)classRootMethod.getContainer();
         }
         else {

@@ -40,6 +40,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -557,6 +558,30 @@ public final class StructLayout extends Type {
         }
     }
 
+    /**
+     * Enum (maps :foo => 1, :bar => 2, etc)
+     */
+    static final class EnumMember extends Member {
+        
+        EnumMember(IRubyObject name, org.jruby.ext.ffi.Enum type, int index, long offset) {
+            super(name, type, index, offset);
+        }
+
+        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+            // Upcall to ruby to convert :foo to an int, then write it out
+            getMemoryIO(ptr).putInt(offset,
+                    RubyNumeric.num2int(type.callMethod(runtime.getCurrentContext(), "find", value)));
+        }
+
+        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+            // Read an int from the native memory, then upcall to the ruby value
+            // lookup code to convert it to the appropriate symbol
+            return type.callMethod(runtime.getCurrentContext(), "find",
+                    runtime.newFixnum(getMemoryIO(ptr).getInt(offset)));
+        }
+    }
+
+
     static final class PointerMember extends StructLayout.Member {
 
         PointerMember(IRubyObject name, Type type, int index, long offset) {
@@ -750,7 +775,7 @@ public final class StructLayout extends Type {
                 getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
                     Math.min(bl.length(), arrayType.length() - 1));
 
-            } else {
+            } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();
                 if (count > arrayType.length()) {
@@ -768,6 +793,8 @@ public final class StructLayout extends Type {
                     op.put(runtime, memory, offset + (i * arrayType.getComponentType().getNativeSize()),
                             ary.entry(i));
                 }
+            } else {
+                throw runtime.newNotImplementedError("cannot set array field");
             }
         }
 

@@ -33,6 +33,7 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.net.SocketException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -142,6 +143,13 @@ public class RubyTCPServer extends RubyTCPSocket {
                 throw context.getRuntime().newErrnoEADDRNOTAVAILError(msg);
             } else {
                 throw context.getRuntime().newErrnoEADDRINUSEError(msg);
+            }
+        } catch(SocketException e) {
+            String msg = e.getMessage();
+            if(msg.indexOf("Permission denied") != -1) {
+                throw context.getRuntime().newErrnoEACCESError("bind(2)");
+            } else {
+                throw sockerr(context.getRuntime(), "initialize: name or service not known");
             }
         } catch(IOException e) {
             throw sockerr(context.getRuntime(), "initialize: name or service not known");
@@ -263,6 +271,11 @@ public class RubyTCPServer extends RubyTCPSocket {
         } finally {
             tcpServer.callMethod(context, "close");
         }
+    }
+
+    @Override
+    public IRubyObject gets(ThreadContext context) {
+        throw context.getRuntime().newErrnoENOTCONNError();
     }
 
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");

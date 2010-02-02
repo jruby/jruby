@@ -1520,11 +1520,11 @@ public class IR_Builder
 
     private void defineNewMethod(MethodDefNode defnNode, IR_Scope s, Operand receiver, boolean isInstanceMethod)
     {
-        IR_Method m;
+        IRMethod m;
         if (isInstanceMethod)
-            m = new IR_Method(s, new MetaObject(s), defnNode.getName(), isInstanceMethod);
+            m = new IRMethod(s, new MetaObject(s), defnNode.getName(), isInstanceMethod);
         else
-            m = new IR_Method(s, receiver, defnNode.getName(), isInstanceMethod);
+            m = new IRMethod(s, receiver, defnNode.getName(), isInstanceMethod);
 
             // Build IR for args
         receiveArgs(defnNode.getArgsNode(), m);
@@ -2676,7 +2676,7 @@ public class IR_Builder
         // Top-level script!
         IR_Script script = new IR_Script("__file__", node.getPosition().getFile());
         IR_Class  rootClass = script._dummyClass;
-        IR_Method rootMethod = rootClass.getRootMethod();
+        IRMethod rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name
         rootMethod.addInstr(new FilenameInstruction(node.getPosition().getFile()));
@@ -2785,7 +2785,7 @@ public class IR_Builder
     }
 
     public Operand buildUntil(final UntilNode untilNode, IR_ExecutionScope s) {
-        return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, !untilNode.evaluateAtStart());
+        return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, untilNode.evaluateAtStart());
     }
 
 /**
@@ -2804,7 +2804,7 @@ public class IR_Builder
     }
 
     public Operand buildWhile(final WhileNode whileNode, IR_ExecutionScope s) {
-        return buildConditionalLoop(s, whileNode.getConditionNode(), whileNode.getBodyNode(), true, !whileNode.evaluateAtStart());
+        return buildConditionalLoop(s, whileNode.getConditionNode(), whileNode.getBodyNode(), true, whileNode.evaluateAtStart());
     }
 
     public Operand buildXStr(XStrNode node, IR_Scope m) {
@@ -2825,7 +2825,7 @@ public class IR_Builder
     public Operand buildZSuper(ZSuperNode zsuperNode, IR_Scope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, ((IR_Method)s).getCallArgs(), block));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, ((IRMethod)s).getCallArgs(), block));
         return ret;
     }
 

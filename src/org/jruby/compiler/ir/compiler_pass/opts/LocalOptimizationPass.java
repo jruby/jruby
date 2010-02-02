@@ -8,7 +8,7 @@ import java.util.ListIterator;
 import org.jruby.compiler.ir.IR_Class;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_ExecutionScope;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
@@ -114,26 +114,26 @@ public class LocalOptimizationPass implements CompilerPass
 
                     // Check if we can optimize this call based on the receiving method and receiver type
                     // Use the simplified receiver!
-                    IR_Method rm = call.getTargetMethodWithReceiver(r);
+                    IRMethod rm = call.getTargetMethodWithReceiver(r);
                     if (rm != null) {
                         IR_Module rc = rm.getDefiningModule();
                         if (rc == IR_Class.getCoreClass("Fixnum")) {
                             Operand[] args = call.getOperands();
                             if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                val = ((Fixnum)r).computeValue(rm._name, (Constant)args[2]);
+                                val = ((Fixnum)r).computeValue(rm.getName(), (Constant)args[2]);
                             }
                         }
                         else if (rc == IR_Class.getCoreClass("Float")) {
                             Operand[] args = call.getOperands();
                             if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                val = ((Float)r).computeValue(rm._name, (Constant)args[2]);
+                                val = ((Float)r).computeValue(rm.getName(), (Constant)args[2]);
                             }
                         }
                         else if (rc == IR_Class.getCoreClass("Array")) {
                             Operand[] args = call.getOperands();
-                            if (args[2] instanceof Fixnum && (rm._name == "[]")) {
+                            if (args[2] instanceof Fixnum && (rm.getName() == "[]")) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                 val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[2])._value.intValue(), false);
                             }
@@ -157,13 +157,13 @@ public class LocalOptimizationPass implements CompilerPass
         }
     }
 
-    private static void addMethodGuard(IR_Method m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
+    private static void addMethodGuard(IRMethod m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
     {
         String      fullName     = m.getFullyQualifiedName();
         CodeVersion knownVersion = versionMap.get(fullName);
-        CodeVersion mVersion     = m.getCodeVersionToken();
+        CodeVersion mVersion     = m.getVersion();
         if ((knownVersion == null) || (knownVersion._version != mVersion._version)) {
-            instrs.add(new ASSERT_METHOD_VERSION_Instr(m.getDefiningModule(), m._name, m.getCodeVersionToken(), deoptLabel));
+            instrs.add(new ASSERT_METHOD_VERSION_Instr(m.getDefiningModule(), m.getName(), m.getVersion(), deoptLabel));
             versionMap.put(fullName, mVersion);
         }
     }

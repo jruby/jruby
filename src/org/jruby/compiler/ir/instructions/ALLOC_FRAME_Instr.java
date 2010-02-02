@@ -9,7 +9,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.IR_ExecutionScope;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
 
 import java.util.Map;
@@ -27,12 +27,12 @@ public class ALLOC_FRAME_Instr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) {}
 
-    private static IR_Method getClosestMethodAncestor(IR_ExecutionScope scope)
+    private static IRMethod getClosestMethodAncestor(IR_ExecutionScope scope)
     {
-        while (!(scope instanceof IR_Method))
+        while (!(scope instanceof IRMethod))
             scope = (IR_ExecutionScope)scope.getLexicalParent();
 
-        return (IR_Method)scope;
+        return (IRMethod)scope;
     }
 
     public String toString()

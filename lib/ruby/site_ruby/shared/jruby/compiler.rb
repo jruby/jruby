@@ -186,7 +186,7 @@ module JRuby::Compiler
 
     attr_accessor :methods, :name, :script_name, :annotations, :interfaces
 
-    def new_method(name, java_signature = nil, annotations = [], java_name = nil)
+    def new_method(name, java_signature = nil, annotations = [], java_name = name)
       method = RubyMethod.new(name, java_signature, annotations, java_name)
       methods << method
       method
@@ -392,6 +392,7 @@ EOJ
     end
 
     def new_method(name)
+      @name ||= name
       method = current_class.new_method(name, @signature, @annotations, @name)
       @signature = @name = nil
       @annotations = []
@@ -400,6 +401,7 @@ EOJ
     end
 
     def new_static_method(name)
+      @name ||= name
       method = current_class.new_method(name, @signature, @annotations, @name)
       method.static = true
       @signature = @name = nil
@@ -422,9 +424,14 @@ EOJ
       params = ary[0]
       ret = ary[1]
 
+      unless org.jruby.ast.ArrayNode === params
+        raise "signature needs an array of args at " + params.position.to_s
+      end
+      raise unless ret
+
       sig = [(defined? ret.name) ? ret.name : ret.value]
       param_strings = params.child_nodes.map do |param|
-        next name_or_value(param)
+        name_or_value(param)
       end
       sig.concat(param_strings)
 

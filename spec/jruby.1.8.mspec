@@ -74,7 +74,7 @@ class MSpecScript
     # ruby_exe() in-process (see core/argf/gets_spec.rb)
     JRuby.runtime.instance_config.run_ruby_in_process = false
     # core
-    get(:core) << '^' + SPEC_DIR + '/core/file'          # many failures
+    get(:core) << '^' + SPEC_DIR + '/core/file/stat'    # many failures
 
     # exclude specs tagged with 'windows' keyword
     set :ci_xtags, ['windows']

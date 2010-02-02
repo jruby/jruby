@@ -4,7 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IR_ExecutionScope;
-import org.jruby.compiler.ir.IR_Method;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
 
 /*
@@ -26,12 +26,12 @@ public class LOAD_FROM_FRAME_Instr extends GET_Instr
         super(Operation.FRAME_LOAD, v, new MetaObject(getClosestMethodAncestor(scope)), slotName);
     }
 
-    private static IR_Method getClosestMethodAncestor(IR_ExecutionScope scope)
+    private static IRMethod getClosestMethodAncestor(IR_ExecutionScope scope)
     {
-        while (!(scope instanceof IR_Method))
+        while (!(scope instanceof IRMethod))
             scope = (IR_ExecutionScope)scope.getLexicalParent();
 
-        return (IR_Method)scope;
+        return (IRMethod)scope;
     }
 
     public String toString()

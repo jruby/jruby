@@ -213,9 +213,11 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl {
         int i = 0;
         for (IR_Instr instr : _instrs) {
             if (i > 0) b.append("\n");
+            
             b.append("  ").append(i).append('\t');
-            if (instr.isDead())
-                b.append("[DEAD]");
+
+            if (instr.isDead()) b.append("[DEAD]");
+            
             b.append(instr);
             i++;
         }

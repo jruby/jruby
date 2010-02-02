@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 import "java_integration.fixtures.ClassWithEnums"
+import "java_integration.fixtures.JavaFields"
 
 describe "Java::JavaClass.for_name" do
   it "should return primitive classes for Java primitive type names" do
@@ -34,5 +35,12 @@ describe "A JavaClass wrapper around a java.lang.Class" do
   it "provides a nice String output for inspect" do
     myclass = java.lang.String.java_class
     myclass.inspect.should == "class java.lang.String"
+  end
+end
+
+describe "A JavaClass with fields containing leading and trailing $" do
+  it "should be accessible" do
+    JavaFields.send('$LEADING').should == "leading"
+    JavaFields.send('TRAILING$').should == true
   end
 end

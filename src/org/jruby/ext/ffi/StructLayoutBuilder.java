@@ -192,6 +192,10 @@ public final class StructLayoutBuilder extends RubyObject {
         } else if (type instanceof CallbackInfo) {
 
             field = new StructLayout.CallbackMember(fieldName, (CallbackInfo) type, fieldCount, offset);
+        
+        } else if (type instanceof org.jruby.ext.ffi.Enum) {
+
+            field = new StructLayout.EnumMember(fieldName, (org.jruby.ext.ffi.Enum) type, fieldCount, offset);
 
         } if (type instanceof Type.Builtin) {
 

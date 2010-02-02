@@ -27,6 +27,9 @@ public class JavaFields {
     public static Boolean trueObjStaticField = Boolean.TRUE;
     public static Boolean falseObjStaticField = Boolean.FALSE;
 
+    public static String $LEADING = "leading";
+    public static Boolean TRAILING$ = Boolean.TRUE;
+
     public String stringField = "foo";
     public byte byteField = (byte)1;
     public short shortField = (short)2;

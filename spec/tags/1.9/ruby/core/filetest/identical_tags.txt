@@ -1,1 +1,1 @@
-windows:FileTest.identical? returns true if both named files are identical
+windows(JRUBY-4445):FileTest.identical? returns true if both named files are identical
