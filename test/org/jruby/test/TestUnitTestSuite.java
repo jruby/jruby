@@ -72,11 +72,15 @@ public class TestUnitTestSuite extends TestSuite {
                 continue;
             }
 
-            addTest(new ScriptTest(line, testDir));
+            addTest(createTest(line, testDir));
         }
     }
 
-    private class ScriptTest extends TestCase {
+    protected TestCase createTest(String line, File testDir) {
+        return new ScriptTest(line, testDir);
+    }
+
+    protected class ScriptTest extends TestCase {
         private final String filename;
         private final File testDir;
         private ByteArrayInputStream in;
@@ -85,7 +89,6 @@ public class TestUnitTestSuite extends TestSuite {
         private ByteArrayOutputStream err;
         private PrintStream printErr;
         private Ruby runtime;
-
 
         public ScriptTest(String filename, File dir) {
             super(filename);
