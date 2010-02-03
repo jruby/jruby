@@ -1,3 +1,4 @@
+require 'java'
 require 'test/unit'
 
 # Unit and regression tests for backtraces.
