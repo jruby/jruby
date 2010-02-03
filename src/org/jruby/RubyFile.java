@@ -62,6 +62,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.DirectoryAsFileException;
+import org.jruby.util.io.PermissionDeniedException;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
@@ -554,8 +555,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // TODO: check if too many open files, GC and try again
 
             return descriptor;
+        } catch (PermissionDeniedException pde) {
+            // PDException can be thrown only when creating the file and
+            // permission is denied.  See JavaDoc of PermissionDeniedException.
+            throw getRuntime().newErrnoEACCESError(path);
         } catch (FileNotFoundException fnfe) {
-            throw getRuntime().newErrnoENOENTError();
+            // FNFException can be thrown in both cases, when the file
+            // is not found, or when permission is denied.
+            if (Ruby.isSecurityRestricted() || new File(path).exists()) {
+                throw getRuntime().newErrnoEACCESError(path);
+            }
+            throw getRuntime().newErrnoENOENTError(path);
         } catch (DirectoryAsFileException dafe) {
             throw getRuntime().newErrnoEISDirError();
         } catch (FileExistsException fee) {
@@ -594,6 +604,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return stream;
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
+        } catch (PermissionDeniedException pde) {
+            // PDException can be thrown only when creating the file and
+            // permission is denied.  See JavaDoc of PermissionDeniedException.
+            throw getRuntime().newErrnoEACCESError(path);
         } catch (FileNotFoundException ex) {
             // FNFException can be thrown in both cases, when the file
             // is not found, or when permission is denied.

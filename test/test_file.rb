@@ -920,6 +920,22 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
+  # JRUBY-4537: File.open raises Errno::ENOENT instead of Errno::EACCES
+  def test_write_open_permission_denied
+    t = Tempfile.new('tmp' + File.basename(__FILE__))
+    t.close
+    File.open(t.path, 'w') {}
+    File.chmod(0555, t.path)
+    # jruby 1.4 raises ENOENT here
+    assert_raises(Errno::EACCES) do
+      File.open(t.path, 'w') {}
+    end
+    # jruby 1.4 raises ENOENT here
+    assert_raises(Errno::EACCES) do
+      File.open(t.path, File::WRONLY) {}
+    end
+  end
+
   #JRUBY-4380: File.open raises IOError instead of Errno::ENOENT
   def test_open_with_nonexisting_directory
     file_path = "/foo/bar"

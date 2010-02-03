@@ -669,6 +669,8 @@ public class ChannelDescriptor {
                     File parent = theFile.getParentFile();
                     if (parent != null && parent != theFile && !parent.exists()) {
                         throw new FileNotFoundException(path);
+                    } else if (!theFile.canWrite()) {
+                        throw new PermissionDeniedException(path);
                     } else {
                         // for all other IO errors, just re-throw the original exception
                         throw ioe;
