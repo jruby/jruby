@@ -3635,6 +3635,78 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
+
+    private static void aryReverse(IRubyObject[] _p1, int p1, IRubyObject[] _p2, int p2) {
+        while(p1 < p2) {
+            IRubyObject tmp = _p1[p1];
+            _p1[p1++] = _p2[p2];
+            _p2[p2--] = tmp;
+        }
+    }
+
+    private IRubyObject internalRotateBang(ThreadContext context, int cnt) {
+        modify();
+        
+        if(cnt != 0) {
+            IRubyObject[] ptr = values;
+            int len = realLength;
+            
+            if(len > 0 && (cnt = rotateCount(cnt, len)) > 0) {
+                --len;
+                if(cnt < len) aryReverse(ptr, begin + cnt, ptr, begin + len);
+                if(--cnt > 0) aryReverse(ptr, begin, ptr, begin + cnt);
+                if(len > 0)   aryReverse(ptr, begin, ptr, begin + len);
+                return this;
+            }
+        }
+        
+        return context.getRuntime().getNil();
+    }
+
+    private static int rotateCount(int cnt, int len) {
+        return (cnt < 0) ? (len - (~cnt % len) - 1) : (cnt % len);
+    }
+
+    private IRubyObject internalRotate(ThreadContext context, int cnt) {
+        int len = realLength;
+        RubyArray rotated = aryDup();
+        rotated.modify();
+
+        if(len > 0) {
+            cnt = rotateCount(cnt, len);
+            IRubyObject[] ptr = this.values;
+            IRubyObject[] ptr2 = rotated.values;
+            len -= cnt;
+            System.arraycopy(ptr, begin + cnt, ptr2, 0, len);
+            System.arraycopy(ptr, begin, ptr2, len, cnt);
+        }
+        
+        return rotated;
+    }
+
+    @JRubyMethod(name = "rotate!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rotate_bang(ThreadContext context) {
+        internalRotateBang(context, 1);
+        return this;
+    }
+
+    @JRubyMethod(name = "rotate!", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rotate_bang(ThreadContext context, IRubyObject cnt) {
+        internalRotateBang(context, RubyNumeric.fix2int(cnt));
+        return this;
+    }
+
+    @JRubyMethod(name = "rotate", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rotate(ThreadContext context) {
+        return internalRotate(context, 1);
+    }
+
+    @JRubyMethod(name = "rotate", compat = CompatVersion.RUBY1_9)
+    public IRubyObject rotate(ThreadContext context, IRubyObject cnt) {
+        return internalRotate(context, RubyNumeric.fix2int(cnt));
+    }
+
+
     // Enumerable direct implementations (non-"each" versions)
     public IRubyObject all_p(ThreadContext context, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
