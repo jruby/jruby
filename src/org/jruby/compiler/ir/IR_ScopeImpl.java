@@ -14,6 +14,9 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.operands.SelfVariable;
+import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
+import org.jruby.compiler.ir.operands.TemporaryVariable;
 
 /**
  * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
@@ -100,44 +103,29 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return _nextClosureIndex;
     }
 
-    /**
-     * Provide a prefix (like 'v' or 'cl_1_v') to allocate a new internal
-     * variable with a non-colliding index.  If you have already allocated
-     * %v_0, %v_1, then the next allocated variable will be the next value
-     * %v_2.  Note that each prefix will get a '%' on the front and also
-     * will allocate indexes based on the prefix provided.
-     *
-     * @param prefix
-     * @return a unique variable based on the prefix provided
-     */
-    public Variable getNewVariable(String prefix) {
-        // Variable names stored here cannot conflict with regular variable names.
-        // We are using '%' as a prefix to prevent name collisions.
-        return new Variable(allocateNextPrefixedName("%" + prefix));
+    public Variable getNewTemporaryClosureVariable(int closureId) {
+        return new TemporaryClosureVariable(closureId, allocateNextPrefixedName("%cl_" + closureId));
     }
 
-    /**
-     * @see IR_ScopeImpl#getNewVariable(String)
-     */
-    public Variable getNewVariable() {
-        return getNewVariable("v");
+    public Variable getNewTemporaryVariable() {
+        return new TemporaryVariable(allocateNextPrefixedName("%v"));
     }
 
     public Label getNewLabel(String prefix) {
-        return new Label(allocateNextPrefixedName(prefix));
+        return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
     }
 
     public Label getNewLabel() {
         return getNewLabel("LBL");
     }
 
-    private String allocateNextPrefixedName(String prefix) {
+    private int allocateNextPrefixedName(String prefix) {
         Integer index = _nextVarIndex.get(prefix);
         if (index == null) index = 0;
         
         _nextVarIndex.put(prefix, index + 1);
         
-        return prefix + "_" + index;
+        return index;
     }
 
     // ENEBO: Appears to be dead code?
@@ -150,7 +138,7 @@ public abstract class IR_ScopeImpl implements IR_Scope {
     // ENEBO: Can this always be the same variable?  Then SELF comparison could
     //    compare against this?
     public Variable getSelf() {
-        return new Variable("self");
+        return new SelfVariable();
     }
 
     public void addModule(IR_Module m) {

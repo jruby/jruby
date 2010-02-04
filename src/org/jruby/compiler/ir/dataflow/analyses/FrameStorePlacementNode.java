@@ -21,6 +21,7 @@ import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ListIterator;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class FrameStorePlacementNode extends FlowGraphNode {
     /* ---------- Public fields, methods --------- */
@@ -168,8 +169,9 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v : dirtyVars) {
-                        if (spillAllVars || cl_fsp.scopeUsesVariable(v)) {
-                            instrs.add(new STORE_TO_FRAME_Instr(s, v.name, v));
+                        if ((spillAllVars || cl_fsp.scopeUsesVariable(v)) && v instanceof LocalVariable) {
+                            // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
+                            instrs.add(new STORE_TO_FRAME_Instr(s, ((LocalVariable) v).name, v));
                             newDirtyVars.remove(v);
                         } // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
                         else if (cl_fsp.scopeDefinesVariable(v)) {
@@ -189,7 +191,10 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                         frameAllocated = true;
                     }
                     for (Variable v : dirtyVars) {
-                        instrs.add(new STORE_TO_FRAME_Instr(s, v.name, v));
+                        // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
+                        if (v instanceof LocalVariable) {
+                            instrs.add(new STORE_TO_FRAME_Instr(s, ((LocalVariable) v).name, v));
+                        }
                     }
                     instrs.next();
                     dirtyVars.clear();
@@ -210,7 +215,10 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
                 instrs.previous();
                 for (Variable v : dirtyVars) {
-                    instrs.add(new STORE_TO_FRAME_Instr(s, v.name, v));
+                    // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
+                    if (v instanceof LocalVariable) {
+                        instrs.add(new STORE_TO_FRAME_Instr(s, ((LocalVariable) v).name, v));
+                    }
                 }
                 instrs.next();
             }

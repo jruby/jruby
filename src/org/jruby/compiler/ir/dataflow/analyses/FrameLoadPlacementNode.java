@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class FrameLoadPlacementNode extends FlowGraphNode {
     /* ---------- Public fields, methods --------- */
@@ -146,8 +147,9 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                     Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
                     it.next();
                     for (Variable v : reqdLoads) {
-                        if (cl_flp.scopeDefinesVariable(v)) {
-                            it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
+                        // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
+                        if (cl_flp.scopeDefinesVariable(v) && v instanceof LocalVariable) {
+                            it.add(new LOAD_FROM_FRAME_Instr(v, s, ((LocalVariable) v).name));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -160,8 +162,11 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                 } else if (call.requiresFrame()) {
                     it.next();
                     for (Variable v : reqdLoads) {
-                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
-                        it.previous();
+                        // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
+                        if (v instanceof LocalVariable) {
+                            it.add(new LOAD_FROM_FRAME_Instr(v, s, ((LocalVariable) v).name));
+                            it.previous();
+                        }
                     }
                     it.previous();
                     reqdLoads.clear();
@@ -177,8 +182,9 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         // Load first use of variables in closures
         if ((s instanceof IR_Closure) && (_bb == _prob.getCFG().getEntryBB())) {
             for (Variable v : reqdLoads) {
-                if (flp.scopeUsesVariable(v)) {
-                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
+                // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
+                if (flp.scopeUsesVariable(v) && v instanceof LocalVariable) {
+                    it.add(new LOAD_FROM_FRAME_Instr(v, s, ((LocalVariable) v).name));
                 }
             }
         }

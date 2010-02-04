@@ -17,7 +17,13 @@ import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
+import org.jruby.compiler.ir.instructions.BRANCH_Instr;
+import org.jruby.compiler.ir.instructions.CallInstruction;
+import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.ByteList;
 
 
@@ -86,13 +92,13 @@ public class Interpreter {
 
     public static void interpretTop(Ruby runtime, IR_Scope scope) {
         if (scope instanceof IR_Script) {
-            interpretRootMethod(runtime, ((IR_Script) scope).getRootClass().getRootMethod());
+            interpretMethod(runtime, ((IR_Script) scope).getRootClass().getRootMethod());
         } else {
             System.out.println("BONED");
         }
     }
 
-    public static void interpretRootMethod(Ruby runtime, IRMethod method) {
+    public static void interpretMethod(Ruby runtime, IRMethod method) {
         System.out.print(method.toString() + "(");
 
         Operand operands[] = method.getCallArgs();
@@ -100,22 +106,54 @@ public class Interpreter {
             System.out.print(operands[i] + ", ");
         }
         System.out.println("EOP)");
+
+        // Dummy start and end are canonical entry and exit points for a method/closures
+        // we always getFallThroughBB(previous) to walk through unless we encounter explicit jump
+
+        // IR_Scope 
+        //   getLexicalScope <--- previous StaticScope equivalent
         
         // ThreadContext, self, receiver{, arg{, arg{, arg{, arg}}}}
-    }
 
-    /*
-    public static void interpret(IR_ExecutionScope scope) {
-        System.out.println("SCOPE: " + scope);
-        System.out.println("INTERPRET");
-        for (BasicBlock block: scope.getCFG().getNodes()) {
-            System.out.println("BLOCK");
-            for (IR_Instr instr : block.getInstrs()) {
-                System.out.println("INSTR: " + instr);
-//                if (!instr.isDead()) System.out.println("INSTR: " + instr);
+        // Construct primitive array as simple store for temporary variables in method and pass along
+
+        CFG cfg = method.getCFG();
+ //       BasicBlock basicBlock = cfg.getEntryBB();
+        for (BasicBlock basicBlock : cfg.getNodes()) {
+            for (IR_Instr i : basicBlock.getInstrs()) {
+                // .. interpret i ..
+                if (i instanceof BRANCH_Instr) {
+                    System.out.println("In branch");
+                    BRANCH_Instr branch = (BRANCH_Instr) i;
+                    boolean taken = false; // .. the interpreter will tell you whether the branch was taken or not ...
+                    if (taken) {
+                        basicBlock = cfg.getTargetBB(branch.getJumpTarget());
+                    } else {
+                        basicBlock = cfg.getFallThroughBB(basicBlock);
+                    }
+                } else if (i instanceof JUMP_Instr) {
+                    System.out.println("In jump");
+                    JUMP_Instr jump = (JUMP_Instr) i;
+                    basicBlock = cfg.getTargetBB(jump.getJumpTarget());
+                } else if (i instanceof CallInstruction) {
+                    CallInstruction callInstruction = (CallInstruction) i;
+
+                    System.out.println("Call: " + callInstruction);
+
+                    // Does not need to be recursive...except for scope handling
+                    interpretMethod(runtime, callInstruction.getTargetMethod());
+                } else {
+                    System.out.println("NOT HANDLING: " + i);
+                }
+                //... handle returns ..
+            }
+
+            if (basicBlock == null) {
+                //.. you are done with this cfg /method ..
+                //.. pop call stack, etc ..
             }
         }
-    }*/
+    }
 
     public static void interpret() {
 
