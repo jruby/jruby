@@ -8,6 +8,8 @@ public abstract class Variable extends Operand implements Comparable {
         return false;
     }
 
+    public abstract String getName();
+
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
         // You can only value-replace atomic values

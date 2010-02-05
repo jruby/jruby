@@ -11,6 +11,11 @@ public class TemporaryVariable extends Variable {
         this.offset = offset;
     }
 
+    @Override
+    public String getName() {
+        return getPrefix() + offset;
+    }
+
     public int compareTo(Object other) {
         if (!(other instanceof TemporaryVariable)) return 0;
         

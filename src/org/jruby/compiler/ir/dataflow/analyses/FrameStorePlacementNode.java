@@ -21,6 +21,7 @@ import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ListIterator;
+import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class FrameStorePlacementNode extends FlowGraphNode {
@@ -43,15 +44,18 @@ public class FrameStorePlacementNode extends FlowGraphNode {
         }
     }
 
+    // Only ruby local variables are candidates for frame stores.  Ignore the rest!
+    // SSS FIXME: What about self?
     public void buildDataFlowVars(IR_Instr i) {
         FrameStorePlacementProblem fsp = (FrameStorePlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
-            fsp.recordUsedVar(v);
+            if ((v instanceof LocalVariable) || (v instanceof SelfVariable))
+                fsp.recordUsedVar(v);
         }
 
         Variable v = i.getResult();
 
-        if (v != null) fsp.recordDefVar(v);
+        if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) fsp.recordDefVar(v);
     }
 
     public void initSolnForNode() {
@@ -114,7 +118,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
             Variable v = i.getResult();
 
-            if (v != null) dirtyVars.add(v);
+            if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) dirtyVars.add(v);
             if (i._op.isReturn()) dirtyVars.clear();
         }
 
@@ -169,9 +173,9 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v : dirtyVars) {
-                        if ((spillAllVars || cl_fsp.scopeUsesVariable(v)) && v instanceof LocalVariable) {
+                        if (spillAllVars || cl_fsp.scopeUsesVariable(v)) {
                             // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
-                            instrs.add(new STORE_TO_FRAME_Instr(s, ((LocalVariable) v).name, v));
+                            instrs.add(new STORE_TO_FRAME_Instr(s, v.getName(), v));
                             newDirtyVars.remove(v);
                         } // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
                         else if (cl_fsp.scopeDefinesVariable(v)) {
@@ -191,10 +195,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                         frameAllocated = true;
                     }
                     for (Variable v : dirtyVars) {
-                        // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
-                        if (v instanceof LocalVariable) {
-                            instrs.add(new STORE_TO_FRAME_Instr(s, ((LocalVariable) v).name, v));
-                        }
+                        instrs.add(new STORE_TO_FRAME_Instr(s, v.getName(), v));
                     }
                     instrs.next();
                     dirtyVars.clear();
@@ -215,17 +216,14 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
                 instrs.previous();
                 for (Variable v : dirtyVars) {
-                    // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
-                    if (v instanceof LocalVariable) {
-                        instrs.add(new STORE_TO_FRAME_Instr(s, ((LocalVariable) v).name, v));
-                    }
+                    instrs.add(new STORE_TO_FRAME_Instr(s, v.getName(), v));
                 }
                 instrs.next();
             }
 
             Variable v = i.getResult();
             
-            if (v != null) dirtyVars.add(v);
+            if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) dirtyVars.add(v);
         }
     }
 

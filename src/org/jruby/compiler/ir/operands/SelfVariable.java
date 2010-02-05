@@ -10,6 +10,11 @@ public class SelfVariable extends Variable {
     }
 
     @Override
+    public String getName() {
+        return "self";
+    }
+
+    @Override
     public String toString() {
         return "self";
     }
