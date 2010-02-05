@@ -88,15 +88,16 @@ public class JavaInterfaceTemplate {
     private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, final RubyClass clazz) {
         Ruby runtime = context.getRuntime();
         checkAlreadyReified(clazz, runtime);
-        
+
         IRubyObject javaClassObj = RuntimeHelpers.getInstanceVariable(self, runtime, "@java_class");
-        IRubyObject javaInterfaces = RuntimeHelpers.getInstanceVariable(clazz, runtime, "@java_interfaces");
-        if (!javaInterfaces.isTrue()) {
+        IRubyObject javaInterfaces;
+        if (!clazz.hasInstanceVariable("@java_interfaces")) {
             javaInterfaces = RubyArray.newArray(runtime, javaClassObj);
             RuntimeHelpers.setInstanceVariable(javaInterfaces, clazz, "@java_interfaces");
 
             initInterfaceImplMethods(context, clazz);
         } else {
+            javaInterfaces = RuntimeHelpers.getInstanceVariable(clazz, runtime, "@java_interfaces");
             // we've already done the above priming logic, just add another interface
             // to the list of intentions unless we're past the point of no return or
             // already intend to implement the given interface
