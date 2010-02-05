@@ -1,1 +1,0 @@
-windows(http://rubyspec.org/issues/show/196):ENV.[] returns the specified environment variable
