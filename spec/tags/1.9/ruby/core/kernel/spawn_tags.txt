@@ -9,3 +9,7 @@ windows(JRUBY-4354):Kernel.spawn executes the given command
 windows(JRUBY-4354):Kernel.spawn executes the given command as a new process
 windows(JRUBY-4354):Kernel.spawn returns the process ID of the new process as a Fixnum
 windows(JRUBY-4354):Kernel.spawn returns immediately
+fails:Kernel.spawn executes the given command
+fails:Kernel.spawn executes the given command as a new process
+fails:Kernel.spawn returns the process ID of the new process as a Fixnum
+fails:Kernel.spawn returns immediately
