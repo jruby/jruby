@@ -1,7 +1,7 @@
 require 'benchmark'
 require 'ffi'
 
-iter = 100000
+iter = ARGV[0] ? ARGV[0].to_i : 100000
 module Posix
   extend FFI::Library
   ffi_lib 'c'
