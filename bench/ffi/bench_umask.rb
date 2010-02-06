@@ -4,10 +4,12 @@ require 'ffi'
 iter = 100000
 module Posix
   extend FFI::Library
+  ffi_lib 'c'
   attach_function 'umask', [ :int ], :int
 end
 module NativeFile
   extend FFI::Library
+  ffi_lib 'c'
   # Attaching the function to this module is about 10% faster than calling Posix.umask
   if FFI::Platform.windows?
     attach_function :_umask, '_umask', [ :int ], :int
