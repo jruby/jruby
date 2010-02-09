@@ -11,6 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2002-2010 JRuby Community
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
@@ -592,7 +593,34 @@ public class LoadService {
             state.library = new ScriptClassLibrary(script);
         }
     }
-    
+
+    /**
+     * Looks for require statements with load strings like
+     * 'some/file.jar!nested/file'. It first adds the leading jar to the
+     * classpath and then proceeds to load the nested element(s) from the
+     * classpath.
+     */
+    public class NestedJarSearcher implements LoadSearcher {
+        public boolean shouldTrySearch(SearchState state) {
+            return state.library == null && state.searchFile.indexOf('!') > 0;
+        }
+
+        public void trySearch(SearchState state) throws RaiseException {
+            int bang = state.searchFile.indexOf('!');
+            String firstPart = state.searchFile.substring(0, bang);
+
+            if (firstPart.endsWith(".jar")) {
+                LoadServiceResource resource = tryResourceFromLoadPathOrURL(state, firstPart, SuffixType.Neither);
+
+                if (resource != null) {
+                    new JarredScript(resource).load(runtime, false);
+                    state.searchFile = state.searchFile.substring(bang + 1);
+                    state.library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+                }
+            }
+        }
+    }
+
     public class SearchState {
         public Library library;
         public String loadName;
@@ -694,6 +722,7 @@ public class LoadService {
         searchers.add(new NormalSearcher());
         searchers.add(new ClassLoaderSearcher());
         searchers.add(new ExtensionSearcher());
+        searchers.add(new NestedJarSearcher());
         searchers.add(new ScriptClassSearcher());
     }
 
