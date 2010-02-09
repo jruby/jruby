@@ -141,7 +141,6 @@ public class JRubyClassLoader extends URLClassLoader {
             return new Enumeration<URL>() {
                 private Iterator<URL> extendedResult;
 
-                @Override
                 public URL nextElement() {
                     if (extendedResult == null) {
                         return originalResult.nextElement();
@@ -150,7 +149,6 @@ public class JRubyClassLoader extends URLClassLoader {
                     }
                 }
 
-                @Override
                 public boolean hasMoreElements() {
                     if (extendedResult == null) {
                         boolean result = originalResult.hasMoreElements();
