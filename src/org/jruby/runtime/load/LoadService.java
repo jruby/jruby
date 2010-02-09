@@ -1005,7 +1005,7 @@ public class LoadService {
                 }
                 jarFiles.put(loadPathEntry,current);
             } catch (ZipException ignored) {
-                if (runtime.getInstanceConfig().isVerbose()) {
+                if (runtime.getInstanceConfig().isDebug()) {
                     runtime.getErr().println("ZipException trying to access " + loadPathEntry + ", stack trace follows:");
                     ignored.printStackTrace(runtime.getErr());
                 }
