@@ -159,9 +159,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "_dump", optional = 1, frame = true)
     public IRubyObject dump(IRubyObject[] args, Block unusedBlock) {
-        RubyString precision = RubyString.newUnicodeString(args[0].getRuntime(), "0:");
-        RubyString str = this.asString();
-        return precision.append(str);
+        RubyString precision = RubyString.newUnicodeString(getRuntime(), "0:");
+
+        return precision.append(asString());
     }
         
     @JRubyMethod(name = "_load", required = 1, frame = true, meta = true)
