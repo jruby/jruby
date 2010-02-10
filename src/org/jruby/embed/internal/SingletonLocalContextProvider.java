@@ -60,7 +60,8 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
 
     @Override
     public RubyInstanceConfig getRubyInstanceConfig() {
-        return Ruby.getGlobalRuntime().getInstanceConfig();
+        if (Ruby.isGlobalRuntimeReady()) return Ruby.getGlobalRuntime().getInstanceConfig();
+        else return config;
     }
 
     public BiVariableMap getVarMap() {

@@ -195,6 +195,22 @@ public final class Ruby {
 
     private static Ruby globalRuntime;
 
+    /**
+     * Tests whether globalRuntime has been instantiated or not.
+     *
+     * This method is used by singleton model of org.jruby.embed.ScriptingContainer
+     * to decide what RubyInstanceConfig should be used. When a global runtime is
+     * not there, RubyInstanceConfig of AbstractContextProvider will be used to enact
+     * configurations set by a user. When a global runtime is already instantiated,
+     * RubyInstanceConfig of the global runtime should be used in ScriptingContaiener.
+     *
+     * @return true if a global runtime is instantiated, false for other.
+     * 
+     */
+    public static boolean isGlobalRuntimeReady() {
+        return globalRuntime != null;
+    }
+
     private static synchronized void setGlobalRuntimeFirstTimeOnly(Ruby runtime) {
         if (globalRuntime == null) {
             globalRuntime = runtime;
