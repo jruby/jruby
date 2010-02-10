@@ -1,0 +1,4 @@
+fails(JRUBY-4543):Kernel#require (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
+fails(JRUBY-4543):Kernel#require (shell expansion) does not perform tilde expansion before storing paths in $LOADED_FEATURES
+fails(JRUBY-4543):Kernel.require (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
+fails(JRUBY-4543):Kernel.require (shell expansion) does not perform tilde expansion before storing paths in $LOADED_FEATURES

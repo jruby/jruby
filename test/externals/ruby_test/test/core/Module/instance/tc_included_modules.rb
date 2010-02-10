@@ -4,6 +4,8 @@
 # Test case for the Module#included_modules instance method.
 ########################################################################
 require 'test/unit'
+require 'rbconfig'
+include Config
 
 module IncludedMod_A; end
 

@@ -165,7 +165,8 @@ class Resolv
   # Resolv::Hosts is a hostname resolver that uses the system hosts file.
 
   class Hosts
-    if /mswin|mingw|bccwin/ =~ RUBY_PLATFORM
+    require 'rbconfig'
+    if /mswin32|cygwin|mingw|bccwin/ =~ RUBY_PLATFORM || ::Config::CONFIG['host_os'] =~ /mswin/
       require 'win32/resolv'
       DefaultFileName = Win32::Resolv.get_hosts_path
     else
@@ -829,7 +830,8 @@ class Resolv
         if File.exist? filename
           config_hash = Config.parse_resolv_conf(filename)
         else
-          if /mswin|cygwin|mingw|bccwin/ =~ RUBY_PLATFORM
+          require 'rbconfig'
+          if /mswin32|cygwin|mingw|bccwin/ =~ RUBY_PLATFORM || ::Config::CONFIG['host_os'] =~ /mswin/
             require 'win32/resolv'
             search, nameserver = Win32::Resolv.get_resolv_info
             config_hash = {}

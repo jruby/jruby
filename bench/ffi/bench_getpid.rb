@@ -5,6 +5,7 @@ iter = 1000000
 
 module Posix
   extend FFI::Library
+  ffi_lib FFI::Library::CURRENT_PROCESS
   if FFI::Platform.windows?
     attach_function :getpid, :_getpid, [], :uint
   else

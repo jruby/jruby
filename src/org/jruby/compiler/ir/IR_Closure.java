@@ -29,8 +29,8 @@ public class IR_Closure extends IR_ExecutionScope {
     }
 
     @Override
-    public Variable getNewVariable() {
-        return getNewVariable("cl" + _closureId + "_v");
+    public Variable getNewTemporaryVariable() {
+        return getNewTemporaryClosureVariable(_closureId);
     }
 
     @Override

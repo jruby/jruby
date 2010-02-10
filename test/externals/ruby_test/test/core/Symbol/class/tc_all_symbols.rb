@@ -13,6 +13,7 @@ class TC_Symbol_AllSymbols_ClassMethod < Test::Unit::TestCase
    end
 
    def test_all_symbols
+      assert(:upcase.is_a?(Symbol))
       assert_equal(true, Symbol.all_symbols.first.is_a?(Symbol))
       assert_equal(true, Symbol.all_symbols.include?(:upcase))
    end

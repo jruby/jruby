@@ -31,6 +31,7 @@ package org.jruby.embed.internal;
 
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
@@ -55,6 +56,11 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
             localContext.getRuntime();
         }
         return Ruby.getGlobalRuntime();
+    }
+
+    @Override
+    public RubyInstanceConfig getRubyInstanceConfig() {
+        return Ruby.getGlobalRuntime().getInstanceConfig();
     }
 
     public BiVariableMap getVarMap() {

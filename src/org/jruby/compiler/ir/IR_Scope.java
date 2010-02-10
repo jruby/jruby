@@ -58,14 +58,9 @@ public interface IR_Scope {
     public int getNextClosureId();
 
     /**
-     *  create a new variable using the prefix
-     */
-    public Variable getNewVariable(String prefix);
-
-    /**
      *  create a new temporary variable
      */
-    public Variable getNewVariable();
+    public Variable getNewTemporaryVariable();
 
     /**
      *  Get a new label using the provided label prefix

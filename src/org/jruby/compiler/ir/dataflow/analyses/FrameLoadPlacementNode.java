@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import org.jruby.compiler.ir.operands.SelfVariable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class FrameLoadPlacementNode extends FlowGraphNode {
     /* ---------- Public fields, methods --------- */
@@ -32,15 +34,17 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         _outReqdLoads = new HashSet<Variable>();
     }
 
+    // Only ruby local variables are candidates for frame loads.  Ignore the rest!
+    // SSS FIXME: What about self?
     public void buildDataFlowVars(IR_Instr i) {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
-            flp.recordUsedVar(v);
+            if ((v instanceof LocalVariable) || (v instanceof SelfVariable))
+                flp.recordUsedVar(v);
         }
 
         Variable v = i.getResult();
-
-        if (v != null) flp.recordDefVar(v);
+        if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) flp.recordDefVar(v);
     }
 
     public void initSolnForNode() {
@@ -98,7 +102,8 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
 
             // The variables used as arguments will need to be loaded
             for (Variable x : i.getUsedVariables()) {
-                reqdLoads.add(x);
+                if ((x instanceof LocalVariable) || (x instanceof SelfVariable))
+                    reqdLoads.add(x);
             }
         }
 
@@ -147,7 +152,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                     it.next();
                     for (Variable v : reqdLoads) {
                         if (cl_flp.scopeDefinesVariable(v)) {
-                            it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
+                            it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -160,7 +165,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                 } else if (call.requiresFrame()) {
                     it.next();
                     for (Variable v : reqdLoads) {
-                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
+                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));
                         it.previous();
                     }
                     it.previous();
@@ -170,7 +175,8 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
 
             // The variables used as arguments will need to be loaded
             for (Variable x : i.getUsedVariables()) {
-                reqdLoads.add(x);
+                if ((x instanceof LocalVariable) || (x instanceof SelfVariable))
+                    reqdLoads.add(x);
             }
         }
 
@@ -178,7 +184,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         if ((s instanceof IR_Closure) && (_bb == _prob.getCFG().getEntryBB())) {
             for (Variable v : reqdLoads) {
                 if (flp.scopeUsesVariable(v)) {
-                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v.name));
+                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));
                 }
             }
         }

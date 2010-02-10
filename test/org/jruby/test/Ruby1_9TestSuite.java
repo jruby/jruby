@@ -1,6 +1,8 @@
 package org.jruby.test;
 
+import java.io.File;
 import junit.framework.Test;
+import junit.framework.TestCase;
 
 /**
  *
@@ -20,14 +22,24 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
         return new Ruby1_9TestSuite(TEST_INDEX);
     }
 
-    @Override
-    protected String generateTestScript(String scriptName, String testClass) {
-        StringBuffer script = new StringBuffer();
-        script.append("require 'minitest/unit'\n");
-        script.append("require '" + scriptName + "'\n");
-        script.append("unit = MiniTest::Unit.new\n");
-        script.append("unit.run_test_suites\n");
-        script.append("unit.report\n");
-        return script.toString();
+    protected TestCase createTest(String line, File testDir) {
+        return new Ruby1_9ScriptTest(line, testDir);
+    }
+
+    protected class Ruby1_9ScriptTest extends TestUnitTestSuite.ScriptTest {
+        public Ruby1_9ScriptTest(String filename, File dir) {
+            super(filename, dir);
+        }
+
+        @Override
+        protected String generateTestScript(String scriptName, String testClass) {
+            StringBuffer script = new StringBuffer();
+            script.append("require 'minitest/unit'\n");
+            script.append("require '" + scriptName + "'\n");
+            script.append("unit = MiniTest::Unit.new\n");
+            script.append("unit.run_test_suites\n");
+            script.append("unit.report\n");
+            return script.toString();
+        }
     }
 }

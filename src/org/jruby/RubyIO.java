@@ -1661,7 +1661,7 @@ public class RubyIO extends RubyObject {
                 OpenFile myOpenFile = io.getOpenFileChecked();
                 myOpenFile.checkWritable(context.getRuntime());
                 Stream writeStream = myOpenFile.getWriteStream();
-                writeStream.fputc(RubyNumeric.num2chr(object));
+                writeStream.fputc(c);
                 if (myOpenFile.isSync()) myOpenFile.fflush(writeStream);
             } catch (IOException ex) {
                 throw context.getRuntime().newIOErrorFromException(ex);
@@ -1673,7 +1673,8 @@ public class RubyIO extends RubyObject {
                 throw context.getRuntime().newErrnoEPIPEError();
             }
         } else {
-            maybeIO.callMethod(context, "write", RubyString.newStringNoCopy(context.getRuntime(), new byte[] {(byte)c}));
+            maybeIO.callMethod(context, "write",
+                    RubyString.newStringNoCopy(context.getRuntime(), new byte[] {(byte)c}));
         }
 
         return object;

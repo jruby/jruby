@@ -3,6 +3,13 @@ fails:Kernel.spawn joins a new process group if :pgroup => true
 fails:Kernel.spawn uses the given working directory if :chdir => dir is supplied
 fails:Kernel.spawn redirects STDERR to the given file descriptior if if :err => Fixnum
 fails:Kernel.spawn redirects STDERR to the given file if :err => String
-windows:Kernel.spawn executes the given command
 fails:Kernel.spawn joins the current process group by default
 fails:Kernel.spawn uses the current working directory as its working directory
+windows(JRUBY-4354):Kernel.spawn executes the given command
+windows(JRUBY-4354):Kernel.spawn executes the given command as a new process
+windows(JRUBY-4354):Kernel.spawn returns the process ID of the new process as a Fixnum
+windows(JRUBY-4354):Kernel.spawn returns immediately
+fails:Kernel.spawn executes the given command
+fails:Kernel.spawn executes the given command as a new process
+fails:Kernel.spawn returns the process ID of the new process as a Fixnum
+fails:Kernel.spawn returns immediately

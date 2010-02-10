@@ -15,6 +15,14 @@ module Gem
     def set_paths(gpaths)
       original_set_paths(gpaths)
       @gem_path.reject! {|p| !readable_path? p }
+      @jar_paths.each {|p| @gem_path << p unless @gem_path.include?(p) } if @jar_paths
+    end
+
+    alias_method :original_default_path, :default_path
+    def default_path
+      paths = original_default_path
+      @jar_paths = paths.select {|p| jarred_path? p }
+      paths.reject {|p| jarred_path? p }
     end
 
     alias_method :original_ruby, :ruby
@@ -41,7 +49,6 @@ module Gem
   # JRuby: We don't want gems installed in lib/jruby/gems, but rather
   # to preserve the old location: lib/ruby/gems.
   def self.default_dir
-    # TODO: use ~/.gems as the default dir when running under the complete jar, so the user can install gems?
     File.join ConfigMap[:libdir], 'ruby', 'gems', ConfigMap[:ruby_version]
   end
 
