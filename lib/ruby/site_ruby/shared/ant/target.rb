@@ -24,7 +24,7 @@ class Ant
     private
     def generate_unique_target_name(name)
       # FIXME: This is not guaranteed to be unique and may be a wonky naming convention?
-      if project.targets.include?(name)
+      if project.targets.get(name)
         project.log "ant already defines #{name}.  Redefining as #{ALREADY_DEFINED_PREFIX}#{name}"
         name = ALREADY_DEFINED_PREFIX + name
       end
