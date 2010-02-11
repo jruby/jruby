@@ -11,5 +11,6 @@ require 'benchmark'
     bm.report("1m 1.respond_to?(:to_ary,true)") { 1_000_000.times { 1.respond_to?(:to_ary, true) }}
     bm.report("1m 1.respond_to?(:next)") { 1_000_000.times { 1.respond_to? :next }}
     bm.report("1m redefined obj.respond_to?") { 1_000_000.times { obj.respond_to? :next }}
+    bm.report("1m varying name respond_to?") { a = :next; b = :to_ary; 1_000_000.times { a,b=b,a; obj.respond_to? a }}
   end
 end
