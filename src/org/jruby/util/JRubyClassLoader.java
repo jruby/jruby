@@ -41,7 +41,7 @@ public class JRubyClassLoader extends URLClassLoader {
     public URL findResource(String resourceName) {
         URL result = super.findResource(resourceName);
 
-        if (result == null) {
+        if (result == null && embeddedResourcesEnabled()) {
             for (URL jarUrl : getURLs()) {
                 try {
                     InputStream baseInputStream = jarUrl.openStream();
@@ -69,6 +69,9 @@ public class JRubyClassLoader extends URLClassLoader {
 
     @Override
     public Enumeration<URL> findResources(String resourceName) throws IOException {
+        if (!embeddedResourcesEnabled()) { // Quick bailout
+            return super.findResources(resourceName);
+        }
 
         final List<URL> embeddedUrls = new ArrayList<URL>();
 
@@ -200,6 +203,10 @@ public class JRubyClassLoader extends URLClassLoader {
                 }
             }
         }
+    }
+
+    private static boolean embeddedResourcesEnabled() {
+        return SafePropertyAccessor.getBoolean("jruby.embedded.resources", false);
     }
 
     private static boolean isJarFile(JarEntry entry) {
