@@ -64,6 +64,24 @@ public class KernelJavaAddons {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_name(IRubyObject recv, IRubyObject[] args) {
+        // empty stub for now
+        return recv.getRuntime().getNil();
+    }
+
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_implements(IRubyObject recv, IRubyObject[] args) {
+        // empty stub for now
+        return recv.getRuntime().getNil();
+    }
+
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_annotation(IRubyObject recv, IRubyObject[] args) {
+        // empty stub for now
+        return recv.getRuntime().getNil();
+    }
+
     private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
         JavaClass targetType;
 

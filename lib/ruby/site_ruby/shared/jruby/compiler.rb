@@ -180,7 +180,7 @@ module JRuby::Compiler
       @imports = imports
       @script_name = script_name
       @methods = []
-      @annotations = []
+      @annotations = annotations
       @interfaces = []
     end
 
@@ -208,7 +208,8 @@ module JRuby::Compiler
       imps_string = imports_string
       ifc_string = interface_string
 
-      class_string = "#{imps_string}\npublic class #{name} extends RubyObject #{ifc_string} {\n"
+      anno_string = annotations.map {|a| "@#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
+      class_string = "#{imps_string}\n\n#{anno_string}\npublic class #{name} extends RubyObject #{ifc_string} {\n"
       class_string << "  private static final Ruby __ruby__ = Ruby.getGlobalRuntime();\n"
       class_string << "  private static final RubyClass __metaclass__;\n"
 
@@ -230,10 +231,8 @@ module JRuby::Compiler
   }
 EOJ
       
-      methods.each do |method|
-        class_string << method.to_s
-      end
-      class_string << "}"
+      class_string << methods.map(&:to_s).join("\n\n")
+      class_string << "\n}"
 
       class_string
     end
@@ -276,7 +275,7 @@ EOJ
       passed_args = args.map {|a| "ruby_" + a}.join(',')
       passed_args = "," + passed_args if args.size > 0
       conv_string = args.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
-      anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")\n"}.join
+      anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
       ret_string = case ret
       when 'void'
         ""
@@ -349,7 +348,7 @@ EOJ
     end
 
     def add_annotation(*child_nodes)
-      name = child_nodes[0].name
+      name = name_or_value(child_nodes[0])
       args = child_nodes[1]
       if args && args.list_node.size > 0
         anno_args = {}
@@ -424,7 +423,7 @@ EOJ
       params = ary[0]
       ret = ary[1]
 
-      unless org.jruby.ast.ArrayNode === params
+      unless org.jruby.ast.ArrayNode === params || org.jruby.ast.ZArrayNode === params
         raise "signature needs an array of args at " + params.position.to_s
       end
       raise unless ret
@@ -518,6 +517,8 @@ EOJ
           end
         when NodeType::NEWLINENODE
           node.next_node.accept(self)
+        when NodeType::NILNODE
+          # nothing
         when NodeType::ROOTNODE
           node.body_node.accept(self)
         else
