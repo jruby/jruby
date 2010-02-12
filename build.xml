@@ -28,6 +28,11 @@
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
   </path>
 
+  <path id="jruby.execute.classpath">
+    <path refid="build.classpath"/>
+    <pathelement path="${jruby.classes.dir}"/>
+  </path>
+
   <!-- directory that contains emma.jar and emma_ant.jar: -->
   <property name="emma.dir" value="${build.lib.dir}" />
 
@@ -187,8 +192,7 @@
   <target name="compile-jruby" depends="prepare-resources, compile-annotation-binder, check-for-optional-packages">
     <!-- Generate binding logic ahead of time -->
     <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
@@ -208,8 +212,7 @@
   <target name="_gmc_internal_" if="annotations.changed">
     <echo message="Generating invokers..."/>
     <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <classpath refid="jruby.execute.classpath"/>
       <jvmarg value="${run.jvm.model}"/>
       <!-- uncomment this line when building on a JVM with invokedynamic
       <jvmarg line="-XX:+InvokeDynamic"/>
@@ -221,10 +224,9 @@
 
     <echo message="Compiling populators..."/>
     <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
-       <classpath refid="build.classpath"/>
-       <classpath path="${jruby.classes.dir}"/>
-       <src path="src_gen"/>
-       <patternset refid="java.src.pattern"/>
+      <classpath refid="jruby.execute.classpath"/>
+      <src path="src_gen"/>
+      <patternset refid="java.src.pattern"/>
     </javac>
 
     <delete file="src_gen/annotated_classes.txt"/>
@@ -238,14 +240,13 @@
   <target name="_gu_internal_" unless="unsafe.not.needed">
     <echo message="Generating Unsafe impl..."/>
     <java classname="org.jruby.util.unsafe.UnsafeGenerator" fork="true" failonerror="true">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="${run.jvm.model}"/>
-        <!-- uncomment this line when building on a JVM with invokedynamic
-        <jvmarg line="-XX:+InvokeDynamic"/>
-        -->
-        <arg value="org.jruby.util.unsafe"/>
-        <arg value="${jruby.classes.dir}/org/jruby/util/unsafe"/>
+      <classpath refid="jruby.execute.classpath"/>
+      <jvmarg value="${run.jvm.model}"/>
+      <!-- uncomment this line when building on a JVM with invokedynamic
+           <jvmarg line="-XX:+InvokeDynamic"/>
+           -->
+      <arg value="org.jruby.util.unsafe"/>
+      <arg value="${jruby.classes.dir}/org/jruby/util/unsafe"/>
     </java>
   </target>
 
@@ -273,8 +274,7 @@
       <echo message="Adjust ruby.executable value in build.properties to speed things up!"/>
       <property name="jruby.home" value="${basedir}"/>
       <java classname="org.jruby.Main" resultproperty="snapshot.result" errorproperty="snapshot.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
+        <classpath refid="jruby.execute.classpath"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <jvmarg value="${run.jvm.model}"/>
         <arg value="${base.dir}/tool/snapshot.rb"/>
@@ -442,9 +442,8 @@
 
       <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
         <classpath>
-          <pathelement location="${jruby.classes.dir}"/>
+          <path refid="jruby.execute.classpath"/>
           <pathelement location="${build.dir}/jar-complete"/>
-          <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
@@ -539,9 +538,8 @@
 
       <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
         <classpath>
-          <pathelement location="${jruby.classes.dir}"/>
+          <path refid="jruby.execute.classpath"/>
           <pathelement location="${build.dir}/jar-complete"/>
-          <path refid="build.classpath"/>
         </classpath>
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
@@ -634,8 +632,7 @@
     <javac destdir="${test.classes.dir}" deprecation="true" encoding="UTF-8" debug="true"
            source="${javac.version}">
       <classpath>
-        <path refid="build.classpath"/>
-        <pathelement path="${jruby.classes.dir}"/>
+        <path refid="jruby.execute.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
       </classpath>
       <src path="${test.dir}"/>
@@ -656,8 +653,7 @@
     <property name="install.ri" value="--no-ri"/>
     <property name="install.rdoc" value="--no-rdoc"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
       <arg value="--command"/>
       <arg value="maybe_install_gems"/>
@@ -676,8 +672,7 @@
   <target name="install-build-gems" depends="install-gems">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
       <arg value="--command"/>
       <arg value="maybe_install_gems"/>
@@ -699,18 +694,11 @@
         </fileset>
     </copy>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/stdlib">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <jvmarg value="-ea"/>
-      <jvmarg value="${run.jvm.model}"/>
-
-      <arg value="-I"/>
-      <arg value="bin/"/>
-      <arg value="-S"/>
-      <arg value="jrubyc"/>
-      <arg line="."/>
+      <jvmarg line="-ea ${run.jvm.model}"/>
+      <arg line="-I bin/ -S jrubyc ."/>
     </java>
   </target>
 
@@ -859,15 +847,8 @@
         <!-- force encoding to UTF-8 because of stupid Macroman on OS X -->
         <sysproperty key="file.encoding" value="UTF-8"/>
 
-	<jvmarg value="-ea"/>
-
-        <jvmarg value="${run.jvm.model}"/>
-
-        <!-- force client VM to improve test run times -->
-        <jvmarg value="-client"/>
-
-        <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-        <jvmarg value="-XX:MaxPermSize=128M"/>
+        <!-- force client VM to improve test run times AND -->
+        <!-- set a larger max permgen, since the tests load a lot of bytecode -->	<jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=128M"/>
 
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
@@ -976,7 +957,7 @@
       <sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
       <sysproperty key="java.awt.headless" value="true"/>
       <jvmarg value="${run.jvm.model}"/>
-      <arg value="-ve"/>
+      <arg line="-ve"/>
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
   </target>
@@ -1237,8 +1218,7 @@
 
   <target name="update-excludes">
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
-      <classpath refid="build.classpath"/>
-      <classpath path="${jruby.classes.dir}"/>
+      <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.launch.inproc" value="false"/>
 
@@ -1274,9 +1254,7 @@
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" resultproperty="spec.status.@{mode.name}" dir="${base.dir}">
 	<classpath refid="test.class.path"/>
-
-	<jvmarg value="-ea"/>
-        <jvmarg value="${run.jvm.model}"/>
+	<jvmarg line="-ea ${run.jvm.model}"/>
 
 	<sysproperty key="jruby.home" value="${basedir}"/>
 	<sysproperty key="jruby.launch.inproc" value="false"/>
@@ -1328,8 +1306,7 @@
         message="No rubyspecs found. Download them via 'ant spec'."/>
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
+        <classpath refid="jruby.execute.classpath"/>
         <sysproperty key="jruby.home" value="${basedir}"/>
         <sysproperty key="jruby.launch.inproc" value="false"/>
         <arg line="${mspec.dir}/bin/mspec"/>
@@ -1673,7 +1650,7 @@
   </target>
 
   <target name="test-rails-stable" depends="jar,install-build-gems">
-    <run-rake rake.targets="fetch_latest_rails_repo"/>
+    <run-rake rake.targets="test:fetch_latest_rails_repo"/>
     <!-- Need to disable assertions because of a rogue one in OpenSSL -->
     <run-rake dir="${rails.dir}/activesupport" rake.targets="test" jvm.args="-da"/>
     <run-rake dir="${rails.dir}/actionmailer" rake.targets="test"/>
@@ -1682,71 +1659,50 @@
   </target>
 
   <target name="test-prawn" depends="jar,install-build-gems">
-      <run-rake rake.targets="fetch_latest_prawn_repo"/>
+      <run-rake rake.targets="test:fetch_latest_prawn_repo"/>
       <run-rake dir="test/prawn" rake.targets="test examples"/>
   </target>
 
-  <target name="bench-language">
+  <target name="bench-language" depends="init">
+      <property name="jruby.home" value="${basedir}"/>
       <java fork="true" classname="org.jruby.Main" output="bench.language.client.interpreted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="-client"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <classpath refid="jruby.execute.classpath"/>
+        <jvmarg line="-client ${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg value="-X-C"/>
-        <arg value="bench/language/bench_all.rb"/>
-        <arg value="5"/>
+        <arg line="-X-C bench/language/bench_all.rb 5"/>
       </java>
       <java fork="true" classname="org.jruby.Main" output="bench.language.client.jitted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="-client"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <classpath refid="jruby.execute.classpath"/>
+        <jvmarg line="-client ${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <sysproperty key="jruby.jit.threshold" value="5"/>
-        <arg value="bench/language/bench_all.rb"/>
-        <arg value="5"/>
+        <arg line="bench/language/bench_all.rb 5"/>
       </java>
       <java fork="true" classname="org.jruby.Main" output="bench.language.client.precompiled.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="-client"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <classpath refid="jruby.execute.classpath"/>
+        <jvmarg line="-client ${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg value="-X+C"/>
-        <arg value="bench/language/bench_all.rb"/>
-        <arg value="5"/>
+        <arg line="-X+C bench/language/bench_all.rb 5"/>
       </java>
 
       <java fork="true" classname="org.jruby.Main" output="bench.language.server.interpreted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="-server"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <classpath refid="jruby.execute.classpath"/>
+        <jvmarg line="-server ${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg value="-X-C"/>
-        <arg value="bench/language/bench_all.rb"/>
-        <arg value="5"/>
+        <arg line="-X-C bench/language/bench_all.rb 5"/>
       </java>
       <java fork="true" classname="org.jruby.Main" output="bench.language.server.jitted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="-server"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <classpath refid="jruby.execute.classpath"/>
+        <jvmarg line="-server ${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <sysproperty key="jruby.jit.threshold" value="5"/>
-        <arg value="bench/language/bench_all.rb"/>
-        <arg value="5"/>
+        <arg line="bench/language/bench_all.rb 5"/>
       </java>
       <java fork="true" classname="org.jruby.Main" output="bench.language.server.precompiled.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="build.classpath"/>
-        <classpath path="${jruby.classes.dir}"/>
-        <jvmarg value="-server"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <classpath refid="jruby.execute.classpath"/>
+        <jvmarg line="-server ${run.jvm.model}"/>
         <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg value="-X+C"/>
-        <arg value="bench/language/bench_all.rb"/>
-        <arg value="5"/>
+        <arg line="-X+C bench/language/bench_all.rb 5"/>
       </java>
   </target>
 </project>
