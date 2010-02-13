@@ -1083,42 +1083,7 @@
 	  description="Runs the very latest rubyspecs without exclusions."/>
 
   <target name="fetch-specs">
-      <condition property="rubyspec-repo-exists">
-          <available file="${rubyspec.dir}/.git"/>
-      </condition>
-
-      <antcall target="do-fetch-specs"/>
-      <antcall target="do-update-specs"/>
-  </target>
-
-  <target name="do-fetch-specs" unless="rubyspec-repo-exists">
-      <!-- Stable specs might exist, so delete them -->
-      <antcall target="clear-specs" inheritall="false"/>
-
-      <echo message="Cloning rubyspec repo to: ${rubyspec.dir}"/>
-      <exec dir="${spec.dir}" executable="git">
-          <arg value="clone"/>
-          <arg value="git://github.com/rubyspec/rubyspec.git"/>
-          <arg value="${rubyspec.dir}"/>
-      </exec>
-
-      <echo message="Cloning mspec repo to: ${mspec.dir}"/>
-      <exec dir="${spec.dir}" executable="git">
-                <arg value="clone"/>
-                <arg value="git://github.com/rubyspec/mspec.git"/>
-                <arg value="${mspec.dir}"/>
-      </exec>
-  </target>
-
-  <target name="do-update-specs" if="rubyspec-repo-exists">
-      <echo message="Updating rubyspec repo -- ${rubyspec.dir}"/>
-      <exec dir="${rubyspec.dir}" executable="git">
-        <arg value="fetch"/>
-      </exec>
-      <echo message="Updating mspec repo -- ${mspec.dir}"/>
-      <exec dir="${mspec.dir}" executable="git">
-        <arg value="fetch"/>
-      </exec>
+    <run-rake rake.targets="spec:fetch_latest_rubyspec_repo spec:fetch_latest_mspec_repo"/>
   </target>
 
   <target name="clear-specs">
@@ -1180,7 +1145,7 @@
     <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
   </target>
 
-  <target name="run-specs-all" depends="jar"><antcall target="run-specs-all-precompiled"/></target>
+  <target name="run-specs-all" depends="jar, run-specs-all-precompiled"/>
 
   <target name="run-specs-compiled" depends="jar">
     <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
@@ -1212,8 +1177,12 @@
     <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
   </target>
 
-  <target name="run-specs-all-interpreted"><_run_specs_all_internal compile.mode="OFF"/></target>
-  <target name="run-specs-all-precompiled"><_run_specs_all_internal compile.mode="FORCE" jit.threshold="0"/></target>
+  <target name="run-specs-all-interpreted">
+    <_run_specs_all_internal mode.name="INTERPRETED" compile.mode="OFF"/>
+  </target>
+  <target name="run-specs-all-precompiled">
+    <_run_specs_all_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0"/>
+  </target>
 
 
   <target name="update-excludes">
@@ -1321,9 +1290,10 @@
   <macrodef name="_run_specs_all_internal">
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
+    <attribute name="mode.name"/>
 
     <sequential>
-      <run-specs compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
+      <run-specs mode.name="@{mode.name}" compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
     </sequential>
   </macrodef>
 
@@ -1650,59 +1620,15 @@
   </target>
 
   <target name="test-rails-stable" depends="jar,install-build-gems">
-    <run-rake rake.targets="test:fetch_latest_rails_repo"/>
-    <!-- Need to disable assertions because of a rogue one in OpenSSL -->
-    <run-rake dir="${rails.dir}/activesupport" rake.targets="test" jvm.args="-da"/>
-    <run-rake dir="${rails.dir}/actionmailer" rake.targets="test"/>
-    <run-rake dir="${rails.dir}/activemodel" rake.targets="test"/>
-    <run-rake dir="${rails.dir}/railties" rake.targets="test"/>
+    <run-rake rake.targets="test:rails"/>
   </target>
 
+<!-- FIXME: MOVE INSTALL BUILD GEMS into rake -->
   <target name="test-prawn" depends="jar,install-build-gems">
-      <run-rake rake.targets="test:fetch_latest_prawn_repo"/>
-      <run-rake dir="test/prawn" rake.targets="test examples"/>
+    <run-rake rake.targets="test:prawn"/>
   </target>
 
   <target name="bench-language" depends="init">
-      <property name="jruby.home" value="${basedir}"/>
-      <java fork="true" classname="org.jruby.Main" output="bench.language.client.interpreted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <jvmarg line="-client ${run.jvm.model}"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg line="-X-C bench/language/bench_all.rb 5"/>
-      </java>
-      <java fork="true" classname="org.jruby.Main" output="bench.language.client.jitted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <jvmarg line="-client ${run.jvm.model}"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <sysproperty key="jruby.jit.threshold" value="5"/>
-        <arg line="bench/language/bench_all.rb 5"/>
-      </java>
-      <java fork="true" classname="org.jruby.Main" output="bench.language.client.precompiled.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <jvmarg line="-client ${run.jvm.model}"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg line="-X+C bench/language/bench_all.rb 5"/>
-      </java>
-
-      <java fork="true" classname="org.jruby.Main" output="bench.language.server.interpreted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <jvmarg line="-server ${run.jvm.model}"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg line="-X-C bench/language/bench_all.rb 5"/>
-      </java>
-      <java fork="true" classname="org.jruby.Main" output="bench.language.server.jitted.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <jvmarg line="-server ${run.jvm.model}"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <sysproperty key="jruby.jit.threshold" value="5"/>
-        <arg line="bench/language/bench_all.rb 5"/>
-      </java>
-      <java fork="true" classname="org.jruby.Main" output="bench.language.server.precompiled.txt" errorproperty="bench.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <jvmarg line="-server ${run.jvm.model}"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <arg line="-X+C bench/language/bench_all.rb 5"/>
-      </java>
+    <run-rake rake.targets="bench:language"/>
   </target>
 </project>

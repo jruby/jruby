@@ -36,28 +36,3 @@ task :gen do
   system 'javac -cp lib/jruby.jar src_gen/*.java'
   system 'jar -uf lib/jruby.jar -C src_gen .'
 end
-
-namespace :test do
-  task :fetch_latest_rails_repo do
-    unless git_repo_exists? RAILS_DIR
-      git_shallow_clone('rails', RAILS_GIT_REPO, RAILS_DIR)
-    else
-      git_pull('rails', RAILS_DIR)
-    end
-  end
-
-  task :fetch_latest_prawn_repo do
-    unless git_repo_exists? PRAWN_DIR
-      git_shallow_clone('prawn', PRAWN_GIT_REPO, PRAWN_DIR) do
-        sh "git checkout #{PRAWN_STABLE_VERSION}"
-        sh "git submodule init"
-        sh "git submodule update"
-      end
-    else
-      git_pull('prawn', PRAWN_DIR) do
-        sh "git checkout #{PRAWN_STABLE_VERSION}"
-        sh "git submodule update"
-      end
-    end
-  end
-end
