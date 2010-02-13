@@ -30,46 +30,47 @@ namespace :test do
       t.ruby_opts << '--debug'
     end
   end
+
+  task :rails => [:jar, :fetch_latest_rails_repo] do
+    # Need to disable assertions because of a rogue assert in OpenSSL
+    jrake("#{RAILS_DIR}/activesupport", "test") { jvmarg :line => "-da" }
+    jrake("#{RAILS_DIR}/actionmailer", "test")
+    jrake("#{RAILS_DIR}/activemodel", "test")
+    jrake("#{RAILS_DIR}/railties", "test")
+  end
+
+  task :prawn => [:jar, :fetch_latest_prawn_repo] do
+    jrake PRAWN_DIR, "test examples"
+  end
+
+  # Complementary tasks for testing
+
+  desc "Retrieve latest stable rails git repository"
+  task :fetch_latest_rails_repo do
+    unless git_repo_exists? RAILS_DIR
+      git_shallow_clone('rails', RAILS_GIT_REPO, RAILS_DIR)
+    else
+      git_pull('rails', RAILS_DIR)
+    end
+  end
+
+  desc "Retrieve latest stable prawn git repository"
+  task :fetch_latest_prawn_repo do
+    unless git_repo_exists? PRAWN_DIR
+      git_shallow_clone('prawn', PRAWN_GIT_REPO, PRAWN_DIR) do
+        sh "git checkout #{PRAWN_STABLE_VERSION}"
+        sh "git submodule init"
+        sh "git submodule update"
+      end
+    else
+      git_pull('prawn', PRAWN_DIR) do
+        sh "git checkout #{PRAWN_STABLE_VERSION}"
+        sh "git submodule update"
+      end
+    end
+  end
 end
 
 file "build/jruby-test-classes.jar" do
   Rake::Task['test:compile'].invoke
-end
-
-namespace :spec do
-  desc "Run the rubyspecs expected to pass (version-frozen)"
-  task :ci do
-    ant "spec"
-  end
-
-  desc "Run all the specs including failures (version-frozen)"
-  task :all do
-    ant "spec-all"
-  end
-
-  gem 'rspec'
-  require 'spec/rake/spectask'
-  desc "Runs Java Integration Specs"
-  Spec::Rake::SpecTask.new("ji" => "build/jruby-test-classes.jar") do |t|
-    t.spec_opts ||= []
-    t.spec_opts << "--options" << "spec/java_integration/spec.opts"
-    t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
-  end
-
-  desc "Runs Java Integration specs quietly"
-  Spec::Rake::SpecTask.new("ji:quiet" => "build/jruby-test-classes.jar") do |t|
-    t.spec_opts ||= []
-    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
-    t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
-  end
-
-  desc "Runs Compiler Specs"
-  Spec::Rake::SpecTask.new("compiler" => "build/jruby-test-classes.jar") do |t|
-    t.spec_files = FileList['spec/compiler/**/*_spec.rb']
-  end
-
-  desc "Runs FFI specs"
-  Spec::Rake::SpecTask.new("ffi" => "build/jruby-test-classes.jar") do |t|
-    t.spec_files = FileList['spec/ffi/**/*_spec.rb']
-  end
 end
