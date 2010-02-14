@@ -791,7 +791,7 @@ public class LoadService {
             String file = baseName + suffix;
             LoadServiceResource resource = findFileInClasspath(file);
             if (resource != null) {
-                state.loadName = file;
+                state.loadName = resolveLoadName(resource, file);
                 return createLibrary(state, resource);
             }
         }
@@ -831,7 +831,7 @@ public class LoadService {
                     }
                     foundResource = new LoadServiceResource(file, s, absolute);
                     debugLogFound(foundResource);
-                    state.loadName = namePlusSuffix;
+                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
                     break;
                 }
             } catch (IllegalArgumentException illArgEx) {
@@ -839,6 +839,40 @@ public class LoadService {
             }
         }
         
+        return foundResource;
+    }
+
+    protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
+        LoadServiceResource foundResource = null;
+
+        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        RubyString env_home = runtime.newString("HOME");
+        if (env.has_key_p(env_home).isFalse()) {
+            return null;
+        }
+        String home = env.op_aref(runtime.getCurrentContext(), env_home).toString();
+        String path = baseName.substring(2);
+
+        for (String suffix : suffixType.getSuffixes()) {
+            String namePlusSuffix = path + suffix;
+            // check home directory; if file exists, retrieve URL and return resource
+            try {
+                JRubyFile file = JRubyFile.create(home, RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
+                debugLogTry("resourceFromHome", file.toString());
+                if (file.isFile() && file.isAbsolute() && file.canRead()) {
+                    boolean absolute = true;
+                    String s = "~/" + namePlusSuffix;
+                    
+                    foundResource = new LoadServiceResource(file, s, absolute);
+                    debugLogFound(foundResource);
+                    state.loadName = resolveLoadName(foundResource, s);
+                    break;
+                }
+            } catch (IllegalArgumentException illArgEx) {
+            } catch (SecurityException secEx) {
+            }
+        }
+
         return foundResource;
     }
     
@@ -862,7 +896,7 @@ public class LoadService {
                     throw runtime.newIOErrorFromException(e);
                 }
                 if (foundResource != null) {
-                    state.loadName = namePlusSuffix;
+                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
                     break; // end suffix iteration
                 }
             }
@@ -882,7 +916,7 @@ public class LoadService {
                     }
                 } catch(Exception e) {}
                 if (foundResource != null) {
-                    state.loadName = namePlusSuffix;
+                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
                     break; // end suffix iteration
                 }
             }    
@@ -899,7 +933,17 @@ public class LoadService {
             foundResource = tryResourceFromCWD(state, baseName, suffixType);
 
             if (foundResource != null) {
-                state.loadName = foundResource.getName();
+                state.loadName = resolveLoadName(foundResource, foundResource.getName());
+                return foundResource;
+            }
+        }
+
+        // if it's a ~/ baseName use HOME logic
+        if (baseName.startsWith("~/")) {
+            foundResource = tryResourceFromHome(state, baseName, suffixType);
+
+            if (foundResource != null) {
+                state.loadName = resolveLoadName(foundResource, foundResource.getName());
                 return foundResource;
             }
         }
@@ -911,7 +955,7 @@ public class LoadService {
                 foundResource = tryResourceAsIs(namePlusSuffix);
 
                 if (foundResource != null) {
-                    state.loadName = namePlusSuffix;
+                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
                     return foundResource;
                 }
             }
@@ -933,7 +977,7 @@ public class LoadService {
                     if(ss.startsWith("./")) {
                         ss = ss.substring(2);
                     }
-                    state.loadName = ss;
+                    state.loadName = resolveLoadName(foundResource, ss);
                     break Outer;
                 }
             } else {
@@ -943,6 +987,8 @@ public class LoadService {
 
                     if (looksLikeJarURL) {
                         foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
+                    } else if(namePlusSuffix.startsWith("./")) {
+                        throw runtime.newLoadError("");
                     } else {
                         foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
                     }
@@ -952,7 +998,7 @@ public class LoadService {
                         if(ss.startsWith("./")) {
                             ss = ss.substring(2);
                         }
-                        state.loadName = ss;
+                        state.loadName = resolveLoadName(foundResource, ss);
                         break Outer; // end suffix iteration
                     }
                 }
@@ -1065,11 +1111,8 @@ public class LoadService {
                     if (reportedPath.charAt(0) == '.' && reportedPath.charAt(1) == '/') {
                         reportedPath = reportedPath.replaceFirst("\\./", runtime.getCurrentDirectory());
                     }
-//                     if (reportedPath.charAt(0) != '.') {
-//                         reportedPath = "./" + reportedPath;
-//                     }
+
                     actualPath = JRubyFile.create(runtime.getCurrentDirectory(), RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
-                    //                    actualPath = new File(RubyFile.expandUserPath(runtime.getCurrentContext(), reportedPath));
                 }
                 debugLogTry("resourceAsIs", actualPath.toString());
                 if (actualPath.isFile() && actualPath.canRead()) {
@@ -1204,5 +1247,9 @@ public class LoadService {
       } catch(Exception e) {
         return path;
       }
+    }
+
+    protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
+        return previousPath;
     }
 }
