@@ -1077,12 +1077,11 @@
       description="Runs known good version of rubyspecs without exclusions."/>
 
   <!-- latest, unstable specs -->
-  <target name="spec-latest" depends="fetch-specs, run-specs"
-      description="Runs the very latest rubyspecs."/>
+  <target name="spec-latest" depends="fetch-specs, run-specs" description="Runs the very latest rubyspecs."/>
   <target name="spec-latest-all" depends="fetch-specs, run-specs-all"
 	  description="Runs the very latest rubyspecs without exclusions."/>
 
-  <target name="fetch-specs">
+  <target name="fetch-specs" depends="jar">
     <run-rake rake.targets="spec:fetch_latest_rubyspec_repo spec:fetch_latest_mspec_repo"/>
   </target>
 
