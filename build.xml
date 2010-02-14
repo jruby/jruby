@@ -1081,7 +1081,7 @@
   <target name="spec-latest-all" depends="fetch-specs, run-specs-all"
 	  description="Runs the very latest rubyspecs without exclusions."/>
 
-  <target name="fetch-specs" depends="jar">
+  <target name="fetch-specs" depends="jar, install-build-gems">
     <run-rake rake.targets="spec:fetch_latest_rubyspec_repo spec:fetch_latest_mspec_repo"/>
   </target>
 
