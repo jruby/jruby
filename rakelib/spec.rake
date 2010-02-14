@@ -38,8 +38,9 @@ namespace :spec do
   # Complimentary tasks for running specs
 
   desc "Retrieve latest tagged rubyspec git repository"
-  task :fetch_latest_rubyspec_repo => :clear_spec_dirs do
+  task :fetch_latest_rubyspec_repo do
     unless git_repo_exists? RUBYSPEC_DIR
+      clear_spec_dirs
       git_shallow_clone('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
     else
       git_pull('rubyspec', RUBYSPEC_DIR)
@@ -55,10 +56,8 @@ namespace :spec do
     end
   end
 
-  # FIXME: If we can detect whether at latest of stable we can do this
-  # More selectively
-  task :clear_spec_dirs do
-    rm_rf RUBYSPEC_DIR
+  def clear_spec_dirs
+    # rm_rf RUBYSPEC_DIR # Note: Already done by git_shallow_clone
     rm_rf MSPEC_DIR
     rm_f RUBYSPEC_TAR_FILE
     rm_f MSPEC_TAR_FILE

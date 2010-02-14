@@ -15,33 +15,41 @@ def jvm_model
     nil
   end
 end
-JVM_MODEL = jvm_model
 
-ant.path(:id => "build.classpath") do
-  fileset :dir => BUILD_LIB_DIR, :includes => "*.jar"
-end
+def initialize_paths
+  self.class.set_const(:JVM_MODEL, jvm_model)
 
-ant.path(:id => "jruby.execute.classpath") do
-  path :refid => "build.classpath"
-  pathelement :path => JRUBY_CLASSES_DIR
-end
+  ant.path(:id => "build.classpath") do
+    fileset :dir => BUILD_LIB_DIR, :includes => "*.jar"
+  end
 
-ant.path(:id => "test.class.path") do
-  pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
-  pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223-2.0.6.jar')
-  pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
-  pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging-1.1.1.jar')
-#  pathelement :path => "${java.class.path}"/>
-  pathelement :path => File.join(LIB_DIR, 'jruby.jar')
-  pathelement :location => TEST_CLASSES_DIR
-  pathelement :path => File.join(TEST_DIR, 'requireTest.jar')
-  pathelement :location => TEST_DIR
+  ant.path(:id => "jruby.execute.classpath") do
+    path :refid => "build.classpath"
+    pathelement :path => JRUBY_CLASSES_DIR
+  end
+
+  ant.path(:id => "test.class.path") do
+    pathelement :path => File.join(BUILD_LIB_DIR, 'junit.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'livetribe-jsr223-2.0.6.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
+    pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging-1.1.1.jar')
+    #  pathelement :path => "${java.class.path}"/>
+    pathelement :path => File.join(LIB_DIR, 'jruby.jar')
+    pathelement :location => TEST_CLASSES_DIR
+    pathelement :path => File.join(TEST_DIR, 'requireTest.jar')
+    pathelement :location => TEST_DIR
+  end
 end
 
 def jruby(java_options = {}, &code)
+  initialize_paths unless JVM_MODEL
+
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
   java_options[:classname] = 'org.jruby.Main'
+
+  puts "JAVA options: #{java_options.inspect}"
+
   ant.java(java_options) do
     classpath :refid => 'build.classpath'
     classpath :path => JRUBY_CLASSES_DIR
@@ -52,8 +60,8 @@ def jruby(java_options = {}, &code)
 end
 
 def jrake(dir, targets, java_options = {}, &code)
-  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
   java_options[:dir] = dir
+  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
   jruby(java_options) do
     classpath :refid => "test.class.path"
     instance_eval(&code) if block_given?
@@ -61,9 +69,9 @@ def jrake(dir, targets, java_options = {}, &code)
   end
 end
 
-def mspec(mspec_options = {}, java_options = {}, &code)
+def mspec(dir, mspec_options = {}, java_options = {}, &code)
+  java_options['dir'] = dir
   java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
-  java_options[:dir] = BASE_DIR
   java_options[:failonerror] ||= 'false'
 
   mspec_options[:compile_mode] ||= 'OFF'
@@ -77,6 +85,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
 
   puts "MSPEC: #{ms.inspect}"
 
+  ant.log.message_output_level = 5
   jruby(java_options) do
     classpath :refid => "test.class.path"
     jvmarg :line => "-ea"
@@ -97,7 +106,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
-    arg :line => "${spec.jvm.model.option}"
+    arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
     arg :line => "-f m"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
   end
