@@ -43,7 +43,7 @@ namespace :spec do
       clear_spec_dirs
       git_shallow_clone('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
     else
-      git_fetch('rubyspec', RUBYSPEC_DIR)
+#      git_fetch('rubyspec', RUBYSPEC_DIR)
     end
   end
 
@@ -52,7 +52,7 @@ namespace :spec do
     unless git_repo_exists? MSPEC_DIR
       git_shallow_clone('rubyspec', MSPEC_GIT_REPO, MSPEC_DIR)
     else
-      git_fetch('rubyspec', MSPEC_DIR)
+#      git_fetch('rubyspec', MSPEC_DIR)
     end
   end
 
