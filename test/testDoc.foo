@@ -1,0 +1,4 @@
+This is a file for testing -x flag (JRUBY-1954).
+
+#! /usr/bin/env ruby
+puts 0

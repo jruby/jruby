@@ -29,9 +29,11 @@
 package org.jruby;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -89,6 +91,28 @@ public class RubyInstanceConfig {
      */
     public static final int CHAINED_COMPILE_LINE_COUNT
             = SafePropertyAccessor.getInt("jruby.compile.chainsize", CHAINED_COMPILE_LINE_COUNT_DEFAULT);
+
+    /**
+     * Indicates whether the script must be extracted from script source
+     */
+    private boolean xFlag;
+
+    public boolean hasShebangLine() {
+        return hasShebangLine;
+    }
+
+    public void setHasShebangLine(boolean hasShebangLine) {
+        this.hasShebangLine = hasShebangLine;
+    }
+
+    /**
+     * Indicates whether the script has a shebang line or not
+     */
+    private boolean hasShebangLine;
+
+    public boolean isxFlag() {
+        return xFlag;
+    }
 
     public enum CompileMode {
         JIT, FORCE, OFF;
@@ -426,7 +450,7 @@ public class RubyInstanceConfig {
                 .append("  -v              print version number, then turn on verbose mode\n")
                 .append("  -w              turn warnings on for your script\n")
                 .append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
-                //.append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
+                .append("  -x[directory]   strip off text before #!ruby line and perhaps cd to directory\n")
                 .append("  -X[option]      enable extended option (omit option to list)\n")
                 .append("  -y              enable parsing debug output\n")
                 .append("  --copyright     print the copyright\n")
@@ -1037,9 +1061,28 @@ public class RubyInstanceConfig {
 
                     break FOR;
                 }
-                // FIXME: -x flag not supported
-//                    case 'x' :
-//                        break;
+               case 'x':
+                   try {
+                       String saved = grabOptionalValue();
+                       if (saved != null) {
+                           File base = new File(currentDirectory);
+                           File newDir = new File(saved);
+                           if (newDir.isAbsolute()) {
+                               currentDirectory = newDir.getCanonicalPath();
+                           } else {
+                               currentDirectory = new File(base, newDir.getPath()).getCanonicalPath();
+                           }
+                           if (!(new File(currentDirectory).isDirectory())) {
+                               MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
+                               throw mee;
+                           }
+                       }
+                       xFlag = true;
+                   } catch (IOException e) {
+                       MainExitException mee = new MainExitException(1, getArgumentError(" -x must be followed by a valid directory"));
+                       throw mee;
+                   }
+                   break FOR;
                 case 'X':
                     String extendedOption = grabOptionalValue();
 
@@ -1262,6 +1305,11 @@ public class RubyInstanceConfig {
                 return getInput();
             } else {
                 File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
+                if (isxFlag()) {
+                    // search for a shebang line and
+                    // return the script between shebang and __END__ or CTRL-Z (0x1A)
+                    return findScript(file);
+                }
                 return new BufferedInputStream(new FileInputStream(file), 8192);
             }
         } catch (IOException e) {
@@ -1273,6 +1321,27 @@ public class RubyInstanceConfig {
             }
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
         }
+    }
+
+    private InputStream findScript(File file) throws IOException {
+        StringBuffer buf = new StringBuffer();
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String currentLine = br.readLine();
+        while (currentLine != null && !(currentLine.length() > 2 && currentLine.charAt(0) == '#' && currentLine.charAt(1) == '!')) {
+            currentLine = br.readLine();
+        }
+
+        buf.append(currentLine);
+        buf.append("\n");
+
+        do {
+            currentLine = br.readLine();
+            if (currentLine != null) {
+            buf.append(currentLine);
+            buf.append("\n");
+            }
+        } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
+        return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
     }
 
     private InputStream getJarScriptSource() {
