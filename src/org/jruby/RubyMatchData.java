@@ -258,7 +258,7 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat("nil".getBytes());
             } else {
-                result.append(((RubyString) str).inspectCommon(runtime.is1_9()));
+                result.append(((RubyString) v).inspectCommon(runtime.is1_9()));
             }
         }
 
