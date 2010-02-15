@@ -35,74 +35,72 @@ unless defined?(OpenSSL)
     class HMACError < OpenSSLError; end
     class DigestError < OpenSSLError; end
 
-    module Digest
-      class Digest
-        class << self
-          def digest(name, data)
-            self.new(name, data).digest
-          end
-          def hexdigest(name, data)
-            self.new(name, data).hexdigest
-          end
+    class Digest
+      class << self
+        def digest(name, data)
+          self.new(name, data).digest
         end
-
-        attr_reader :algorithm, :name, :data
-
-        def initialize(name, data = nil)
-          @name = name
-          @data = ""
-          create_digest
-          update(data) if data
+        def hexdigest(name, data)
+          self.new(name, data).hexdigest
         end
+      end
 
-        def initialize_copy(dig)
-          initialize(dig.name, dig.data)
-        end
+      attr_reader :algorithm, :name, :data
 
-        def update(d)
-          @data << d
-          @md.update(d.to_java_bytes)
-          self
-        end
-        alias_method :<<, :update
+      def initialize(name, data = nil)
+        @name = name
+        @data = ""
+        create_digest
+        update(data) if data
+      end
 
-        def digest
-          @md.reset
-          String.from_java_bytes @md.digest(@data.to_java_bytes)
-        end
+      def initialize_copy(dig)
+        initialize(dig.name, dig.data)
+      end
 
-        def hexdigest
-          digest.unpack("H*")[0]
-        end
-        alias_method :to_s, :hexdigest
-        alias_method :inspect, :hexdigest
+      def update(d)
+        @data << d
+        @md.update(d.to_java_bytes)
+        self
+      end
+      alias_method :<<, :update
 
-        def ==(oth)
-          return false unless oth.kind_of? Digest
-          self.algorithm == oth.algorithm && self.digest == oth.digest
-        end
+      def digest
+        @md.reset
+        String.from_java_bytes @md.digest(@data.to_java_bytes)
+      end
 
-        def reset
-          @md.reset
-          @data = ""
-        end
+      def hexdigest
+        digest.unpack("H*")[0]
+      end
+      alias_method :to_s, :hexdigest
+      alias_method :inspect, :hexdigest
 
-        def size
-          @md.getDigestLength
-        end
+      def ==(oth)
+        return false unless oth.kind_of? OpenSSL::Digest
+        self.algorithm == oth.algorithm && self.digest == oth.digest
+      end
 
-        private
-        def create_digest
-          @algorithm = case @name
-          when "DSS"
-            "SHA"
-          when "DSS1"
-            "SHA1"
-          else
-            @name
-          end
-          @md = java.security.MessageDigest.getInstance(@algorithm)
+      def reset
+        @md.reset
+        @data = ""
+      end
+
+      def size
+        @md.getDigestLength
+      end
+
+      private
+      def create_digest
+        @algorithm = case @name
+        when "DSS"
+          "SHA"
+        when "DSS1"
+          "SHA1"
+        else
+          @name
         end
+        @md = java.security.MessageDigest.getInstance(@algorithm)
       end
 
       begin
@@ -131,6 +129,13 @@ unless defined?(OpenSSL)
         }
       ensure
         $VERBOSE = old_verbose
+      end
+
+      class Digest < Digest
+        def initialize(*args)
+          # add warning
+          super(*args)
+        end
       end
     end
 
