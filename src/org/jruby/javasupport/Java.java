@@ -784,39 +784,24 @@ public class Java implements Library {
             } catch (Exception e) { /* expected */ }
 
             // Haven't found a class, continue on as though it were a package
-            RubyModule packageModule;
+            final RubyModule packageModule = getJavaPackageModule(runtime, fullName);
             // TODO: decompose getJavaPackageModule so we don't parse fullName
-            if ((packageModule = getJavaPackageModule(runtime, fullName)) == null) {
+            if (packageModule == null) {
                 return null;
             }
+
+            // save package in singletonized parent, so we don't come back here
+            memoizePackageOrClass(parentPackage, name, packageModule);
             
-            // save package module as ivar in parent, and add method to parent so
-            // we don't have to come back here.
-            final String ivarName = ("@__pkg__" + name).intern();
-            parentPackage.fastSetInstanceVariable(ivarName, packageModule);
-            RubyClass singleton = parentPackage.getSingletonClass();
-            singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
-
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    if (args.length != 0) {
-                        Arity.raiseArgumentError(runtime, args.length, 0, 0);
-                    }
-                    IRubyObject variable;
-                    if ((variable = ((RubyModule) self).fastGetInstanceVariable(ivarName)) != null) {
-                        return variable;
-                    }
-                    return runtime.getNil();
-                }
-
-                @Override
-                public Arity getArity() {
-                    return Arity.noArguments();
-                }
-            });
             return packageModule;
         } else {
             // upper case name, so most likely a class
-            return getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
+            final RubyModule javaModule = getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
+
+            // save class in singletonized parent, so we don't come back here
+            memoizePackageOrClass(parentPackage, name, javaModule);
+
+            return javaModule;
 
         // FIXME: we should also support orgs that use capitalized package
         // names (including, embarrassingly, the one I work for), but this
@@ -869,42 +854,23 @@ public class Java implements Library {
 
             // TODO: check for Java reserved names and raise exception if encountered
 
-            RubyModule packageModule;
+            final RubyModule packageModule = getJavaPackageModule(runtime, name);
             // TODO: decompose getJavaPackageModule so we don't parse fullName
-            if ((packageModule = getJavaPackageModule(runtime, name)) == null) {
+            if (packageModule == null) {
                 return null;
             }
             RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
             if (javaModule.getMetaClass().isMethodBound(name, false)) {
                 return packageModule;
-            // save package module as ivar in parent, and add method to parent so
-            // we don't have to come back here.
             }
-            final String ivarName = ("@__pkg__" + name).intern();
-            javaModule.fastSetInstanceVariable(ivarName, packageModule);
-            RubyClass singleton = javaModule.getSingletonClass();
-            singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
 
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    if (args.length != 0) {
-                        Arity.raiseArgumentError(runtime, args.length, 0, 0);
-                    }
-                    IRubyObject variable;
-                    if ((variable = ((RubyModule) self).fastGetInstanceVariable(ivarName)) != null) {
-                        return variable;
-                    }
-                    return runtime.getNil();
-                }
-
-                @Override
-                public Arity getArity() {
-                    return Arity.noArguments();
-                }
-            });
+            memoizePackageOrClass(javaModule, name, packageModule);
+            
             return packageModule;
         } else {
+            RubyModule javaModule = null;
             try {
-                return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
+                javaModule = getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
             } catch (RaiseException re) { /* not a class */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
@@ -916,8 +882,33 @@ public class Java implements Library {
             // TODO: top-level upper-case package was supported in the previous (Ruby-based)
             // implementation, so leaving as is.  see note at #getProxyOrPackageUnderPackage
             // re: future approach below the top-level.
-            return getPackageModule(runtime, name);
+            if (javaModule == null) {
+                javaModule = getPackageModule(runtime, name);
+            }
+
+            memoizePackageOrClass(runtime.getJavaSupport().getJavaModule(), name, javaModule);
+
+            return javaModule;
         }
+    }
+
+    private static void memoizePackageOrClass(RubyModule parentPackage, String name, final IRubyObject value) {
+        RubyClass singleton = parentPackage.getSingletonClass();
+        singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                Arity.checkArgumentCount(context.getRuntime(), args, 0, 0);
+                return call(context, self, clazz, name);
+            }
+
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return value;
+            }
+
+            @Override
+            public Arity getArity() {
+                return Arity.noArguments();
+            }
+        });
     }
 
     public static IRubyObject get_top_level_proxy_or_package(ThreadContext context, IRubyObject recv, IRubyObject sym) {
