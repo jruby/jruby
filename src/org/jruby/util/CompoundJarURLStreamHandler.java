@@ -26,7 +26,11 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
     public static URL createUrl(URL base, String... path) throws MalformedURLException {
         StringBuilder pathBuilder = new StringBuilder();
 
-        pathBuilder.append(base.toExternalForm());
+        if (base.getProtocol().equals("jar")) {
+            pathBuilder.append(base.getFile());
+        } else {
+            pathBuilder.append(base.toExternalForm());
+        }
 
         for (String entry : path) {
             pathBuilder.append("!");

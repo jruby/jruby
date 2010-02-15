@@ -217,6 +217,9 @@ public class Main {
 
         if (in == null) {
             // no script to run, return success below
+        } else if (config.isxFlag() && !config.hasShebangLine()) {
+            // no shebang was found and x option is set
+            throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
         } else if (config.isShouldCheckSyntax()) {
             int status = 0;
             try {
@@ -337,6 +340,16 @@ public class Main {
             in.mark(1024);
             reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
             String firstLine = reader.readLine();
+
+            // Search for the shebang line in the given stream
+            // if it wasn't found on the first line and the -x option
+            // was specified
+            if (config.isxFlag()) {
+                while (firstLine != null && !isShebangLine(firstLine)) {
+                    firstLine = reader.readLine();
+                }
+            }
+
             boolean usesEnv = false;
             if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
                 String[] options = firstLine.substring(2).split("\\s+");
@@ -360,7 +373,11 @@ public class Main {
                         break;
                     }
                 }
+                config.setHasShebangLine(true);
                 System.arraycopy(options, i, result, 0, options.length - i);
+            } else {
+                // No shebang line found
+                config.setHasShebangLine(false);
             }
         } catch (Exception ex) {
             // ignore error
@@ -371,4 +388,9 @@ public class Main {
         }
         return result;
     }
+
+    protected boolean isShebangLine(String line) {
+        return (line.length() > 2 && line.charAt(0) == '#' && line.charAt(1) == '!');
+    }
 }
+

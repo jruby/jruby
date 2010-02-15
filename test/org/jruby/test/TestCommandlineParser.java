@@ -114,4 +114,12 @@ public class TestCommandlineParser extends TestCase {
         assertEquals("--command", parser.getArgv()[0]);
         assertEquals("irb", parser.getArgv()[1]);
     }
+
+    public void testCommandExtractScript() {
+        String[] args = new String[] { "-xtest", "testDoc.foo"};
+        RubyInstanceConfig parser = new RubyInstanceConfig();
+        parser.processArguments(args);
+        assertEquals(true, parser.isxFlag());
+        assertEquals("testDoc.foo", parser.getScriptFileName());
+    }
 }

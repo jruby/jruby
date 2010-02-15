@@ -36,4 +36,3 @@ task :gen do
   system 'javac -cp lib/jruby.jar src_gen/*.java'
   system 'jar -uf lib/jruby.jar -C src_gen .'
 end
-

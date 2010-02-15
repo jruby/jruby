@@ -9,7 +9,7 @@ java_import org.apache.tools.ant.ProjectHelper
 java_import org.apache.tools.ant.Target
 
 class Ant
-  attr_reader :project
+  attr_reader :project, :log
 
   def initialize(options={}, &block)
     @options = options
@@ -28,6 +28,7 @@ class Ant
         log.error_print_stream = java.lang.System.err
         log.emacs_mode = true
         log.message_output_level = options[:output_level] || 2
+        @log = log                     
       end)
     end
   end
