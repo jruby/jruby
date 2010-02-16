@@ -9,14 +9,20 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 public class JRubyClassLoader extends URLClassLoader {
     private final static ProtectionDomain DEFAULT_DOMAIN
             = JRubyClassLoader.class.getProtectionDomain();
+
+    private final Map<URL,Set<String>> jarIndexes = new HashMap<URL,Set<String>>();
 
     public JRubyClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
@@ -26,6 +32,7 @@ public class JRubyClassLoader extends URLClassLoader {
     @Override
     public void addURL(URL url) {
         super.addURL(url);
+        indexJarContents(url);
     }
 
     public Class<?> defineClass(String name, byte[] bytes) {
@@ -36,30 +43,56 @@ public class JRubyClassLoader extends URLClassLoader {
        return super.defineClass(name, bytes, 0, bytes.length, domain);
     }
 
-    // From Stas Garifulin's CompundJarClassLoader. http://jira.codehaus.org/browse/JRUBY-3299
+    @Override
+    protected Class<?> findClass(String className) throws ClassNotFoundException {
+        try {
+            return super.findClass(className);
+        } catch (ClassNotFoundException ex) {
+            String resourceName = className.replace('.', '/').concat(".class");
+
+            for (URL jarUrl : getURLs()) {
+                synchronized (jarIndexes) {
+                    if (jarIndexes.get(jarUrl).contains(resourceName)) {
+                        try {
+                            URL classUrl = CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
+                            InputStream input = classUrl.openStream();
+                            try {
+                                byte[] buffer = new byte[4096];
+                                ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+                                for (int count = input.read(buffer); count > 0; count = input.read(buffer)) {
+                                    output.write(buffer, 0, count);
+                                }
+
+                                byte[] data = output.toByteArray();
+                                return defineClass(className, data, 0, data.length);
+                            } finally {
+                                close(input);
+                            }
+                        } catch (IOException e) {
+                            // keep going to next URL
+                        }
+                    }
+                }
+            }
+            throw ex;
+        }
+    }
+
     @Override
     public URL findResource(String resourceName) {
         URL result = super.findResource(resourceName);
 
-        if (result == null && embeddedResourcesEnabled()) {
+        if (result == null) {
             for (URL jarUrl : getURLs()) {
-                try {
-                    InputStream baseInputStream = jarUrl.openStream();
-
-                    try {
-                        JarInputStream baseJar = new JarInputStream(baseInputStream);
-
-                        List<String> path = findEmbeddedResource(baseJar, resourceName, new ArrayList<String>(), 0);
-
-                        if (path != null) {
-                            result = CompoundJarURLStreamHandler.createUrl(jarUrl, path);
+                synchronized (jarIndexes) {
+                    if (jarIndexes.get(jarUrl).contains(resourceName)) {
+                        try {
+                            return CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
+                        } catch (IOException e) {
+                            // keep going
                         }
-
-                    } finally {
-                        close(baseInputStream);
                     }
-                } catch (IOException ex) {
-                    // can't read the stream, keep going
                 }
             }
         }
@@ -69,30 +102,17 @@ public class JRubyClassLoader extends URLClassLoader {
 
     @Override
     public Enumeration<URL> findResources(String resourceName) throws IOException {
-        if (!embeddedResourcesEnabled()) { // Quick bailout
-            return super.findResources(resourceName);
-        }
-
         final List<URL> embeddedUrls = new ArrayList<URL>();
 
         for (URL jarUrl : getURLs()) {
-            try {
-                InputStream baseInputStream = jarUrl.openStream();
-
-                try {
-                    JarInputStream baseJar = new JarInputStream(baseInputStream);
-                    List<List<String>> result = new ArrayList<List<String>>();
-
-                    collectEmbeddedResources(result, baseJar, resourceName, new ArrayList<String>(), 0);
-
-                    for (List<String> path : result) {
-                        embeddedUrls.add(CompoundJarURLStreamHandler.createUrl(jarUrl, path));
+            synchronized (jarIndexes) {
+                if (jarIndexes.get(jarUrl).contains(resourceName)) {
+                    try {
+                        embeddedUrls.add(CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName));
+                    } catch (IOException e) {
+                        // keep going
                     }
-                } finally {
-                    close(baseInputStream);
                 }
-            } catch (IOException ex) {
-                // can't read the stream, keep going
             }
         }
 
@@ -131,86 +151,30 @@ public class JRubyClassLoader extends URLClassLoader {
         }
     }
 
-    private List<String> findEmbeddedResource(JarInputStream currentJar, String resourceName, List<String> currentPath,
-            int level) throws IOException {
+    private void indexJarContents(URL jarUrl) {
+        synchronized (jarIndexes) {
+            Set<String> entries = new HashSet<String>();
+            jarIndexes.put(jarUrl, entries);
+            String proto = jarUrl.getProtocol();
 
-        for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
-
-            String entryName = entry.getName();
-
-            List<String> result = null;
-
-            if (entryName.equals(resourceName)) {
-                result = new ArrayList<String>(currentPath);
-                result.add(resourceName);
-            } else if (isJarFile(entry)) {
-                String embeddedResourceName = resourceName;
-                if (resourceName.startsWith(entryName + "!")) {
-                    embeddedResourceName = resourceName.substring(entryName.length() + 1);
-                } else {
-                    continue;
-                }
-
-
-                JarInputStream embeddedJar = new JarInputStream(currentJar);
-
-                currentPath.add(entryName);
+            // we only need to index jar: and compoundjar: URLs
+            // 1st-level jar files with file: URLs are handled by the JDK
+            if (proto.equals("jar") || proto.equals(CompoundJarURLStreamHandler.PROTOCOL)) {
                 try {
-                    result = findEmbeddedResource(embeddedJar, embeddedResourceName, currentPath, level + 1);
-                } finally {
-                    currentPath.remove(entryName);
-                }
-            }
-
-            if (result != null) {
-                return result;
-            }
-        }
-
-        return null;
-    }
-
-    private void collectEmbeddedResources(List<List<String>> result, JarInputStream currentJar, String resourceName,
-            List<String> currentPath, int level) throws IOException {
-
-        for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
-
-            String entryName = entry.getName();
-
-            if (entryName.equals(resourceName)) {
-                List<String> path = new ArrayList<String>(currentPath);
-                path.add(resourceName);
-
-                result.add(path);
-            }
-
-            if (isJarFile(entry)) {
-                String embeddedResourceName = resourceName;
-                if (resourceName.startsWith(entryName + "!")) {
-                    embeddedResourceName = resourceName.substring(entryName.length() + 1);
-                } else {
-                    continue;
-                }
-
-                JarInputStream embeddedJar = new JarInputStream(currentJar);
-
-                currentPath.add(entryName);
-
-                try {
-                    collectEmbeddedResources(result, embeddedJar, embeddedResourceName, currentPath, level + 1);
-                } finally {
-                    currentPath.remove(entryName);
+                    InputStream baseInputStream = jarUrl.openStream();
+                    try {
+                        JarInputStream baseJar = new JarInputStream(baseInputStream);
+                        for (JarEntry entry = baseJar.getNextJarEntry(); entry != null; entry = baseJar.getNextJarEntry()) {
+                            entries.add(entry.getName());
+                        }
+                    } finally {
+                        close(baseInputStream);
+                    }
+                } catch (IOException ex) {
+                    // can't read the stream, keep going
                 }
             }
         }
-    }
-
-    private static boolean embeddedResourcesEnabled() {
-        return SafePropertyAccessor.getBoolean("jruby.embedded.resources", false);
-    }
-
-    private static boolean isJarFile(JarEntry entry) {
-        return !entry.isDirectory() && entry.getName().endsWith(".jar");
     }
 
     private static void close(Closeable resource) {
