@@ -641,8 +641,6 @@
     </copy>
   </target>
 
-<!--  <target name="install-gems"><run-rake rake.targets="install_gems"/></target> -->
-
   <target name="compile-stdlib" unless="test">
     <copy todir="${build.dir}/stdlib">
         <fileset dir="${basedir}/lib/ruby/1.8">
@@ -1035,7 +1033,7 @@
   <target name="spec-latest-all" depends="fetch-specs, run-specs-all"
 	  description="Runs the very latest rubyspecs without exclusions."/>
 
-  <target name="fetch-specs" depends="init"><run-rake rake.targets="spec:fetch_specs"/></target>
+  <target name="fetch-specs" depends="jar"><run-rake rake.targets="spec:fetch_specs"/></target>
 
   <target name="clear-specs">
       <delete dir="${rubyspec.dir}"/>

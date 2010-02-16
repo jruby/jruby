@@ -37,8 +37,7 @@ namespace :spec do
 
   # Complimentary tasks for running specs
 
-  task :fetch_specs => [:jar, :install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo] do
-  end
+  task :fetch_specs => [:install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo]
 
   desc "Retrieve latest tagged rubyspec git repository"
   task :fetch_latest_rubyspec_repo do
