@@ -1,17 +1,17 @@
 package org.jruby.util;
 
-import java.security.ProtectionDomain;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +22,7 @@ public class JRubyClassLoader extends URLClassLoader {
     private final static ProtectionDomain DEFAULT_DOMAIN
             = JRubyClassLoader.class.getProtectionDomain();
 
-    private final Map<URL,Set<String>> jarIndexes = new HashMap<URL,Set<String>>();
+    private final Map<URL,Set<String>> jarIndexes = new LinkedHashMap<URL,Set<String>>();
 
     public JRubyClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
@@ -50,31 +50,41 @@ public class JRubyClassLoader extends URLClassLoader {
         } catch (ClassNotFoundException ex) {
             String resourceName = className.replace('.', '/').concat(".class");
 
-            for (URL jarUrl : getURLs()) {
-                synchronized (jarIndexes) {
+            URL classUrl = null;
+            synchronized (jarIndexes) {
+                for (URL jarUrl : jarIndexes.keySet()) {
                     if (jarIndexes.get(jarUrl).contains(resourceName)) {
                         try {
-                            URL classUrl = CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
-                            InputStream input = classUrl.openStream();
-                            try {
-                                byte[] buffer = new byte[4096];
-                                ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-                                for (int count = input.read(buffer); count > 0; count = input.read(buffer)) {
-                                    output.write(buffer, 0, count);
-                                }
-
-                                byte[] data = output.toByteArray();
-                                return defineClass(className, data, 0, data.length);
-                            } finally {
-                                close(input);
-                            }
+                            classUrl = CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
+                            break;
                         } catch (IOException e) {
                             // keep going to next URL
                         }
                     }
                 }
             }
+
+            if (classUrl != null) {
+                try {
+                    InputStream input = classUrl.openStream();
+                    try {
+                        byte[] buffer = new byte[4096];
+                        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+                        for (int count = input.read(buffer); count > 0; count = input.read(buffer)) {
+                            output.write(buffer, 0, count);
+                        }
+
+                        byte[] data = output.toByteArray();
+                        return defineClass(className, data, 0, data.length);
+                    } finally {
+                        close(input);
+                    }
+                } catch (IOException e) {
+                    // just fall-through to the re-throw below
+                }
+            }
+
             throw ex;
         }
     }
@@ -84,8 +94,8 @@ public class JRubyClassLoader extends URLClassLoader {
         URL result = super.findResource(resourceName);
 
         if (result == null) {
-            for (URL jarUrl : getURLs()) {
-                synchronized (jarIndexes) {
+            synchronized (jarIndexes) {
+                for (URL jarUrl : jarIndexes.keySet()) {
                     if (jarIndexes.get(jarUrl).contains(resourceName)) {
                         try {
                             return CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName);
@@ -104,8 +114,8 @@ public class JRubyClassLoader extends URLClassLoader {
     public Enumeration<URL> findResources(String resourceName) throws IOException {
         final List<URL> embeddedUrls = new ArrayList<URL>();
 
-        for (URL jarUrl : getURLs()) {
-            synchronized (jarIndexes) {
+        synchronized (jarIndexes) {
+            for (URL jarUrl : jarIndexes.keySet()) {
                 if (jarIndexes.get(jarUrl).contains(resourceName)) {
                     try {
                         embeddedUrls.add(CompoundJarURLStreamHandler.createUrl(jarUrl, resourceName));
@@ -152,14 +162,14 @@ public class JRubyClassLoader extends URLClassLoader {
     }
 
     private void indexJarContents(URL jarUrl) {
-        synchronized (jarIndexes) {
-            Set<String> entries = new HashSet<String>();
-            jarIndexes.put(jarUrl, entries);
-            String proto = jarUrl.getProtocol();
+        String proto = jarUrl.getProtocol();
+        // we only need to index jar: and compoundjar: URLs
+        // 1st-level jar files with file: URLs are handled by the JDK
+        if (proto.equals("jar") || proto.equals(CompoundJarURLStreamHandler.PROTOCOL)) {
+            synchronized (jarIndexes) {
+                Set<String> entries = new HashSet<String>();
+                jarIndexes.put(jarUrl, entries);
 
-            // we only need to index jar: and compoundjar: URLs
-            // 1st-level jar files with file: URLs are handled by the JDK
-            if (proto.equals("jar") || proto.equals(CompoundJarURLStreamHandler.PROTOCOL)) {
                 try {
                     InputStream baseInputStream = jarUrl.openStream();
                     try {
