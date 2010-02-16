@@ -1,1 +1,2 @@
 fails:String#strip! raises a RuntimeError if self is frozen
+fails:String#strip! raises a RuntimeError on a frozen instance that would not be modified

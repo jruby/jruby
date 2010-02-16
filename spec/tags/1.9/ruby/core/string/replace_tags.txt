@@ -1,1 +1,2 @@
 fails:String#replace raises a RuntimeError if self is frozen
+fails:String#replace raises a RuntimeError on a frozen instance that would not be modified
