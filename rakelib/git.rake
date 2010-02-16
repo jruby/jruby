@@ -11,12 +11,16 @@ end
 
 def git_pull(label, local_directory)
   puts "#{label} repo found: pulling repo at #{local_directory}"
-  sh "git pull"
-  Dir.chdir(local_directory) { yield } if block_given?
+  Dir.chdir(local_directory) do 
+    sh "git pull"
+    yield if block_given?
+  end 
 end
 
 def git_fetch(label, local_directory)
   puts "#{label} repo found: fetching repo at #{local_directory}"
-  sh "git fetch"
-  Dir.chdir(local_directory) { yield } if block_given?
+  Dir.chdir(local_directory) do 
+    sh "git fetch"
+    yield if block_given?
+  end
 end
