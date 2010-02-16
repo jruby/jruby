@@ -33,6 +33,10 @@ class Ant
     end
   end
 
+  def properties
+    @project.properties
+  end
+
   # Add a target (two forms)
   # 1. Execute a block as a target: add_target "foo-target" { echo :message => "I am cool" }
   # 2. Execute a rake task as a target: add_target Rake.application["default"]
