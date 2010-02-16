@@ -21,6 +21,11 @@ namespace :test do
     ant "test-all"
   end
 
+  desc "FIXME: Not sure about what this should be called (name came from ant)"
+  task :rake_targets => ['install_gems', 'spec:ji:quiet', 'spec:compiler', 'spec:ffi'] do
+    jrake(BASE_DIR, 'test:tracing') { arg :line => '--debug' }
+  end
+
   desc "Run tracing tests (do not forget to pass --debug)"
   task :tracing do
     require 'rake/testtask'
@@ -31,7 +36,7 @@ namespace :test do
     end
   end
 
-  task :rails => [:jar, :fetch_latest_rails_repo] do
+  task :rails => [:jar, :install_build_gems, :fetch_latest_rails_repo] do
     # Need to disable assertions because of a rogue assert in OpenSSL
     jrake("#{RAILS_DIR}/activesupport", "test") { jvmarg :line => "-da" }
     jrake("#{RAILS_DIR}/actionmailer", "test")
@@ -39,7 +44,7 @@ namespace :test do
     jrake("#{RAILS_DIR}/railties", "test")
   end
 
-  task :prawn => [:jar, :fetch_latest_prawn_repo] do
+  task :prawn => [:jar, :install_build_gems, :fetch_latest_prawn_repo] do
     jrake PRAWN_DIR, "test examples"
   end
 

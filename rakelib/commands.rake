@@ -17,7 +17,7 @@ def jvm_model
 end
 
 def initialize_paths
-  self.class.set_const(:JVM_MODEL, jvm_model)
+  self.class.const_set(:JVM_MODEL, jvm_model)
 
   ant.path(:id => "build.classpath") do
     fileset :dir => BUILD_LIB_DIR, :includes => "*.jar"
@@ -42,11 +42,12 @@ def initialize_paths
 end
 
 def jruby(java_options = {}, &code)
-  initialize_paths unless JVM_MODEL
+  initialize_paths unless defined? JVM_MODEL
 
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
   java_options[:classname] = 'org.jruby.Main'
+  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
 
   puts "JAVA options: #{java_options.inspect}"
 
@@ -61,7 +62,6 @@ end
 
 def jrake(dir, targets, java_options = {}, &code)
   java_options[:dir] = dir
-  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
   jruby(java_options) do
     classpath :refid => "test.class.path"
     instance_eval(&code) if block_given?
@@ -71,7 +71,6 @@ end
 
 def mspec(dir, mspec_options = {}, java_options = {}, &code)
   java_options['dir'] = dir
-  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
   java_options[:failonerror] ||= 'false'
 
   mspec_options[:compile_mode] ||= 'OFF'
@@ -109,5 +108,12 @@ def mspec(dir, mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
     arg :line => "-f m"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
+  end
+end
+
+def gem_install(gems, gem_options = "", java_options = {}, &code)
+  jruby(java_options) do
+    arg :line => "--command maybe_install_gems #{gems} #{gem_options}"
+    instance_eval(&code) if block_given?
   end
 end
