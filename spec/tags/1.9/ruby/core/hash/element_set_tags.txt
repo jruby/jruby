@@ -1,0 +1,1 @@
+fails(JRUBY-4565):Hash#[]= raises RuntimeErrors if attempt to add new key during iteration

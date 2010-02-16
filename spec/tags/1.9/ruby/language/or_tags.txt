@@ -1,0 +1,3 @@
+fails(JRUBY-4549):The or operator has a lower precedence than 'break' in 'break true or false'
+fails(JRUBY-4549):The or operator has a lower precedence than 'next' in 'next true or false'
+fails(JRUBY-4549):The or operator has a lower precedence than 'return' in 'return true or false'
