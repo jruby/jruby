@@ -1,10 +1,11 @@
+# -*- coding: iso-8859-1 -*-
 require 'ant'
+require 'rbconfig'
 
 # Determine if we need to put a 32 or 64 bit flag to the command-line
 # based on what java reports as the hardward architecture.
 def jvm_model
-  # My windows machine does not do this?  Can this happen?
-  return nil if ENV_JAVA['os.family'] == "windows"
+  return nil if Config::CONFIG['host_os'] =~ /mswin|mingw/
 
   case ENV_JAVA['os.arch']
   when 'amd64', 'x86_64', 'sparcv9', 's390x' then
@@ -17,7 +18,7 @@ def jvm_model
 end
 
 def initialize_paths
-  self.class.set_const(:JVM_MODEL, jvm_model)
+  self.class.const_set(:JVM_MODEL, jvm_model)
 
   ant.path(:id => "build.classpath") do
     fileset :dir => BUILD_LIB_DIR, :includes => "*.jar"
@@ -42,11 +43,12 @@ def initialize_paths
 end
 
 def jruby(java_options = {}, &code)
-  initialize_paths unless JVM_MODEL
+  initialize_paths unless defined? JVM_MODEL
 
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
   java_options[:classname] = 'org.jruby.Main'
+  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
 
   puts "JAVA options: #{java_options.inspect}"
 
@@ -61,7 +63,6 @@ end
 
 def jrake(dir, targets, java_options = {}, &code)
   java_options[:dir] = dir
-  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
   jruby(java_options) do
     classpath :refid => "test.class.path"
     instance_eval(&code) if block_given?
@@ -69,10 +70,9 @@ def jrake(dir, targets, java_options = {}, &code)
   end
 end
 
-def mspec(dir, mspec_options = {}, java_options = {}, &code)
-  java_options['dir'] = dir
-  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
+def mspec(mspec_options = {}, java_options = {}, &code)
   java_options[:failonerror] ||= 'false'
+  java_options[:dir] ||= BASE_DIR
 
   mspec_options[:compile_mode] ||= 'OFF'
   mspec_options[:jit_threshold] ||= 20
@@ -83,9 +83,11 @@ def mspec(dir, mspec_options = {}, java_options = {}, &code)
   mspec_options[:compat] ||= "RUBY1_8"
   ms = mspec_options
 
+  # We can check this property to see whether we failed the run or not
+  java_options[:resultproperty] ||="spec.status.#{mspec_options[:compile_mode]}"
+
   puts "MSPEC: #{ms.inspect}"
 
-  ant.log.message_output_level = 5
   jruby(java_options) do
     classpath :refid => "test.class.path"
     jvmarg :line => "-ea"
@@ -109,5 +111,12 @@ def mspec(dir, mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
     arg :line => "-f m"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
+  end
+end
+
+def gem_install(gems, gem_options = "", java_options = {}, &code)
+  jruby(java_options) do
+    arg :line => "--command maybe_install_gems #{gems} #{gem_options}"
+    instance_eval(&code) if block_given?
   end
 end

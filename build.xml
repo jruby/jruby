@@ -15,13 +15,6 @@
        setting local overrides, but that's how Ant works. -->
   <property file="default.build.properties"/>
 
-  <!-- Gem file names -->
-  <property name="rspec.gem" value="rspec-1.2.9.gem"/>
-  <property name="rake.gem" value="rake-0.8.7.gem"/>
-  <property name="ruby-debug.gem" value="ruby-debug-0.10.3.gem"/>
-  <property name="ruby-debug-base.gem" value="ruby-debug-base-0.10.3.1-java.gem"/>
-  <property name="columnize.gem" value="columnize-0.3.1.gem"/>
-
   <property name="shared.lib.dir" value="lib/ruby/site_ruby/shared"/>
 
   <path id="build.classpath">
@@ -648,45 +641,6 @@
     </copy>
   </target>
 
-  <target name="install-gems">
-    <property name="jruby.home" value="${basedir}"/>
-    <property name="install.ri" value="--no-ri"/>
-    <property name="install.rdoc" value="--no-rdoc"/>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-      <classpath refid="jruby.execute.classpath"/>
-      <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg value="--command"/>
-      <arg value="maybe_install_gems"/>
-      <arg value="${build.lib.dir}/${rspec.gem}"/>
-      <arg value="${build.lib.dir}/${rake.gem}"/>
-      <arg value="${build.lib.dir}/${ruby-debug-base.gem}"/>
-      <arg value="${build.lib.dir}/${ruby-debug.gem}"/>
-      <arg value="${build.lib.dir}/${columnize.gem}"/>
-      <arg value="${install.ri}"/>
-      <arg value="${install.rdoc}"/>
-      <arg value="--ignore-dependencies"/>
-      <arg value="--env-shebang"/>
-    </java>
-  </target>
-
-  <target name="install-build-gems" depends="install-gems">
-    <property name="jruby.home" value="${basedir}"/>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-      <classpath refid="jruby.execute.classpath"/>
-      <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg value="--command"/>
-      <arg value="maybe_install_gems"/>
-      <arg value="mocha"/>
-      <arg value="i18n"/>
-      <arg value="jruby-memcache-client"/>
-      <arg value="tzinfo"/>
-      <arg value="jruby-openssl"/>
-      <arg value="--no-ri"/>
-      <arg value="--no-rdoc"/>
-      <arg value="--env-shebang"/>
-    </java>
-  </target>
-
   <target name="compile-stdlib" unless="test">
     <copy todir="${build.dir}/stdlib">
         <fileset dir="${basedir}/lib/ruby/1.8">
@@ -962,11 +916,9 @@
     </java>
   </target>
 
-  <target name="test-rake-targets" depends="install-gems">
-      <run-rake rake.targets="spec:ji:quiet"/>
-      <run-rake rake.targets="test:tracing" jruby.args="--debug"/>
-      <run-rake rake.targets="spec:compiler"/>
-      <run-rake rake.targets="spec:ffi"/>
+
+  <target name="test-rake-targets" depends="init">
+    <run-rake rake.targets="test:rake_targets"/>
   </target>
 
   <macrodef name="run-rake">
@@ -1081,9 +1033,7 @@
   <target name="spec-latest-all" depends="fetch-specs, run-specs-all"
 	  description="Runs the very latest rubyspecs without exclusions."/>
 
-  <target name="fetch-specs" depends="jar, install-build-gems">
-    <run-rake rake.targets="spec:fetch_latest_rubyspec_repo spec:fetch_latest_mspec_repo"/>
-  </target>
+  <target name="fetch-specs" depends="jar"><run-rake rake.targets="spec:fetch_specs"/></target>
 
   <target name="clear-specs">
       <delete dir="${rubyspec.dir}"/>
@@ -1425,11 +1375,7 @@
     <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
     <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
-    <antcall target="install-gems">
-      <param name="jruby.home" value="${dist.stage.bin.dir}"/>
-      <param name="install.ri" value=""/>
-      <param name="install.rdoc" value=""/>
-    </antcall>
+    <run-rake rake.targets="install_dist_gems"/>
     <tar destfile="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.bin.dir}" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
@@ -1479,11 +1425,7 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
-    <antcall target="install-gems">
-      <param name="jruby.home" value="${dist.stage.src.dir}"/>
-      <param name="install.ri" value=""/>
-      <param name="install.rdoc" value=""/>
-    </antcall>
+    <run-rake rake.targets="install_dist_gems"/>
     <fixEOLs dist-stage-dir="${dist.stage.src.dir}"/>
     <tar destfile="${dist.dir}/jruby-src-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.src.dir}" mode="755" prefix="jruby-${version.jruby}">
@@ -1618,16 +1560,7 @@
     <mkdir dir="${build.dir}/nailmain"/>
   </target>
 
-  <target name="test-rails-stable" depends="jar,install-build-gems">
-    <run-rake rake.targets="test:rails"/>
-  </target>
-
-<!-- FIXME: MOVE INSTALL BUILD GEMS into rake -->
-  <target name="test-prawn" depends="jar,install-build-gems">
-    <run-rake rake.targets="test:prawn"/>
-  </target>
-
-  <target name="bench-language" depends="init">
-    <run-rake rake.targets="bench:language"/>
-  </target>
+  <target name="test-rails-stable" depends="init"><run-rake rake.targets="test:rails"/></target>
+  <target name="test-prawn" depends="init"><run-rake rake.targets="test:prawn"/></target>
+  <target name="bench-language" depends="init"><run-rake rake.targets="bench:language"/></target>
 </project>

@@ -63,33 +63,19 @@ class TestLoad < Test::Unit::TestCase
   end
 
   def test_require_nested_jar_should_make_its_scripts_accessible
-    enable_embedded_resources do
-      $LOADED_FEATURES.delete_if {|f| f =~ /nested_jar|files_in_jar/}
-      $hello = nil
-      require 'test/jar_with_ruby_files_in_jar'
-      require 'jar_with_ruby_file'
-      require 'hello_from_nested_jar'
-      assert "hi from nested jar", $hello
-    end
+    $LOADED_FEATURES.delete_if {|f| f =~ /nested_jar|files_in_jar/}
+    $hello = nil
+    require 'test/jar_with_ruby_files_in_jar'
+    require 'jar_with_ruby_file'
+    require 'hello_from_nested_jar'
+    assert "hi from nested jar", $hello
   end
 
-  def test_require_nested_jar_path
-    enable_embedded_resources do
-      $LOADED_FEATURES.delete_if {|f| f =~ /nested_jar|files_in_jar/}
-      $hello = nil
-      require 'test/jar_with_ruby_files_in_jar'
-      require 'jar_with_ruby_file.jar!hello_from_nested_jar'
-      assert "hi from nested jar", $hello
-    end
-  end
-
-  def test_require_full_nested_jar_path
-    enable_embedded_resources do
-      $LOADED_FEATURES.delete_if {|f| f =~ /nested_jar|files_in_jar/}
-      $hello = nil
-      require 'test/jar_with_ruby_files_in_jar.jar!jar_with_ruby_file.jar!hello_from_nested_jar'
-      assert "hi from nested jar", $hello
-    end
+  def test_require_nested_jar_enables_class_loading_from_that_jar
+    require 'test/jar_with_nested_classes_jar'
+    require 'jar_with_classes'
+    java_import "test.HelloThere"
+    assert HelloThere.new.message
   end
 
   def call_extern_load_foo_bar(classpath = nil)
@@ -221,12 +207,5 @@ DEPS
       load 'jruby-3977.rb'
       assert $jruby3977
     }
-  end
-
-  def enable_embedded_resources
-    java.lang.System.setProperty("jruby.embedded.resources", "true")
-    yield
-  ensure
-    java.lang.System.getProperties.remove("jruby.embedded.resources")
   end
 end

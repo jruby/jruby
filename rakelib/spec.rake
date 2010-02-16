@@ -9,6 +9,27 @@ namespace :spec do
     ant "spec-all"
   end
 
+  desc "Run all 1.8 tagged specs in interpreted, JIT, and pre-compiled modes"
+  task :all_tagged_1_8 => [:interpreted_tagged_1_8, :compiled_tagged_1_8, 
+                           :precompiled_tagged_1_8]
+
+  desc "Tagged 1.8 specs in interpreted mode only"
+  task :interpreted_tagged_1_8 do
+    mspec :compile_mode => "OFF", :spec_config => RUBY18_MSPEC_FILE
+  end
+
+  desc "Tagged 1.8 specs in JIT mode only (threshold=0)"
+  task :compiled_tagged_1_8 do
+    mspec :compile_mode => "JIT", :spec_config => RUBY18_MSPEC_FILE, 
+       :jit_threshold => 0
+  end
+
+  desc "Tagged 1.8 specs in AOT mode only"
+  task :precompiled_tagged_1_8 do
+    mspec :compile_mode => "FORCE", :spec_config => RUBY18_MSPEC_FILE, 
+       :jit_threshold => 0
+  end
+
   gem 'rspec'
   require 'spec/rake/spectask'
   desc "Runs Java Integration Specs"
@@ -37,13 +58,15 @@ namespace :spec do
 
   # Complimentary tasks for running specs
 
+  task :fetch_specs => [:install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo]
+
   desc "Retrieve latest tagged rubyspec git repository"
   task :fetch_latest_rubyspec_repo do
     unless git_repo_exists? RUBYSPEC_DIR
       clear_spec_dirs
       git_shallow_clone('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
     else
-#      git_fetch('rubyspec', RUBYSPEC_DIR)
+      git_fetch('rubyspec', RUBYSPEC_DIR)
     end
   end
 
@@ -52,7 +75,7 @@ namespace :spec do
     unless git_repo_exists? MSPEC_DIR
       git_shallow_clone('rubyspec', MSPEC_GIT_REPO, MSPEC_DIR)
     else
-#      git_fetch('rubyspec', MSPEC_DIR)
+      git_fetch('rubyspec', MSPEC_DIR)
     end
   end
 
