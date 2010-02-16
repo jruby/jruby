@@ -9,6 +9,27 @@ namespace :spec do
     ant "spec-all"
   end
 
+  desc "Run all 1.8 tagged specs in interpreted, JIT, and pre-compiled modes"
+  task :all_tagged_1_8 => [:interpreted_tagged_1_8, :compiled_tagged_1_8, 
+                           :precompiled_tagged_1_8]
+
+  desc "Tagged 1.8 specs in interpreted mode only"
+  task :interpreted_tagged_1_8 do
+    mspec :compile_mode => "OFF", :spec_config => RUBY18_MSPEC_FILE
+  end
+
+  desc "Tagged 1.8 specs in JIT mode only (threshold=0)"
+  task :compiled_tagged_1_8 do
+    mspec :compile_mode => "JIT", :spec_config => RUBY18_MSPEC_FILE, 
+       :jit_threshold => 0
+  end
+
+  desc "Tagged 1.8 specs in AOT mode only"
+  task :precompiled_tagged_1_8 do
+    mspec :compile_mode => "FORCE", :spec_config => RUBY18_MSPEC_FILE, 
+       :jit_threshold => 0
+  end
+
   gem 'rspec'
   require 'spec/rake/spectask'
   desc "Runs Java Integration Specs"

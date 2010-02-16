@@ -1,10 +1,11 @@
+# -*- coding: iso-8859-1 -*-
 require 'ant'
+require 'rbconfig'
 
 # Determine if we need to put a 32 or 64 bit flag to the command-line
 # based on what java reports as the hardward architecture.
 def jvm_model
-  # My windows machine does not do this?  Can this happen?
-  return nil if ENV_JAVA['os.family'] == "windows"
+  return nil if Config::CONFIG['host_os'] =~ /mswin|mingw/
 
   case ENV_JAVA['os.arch']
   when 'amd64', 'x86_64', 'sparcv9', 's390x' then
@@ -69,9 +70,9 @@ def jrake(dir, targets, java_options = {}, &code)
   end
 end
 
-def mspec(dir, mspec_options = {}, java_options = {}, &code)
-  java_options['dir'] = dir
+def mspec(mspec_options = {}, java_options = {}, &code)
   java_options[:failonerror] ||= 'false'
+  java_options[:dir] ||= BASE_DIR
 
   mspec_options[:compile_mode] ||= 'OFF'
   mspec_options[:jit_threshold] ||= 20
@@ -82,9 +83,11 @@ def mspec(dir, mspec_options = {}, java_options = {}, &code)
   mspec_options[:compat] ||= "RUBY1_8"
   ms = mspec_options
 
+  # We can check this property to see whether we failed the run or not
+  java_options[:resultproperty] ||="spec.status.#{mspec_options[:compile_mode]}"
+
   puts "MSPEC: #{ms.inspect}"
 
-  ant.log.message_output_level = 5
   jruby(java_options) do
     classpath :refid => "test.class.path"
     jvmarg :line => "-ea"
