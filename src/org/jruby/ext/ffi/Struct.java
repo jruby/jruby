@@ -166,13 +166,13 @@ public class Struct extends RubyObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
-        return layout.getMember(context.getRuntime(), fieldName).get(context.getRuntime(), this, getMemory());
+        return layout.getValue(context, fieldName, this, getMemory());
     }
 
     @JRubyMethod(name = "[]=")
     public IRubyObject setFieldValue(ThreadContext context, IRubyObject fieldName, IRubyObject fieldValue) {
-        Ruby runtime = context.getRuntime();
-        layout.getMember(runtime, fieldName).put(runtime, this, getMemory(), fieldValue);
+        layout.putValue(context, fieldName, this, getMemory(), fieldValue);
+
         return fieldValue;
     }
 
