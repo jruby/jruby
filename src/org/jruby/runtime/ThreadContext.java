@@ -114,11 +114,6 @@ public final class ThreadContext {
      */
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
-        
-        // TOPLEVEL self and a few others want a top-level scope.  We create this one right
-        // away and then pass it into top-level parse so it ends up being the top level.
-        StaticScope topStaticScope = new LocalStaticScope(null);
-        pushScope(new ManyVarsDynamicScope(topStaticScope, null));
 
         Frame[] stack = frameStack;
         int length = stack.length;
@@ -1221,8 +1216,19 @@ public final class ThreadContext {
         popRubyClass();
         popScope();
     }
-    
+
+    @Deprecated
     public void prepareTopLevel(RubyClass objectClass, IRubyObject topSelf) {
+        preTopLevel(objectClass, topSelf);
+    }
+
+    /**
+     * Prepare a toplevel execution context, including a frame, scope, and current RubyClass
+     *
+     * @param objectClass The current RubyClass
+     * @param topSelf The "self" for the toplevel frame
+     */
+    public void preTopLevel(RubyClass objectClass, IRubyObject topSelf) {
         pushFrame();
         setCurrentVisibility(Visibility.PRIVATE);
         
@@ -1231,7 +1237,21 @@ public final class ThreadContext {
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
         
+        // TOPLEVEL self and a few others want a top-level scope.  We create this one right
+        // away and then pass it into top-level parse so it ends up being the top level.
+        StaticScope topStaticScope = new LocalStaticScope(null);
+        pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+        
         getCurrentScope().getStaticScope().setModule(objectClass);
+    }
+
+    /**
+     * Remove the elements added for the toplevel execution context.
+     */
+    public void postTopLevel() {
+        popFrame();
+        popRubyClass();
+        popScope();
     }
     
     public void preNodeEval(RubyModule rubyClass, IRubyObject self, String name) {
