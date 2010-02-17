@@ -21,11 +21,14 @@ class Element
     assign_attributes element, args
     define_nested_elements element
     code.arity==1 ? code[element] : element.instance_eval(&code) if block_given?
-    if parent.respond_to? :get_owning_target # Task
+    if parent.respond_to? :add_task # Target
+      @ant.project.log "Adding #{name} to #{parent}", 5
+      parent.add_task element
+    elsif parent.respond_to? :get_owning_target # Task
       @ant.project.log "Adding #{name} to #{parent.component_name}", 5
       parent.add_child element
       parent.runtime_configurable_wrapper.add_child element.runtime_configurable_wrapper
-    else # Target
+    else # Just run it now
       @ant.project.log "Executing #{name}", 5
       element.maybe_configure
       element.execute

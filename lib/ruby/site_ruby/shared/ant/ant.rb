@@ -10,6 +10,7 @@ java_import org.apache.tools.ant.Target
 
 class Ant
   attr_reader :project, :log
+  attr_accessor :current_target
 
   def initialize(options={}, &block)
     @options = options
@@ -21,28 +22,71 @@ class Ant
     # If we are calling into a rakefile from ant then we already have a project to use
     return $project if $project
 
+    output_level = options.delete(:output_level) || 2
+
     Project.new.tap do |p|
       p.init
       p.add_build_listener(DefaultLogger.new.tap do |log|
         log.output_print_stream = java.lang.System.out
         log.error_print_stream = java.lang.System.err
         log.emacs_mode = true
-        log.message_output_level = options[:output_level] || 2
-        @log = log                     
+        log.message_output_level = output_level
+        @log = log
       end)
+      options.each_pair {|k,v| p.send("set_#{k}", v) }
     end
+  end
+
+  def properties
+    @project.properties
   end
 
   # Add a target (two forms)
   # 1. Execute a block as a target: add_target "foo-target" { echo :message => "I am cool" }
   # 2. Execute a rake task as a target: add_target Rake.application["default"]
-  def add_target(task, &block)
-    target = block_given? ? BlockTarget.new(self, task, &block) : RakeTarget.new(self, task)
+  def add_target(*options, &block)
+    target = block_given? ? BlockTarget.new(self, *options, &block) : RakeTarget.new(self, options.first)
     @project.add_target target
+  end
+  alias target add_target
+
+  def [](name)
+    if @project.targets.containsKey(name)
+      TargetWrapper.new(@project, name)
+    else
+      MissingWrapper.new(@project, name)
+    end
   end
 
   def execute_target(name)
-    @project.execute_target(name)
+    self[name].execute
+  end
+
+  def execute_default
+    @project.execute_target(@project.default_target)
+  end
+
+  def project_help
+    max_width = @project.targets.keys.max {|a,b| a.length <=> b.length}.length
+    @project.targets.values.select {|t|
+      t.description
+    }.sort{|a,b|
+      a.name <=> b.name
+    }.map {|t|
+      "%-#{max_width}s - %s" % [t.name, t.description]
+    }.join("\n")
+  end
+
+  def handle_argv(argv)
+    return if Ant.run
+    if argv.length > 0
+      argv.each {|t| ant.execute_target(t) }
+    else
+      ant.execute_default
+    end
+  rescue => e
+    warn e.message
+    exit 1
   end
 
   # We generate top-level methods for all default data types and task definitions for this instance
@@ -79,6 +123,8 @@ class Ant
   end
 
   class << self
+    attr_accessor :run
+
     def ant(options={}, &code)
       if options.respond_to? :to_hash
         @ant ||= Ant.new options.to_hash
@@ -111,7 +157,14 @@ end
 #      ant args
 #
 def ant(*args, &block)
-  Ant.ant(*args, &block)
+  argv = ARGV
+  ant = Ant.ant(*args, &block)
+  if Ant === ant && caller[0].split(/:/).first == $0
+    at_exit do
+      ant.handle_argv(argv)
+    end
+  end
+  ant
 end
 
 def ant_import(filename = 'build.xml')
