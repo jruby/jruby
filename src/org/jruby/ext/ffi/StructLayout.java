@@ -325,8 +325,6 @@ public final class StructLayout extends Type {
      */
     @JRubyClass(name="FFI::StructLayout::Field", parent="Object")
     public static abstract class Member extends RubyObject {
-        /** The name of this member. */
-        protected final IRubyObject name;
 
         /** The {@link Type} of this member. */
         protected final Type type;
@@ -340,7 +338,6 @@ public final class StructLayout extends Type {
         /** Initializes a new Member instance */
         protected Member(IRubyObject name, Type type, int index, long offset) {
             super(type.getRuntime(), type.getRuntime().fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Field"));
-            this.name = name;
             this.type = type;
             this.index = index;
             this.offset = offset;
