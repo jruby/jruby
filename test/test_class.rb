@@ -320,4 +320,17 @@ class TestClass < Test::Unit::TestCase
   def test_alias_method_calls_method_added
     assert_equal([:puts2], AliasMethodTester::METHODS)
   end
+
+  # JRUBY-4266
+  def test_sclass_return
+    c = Class.new do
+      def foo
+        class << self
+          return 'foo'
+        end
+      end
+    end
+
+    assert_equal 'foo', c.new.foo
+  end
 end
