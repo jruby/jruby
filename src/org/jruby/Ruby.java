@@ -1043,7 +1043,7 @@ public final class Ruby {
         
         // Require in all libraries specified on command line
         for (String scriptName : config.requiredLibraries()) {
-            RubyKernel.require(getTopSelf(), newString(scriptName), Block.NULL_BLOCK);
+            loadService.smartLoad(scriptName);
         }
 
         // Modified for JRUBY-4484
