@@ -1180,7 +1180,9 @@ public class RubyInstanceConfig {
 
             scriptFileName = resolveScript(scriptName);
 
-            if (scriptFileName.equals(scriptName)) {
+            // run as a command if we couldn't find a script
+            if (scriptFileName == null) {
+                scriptFileName = scriptName;
                 requiredLibraries.add("jruby/commands");
                 inlineScript.append("JRuby::Commands." + scriptName);
                 inlineScript.append("\n");
@@ -1199,7 +1201,7 @@ public class RubyInstanceConfig {
                 // try cwd first
                 File fullName = JRubyFile.create(currentDirectory, scriptName);
                 if (fullName.exists() && fullName.isFile()) {
-                    return fullName.getAbsolutePath();
+                    return scriptName;
                 }
 
                 fullName = JRubyFile.create(getJRubyHome(), "bin/" + scriptName);
@@ -1224,7 +1226,7 @@ public class RubyInstanceConfig {
             } catch (IllegalArgumentException iae) {
                 if (debug) System.err.println("warning: could not resolve -S script on filesystem: " + scriptName);
             }
-            return scriptName;
+            return null;
         }
 
         private String grabValue(String errorMessage) {
