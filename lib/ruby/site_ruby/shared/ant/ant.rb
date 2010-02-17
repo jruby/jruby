@@ -77,6 +77,18 @@ class Ant
     }.join("\n")
   end
 
+  def handle_argv(argv)
+    return if Ant.run
+    if argv.length > 0
+      argv.each {|t| ant.execute_target(t) }
+    else
+      ant.execute_default
+    end
+  rescue => e
+    warn e.message
+    exit 1
+  end
+
   # We generate top-level methods for all default data types and task definitions for this instance
   # of ant.  This eliminates the need to rely on method_missing.
   def initialize_elements
@@ -145,21 +157,14 @@ end
 #      ant args
 #
 def ant(*args, &block)
+  argv = ARGV
   ant = Ant.ant(*args, &block)
   if Ant === ant && caller[0].split(/:/).first == $0
     at_exit do
-      begin
-        if ARGV.length > 0
-          ARGV.each {|t| ant.execute_target(t) }
-        else
-          ant.execute_default
-        end
-      rescue => e
-        warn e.message
-        exit 1
-      end unless Ant.run
+      ant.handle_argv(argv)
     end
   end
+  ant
 end
 
 def ant_import(filename = 'build.xml')
