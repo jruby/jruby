@@ -54,6 +54,7 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -3851,6 +3852,18 @@ public class RubyArray extends RubyObject implements List {
             array[i] = values[i + begin].toJava(Object.class);
         }
         return array;
+    }
+
+    @Override
+    public Object toJava(Class target) {
+        if (target.isArray()) {
+            Class type = target.getComponentType();
+            Object rawJavaArray = Array.newInstance(type, realLength);
+            ArrayJavaAddons.copyDataToJavaArrayDirect(getRuntime().getCurrentContext(), this, rawJavaArray);
+            return rawJavaArray;
+        } else {
+            return super.toJava(target);
+        }
     }
 
     public boolean add(Object element) {
