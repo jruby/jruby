@@ -559,7 +559,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } catch (DirectoryAsFileException dafe) {
             throw getRuntime().newErrnoEISDirError();
         } catch (FileExistsException fee) {
-            throw getRuntime().newErrnoEEXISTError("file exists: " + path);
+            throw getRuntime().newErrnoEEXISTError(path);
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
         }
@@ -598,11 +598,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // FNFException can be thrown in both cases, when the file
             // is not found, or when permission is denied.
             if (Ruby.isSecurityRestricted() || new File(path).exists()) {
-                throw getRuntime().newErrnoEACCESError(
-                        "Permission denied - " + path);
+                throw getRuntime().newErrnoEACCESError(path);
             }
-            throw getRuntime().newErrnoENOENTError(
-                    "File not found - " + path);
+            throw getRuntime().newErrnoENOENTError(path);
         } catch (DirectoryAsFileException ex) {
             throw getRuntime().newErrnoEISDirError();
         } catch (FileExistsException ex) {
@@ -614,7 +612,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (SecurityException ex) {
-            throw getRuntime().newErrnoEACCESError("Permission denied - " + path);
+            throw getRuntime().newErrnoEACCESError(path);
         }
     }
 
@@ -623,7 +621,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int mode = (int) arg.convertToInteger().getLongValue();
 
         if (!new File(path).exists()) {
-            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError(path);
         }
 
         return context.getRuntime().newFixnum(context.getRuntime().getPosix().chmod(path, mode));
@@ -642,7 +640,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (!new File(path).exists()) {
-            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError(path);
         }
 
         return context.getRuntime().newFixnum(context.getRuntime().getPosix().chown(path, owner, group));
@@ -663,7 +661,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int mode = (int) arg.convertToInteger().getLongValue();
 
         if (!new File(path).exists()) {
-            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError(path);
         }
 
         return context.getRuntime().newFixnum(context.getRuntime().getPosix().lchmod(path, mode));
@@ -683,7 +681,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (!new File(path).exists()) {
-            throw context.getRuntime().newErrnoENOENTError("No such file or directory - " + path);
+            throw context.getRuntime().newErrnoENOENTError(path);
         }
 
         return context.getRuntime().newFixnum(context.getRuntime().getPosix().lchown(path, owner, group));
@@ -740,7 +738,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
         RubyInteger newLength = arg.convertToInteger();
         if (newLength.getLongValue() < 0) {
-            throw context.getRuntime().newErrnoEINVALError("invalid argument: " + path);
+            throw context.getRuntime().newErrnoEINVALError(path);
         }
         try {
             openFile.checkWritable(context.getRuntime());
@@ -867,7 +865,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             RubyString filename = get_path(context, args[i]);
             
             if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
-                throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
             
             boolean result = 0 == runtime.getPosix().chmod(filename.getUnicodeValue(), (int)mode.getLongValue());
@@ -897,7 +895,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             RubyString filename = get_path(context, args[i]);
 
             if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
-                throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
             
             boolean result = 0 == runtime.getPosix().chown(filename.getUnicodeValue(), owner, group);
@@ -1419,7 +1417,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             RubyString filename = get_path(context, args[i]);
             
             if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
-                throw runtime.newErrnoENOENTError("No such file or directory - " + filename);
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
             
             boolean result = 0 == runtime.getPosix().lchmod(filename.getUnicodeValue(), (int)mode.getLongValue());
@@ -1463,8 +1461,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // the POSIX handler throws an exception, but not in case
             // with pure Java POSIX layer (when native support is disabled),
             // so we deal with it like this:
-            throw runtime.newErrnoEEXISTError("File exists - "
-                           + fromStr + " or " + toStr);
+            throw runtime.newErrnoEEXISTError(fromStr + " or " + toStr);
         }
         return runtime.newFixnum(ret);
     }
@@ -1488,8 +1485,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         JRubyFile newFile = JRubyFile.create(runtime.getCurrentDirectory(), newNameJavaString);
         
         if (!oldFile.exists() || !newFile.getParentFile().exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + oldNameJavaString +
-                    " or " + newNameJavaString);
+            throw runtime.newErrnoENOENTError(oldNameJavaString + " or " + newNameJavaString);
         }
 
         JRubyFile dest = JRubyFile.create(runtime.getCurrentDirectory(), newNameJavaString);
@@ -1509,8 +1505,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return RubyFixnum.zero(runtime);
         }
 
-        throw runtime.newErrnoEACCESError("Permission denied - " + oldNameJavaString + " or " +
-                newNameJavaString);
+        throw runtime.newErrnoEACCESError(oldNameJavaString + " or " + newNameJavaString);
     }
     
     @JRubyMethod(required = 1, meta = true)
@@ -1532,8 +1527,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (runtime.getPosix().symlink(
                     fromStr.getUnicodeValue(), tovalue) == -1) {
                 // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw runtime.newErrnoEEXISTError("File exists - " 
-                               + fromStr + " or " + toStr);
+                throw runtime.newErrnoEEXISTError(fromStr + " or " + toStr);
             }
         } catch (java.lang.UnsatisfiedLinkError ule) {
             throw runtime.newNotImplementedError("symlink() function is unimplemented on this machine");
@@ -1550,11 +1544,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             String realPath = runtime.getPosix().readlink(path.convertToString().getUnicodeValue());
         
             if (!RubyFileTest.exist_p(recv, path).isTrue()) {
-                throw runtime.newErrnoENOENTError("No such file or directory - " + path);
+                throw runtime.newErrnoENOENTError(path.toString());
             }
         
             if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
-                throw runtime.newErrnoEINVALError("invalid argument - " + path);
+                throw runtime.newErrnoEINVALError(path.toString());
             }
         
             if (realPath == null) {
@@ -1584,12 +1578,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (!testFile.exists()) {
-            throw runtime.newErrnoENOENTError(
-                    "No such file or directory - " + filename.getByteList().toString());
+            throw runtime.newErrnoENOENTError(filename.getByteList().toString());
         }
 
         if (newLength.getLongValue() < 0) {
-            throw runtime.newErrnoEINVALError("invalid argument: " + filename);
+            throw runtime.newErrnoEINVALError(filename.toString());
         }
 
         IRubyObject[] args = new IRubyObject[] { filename, runtime.newString("r+") };
@@ -1634,7 +1627,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.getUnicodeValue());
             
             if (!fileToTouch.exists()) {
-                throw runtime.newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
 
             runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
@@ -1656,11 +1649,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // Broken symlinks considered by exists() as non-existing,
             // so we need to check for symlinks explicitly.
             if (!lToDelete.exists() && !isSymlink) {
-                throw runtime.newErrnoENOENTError(" No such file or directory - \"" + filename + "\"");
+                throw runtime.newErrnoENOENTError(filename.toString());
             }
 
             if (!lToDelete.delete()) {
-                throw runtime.newErrnoEACCESError("Permission denied - \"" + filename + "\"");
+                throw runtime.newErrnoEACCESError(filename.toString());
             }
         }
         
@@ -1700,7 +1693,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), path);
         
         if (!file.exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + path);
+            throw runtime.newErrnoENOENTError(path);
         }
         
         return runtime.newTime(file.lastModified());
