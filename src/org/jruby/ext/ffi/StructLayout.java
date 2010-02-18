@@ -470,6 +470,20 @@ public final class StructLayout extends Type {
          * @return A ruby object equivalent to the native member value.
          */
         public abstract IRubyObject get(ThreadContext context, Storage cache, Member m, IRubyObject ptr);
+
+        /**
+         * Gets the cacheable status of this Struct member
+         *
+         * @return <tt>true</tt> if this member type is cacheable
+         */
+        public abstract boolean isCacheable();
+
+        /**
+         * Checks if a reference to the ruby object assigned to this field needs to be stored
+         *
+         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         */
+        public abstract boolean isValueReferenceNeeded();
     }
 
     static final class DefaultFieldIO implements FieldIO {
@@ -482,17 +496,13 @@ public final class StructLayout extends Type {
         public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             m.field.callMethod(context, "put", new IRubyObject[] { ptr, value });
         }
-    }
 
-    static final class UninitializedFieldIO implements FieldIO {
-        public static final FieldIO INSTANCE = new UninitializedFieldIO();
-
-        public IRubyObject get(ThreadContext context, Storage cache, Member m, IRubyObject ptr) {
-            throw context.getRuntime().newRuntimeError("uninitialized field class " + m.field.getMetaClass());
+        public final boolean isCacheable() {
+            return false;
         }
 
-        public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
-            throw context.getRuntime().newRuntimeError("uninitialized field class " + m.field.getMetaClass());
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 
@@ -517,18 +527,15 @@ public final class StructLayout extends Type {
 
 
         Field(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
-            this.io = DefaultFieldIO.INSTANCE;
-            this.type = (Type) runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("VOID");
+            this(runtime, klass, DefaultFieldIO.INSTANCE);
         }
 
         Field(Ruby runtime, RubyClass klass, FieldIO io) {
-            super(runtime, klass);
-            this.io = io;
-            this.type = (Type) runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("VOID");
+            this(runtime, klass, (Type) runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("VOID"),
+                    -1, io);
+            
         }
-
-
+        
         Field(Ruby runtime, RubyClass klass, Type type, int offset, FieldIO io) {
             super(runtime, klass);
             this.type = type;
@@ -536,15 +543,19 @@ public final class StructLayout extends Type {
             this.io = io;
         }
 
-        void init(ThreadContext context, IRubyObject type, IRubyObject offset, FieldIO io) {
+        void init(IRubyObject type, IRubyObject offset) {
             this.type = checkType(type);
             this.offset = RubyNumeric.num2int(offset);
+        }
+
+        void init(IRubyObject type, IRubyObject offset, FieldIO io) {
+            init(type, offset);
             this.io = io;
         }
 
         @JRubyMethod
         public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
-            init(context, type, offset, DefaultFieldIO.INSTANCE);
+            init(type, offset);
 
             return this;
         }
@@ -579,8 +590,8 @@ public final class StructLayout extends Type {
          *
          * @return <tt>true</tt> if this member type is cacheable
          */
-        protected boolean isCacheable() {
-            return false;
+        public final boolean isCacheable() {
+            return io.isCacheable();
         }
 
         /**
@@ -588,8 +599,8 @@ public final class StructLayout extends Type {
          *
          * @return <tt>true</tt> if this member type requires the ruby value to be stored.
          */
-        protected boolean isValueReferenceNeeded() {
-            return false;
+        public final boolean isValueReferenceNeeded() {
+            return io.isValueReferenceNeeded();
         }
 
         @JRubyMethod
@@ -636,7 +647,7 @@ public final class StructLayout extends Type {
         @JRubyMethod
         public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
 
-            init(context, type, offset, new ScalarFieldIO(checkType(type)));
+            init(type, offset, new ScalarFieldIO(checkType(type)));
 
             return this;
         }
@@ -653,21 +664,12 @@ public final class StructLayout extends Type {
     public static final class EnumField extends Field {
 
         public EnumField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
+            super(runtime, klass, EnumFieldIO.INSTANCE);
         }
 
         public EnumField(Ruby runtime, Enum type, int offset) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Enum"),
                     type, offset, EnumFieldIO.INSTANCE);
-        }
-
-        @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
-
-            init(context, type, offset, EnumFieldIO.INSTANCE);
-
-            return this;
         }
     }
 
@@ -682,31 +684,12 @@ public final class StructLayout extends Type {
     static final class StringField extends Field {
 
         public StringField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
+            super(runtime, klass, StringFieldIO.INSTANCE);
         }
 
         public StringField(Ruby runtime, Type.Builtin type, int offset) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("String"), 
                     type, offset, StringFieldIO.INSTANCE);
-        }
-
-        @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
-
-            init(context, type, offset, StringFieldIO.INSTANCE);
-
-            return this;
-        }
-        
-        @Override
-        protected final boolean isCacheable() {
-            return true;
-        }
-
-        @Override
-        protected final boolean isValueReferenceNeeded() {
-            return true;
         }
     }
 
@@ -721,32 +704,12 @@ public final class StructLayout extends Type {
     static final class PointerField extends Field {
 
         public PointerField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
-            this.io = PointerFieldIO.INSTANCE;
+            super(runtime, klass, PointerFieldIO.INSTANCE);
         }
         
         public PointerField(Ruby runtime, Type.Builtin type, int offset) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Pointer"), 
                     type, offset, PointerFieldIO.INSTANCE);
-        }
-
-        @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
-
-            init(context, type, offset, PointerFieldIO.INSTANCE);
-
-            return this;
-        }
-
-        @Override
-        protected final boolean isCacheable() {
-            return true;
-        }
-
-        @Override
-        protected final boolean isValueReferenceNeeded() {
-            return true;
         }
     }
 
@@ -761,12 +724,12 @@ public final class StructLayout extends Type {
     static final class FunctionField extends Field {
 
         public FunctionField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
         }
 
         public FunctionField(Ruby runtime, CallbackInfo sbv, int offset) {
             super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Function"),
-                    sbv, offset, CallbackFieldIO.INSTANCE);
+                    sbv, offset, FunctionFieldIO.INSTANCE);
         }
 
         @Override
@@ -775,19 +738,9 @@ public final class StructLayout extends Type {
             if (!(type instanceof CallbackInfo)) {
                 throw context.getRuntime().newTypeError(type, context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Function"));
             }
-            init(context, type, offset, new CallbackFieldIO());
+            init(type, offset, new FunctionFieldIO());
 
             return this;
-        }
-
-        @Override
-        protected boolean isCacheable() {
-            return true;
-        }
-
-        @Override
-        protected boolean isValueReferenceNeeded() {
-            return true;
         }
     }
 
@@ -802,7 +755,7 @@ public final class StructLayout extends Type {
     static final class InnerStructField extends Field {
 
         public InnerStructField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
         }
 
         public InnerStructField(Ruby runtime, StructByValue sbv, int offset) {
@@ -817,19 +770,9 @@ public final class StructLayout extends Type {
                 throw context.getRuntime().newTypeError(type,
                         context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Struct"));
             }
-            init(context, type, offset, new InnerStructFieldIO((StructByValue) type));
+            init(type, offset, new InnerStructFieldIO((StructByValue) type));
 
             return this;
-        }
-
-        @Override
-        protected boolean isCacheable() {
-            return true;
-        }
-
-        @Override
-        protected boolean isValueReferenceNeeded() {
-            return true;
         }
     }
 
@@ -844,7 +787,7 @@ public final class StructLayout extends Type {
     static final class ArrayField extends Field {
 
         public ArrayField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass);
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
         }
 
         public ArrayField(Ruby runtime, Type.Array arrayType, int offset) {
@@ -859,13 +802,9 @@ public final class StructLayout extends Type {
                 throw context.getRuntime().newTypeError(type,
                         context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Array"));
             }
-            init(context, type, offset, new ArrayFieldIO((Type.Array) type));
+            init(type, offset, new ArrayFieldIO((Type.Array) type));
 
             return this;
-        }
-        @Override
-        protected boolean isCacheable() {
-            return true;
         }
     }
 
@@ -1000,6 +939,14 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
             return op.get(context.getRuntime(), m.getMemoryIO(ptr), m.offset);
         }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
+        }
     }
 
     /**
@@ -1019,6 +966,14 @@ public final class StructLayout extends Type {
             // lookup code to convert it to the appropriate symbol
             return m.type.callMethod(context, "find",
                     context.getRuntime().newFixnum(m.getMemoryIO(ptr).getInt(m.offset)));
+        }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 
@@ -1070,6 +1025,13 @@ public final class StructLayout extends Type {
             return retval;
         }
 
+        public final boolean isCacheable() {
+            return true;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return true;
+        }
     }
 
     static final class StringFieldIO implements FieldIO {
@@ -1100,11 +1062,19 @@ public final class StructLayout extends Type {
 
             m.getMemoryIO(ptr).putMemoryIO(m.getOffset(ptr), io);
         }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return true;
+        }
     }
 
 
-    static final class CallbackFieldIO implements FieldIO {
-        public static final FieldIO INSTANCE = new CallbackFieldIO();
+    static final class FunctionFieldIO implements FieldIO {
+        public static final FieldIO INSTANCE = new FunctionFieldIO();
 
         public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             if (value.isNil()) {
@@ -1119,6 +1089,14 @@ public final class StructLayout extends Type {
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
             return Factory.getInstance().newFunction(context.getRuntime(), ((Pointer) ptr).getPointer(context.getRuntime(), m.getOffset(ptr)), (CallbackInfo) m.type);
+        }
+
+        public final boolean isCacheable() {
+            return true;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return true;
         }
     }
 
@@ -1145,6 +1123,14 @@ public final class StructLayout extends Type {
             }
 
             return s;
+        }
+
+        public final boolean isCacheable() {
+            return true;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 
@@ -1207,6 +1193,15 @@ public final class StructLayout extends Type {
         private final boolean isCharArray() {
             return arrayType.getComponentType().nativeType == NativeType.CHAR
                     || arrayType.getComponentType().nativeType == NativeType.UCHAR;
+        }
+
+
+        public final boolean isCacheable() {
+            return true;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 }
