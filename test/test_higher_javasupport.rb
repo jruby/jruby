@@ -802,4 +802,16 @@ CLASSDEF
     assert_equal java.util.ArrayList, IncludePackageSub.new.arraylist
     assert_equal :BlahBlah, IncludePackageSub.new.blahblah
   end
+
+  # JRUBY-4529
+  def test_float_always_coerces_to_java_float
+    assert_nothing_raised do
+      a = 1.0
+      loop do
+        a /= 2
+        a.to_java :float
+        break if a == 0.0
+      end
+    end
+  end
 end

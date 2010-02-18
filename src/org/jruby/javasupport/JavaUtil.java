@@ -763,13 +763,7 @@ public class JavaUtil {
         }
     };
     private static boolean isDoubleFloatable(double value) {
-        return
-                value == 0.0 || // 0.0 is ok
-                value >= Float.MIN_VALUE && value <= Float.MAX_VALUE || // float range
-                value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE || // inverted float range?
-                Double.isNaN(value) || // NaN
-                value == Double.POSITIVE_INFINITY || // +infinity
-                value == Double.NEGATIVE_INFINITY; // -infinity
+        return true;
     }
     private static boolean isLongByteable(long value) {
         return value >= Byte.MIN_VALUE && value <= 0xFF;
