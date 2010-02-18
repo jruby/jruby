@@ -50,6 +50,13 @@ public final class StructByValue extends Type {
         this.structLayout = structLayout;
     }
 
+    StructByValue(Ruby runtime, RubyClass structClass, StructLayout structLayout) {
+        super(runtime, runtime.fastGetModule("FFI").fastGetClass("Type").fastGetClass("Struct"),
+                NativeType.STRUCT, structLayout.size, structLayout.alignment);
+        this.structClass = structClass;
+        this.structLayout = structLayout;
+    }
+
     @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
         return RubyString.newString(context.getRuntime(), String.format("#<FFI::StructByValue:%s>", structClass.getName()));

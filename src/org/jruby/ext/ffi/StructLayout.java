@@ -69,13 +69,16 @@ public final class StructLayout extends Type {
     private final List<RubySymbol> fieldNames;
 
     /** The ordered list of fields */
-    private final List<Member> fields;
-    
-    private final int cacheableFieldCount;
-    private final int[] cacheIndexMap;
+    private final List<Field> fields;
 
+    /** The ordered list of fields */
+    private final List<Member> members;
+
+    /** The number of cacheable fields in this struct */
+    private final int cacheableFieldCount;
+
+    /** The number of reference fields in this struct */
     private final int referenceFieldCount;
-    private final int[] referenceIndexMap;
 
     /**
      * Registers the StructLayout class in the JRuby runtime.
@@ -88,18 +91,46 @@ public final class StructLayout extends Type {
         layoutClass.defineAnnotatedMethods(StructLayout.class);
         layoutClass.defineAnnotatedConstants(StructLayout.class);
 
-        RubyClass arrayClass = runtime.defineClassUnder("Array", runtime.getObject(),
+        RubyClass arrayClass = runtime.defineClassUnder("ArrayProxy", runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
         arrayClass.includeModule(runtime.getEnumerable());
-        arrayClass.defineAnnotatedMethods(Array.class);
+        arrayClass.defineAnnotatedMethods(ArrayProxy.class);
 
-        RubyClass charArrayClass = runtime.defineClassUnder("CharArray", arrayClass,
+        RubyClass charArrayClass = runtime.defineClassUnder("CharArrayProxy", arrayClass,
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        charArrayClass.defineAnnotatedMethods(CharArray.class);
+        charArrayClass.defineAnnotatedMethods(CharArrayProxy.class);
 
         RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        fieldClass.defineAnnotatedMethods(Member.class);
+                FieldAllocator.INSTANCE, layoutClass);
+        fieldClass.defineAnnotatedMethods(Field.class);
+
+        RubyClass scalarFieldClass = runtime.defineClassUnder("Scalar", fieldClass,
+                ScalarFieldAllocator.INSTANCE, layoutClass);
+        scalarFieldClass.defineAnnotatedMethods(ScalarField.class);
+
+        RubyClass enumFieldClass = runtime.defineClassUnder("Enum", fieldClass,
+                EnumFieldAllocator.INSTANCE, layoutClass);
+        enumFieldClass.defineAnnotatedMethods(EnumField.class);
+
+        RubyClass stringFieldClass = runtime.defineClassUnder("String", fieldClass,
+                StringFieldAllocator.INSTANCE, layoutClass);
+        stringFieldClass.defineAnnotatedMethods(StringField.class);
+
+        RubyClass pointerFieldClass = runtime.defineClassUnder("Pointer", fieldClass,
+                PointerFieldAllocator.INSTANCE, layoutClass);
+        pointerFieldClass.defineAnnotatedMethods(PointerField.class);
+
+        RubyClass functionFieldClass = runtime.defineClassUnder("Function", fieldClass,
+                FunctionFieldAllocator.INSTANCE, layoutClass);
+        functionFieldClass.defineAnnotatedMethods(FunctionField.class);
+
+        RubyClass innerStructFieldClass = runtime.defineClassUnder("InnerStruct", fieldClass,
+                InnerStructFieldAllocator.INSTANCE, layoutClass);
+        innerStructFieldClass.defineAnnotatedMethods(InnerStructField.class);
+
+        RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
+                ArrayFieldAllocator.INSTANCE, layoutClass);
+        arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
 
         return layoutClass;
     }
@@ -110,54 +141,47 @@ public final class StructLayout extends Type {
      * @param runtime The runtime for the <tt>StructLayout</tt>.
      * @param fields The fields map for this struct.
      * @param size the total size of the struct.
-     * @param minAlign The minimum alignment required when allocating memory.
+     * @param alignment The minimum alignment required when allocating memory.
      */
-    StructLayout(Ruby runtime, Collection<RubySymbol> fieldNames, Map<IRubyObject, Member> fields, int size, int minAlign) {
-        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME), NativeType.STRUCT, size, minAlign);
-        //
-        // fields should really be an immutable map as it is never modified after construction
-        //
-        this.fieldMap = immutableMap(fields);
-        this.cacheIndexMap = new int[fieldNames.size()];
-        this.referenceIndexMap = new int[fieldNames.size()];
-
+    StructLayout(Ruby runtime, Collection<RubySymbol> fieldNames, Map<IRubyObject, Field> fields, int size, int alignment) {
+        this(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout"), fieldNames, fields, size, alignment);
+    }
+    
+    /**
+     * Creates a new <tt>StructLayout</tt> instance.
+     *
+     * @param runtime The runtime for the <tt>StructLayout</tt>.
+     * @param fields The fields map for this struct.
+     * @param size the total size of the struct.
+     * @param alignment The minimum alignment required when allocating memory.
+     */
+    StructLayout(Ruby runtime, RubyClass klass, Collection<RubySymbol> fieldNames, Map<IRubyObject, Field> fields, int size, int alignment) {
+        super(runtime, klass, NativeType.STRUCT, size, alignment);
+        
         int cfCount = 0, refCount = 0;
-        List<Member> fieldList = new ArrayList<Member>(fieldNames.size());
+        List<Field> fieldList = new ArrayList<Field>(fieldNames.size());
+        Map<IRubyObject, Member> memberMap = new LinkedHashMap<IRubyObject, Member>(fieldNames.size());
 
+        int index = 0;
         for (RubySymbol fieldName : fieldNames) {
-            Member m = fields.get(fieldName);
-            fieldList.add(m);
-            if (m.isCacheable()) {
-                cacheIndexMap[m.index] = cfCount++;
-            } else {
-                cacheIndexMap[m.index] = -1;
-            }
-            if (m.isValueReferenceNeeded()) {
-                referenceIndexMap[m.index] = refCount++;
-            } else {
-                referenceIndexMap[m.index] = -1;
-            }
+            Field f = fields.get(fieldName);
+            fieldList.add(f);
+            int cfIndex = f.isCacheable() ? cfCount++ : -1;
+            int refIndex = f.isValueReferenceNeeded() ? refCount++ : -1;
+            
+            memberMap.put(fieldName, new Member(f, index, cfIndex, refIndex));
+            fieldList.add(f);
         }
+
+        
         this.cacheableFieldCount = cfCount;
         this.referenceFieldCount = refCount;
 
         // Create the ordered list of field names from the map
         this.fieldNames = Collections.unmodifiableList(new ArrayList<RubySymbol>(fieldNames));
         this.fields = Collections.unmodifiableList(fieldList);
-    }
-    
-    /**
-     * Creates an immutable copy of the map.
-     * <p>
-     * Copies each entry in <tt>fields</tt>, ensuring that each key is immutable,
-     * and returns an immutable map.
-     * </p>
-     * 
-     * @param fields the map of fields to copy
-     * @return an immutable copy of <tt>fields</tt>
-     */
-    private static Map<IRubyObject, Member> immutableMap(Map<IRubyObject, Member> fields) {
-        return Collections.unmodifiableMap(new LinkedHashMap<IRubyObject, Member>(fields));
+        this.fieldMap = Collections.unmodifiableMap(memberMap);
+        this.members = Collections.unmodifiableList(new ArrayList(memberMap.values()));
     }
     
     /**
@@ -169,7 +193,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "get", required = 2)
     public IRubyObject get(ThreadContext context, IRubyObject ptr, IRubyObject name) {
-        return getMember(context.getRuntime(), name).get(context.getRuntime(), nullStorage, ptr);
+        return getValue(context, name, nullStorage, ptr);
     }
     
     /**
@@ -181,7 +205,8 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "put", required = 3)
     public IRubyObject put(ThreadContext context, IRubyObject ptr, IRubyObject name, IRubyObject value) {
-        getMember(context.getRuntime(), name).put(context.getRuntime(), nullStorage, ptr, value);
+        putValue(context, name, nullStorage, ptr, value);
+
         return value;
     }
     
@@ -192,11 +217,11 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        RubyArray members = RubyArray.newArray(context.getRuntime());
+        RubyArray mbrs = RubyArray.newArray(context.getRuntime());
         for (RubySymbol name : fieldNames) {
-            members.append(name);
+            mbrs.append(name);
         }
-        return members;
+        return mbrs;
     }
 
     /**
@@ -255,14 +280,22 @@ public final class StructLayout extends Type {
     
     @JRubyMethod(name = "[]")
     public IRubyObject aref(ThreadContext context, IRubyObject fieldName) {
-        return getMember(context.getRuntime(), fieldName);
+        return getField(context.getRuntime(), fieldName);
     }
 
     @JRubyMethod
     public IRubyObject fields(ThreadContext context) {
         return RubyArray.newArray(context.getRuntime(), fields);
     }
-    
+
+    final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
+        return getMember(context.getRuntime(), name).get(context, cache, ptr);
+    }
+
+    final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
+        getMember(context.getRuntime(), name).put(context, cache, ptr, value);
+    }
+
     /**
      * Returns a {@link Member} descriptor for a struct field.
      * 
@@ -275,6 +308,16 @@ public final class StructLayout extends Type {
             return f;
         }
         throw runtime.newArgumentError("Unknown field: " + name);
+    }
+
+    /**
+     * Returns a {@link Field} descriptor for a struct field.
+     *
+     * @param name The name of the struct field.
+     * @return A <tt>Member</tt> descriptor.
+     */
+    final Field getField(Ruby runtime, IRubyObject name) {
+        return getMember(runtime, name).field;
     }
 
     public final int getMinimumAlignment() {
@@ -290,7 +333,7 @@ public final class StructLayout extends Type {
     }
 
     final int getReferenceFieldIndex(Member member) {
-        return referenceIndexMap[member.index];
+        return member.referenceIndex;
     }
 
     final int getCacheableFieldCount() {
@@ -298,15 +341,19 @@ public final class StructLayout extends Type {
     }
 
     final int getCacheableFieldIndex(Member member) {
-        return cacheIndexMap[member.index];
+        return member.cacheIndex;
     }
 
     public final int getFieldCount() {
         return fields.size();
     }
 
-    public final java.util.Collection<Member> getFields() {
+    public final java.util.Collection<Field> getFields() {
         return fields;
+    }
+
+    public final java.util.Collection<Member> getMembers() {
+        return members;
     }
 
     /**
@@ -314,27 +361,35 @@ public final class StructLayout extends Type {
      * when reading/writing the member, as well as how to convert between the 
      * native representation of the member and the JRuby representation.
      */
-    @JRubyClass(name="FFI::StructLayout::Field", parent="Object")
-    public static abstract class Member extends RubyObject {
-        /** The name of this member. */
-        protected final IRubyObject name;
+    public static final class Member {
+        final FieldIO io;
+
+        final Field field;
 
         /** The {@link Type} of this member. */
-        protected final Type type;
+        final Type type;
 
         /** The offset within the memory area of this member */
-        protected final long offset;
-        
+        final int offset;
+
+        /** The index of this member within the struct field cache */
+        final int cacheIndex;
+
+        /** The index of this member within the struct field reference array*/
+        final int referenceIndex;
+
         /** The index of this member within the struct */
-        protected final int index;
+        final int index;
 
         /** Initializes a new Member instance */
-        protected Member(IRubyObject name, Type type, int index, long offset) {
-            super(type.getRuntime(), type.getRuntime().fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Field"));
-            this.name = name;
-            this.type = type;
+        protected Member(Field f, int index, int cacheIndex, int referenceIndex) {
+            this.field = f;
+            this.io = f.io;
+            this.type = f.type;
+            this.offset = f.offset;
             this.index = index;
-            this.offset = offset;
+            this.cacheIndex = cacheIndex;
+            this.referenceIndex = referenceIndex;
         }
 
         /**
@@ -342,7 +397,7 @@ public final class StructLayout extends Type {
          * @param ptr The memory area of the struct.
          * @return A memory I/O accessor that can be used to read/write this member.
          */
-        static final MemoryIO getMemoryIO(IRubyObject ptr) {
+        final MemoryIO getMemoryIO(IRubyObject ptr) {
             return ((AbstractMemory) ptr).getMemoryIO();
         }
 
@@ -354,8 +409,170 @@ public final class StructLayout extends Type {
             return index;
         }
 
-        public final NativeType getNativeType() {
-            return type.getNativeType();
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof Member && ((Member) obj).offset == offset && type.equals(((Member) obj).type);
+        }
+
+        @Override
+        public int hashCode() {
+            return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32)) + 37 * type.hashCode();
+        }
+        
+        /**
+         * Writes a ruby value to the native struct member as the appropriate native value.
+         *
+         * @param runtime The ruby runtime
+         * @param cache The value cache
+         * @param ptr The struct memory area.
+         * @param value The ruby value to write to the native struct member.
+         */
+        public final void put(ThreadContext context, Storage cache, IRubyObject ptr, IRubyObject value) {
+            io.put(context, cache, this, ptr, value);
+        }
+
+        /**
+         * Reads a ruby value from the struct member.
+         *
+         * @param cache The cache used to store
+         * @param ptr The struct memory area.
+         * @return A ruby object equivalent to the native member value.
+         */
+        public final IRubyObject get(ThreadContext context, Storage cache, IRubyObject ptr) {
+            return io.get(context, cache, this, ptr);
+        }
+
+        public final int offset() {
+            return offset;
+        }
+
+        public final Type type() {
+            return type;
+        }
+    }
+
+    interface FieldIO {
+        /**
+         * Writes a ruby value to the native struct member as the appropriate native value.
+         *
+         * @param runtime The ruby runtime
+         * @param cache The value cache
+         * @param ptr The struct memory area.
+         * @param value The ruby value to write to the native struct member.
+         */
+        public abstract void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value);
+
+        /**
+         * Reads a ruby value from the struct member.
+         *
+         * @param cache The cache used to store
+         * @param ptr The struct memory area.
+         * @return A ruby object equivalent to the native member value.
+         */
+        public abstract IRubyObject get(ThreadContext context, Storage cache, Member m, IRubyObject ptr);
+
+        /**
+         * Gets the cacheable status of this Struct member
+         *
+         * @return <tt>true</tt> if this member type is cacheable
+         */
+        public abstract boolean isCacheable();
+
+        /**
+         * Checks if a reference to the ruby object assigned to this field needs to be stored
+         *
+         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         */
+        public abstract boolean isValueReferenceNeeded();
+    }
+
+    static final class DefaultFieldIO implements FieldIO {
+        public static final FieldIO INSTANCE = new DefaultFieldIO();
+
+        public IRubyObject get(ThreadContext context, Storage cache, Member m, IRubyObject ptr) {
+            return m.field.callMethod(context, "get", ptr);
+        }
+
+        public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
+            m.field.callMethod(context, "put", new IRubyObject[] { ptr, value });
+        }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
+        }
+    }
+
+    private static final class FieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new Field(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new FieldAllocator();
+    }
+
+    @JRubyClass(name="FFI::StructLayout::Field", parent="Object")
+    public static class Field extends RubyObject {
+
+        /** The basic ops to read/write this field */
+        FieldIO io;
+
+        /** The {@link Type} of this member. */
+        private Type type;
+
+        /** The offset within the memory area of this member */
+        private int offset;
+
+
+        Field(Ruby runtime, RubyClass klass) {
+            this(runtime, klass, DefaultFieldIO.INSTANCE);
+        }
+
+        Field(Ruby runtime, RubyClass klass, FieldIO io) {
+            this(runtime, klass, (Type) runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("VOID"),
+                    -1, io);
+            
+        }
+        
+        Field(Ruby runtime, RubyClass klass, Type type, int offset, FieldIO io) {
+            super(runtime, klass);
+            this.type = type;
+            this.offset = offset;
+            this.io = io;
+        }
+
+        void init(IRubyObject type, IRubyObject offset) {
+            this.type = checkType(type);
+            this.offset = RubyNumeric.num2int(offset);
+        }
+
+        void init(IRubyObject type, IRubyObject offset, FieldIO io) {
+            init(type, offset);
+            this.io = io;
+        }
+
+        @JRubyMethod
+        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
+            init(type, offset);
+
+            return this;
+        }
+
+        final Type checkType(IRubyObject type) {
+            if (!(type instanceof Type)) {
+                throw getRuntime().newTypeError(type, getRuntime().fastGetModule("FFI").fastGetClass("Type"));
+            }
+            return (Type) type;
+        }
+
+        public final int offset() {
+            return this.offset;
+        }
+
+        public final Type ffiType() {
+            return type;
         }
 
         @Override
@@ -367,33 +584,14 @@ public final class StructLayout extends Type {
         public int hashCode() {
             return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32));
         }
-        
-        /**
-         * Writes a ruby value to the native struct member as the appropriate native value.
-         *
-         * @param runtime The ruby runtime
-         * @param cache The value cache
-         * @param ptr The struct memory area.
-         * @param value The ruby value to write to the native struct member.
-         */
-        public abstract void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value);
-
-        /**
-         * Reads a ruby value from the struct member.
-         *
-         * @param cache The cache used to store
-         * @param ptr The struct memory area.
-         * @return A ruby object equivalent to the native member value.
-         */
-        public abstract IRubyObject get(Ruby runtime, Storage cache, IRubyObject ptr);
 
         /**
          * Gets the cacheable status of this Struct member
          *
          * @return <tt>true</tt> if this member type is cacheable
          */
-        protected boolean isCacheable() {
-            return false;
+        public final boolean isCacheable() {
+            return io.isCacheable();
         }
 
         /**
@@ -401,34 +599,215 @@ public final class StructLayout extends Type {
          *
          * @return <tt>true</tt> if this member type requires the ruby value to be stored.
          */
-        protected boolean isValueReferenceNeeded() {
-            return false;
+        public final boolean isValueReferenceNeeded() {
+            return io.isValueReferenceNeeded();
         }
 
         @JRubyMethod
-        public IRubyObject size(ThreadContext context) {
+        public final IRubyObject size(ThreadContext context) {
             return context.getRuntime().newFixnum(type.getNativeSize());
         }
 
         @JRubyMethod
-        public IRubyObject alignment(ThreadContext context) {
+        public final IRubyObject alignment(ThreadContext context) {
             return context.getRuntime().newFixnum(type.getNativeAlignment());
         }
 
         @JRubyMethod
-        public IRubyObject offset(ThreadContext context) {
+        public final IRubyObject offset(ThreadContext context) {
             return context.getRuntime().newFixnum(offset);
         }
 
         @JRubyMethod(name = { "type", "ffi_type" })
-        public IRubyObject ffi_type(ThreadContext context) {
+        public final IRubyObject type(ThreadContext context) {
             return type;
         }
     }
 
-    public static interface Aggregate {
-        public abstract Collection<Member> getMembers();
+    private static final class ScalarFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new ScalarField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new ScalarFieldAllocator();
     }
+
+    @JRubyClass(name="FFI::StructLayout::Scalar", parent="FFI::StructLayout::Field")
+    public static final class ScalarField extends Field {
+
+        public ScalarField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass);
+        }
+
+        public ScalarField(Ruby runtime, Type.Builtin type, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Scalar"),
+                    type, offset, new ScalarFieldIO(type));
+        }
+
+        @Override
+        @JRubyMethod
+        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
+
+            init(type, offset, new ScalarFieldIO(checkType(type)));
+
+            return this;
+        }
+    }
+
+    private static final class EnumFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new EnumField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new EnumFieldAllocator();
+    }
+
+    @JRubyClass(name="FFI::StructLayout::Enum", parent="FFI::StructLayout::Field")
+    public static final class EnumField extends Field {
+
+        public EnumField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, EnumFieldIO.INSTANCE);
+        }
+
+        public EnumField(Ruby runtime, Enum type, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Enum"),
+                    type, offset, EnumFieldIO.INSTANCE);
+        }
+    }
+
+    private static final class StringFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new StringField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new StringFieldAllocator();
+    }
+
+    @JRubyClass(name="FFI::StructLayout::String", parent="FFI::StructLayout::Field")
+    static final class StringField extends Field {
+
+        public StringField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, StringFieldIO.INSTANCE);
+        }
+
+        public StringField(Ruby runtime, Type.Builtin type, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("String"), 
+                    type, offset, StringFieldIO.INSTANCE);
+        }
+    }
+
+    private static final class PointerFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new PointerField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new PointerFieldAllocator();
+    }
+
+    @JRubyClass(name="FFI::StructLayout::Pointer", parent="FFI::StructLayout::Field")
+    static final class PointerField extends Field {
+
+        public PointerField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, PointerFieldIO.INSTANCE);
+        }
+        
+        public PointerField(Ruby runtime, Type.Builtin type, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Pointer"), 
+                    type, offset, PointerFieldIO.INSTANCE);
+        }
+    }
+
+    private static final class FunctionFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new FunctionField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new FunctionFieldAllocator();
+    }
+
+    @JRubyClass(name="FFI::StructLayout::Function", parent="FFI::StructLayout::Field")
+    static final class FunctionField extends Field {
+
+        public FunctionField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
+        }
+
+        public FunctionField(Ruby runtime, CallbackInfo sbv, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Function"),
+                    sbv, offset, FunctionFieldIO.INSTANCE);
+        }
+
+        @Override
+        @JRubyMethod
+        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
+            if (!(type instanceof CallbackInfo)) {
+                throw context.getRuntime().newTypeError(type, context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Function"));
+            }
+            init(type, offset, new FunctionFieldIO());
+
+            return this;
+        }
+    }
+
+    private static final class InnerStructFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new InnerStructField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new InnerStructFieldAllocator();
+    }
+    
+    @JRubyClass(name="FFI::StructLayout::InnerStruct", parent="FFI::StructLayout::Field")
+    static final class InnerStructField extends Field {
+
+        public InnerStructField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
+        }
+
+        public InnerStructField(Ruby runtime, StructByValue sbv, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("InnerStruct"),
+                    sbv, offset, new InnerStructFieldIO(sbv));
+        }
+
+        @Override
+        @JRubyMethod
+        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
+            if (!(type instanceof StructByValue)) {
+                throw context.getRuntime().newTypeError(type,
+                        context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Struct"));
+            }
+            init(type, offset, new InnerStructFieldIO((StructByValue) type));
+
+            return this;
+        }
+    }
+
+    private static final class ArrayFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new ArrayField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new ArrayFieldAllocator();
+    }
+    
+    @JRubyClass(name="FFI::StructLayout::Array", parent="FFI::StructLayout::Field")
+    static final class ArrayField extends Field {
+
+        public ArrayField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
+        }
+
+        public ArrayField(Ruby runtime, Type.Array arrayType, int offset) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Array"),
+                    arrayType, offset, new ArrayFieldIO(arrayType));
+        }
+
+        @Override
+        @JRubyMethod
+        public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject offset) {
+            if (!(type instanceof Type.Array)) {
+                throw context.getRuntime().newTypeError(type,
+                        context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Array"));
+            }
+            init(type, offset, new ArrayFieldIO((Type.Array) type));
+
+            return this;
+        }
+    }
+
 
     public static interface Storage {
         IRubyObject getCachedValue(Member member);
@@ -442,18 +821,18 @@ public final class StructLayout extends Type {
         public void putReference(Member member, IRubyObject value) { }
     }
     
-    @JRubyClass(name="FFI::StructLayout::Array", parent="Object")
-    public static class Array extends RubyObject {
+    @JRubyClass(name="FFI::StructLayout::ArrayProxy", parent="Object")
+    public static class ArrayProxy extends RubyObject {
         protected final AbstractMemory ptr;
-        protected final MemoryOp aio;
+        final MemoryOp aio;
         protected final Type.Array arrayType;
 
-        Array(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("Array"),
+        ArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
+            this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("ArrayProxy"),
                     ptr, offset, type, aio);
         }
 
-        Array(Ruby runtime, RubyClass klass, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
+        ArrayProxy(Ruby runtime, RubyClass klass, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
             super(runtime, klass);
             this.ptr = ((AbstractMemory) ptr).slice(runtime, offset, type.getNativeSize());
             this.arrayType = type;
@@ -525,10 +904,10 @@ public final class StructLayout extends Type {
         
     }
 
-    @JRubyClass(name="FFI::StructLayout::CharArray", parent="FFI::StructLayout::Array")
-    public static final class CharArray extends Array {
-        CharArray(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("CharArray"),
+    @JRubyClass(name="FFI::StructLayout::CharArrayProxy", parent="FFI::StructLayout::ArrayProxy")
+    public static final class CharArrayProxy extends ArrayProxy {
+        CharArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
+            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("CharArrayProxy"),
                     ptr, offset, type, aio);
         }
 
@@ -542,322 +921,287 @@ public final class StructLayout extends Type {
      * Primitive (byte, short, int, long, float, double) types are all handled by
      * a PrimitiveMember type.
      */
-    static final class PrimitiveMember extends Member {
+    static final class ScalarFieldIO implements FieldIO {
         private final MemoryOp op;
 
-        PrimitiveMember(IRubyObject name, Type type, int index, long offset) {
-            super(name, type, index, offset);
-            op = MemoryOp.getMemoryOp(type);
+        ScalarFieldIO(Type type) {
+            this.op = MemoryOp.getMemoryOp(type);
         }
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
-            op.put(runtime, getMemoryIO(ptr), offset, value);
+        
+        ScalarFieldIO(MemoryOp op) {
+            this.op = op;
         }
 
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            return op.get(runtime, getMemoryIO(ptr), offset);
+        public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
+            op.put(context.getRuntime(), m.getMemoryIO(ptr), m.offset, value);
+        }
+
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
+            return op.get(context.getRuntime(), m.getMemoryIO(ptr), m.offset);
+        }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 
     /**
      * Enum (maps :foo => 1, :bar => 2, etc)
      */
-    static final class EnumMember extends Member {
-        
-        EnumMember(IRubyObject name, org.jruby.ext.ffi.Enum type, int index, long offset) {
-            super(name, type, index, offset);
-        }
+    static final class EnumFieldIO implements FieldIO {
+        public static final FieldIO INSTANCE = new EnumFieldIO();
 
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+        public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             // Upcall to ruby to convert :foo to an int, then write it out
-            getMemoryIO(ptr).putInt(offset,
-                    RubyNumeric.num2int(type.callMethod(runtime.getCurrentContext(), "find", value)));
+            m.getMemoryIO(ptr).putInt(m.offset,
+                    RubyNumeric.num2int(m.type.callMethod(context, "find", value)));
         }
 
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
             // Read an int from the native memory, then upcall to the ruby value
             // lookup code to convert it to the appropriate symbol
-            return type.callMethod(runtime.getCurrentContext(), "find",
-                    runtime.newFixnum(getMemoryIO(ptr).getInt(offset)));
+            return m.type.callMethod(context, "find",
+                    context.getRuntime().newFixnum(m.getMemoryIO(ptr).getInt(m.offset)));
+        }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 
+    
 
-    static final class PointerMember extends StructLayout.Member {
-
-        PointerMember(IRubyObject name, Type type, int index, long offset) {
-            super(name, type, index, offset);
-        }
-
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+    static final class PointerFieldIO implements FieldIO {
+        public static final FieldIO INSTANCE = new PointerFieldIO();
+        
+        public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             if (value instanceof Pointer) {
-                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), ((Pointer) value).getMemoryIO());
+                m.getMemoryIO(ptr).putMemoryIO(m.offset, ((Pointer) value).getMemoryIO());
             } else if (value instanceof Struct) {
                 MemoryIO mem = ((Struct) value).getMemoryIO();
 
                 if (!(mem instanceof DirectMemoryIO)) {
-                    throw runtime.newArgumentError("Struct memory not backed by a native pointer");
+                    throw context.getRuntime().newArgumentError("Struct memory not backed by a native pointer");
                 }
-                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), mem);
+                m.getMemoryIO(ptr).putMemoryIO(m.offset, mem);
 
             } else if (value instanceof RubyInteger) {
-                getMemoryIO(ptr).putAddress(offset, Util.int64Value(ptr));
+                m.getMemoryIO(ptr).putAddress(m.offset, Util.int64Value(ptr));
             } else if (value.respondsTo("to_ptr")) {
-                IRubyObject addr = value.callMethod(runtime.getCurrentContext(), "to_ptr");
+                IRubyObject addr = value.callMethod(context, "to_ptr");
                 if (addr instanceof Pointer) {
-                    getMemoryIO(ptr).putMemoryIO(offset, ((Pointer) addr).getMemoryIO());
+                    m.getMemoryIO(ptr).putMemoryIO(m.offset, ((Pointer) addr).getMemoryIO());
                 } else {
-                    throw runtime.newArgumentError("Invalid pointer value");
+                    throw context.getRuntime().newArgumentError("Invalid pointer value");
                 }
             } else if (value.isNil()) {
-                getMemoryIO(ptr).putAddress(offset, 0L);
+                m.getMemoryIO(ptr).putAddress(m.offset, 0L);
             } else {
-                throw runtime.newArgumentError("Invalid pointer value");
+                throw context.getRuntime().newArgumentError("Invalid pointer value");
             }
-            cache.putReference(this, value);
+            cache.putReference(m, value);
         }
 
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            DirectMemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(getOffset(ptr));
-            IRubyObject old = cache.getCachedValue(this);
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
+            DirectMemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(m.getOffset(ptr));
+            IRubyObject old = cache.getCachedValue(m);
             if (old instanceof Pointer) {
                 MemoryIO oldMemory = ((Pointer) old).getMemoryIO();
                 if (memory.equals(oldMemory)) {
                     return old;
                 }
             }
-            Pointer retval = new Pointer(runtime, memory);
-            cache.putCachedValue(this, retval);
+            Pointer retval = new Pointer(context.getRuntime(), memory);
+            cache.putCachedValue(m, retval);
+
             return retval;
         }
 
-        @Override
-        protected boolean isCacheable() {
+        public final boolean isCacheable() {
             return true;
         }
 
-        @Override
-        protected boolean isValueReferenceNeeded() {
+        public final boolean isValueReferenceNeeded() {
             return true;
         }
     }
 
-    static final class StringMember extends StructLayout.Member {
-        StringMember(IRubyObject name, Type type, int index, long offset) {
-            super(name, type, index, offset);
-        }
-
-        @Override
-        protected boolean isCacheable() {
-            return true;
-        }
-
-        @Override
-        protected boolean isValueReferenceNeeded() {
-            return true;
-        }
-
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            MemoryIO io = getMemoryIO(ptr).getMemoryIO(getOffset(ptr));
+    static final class StringFieldIO implements FieldIO {
+        public static final FieldIO INSTANCE = new StringFieldIO();
+        
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
+            MemoryIO io = m.getMemoryIO(ptr).getMemoryIO(m.getOffset(ptr));
             if (io == null || io.isNull()) {
-                return runtime.getNil();
+                return context.getRuntime().getNil();
             }
 
-            return RubyString.newStringNoCopy(runtime, io.getZeroTerminatedByteArray(0));
+            return RubyString.newStringNoCopy(context.getRuntime(), io.getZeroTerminatedByteArray(0));
         }
 
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
+        public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             ByteList bl = value.convertToString().getByteList();
 
-            MemoryPointer mem = MemoryPointer.allocate(runtime, 1, bl.length() + 1, false);
+            MemoryPointer mem = MemoryPointer.allocate(context.getRuntime(), 1, bl.length() + 1, false);
             //
             // Keep a reference to the temporary memory in the cache so it does
             // not get freed by the GC until the struct is freed
             //
-            cache.putReference(this, mem);
+            cache.putReference(m, mem);
 
             MemoryIO io = mem.getMemoryIO();
             io.put(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
             io.putByte(bl.length(), (byte) 0);
 
-            getMemoryIO(ptr).putMemoryIO(getOffset(ptr), io);
+            m.getMemoryIO(ptr).putMemoryIO(m.getOffset(ptr), io);
+        }
+
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return true;
         }
     }
 
-    static final class CallbackMember extends StructLayout.Member {
-        private final CallbackInfo cbInfo;
 
-        CallbackMember(IRubyObject name, CallbackInfo cbInfo, int index, long offset) {
-            super(name, cbInfo, index, offset);
-            this.cbInfo = cbInfo;
-        }
+    static final class FunctionFieldIO implements FieldIO {
+        public static final FieldIO INSTANCE = new FunctionFieldIO();
 
-        @Override
-        protected boolean isCacheable() {
-            return true;
-        }
-
-        @Override
-        protected boolean isValueReferenceNeeded() {
-            return true;
-        }
-
-        public void put(Ruby runtime, Storage cache, IRubyObject ptr, IRubyObject value) {
+        public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             if (value.isNil()) {
-                getMemoryIO(ptr).putAddress(getOffset(ptr), 0L);
+                m.getMemoryIO(ptr).putAddress(m.getOffset(ptr), 0L);
             } else {
-                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(runtime, cbInfo, value);
-                getMemoryIO(ptr).putMemoryIO(getOffset(ptr), cb.getMemoryIO());
-                cache.putCachedValue(this, cb);
-                cache.putReference(this, cb);
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.getRuntime(), (CallbackInfo) m.type, value);
+                m.getMemoryIO(ptr).putMemoryIO(m.getOffset(ptr), cb.getMemoryIO());
+                cache.putCachedValue(m, cb);
+                cache.putReference(m, cb);
             }
         }
 
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            return Factory.getInstance().newFunction(runtime, ((Pointer) ptr).getPointer(runtime, getOffset(ptr)), cbInfo);
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
+            return Factory.getInstance().newFunction(context.getRuntime(), ((Pointer) ptr).getPointer(context.getRuntime(), m.getOffset(ptr)), (CallbackInfo) m.type);
+        }
+
+        public final boolean isCacheable() {
+            return true;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return true;
         }
     }
 
-    static final class StructMember extends StructLayout.Member implements StructLayout.Aggregate {
-        private final RubyClass klass;
-        private final StructLayout layout;
+    
 
-        StructMember(IRubyObject name, StructLayout layout, RubyClass klass, int index, long offset) {
-            super(name, layout, index, offset);
-            this.klass = klass;
-            this.layout = layout;
+    static final class InnerStructFieldIO implements FieldIO {
+        private final StructByValue sbv;
+
+        public InnerStructFieldIO(StructByValue sbv) {
+            this.sbv = sbv;
         }
 
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
-            throw runtime.newNotImplementedError("Cannot set Struct fields");
+        public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
+            throw context.getRuntime().newNotImplementedError("Cannot set Struct fields");
         }
 
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            IRubyObject s = cache.getCachedValue(this);
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
+            IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
-                s = klass.newInstance(runtime.getCurrentContext(),
-                        new IRubyObject[] { ((AbstractMemory) ptr).slice(runtime, getOffset(ptr)) },
+                s = sbv.getStructClass().newInstance(context,
+                        new IRubyObject[] { ((AbstractMemory) ptr).slice(context.getRuntime(), m.getOffset(ptr)) },
                         Block.NULL_BLOCK);
-                cache.putCachedValue(this, s);
+                cache.putCachedValue(m, s);
             }
 
             return s;
         }
 
-        @Override
-        protected boolean isCacheable() {
+        public final boolean isCacheable() {
             return true;
         }
 
-        @Override
-        protected boolean isValueReferenceNeeded() {
-            return true;
-        }
-
-        public Collection<StructLayout.Member> getMembers() {
-            return layout.getFields();
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 
-    static final class ArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
-        private final MemoryOp op;
+    static final class ArrayFieldIO implements FieldIO {
         private final Type.Array arrayType;
+        private final MemoryOp op;
 
-        ArrayMember(IRubyObject name, Type.Array arrayType, int index, long offset, MemoryOp op) {
-            super(name, arrayType, index, offset);
-            this.op = op;
+        public ArrayFieldIO(Type.Array arrayType) {
             this.arrayType = arrayType;
+            this.op = MemoryOp.getMemoryOp(arrayType.getComponentType());
+
+            if (op == null) {
+                throw arrayType.getRuntime().newNotImplementedError("unsupported array field type: " + arrayType);
+            }
         }
 
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
 
+        public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
+            
             if (isCharArray() && value instanceof RubyString) {
                 ByteList bl = value.convertToString().getByteList();
-                getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
+                m.getMemoryIO(ptr).putZeroTerminatedByteArray(m.offset, bl.getUnsafeBytes(), bl.begin(),
                     Math.min(bl.length(), arrayType.length() - 1));
 
             } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();
                 if (count > arrayType.length()) {
-                    throw runtime.newIndexError("array too big");
+                    throw context.getRuntime().newIndexError("array too big");
                 }
                 AbstractMemory memory = (AbstractMemory) ptr;
 
                 // Clear any elements that will not be filled by the array
                 if (count < arrayType.length()) {
-                    memory.getMemoryIO().setMemory(offset + (count * arrayType.getComponentType().getNativeSize()),
+                    memory.getMemoryIO().setMemory(m.offset + (count * arrayType.getComponentType().getNativeSize()),
                             (arrayType.length() - count) * arrayType.getComponentType().getNativeSize(), (byte) 0);
                 }
                 
                 for (int i = 0; i < count; ++i) {
-                    op.put(runtime, memory, offset + (i * arrayType.getComponentType().getNativeSize()),
+                    op.put(context.getRuntime(), memory, m.offset + (i * arrayType.getComponentType().getNativeSize()),
                             ary.entry(i));
                 }
             } else {
-                throw runtime.newNotImplementedError("cannot set array field");
+                throw context.getRuntime().newNotImplementedError("cannot set array field");
             }
         }
 
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            IRubyObject s = cache.getCachedValue(this);
+        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
+            IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
                 s = isCharArray()
-                        ? new StructLayout.CharArray(runtime, ptr, offset, arrayType, op)
-                        : new StructLayout.Array(runtime, ptr, offset, arrayType, op);
-                cache.putCachedValue(this, s);
+                        ? new StructLayout.CharArrayProxy(context.getRuntime(), ptr, m.offset, arrayType, op)
+                        : new StructLayout.ArrayProxy(context.getRuntime(), ptr, m.offset, arrayType, op);
+                cache.putCachedValue(m, s);
             }
 
             return s;
-        }
-
-        @Override
-        protected boolean isCacheable() {
-            return true;
-        }
-
-        public Collection<StructLayout.Member> getMembers() {
-
-            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(arrayType.length());
-            Type elemType = arrayType.getComponentType();
-            for (int i = 0; i < arrayType.length(); ++i) {
-                members.add(new StructLayout.PrimitiveMember(getRuntime().getNil(), elemType, i, i * elemType.getNativeSize()));
-            }
-
-            return members;
         }
 
         private final boolean isCharArray() {
             return arrayType.getComponentType().nativeType == NativeType.CHAR
                     || arrayType.getComponentType().nativeType == NativeType.UCHAR;
         }
-    }
 
-    static final class CharArrayMember extends StructLayout.Member implements StructLayout.Aggregate {
-        private final int length;
-        CharArrayMember(IRubyObject name, Type type, int index, long offset, int size) {
-            super(name, type, index, offset);
-            this.length = size;
+
+        public final boolean isCacheable() {
+            return true;
         }
 
-        public void put(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr, IRubyObject value) {
-            ByteList bl = value.convertToString().getByteList();
-            getMemoryIO(ptr).putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
-                    Math.min(bl.length(), length - 1));
-        }
-
-        public IRubyObject get(Ruby runtime, StructLayout.Storage cache, IRubyObject ptr) {
-            return MemoryUtil.getTaintedString(runtime, getMemoryIO(ptr), getOffset(ptr), length);
-        }
-
-        public Collection<StructLayout.Member> getMembers() {
-
-            ArrayList<StructLayout.Member> members = new ArrayList<StructLayout.Member>(length);
-
-            for (int i = 0; i < length; ++i) {
-                members.add(new StructLayout.PrimitiveMember(type.getRuntime().getNil(), type, i, i * type.getNativeSize()));
-            }
-
-            return members;
+        public final boolean isValueReferenceNeeded() {
+            return false;
         }
     }
 }
