@@ -397,6 +397,10 @@ public final class Ruby {
         }
         
         Node scriptNode = parseFromMain(inputStream, filename);
+
+        // done with the stream, shut it down
+        try {inputStream.close();} catch (IOException ioe) {}
+
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
