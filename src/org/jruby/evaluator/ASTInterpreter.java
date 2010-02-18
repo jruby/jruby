@@ -261,7 +261,10 @@ public class ASTInterpreter {
     public static RubyModule getClassVariableBase(ThreadContext context, Ruby runtime) {
         StaticScope scope = context.getCurrentScope().getStaticScope();
         RubyModule rubyClass = scope.getModule();
-        if (rubyClass.isSingleton() || rubyClass == runtime.getDummy()) {
+        while (rubyClass.isSingleton() || rubyClass == runtime.getDummy()) {
+            // We ran out of scopes to check
+            if (scope == null) return null;
+
             scope = scope.getPreviousCRefScope();
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {
