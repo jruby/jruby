@@ -124,5 +124,12 @@ class TestSystemError < Test::Unit::TestCase
       # jruby 1.4 has duplicated error msg as well
       assert_equal 'Permission denied - ' + t.path, e.message
     end
+    #
+    begin
+      File.open(t.path, File::WRONLY) {}
+      fail
+    rescue Errno::EACCES => e
+      assert_equal 'Permission denied - ' + t.path, e.message
+    end
   end
 end
