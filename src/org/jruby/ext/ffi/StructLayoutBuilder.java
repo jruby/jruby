@@ -55,7 +55,7 @@ public final class StructLayoutBuilder extends RubyObject {
 
     private final List<RubySymbol> fieldNames = new LinkedList<RubySymbol>();
 
-    private final Map<IRubyObject, StructLayout.Member> fields = new LinkedHashMap<IRubyObject, StructLayout.Member>();
+    private final Map<IRubyObject, StructLayout.Field> fields = new LinkedHashMap<IRubyObject, StructLayout.Field>();
     /** The current size of the layout in bytes */
     private int size = 0;
     /** The current minimum alignment of the layout in bytes */
@@ -130,12 +130,12 @@ public final class StructLayoutBuilder extends RubyObject {
         return RubyString.newString(runtime, key.asJavaString());
     }
 
-    private final IRubyObject storeField(Ruby runtime, IRubyObject name, StructLayout.Member field, int align, int size) {
+    private final IRubyObject storeField(Ruby runtime, IRubyObject name, StructLayout.Field field, int align, int size) {
         
         fields.put(createStringKey(runtime, name), field);
         fields.put(createSymbolKey(runtime, name), field);
         fieldNames.add(createSymbolKey(runtime, name));
-        this.size = Math.max(this.size, (int) field.offset + size);
+        this.size = Math.max(this.size, field.offset() + size);
         this.minAlign = Math.max(this.minAlign, align);
         return this;
     }
@@ -177,29 +177,28 @@ public final class StructLayoutBuilder extends RubyObject {
         Type type = (Type) args[1];
         int offset = calculateOffset(args, 2, type.getNativeAlignment());
         
-        StructLayout.Member field = null;
+        StructLayout.Field field = null;
         if (type instanceof Type.Array) {
 
             Type.Array arrayType = (Type.Array) type;
-            field = new StructLayout.ArrayMember(fieldName, arrayType, fieldCount, offset,
-                    MemoryOp.getMemoryOp(arrayType.getComponentType()));
+            field = new StructLayout.ArrayField(context.getRuntime(), arrayType, offset);
 
         } else if (type instanceof StructByValue) {
             StructByValue sbv = (StructByValue) type;
 
-            field = new StructLayout.StructMember(fieldName, sbv.getStructLayout(), sbv.getStructClass(), fieldCount, offset);
+            field = new StructLayout.InnerStructField(runtime, (StructByValue) type, offset);
         
         } else if (type instanceof CallbackInfo) {
 
-            field = new StructLayout.CallbackMember(fieldName, (CallbackInfo) type, fieldCount, offset);
+            field = new StructLayout.FunctionField(runtime, (CallbackInfo) type, offset);
         
         } else if (type instanceof org.jruby.ext.ffi.Enum) {
 
-            field = new StructLayout.EnumMember(fieldName, (org.jruby.ext.ffi.Enum) type, fieldCount, offset);
+            field = new StructLayout.EnumField(runtime, (org.jruby.ext.ffi.Enum) type, offset);
 
         } if (type instanceof Type.Builtin) {
 
-            field = createBuiltinMember(fieldName, (Type.Builtin) type, fieldCount, offset);
+            field = createBuiltinMember(runtime, (Type.Builtin) type, offset);
         }
         if (field == null) {
             throw runtime.newArgumentError("Unknown field type: " + type);
@@ -222,8 +221,10 @@ public final class StructLayoutBuilder extends RubyObject {
         }
         final StructLayout layout = Struct.getStructLayout(runtime, args[1]);
         int offset = calculateOffset(args, 2, layout.getNativeAlignment());
-
-        StructLayout.Member field = new StructLayout.StructMember(fieldName, layout, (RubyClass) args[1], fieldCount++, offset);
+        RubyClass structClass = (RubyClass) args[1];
+        StructByValue sbv = new StructByValue(runtime, structClass, layout);
+        
+        StructLayout.Field field = new StructLayout.InnerStructField(runtime, sbv, offset);
         return storeField(runtime, fieldName, field, layout.getNativeAlignment(), layout.getNativeSize());
     }
 
@@ -245,35 +246,12 @@ public final class StructLayoutBuilder extends RubyObject {
         }
 
         Type type = (Type) args[1];
-
         int offset = calculateOffset(args, 3, type.getNativeAlignment());
-        
         int length = Util.int32Value(args[2]);
-        MemoryOp op = MemoryOp.getMemoryOp(type);
-        if (op == null) {
-            throw context.getRuntime().newNotImplementedError("Unsupported array field type: " + type);
-        }
-        StructLayout.Member field = new StructLayout.ArrayMember(fieldName, new Type.Array(runtime, type, length), fieldCount++, offset, op);
+
+        StructLayout.Field field = new StructLayout.ArrayField(runtime, new Type.Array(runtime, type, length), offset);
 
         return storeField(runtime, fieldName, field, type.getNativeAlignment(), (type.getNativeSize() * length));
-    }
-
-    @JRubyMethod(name = "add_char_array", required = 2, optional = 1)
-    public IRubyObject add_char_array(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.getRuntime();
-        final IRubyObject fieldName = args[0];
-
-        checkFieldName(runtime, fieldName);
-
-        if (!(args[1] instanceof RubyInteger)) {
-            throw runtime.newTypeError("wrong argument type "
-                    + args[1].getMetaClass().getName() + " (expected Integer)");
-        }
-
-        int strlen = Util.int32Value(args[1]);
-        int offset = calculateOffset(args, 2, 1);
-        Type type = (Type) context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastFetchConstant("INT8");
-        return storeField(runtime, args[0], new StructLayout.CharArrayMember(fieldName, type, fieldCount++, offset, strlen), 1, strlen);
     }
 
     /**
@@ -284,7 +262,7 @@ public final class StructLayoutBuilder extends RubyObject {
      * @param offset The offset in bytes of the field within the struct memory.
      * @return A new struct layout member for the type.
      */
-    static StructLayout.Member createBuiltinMember(IRubyObject name, Type.Builtin type, final int index, final long offset) {
+    static StructLayout.Field createBuiltinMember(Ruby runtime, Type.Builtin type, final int offset) {
 
         switch (type.getNativeType()) {
             case BOOL:
@@ -300,14 +278,14 @@ public final class StructLayoutBuilder extends RubyObject {
             case ULONG:
             case FLOAT:
             case DOUBLE:
-                return new StructLayout.PrimitiveMember(name, type, index, offset);
+                return new StructLayout.ScalarField(runtime, type, offset);
 
             case POINTER:
-                return new StructLayout.PointerMember(name, type, index, offset);
+                return new StructLayout.PointerField(runtime, type, offset);
 
             case STRING:
             case RBXSTRING:
-                return new StructLayout.StringMember(name, type, index, offset);
+                return new StructLayout.StringField(runtime, type, offset);
         }
         return null;
     }

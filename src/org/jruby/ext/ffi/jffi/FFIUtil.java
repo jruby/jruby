@@ -63,10 +63,19 @@ public final class FFIUtil {
         if (type instanceof Type.Builtin || type instanceof CallbackInfo || type instanceof org.jruby.ext.ffi.Enum) {
 
             return FFIUtil.getFFIType(type.getNativeType());
+        
+        } else if (type instanceof org.jruby.ext.ffi.StructLayout) {
+
+            return FFIUtil.newStruct((org.jruby.ext.ffi.StructLayout) type);
 
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
 
             return FFIUtil.newStruct(((org.jruby.ext.ffi.StructByValue) type).getStructLayout());
+
+        } else if (type instanceof org.jruby.ext.ffi.Type.Array) {
+
+            return FFIUtil.newArray((org.jruby.ext.ffi.Type.Array) type);
+
 
         } else {
             return null;
@@ -76,27 +85,23 @@ public final class FFIUtil {
     static final com.kenai.jffi.Type getFFIType(NativeType type) {
         return typeMap.get(type);
     }
-
+   
     /**
-     * Creates a new JFFI Struct descriptor from a list of struct members
+     * Creates a new JFFI Struct descriptor for a StructLayout
      *
-     * @param the runtime
-     * @param structMembers the members of the struct
+     * @param layout The structure layout
      * @return A new Struct descriptor.
      */
-    static final com.kenai.jffi.Struct newStruct(Ruby runtime, Collection<StructLayout.Member> structMembers) {
+    static final com.kenai.jffi.Struct newStruct(org.jruby.ext.ffi.StructLayout layout) {
+        Collection<StructLayout.Member> structMembers = layout.getMembers();
         com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[structMembers.size()];
 
         int i = 0;
         for (StructLayout.Member m : structMembers) {
             com.kenai.jffi.Type fieldType;
-            if (m instanceof StructLayout.Aggregate) {
-                fieldType = newStruct(runtime, ((StructLayout.Aggregate) m).getMembers());
-            } else {
-                fieldType = FFIUtil.getFFIType(m.getNativeType());
-            }
+            fieldType = FFIUtil.getFFIType(m.type());
             if (fieldType == null) {
-                throw runtime.newTypeError("Unsupported Struct field type " + m);
+                throw layout.getRuntime().newTypeError("unsupported Struct field type " + m);
             }
             fields[i++] = fieldType;
         }
@@ -105,13 +110,19 @@ public final class FFIUtil {
     }
 
     /**
-     * Creates a new JFFI Struct descriptor for a StructLayout
+     * Creates a new JFFI type descriptor for an array
      *
      * @param layout The structure layout
      * @return A new Struct descriptor.
      */
-    static final com.kenai.jffi.Struct newStruct(StructLayout layout) {
-        return newStruct(layout.getRuntime(), layout.getFields());
+    static final com.kenai.jffi.Array newArray(org.jruby.ext.ffi.Type.Array arrayType) {
+        com.kenai.jffi.Type componentType = FFIUtil.getFFIType(arrayType.getComponentType());
+
+        if (componentType == null) {
+            throw arrayType.getRuntime().newTypeError("unsupported array element type " + componentType);
+        }
+
+        return new com.kenai.jffi.Array(componentType, arrayType.length());
     }
 
     /**
