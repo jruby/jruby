@@ -1017,8 +1017,9 @@ public final class Ruby {
         // initialize the root of the class hierarchy completely
         initRoot();
 
-        // Construct the top-level execution frame and scope for the main thread
-        tc.prepareTopLevel(objectClass, topSelf);
+        // Modified for JRUBY-4484
+        // prepare a temporary toplevel frame during init, for consumers like TOPLEVEL_BINDING
+        tc.preTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
         bootstrap();
@@ -1035,11 +1036,19 @@ public final class Ruby {
 
         // initialize builtin libraries
         initBuiltins();
+
+        // Modified for JRUBY-4484
+        // remove the temporary toplevel frame
+        tc.postTopLevel();
         
         // Require in all libraries specified on command line
         for (String scriptName : config.requiredLibraries()) {
-            RubyKernel.require(getTopSelf(), newString(scriptName), Block.NULL_BLOCK);
+            loadService.smartLoad(scriptName);
         }
+
+        // Modified for JRUBY-4484
+        // Construct the final toplevel frame and scope for the main thread
+        tc.preTopLevel(objectClass, topSelf);
     }
 
     private void bootstrap() {

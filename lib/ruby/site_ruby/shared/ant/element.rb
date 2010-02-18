@@ -30,6 +30,7 @@ class Element
       parent.runtime_configurable_wrapper.add_child element.runtime_configurable_wrapper
     else # Just run it now
       @ant.project.log "Executing #{name}", 5
+      element.owning_target = Target.new.tap {|t| t.name = ""}
       element.maybe_configure
       element.execute
     end
@@ -40,6 +41,8 @@ class Element
     UnknownElement.new(@name).tap do |e|
       e.project = @ant.project
       e.task_name = @name
+      e.location = @ant.location
+      e.owning_target = @ant.current_target
     end
   end
 
@@ -61,7 +64,7 @@ class Element
     @helper = IntrospectionHelper.get_helper(@ant.project, @clazz)
     @helper.get_nested_element_map.each do |element_name, clazz|
       element = @ant.acquire_element(element_name, clazz)
-      meta_class.send(:define_method, element_name) do |*args, &block|
+      meta_class.send(:define_method, Ant.safe_method_name(element_name)) do |*args, &block|
         element.call(instance, *args, &block)
       end
     end

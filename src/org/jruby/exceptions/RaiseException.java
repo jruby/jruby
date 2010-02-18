@@ -166,8 +166,14 @@ public class RaiseException extends JumpException {
         runtime.setStackTraces(runtime.getStackTraces() + 1);
 
         ThreadContext.RubyStackTraceElement[] stackTrace = newException.getBacktraceFrames();
+
+        // if it's null, build a backtrace
         if (stackTrace == null) {
             stackTrace = context.createBacktrace2(0, nativeException);
+
+            // if it's still null, just use an empty trace
+            if (stackTrace == null) stackTrace = new ThreadContext.RubyStackTraceElement[0];
+            
             newException.setBacktraceFrames(stackTrace);
         }
 

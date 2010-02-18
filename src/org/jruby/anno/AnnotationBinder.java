@@ -2,6 +2,7 @@ package org.jruby.anno;
 
 import com.sun.mirror.apt.*;
 import com.sun.mirror.declaration.*;
+import com.sun.mirror.type.ReferenceType;
 import com.sun.mirror.util.*;
 
 import java.io.ByteArrayOutputStream;
@@ -135,6 +136,18 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             continue;
                         }
                         methodCount++;
+
+                        // warn if the method raises any exceptions (JRUBY-4494)
+                        if (md.getThrownTypes().size() != 0) {
+                            System.err.print("Method " + cd.toString() + "." + md.toString() + " should not throw exceptions: ");
+                            boolean comma = false;
+                            for (ReferenceType thrownType : md.getThrownTypes()) {
+                                if (comma) System.err.print(", ");
+                                System.err.print(thrownType);
+                                comma = true;
+                            }
+                            System.err.print("\n");
+                        }
 
                         String name = anno.name().length == 0 ? md.getSimpleName() : anno.name()[0];
 

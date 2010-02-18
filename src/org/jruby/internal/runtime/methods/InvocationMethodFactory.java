@@ -376,10 +376,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     boolean heapScoped = callConfig.scoping() == Scoping.Full;
                     boolean framed = callConfig.framing() == Framing.Full;
 
-                    if (heapScoped)             mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+                    if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
                     if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
                     if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, doFinally, null);
-                    if (heapScoped)             mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
+                    if (framed || heapScoped)   mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
                     if (framed)                 mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
                     if (framed || heapScoped)   mv.label(tryBegin);
 
@@ -417,7 +417,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
 
                     // return jump handling
-                    if (heapScoped) {
+                    if (framed || heapScoped) {
                         mv.label(catchReturnJump);
                         {
                             mv.aload(0);

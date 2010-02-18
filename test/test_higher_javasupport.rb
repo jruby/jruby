@@ -780,4 +780,26 @@ CLASSDEF
     assert(x.java_class.kind_of?Java::JavaClass)
   end
 
+  # JRUBY-4524
+  class IncludePackageSuper
+    def self.const_missing(a)
+      a
+    end
+  end
+
+  class IncludePackageSub < IncludePackageSuper
+    include_package 'java.util'
+
+    def arraylist
+      ArrayList
+    end
+
+    def blahblah
+      BlahBlah
+    end
+  end
+  def test_include_package_chains_super
+    assert_equal java.util.ArrayList, IncludePackageSub.new.arraylist
+    assert_equal :BlahBlah, IncludePackageSub.new.blahblah
+  end
 end

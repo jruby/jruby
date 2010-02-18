@@ -1,5 +1,6 @@
 package org.jruby.java.addons;
 
+import java.lang.reflect.Array;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
@@ -65,6 +66,19 @@ public class ArrayJavaAddons {
         int i = 0;
         for (; i < rubyLength && i < javaLength; i++) {
             javaArray.setWithExceptionHandling(i, rubyArray.entry(i).toJava(targetType));
+        }
+    }
+
+    public static void copyDataToJavaArrayDirect(
+            ThreadContext context, RubyArray rubyArray, Object javaArray) {
+        int javaLength = Array.getLength(javaArray);
+        Class targetType = javaArray.getClass().getComponentType();
+
+        int rubyLength = rubyArray.getLength();
+
+        int i = 0;
+        for (; i < rubyLength && i < javaLength; i++) {
+            Array.set(javaArray, i, rubyArray.entry(i).toJava(targetType));
         }
     }
     

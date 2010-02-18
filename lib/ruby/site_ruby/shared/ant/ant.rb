@@ -4,16 +4,18 @@ require 'ant/target'
 
 java_import org.apache.tools.ant.ComponentHelper
 java_import org.apache.tools.ant.DefaultLogger
+java_import org.apache.tools.ant.Location
 java_import org.apache.tools.ant.Project
 java_import org.apache.tools.ant.ProjectHelper
 java_import org.apache.tools.ant.Target
 
 class Ant
-  attr_reader :project, :log
+  attr_reader :project, :log, :location
   attr_accessor :current_target
 
   def initialize(options={}, &block)
     @options = options
+    @location = Location.new(caller.detect{|el| el !~ /^#{__FILE__}/}.split(/:/).first)
     @project = create_project options
     initialize_elements
   end
@@ -33,6 +35,9 @@ class Ant
         log.message_output_level = output_level
         @log = log
       end)
+      helper = ProjectHelper.getProjectHelper
+      helper.import_stack.add(Object.new)
+      p.addReference(ProjectHelper::PROJECTHELPER_REFERENCE, helper)
       options.each_pair {|k,v| p.send("set_#{k}", v) }
     end
   end
@@ -45,7 +50,7 @@ class Ant
   # 1. Execute a block as a target: add_target "foo-target" { echo :message => "I am cool" }
   # 2. Execute a rake task as a target: add_target Rake.application["default"]
   def add_target(*options, &block)
-    target = block_given? ? BlockTarget.new(self, *options, &block) : RakeTarget.new(self, options.first)
+    target = options.first.respond_to?(:name) ? RakeTarget.new(self, options.first) : BlockTarget.new(self, *options, &block)
     @project.add_target target
   end
   alias target add_target
@@ -100,7 +105,7 @@ class Ant
 
   # All elements (including nested elements) are registered so we can access them easily.
   def acquire_element(name, clazz)
-    element = @elements[name]
+    element = @elements[name + clazz.to_s]
     return element if element
 
     # Not registered in ant's type registry for this project (nested el?)
@@ -109,21 +114,35 @@ class Ant
       @helper.add_data_type_definition(name, clazz)
     end
 
-    @elements[name] = :give_it_something_to_prevent_endless_recursive_defs
-    @elements[name] = Element.new(self, name, clazz)
+    @elements[name + clazz.to_s] = :give_it_something_to_prevent_endless_recursive_defs
+    @elements[name + clazz.to_s] = Element.new(self, name, clazz)
   end
 
   def generate_children(collection)
     collection.each do |name, clazz|
       element = acquire_element(name, clazz)
-      self.class.send(:define_method, name) do |*a, &b|
+      self.class.send(:define_method, Ant.safe_method_name(name)) do |*a, &b|
         element.call(@current_target, *a, &b)
       end
     end
   end
 
+  def _element(name, *args, &block)
+#     raise "unknown element #{name}!" unless @helper.get_definition(name)
+    element = acquire_element(name, nil)
+    element.call(@current_target, *args, &block)
+  end
+
   class << self
     attr_accessor :run
+
+    def safe_method_name(element_name)
+      if element_name =~ /\A(and|or|not|do|end|if|else)\z/m
+        "_#{element_name}"
+      else
+        element_name
+      end
+    end
 
     def ant(options={}, &code)
       if options.respond_to? :to_hash

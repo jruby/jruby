@@ -96,6 +96,29 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_equal 0, $?.exitstatus
   end
 
+  def test_dash_big_S_resolves_absolute___FILE___correctly
+    with_temp_script(%q{puts __FILE__}) do |s|
+      output = jruby("-S #{s.path}").chomp
+
+      assert_equal 0, $?.exitstatus
+      assert_equal s.path, output
+    end
+  end
+
+  def test_dash_big_S_resolves_relative___FILE___correctly
+    
+    with_temp_script(%q{puts __FILE__}) do |s|
+      Dir.chdir(Dir.tmpdir)
+      relative_tmp = File.basename(s.path)
+      output = jruby("-S #{relative_tmp}").chomp
+
+      assert_equal 0, $?.exitstatus
+      assert_equal relative_tmp, output
+    end
+  end
+
+  
+
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, $KCODE, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
     args = " -J-Dfoo=bar -v -T3 -d -Ku -b -a -n -Ihello -C .. -F, -e #{q + e_line + q}"

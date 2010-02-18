@@ -15,27 +15,34 @@ class Module
     @included_packages = [package_name]
     @java_aliases ||= {}
     
-    
-      def self.const_missing(constant)
-        real_name = @java_aliases[constant] || constant
+    def self.const_missing(constant)
+      real_name = @java_aliases[constant] || constant
 
-        java_class = nil
+      java_class = nil
+      last_error = nil
 
-        error_chain = []
-        @included_packages.each do |package|
-            begin
-              java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
-            rescue
-              error_chain << $!
-            end
-            break if java_class
-        end
-
-        raise error_chain.last if java_class.nil? && !error_chain.empty?
-        return super unless java_class
-
-        JavaUtilities.create_proxy_class(constant, java_class, self)
+      @included_packages.each do |package|
+          begin
+            java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
+          rescue NameError
+            # we only rescue NameError, since other errors should bubble out
+            last_error = $!
+          end
+          break if java_class
       end
+
+      if java_class
+        return JavaUtilities.create_proxy_class(constant, java_class, self)
+      else
+        # try to chain to super's const_missing
+        begin
+          return super
+        rescue NameError
+          # super didn't find anything either, raise our Java error
+          raise NameError.new("#{constant} not found in packages #{@included_packages.join(', ')}; last error: #{last_error.message}")
+        end
+      end
+    end
   end
   
   # Imports the package specified by +package_name+, first by trying to scan JAR resources

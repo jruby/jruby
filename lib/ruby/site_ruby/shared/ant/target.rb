@@ -38,7 +38,7 @@ class Ant
       set_project ant.project
       hash = extract_options(options)
       hash.each_pair {|k,v| send("set_#{k}", v) }
-      define_target(ant, &block)
+      define_target(ant, &block) if block
     end
 
     private
