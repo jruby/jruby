@@ -53,10 +53,14 @@ public class RubyClassPathVariable extends RubyObject {
     }
 
     @JRubyMethod(name = {"append", "<<"}, required = 1)
-    public IRubyObject append(IRubyObject obj) throws Exception {
+    public IRubyObject append(IRubyObject obj) {
         String ss = obj.convertToString().toString();
-        URL url = getURL(ss);
-        getRuntime().getJRubyClassLoader().addURL(url);
+        try {
+            URL url = getURL(ss);
+            getRuntime().getJRubyClassLoader().addURL(url);
+        } catch (MalformedURLException mue) {
+            throw getRuntime().newArgumentError(mue.getLocalizedMessage());
+        }
         return this;
     }
     

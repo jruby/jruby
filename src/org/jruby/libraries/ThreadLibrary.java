@@ -112,7 +112,7 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public RubyBoolean try_lock(ThreadContext context) throws InterruptedException {
+        public RubyBoolean try_lock(ThreadContext context) {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
             //}
@@ -126,7 +126,7 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod(frame = true)
-        public IRubyObject lock(ThreadContext context) throws InterruptedException {
+        public IRubyObject lock(ThreadContext context) {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
             //}
@@ -145,7 +145,7 @@ public class ThreadLibrary implements Library {
                         if (!isLocked()) {
                             notify();
                         }
-                        throw ex;
+                        throw context.getRuntime().newConcurrencyError(ex.getLocalizedMessage());
                     }
                 }
             } finally {
@@ -189,7 +189,7 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod
-        public IRubyObject synchronize(ThreadContext context, Block block) throws InterruptedException {
+        public IRubyObject synchronize(ThreadContext context, Block block) {
             try {
                 lock(context);
                 return block.yield(context, null);
@@ -223,7 +223,7 @@ public class ThreadLibrary implements Library {
         }
 
         @JRubyMethod(name = "wait", required = 1, optional = 1)
-        public IRubyObject wait_ruby(ThreadContext context, IRubyObject args[]) throws InterruptedException {
+        public IRubyObject wait_ruby(ThreadContext context, IRubyObject args[]) {
             if ( args.length < 1 ) {
                 throw context.getRuntime().newArgumentError(args.length, 1);
             }
@@ -242,7 +242,7 @@ public class ThreadLibrary implements Library {
             }
 
             if (Thread.interrupted()) {
-                throw new InterruptedException();
+                throw context.getRuntime().newConcurrencyError("thread interrupted");
             }
             boolean success = false;
             try {
@@ -250,6 +250,8 @@ public class ThreadLibrary implements Library {
                     mutex.unlock(context);
                     try {
                         success = context.getThread().wait_timeout(this, timeout);
+                    } catch (InterruptedException ie) {
+                        throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
                     } finally {
                         // An interrupt or timeout may have caused us to miss
                         // a notify that we consumed, so do another notify in
