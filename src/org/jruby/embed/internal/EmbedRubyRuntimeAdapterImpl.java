@@ -57,6 +57,8 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
 import org.jruby.parser.EvalStaticScope;
+import org.jruby.parser.LocalStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
@@ -209,6 +211,11 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     ManyVarsDynamicScope getManyVarsDynamicScope(Ruby runtime, int depth) {
         ManyVarsDynamicScope scope;
         ThreadContext context = runtime.getCurrentContext();
+
+        //push dummy scope, especially for the second and later parsing.
+        StaticScope topStaticScope = new LocalStaticScope(null);
+        context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
+
         DynamicScope currentScope = context.getCurrentScope();
         String[] names4Injection = container.getVarMap().getLocalVarNames();
         if (names4Injection == null || names4Injection.length == 0) {

@@ -143,8 +143,13 @@ public class PersistentLocalVariable extends AbstractVariable {
      */
     public void remove(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
-        DynamicScope currentScope = context.getCurrentScope();
-        ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
-        scope = new ManyVarsDynamicScope(new EvalStaticScope(currentScope.getStaticScope()), currentScope);
+        try {
+            DynamicScope currentScope = context.getCurrentScope();
+            ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
+            scope = new ManyVarsDynamicScope(new EvalStaticScope(currentScope.getStaticScope()), currentScope);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            //no context is left.
+            //no operation is needed.
+        }
     }
 }
