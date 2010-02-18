@@ -69,35 +69,27 @@ private static final int SIZE_THRESHOLD = 16;
     }
 
     private static boolean seqtest(Object[] a, int lo, int hi, Comparator c) {
-        int i = lo + 1, j = hi - 2;
-        //sequential
-        while (i < j && c.compare(a[i], a[i+1]) <= 0)
-            i++;
-
-        if (i != j)
-        {
+        for (int i = lo + 1; i < hi - 2; ++i) {
+            if (c.compare(a[i], a[i + 1]) > 0) {
                 return false;
+            }
         }
         endTest(a, lo, hi, c);
         return true;
     }
 
     private static boolean revtest(Object[] a, int lo, int hi, Comparator c) {
-        int i = lo + 1, j = hi - 2;
-        while (i < j && c.compare(a[i], a[i+1]) >= 0)
-            i++;
-
-        if (i != j)
-        {
-            return false;
+        for (int i = lo + 1; i < hi - 2; ++i) {
+            if (c.compare(a[i], a[i + 1]) < 0) {
+                return false;
+            }
         }
 
         // reverse the entire area of the array selected if it's reversed.
-        i = lo;
+        int i = lo;
+        int j = hi - 1;
         while (i < j) {
-            swap(a, i, j);
-            i++;
-            j--;
+            swap(a, i++, j--);
         }
         endTest(a, lo, hi, c);
         return true;
@@ -179,31 +171,24 @@ private static final int SIZE_THRESHOLD = 16;
     }
 
 
-    private static int[] partition(Object[] a, int lo1, int hi, Object x, Comparator c) {
+    private static int[] partition(Object[] a, int lo1, int hi, Object x, Comparator comp) {
         int lo = lo1;
-        int i = lo, j = hi, c1 = 0;
-
-        while (lo < hi && c.compare(x, a[lo]) == 0)
-            lo++;
-        i = lo;
+        int i = lo, j = hi, c = 0;
 
         while (true) {
-            while (i < j && (c1 = c.compare(a[i], x)) <= 0) {
-                if (c1 == 0 && i != lo)
-                {
-                    while (c.compare(x, a[lo]) == 0)
-                        lo++;
-
-                    if (lo > i)
-                        i = lo - 1;
-                    else
+            while (i < j && (c = comp.compare(a[i], x)) <= 0) {
+                if (c == 0) {
+                    if (i > lo) {
                         swap(a, lo++, i);
+                    } else {
+                        lo++;
+                    }
                 }
                 i++;
             }
             j--;
 
-            while (j >= i && (c1 = c.compare(x, a[j])) < 0) {
+            while (j >= i && (c = comp.compare(x, a[j])) < 0) {
                 j--;
             }
 
@@ -211,39 +196,34 @@ private static final int SIZE_THRESHOLD = 16;
                 break;
             }
 
-            if (c1 == 0) {
-                while (c.compare(x, a[lo]) == 0)
-                    lo++;
+            if (c == 0) {
 
                 swap(a, i, j);
 
-                if (lo != i) {
+                if (i > lo) {
                     swap(a, lo++, i);
                 } else {
                     lo++;
                 }
 
-                if (lo > i)
-                    i = lo - 1;
             } else {
                 swap(a, i, j);
             }
             i++;
         }
 
-        c1 = ((i >= hi) ? hi-1 : i);
+        c = ((i >= hi) ? hi-1 : i);
 
-        while (c1 > lo1 && c.compare(x, a[c1]) < 0 ) {
-            c1--;
+        while (c > lo1 && comp.compare(x, a[c]) < 0 ) {
+            c--;
         }
 
-        while (lo < hi && c.compare(x, a[lo]) == 0)
-            lo++;
         lo--;
 
-        while (lo >= lo1 && c1 > lo)
-            swap(a, lo1++, c1--);
-        return new int[]{(c1 > lo) ? c1 + 1 : lo1, i};
+        while (lo >= lo1 && c > lo)
+            swap(a, lo1++, c--);
+
+        return new int[]{(c > lo) ? c + 1 : lo1, i};
     }
 
 
@@ -273,19 +253,14 @@ private static final int SIZE_THRESHOLD = 16;
     }
 
     private static void insertionsort(Object[] a, int lo, int hi, Comparator c) {
-        int i;
-        for (i = lo+1; i < hi; i++) {
-            if (c.compare(a[i], a[i-1]) < 0)
-            {
-                int j = i - 1;
-                Object t = a[i];
-                a[i] = a[j];
-                for ( ; j != lo && c.compare(t, a[j-1]) < 0; --j)
-                {
-                    a[j] = a[j - 1];
-                }
-                a[j] = t;
+        for (int i = lo+1; i < hi; i++) {
+            int j = i;
+            Object t = a[j];
+            while (j > lo && c.compare(t, a[j - 1]) < 0) {
+                a[j] = a[j - 1];
+                --j;
             }
+            a[j] = t;
         }
     }
 

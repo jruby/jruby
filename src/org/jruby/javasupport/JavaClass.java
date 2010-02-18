@@ -1317,27 +1317,43 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaMethod java_method(IRubyObject[] args) throws ClassNotFoundException {
+    public JavaMethod java_method(IRubyObject[] args) {
         String methodName = args[0].asJavaString();
-        Class<?>[] argumentTypes = buildArgumentTypes(args);
-        return JavaMethod.create(getRuntime(), javaClass(), methodName, argumentTypes);
+        try {
+            Class<?>[] argumentTypes = buildArgumentTypes(args);
+            return JavaMethod.create(getRuntime(), javaClass(), methodName, argumentTypes);
+        } catch (ClassNotFoundException cnfe) {
+            throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'",
+                methodName);
+        }
+
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaMethod declared_method(IRubyObject[] args) throws ClassNotFoundException {
+    public JavaMethod declared_method(IRubyObject[] args) {
         String methodName = args[0].asJavaString();
-        Class<?>[] argumentTypes = buildArgumentTypes(args);
-        return JavaMethod.createDeclared(getRuntime(), javaClass(), methodName, argumentTypes);
+        try {
+            Class<?>[] argumentTypes = buildArgumentTypes(args);
+            return JavaMethod.createDeclared(getRuntime(), javaClass(), methodName, argumentTypes);
+        } catch (ClassNotFoundException cnfe) {
+            throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'",
+                methodName);
+        }
     }
 
     @JRubyMethod(required = 1, rest = true)
-    public JavaCallable declared_method_smart(IRubyObject[] args) throws ClassNotFoundException {
+    public JavaCallable declared_method_smart(IRubyObject[] args) {
         String methodName = args[0].asJavaString();
-        Class<?>[] argumentTypes = buildArgumentTypes(args);
- 
-        JavaCallable callable = getMatchingCallable(getRuntime(), javaClass(), methodName, argumentTypes);
 
-        if (callable != null) return callable;
+        try {
+            Class<?>[] argumentTypes = buildArgumentTypes(args);
+
+            JavaCallable callable = getMatchingCallable(getRuntime(), javaClass(), methodName, argumentTypes);
+
+            if (callable != null) return callable;
+        } catch (ClassNotFoundException cnfe) {
+            // fall through to error below
+        }
 
         throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'",
                 methodName);

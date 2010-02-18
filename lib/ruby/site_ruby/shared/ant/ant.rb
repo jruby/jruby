@@ -17,12 +17,14 @@ class Ant
     @options = options
     @location = Location.new(caller.detect{|el| el !~ /^#{__FILE__}/}.split(/:/).first)
     @project = create_project options
+    @current_target = nil
     initialize_elements
+    handle_argv unless options[:run] == false || Ant.run || @location.file_name != $0
   end
 
   def create_project(options)
     # If we are calling into a rakefile from ant then we already have a project to use
-    return $project if $project
+    return $project if defined?($project) && $project
 
     output_level = options.delete(:output_level) || 2
 
@@ -82,17 +84,6 @@ class Ant
     }.join("\n")
   end
 
-  def handle_argv(argv)
-    return if Ant.run
-    if argv.length > 0
-      argv.each {|t| ant.execute_target(t) }
-    else
-      ant.execute_default
-    end
-  rescue => e
-    warn e.message
-    exit 1
-  end
 
   # We generate top-level methods for all default data types and task definitions for this instance
   # of ant.  This eliminates the need to rely on method_missing.
@@ -118,6 +109,21 @@ class Ant
     @elements[name + clazz.to_s] = Element.new(self, name, clazz)
   end
 
+  def _element(name, *args, &block)
+#     raise "unknown element #{name}!" unless @helper.get_definition(name)
+    element = acquire_element(name, nil)
+    element.call(@current_target, *args, &block)
+  end
+
+  def run(*targets)
+    if targets.length > 0
+      targets.each {|t| execute_target(t) }
+    else
+      execute_default
+    end
+  end
+
+  private
   def generate_children(collection)
     collection.each do |name, clazz|
       element = acquire_element(name, clazz)
@@ -127,10 +133,24 @@ class Ant
     end
   end
 
-  def _element(name, *args, &block)
-#     raise "unknown element #{name}!" unless @helper.get_definition(name)
-    element = acquire_element(name, nil)
-    element.call(@current_target, *args, &block)
+  def handle_argv
+    argv = ARGV
+    properties = []
+    targets = []
+    argv.each {|a| a =~ /^-D/ ? properties << a[2..-1] : targets << a }
+    properties.each do |p|
+      key, value = p.split('=', 2)
+      value ||= "true"
+      @project.set_user_property(key, value)
+    end
+    at_exit do
+      begin
+        run(*targets) unless Ant.run
+      rescue => e
+        warn e.message
+        exit 1
+      end
+    end
   end
 
   class << self
@@ -176,14 +196,7 @@ end
 #      ant args
 #
 def ant(*args, &block)
-  argv = ARGV
-  ant = Ant.ant(*args, &block)
-  if Ant === ant && caller[0].split(/:/).first == $0
-    at_exit do
-      ant.handle_argv(argv)
-    end
-  end
-  ant
+  Ant.ant(*args, &block)
 end
 
 def ant_import(filename = 'build.xml')

@@ -42,22 +42,36 @@ public class JRubyObjectInputStream extends RubyObject {
     }
     
     @JRubyMethod(name="initialize",required=1, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject wrappedStream) throws IOException {
-	InputStream stream = (InputStream)wrappedStream.toJava(InputStream.class);
-	impl = new JRubyObjectInputStreamImpl(getRuntime(),stream);
-	return this;
+    public IRubyObject initialize(IRubyObject wrappedStream) {
+        InputStream stream = (InputStream)wrappedStream.toJava(InputStream.class);
+        try {
+            impl = new JRubyObjectInputStreamImpl(getRuntime(),stream);
+        } catch (IOException ioe) {
+            throw getRuntime().newIOErrorFromException(ioe);
+        }
+        return this;
     }
 
     @JRubyMethod(name="read_object", alias="readObject")
-	public IRubyObject readObject() throws IOException, ClassNotFoundException {
-	return Java.getInstance(getRuntime(),impl.readObject());
+	public IRubyObject readObject() {
+        try {
+        	return Java.getInstance(getRuntime(),impl.readObject());
+        } catch (IOException ioe) {
+            throw getRuntime().newIOErrorFromException(ioe);
+        } catch (ClassNotFoundException cnfe) {
+            throw getRuntime().newNameError(cnfe.getLocalizedMessage(), cnfe.getMessage(), cnfe);
+        }
     }
 
 
     @JRubyMethod(name="close")
-    public IRubyObject close() throws IOException {
-	impl.close();
-	return this;
+    public IRubyObject close() {
+        try {
+            impl.close();
+        } catch (IOException ioe) {
+            throw getRuntime().newIOErrorFromException(ioe);
+        }
+        return this;
     }
 
     class JRubyObjectInputStreamImpl extends ObjectInputStream {

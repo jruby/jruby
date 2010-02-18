@@ -118,7 +118,7 @@ public class FiberLibrary implements Library {
         }
 
         @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
-        public IRubyObject resume(ThreadContext context, IRubyObject[] args) throws InterruptedException {
+        public IRubyObject resume(ThreadContext context, IRubyObject[] args) {
             synchronized (yieldLock) {
                 // FIXME: Broken but behaving
                 if (args.length == 0) {
@@ -128,22 +128,30 @@ public class FiberLibrary implements Library {
                 } else {
                     result = context.getRuntime().newArrayNoCopyLight(args);
                 }
-                if (!alive) {
-                    executor.execute(runnable);
-                    yieldLock.wait();
-                } else {
-                    yieldLock.notify();
-                    yieldLock.wait();
+                try {
+                    if (!alive) {
+                        executor.execute(runnable);
+                        yieldLock.wait();
+                    } else {
+                        yieldLock.notify();
+                        yieldLock.wait();
+                    }
+                } catch (InterruptedException ie) {
+                    throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
                 }
             }
             return result;
         }
 
         @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
-        public IRubyObject transfer(IRubyObject[] args) throws InterruptedException {
+        public IRubyObject transfer(IRubyObject[] args) {
             synchronized (yieldLock) {
                 yieldLock.notify();
-                yieldLock.wait();
+                try {
+                    yieldLock.wait();
+                } catch (InterruptedException ie) {
+                    throw getRuntime().newConcurrencyError(ie.getLocalizedMessage());
+                }
             }
             return result;
         }
@@ -160,7 +168,7 @@ public class FiberLibrary implements Library {
 
     public static class FiberMeta {
         @JRubyMethod(compat = CompatVersion.RUBY1_9, rest = true, meta = true)
-        public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] args) throws InterruptedException {
+        public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Fiber fiber = context.getFiber();
             // FIXME: Broken but behaving
             if (args.length == 0) {
@@ -172,7 +180,11 @@ public class FiberLibrary implements Library {
             }
             synchronized (fiber.yieldLock) {
                 fiber.yieldLock.notify();
-                fiber.yieldLock.wait();
+                try {
+                    fiber.yieldLock.wait();
+                } catch (InterruptedException ie) {
+                    throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
+                }
             }
             return context.getRuntime().getNil();
         }

@@ -371,7 +371,7 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
-    public IRubyObject reopen(ThreadContext context, IRubyObject[] args) throws InvalidValueException {
+    public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         
     	if (args.length < 1) {
@@ -494,6 +494,8 @@ public class RubyIO extends RubyObject {
                 throw runtime.newIOError("could not reopen: " + ex.getMessage());
             } catch (PipeException ex) {
                 throw runtime.newIOError("could not reopen: " + ex.getMessage());
+            } catch (InvalidValueException ive) {
+                throw runtime.newErrnoEINVALError();
             }
         } else {
             IRubyObject pathString = args[0].convertToString();
@@ -2031,7 +2033,7 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "close_write")
-    public IRubyObject close_write(ThreadContext context) throws BadDescriptorException {
+    public IRubyObject close_write(ThreadContext context) {
         try {
             if (context.getRuntime().getSafeLevel() >= 4 && isTaint()) {
                 throw context.getRuntime().newSecurityError("Insecure: can't close");
@@ -2062,7 +2064,7 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "close_read")
-    public IRubyObject close_read(ThreadContext context) throws BadDescriptorException {
+    public IRubyObject close_read(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         
         try {
@@ -2087,6 +2089,8 @@ public class RubyIO extends RubyObject {
                 // n is result of fclose; but perhaps having a SysError below is enough?
                 // if (n != 0) rb_sys_fail(fptr->path);
             }
+        } catch (BadDescriptorException bde) {
+            throw runtime.newErrnoEBADFError();
         } catch (IOException ioe) {
             // I believe Ruby bails out with a "bug" if closing fails
             throw runtime.newIOErrorFromException(ioe);
@@ -3551,21 +3555,25 @@ public class RubyIO extends RubyObject {
 
     // NIO based pipe
     @JRubyMethod(name = "pipe", meta = true)
-    public static IRubyObject pipe(ThreadContext context, IRubyObject recv) throws Exception {
+    public static IRubyObject pipe(ThreadContext context, IRubyObject recv) {
         // TODO: This isn't an exact port of MRI's pipe behavior, so revisit
        Ruby runtime = context.getRuntime();
-       Pipe pipe = Pipe.open();
-       
-       RubyIO source = new RubyIO(runtime, pipe.source());
-       RubyIO sink = new RubyIO(runtime, pipe.sink());
-       
-       sink.openFile.getMainStream().setSync(true);
-       return runtime.newArrayNoCopy(new IRubyObject[] { source, sink });
+       try {
+           Pipe pipe = Pipe.open();
+
+           RubyIO source = new RubyIO(runtime, pipe.source());
+           RubyIO sink = new RubyIO(runtime, pipe.sink());
+
+           sink.openFile.getMainStream().setSync(true);
+           return runtime.newArrayNoCopy(new IRubyObject[] { source, sink });
+       } catch (IOException ioe) {
+           throw runtime.newIOErrorFromException(ioe);
+       }
    }
     
     @JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
-            IRubyObject arg1, IRubyObject arg2) throws IOException {
+            IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
         RubyIO io1;
         RubyIO io2;
@@ -3597,11 +3605,15 @@ public class RubyIO extends RubyObject {
         FileChannel f1 = (FileChannel)d1.getChannel();
         FileChannel f2 = (FileChannel)d2.getChannel();
 
-        long size = f1.size();
+        try {
+            long size = f1.size();
 
-        f1.transferTo(f2.position(), size, f2);
+            f1.transferTo(f2.position(), size, f2);
 
-        return context.getRuntime().newFixnum(size);
+            return context.getRuntime().newFixnum(size);
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
     }
     
     /**

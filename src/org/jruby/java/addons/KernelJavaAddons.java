@@ -13,18 +13,20 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 public class KernelJavaAddons {
     @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject rbRaise(
-            ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject rbRaise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         
         if (args.length == 1 && args[0].dataGetStruct() instanceof JavaObject) {
             // looks like someone's trying to raise a Java exception. Let them.
             Object maybeThrowable = ((JavaObject)args[0].dataGetStruct()).getValue();
             
             if (maybeThrowable instanceof Throwable) {
-                throw (Throwable)maybeThrowable;
+                // yes, we're cheating here.
+                UnsafeFactory.getUnsafe().throwException((Throwable)maybeThrowable);
+                return recv; // not reached
             } else {
                 throw context.getRuntime().newTypeError("can't raise a non-Throwable Java object");
             }
