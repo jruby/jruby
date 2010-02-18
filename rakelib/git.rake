@@ -9,18 +9,22 @@ def git_shallow_clone(label, git_repository, local_directory)
   Dir.chdir(local_directory) { yield } if block_given?
 end
 
-def git_pull(label, local_directory)
-  puts "#{label} repo found: pulling repo at #{local_directory}"
+def git_simple_command(command, label, local_directory)
+  puts "#{label} repo found: `git #{command}` repo at #{local_directory}"
   Dir.chdir(local_directory) do 
-    sh "git pull"
+    sh "git #{command}"
     yield if block_given?
   end 
 end
 
+def git_pull(label, local_directory)
+  git_simple_command("pull", label, local_directory)
+end
+
 def git_fetch(label, local_directory)
-  puts "#{label} repo found: fetching repo at #{local_directory}"
-  Dir.chdir(local_directory) do 
-    sh "git fetch"
-    yield if block_given?
-  end
+  git_simple_command("fetch", label, local_directory)
+end
+
+def git_checkout(label, tag, local_directory)
+  git_simple_command("checkout #{tag}", label, local_directory)
 end

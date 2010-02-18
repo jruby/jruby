@@ -445,8 +445,8 @@
         <arg value="maybe_install_gems"/>
         <arg value="${build.lib.dir}/${rspec.gem}"/>
         <arg value="${build.lib.dir}/${rake.gem}"/>
-        <arg value="${build.lib.dir}/${ruby-debug-base.gem}"/>
-        <arg value="${build.lib.dir}/${ruby-debug.gem}"/>
+        <arg value="${build.lib.dir}/${ruby.debug.base.gem}"/>
+        <arg value="${build.lib.dir}/${ruby.debug.gem}"/>
         <arg value="${build.lib.dir}/${columnize.gem}"/>
         <arg value="--no-ri"/>
         <arg value="--no-rdoc"/>
@@ -541,8 +541,8 @@
         <arg value="maybe_install_gems"/>
         <arg value="${build.lib.dir}/${rspec.gem}"/>
         <arg value="${build.lib.dir}/${rake.gem}"/>
-        <arg value="${build.lib.dir}/${ruby-debug-base.gem}"/>
-        <arg value="${build.lib.dir}/${ruby-debug.gem}"/>
+        <arg value="${build.lib.dir}/${ruby.debug.base.gem}"/>
+        <arg value="${build.lib.dir}/${ruby.debug.gem}"/>
         <arg value="${build.lib.dir}/${columnize.gem}"/>
         <arg value="--no-ri"/>
         <arg value="--no-rdoc"/>
@@ -916,12 +916,9 @@
     </java>
   </target>
 
+  <target name="test-rake-targets" depends="init"><rake task="test:rake_targets"/></target>
 
-  <target name="test-rake-targets" depends="init">
-    <run-rake rake.targets="test:rake_targets"/>
-  </target>
-
-  <macrodef name="run-rake">
+  <macrodef name="rake">
     <attribute name="compile.mode" default="OFF"/>
     <attribute name="jit.threshold" default="20"/>
     <attribute name="jit.max" default="-1"/>
@@ -930,12 +927,12 @@
     <attribute name="reflection" default="false"/>
     <attribute name="inproc" default="true"/>
     <attribute name="jruby.args" default=""/>
-    <attribute name="rake.targets"/>
+    <attribute name="task"/>
     <attribute name="dir" default="${base.dir}"/>
     <attribute name="jvm.args" default="-ea"/>
 
     <sequential>
-      <echo message="Running rake @{rake.targets}"/>
+      <echo message="Running rake @{task}"/>
       <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
 
       <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="@{dir}">
@@ -959,180 +956,52 @@
         <sysproperty key="emma.coverage.out.merge" value="true" />
         <sysproperty key="emma.verbosity.level" value="silent" />
 
-        <arg line="@{jruby.args}"/>
-        <arg line="-S rake"/>
-        <arg line="@{rake.targets}"/>
+        <arg line="@{jruby.args} -S rake @{task}"/>
       </java>
     </sequential>
   </macrodef>
 
-  <target name="detect-stable-specs-need-update">
-    <property file="${spec.dir}/rubyspecs.current.revision"/>
-    <condition property="stable-specs-need-update">
-      <or>
-        <not> <available file="${rubyspec.dir}"/> </not>
-        <not> <available file="${mspec.dir}"/> </not>
-        <not>
-          <equals
-            arg1="${rubyspecs.revision}"
-            arg2="${rubyspecs.current.revision}"/>
-        </not>
-        <not>
-          <equals
-            arg1="${mspec.revision}"
-            arg2="${mspec.current.revision}"/>
-        </not>
-      </or>
-    </condition>
+  <!-- Utilities to manage rubyspecs/mspec files -->
+  <target name="fetch-stable-specs" depends="init">
+    <rake task="spec:fetch_stable_specs"/>
+  </target>
+  <target name="fetch-latest-specs" depends="init">
+    <rake task="spec:fetch_latest_specs"/>
   </target>
 
-  <target name="fetch-stable-specs" depends="fetch-specs, detect-stable-specs-need-update" if="stable-specs-need-update">
-      <echo message="Rolling rubyspec to stable version"/>
-      <exec dir="${rubyspec.dir}" executable="git">
-          <arg line="checkout ${rubyspecs.revision}"/>
-      </exec>
-
-      <echo message="Rolling mspec to stable version"/>
-      <exec dir="${mspec.dir}" executable="git">
-          <arg line="checkout ${mspec.revision}"/>
-      </exec>
-
-  	<!-- Write down the revision of downloaded specs -->
-    <propertyfile file="${spec.dir}/rubyspecs.current.revision" comment="Revision of downloaded specs.">
-      <entry key="rubyspecs.current.revision" value="${rubyspecs.revision}"/>
-      <entry key="mspec.current.revision" value="${mspec.revision}"/>
-    </propertyfile>
+  <!-- Main spec runs (See rakelib/spec.rake for definitions/descriptions) -->
+  <target name="spec:ci_18" depends="jar"><rake task="spec:ci_18"/></target>
+  <target name="spec:ci_19" depends="jar"><rake task="spec:ci_19"/></target>
+  <target name="spec:ci_interpreted_18_19" depends="jar">
+    <rake task="spec:ci_interpreted_18_19"/>
   </target>
+  <target name="spec:ci_interpreted_18" depends="jar">
+    <rake task="spec:ci_interpreted_18"/>
+  </target>
+  <target name="spec:ci_interpreted_19" depends="jar">
+    <rake task="spec:ci_interpreted_19"/>
+  </target>
+  <target name="spec:ci_all_precompiled_18" depends="jar">
+    <rake task="spec:ci_all_precompiled_18"/>
+  </target>
+  <target name="spec:ci_all_interpreted_18" depends="jar">
+    <rake task="spec:ci_all_interpreted_18"/>
+  </target>
+  <target name="spec:ci_all" depends="jar"><rake task="spec:ci_all"/></target>
+  <target name="spec:ci_latest" depends="jar"><rake task="spec:ci_latest"/></target>
 
-  <!-- NOTE: There are two different rubyspecs versions: stable and unstable.
-       Stable ones are in known good state, and all known JRuby failures are excluded.
-       The idea is that the stable specs runs must be clean, no failures.
-       Unstable specs are the very latest, and might have new failures.
-
-       Stable specs are downloaded as a snapshot of particular revision.
-       Unstable specs are downloaded as a git repo. -->
-
-  <!-- stable specs -->
-  <target name="spec" depends="fetch-stable-specs, run-specs"
-      description="Runs known good version of rubyspecs."/>
-  <target name="spec-short" depends="fetch-stable-specs, run-specs-short, run-specs-short-1.9"
-      description="Runs known good version of rubyspecs, excluding unstable library specs."/>
-  <target name="spec-short-1.9" depends="fetch-stable-specs, run-specs-short-1.9"
-      description="Runs known good version of rubyspecs, excluding unstable library specs."/>
-  <target name="spec-ci" depends="fetch-stable-specs, run-specs-ci"
-      description="Runs known good version of rubyspecs interpreted, compiled, and precompile, excluding unstable library specs."/>
-  <target name="spec-ci-1.9" depends="fetch-stable-specs, run-specs-ci-1.9"
-      description="Runs known good version of rubyspecs interpreted, compiled, and precompile, excluding unstable library specs."/>
-  <target name="spec-all" depends="fetch-stable-specs, run-specs-all"
-      description="Runs known good version of rubyspecs without exclusions."/>
-  <target name="spec-all-interpreted" depends="fetch-stable-specs, run-specs-all-interpreted"
-      description="Runs known good version of rubyspecs without exclusions."/>
+  <!-- Old compatibility targets which call to newer Rake-based ones -->
+  <target name="spec" depends="spec:ci_18"/>
+  <target name="spec-ci" depends="spec:ci_18"/>
+  <target name="spec-short" depends="spec:ci_interpreted_18_19"/>
+  <target name="spec-ci-1.9" depends="spec:ci_19"/>
+  <target name="spec-short-1.9" depends="spec:ci_interpreted_19"/>
+  <target name="spec-all" depends="spec:ci_all_precompiled_18"/>
+  <target name="spec-all-interpreted" depends="spec:ci_all_interpreted_18"/>
 
   <!-- latest, unstable specs -->
-  <target name="spec-latest" depends="fetch-specs, run-specs" description="Runs the very latest rubyspecs."/>
-  <target name="spec-latest-all" depends="fetch-specs, run-specs-all"
-	  description="Runs the very latest rubyspecs without exclusions."/>
-
-  <target name="fetch-specs" depends="jar"><run-rake rake.targets="spec:fetch_specs"/></target>
-
-  <target name="clear-specs">
-      <delete dir="${rubyspec.dir}"/>
-      <delete dir="${mspec.dir}"/>
-      <delete file="${build.dir}/rubyspec.tgz"/>
-      <delete file="${build.dir}/mspec.tgz"/>
-      <delete file="${spec.dir}/rubyspecs.current.revision"/>
-  </target>
-
-  <target name="run-specs" depends="run-specs-precompiled, run-specs-compiled, run-specs-interpreted">
-    <condition property="spec.status.combined.OK">
-      <and>
-        <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
-        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
-        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
-      </and>
-    </condition>
-    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
-  </target>
-
-  <target name="run-specs-short" depends="run-specs-interpreted-short">
-    <condition property="spec.status.combined.OK">
-      <and>
-        <equals arg1="${spec.status.INTERPRETED}"    arg2="0"/>
-      </and>
-    </condition>
-    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
-  </target>
-
-  <target name="run-specs-short-1.9" depends="run-specs-interpreted-short-1.9">
-    <condition property="spec.status.combined.OK">
-      <and>
-        <equals arg1="${spec.status.INTERPRETED}"    arg2="0"/>
-      </and>
-    </condition>
-    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
-  </target>
-
-  <target name="run-specs-ci" depends="run-specs-compiled-short, run-specs-interpreted-short, run-specs-precompiled-short">
-    <condition property="spec.status.combined.OK">
-      <and>
-        <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
-        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
-        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
-      </and>
-    </condition>
-    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
-  </target>
-
-  <target name="run-specs-ci-1.9" depends="run-specs-compiled-short-1.9, run-specs-interpreted-short-1.9, run-specs-precompiled-short-1.9">
-    <condition property="spec.status.combined.OK">
-      <and>
-        <equals arg1="${spec.status.PRECOMPILED}" arg2="0"/>
-        <equals arg1="${spec.status.COMPILED}"    arg2="0"/>
-        <equals arg1="${spec.status.INTERPRETED}" arg2="0"/>
-      </and>
-    </condition>
-    <fail message="RubySpecs FAILED" unless="spec.status.combined.OK"/>
-  </target>
-
-  <target name="run-specs-all" depends="jar, run-specs-all-precompiled"/>
-
-  <target name="run-specs-compiled" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
-  </target>
-  <target name="run-specs-precompiled" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
-  </target>
-  <target name="run-specs-interpreted" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.8.mspec"/>
-  </target>
-
-  <target name="run-specs-compiled-short" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
-  </target>
-  <target name="run-specs-precompiled-short" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.8.mspec"/>
-  </target>
-  <target name="run-specs-interpreted-short" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.8.mspec"/>
-  </target>
-
-  <target name="run-specs-compiled-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="COMPILED" compile.mode="JIT" jit.threshold="0" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
-  </target>
-  <target name="run-specs-precompiled-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
-  </target>
-  <target name="run-specs-interpreted-short-1.9" depends="jar">
-    <_run_specs_internal mode.name="INTERPRETED" compile.mode="OFF" spec.config="${spec.dir}/jruby.1.9.mspec" compat="RUBY1_9"/>
-  </target>
-
-  <target name="run-specs-all-interpreted">
-    <_run_specs_all_internal mode.name="INTERPRETED" compile.mode="OFF"/>
-  </target>
-  <target name="run-specs-all-precompiled">
-    <_run_specs_all_internal mode.name="PRECOMPILED" compile.mode="FORCE" jit.threshold="0"/>
-  </target>
-
+  <target name="spec-latest-all" depends="spec:ci_all"/>
+  <target name="spec-latest" depends="spec:ci_latest"/>
 
   <target name="update-excludes">
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
@@ -1141,8 +1010,7 @@
       <sysproperty key="jruby.launch.inproc" value="false"/>
 
       <arg line="${mspec.dir}/bin/mspec tag"/>
-      <arg line="--add fails --fail"/>
-      <arg line="-B ${spec.dir}/default.mspec"/>
+      <arg line="--add fails --fail -B ${spec.dir}/default.mspec"/>
     </java>
   </target>
 
@@ -1155,65 +1023,6 @@
     description="Prints out all currently excluded rubyspecs in 1.9 mode.">
     <spec-show-excludes spec.mode="1.9"/>
   </target>
-
-  <macrodef name="run-specs">
-    <attribute name="compile.mode" default="OFF"/>
-    <attribute name="jit.threshold" default="20"/>
-    <attribute name="jit.max" default="-1"/>
-    <attribute name="objectspace.enabled" default="true"/>
-    <attribute name="thread.pooling" default="false"/>
-    <attribute name="reflection" default="false"/>
-    <attribute name="mode.name"/>
-    <attribute name="spec.config"/>
-    <attribute name="compat" default="RUBY1_8"/>
-
-    <sequential>
-      <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} compat=@{compat}"/>
-
-      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" resultproperty="spec.status.@{mode.name}" dir="${base.dir}">
-	<classpath refid="test.class.path"/>
-	<jvmarg line="-ea ${run.jvm.model}"/>
-
-	<sysproperty key="jruby.home" value="${basedir}"/>
-	<sysproperty key="jruby.launch.inproc" value="false"/>
-        <sysproperty key="emma.verbosity.level" value="silent" />
-
-        <env key="JAVA_OPTS" value="-Demma.verbosity.level=silent"/>
-
-	<arg line="${mspec.dir}/bin/mspec ci"/>
-	<arg line="-T -J-ea"/>
-	<arg line="-T -J-Djruby.launch.inproc=false"/>
-	<arg line="-T -J-Djruby.compile.mode=@{compile.mode}"/>
-	<arg line="-T -J-Djruby.jit.threshold=@{jit.threshold}"/>
-	<arg line="-T -J-Djruby.jit.max=@{jit.max}"/>
-	<arg line="-T -J-Djruby.objectspace.enabled=@{objectspace.enabled}"/>
-	<arg line="-T -J-Djruby.thread.pool.enabled=@{thread.pooling}"/>
-	<arg line="-T -J-Djruby.reflection=@{reflection}"/>
-        <arg line="-T -J-Djruby.compat.version=@{compat}"/>
-        <arg line="-T -J-Demma.coverage.out.file=${test.results.dir}/coverage.emma"/>
-        <arg line="-T -J-Demma.coverage.out.merge=true"/>
-        <arg line="-T -J-Demma.verbosity.level=silent" />
-        <arg line="${spec.jvm.model.option}" />
-	<arg line="-f m"/>
-	<arg line="-B @{spec.config}"/>
-      </java>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="_run_specs_internal">
-    <attribute name="compile.mode" default="OFF"/>
-    <attribute name="jit.threshold" default="20"/>
-    <attribute name="mode.name"/>
-    <attribute name="spec.config"/>
-    <attribute name="compat" default="RUBY1_8"/>
-
-    <sequential>
-      <echo message="Excludes: ${spec.tags.dir}"/>
-      <run-specs mode.name="@{mode.name}"
-        compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
-        spec.config="@{spec.config}" compat="@{compat}"/>
-    </sequential>
-  </macrodef>
 
   <macrodef name="spec-show-excludes">
     <attribute name="spec.mode" default="1.8"/>
@@ -1233,16 +1042,6 @@
         <arg line="-B ${spec.dir}/jruby.@{spec.mode}.mspec"/>
         <arg value=":ci_files"/>
       </java>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="_run_specs_all_internal">
-    <attribute name="compile.mode" default="OFF"/>
-    <attribute name="jit.threshold" default="20"/>
-    <attribute name="mode.name"/>
-
-    <sequential>
-      <run-specs mode.name="@{mode.name}" compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"/>
     </sequential>
   </macrodef>
 
@@ -1375,7 +1174,7 @@
     <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
     <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
-    <run-rake rake.targets="install_dist_gems"/>
+    <rake task="install_dist_gems"/>
     <tar destfile="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.bin.dir}" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
@@ -1425,7 +1224,7 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
-    <run-rake rake.targets="install_dist_gems"/>
+    <rake task="install_dist_gems"/>
     <fixEOLs dist-stage-dir="${dist.stage.src.dir}"/>
     <tar destfile="${dist.dir}/jruby-src-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.src.dir}" mode="755" prefix="jruby-${version.jruby}">
@@ -1517,7 +1316,8 @@
     <antcall target="clean-ng"/>
   </target>
 
-  <target name="clean-all" depends="clean, clear-specs, dist-clean" description="Cleans everything, including dist files and specs">
+  <target name="clean-all" depends="clean, dist-clean" description="Cleans everything, including dist files and specs">
+      <rake task="spec:clean_specs"/>
       <delete dir="${base.dir}/build.eclipse"/>
       <delete dir="${base.dir}/lib/native"/>
   </target>
@@ -1560,7 +1360,7 @@
     <mkdir dir="${build.dir}/nailmain"/>
   </target>
 
-  <target name="test-rails-stable" depends="init"><run-rake rake.targets="test:rails"/></target>
-  <target name="test-prawn" depends="init"><run-rake rake.targets="test:prawn"/></target>
-  <target name="bench-language" depends="init"><run-rake rake.targets="bench:language"/></target>
+  <target name="test-rails-stable" depends="init"><rake task="test:rails"/></target>
+  <target name="test-prawn" depends="init"><rake task="test:prawn"/></target>
+  <target name="bench-language" depends="init"><rake task="bench:language"/></target>
 </project>
