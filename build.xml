@@ -692,8 +692,19 @@
     </emma>
   </target>
 
+  <target name="install-gems">
+    <property name="jruby.home" value="${basedir}"/>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <arg line="--command maybe_install_gems ${rake.gem} --env-shebang"/>
+    </java>
+  </target>
+
   <target name="test" depends="
     copy-test-files,
+    install-gems,
     run-junit-interpreted-short,
     test-rake-targets"
     description="Runs unit tests.">
@@ -701,6 +712,7 @@
 
   <target name="test-extended" depends="
     copy-test-files,
+    install-gems,
     run-junit-compiled,
     test-rake-targets"
     description="Runs unit tests.">
