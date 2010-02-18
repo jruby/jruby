@@ -532,18 +532,22 @@ public class ShellLauncher {
         Process childProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
 
-        // CON: popen is a case where I think we should just always shell out.
-        if (strings.length == 1) {
-            // single string command, pass to sh to expand wildcards
-            String[] argArray = new String[3];
-            argArray[0] = shell;
-            argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
-            argArray[2] = strings[0].asJavaString();
-            childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
-        } else {
-            // direct invocation of the command
-            String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
-            childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);
+        try {
+            // CON: popen is a case where I think we should just always shell out.
+            if (strings.length == 1) {
+                // single string command, pass to sh to expand wildcards
+                String[] argArray = new String[3];
+                argArray[0] = shell;
+                argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
+                argArray[2] = strings[0].asJavaString();
+                childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
+            } else {
+                // direct invocation of the command
+                String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
+                childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);
+            }
+        } catch (SecurityException se) {
+            throw runtime.newSecurityError(se.getLocalizedMessage());
         }
 
         return childProcess;
@@ -1070,23 +1074,28 @@ public class ShellLauncher {
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
-        if (cfg.shouldRunInProcess()) {
-            log(runtime, "Launching in-process");
-            ScriptThreadProcess ipScript = new ScriptThreadProcess(
-                    runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
-            ipScript.start();
-            return ipScript;
-        } else if (cfg.shouldRunInShell()) {
-            log(runtime, "Launching with shell");
-            // execute command with sh -c
-            // this does shell expansion of wildcards
-            cfg.verifyExecutableForShell();
-            aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
-        } else {
-            log(runtime, "Launching directly (no shell)");
-            cfg.verifyExecutableForDirect();
-            aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+        try {
+            if (cfg.shouldRunInProcess()) {
+                log(runtime, "Launching in-process");
+                ScriptThreadProcess ipScript = new ScriptThreadProcess(
+                        runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+                ipScript.start();
+                return ipScript;
+            } else if (cfg.shouldRunInShell()) {
+                log(runtime, "Launching with shell");
+                // execute command with sh -c
+                // this does shell expansion of wildcards
+                cfg.verifyExecutableForShell();
+                aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+            } else {
+                log(runtime, "Launching directly (no shell)");
+                cfg.verifyExecutableForDirect();
+                aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+            }
+        } catch (SecurityException se) {
+            throw runtime.newSecurityError(se.getLocalizedMessage());
         }
+        
         return aProcess;
     }
 
