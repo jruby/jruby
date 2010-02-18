@@ -509,6 +509,69 @@ public class Java implements Library {
             return getRubyMethod(context, proxyClass, name, argTypesClasses);
         }
 
+        @JRubyMethod(backtrace = true, meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName) {
+            String name = rubyName.asJavaString();
+            Ruby runtime = context.getRuntime();
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name));
+            return method.invokeStaticDirect();
+        }
+
+        @JRubyMethod(backtrace = true, meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes) {
+            String name = rubyName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            Ruby runtime = context.getRuntime();
+
+            if (argTypesAry.size() != 0) {
+                Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
+                throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
+            }
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name));
+            return method.invokeStaticDirect();
+        }
+
+        @JRubyMethod(backtrace = true, meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
+            String name = rubyName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            Ruby runtime = context.getRuntime();
+
+            if (argTypesAry.size() != 1) {
+                throw JavaMethod.newArgSizeMismatchError(runtime, (Class) argTypesAry.eltInternal(0).toJava(Class.class));
+            }
+
+            Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name, argTypeClass));
+            return method.invokeStaticDirect(arg0.toJava(argTypeClass));
+        }
+
+        @JRubyMethod(required = 4, rest = true, backtrace = true, meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            Ruby runtime = context.getRuntime();
+
+            String name = args[0].asJavaString();
+            RubyArray argTypesAry = args[1].convertToArray();
+            int argsLen = args.length - 2;
+
+            if (argTypesAry.size() != argsLen) {
+                throw JavaMethod.newArgSizeMismatchError(runtime, (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]));
+            }
+
+            Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argsLen]);
+
+            Object[] argsAry = new Object[argsLen];
+            for (int i = 0; i < argsLen; i++) {
+                argsAry[i] = args[i + 2].toJava(argTypesClasses[i]);
+            }
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name, argTypesClasses));
+            return method.invokeStaticDirect(argsAry);
+        }
+
         @JRubyMethod(backtrace = true, meta = true, visibility = Visibility.PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName) {
             return java_alias(context, proxyClass, newName, rubyName, context.getRuntime().newEmptyArray());
@@ -529,9 +592,7 @@ public class Java implements Library {
                 throw runtime.newTypeError(proxyClass, runtime.getModule());
             }
 
-            Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
-
-            Method method = getMethodFromClass(runtime, jclass, name, argTypesClasses);
+            Method method = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
             MethodInvoker invoker = getMethodInvokerForMethod(rubyClass, method);
 
             if (Modifier.isStatic(method.getModifiers())) {
@@ -555,30 +616,27 @@ public class Java implements Library {
             throw runtime.newTypeError(proxyClass, runtime.getModule());
         }
 
-        Class jclass = (Class)((JavaClass)proxyClass.callMethod(context, "java_class")).getValue();
+        Method jmethod = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
         String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
         
-        try {
-            Method jmethod = jclass.getMethod(name, argTypesClasses);
-            MethodInvoker invoker;
-            if (Modifier.isStatic(jmethod.getModifiers())) {
-                invoker = new StaticMethodInvoker(rubyClass, jmethod);
-                return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
-            } else {
-                invoker = new InstanceMethodInvoker(rubyClass, jmethod);
-                return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
-            }
-        } catch (NoSuchMethodException nsme) {
-            String errorName = jclass.getName() + "." + prettyName;
-            throw runtime.newNameError("Java method not found: " + errorName, name);
+        if (Modifier.isStatic(jmethod.getModifiers())) {
+            MethodInvoker invoker = new StaticMethodInvoker(rubyClass, jmethod);
+            return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
+        } else {
+            MethodInvoker invoker = new InstanceMethodInvoker(rubyClass, jmethod);
+            return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
         }
     }
 
-    public static Method getMethodFromClass(Ruby runtime, Class jclass, String name, Class... argTypes) {
+    public static Method getMethodFromClass(Ruby runtime, IRubyObject proxyClass, String name, Class... argTypes) {
+        Class jclass = (Class)((JavaClass)proxyClass.callMethod(runtime.getCurrentContext(), "java_class")).getValue();
+
         try {
             return jclass.getMethod(name, argTypes);
         } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(runtime, jclass, name + CodegenUtils.prettyParams(argTypes), name);
+            String prettyName = name + CodegenUtils.prettyParams(argTypes);
+            String errorName = jclass.getName() + "." + prettyName;
+            throw runtime.newNameError("Java method not found: " + errorName, name);
         }
     }
 
