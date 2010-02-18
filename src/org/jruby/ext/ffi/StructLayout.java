@@ -73,12 +73,12 @@ public final class StructLayout extends Type {
 
     /** The ordered list of fields */
     private final List<Member> members;
-    
-    private final int cacheableFieldCount;
-    private final int[] cacheIndexMap;
 
+    /** The number of cacheable fields in this struct */
+    private final int cacheableFieldCount;
+
+    /** The number of reference fields in this struct */
     private final int referenceFieldCount;
-    private final int[] referenceIndexMap;
 
     /**
      * Registers the StructLayout class in the JRuby runtime.
@@ -157,10 +157,7 @@ public final class StructLayout extends Type {
      */
     StructLayout(Ruby runtime, RubyClass klass, Collection<RubySymbol> fieldNames, Map<IRubyObject, Field> fields, int size, int alignment) {
         super(runtime, klass, NativeType.STRUCT, size, alignment);
-
-        this.cacheIndexMap = new int[fieldNames.size()];
-        this.referenceIndexMap = new int[fieldNames.size()];
-
+        
         int cfCount = 0, refCount = 0;
         List<Field> fieldList = new ArrayList<Field>(fieldNames.size());
         Map<IRubyObject, Member> memberMap = new LinkedHashMap<IRubyObject, Member>(fieldNames.size());
@@ -169,20 +166,10 @@ public final class StructLayout extends Type {
         for (RubySymbol fieldName : fieldNames) {
             Field f = fields.get(fieldName);
             fieldList.add(f);
-
-            if (f.isCacheable()) {
-                cacheIndexMap[index] = cfCount++;
-            } else {
-                cacheIndexMap[index] = -1;
-            }
-
-            if (f.isValueReferenceNeeded()) {
-                referenceIndexMap[index] = refCount++;
-            } else {
-                referenceIndexMap[index] = -1;
-            }
+            int cfIndex = f.isCacheable() ? cfCount++ : -1;
+            int refIndex = f.isValueReferenceNeeded() ? refCount++ : -1;
             
-            memberMap.put(fieldName, new Member(f, index));
+            memberMap.put(fieldName, new Member(f, index, cfIndex, refIndex));
             fieldList.add(f);
         }
 
@@ -346,7 +333,7 @@ public final class StructLayout extends Type {
     }
 
     final int getReferenceFieldIndex(Member member) {
-        return referenceIndexMap[member.index];
+        return member.referenceIndex;
     }
 
     final int getCacheableFieldCount() {
@@ -354,7 +341,7 @@ public final class StructLayout extends Type {
     }
 
     final int getCacheableFieldIndex(Member member) {
-        return cacheIndexMap[member.index];
+        return member.cacheIndex;
     }
 
     public final int getFieldCount() {
@@ -384,17 +371,25 @@ public final class StructLayout extends Type {
 
         /** The offset within the memory area of this member */
         final int offset;
-        
+
+        /** The index of this member within the struct field cache */
+        final int cacheIndex;
+
+        /** The index of this member within the struct field reference array*/
+        final int referenceIndex;
+
         /** The index of this member within the struct */
         final int index;
 
         /** Initializes a new Member instance */
-        protected Member(Field f, int index) {
+        protected Member(Field f, int index, int cacheIndex, int referenceIndex) {
             this.field = f;
             this.io = f.io;
             this.type = f.type;
             this.offset = f.offset;
             this.index = index;
+            this.cacheIndex = cacheIndex;
+            this.referenceIndex = referenceIndex;
         }
 
         /**
