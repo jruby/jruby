@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.jruby.Ruby;
@@ -111,7 +112,11 @@ public class Parser {
             if (result.getEndOffset() >= 0) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
-                runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, lexerSource.getRemainingAsStream()));
+                try {
+                    runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, lexerSource.getRemainingAsStream()));
+                } catch (IOException e) { // Not sure how to handle suddenly closed IO here?
+                    runtime.defineGlobalConstant("DATA", runtime.getNil());
+                }
                 runtime.setVerbose(verbose);
             	result.setEndOffset(-1);
             }
