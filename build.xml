@@ -443,11 +443,11 @@
         <jvmarg value="${run.jvm.model}"/>
         <arg value="--command"/>
         <arg value="maybe_install_gems"/>
-        <arg value="${build.lib.dir}/${rspec.gem}"/>
-        <arg value="${build.lib.dir}/${rake.gem}"/>
-        <arg value="${build.lib.dir}/${ruby.debug.base.gem}"/>
-        <arg value="${build.lib.dir}/${ruby.debug.gem}"/>
-        <arg value="${build.lib.dir}/${columnize.gem}"/>
+        <arg value="${rspec.gem}"/>
+        <arg value="${rake.gem}"/>
+        <arg value="${ruby.debug.base.gem}"/>
+        <arg value="${ruby.debug.gem}"/>
+        <arg value="${columnize.gem}"/>
         <arg value="--no-ri"/>
         <arg value="--no-rdoc"/>
         <arg value="--ignore-dependencies"/>
