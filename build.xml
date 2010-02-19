@@ -1354,7 +1354,7 @@
     <mkdir dir="${build.dir}/nailmain"/>
   </target>
 
-  <target name="test-rails-stable" depends="init"><rake task="test:rails"/></target>
-  <target name="test-prawn" depends="init"><rake task="test:prawn"/></target>
-  <target name="bench-language" depends="init"><rake task="bench:language"/></target>
+  <target name="test-rails-stable" depends="jar"><rake task="test:rails"/></target>
+  <target name="test-prawn" depends="jar"><rake task="test:prawn"/></target>
+  <target name="bench-language" depends="jar"><rake task="bench:language"/></target>
 </project>
