@@ -44,13 +44,21 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Represents a 'redo'
  */
-public class RedoNode extends Node {
+public class RedoNode extends Node implements NonLocalControlFlowNode {
     public RedoNode(ISourcePosition position) {
         super(position);
     }
 
     public NodeType getNodeType() {
         return NodeType.REDONODE;
+    }
+
+    public Node getValueNode() {
+        return null; // Needed for non local control flow node marker
+    }
+
+    public boolean hasValue() {
+        return false; // Redo never allows a value
     }
 
     /**

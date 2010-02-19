@@ -43,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents a return statement.
  */
-public class ReturnNode extends Node {
+public class ReturnNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
     private Object target;
 
@@ -69,6 +69,10 @@ public class ReturnNode extends Node {
 
     public Node getValueNode() {
         return valueNode;
+    }
+
+    public boolean hasValue() {
+        return valueNode != NilImplicitNode.NIL;
     }
 
     public Object getTarget() {

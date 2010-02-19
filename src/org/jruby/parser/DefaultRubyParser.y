@@ -379,7 +379,6 @@ stmt          : kALIAS fitem {
                   $$ = new PostExeNode(getPosition($3), $3);
               }
               | lhs '=' command_call {
-                  support.checkExpression($3);
                   $$ = support.node_assign($1, $3);
               }
               | mlhs '=' command_call {
@@ -408,16 +407,24 @@ stmt          : kALIAS fitem {
 		  }
 	      }
               | primary_value '[' aref_args tRBRACK tOP_ASGN command_call {
+                  support.checkExpression($6);
+
                   $$ = support.new_opElementAsgnNode(getPosition($1), $1, (String) $5.getValue(), $3, $6);
 
               }
               | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
+                  support.checkExpression($5);
+
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
               }
               | primary_value tDOT tCONSTANT tOP_ASGN command_call {
+                  support.checkExpression($5);
+
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
               }
               | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
+                  support.checkExpression($5);
+
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
               }
               | backref tOP_ASGN command_call {
@@ -732,15 +739,23 @@ arg           : lhs '=' arg {
 		  }
               }
               | primary_value '[' aref_args tRBRACK tOP_ASGN arg {
+		  support.checkExpression($6);
+
                   $$ = support.new_opElementAsgnNode(getPosition($1), $1, (String) $5.getValue(), $3, $6);
               }
               | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
+		  support.checkExpression($5);
+
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
               }
               | primary_value tDOT tCONSTANT tOP_ASGN arg {
+		  support.checkExpression($5);
+
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
               }
               | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
+		  support.checkExpression($5);
+
                   $$ = new OpAsgnNode(getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
               }
 	      | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
@@ -878,15 +893,13 @@ aref_args     : none
               | args trailer {
                   $$ = $1;
               }
-              | args ',' tSTAR arg opt_nl {
-                  support.checkExpression($4);
+              | args ',' tSTAR arg_value opt_nl {
                   $$ = support.arg_concat(getPosition($1), $1, $4);
               }
               | assocs trailer {
                   $$ = support.newArrayNode(getPosition($1), new HashNode(getPosition(), $1));
               }
-              | tSTAR arg opt_nl {
-                  support.checkExpression($2);
+              | tSTAR arg_value opt_nl {
 		  $$ = new NewlineNode(getPosition($1), support.newSplatNode(getPosition($1), $2));
               }
 
@@ -1809,10 +1822,8 @@ opt_f_block_arg: ',' f_block_arg {
 	      }
 
 singleton     : var_ref {
-                  if (!($1 instanceof SelfNode)) {
-		      support.checkExpression($1);
-		  }
 		  $$ = $1;
+                  support.checkExpression($1);
               }
               | tLPAREN2 {
                   lexer.setState(LexState.EXPR_BEG);
