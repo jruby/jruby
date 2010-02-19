@@ -42,6 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 abstract class AbstractVariable implements BiVariable {
+    protected IRubyObject origin = null;
     protected String name;
     protected Object javaObject = null;
     protected Class javaType = null;
@@ -71,7 +72,8 @@ abstract class AbstractVariable implements BiVariable {
         this.irubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
     }
 
-    protected AbstractVariable(String name, IRubyObject rubyObject) {
+    protected AbstractVariable(IRubyObject origin, String name, IRubyObject rubyObject) {
+        this.origin = origin;
         this.name = name;
         updateRubyObject(rubyObject);
     }
@@ -81,6 +83,14 @@ abstract class AbstractVariable implements BiVariable {
             return;
         }
         this.irubyObject = rubyObject;
+    }
+
+    public IRubyObject getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(IRubyObject origin) {
+        this.origin = origin;
     }
 
     public String getName() {

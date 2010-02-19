@@ -70,8 +70,8 @@ public class ClassVariable extends AbstractVariable {
      * @param name the class variable name
      * @param irubyObject Ruby class variable object
      */
-    ClassVariable(String name, IRubyObject irubyObject) {
-        super(name, irubyObject);
+    ClassVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
+        super(origin, name, irubyObject);
     }
 
     /**
@@ -93,7 +93,7 @@ public class ClassVariable extends AbstractVariable {
                 var = vars.getVariable(name);
                 var.setRubyObject(value);
             } else {
-                var = new ClassVariable(name, value);
+                var = new ClassVariable(receiver, name, value);
                 vars.update(name, var);
             }
         }
@@ -127,6 +127,7 @@ public class ClassVariable extends AbstractVariable {
      * @param receiver is the instance that will have variable injection.
      */
     public void inject(Ruby runtime, IRubyObject receiver) {
+        if (origin != null && origin != receiver) return;
         RubyModule rubyClass = getRubyClass(runtime);
         rubyClass.setClassVar(name, irubyObject);
     }

@@ -71,8 +71,8 @@ public class Constant extends AbstractVariable {
      * @param name the constant name
      * @param irubyObject Ruby constant object
      */
-    Constant(String name, IRubyObject irubyObject) {
-        super(name, irubyObject);
+    Constant(IRubyObject origin, String name, IRubyObject irubyObject) {
+        super(origin, name, irubyObject);
     }
 
     void markInitialized() {
@@ -92,22 +92,22 @@ public class Constant extends AbstractVariable {
         }
         IRubyObject irobj = runtime.getTopSelf().getMetaClass().fastGetConstant("ARGV");
         if (irobj != null) {
-            updateVarMap(vars, "ARGV", irobj);
+            updateVarMap(vars, receiver, "ARGV", irobj);
         }
         Collection<String> names = receiver.getMetaClass().getConstantNames();
         for (String name : names) {
             IRubyObject value = receiver.getMetaClass().getConstant(name);
-            updateVarMap(vars, name, value);
+            updateVarMap(vars, receiver, name, value);
         }
     }
 
-    private static void updateVarMap(BiVariableMap vars, String name, IRubyObject value) {
+    private static void updateVarMap(BiVariableMap vars, IRubyObject origin, String name, IRubyObject value) {
         BiVariable var;
         if (vars.containsKey((Object) name)) {
             var = vars.getVariable(name);
             var.setRubyObject(value);
         } else {
-            var = new Constant(name, value);
+            var = new Constant(origin, name, value);
             ((Constant) var).markInitialized();
             vars.update(name, var);
         }

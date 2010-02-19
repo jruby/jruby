@@ -207,11 +207,23 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      */
     public V get(Object key) {
         interceptor.tryLazyRetrieval(this, runtime, null, key);
-        BiVariable bv = getVariable((String)key);
-        if (bv == null) {
-            return null;
+        List<BiVariable> list = new ArrayList();
+        for (int i=0; i<varNames.size(); i++) {
+            if (key.equals(varNames.get(i))) {
+                list.add(variables.get(i));
+            }
         }
-        return (V)bv.getJavaObject();
+        if (list.size() == 0) {
+            return null;
+        } else if (list.size() == 1) {
+            return (V)list.get(0).getJavaObject();
+        } else {
+            List variables = new ArrayList();
+            for (int i=0; i<list.size(); i++) {
+                variables.add(list.get(i).getJavaObject());
+            }
+            return (V) variables.toArray();
+        }
     }
 
     /**

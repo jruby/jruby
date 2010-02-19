@@ -48,6 +48,7 @@ public final class MetaClass extends RubyClass {
         this.index = superClass.index; // use same ClassIndex as metaclass, since we're technically still of that type
     }
 
+    @Override
     public boolean isSingleton() {
         return true;
     }
