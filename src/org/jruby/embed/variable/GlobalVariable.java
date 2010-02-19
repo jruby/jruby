@@ -72,7 +72,7 @@ public class GlobalVariable extends AbstractVariable {
      * @param irubyObject Ruby global object
      */
     GlobalVariable(String name, IRubyObject irubyObject) {
-        super(name, irubyObject);
+        super(null, name, irubyObject);
     }
 
     /**

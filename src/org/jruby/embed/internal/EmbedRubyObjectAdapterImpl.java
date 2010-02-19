@@ -97,9 +97,9 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         BiVariableMap map = container.getVarMap();
         if (map.containsKey(variableName)) {
             BiVariable bv = map.getVariable(variableName);
-            bv.setRubyObject(obj);
+            bv.setRubyObject(value);
         } else {
-            InstanceVariable iv = new InstanceVariable(variableName, value);
+            InstanceVariable iv = new InstanceVariable(obj, variableName, value);
             map.update(variableName, iv);
         }
         return obj.getInstanceVariables().setInstanceVariable(variableName, value);

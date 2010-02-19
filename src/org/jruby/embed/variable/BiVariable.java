@@ -59,6 +59,20 @@ public interface BiVariable {
     public Type getType();
 
     /**
+     * Returns the original receiver where this variable has been retrieved.
+     *
+     * @return an original receiver.
+     */
+    public IRubyObject getOrigin();
+
+    /**
+     * Changes the original receiver to the given value.
+     *
+     * @param an original receiver.
+     */
+    public void setOrigin(IRubyObject origin);
+
+    /**
      * Returns a name of the variable this object holds. The name follows Ruby's
      * naming rule.
      *

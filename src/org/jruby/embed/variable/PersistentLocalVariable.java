@@ -72,8 +72,8 @@ public class PersistentLocalVariable extends AbstractVariable {
      * @param name the persistent local variable name
      * @param irubyObject Ruby local object
      */
-    PersistentLocalVariable(String name, IRubyObject irubyObject) {
-        super(name, irubyObject);
+    PersistentLocalVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
+        super(origin, name, irubyObject);
     }
 
     /**
@@ -119,7 +119,7 @@ public class PersistentLocalVariable extends AbstractVariable {
             if ((v = vars.getVariable(names[i])) != null) {
                 v.setRubyObject(values[i]);
             } else {
-                v = new PersistentLocalVariable(names[i], values[i]);
+                v = new PersistentLocalVariable(receiver, names[i], values[i]);
                 vars.update(names[i], v);
             }
         }
