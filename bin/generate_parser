@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Run from your JRuby home directory....More smarts needed here.
 
@@ -12,8 +12,8 @@ DEBUG=true
 
 if [ "$1" != "" ]; then
   PARSER_BASE=$1
+  shift
 fi
-shift
 
 if [ "$1" != "" ]; then
   YYTABLE_PREFIX=$1
