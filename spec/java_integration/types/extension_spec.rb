@@ -9,6 +9,7 @@ import "java_integration.fixtures.PrivateInstanceMethod"
 import "java_integration.fixtures.PrivateStaticMethod"
 import "java_integration.fixtures.ConcreteWithVirtualCall"
 import "java_integration.fixtures.ComplexPrivateConstructor"
+import "java_integration.fixtures.ReceivesArrayList"
 
 describe "A Ruby subclass of a Java concrete class" do
   it "should allow access to the proxy object for the class" do
@@ -92,6 +93,24 @@ describe "A Ruby subclass of a Java concrete class" do
       end
     }
     my_arraylist.new.callVirtualMethod.should == "derived"
+  end
+
+  # JRUBY-4571
+  it "can also include interfaces and the resulting class both extends and implements" do
+    my_arraylist = Class.new(java.util.ArrayList) do
+      include java.lang.Runnable
+
+      def run; @foo = 'foo'; end
+      attr_accessor :foo;
+      def size; 100; end
+    end.new
+
+    ReceivesArrayList.new.receive_array_list(my_arraylist).should == 100
+    
+    thread = java.lang.Thread.new(my_arraylist)
+    thread.start
+    thread.join
+    my_arraylist.foo.should == 'foo'
   end
 end
 

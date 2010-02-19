@@ -125,7 +125,8 @@ public class JavaInterfaceTemplate {
 
     private static void initInterfaceImplMethods(ThreadContext context, RubyClass clazz) {
         // setup new, etc unless this is a ConcreteJavaProxy subclass
-        if (!clazz.isMethodBound("__jcreate_meta!", false)) {
+        // For JRUBY-4571, check both these, since JavaProxy extension stuff adds the former and this code adds the latter
+        if (!(clazz.isMethodBound("__jcreate!", false) || clazz.isMethodBound("__jcreate_meta!", false))) {
             // First we make modifications to the class, to adapt it to being
             // both a Ruby class and a proxy for a Java type
 
