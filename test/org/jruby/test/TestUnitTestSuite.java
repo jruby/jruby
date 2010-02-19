@@ -66,60 +66,38 @@ public class TestUnitTestSuite extends TestSuite {
             new BufferedReader(new InputStreamReader(new FileInputStream(testIndexFile)));
 
         String line;
-        while ((line = testFiles.readLine()) != null) {
+        Interpreter[] ints = new Interpreter[8];
+        for (int i = 0; (line = testFiles.readLine()) != null; i++) {
             line = line.trim();
             if (line.startsWith("#") || line.length() == 0) {
                 continue;
             }
-
-            addTest(createTest(line, testDir));
+            if (ints[i % ints.length] == null) {
+                ints[i % ints.length] = new Interpreter();
+            }
+            addTest(createTest(line, testDir, ints[i % ints.length]));
         }
     }
 
-    protected TestCase createTest(String line, File testDir) {
-        return new ScriptTest(line, testDir);
+    protected TestCase createTest(String line, File testDir, Interpreter interpreter) {
+        return new ScriptTest(line, testDir, interpreter);
     }
 
-    protected class ScriptTest extends TestCase {
-        private final String filename;
-        private final File testDir;
-        private ByteArrayInputStream in;
-        private ByteArrayOutputStream out;
-        private PrintStream printOut;
-        private ByteArrayOutputStream err;
-        private PrintStream printErr;
-        private Ruby runtime;
+    protected static class Interpreter {
+        ByteArrayInputStream in;
+        ByteArrayOutputStream out;
+        ByteArrayOutputStream err;
+        PrintStream printOut;
+        PrintStream printErr;
+        Ruby runtime;
 
-        public ScriptTest(String filename, File dir) {
-            super(filename);
-            this.filename = filename;
-            this.testDir = dir;
-        }
-
-        protected void setUp() throws Exception {
+        public Interpreter() {
             in = new ByteArrayInputStream(new byte[0]);
             out = new ByteArrayOutputStream();
             err = new ByteArrayOutputStream();
-            runtime = Ruby.newInstance(in, printOut = new PrintStream(out), printErr = new PrintStream(err));
-            setupInterpreter(runtime);
-        }
-
-        protected void tearDown() throws Exception {
-            in.close();
-            out.close();
-            err.close();
-            printOut.close();
-            printErr.close();
-
-            in = null;
-            out = null;
-            err = null;
-            printOut = null;
-            printErr = null;
-            runtime = null;
-        }
-
-        private void setupInterpreter(Ruby runtime) {
+            printOut = new PrintStream(out);
+            printErr = new PrintStream(err);
+            runtime = Ruby.newInstance(in, printOut, printErr);
             ArrayList loadPath = new ArrayList();
 
             loadPath.add("test/externals/bfts");
@@ -127,6 +105,39 @@ public class TestUnitTestSuite extends TestSuite {
 
             runtime.getLoadService().init(loadPath);
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
+        }
+
+        public void setUp() {
+            runtime.setCurrentDirectory(System.getProperty("user.dir"));
+        }
+
+        public void tearDown() {
+            in.reset();
+            out.reset();
+            err.reset();
+        }
+    }
+
+    protected class ScriptTest extends TestCase {
+        private final String filename;
+        private final File testDir;
+        private final Interpreter interpreter;
+
+        public ScriptTest(String filename, File dir, Interpreter interpreter) {
+            super(filename);
+            this.filename = filename;
+            this.testDir = dir;
+            this.interpreter = interpreter;
+        }
+
+        @Override
+        protected void setUp() throws Exception {
+            interpreter.setUp();
+        }
+
+        @Override
+        protected void tearDown() throws Exception {
+            interpreter.tearDown();
         }
 
         protected String generateTestScript(String scriptName, String testClass) {
@@ -190,26 +201,34 @@ public class TestUnitTestSuite extends TestSuite {
             throw new RuntimeException("No *TestCase derivative found in '" + filename + ".rb'!");
         }
 
+        @Override
         public void runTest() throws Throwable {
-
             List<String> testClassNames = getTestClassNamesFromReadingTestScript(filename);
 
             // there might be more test classes in a single file, so we iterate over them
             for (String testClass : testClassNames) {
                 try {
-                    RubyArray faults = (RubyArray)runtime.executeScript(generateTestScript(scriptName(), testClass), scriptName() + "_generated_test.rb");
+                    synchronized(interpreter) {
+                        RubyArray faults = (RubyArray) interpreter.runtime.executeScript(generateTestScript(scriptName(), testClass), scriptName() + "_generated_test.rb");
 
-                    if (!faults.isEmpty()) {
-                        StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
-                        for (Iterator iter = faults.iterator(); iter.hasNext();) {
-                            String fault = iter.next().toString();
+                        if (!faults.isEmpty()) {
+                            StringBuffer faultString = new StringBuffer("Faults encountered running " + scriptName() + ", complete output follows:\n");
+                            for (Iterator iter = faults.iterator(); iter.hasNext();) {
+                                String fault = iter.next().toString();
 
-                            faultString.append(fault).append("\n");
+                                faultString.append(fault).append("\n");
+                            }
+
+                            System.out.write(interpreter.out.toByteArray());
+                            System.err.write(interpreter.err.toByteArray());
+                            fail(faultString.toString());
                         }
-
-                        fail(faultString.toString());
                     }
                 } catch (RaiseException re) {
+                    synchronized (interpreter) {
+                        System.out.write(interpreter.out.toByteArray());
+                        System.err.write(interpreter.err.toByteArray());
+                    }
                     fail("Faults encountered running " + scriptName() + ", complete output follows:\n" + re.getException().message + "\n" + pretty(((RubyArray)re.getException().backtrace()).getList()));
                 }
             }
