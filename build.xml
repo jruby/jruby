@@ -441,17 +441,8 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg value="--command"/>
-        <arg value="maybe_install_gems"/>
-        <arg value="${build.lib.dir}/${rspec.gem}"/>
-        <arg value="${build.lib.dir}/${rake.gem}"/>
-        <arg value="${build.lib.dir}/${ruby.debug.base.gem}"/>
-        <arg value="${build.lib.dir}/${ruby.debug.gem}"/>
-        <arg value="${build.lib.dir}/${columnize.gem}"/>
-        <arg value="--no-ri"/>
-        <arg value="--no-rdoc"/>
-        <arg value="--ignore-dependencies"/>
-        <arg value="--env-shebang"/>
+        <arg line="--command maybe_install_gems ${dist.gems}"/>
+        <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
       </java>
 
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
@@ -537,17 +528,8 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg value="--command"/>
-        <arg value="maybe_install_gems"/>
-        <arg value="${build.lib.dir}/${rspec.gem}"/>
-        <arg value="${build.lib.dir}/${rake.gem}"/>
-        <arg value="${build.lib.dir}/${ruby.debug.base.gem}"/>
-        <arg value="${build.lib.dir}/${ruby.debug.gem}"/>
-        <arg value="${build.lib.dir}/${columnize.gem}"/>
-        <arg value="--no-ri"/>
-        <arg value="--no-rdoc"/>
-        <arg value="--ignore-dependencies"/>
-        <arg value="--env-shebang"/>
+        <arg line="--command maybe_install_gems ${dist.gems}"/>
+        <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
       </java>
 
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
