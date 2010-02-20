@@ -20,6 +20,7 @@ end
 # ant-launcher.jar is required because we use Project.init()
 $CLASSPATH << File.join(Ant::ANT_HOME, 'lib', 'ant.jar')
 $CLASSPATH << File.join(Ant::ANT_HOME, 'lib', 'ant-launcher.jar')
+$CLASSPATH << File.join(Ant::ANT_HOME, 'lib', 'ant-nodeps.jar')
 
 require 'ant/ant'
 require 'ant/rake' if defined?(::Rake)
