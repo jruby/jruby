@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Represents a 'break' statement.
  */
-public class BreakNode extends Node {
+public class BreakNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
     
     public BreakNode(ISourcePosition position, Node valueNode) {
@@ -73,6 +73,10 @@ public class BreakNode extends Node {
      */
     public Node getValueNode() {
         return valueNode;
+    }
+
+    public boolean hasValue() {
+        return valueNode != NilImplicitNode.NIL;
     }
     
     public List<Node> childNodes() {

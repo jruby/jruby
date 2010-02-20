@@ -2,6 +2,7 @@
 
 package org.jruby.lexer.yacc;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -291,7 +292,21 @@ public class InputStreamLexerSource extends LexerSource {
     }
 
     @Override
-    public InputStream getRemainingAsStream() {
-        return in;
+    public InputStream getRemainingAsStream() throws IOException {
+        return bufferEntireStream(in);
+    }
+
+    private InputStream bufferEntireStream(InputStream stream) throws IOException {
+        byte[] allBytes = new byte[0];
+        byte[] b = new byte[1024];
+        int bytesRead = 0;
+        while ((bytesRead = stream.read(b)) != -1) {
+            byte[] newbuf = new byte[allBytes.length + bytesRead];
+            System.arraycopy(allBytes, 0, newbuf, 0, allBytes.length);
+            System.arraycopy(b, 0, newbuf, allBytes.length, bytesRead);
+            allBytes = newbuf;
+        }
+
+        return new ByteArrayInputStream(allBytes);
     }
 }

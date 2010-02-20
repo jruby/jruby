@@ -54,11 +54,11 @@ import org.jruby.ast.AttrAssignTwoArgNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
+import org.jruby.ast.BinaryOperatorNode;
 import org.jruby.ast.BlockArg18Node;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallManyArgsBlockNode;
 import org.jruby.ast.CallManyArgsBlockPassNode;
 import org.jruby.ast.CallManyArgsNode;
@@ -560,17 +560,6 @@ public class ParserSupport {
         }
     }
 
-    /**
-     * Does this node represent an expression?
-     * @param node to be checked
-     * @return true if an expression, false otherwise
-     */
-    public void checkExpression(Node node) {
-        if (warnings.isVerbose() && !isExpression(node)) {
-            warnings.warning(ID.VOID_VALUE_EXPRESSION, node.getPosition(), "void value expression");
-        }
-    }
-
     private Node compactNewlines(Node head) {
         while (head instanceof NewlineNode) {
             Node nextNode = ((NewlineNode) head).getNextNode();
@@ -582,34 +571,48 @@ public class ParserSupport {
         }
         return head;
     }
-    
-    private boolean isExpression(Node node) {
-        do {
-            if (node == null) return true;
-            
+
+    // logical equivalent to value_expr in MRI
+    public boolean checkExpression(Node node) {
+        boolean conditional = false;
+
+        while (node != null) {
             switch (node.getNodeType()) {
-            case BEGINNODE:
-                node = ((BeginNode) node).getBodyNode();
-                break;
+            case DEFNNODE: case DEFSNODE:
+                warnings.warning(ID.VOID_VALUE_EXPRESSION, node.getPosition(),
+                        "void value expression");
+                return false;
+            case RETURNNODE: case BREAKNODE: case NEXTNODE: case REDONODE:
+            case RETRYNODE:
+                if (!conditional) {
+                    throw new SyntaxException(PID.VOID_VALUE_EXPRESSION,
+                            node.getPosition(), lexer.getCurrentLine(),
+                            "void value expression");
+                }
+                return false;
             case BLOCKNODE:
                 node = ((BlockNode) node).getLast();
                 break;
-            case BREAKNODE:
-                node = ((BreakNode) node).getValueNode();
+            case BEGINNODE:
+                node = ((BeginNode) node).getBodyNode();
                 break;
-            case CLASSNODE: case DEFNNODE: case DEFSNODE: case MODULENODE: case NEXTNODE: 
-            case REDONODE: case RETRYNODE: case RETURNNODE: case UNTILNODE: case WHILENODE:
-                return false;
             case IFNODE:
-                return isExpression(((IfNode) node).getThenBody()) &&
-                  isExpression(((IfNode) node).getElseBody());
+                if (!checkExpression(((IfNode) node).getThenBody())) return false;
+                node = ((IfNode) node).getElseBody();
+                break;
+            case ANDNODE: case ORNODE:
+                conditional = true;
+                node = ((BinaryOperatorNode) node).getSecondNode();
+                break;
             case NEWLINENODE:
                 node = ((NewlineNode) node).getNextNode();
                 break;
             default: // Node
                 return true;
             }
-        } while (true);
+        }
+
+        return true;
     }
     
     /**

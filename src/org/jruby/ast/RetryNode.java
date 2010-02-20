@@ -43,13 +43,21 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents a 'retry' statement.
  */
-public class RetryNode extends Node {
+public class RetryNode extends Node implements NonLocalControlFlowNode {
     public RetryNode(ISourcePosition position) {
         super(position);
     }
 
     public NodeType getNodeType() {
         return NodeType.RETRYNODE;
+    }
+
+    public Node getValueNode() {
+        return null; // Needed for non local control flow node marker
+    }
+
+    public boolean hasValue() {
+        return false; // Retry never allows a value
     }
 
     /**

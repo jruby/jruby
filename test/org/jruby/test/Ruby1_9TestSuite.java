@@ -22,13 +22,14 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
         return new Ruby1_9TestSuite(TEST_INDEX);
     }
 
-    protected TestCase createTest(String line, File testDir) {
-        return new Ruby1_9ScriptTest(line, testDir);
+    @Override
+    protected TestCase createTest(String line, File testDir, TestUnitTestSuite.Interpreter interpreter) {
+        return new Ruby1_9ScriptTest(line, testDir, interpreter);
     }
 
     protected class Ruby1_9ScriptTest extends TestUnitTestSuite.ScriptTest {
-        public Ruby1_9ScriptTest(String filename, File dir) {
-            super(filename, dir);
+        public Ruby1_9ScriptTest(String filename, File dir, TestUnitTestSuite.Interpreter interpreter) {
+            super(filename, dir, interpreter);
         }
 
         @Override

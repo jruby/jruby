@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents a 'next' statement.
  */
-public class NextNode extends Node {
+public class NextNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
 
     public NextNode(ISourcePosition position, Node valueNode) {
@@ -73,6 +73,10 @@ public class NextNode extends Node {
      */
     public Node getValueNode() {
         return valueNode;
+    }
+
+    public boolean hasValue() {
+        return valueNode != NilImplicitNode.NIL;
     }
     
     public List<Node> childNodes() {

@@ -217,5 +217,5 @@ public abstract class LexerSource {
     public abstract boolean peek(int c) throws IOException;
     public abstract boolean lastWasBeginOfLine();
     public abstract boolean wasBeginOfLine();
-    public abstract InputStream getRemainingAsStream();
+    public abstract InputStream getRemainingAsStream() throws IOException;
 }

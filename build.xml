@@ -1310,8 +1310,16 @@
     <antcall target="clean-ng"/>
   </target>
 
-  <target name="clean-all" depends="clean, dist-clean" description="Cleans everything, including dist files and specs">
-      <rake task="spec:clean_specs"/>
+  <!-- FIXME: Cannot run Rake on clean until minijruby so keep this target -->
+  <target name="clear-specs">
+      <delete dir="${rubyspec.dir}"/>
+      <delete dir="${mspec.dir}"/>
+      <delete file="${rubyspec.tar.file}"/>
+      <delete file="${mspec.tar.file}"/>
+      <delete file="${spec.dir}/rubyspecs.current.revision"/>
+  </target>
+
+  <target name="clean-all" depends="clean, dist-clean, clear-specs" description="Cleans everything, including dist files and specs">
       <delete dir="${base.dir}/build.eclipse"/>
       <delete dir="${base.dir}/lib/native"/>
   </target>
@@ -1354,7 +1362,7 @@
     <mkdir dir="${build.dir}/nailmain"/>
   </target>
 
-  <target name="test-rails-stable" depends="init"><rake task="test:rails"/></target>
-  <target name="test-prawn" depends="init"><rake task="test:prawn"/></target>
-  <target name="bench-language" depends="init"><rake task="bench:language"/></target>
+  <target name="test-rails-stable" depends="jar"><rake task="test:rails"/></target>
+  <target name="test-prawn" depends="jar"><rake task="test:prawn"/></target>
+  <target name="bench-language" depends="jar"><rake task="bench:language"/></target>
 </project>
