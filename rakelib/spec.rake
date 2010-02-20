@@ -19,6 +19,9 @@ namespace :spec do
   # the specs they run against.  This is so we can run the similiar mspec
   # runs against a stable and head version of the rubyspecs.
 
+  desc "Run simple set of tests over both 1.8 and 1.9 modes"
+  task :short => 'spec:ci_interpreted_18_19'
+
   desc "Run rubyspecs expected to pass (version-frozen)"
   task :ci => ['spec:fetch_stable_specs', 'spec:tagged_18']
   task :ci_18 => :ci
