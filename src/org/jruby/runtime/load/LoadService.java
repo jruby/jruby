@@ -255,7 +255,7 @@ public class LoadService {
             library.load(runtime, wrap);
         } catch (IOException e) {
             if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
-            throw runtime.newLoadError("IO error -- " + file);
+            throw newLoadErrorFromThrowable(runtime, file, e);
         }
     }
 
@@ -683,10 +683,14 @@ public class LoadService {
 
             if(runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
             
-            RaiseException re = runtime.newLoadError("IO error -- " + state.searchFile);
+            RaiseException re = newLoadErrorFromThrowable(runtime, state.searchFile, e);
             re.initCause(e);
             throw re;
         }
+    }
+
+    private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
+        return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()));
     }
     
     protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
