@@ -965,7 +965,7 @@ public class RubyInstanceConfig {
                     break FOR;
                 case 'F':
                     inputFieldSeparator = grabValue(getArgumentError(" -F must be followed by a pattern for input field separation"));
-                    break;
+                    break FOR;
                 case 'h':
                     shouldPrintUsage = true;
                     shouldRunInterpreter = false;
