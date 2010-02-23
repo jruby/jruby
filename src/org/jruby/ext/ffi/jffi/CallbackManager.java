@@ -313,7 +313,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             if (released.getAndSet(true)) {
                 throw runtime.newRuntimeError("callback already freed");
             }
-            handle.free();
+            handle.dispose();
         }
 
         public void setAutoRelease(boolean autorelease) {
