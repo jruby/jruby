@@ -10,7 +10,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- *
+ *Inner
  * Copyright (C) 2008 JRuby project
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -701,7 +701,7 @@ public final class StructLayout extends Type {
     }
 
     @JRubyClass(name="FFI::StructLayout::Pointer", parent="FFI::StructLayout::Field")
-    static final class PointerField extends Field {
+    public static final class PointerField extends Field {
 
         public PointerField(Ruby runtime, RubyClass klass) {
             super(runtime, klass, PointerFieldIO.INSTANCE);
@@ -721,7 +721,7 @@ public final class StructLayout extends Type {
     }
 
     @JRubyClass(name="FFI::StructLayout::Function", parent="FFI::StructLayout::Field")
-    static final class FunctionField extends Field {
+    public static final class FunctionField extends Field {
 
         public FunctionField(Ruby runtime, RubyClass klass) {
             super(runtime, klass, DefaultFieldIO.INSTANCE);
@@ -752,7 +752,7 @@ public final class StructLayout extends Type {
     }
     
     @JRubyClass(name="FFI::StructLayout::InnerStruct", parent="FFI::StructLayout::Field")
-    static final class InnerStructField extends Field {
+    public static final class InnerStructField extends Field {
 
         public InnerStructField(Ruby runtime, RubyClass klass) {
             super(runtime, klass, DefaultFieldIO.INSTANCE);
@@ -784,7 +784,7 @@ public final class StructLayout extends Type {
     }
     
     @JRubyClass(name="FFI::StructLayout::Array", parent="FFI::StructLayout::Field")
-    static final class ArrayField extends Field {
+    public static final class ArrayField extends Field {
 
         public ArrayField(Ruby runtime, RubyClass klass) {
             super(runtime, klass, DefaultFieldIO.INSTANCE);
