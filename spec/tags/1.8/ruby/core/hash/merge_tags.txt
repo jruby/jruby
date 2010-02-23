@@ -1,1 +1,1 @@
-fails(JRUBY-4565):Hash#merge! raises RuntimeErrors if attempt to add new key during iteration
+fails(JRUBY-4565):Hash#merge! raises a RuntimeError if a new key is added during iteration

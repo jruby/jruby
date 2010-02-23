@@ -4323,7 +4323,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
             if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
                 if (len == 0) {
-                    result.append(newEmptyString(runtime, getMetaClass()));
+                    result.append(newEmptyString(runtime, getMetaClass()).infectBy(this));
                     break;
                 } else if (lastNull) {
                     result.append(makeShared19(runtime, beg, StringSupport.length(enc, bytes, begin + beg, range)));

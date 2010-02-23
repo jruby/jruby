@@ -1,0 +1,1 @@
+fails(JRUBY-4587):String#split with Regexp respects $KCODE when splitting between characters
