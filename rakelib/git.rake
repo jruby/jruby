@@ -32,5 +32,5 @@ def git_fetch(label, local_directory)
 end
 
 def git_checkout(label, tag, local_directory)
-  git_simple_command("checkout #{tag}", label, local_directory)
+  git_simple_command("checkout -q #{tag}", label, local_directory)
 end
