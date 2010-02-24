@@ -100,6 +100,7 @@
             <os family="windows"/>
         </not>
     </condition>
+    <copy file="${basedir}/bin/jruby.sh" tofile="${basedir}/bin/jruby" overwrite="false"/>
   </target>
 
   <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
