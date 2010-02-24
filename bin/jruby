@@ -104,8 +104,7 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
         JRUBY_CP="$j"
     fi
     if [ $JRUBY_ALREADY_ADDED ]; then
-        echo "ERROR: more than one JRuby JAR found in lib directory"
-        exit 10
+        echo "WARNING: more than one JRuby JAR found in lib directory"
     fi
     JRUBY_ALREADY_ADDED=true
 done
