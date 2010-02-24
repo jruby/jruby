@@ -404,6 +404,7 @@
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby.bnd" />
         <param name="jar.wrap" value="${lib.dir}/jruby.jar" />
+        <param name="bar.wrap" value="${lib.dir}/jruby.bar" />
       </antcall>
   </target>
 
@@ -412,17 +413,18 @@
     <filter token="JRUBY_VERSION" value="${version.jruby}"/>
     <copy file="${basedir}/jruby.bnd.template" tofile="${build.dir}/${bndfile}" filtering="true"/>
     <taskdef resource="aQute/bnd/ant/taskdef.properties"
-      classpath="${build.lib.dir}/bnd-0.0.249.jar"/>
+      classpath="${build.lib.dir}/bnd.jar"/>
     <bndwrap definitions="${build.dir}" output="${dest.lib.dir}">
       <fileset file="${jar.wrap}" />
     </bndwrap>
-    <move file="${jar.wrap}$" tofile="${jar.wrap}"
+    <move file="${bar.wrap}" tofile="${jar.wrap}"
       overwrite="true" />
   </target>
 
     <target name="jar-complete" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
+      <property name="bilename" value="jruby-complete.bar"/>
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
       <mkdir dir="${jar-complete-home}"/>
@@ -497,6 +499,7 @@
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby-complete.bnd" />
         <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
+        <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
       </antcall>
     </target>
 
