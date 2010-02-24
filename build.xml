@@ -687,7 +687,7 @@
     </emma>
   </target>
 
-  <target name="install-gems" depends="init">
+  <target name="install-gems" depends="init,jar">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
