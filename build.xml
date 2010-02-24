@@ -92,6 +92,14 @@
     <uptodate property="native-libs-uptodate" targetfile="${lib.dir}/native/libs.OK">
       <srcfiles dir= "build_lib" includes="jffi-*.jar"/>
     </uptodate>
+    <condition property="dev.install.gems" value="${dev.windows.gems}">
+        <os family="windows"/>
+    </condition>
+    <condition property="dev.install.gems" value="${dev.gems}">
+        <not>
+            <os family="windows"/>
+        </not>
+    </condition>
   </target>
 
   <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
@@ -443,7 +451,7 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg line="--command maybe_install_gems ${dist.gems}"/>
+        <arg line="--command maybe_install_gems ${complete.jar.gems}"/>
         <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
       </java>
 
@@ -531,7 +539,7 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg line="--command maybe_install_gems ${dist.gems}"/>
+        <arg line="--command maybe_install_gems ${complete.jar.gems}"/>
         <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
       </java>
 
@@ -677,13 +685,13 @@
     </emma>
   </target>
 
-  <target name="install-gems">
+  <target name="install-gems" depends="init">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="--command maybe_install_gems ${rake.gem} ${rspec.gem} --env-shebang"/>
+      <arg line="--command maybe_install_gems ${dev.install.gems}"/>
     </java>
   </target>
 
@@ -1088,6 +1096,7 @@
   </target>
 
   <patternset id="dist.bindir.files">
+    <exclude name="bin/jruby"/>
     <include name="bin/*jruby*"/>
     <include name="bin/*gem*"/>
     <include name="bin/*ri*"/>
@@ -1136,6 +1145,8 @@
     <include name="src/**"/>
     <include name="test/**"/>
     <include name="spec/**"/>
+    <exclude name="spec/mspec"/>
+    <exclude name="spec/ruby"/>
     <include name="tool/**"/>
     <exclude name="tool/nailgun/**"/>
     <include name="build_lib/**"/>
@@ -1149,7 +1160,7 @@
     <include name="jruby.bnd.template"/>
     <include name="pom.xml"/>
     <include name="maven/**"/>
-    <exclude name="lib/jruby.jar"/>
+    <exclude name="lib/jruby*.jar"/>
   </patternset>
 
   <!-- note: tool/nailgun/configure must be added separately -->
@@ -1168,6 +1179,9 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
+    <!-- dist-bin by default does not come w/ unix native launcher, so -->
+    <!-- move ${dist.stage.bin.dir}/jruby.sh to ${dist.stage.bin.dir}/jruby -->
+    <move file="${dist.stage.bin.dir}/bin/jruby.sh" tofile="${dist.stage.bin.dir}/bin/jruby"/>
     <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
     <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
