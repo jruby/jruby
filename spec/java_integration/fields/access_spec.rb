@@ -94,5 +94,17 @@ describe "JRuby-wrapped Java Objects" do
         field_accessor(:finalStrField).should raise_error
       end
     }
-  end    
+  end
+
+  it "should access to static fields" do
+    lambda {
+      expected = ["/"].to_java(:string)
+
+      field = java.lang.ClassLoader.java_class.declared_field("sys_paths")
+      field.accessible = true
+
+      field.set_value(nil, expected)
+      field.value(nil).should == expected
+    }.should_not raise_error
+  end
 end

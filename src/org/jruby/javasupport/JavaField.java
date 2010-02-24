@@ -125,7 +125,10 @@ public class JavaField extends JavaAccessibleObject {
     public IRubyObject value(ThreadContext context, IRubyObject object) {
         Ruby runtime = context.getRuntime();
 
-        Object javaObject = JavaUtil.unwrapJavaValue(runtime, object, "not a java object");
+        Object javaObject = null;
+        if (!Modifier.isStatic(field.getModifiers())) {
+            javaObject = JavaUtil.unwrapJavaValue(runtime, object, "not a java object");
+        }
         try {
             return JavaUtil.convertJavaToUsableRubyObject(runtime, field.get(javaObject));
         } catch (IllegalAccessException iae) {
@@ -135,7 +138,10 @@ public class JavaField extends JavaAccessibleObject {
 
     @JRubyMethod
     public IRubyObject set_value(IRubyObject object, IRubyObject value) {
-        Object javaObject  = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object: " + object);
+        Object javaObject = null;
+        if (!Modifier.isStatic(field.getModifiers())) {
+            javaObject  = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object: " + object);
+        }
         IRubyObject val = value;
         if(val.dataGetStruct() instanceof JavaObject) {
             val = (IRubyObject)val.dataGetStruct();
