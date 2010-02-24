@@ -101,6 +101,7 @@
         </not>
     </condition>
     <copy file="${basedir}/bin/jruby.sh" tofile="${basedir}/bin/jruby" overwrite="false"/>
+    <chmod perm="755" file="${basedir}/bin/jruby"/>
   </target>
 
   <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
