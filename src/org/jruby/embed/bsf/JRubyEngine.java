@@ -254,9 +254,7 @@ public class JRubyEngine extends BSFEngineImpl {
     @Override
     public void terminate() {
         container.getVarMap().clear();
-        Ruby runtime = container.getProvider().getRuntime();
-    	JavaEmbedUtils.terminate(runtime);
-        runtime = null;
+        container.terminate();
         super.terminate();
     }
 }

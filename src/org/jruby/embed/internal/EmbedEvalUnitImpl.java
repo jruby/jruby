@@ -142,7 +142,6 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             if (sharing_variables) {
                 container.getProvider().getRuntime().getCurrentContext().popScope();
             }
-            JavaEmbedUtils.terminate(container.getProvider().getRuntime());
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
             ClassCache classCache = JavaEmbedUtils.createClassCache(getRuntime().getClassLoader());

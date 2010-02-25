@@ -111,6 +111,7 @@ public class MultipleScriptsRunnerTest {
                 t.printStackTrace();
             } finally {
                 instance.getVarMap().clear();
+                instance.terminate();
                 instance = null;
             }
         }
@@ -238,6 +239,7 @@ public class MultipleScriptsRunnerTest {
             } catch (Throwable t) {
                 t.printStackTrace();
             } finally {
+                instance.terminate();
                 instance = null;
             }
         }
@@ -266,6 +268,7 @@ public class MultipleScriptsRunnerTest {
             instance.runScriptlet(PathType.ABSOLUTE, testname);
 
             instance.getVarMap().clear();
+            instance.terminate();
             instance = null;
         }
     }
@@ -278,7 +281,7 @@ public class MultipleScriptsRunnerTest {
         for (int i=0; i<testnames.length; i++) {
             System.out.println("[" + testnames[i] + "]");
             String testname = basedir + "/test/" + testnames[i];
-            ScriptingContainer instance;
+            ScriptingContainer instance = null;
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().getRubyInstanceConfig().setLoadPaths(ruby19loadPaths);
@@ -288,6 +291,7 @@ public class MultipleScriptsRunnerTest {
             } catch (Throwable t) {
                 t.printStackTrace();
             } finally {
+                instance.terminate();
                 instance = null;
             }
         }
@@ -314,6 +318,7 @@ public class MultipleScriptsRunnerTest {
             instance.runScriptlet(PathType.CLASSPATH, testname);
 
             instance.getVarMap().clear();
+            instance.terminate();
             instance = null;
         }
     }

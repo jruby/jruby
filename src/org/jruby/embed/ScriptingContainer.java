@@ -1639,4 +1639,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public PrintStream getErr() {
         return getError();
     }
+
+    public void terminate() {
+        getProvider().getRuntime().tearDown();
+    }
 }

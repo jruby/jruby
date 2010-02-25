@@ -663,4 +663,24 @@ public class JRubyEngineTest {
 
         instance = null;
     }
+
+    @Test
+    public void testTermination() throws ScriptException {
+        System.out.println("Termination Test");
+        ScriptEngineManager manager = new ScriptEngineManager();
+        JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
+        instance.eval("$x='GVar'");
+        StringWriter writer = new StringWriter();
+        instance.getContext().setWriter(writer);
+        instance.eval("at_exit { puts \"#{$x} in an at_exit block\" }");
+        String expResult = "";
+        assertEquals(expResult, writer.toString().trim());
+
+        writer = new StringWriter();
+        instance.getContext().setWriter(writer);
+        instance.getContext().setAttribute("org.jruby.embed.termination", true, ScriptContext.ENGINE_SCOPE);
+        instance.eval("");
+        expResult = "GVar in an at_exit block";
+        assertEquals(expResult, writer.toString().trim());
+    }
 }
