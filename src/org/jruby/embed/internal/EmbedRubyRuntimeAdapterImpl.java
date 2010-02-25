@@ -169,7 +169,15 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         }
         try {
             Ruby runtime = container.getProvider().getRuntime();
-            ManyVarsDynamicScope scope = getManyVarsDynamicScope(runtime, 0);
+            ManyVarsDynamicScope scope  = null;
+            boolean sharing_variables = true;
+            Object obj = container.getAttribute(AttributeName.SHARING_VARIBALES);
+            if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+                sharing_variables = false;
+            }
+            if (sharing_variables) {
+                scope = getManyVarsDynamicScope(runtime, 0);
+            }
             Node node = null;
             if (input instanceof String) {
                 node = container.getProvider().getRuntime().parseEval((String)input, filename, scope, line);

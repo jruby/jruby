@@ -38,6 +38,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyString;
+import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyObjectAdapter;
 import org.jruby.embed.InvokeFailedException;
@@ -371,12 +372,21 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         }
         Ruby runtime = container.getProvider().getRuntime();
         IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
+        boolean sharing_variables = true;
+        Object obj = container.getAttribute(AttributeName.SHARING_VARIBALES);
+        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+            sharing_variables = false;
+        }
         try {
-            ManyVarsDynamicScope scope = unit != null ? unit.getScope() : null;
-            container.getVarMap().inject(scope, 0, rubyReceiver);
-            runtime.getCurrentContext().pushScope(scope);
+            if (sharing_variables) {
+                ManyVarsDynamicScope scope = unit != null ? unit.getScope() : null;
+                container.getVarMap().inject(scope, 0, rubyReceiver);
+                runtime.getCurrentContext().pushScope(scope);
+            }
             IRubyObject result = callEachType(type, rubyReceiver, methodName, block, args);
-            container.getVarMap().retrieve(rubyReceiver);
+            if (sharing_variables) {
+                container.getVarMap().retrieve(rubyReceiver);
+            }
             if (!(result instanceof RubyNil) && returnType != null) {
                 Object ret = JavaEmbedUtils.rubyToJava(runtime, result, returnType);
                 return ret != null ? returnType.cast(ret) : null;
@@ -398,8 +408,9 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             }
             throw new InvokeFailedException(e);
         } finally {
-            runtime.getCurrentContext().popScope();
-            JavaEmbedUtils.terminate(runtime);
+            if (sharing_variables) {
+                runtime.getCurrentContext().popScope();
+            }
         }
     }
 

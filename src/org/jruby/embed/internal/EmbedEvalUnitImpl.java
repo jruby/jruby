@@ -35,6 +35,7 @@ import java.io.Writer;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
@@ -99,9 +100,16 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             return null;
         }
         BiVariableMap vars = container.getVarMap();
+        boolean sharing_variables = true;
+        Object obj = container.getAttribute(AttributeName.SHARING_VARIBALES);
+        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+            sharing_variables = false;
+        }
         try {
-            vars.inject(scope, 0, null);
-            container.getProvider().getRuntime().getCurrentContext().pushScope(scope);
+            if (sharing_variables) {
+                vars.inject(scope, 0, null);
+                container.getProvider().getRuntime().getCurrentContext().pushScope(scope);
+            }
             IRubyObject ret;
             CompileMode mode = container.getProvider().getRuntime().getInstanceConfig().getCompileMode();
             if (mode == CompileMode.FORCE || mode == CompileMode.JIT) {
@@ -109,7 +117,9 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             } else {
                 ret = container.getProvider().getRuntime().runInterpreter(node);
             }
-            vars.retrieve(ret);
+            if (sharing_variables) {
+                vars.retrieve(ret);
+            }
             return ret;
         } catch (RaiseException e) {
             container.getProvider().getRuntime().printError(e.getException());
@@ -129,7 +139,9 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             }
             throw new EvalFailedException(e);
         } finally {
-            container.getProvider().getRuntime().getCurrentContext().popScope();
+            if (sharing_variables) {
+                container.getProvider().getRuntime().getCurrentContext().popScope();
+            }
             JavaEmbedUtils.terminate(container.getProvider().getRuntime());
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?

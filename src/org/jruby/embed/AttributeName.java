@@ -69,7 +69,13 @@ public enum AttributeName {
      * A key used in an attribute map to specify that the script to be parsed has
      * unicode escape in it. Default is false.
      */
-    UNICODE_ESCAPE("org.jruby.embed.unicode.escpe");
+    UNICODE_ESCAPE("org.jruby.embed.unicode.escpe"),
+
+    /**
+     * A key used in an attribute map to turn on/off sharing variable feature.
+     * Default is true. If false is set, better performance will be expected.
+     */
+    SHARING_VARIBALES("org.jruby.embed.sharing.variables");
 
     private final String fqpn;
 
