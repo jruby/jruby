@@ -96,3 +96,11 @@ if (Gem::win_platform?)
     end
   end
 end
+
+# Check for jruby_native and load it if present. jruby_native
+# indicates the native launcher is installed and will override
+# env-shebang and possibly other options.
+begin
+  require 'rubygems/defaults/jruby_native'
+rescue LoadError
+end

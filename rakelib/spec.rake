@@ -191,7 +191,7 @@ namespace :spec do
   task :fetch_latest_rubyspec_repo do
     unless git_repo_exists? RUBYSPEC_DIR
       clean_spec_dirs
-      git_shallow_clone('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
+      git_clone('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
     else
       git_fetch('rubyspec', RUBYSPEC_DIR)
     end
@@ -200,9 +200,9 @@ namespace :spec do
   desc "Retrieve latest tagged mspec git repository"
   task :fetch_latest_mspec_repo do
     unless git_repo_exists? MSPEC_DIR
-      git_shallow_clone('rubyspec', MSPEC_GIT_REPO, MSPEC_DIR)
+      git_clone('mspec', MSPEC_GIT_REPO, MSPEC_DIR)
     else
-      git_fetch('rubyspec', MSPEC_DIR)
+      git_fetch('mspec', MSPEC_DIR)
     end
   end
 

@@ -74,12 +74,19 @@ public class ArgsCatNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
     }
-    
+
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject args = firstNode.interpret(runtime, context, self, aBlock);
-        IRubyObject secondArgs = RuntimeHelpers.splatValue(secondNode.interpret(runtime, context, self, aBlock));
-   
+
+        IRubyObject secondInterpret = secondNode.interpret(runtime, context, self, aBlock);
+        IRubyObject secondArgs;
+        if (runtime.is1_9()) {
+            secondArgs = RuntimeHelpers.splatValue19(secondInterpret);
+        } else {
+            secondArgs = RuntimeHelpers.splatValue(secondInterpret);
+        }
+
         return RuntimeHelpers.ensureRubyArray(runtime, args).concat(secondArgs);    
     }
 }

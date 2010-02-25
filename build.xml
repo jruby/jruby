@@ -92,6 +92,16 @@
     <uptodate property="native-libs-uptodate" targetfile="${lib.dir}/native/libs.OK">
       <srcfiles dir= "build_lib" includes="jffi-*.jar"/>
     </uptodate>
+    <condition property="dev.install.gems" value="${dev.windows.gems}">
+        <os family="windows"/>
+    </condition>
+    <condition property="dev.install.gems" value="${dev.gems}">
+        <not>
+            <os family="windows"/>
+        </not>
+    </condition>
+    <copy file="${basedir}/bin/jruby.sh" tofile="${basedir}/bin/jruby" overwrite="false"/>
+    <chmod perm="755" file="${basedir}/bin/jruby"/>
   </target>
 
   <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
@@ -404,6 +414,7 @@
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby.bnd" />
         <param name="jar.wrap" value="${lib.dir}/jruby.jar" />
+        <param name="bar.wrap" value="${lib.dir}/jruby.bar" />
       </antcall>
   </target>
 
@@ -412,17 +423,18 @@
     <filter token="JRUBY_VERSION" value="${version.jruby}"/>
     <copy file="${basedir}/jruby.bnd.template" tofile="${build.dir}/${bndfile}" filtering="true"/>
     <taskdef resource="aQute/bnd/ant/taskdef.properties"
-      classpath="${build.lib.dir}/bnd-0.0.249.jar"/>
+      classpath="${build.lib.dir}/bnd.jar"/>
     <bndwrap definitions="${build.dir}" output="${dest.lib.dir}">
       <fileset file="${jar.wrap}" />
     </bndwrap>
-    <move file="${jar.wrap}$" tofile="${jar.wrap}"
+    <move file="${bar.wrap}" tofile="${jar.wrap}"
       overwrite="true" />
   </target>
 
     <target name="jar-complete" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
+      <property name="bilename" value="jruby-complete.bar"/>
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
       <mkdir dir="${jar-complete-home}"/>
@@ -441,7 +453,7 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg line="--command maybe_install_gems ${dist.gems}"/>
+        <arg line="--command maybe_install_gems ${complete.jar.gems}"/>
         <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
       </java>
 
@@ -497,6 +509,7 @@
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby-complete.bnd" />
         <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
+        <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
       </antcall>
     </target>
 
@@ -528,7 +541,7 @@
         <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
         <env key="RUBYOPT" value=""/>
         <jvmarg value="${run.jvm.model}"/>
-        <arg line="--command maybe_install_gems ${dist.gems}"/>
+        <arg line="--command maybe_install_gems ${complete.jar.gems}"/>
         <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
       </java>
 
@@ -674,13 +687,13 @@
     </emma>
   </target>
 
-  <target name="install-gems">
+  <target name="install-gems" depends="init,jar">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="--command maybe_install_gems ${rake.gem} ${rspec.gem} --env-shebang"/>
+      <arg line="--command maybe_install_gems ${dev.install.gems}"/>
     </java>
   </target>
 
@@ -1085,6 +1098,7 @@
   </target>
 
   <patternset id="dist.bindir.files">
+    <exclude name="bin/jruby"/>
     <include name="bin/*jruby*"/>
     <include name="bin/*gem*"/>
     <include name="bin/*ri*"/>
@@ -1133,6 +1147,8 @@
     <include name="src/**"/>
     <include name="test/**"/>
     <include name="spec/**"/>
+    <exclude name="spec/mspec"/>
+    <exclude name="spec/ruby"/>
     <include name="tool/**"/>
     <exclude name="tool/nailgun/**"/>
     <include name="build_lib/**"/>
@@ -1146,7 +1162,7 @@
     <include name="jruby.bnd.template"/>
     <include name="pom.xml"/>
     <include name="maven/**"/>
-    <exclude name="lib/jruby.jar"/>
+    <exclude name="lib/jruby*.jar"/>
   </patternset>
 
   <!-- note: tool/nailgun/configure must be added separately -->
@@ -1165,6 +1181,9 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
+    <!-- dist-bin by default does not come w/ unix native launcher, so -->
+    <!-- move ${dist.stage.bin.dir}/jruby.sh to ${dist.stage.bin.dir}/jruby -->
+    <move file="${dist.stage.bin.dir}/bin/jruby.sh" tofile="${dist.stage.bin.dir}/bin/jruby"/>
     <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
     <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>

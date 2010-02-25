@@ -1,0 +1,1 @@
+fails(JRUBY-4587):String#scan respects $KCODE when the pattern collapses to nothing

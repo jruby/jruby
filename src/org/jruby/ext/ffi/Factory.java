@@ -96,7 +96,8 @@ public abstract class Factory {
             try {
                 Factory.getInstance().init(runtime, ffi);
             } catch (Exception e) {
-                throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage());
+                throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage()
+                        + " See http://jira.codehaus.org/browse/JRUBY-4583");
             }
         }
     }

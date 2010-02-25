@@ -3,9 +3,15 @@ def git_repo_exists?(dir)
 end
 
 def git_shallow_clone(label, git_repository, local_directory)
+  git_clone(label, git_repository, local_directory, true)
+end
+
+def git_clone(label, git_repository, local_directory, shallow = false)
   puts "No #{label} repo found: cloning to #{local_directory}"
   rm_rf local_directory  # Something there, but not a git repo.  Destroy!
-  sh "git clone --depth 1 #{git_repository} #{local_directory}"
+  cmd = "git clone #{git_repository} #{local_directory}"
+  cmd << " --depth 1" if shallow
+  sh cmd
   Dir.chdir(local_directory) { yield } if block_given?
 end
 
@@ -26,5 +32,5 @@ def git_fetch(label, local_directory)
 end
 
 def git_checkout(label, tag, local_directory)
-  git_simple_command("checkout #{tag}", label, local_directory)
+  git_simple_command("checkout -q #{tag}", label, local_directory)
 end

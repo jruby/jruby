@@ -1,0 +1,1 @@
+fails:Module.constants returns Module's constants when given a parameter
