@@ -171,7 +171,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             Ruby runtime = container.getProvider().getRuntime();
             ManyVarsDynamicScope scope  = null;
             boolean sharing_variables = true;
-            Object obj = container.getAttribute(AttributeName.SHARING_VARIBALES);
+            Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
             if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
                 sharing_variables = false;
             }

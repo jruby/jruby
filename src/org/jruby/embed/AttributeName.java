@@ -73,9 +73,10 @@ public enum AttributeName {
 
     /**
      * A key used in an attribute map to turn on/off sharing variable feature.
-     * Default is true. If false is set, better performance will be expected.
+     * Default is true. If false is set, sharing variables goes off, and better
+     * performance will be expected.
      */
-    SHARING_VARIBALES("org.jruby.embed.sharing.variables");
+    SHARING_VARIABLES("org.jruby.embed.sharing.variables");
 
     private final String fqpn;
 
