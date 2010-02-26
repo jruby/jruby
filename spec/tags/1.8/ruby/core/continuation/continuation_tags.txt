@@ -1,3 +1,0 @@
-fails(not possible on current JVMs):Executing a Continuation using #call transfers execution to right after the Kernel.callcc block
-fails(not possible on current JVMs):Executing a Continuation escapes an inner ensure block
-fails(not possible on current JVMs):Executing a Continuation executes an outer ensure block

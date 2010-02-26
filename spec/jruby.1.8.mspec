@@ -94,4 +94,13 @@ class MSpecScript
                         [%r(^.*/library/),      TAGS_DIR + '/1.8/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
+
+  # Disable features (not currently supported)
+  MSpec.disable_feature :continuation
+  MSpec.disable_feature :fork
+
+  # Enable features
+  MSpec.enable_feature :readline
+  # These are encoding-aware methods backported to 1.8.7+ (eg String#bytes)
+  MSpec.enable_feature :encoding_transition
 end
