@@ -576,8 +576,8 @@ public class Dir {
                 }
 
                 st = new JavaSecuredFile(newStringFromUTF8(bytes, begin+5, ix-5));
-                String jar = newStringFromUTF8(bytes, begin+ix+1, end-(ix+1));
                 try {
+                    String jar = newStringFromUTF8(bytes, begin+ix+1, end-(ix+1));
                     JarFile jf = new JarFile(st);
                     
                     if (jar.startsWith("/")) jar = jar.substring(1);

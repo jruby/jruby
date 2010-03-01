@@ -31,7 +31,6 @@ package org.jruby.embed.jsr223;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import org.jruby.embed.ScriptingContainer;
 import java.io.Reader;
 import java.io.Writer;
 import javax.script.Bindings;
@@ -43,7 +42,9 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
+import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
+import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -89,6 +90,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 
@@ -110,6 +115,15 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
     }
 
+    private boolean isTerminationOn() {
+        boolean termination = false;
+        Object obj = container.getAttribute(AttributeName.TERMINATION.toString());
+        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+            termination = true;
+        }
+        return termination;
+    }
+
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
         if (reader == null || context == null) {
             throw new NullPointerException("either reader or context is null");
@@ -122,6 +136,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 
@@ -135,6 +153,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 
@@ -149,6 +171,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 
@@ -163,6 +189,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 
@@ -178,6 +208,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 

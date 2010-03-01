@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Struct extends RubyObject implements StructLayout.Storage {
     private final StructLayout layout;
     private final IRubyObject[] referenceCache;
-    private IRubyObject memory;
+    private AbstractMemory memory;
     private IRubyObject[] valueCache;
     
     private static final class Allocator implements ObjectAllocator {
@@ -69,7 +69,13 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     Struct(Ruby runtime, RubyClass klass, StructLayout layout, IRubyObject memory) {
         super(runtime, klass);
         this.layout = layout;
-        this.memory = memory;
+
+        if (!(memory == null || memory instanceof AbstractMemory)) {
+            throw runtime.newTypeError("wrong argument type "
+                    + memory.getMetaClass().getName() + " (expected Pointer or Buffer)");
+        }
+
+        this.memory = (AbstractMemory) memory;
         this.referenceCache = new IRubyObject[layout.getReferenceFieldCount()];
     }
 
@@ -183,18 +189,20 @@ public class Struct extends RubyObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "pointer")
     public IRubyObject pointer(ThreadContext context) {
-        return memory;
+        return getMemory();
     }
+    
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
         return layout.members(context);
     }
 
-    public final IRubyObject getMemory() {
-        return memory;
+    public final AbstractMemory getMemory() {
+        return memory != null ? memory : (memory = MemoryPointer.allocate(getRuntime(), layout.getSize(), 1, true));
     }
+
     final MemoryIO getMemoryIO() {
-        return ((AbstractMemory) memory).getMemoryIO();
+        return getMemory().getMemoryIO();
     }
 
     public final IRubyObject getCachedValue(StructLayout.Member member) {

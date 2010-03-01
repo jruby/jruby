@@ -35,6 +35,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
+import org.jruby.embed.AttributeName;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -194,4 +195,26 @@ public class JRubyCompiledScriptTest {
         assertEquals(expResult, result);
     }
 
+    @Test
+    public void testTerminate() throws ScriptException {
+        System.out.println("termination");
+        JRubyEngineFactory factory = new JRubyEngineFactory();
+        JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
+        engine.eval("$x='GVar'");
+        StringWriter writer = new StringWriter();
+        engine.getContext().setWriter(writer);
+        String script = "at_exit { puts \"#{$x} in an at_exit block\" }";
+        JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
+
+        instance.eval();
+        Object expResult = "";
+        assertEquals(expResult, writer.toString().trim());
+
+        writer = new StringWriter();
+        engine.getContext().setWriter(writer);
+        engine.getContext().setAttribute(AttributeName.TERMINATION.toString(), true, ScriptContext.ENGINE_SCOPE);
+        expResult = "GVar in an at_exit block";
+        engine.compile("").eval();
+        assertEquals(expResult, writer.toString().trim());
+    }
 }

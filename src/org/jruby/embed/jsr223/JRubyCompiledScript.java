@@ -39,6 +39,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.jruby.RubyNil;
+import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -75,7 +76,20 @@ public class JRubyCompiledScript extends CompiledScript {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
+    }
+
+    private boolean isTerminationOn() {
+        boolean termination = false;
+        Object obj = container.getAttribute(AttributeName.TERMINATION.toString());
+        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+            termination = true;
+        }
+        return termination;
     }
 
     public Object eval(Bindings bindings) throws ScriptException {
@@ -88,6 +102,10 @@ public class JRubyCompiledScript extends CompiledScript {
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
     
@@ -101,6 +119,10 @@ public class JRubyCompiledScript extends CompiledScript {
             return null;
         } catch (Exception e) {
             throw wrapException(e);
+        } finally {
+            if(isTerminationOn()) {
+                container.terminate();
+            }
         }
     }
 

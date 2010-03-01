@@ -490,7 +490,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 return getStringParameter(runtime, buffer, index);
 
             case BOOL:
-                return runtime.newBoolean(buffer.getInt(index) != 0);
+                return runtime.newBoolean(buffer.getByte(index) != 0);
 
             default:
                 throw new IllegalArgumentException("Invalid type " + type);

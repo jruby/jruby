@@ -550,13 +550,13 @@ public final class DefaultMethodFactory {
      */
     static final class BooleanMarshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt(parameter.isTrue() ? 1 : 0);
+            buffer.putByte(parameter.isTrue() ? 1 : 0);
         }
         public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             if (!(parameter instanceof RubyBoolean)) {
                 throw invocation.getThreadContext().getRuntime().newTypeError("wrong argument type.  Expected true or false");
             }
-            buffer.putInt(parameter.isTrue() ? 1 : 0);
+            buffer.putByte(parameter.isTrue() ? 1 : 0);
         }
         public static final ParameterMarshaller INSTANCE = new BooleanMarshaller();
     }

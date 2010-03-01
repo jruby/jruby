@@ -69,7 +69,24 @@ public enum AttributeName {
      * A key used in an attribute map to specify that the script to be parsed has
      * unicode escape in it. Default is false.
      */
-    UNICODE_ESCAPE("org.jruby.embed.unicode.escpe");
+    UNICODE_ESCAPE("org.jruby.embed.unicode.escpe"),
+
+    /**
+     * A key used in an attribute map to turn on/off sharing variable feature.
+     * Default is true. If false is set, sharing variables goes off, and better
+     * performance will be expected.
+     */
+    SHARING_VARIABLES("org.jruby.embed.sharing.variables"),
+
+    /**
+     * A key used in an attribute map to turn on/off termination. This attribute
+     * is for JSR223 only.
+     *
+     * Default is false, which means JRubyEngine doesn't terminate any state and
+     * doesn't execute at_exit blocks. If true is set, JRubyEngine terminates the state
+     * as well as executes at_exit blocks.
+     */
+    TERMINATION("org.jruby.embed.termination");
 
     private final String fqpn;
 
