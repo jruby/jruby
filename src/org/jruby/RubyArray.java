@@ -2410,6 +2410,46 @@ public class RubyArray extends RubyObject implements List {
         return block.isGiven() ? selectCommon(context, block) : enumeratorize(context.getRuntime(), this, "select");
     }
 
+    @JRubyMethod(name = "select!", frame = true, backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject select_bang(ThreadContext context, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) {
+            return enumeratorize(runtime, this, "select!");
+        }
+
+        int j = 0;
+        IRubyObject[] aux = new IRubyObject[values.length];
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject value = values[begin + i];
+            if (!block.yield(context, value).isTrue()) {
+                continue;
+            }
+            if (i != j) {
+                aux[begin + j] = value;
+            }
+            j++;
+        }
+
+        if (realLength == j) {
+            return runtime.getNil();
+        }
+        if (j < realLength) {
+            System.arraycopy(aux, begin, values, begin, j);
+            realLength = j;
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(name = "keep_if", frame = true, backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject keep_if(ThreadContext context, Block block) {
+        if (!block.isGiven()) {
+            return enumeratorize(context.getRuntime(), this, "keep_if");
+        }
+        select_bang(context, block);
+        return this;
+    }
+
     /** rb_ary_delete
      *
      */
