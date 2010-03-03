@@ -64,6 +64,7 @@ import org.jruby.util.CodegenUtils;
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
     private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
+    private final static boolean HANDLE_DEBUG = false;
     private final Method method;
     private final Handle handle;
     private final JavaUtil.JavaConverter returnConverter;
@@ -93,6 +94,48 @@ public class JavaMethod extends JavaCallable {
         boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
         boolean classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
 
+        // try to find a "totally" public version of the method using superclasses and interfaces
+        if (methodIsPublic && !classIsPublic) {
+            if (HANDLE_DEBUG) System.out.println("Method " + method + " is not on a public class, searching for a better one");
+            Method newMethod = method;
+            Class newClass = method.getDeclaringClass();
+
+            OUTER: while (newClass != null) {
+                // try class
+                try {
+                    if (HANDLE_DEBUG) System.out.println("Trying to find " + method + " on " + newClass);
+                    newMethod = newClass.getMethod(method.getName(), method.getParameterTypes());
+
+                    // got it; break if this class is public
+                    if (Modifier.isPublic(newMethod.getDeclaringClass().getModifiers())) {
+                        break;
+                    }
+                } catch (NoSuchMethodException nsme) {
+                }
+
+                // try interfaces
+                for (Class ifc : newClass.getInterfaces()) {
+                    try {
+                        if (HANDLE_DEBUG) System.out.println("Trying to find " + method + " on " + ifc);
+                        newMethod = ifc.getMethod(method.getName(), method.getParameterTypes());
+                        break OUTER;
+                    } catch (NoSuchMethodException nsme) {
+                    }
+                }
+
+                // go to superclass
+                newClass = newClass.getSuperclass();
+                newMethod = null;
+            }
+            
+            if (newMethod != null) {
+                if (HANDLE_DEBUG) System.out.println("Found a better method target: " + newMethod);
+                method = newMethod;
+                methodIsPublic = Modifier.isPublic(method.getModifiers());
+                classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
+            }
+        }
+
         // prepare a faster handle if handles are enabled and the method and class are public
         Handle tmpHandle = null;
         try {
@@ -110,6 +153,11 @@ public class JavaMethod extends JavaCallable {
         } catch (ClassNotFoundException cnfe) {
             tmpHandle = null;
         }
+
+        if (tmpHandle == null) {
+            if (HANDLE_DEBUG) System.out.println("did not use handle for " + method);
+        }
+        
         handle = tmpHandle;
 
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
