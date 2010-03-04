@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.MethodSignatureNode;
 import org.jruby.ast.java_signature.Modifier;
 import org.jruby.ast.java_signature.ParameterNode;
@@ -165,20 +166,16 @@ interface_type : class_or_interface_type
 
 // TypeNode
 array_type : primitive_type dims {
-     $$ = $1;
-     $<TypeNode>$.setIsArray(true);
+     $$ = new ArrayTypeNode($1);
  }
  | name dims {
-     $$ = new ReferenceTypeNode($1);
-     $<TypeNode>$.setIsArray(true);
+     $$ = new ArrayTypeNode(new ReferenceTypeNode($1));
  }
  | class_or_interface LT type_argument_list_1 DOT name dims {
-     $$ = $1; // FIXME: Add generics to ref type
-     $<TypeNode>$.setIsArray(true);
+     $$ = new ArrayTypeNode($1); // FIXME: Add generics to ref type
  }
  | class_or_interface LT type_argument_list_1 dims {
-     $$ = $1; // FIXME: Add generics to ref type
-     $<TypeNode>$.setIsArray(true);
+     $$ = new ArrayTypeNode($1); // FIXME: Add generics to ref type
  }
 
 wildcard : QUESTION { $$ = $1; }// FIXME:

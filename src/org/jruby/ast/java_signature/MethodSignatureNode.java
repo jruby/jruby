@@ -21,7 +21,7 @@ public class MethodSignatureNode {
         return name;
     }
 
-    public List<ParameterNode> getParameterList() {
+    public List<ParameterNode> getParameters() {
         return parameterList;
     }
 

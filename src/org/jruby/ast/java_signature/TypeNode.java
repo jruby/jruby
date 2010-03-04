@@ -5,7 +5,6 @@ package org.jruby.ast.java_signature;
  */
 public class TypeNode {
     protected String name;
-    protected boolean isArray = false;
 
     public TypeNode(String name) {
         this.name = name;
@@ -32,10 +31,6 @@ public class TypeNode {
     }
 
     public boolean isArray() {
-        return isArray;
-    }
-
-    public void setIsArray(boolean isArray) {
-        this.isArray = isArray;
+        return false;
     }
 }

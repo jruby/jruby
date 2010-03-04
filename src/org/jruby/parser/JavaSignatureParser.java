@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.MethodSignatureNode;
 import org.jruby.ast.java_signature.Modifier;
 import org.jruby.ast.java_signature.ParameterNode;
@@ -24,7 +25,7 @@ public class JavaSignatureParser {
     public static MethodSignatureNode parse(InputStream in) throws IOException, ParserSyntaxException {
         return (MethodSignatureNode) parser.yyparse(JavaSignatureLexer.create(in));
     }
-					// line 28 "-"
+					// line 29 "-"
   // %token constants
   public static final int BOOLEAN = 257;
   public static final int BYTE = 258;
@@ -446,289 +447,285 @@ public class JavaSignatureParser {
         switch (yyN) {
 // ACTIONS_BEGIN
 case 4:
-					// line 110 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 111 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.BOOLEAN;
  }
   break;
 case 5:
-					// line 113 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 114 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.SHORT;
  }
   break;
 case 6:
-					// line 116 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 117 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.INT;
  }
   break;
 case 7:
-					// line 119 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 120 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.LONG;
  }
   break;
 case 8:
-					// line 122 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 123 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.CHAR;
  }
   break;
 case 9:
-					// line 125 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 126 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.BOOLEAN;
  }
   break;
 case 10:
-					// line 128 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 129 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.FLOAT;
  }
   break;
 case 11:
-					// line 131 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 132 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.DOUBLE;
  }
   break;
 case 12:
-					// line 136 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 137 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[0+yyTop]);
  }
   break;
 case 14:
-					// line 142 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 143 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = ((String)yyVals[0+yyTop]); 
  }
   break;
 case 15:
-					// line 147 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 148 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = new ReferenceTypeNode(((String)yyVals[0+yyTop]));
  }
   break;
 case 16:
-					// line 150 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 151 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[-4+yyTop]); /* FIXME: Add generics to ref type*/
  }
   break;
 case 18:
-					// line 156 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 157 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[-2+yyTop]); /* FIXME: Add generics to ref type*/
  }
   break;
 case 21:
-					// line 167 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 168 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-     yyVal = ((TypeNode)yyVals[-1+yyTop]);
-     ((TypeNode)yyVal).setIsArray(true);
+     yyVal = new ArrayTypeNode(((TypeNode)yyVals[-1+yyTop]));
  }
   break;
 case 22:
 					// line 171 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-     yyVal = new ReferenceTypeNode(((String)yyVals[-1+yyTop]));
-     ((TypeNode)yyVal).setIsArray(true);
+     yyVal = new ArrayTypeNode(new ReferenceTypeNode(((String)yyVals[-1+yyTop])));
  }
   break;
 case 23:
-					// line 175 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 174 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-     yyVal = ((ReferenceTypeNode)yyVals[-5+yyTop]); /* FIXME: Add generics to ref type*/
-     ((TypeNode)yyVal).setIsArray(true);
+     yyVal = new ArrayTypeNode(((ReferenceTypeNode)yyVals[-5+yyTop])); /* FIXME: Add generics to ref type*/
  }
   break;
 case 24:
-					// line 179 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 177 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-     yyVal = ((ReferenceTypeNode)yyVals[-3+yyTop]); /* FIXME: Add generics to ref type*/
-     ((TypeNode)yyVal).setIsArray(true);
+     yyVal = new ArrayTypeNode(((ReferenceTypeNode)yyVals[-3+yyTop])); /* FIXME: Add generics to ref type*/
  }
   break;
 case 25:
-					// line 184 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 181 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[0+yyTop]); }
   break;
 case 26:
-					// line 185 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 182 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 27:
-					// line 186 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 183 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 28:
-					// line 188 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 185 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]); }
   break;
 case 29:
-					// line 189 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 186 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 30:
-					// line 190 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 187 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 31:
-					// line 192 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 189 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]); }
   break;
 case 32:
-					// line 193 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 190 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 33:
-					// line 194 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 191 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 34:
-					// line 196 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 193 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]); }
   break;
 case 35:
-					// line 197 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 194 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 36:
-					// line 198 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 195 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 37:
-					// line 200 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 197 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((TypeNode)yyVals[-1+yyTop]); }
   break;
 case 38:
-					// line 201 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 198 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((ReferenceTypeNode)yyVals[-2+yyTop]); }
   break;
 case 39:
-					// line 203 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 200 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((TypeNode)yyVals[-1+yyTop]); }
   break;
 case 40:
-					// line 204 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 201 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((ReferenceTypeNode)yyVals[-2+yyTop]); }
   break;
 case 41:
-					// line 206 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 203 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((TypeNode)yyVals[-1+yyTop]); }
   break;
 case 60:
-					// line 232 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 229 "src/org/jruby/parser/JavaSignatureParser.y"
   {
     yyVal = new ArrayList<Modifier>();
     ((List)yyVal).add(((Modifier)yyVals[0+yyTop]));
  }
   break;
 case 61:
-					// line 236 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 233 "src/org/jruby/parser/JavaSignatureParser.y"
   {
     ((List)yyVals[-1+yyTop]).add(((Modifier)yyVals[0+yyTop]));
  }
   break;
 case 62:
-					// line 241 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 238 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = new ArrayList<Modifier>(); }
   break;
 case 63:
-					// line 244 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 241 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.PUBLIC; }
   break;
 case 64:
-					// line 245 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 242 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.PROTECTED; }
   break;
 case 65:
-					// line 246 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 243 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.PRIVATE; }
   break;
 case 66:
-					// line 247 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 244 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.STATIC; }
   break;
 case 67:
-					// line 248 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 245 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.ABSTRACT; }
   break;
 case 68:
-					// line 249 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 246 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.FINAL; }
   break;
 case 69:
-					// line 250 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 247 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.NATIVE; }
   break;
 case 70:
-					// line 251 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 248 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.SYNCHRONIZED; }
   break;
 case 71:
-					// line 252 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 249 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.TRANSIENT; }
   break;
 case 72:
-					// line 253 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 250 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.VOLATILE; }
   break;
 case 73:
-					// line 254 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 251 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.STRICTFP; }
   break;
 case 74:
-					// line 257 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 254 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[0+yyTop]); }
   break;
 case 75:
-					// line 258 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 255 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]) + "." + ((String)yyVals[0+yyTop]); }
   break;
 case 76:
-					// line 261 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 258 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = null; }
   break;
 case 77:
-					// line 261 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 258 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = null; }
   break;
 case 78:
-					// line 264 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 261 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((List)yyVals[0+yyTop]); }
   break;
 case 79:
-					// line 265 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 262 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = new ArrayList<TypeNode>(); }
   break;
 case 80:
-					// line 268 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 265 "src/org/jruby/parser/JavaSignatureParser.y"
   {
     yyVal = new ArrayList<TypeNode>();
     ((List)yyVal).add(((ReferenceTypeNode)yyVals[0+yyTop]));
  }
   break;
 case 81:
-					// line 272 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 269 "src/org/jruby/parser/JavaSignatureParser.y"
   {
     ((List)yyVals[-2+yyTop]).add(((ReferenceTypeNode)yyVals[0+yyTop]));
  }
   break;
 case 82:
-					// line 277 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 274 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                       yyVal = new MethodSignatureNode(((String)yyVals[-3+yyTop]), ((List)yyVals[-1+yyTop]));
                   }
   break;
 case 84:
-					// line 283 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 280 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = new ArrayList<ParameterNode>(); }
   break;
 case 85:
-					// line 286 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 283 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                           List<ParameterNode> list = new ArrayList<ParameterNode>();
                           list.add(((ParameterNode)yyVals[0+yyTop]));
@@ -736,101 +733,101 @@ case 85:
                       }
   break;
 case 86:
-					// line 291 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 288 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                           ((List)yyVals[-2+yyTop]).add(((ParameterNode)yyVals[0+yyTop]));
                       }
   break;
 case 87:
-					// line 296 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 293 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), ((String)yyVals[0+yyTop]));
                  }
   break;
 case 88:
-					// line 299 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 296 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[0+yyTop]), null);
                  }
   break;
 case 89:
-					// line 302 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 299 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), ((String)yyVals[0+yyTop]), true);
                  }
   break;
 case 90:
-					// line 305 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 302 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[0+yyTop]), null, true);
                  }
   break;
 case 91:
-					// line 308 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 305 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]), false, true);
                  }
   break;
 case 92:
-					// line 311 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 308 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), null, false, true);
                  }
   break;
 case 93:
-					// line 314 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 311 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]), true, true);
                  }
   break;
 case 94:
-					// line 317 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 314 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), null, true, true);
                  }
   break;
 case 95:
-					// line 322 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 319 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                            yyVal = ((String)yyVals[0+yyTop]);
                        }
   break;
 case 96:
-					// line 325 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 322 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                            yyVal = ((String)yyVal) + "[]";
                        }
   break;
 case 102:
-					// line 337 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 334 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]); }
   break;
 case 104:
-					// line 340 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 337 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]); }
   break;
 case 105:
-					// line 341 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 338 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 108:
-					// line 345 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 342 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]); }
   break;
 case 114:
-					// line 353 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 350 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]);}
   break;
 case 115:
-					// line 355 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 352 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-1+yyTop]); }
   break;
 case 116:
-					// line 357 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 354 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = null; }
   break;
 case 117:
-					// line 359 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 356 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-3+yyTop]));
@@ -839,7 +836,7 @@ case 117:
               }
   break;
 case 118:
-					// line 365 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 362 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-5+yyTop]));
@@ -848,7 +845,7 @@ case 118:
               }
   break;
 case 119:
-					// line 371 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 368 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-3+yyTop]));
@@ -857,7 +854,7 @@ case 119:
               }
   break;
 case 120:
-					// line 377 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 374 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-5+yyTop]));
@@ -865,7 +862,7 @@ case 120:
                   ((MethodSignatureNode)yyVal).setThrows(((List)yyVals[0+yyTop]));
               }
   break;
-					// line 1029 "-"
+					// line 1026 "-"
 // ACTIONS_END
         }
         yyTop -= yyLen[yyN];
@@ -893,7 +890,7 @@ case 120:
   }
 
 // ACTION_BODIES
-					// line 385 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 382 "src/org/jruby/parser/JavaSignatureParser.y"
 
 }
-					// line 1065 "-"
+					// line 1062 "-"
