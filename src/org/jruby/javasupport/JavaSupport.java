@@ -37,6 +37,7 @@ import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.Ruby;
@@ -46,6 +47,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.WeakIdentityHashMap;
 
 public class JavaSupport {
     private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
@@ -109,6 +111,8 @@ public class JavaSupport {
     private RubyClass concreteProxyClass;
     
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
+
+    private final Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
     
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
@@ -198,6 +202,31 @@ public class JavaSupport {
     
     public Map<String, JavaClass> getNameClassMap() {
         return nameClassMap;
+    }
+
+    public void setJavaObjectVariable(Object o, int i, Object v) {
+        synchronized (javaObjectVariables) {
+            Object[] vars = javaObjectVariables.get(o);
+            if (vars == null) {
+                vars = new Object[i + 1];
+                javaObjectVariables.put(o, vars);
+            } else if (vars.length <= i) {
+                Object[] newVars = new Object[i + 1];
+                System.arraycopy(vars, 0, newVars, 0, vars.length);
+                javaObjectVariables.put(o, newVars);
+                vars = newVars;
+            }
+            vars[i] = v;
+        }
+    }
+    
+    public Object getJavaObjectVariable(Object o, int i) {
+        synchronized (javaObjectVariables) {
+            Object[] vars = javaObjectVariables.get(o);
+            if (vars == null) return null;
+            if (vars.length <= i) return null;
+            return vars[i];
+        }
     }
     
     public RubyModule getJavaModule() {
