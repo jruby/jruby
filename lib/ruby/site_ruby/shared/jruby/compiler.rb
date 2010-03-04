@@ -7,7 +7,8 @@ module JRuby::Compiler
   BytecodeCompiler = org.jruby.compiler.impl.StandardASMCompiler
   ASTCompiler = org.jruby.compiler.ASTCompiler
   JavaFile = java.io.File
-
+  MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
+  
   def compile_argv(argv)
     basedir = Dir.pwd
     prefix = ""
@@ -65,20 +66,11 @@ module JRuby::Compiler
         file = File.open(filename)
 
         pathname = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
-        puts "Compiling #{filename} to class #{pathname}"
 
         inspector = org.jruby.compiler.ASTInspector.new
 
         source = file.read
         node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
-
-        inspector.inspect(node)
-
-        asmCompiler = BytecodeCompiler.new(pathname, filename)
-        compiler = ASTCompiler.new
-        compiler.compile_root(node, asmCompiler, inspector)
-
-        asmCompiler.write_class(JavaFile.new(target))
 
         if java
           ruby_script = process_script(node, filename)
@@ -91,6 +83,16 @@ module JRuby::Compiler
               f.write(cls.to_s)
             end
           end
+        else
+          puts "Compiling #{filename} to class #{pathname}"
+
+          inspector.inspect(node)
+
+          asmCompiler = BytecodeCompiler.new(pathname, filename)
+          compiler = ASTCompiler.new
+          compiler.compile_root(node, asmCompiler, inspector)
+
+          asmCompiler.write_class(JavaFile.new(target))
         end
 
         0
@@ -269,37 +271,39 @@ EOJ
 
     def to_s
       signature = java_signature
-      signature &&= signature.dup
-      ret = signature ? signature.shift : 'Object'
-      args_string = args.map {|a| "#{signature ? signature.shift : 'Object'} #{a}"}.join(',')
-      passed_args = args.map {|a| "ruby_" + a}.join(',')
-      passed_args = "," + passed_args if args.size > 0
-      conv_string = args.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
-      anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
-      ret_string = case ret
-      when 'void'
-        ""
-      when 'byte'
-        "return (Byte)ruby_result.toJava(byte.class);"
-      when 'short'
-        "return (Short)ruby_result.toJava(short.class);"
-      when 'char'
-        "return (Character)ruby_result.toJava(char.class);"
-      when 'int'
-        "return (Integer)ruby_result.toJava(int.class);"
-      when 'long'
-        "return (Long)ruby_result.toJava(long.class);"
-      when 'float'
-        "return (Float)ruby_result.toJava(float.class);"
-      when 'double'
-        "return (Double)ruby_result.toJava(double.class);"
-      when 'boolean'
-        "return (Boolean)ruby_result.toJava(boolean.class);"
-      else
-        "return (#{ret})ruby_result.toJava(#{ret}.class);"
-      end
+      case signature
+      when Array
+        signature &&= signature.dup
+        ret = signature ? signature.shift : 'Object'
+        args_string = args.map {|a| "#{signature ? signature.shift : 'Object'} #{a}"}.join(',')
+        passed_args = args.map {|a| "ruby_" + a}.join(',')
+        passed_args = "," + passed_args if args.size > 0
+        conv_string = args.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+        anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
+        ret_string = case ret
+        when 'void'
+          ""
+        when 'byte'
+          "return (Byte)ruby_result.toJava(byte.class);"
+        when 'short'
+          "return (Short)ruby_result.toJava(short.class);"
+        when 'char'
+          "return (Character)ruby_result.toJava(char.class);"
+        when 'int'
+          "return (Integer)ruby_result.toJava(int.class);"
+        when 'long'
+          "return (Long)ruby_result.toJava(long.class);"
+        when 'float'
+          "return (Float)ruby_result.toJava(float.class);"
+        when 'double'
+          "return (Double)ruby_result.toJava(double.class);"
+        when 'boolean'
+          "return (Boolean)ruby_result.toJava(boolean.class);"
+        else
+          "return (#{ret})ruby_result.toJava(#{ret}.class);"
+        end
 
-      method_string = <<EOJ
+        method_string = <<EOJ
 #{anno_string}
   public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
 #{conv_string}
@@ -307,7 +311,65 @@ EOJ
     #{ret_string}
   }
 EOJ
-      method_string
+        method_string
+      when MethodSignatureNode
+        ret = signature.return_type.name
+        
+        var_names = []
+        i = 0;
+        args_string = signature.parameter_list.map do |a|
+          type = a.type.name
+          if a.variable_name
+            var_name = a.variable_name
+          else
+            var_name = args[i]
+            i+=1
+          end
+
+          var_names << var_name
+          "#{type} #{var_name}"
+        end.join(', ')
+
+        passed_string = var_names.map {|a| "ruby_#{a}"}.join(', ')
+        passed_string = ', ' + passed_string if signature.parameter_list.size > 0
+
+        conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+        
+        anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
+        
+        ret_string = case ret
+        when 'void'
+          ""
+        when 'byte'
+          "return (Byte)ruby_result.toJava(byte.class);"
+        when 'short'
+          "return (Short)ruby_result.toJava(short.class);"
+        when 'char'
+          "return (Character)ruby_result.toJava(char.class);"
+        when 'int'
+          "return (Integer)ruby_result.toJava(int.class);"
+        when 'long'
+          "return (Long)ruby_result.toJava(long.class);"
+        when 'float'
+          "return (Float)ruby_result.toJava(float.class);"
+        when 'double'
+          "return (Double)ruby_result.toJava(double.class);"
+        when 'boolean'
+          "return (Boolean)ruby_result.toJava(boolean.class);"
+        else
+          "return (#{ret})ruby_result.toJava(#{ret}.class);"
+        end
+
+        method_string = <<EOJ
+#{anno_string}
+  public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
+#{conv_string}
+    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
+    #{ret_string}
+  }
+EOJ
+        method_string
+      end
     end
   end
 
@@ -419,22 +481,29 @@ EOJ
 
     def build_signature(signature_args)
       # assumes hash node
-      ary = signature_args.child_nodes[0].child_nodes
-      params = ary[0]
-      ret = ary[1]
+      case signature_args
+      when org.jruby.ast.HashNode
+        ary = signature_args.child_nodes[0].child_nodes
+        params = ary[0]
+        ret = ary[1]
 
-      unless org.jruby.ast.ArrayNode === params || org.jruby.ast.ZArrayNode === params
-        raise "signature needs an array of args at " + params.position.to_s
+        unless org.jruby.ast.ArrayNode === params || org.jruby.ast.ZArrayNode === params
+          raise "signature needs an array of args at " + params.position.to_s
+        end
+        raise unless ret
+
+        sig = [(defined? ret.name) ? ret.name : ret.value]
+        param_strings = params.child_nodes.map do |param|
+          name_or_value(param)
+        end
+        sig.concat(param_strings)
+
+        sig
+      when org.jruby.ast.StrNode
+        sig_node = org.jruby.parser.JavaSignatureParser.parse(java.io.ByteArrayInputStream.new(signature_args.value.to_java_bytes))
+
+        sig_node
       end
-      raise unless ret
-
-      sig = [(defined? ret.name) ? ret.name : ret.value]
-      param_strings = params.child_nodes.map do |param|
-        name_or_value(param)
-      end
-      sig.concat(param_strings)
-
-      sig
     end
 
     def build_args_signature(params)
