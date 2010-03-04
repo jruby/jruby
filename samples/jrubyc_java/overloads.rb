@@ -1,12 +1,10 @@
 require 'java'
 
 class OverloadedClass
-  java_name :run
-  java_signature [String] => :void
+  java_signature "void run(String)"
   def run1(a); end
   
-  java_name :run
-  java_signature ["int"] => :void
+  java_signature "void run(int)"
   def run2(a); end
 end
 

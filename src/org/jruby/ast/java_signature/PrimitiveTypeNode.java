@@ -31,6 +31,16 @@ public class PrimitiveTypeNode extends TypeNode {
     }
 
     @Override
+    public boolean isVoid() {
+        return name.equals("void");
+    }
+
+    @Override
+    public String getWrapperName() {
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
+    @Override
     public String toString() {
         return name;
     }

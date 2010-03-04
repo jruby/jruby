@@ -19,6 +19,14 @@ public class TypeNode {
         return false;
     }
 
+    public boolean isVoid() {
+        return false;
+    }
+
+    public String getWrapperName() {
+        return name;
+    }
+
     public boolean isTyped() {
         return false;
     }
