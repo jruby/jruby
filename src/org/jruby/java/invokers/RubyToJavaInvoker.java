@@ -28,7 +28,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     protected JavaCallable[] javaVarargsCallables;
     protected int minVarargsArity = Integer.MAX_VALUE;
     protected Map cache;
-    protected volatile boolean initialized;
+    protected boolean initialized;
     private Member[] members;
     
     RubyToJavaInvoker(RubyModule host, Member[] members) {
@@ -59,7 +59,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     protected abstract boolean isMemberVarArgs(Member member);
 
     synchronized void createJavaCallables(Ruby runtime) {
-        if (!initialized) { // read-volatile
+        if (!initialized) {
             if (members != null) {
                 if (members.length == 1) {
                     javaCallable = createCallable(runtime, members[0]);
@@ -107,7 +107,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 // FIXME: No real reason to use CHM, is there?
                 cache = new ConcurrentHashMap(0, 0.75f, 1);
             }
-            initialized = true; // write-volatile
+            initialized = true;
         }
     }
 

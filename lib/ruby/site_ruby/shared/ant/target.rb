@@ -1,9 +1,9 @@
 require 'java'
 require 'ant/ant'
 
-java_import org.apache.tools.ant.Target
-
 class Ant
+  java_import org.apache.tools.ant.Target
+
   class RakeTarget < Target
     ALREADY_DEFINED_PREFIX = "rake_"
 

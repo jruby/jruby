@@ -73,4 +73,14 @@ public class ConcreteJavaProxy extends JavaProxy {
         
         return concreteJavaProxy;
     }
+
+    @Override
+    public Object getVariable(int index) {
+        return getRuntime().getJavaSupport().getJavaObjectVariable(this, index);
+    }
+
+    @Override
+    public void setVariable(int index, Object value) {
+        getRuntime().getJavaSupport().setJavaObjectVariable(this, index, value);
+    }
 }

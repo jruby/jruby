@@ -1,0 +1,141 @@
+require File.expand_path('../spec_helper', __FILE__)
+require 'ant'
+
+class Ant
+  module Spec
+    class AntExampleGroup < ::Spec::Example::ExampleGroup
+      after :each do
+        Ant.send(:instance_variable_set, "@ant", nil)
+      end
+
+      # Validates the tasks in a target look sane. Currently just
+      # checks owning_target.
+      class ValidTasksMatcher
+        def description
+          "have valid tasks"
+        end
+
+        def matches?(target)
+          @target = target
+          result = true
+          @target.tasks.each do |t|
+            result &&= (t.owning_target == @target)
+          end
+          result
+        end
+
+        def failure_message_for_should
+          "expected #{@target.inspect} to have valid tasks"
+        end
+
+        def failure_message_for_should_not
+          "expected #{@target.inspect} to not have valid tasks"
+        end
+      end
+
+      # Allows matching task structure with a nested hash as follows.
+      #
+      # { :_name => "jar", :destfile => "spec-test.jar", :compress => "true", :index => "true",
+      #   :_children => [
+      #     { :_name => "fileset", :dir => "build" }
+      #   ]}
+      #
+      # would match the following:
+      #
+      # jar :destfile => "spec-test.jar", :compress => "true", :index => "true" do
+      #   fileset :dir => "build"
+      # end
+      #
+      class TaskStructureMatcher
+        def initialize(hash, configure = false)
+          @expected = hash
+          @configure = configure
+        end
+
+        def description
+          "have the specified #{(@configure ? 'configured' : 'element')} structure"
+        end
+
+        def matches?(actual)
+          @actual = actual
+          result = true
+          tasks = actual.tasks
+          if Hash === @expected && tasks.length != 1 || tasks.length != @expected.length
+            @message = "task list length different"
+            return false
+          end
+          @expected.each_with_index do |h,i|
+            tasks[i].maybe_configure if @configure
+            result &&= match_wrapper(h, tasks[i].wrapper)
+          end
+          result
+        end
+
+        def match_wrapper(hash, wrapper, name = nil)
+          hname = hash[:_name] ? hash[:_name] : '<?>'
+          if name
+            name = "#{name} => #{hname}"
+          else
+            name = hname
+          end
+
+          # name
+          if hash[:_name] && hash[:_name] != wrapper.element_tag
+            @message = "name different: expected #{hash[:_name].inspect} but was #{wrapper.element_tag.inspect}"
+            return false
+          end
+
+          # proxy class name
+          if hash[:_type] && (wrapper.proxy.nil? || hash[:_type] != wrapper.proxy.java_class.name)
+            @message = "type different: expected #{hash[:_type]} but was #{wrapper.proxy.java_class.name}"
+            return false
+          end
+
+          # attributes
+          hash.keys.select {|k| k.to_s !~ /^_/}.each do |k|
+            unless wrapper.attribute_map.containsKey(k.to_s)
+              @message = "'#{name} => #{k}' attribute missing"
+              return false
+            end
+
+            if hash[k] != wrapper.attribute_map[k.to_s]
+              @message = "'#{name} => #{k}' attribute different: expected #{hash[k].inspect} but was #{wrapper.attribute_map[k.to_s].inspect}"
+              return false
+            end
+          end
+
+          # children, recursively
+          children = wrapper.children.to_a
+          (hash[:_children] || []).each_with_index do |h,i|
+            return false unless match_wrapper(h, children[i], name)
+          end
+          true
+        end
+
+        def failure_message_for_should
+          require 'pp'
+          "expected #{@actual.name} to have structure:\n#{@expected.pretty_inspect}\n#{@message}"
+        end
+
+        def failure_message_for_should_not
+          require 'pp'
+          "expected #{@actual.name} to not have structure:\n#{@expected.pretty_inspect}\n#{@message}"
+        end
+      end
+
+      def have_valid_tasks
+        ValidTasksMatcher.new
+      end
+
+      def have_structure(hash)
+        TaskStructureMatcher.new(hash)
+      end
+
+      def have_configured_structure(hash)
+        TaskStructureMatcher.new(hash, true)
+      end
+
+      ::Spec::Example::ExampleGroupFactory.register(:ant, self)
+    end
+  end
+end

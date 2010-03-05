@@ -1,4 +1,4 @@
-require 'java'
+require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "A Java object's java_method method" do
   before :each do
@@ -58,5 +58,15 @@ describe "A Java object's java_method method" do
     lambda do
       java.lang.Integer.java_method :valueOf, [Java::long]
     end.should raise_error(NameError)
+  end
+
+  it "calls static methods" do
+    lambda {
+      import 'java_integration.fixtures.PackageStaticMethod'
+
+      method = PackageStaticMethod.java_class.declared_method_smart :thePackageScopeMethod
+      method.accessible = true
+      method.invoke Java.ruby_to_java(nil)
+    }.should_not raise_error
   end
 end

@@ -7,7 +7,8 @@ module JRuby::Compiler
   BytecodeCompiler = org.jruby.compiler.impl.StandardASMCompiler
   ASTCompiler = org.jruby.compiler.ASTCompiler
   JavaFile = java.io.File
-
+  MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
+  
   def compile_argv(argv)
     basedir = Dir.pwd
     prefix = ""
@@ -65,20 +66,11 @@ module JRuby::Compiler
         file = File.open(filename)
 
         pathname = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
-        puts "Compiling #{filename} to class #{pathname}"
 
         inspector = org.jruby.compiler.ASTInspector.new
 
         source = file.read
         node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
-
-        inspector.inspect(node)
-
-        asmCompiler = BytecodeCompiler.new(pathname, filename)
-        compiler = ASTCompiler.new
-        compiler.compile_root(node, asmCompiler, inspector)
-
-        asmCompiler.write_class(JavaFile.new(target))
 
         if java
           ruby_script = process_script(node, filename)
@@ -91,6 +83,16 @@ module JRuby::Compiler
               f.write(cls.to_s)
             end
           end
+        else
+          puts "Compiling #{filename} to class #{pathname}"
+
+          inspector.inspect(node)
+
+          asmCompiler = BytecodeCompiler.new(pathname, filename)
+          compiler = ASTCompiler.new
+          compiler.compile_root(node, asmCompiler, inspector)
+
+          asmCompiler.write_class(JavaFile.new(target))
         end
 
         0
@@ -186,8 +188,8 @@ module JRuby::Compiler
 
     attr_accessor :methods, :name, :script_name, :annotations, :interfaces
 
-    def new_method(name, java_signature = nil, annotations = [], java_name = name)
-      method = RubyMethod.new(name, java_signature, annotations, java_name)
+    def new_method(name, java_signature = nil, annotations = [])
+      method = RubyMethod.new(name, java_signature, annotations)
       methods << method
       method
     end
@@ -245,16 +247,15 @@ EOJ
   end
 
   class RubyMethod
-    def initialize(name, java_signature = nil, annotations = [], java_name = name)
+    def initialize(name, java_signature = nil, annotations = [])
       @name = name
       @java_signature = java_signature
-      @java_name = java_name
       @static = false;
       @args = []
       @annotations = annotations
     end
 
-    attr_accessor :args, :name, :java_signature, :java_name, :static, :annotations
+    attr_accessor :args, :name, :java_signature, :static, :annotations
 
     def format_anno_value(value)
       case value
@@ -269,34 +270,41 @@ EOJ
 
     def to_s
       signature = java_signature
-      signature &&= signature.dup
-      ret = signature ? signature.shift : 'Object'
-      args_string = args.map {|a| "#{signature ? signature.shift : 'Object'} #{a}"}.join(',')
-      passed_args = args.map {|a| "ruby_" + a}.join(',')
-      passed_args = "," + passed_args if args.size > 0
-      conv_string = args.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+
+      if signature.parameter_list.size != args.size
+        raise "signature and method argument counts do not match"
+      end
+
+      ret = signature.return_type
+
+      var_names = []
+      i = 0;
+      args_string = signature.parameter_list.map do |a|
+        type = a.type.name
+        if a.variable_name
+          var_name = a.variable_name
+        else
+          var_name = args[i]
+          i+=1
+        end
+
+        var_names << var_name
+        "#{type} #{var_name}"
+      end.join(', ')
+
+      passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+      passed_args = ', ' + passed_args if signature.parameter_list.size > 0
+
+      conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+
       anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
-      ret_string = case ret
-      when 'void'
-        ""
-      when 'byte'
-        "return (Byte)ruby_result.toJava(byte.class);"
-      when 'short'
-        "return (Short)ruby_result.toJava(short.class);"
-      when 'char'
-        "return (Character)ruby_result.toJava(char.class);"
-      when 'int'
-        "return (Integer)ruby_result.toJava(int.class);"
-      when 'long'
-        "return (Long)ruby_result.toJava(long.class);"
-      when 'float'
-        "return (Float)ruby_result.toJava(float.class);"
-      when 'double'
-        "return (Double)ruby_result.toJava(double.class);"
-      when 'boolean'
-        "return (Boolean)ruby_result.toJava(boolean.class);"
+
+      java_name = signature.name
+
+      if ret.void?
+        ret_string = ""
       else
-        "return (#{ret})ruby_result.toJava(#{ret}.class);"
+        ret_string = "return (#{ret.wrapper_name})ruby_result.toJava(#{ret.name}.class);"
       end
 
       method_string = <<EOJ
@@ -324,7 +332,7 @@ EOJ
       @name = nil
     end
 
-    attr_accessor :class_stack, :method_stack, :signature, :name, :script, :annotations
+    attr_accessor :class_stack, :method_stack, :signature, :script, :annotations
 
     def add_import(name)
       @script.add_import(name)
@@ -332,10 +340,6 @@ EOJ
 
     def set_signature(name)
       @signature = name
-    end
-
-    def set_name(name)
-      @name = name
     end
 
     def prepare_anno_value(value)
@@ -391,19 +395,17 @@ EOJ
     end
 
     def new_method(name)
-      @name ||= name
-      method = current_class.new_method(name, @signature, @annotations, @name)
-      @signature = @name = nil
+      method = current_class.new_method(name, @signature, @annotations)
+      @signature = nil
       @annotations = []
 
       method_stack.push(method)
     end
 
     def new_static_method(name)
-      @name ||= name
-      method = current_class.new_method(name, @signature, @annotations, @name)
+      method = current_class.new_method(name, @signature, @annotations)
       method.static = true
-      @signature = @name = nil
+      @signature = nil
       @annotations = []
 
       method_stack.push(method)
@@ -418,23 +420,13 @@ EOJ
     end
 
     def build_signature(signature_args)
-      # assumes hash node
-      ary = signature_args.child_nodes[0].child_nodes
-      params = ary[0]
-      ret = ary[1]
+      if org.jruby.ast.StrNode === signature_args
+        sig_node = org.jruby.parser.JavaSignatureParser.parse(java.io.ByteArrayInputStream.new(signature_args.value.to_java_bytes))
 
-      unless org.jruby.ast.ArrayNode === params || org.jruby.ast.ZArrayNode === params
-        raise "signature needs an array of args at " + params.position.to_s
+        sig_node
+      else
+        raise "java_signature must take a literal string"
       end
-      raise unless ret
-
-      sig = [(defined? ret.name) ? ret.name : ret.value]
-      param_strings = params.child_nodes.map do |param|
-        name_or_value(param)
-      end
-      sig.concat(param_strings)
-
-      sig
     end
 
     def build_args_signature(params)
@@ -508,8 +500,6 @@ EOJ
             add_import node.args_node.child_nodes[0].value
           when 'java_signature'
             set_signature build_signature(node.args_node.child_nodes[0])
-          when 'java_name'
-            set_name name_or_value(node.args_node.child_nodes[0])
           when 'java_annotation'
             add_annotation(*node.args_node.child_nodes)
           when 'java_implements'

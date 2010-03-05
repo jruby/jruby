@@ -127,6 +127,9 @@ import org.jruby.util.io.ChannelDescriptor;
 import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
@@ -556,7 +559,7 @@ public final class Ruby {
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
         if (compile) {
-            script = tryCompile(scriptNode, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+            script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
             if (forceCompile && script == null) {
                 return getNil();
             }
@@ -575,14 +578,14 @@ public final class Ruby {
     }
     
     public Script tryCompile(Node node) {
-        return tryCompile(node, new JRubyClassLoader(getJRubyClassLoader()));
+        return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()));
     }
     
-    private Script tryCompile(Node node, JRubyClassLoader classLoader) {
-        return tryCompile(node, classLoader, false);
+    private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader) {
+        return tryCompile(node, cachedClassName, classLoader, false);
     }
 
-    private Script tryCompile(Node node, JRubyClassLoader classLoader, boolean dump) {
+    private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         Script script = null;
         try {
             String filename = node.getPosition().getFile();
@@ -591,7 +594,13 @@ public final class Ruby {
             ASTInspector inspector = new ASTInspector();
             inspector.inspect(node);
 
-            StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
+            StandardASMCompiler asmCompiler = null;
+            if (RubyInstanceConfig.JIT_CODE_CACHE != null && cachedClassName != null) {
+                System.out.println(cachedClassName);
+                asmCompiler = new StandardASMCompiler(cachedClassName.replace('.', '/'), filename);
+            } else {
+                asmCompiler = new StandardASMCompiler(classname, filename);
+            }
             ASTCompiler compiler = config.newCompiler();
             if (dump) {
                 compiler.compileRoot(node, asmCompiler, inspector, false, false);
@@ -599,6 +608,13 @@ public final class Ruby {
             } else {
                 compiler.compileRoot(node, asmCompiler, inspector, true, false);
             }
+
+            if (RubyInstanceConfig.JIT_CODE_CACHE != null && cachedClassName != null) {
+                // save script off to disk
+                String pathName = cachedClassName.replace('.', '/');
+                JITCompiler.saveToCodeCache(this, asmCompiler.getClassByteArray(), "ruby/jit", new File(RubyInstanceConfig.JIT_CODE_CACHE, pathName + ".class"));
+            }
+
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             if (config.isJitLogging()) {
@@ -606,7 +622,7 @@ public final class Ruby {
             }
         } catch (NotCompilableException nce) {
             if (config.isJitLoggingVerbose() || config.isDebug()) {
-                System.err.println("warning: ot compileable: " + nce.getMessage());
+                System.err.println("warning: not compileable: " + nce.getMessage());
                 nce.printStackTrace();
             } else {
                 System.err.println("warning: could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
@@ -2504,16 +2520,62 @@ public final class Ruby {
         IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
         ThreadContext context = getCurrentContext();
         String file = context.getFile();
+        InputStream readStream = in;
         
         try {
             secure(4); /* should alter global state */
 
             context.setFile(filename);
             context.preNodeEval(objectClass, self, filename);
+
+            Script script = null;
+            String className = null;
+
+            try {
+                // read full contents of file, hash it, and try to load that class first
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int num;
+                while ((num = in.read(buffer)) > -1) {
+                    baos.write(buffer, 0, num);
+                }
+                buffer = baos.toByteArray();
+                String hash = JITCompiler.getHashForBytes(buffer);
+                className = "ruby.jit.FILE_" + hash;
+
+                // FIXME: duplicated from ClassCache
+                Class contents;
+                try {
+                    contents = jrubyClassLoader.loadClass(className);
+                    if (JITCompiler.DEBUG) {
+                        System.err.println("found jitted code in classloader: " + className);
+                    }
+                    script = (Script)contents.newInstance();
+                    readStream = new ByteArrayInputStream(buffer);
+                } catch (ClassNotFoundException cnfe) {
+                    if (JITCompiler.DEBUG) {
+                        System.err.println("no jitted code in classloader for file " + filename + " at class: " + className);
+                    }
+                } catch (InstantiationException ie) {
+                    if (JITCompiler.DEBUG) {
+                        System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                    }
+                } catch (IllegalAccessException iae) {
+                    if (JITCompiler.DEBUG) {
+                        System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                    }
+                }
+            } catch (IOException ioe) {
+                // TODO: log something?
+            }
+
+            // script was not found in cache above, so proceed to compile
+            if (script == null) {
+                Node scriptNode = parseFile(readStream, filename, null);
+
+                script = tryCompile(scriptNode, className, new JRubyClassLoader(jrubyClassLoader));
+            }
             
-            Node scriptNode = parseFile(in, filename, null);
-            
-            Script script = tryCompile(scriptNode, new JRubyClassLoader(jrubyClassLoader));
             if (script == null) {
                 System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
             }

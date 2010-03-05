@@ -1,7 +1,7 @@
 require 'java'
 
 class SimpleRubyClass
-  java_signature [] => :void
+  java_signature "void simple_method()"
   def simple_method
     puts "here!"
   end

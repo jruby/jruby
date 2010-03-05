@@ -2,50 +2,32 @@ require 'java'
 require 'ant/element'
 require 'ant/target'
 
-java_import org.apache.tools.ant.ComponentHelper
-java_import org.apache.tools.ant.DefaultLogger
-java_import org.apache.tools.ant.Location
-java_import org.apache.tools.ant.Project
-java_import org.apache.tools.ant.ProjectHelper
-java_import org.apache.tools.ant.Target
-
 class Ant
+  java_import org.apache.tools.ant.ComponentHelper
+  java_import org.apache.tools.ant.DefaultLogger
+  java_import org.apache.tools.ant.Location
+  java_import org.apache.tools.ant.Project
+  java_import org.apache.tools.ant.ProjectHelper
+
   attr_reader :project, :log, :location
   attr_accessor :current_target
 
   def initialize(options={}, &block)
     @options = options
-    @location = Location.new(caller.detect{|el| el !~ /^#{__FILE__}/}.split(/:/).first)
+    @location = Ant.location_from_caller
     @project = create_project options
     @current_target = nil
     initialize_elements
-    handle_argv unless options[:run] == false || Ant.run || @location.file_name != $0
-  end
-
-  def create_project(options)
-    # If we are calling into a rakefile from ant then we already have a project to use
-    return $project if defined?($project) && $project
-
-    output_level = options.delete(:output_level) || 2
-
-    Project.new.tap do |p|
-      p.init
-      p.add_build_listener(DefaultLogger.new.tap do |log|
-        log.output_print_stream = java.lang.System.out
-        log.error_print_stream = java.lang.System.err
-        log.emacs_mode = true
-        log.message_output_level = output_level
-        @log = log
-      end)
-      helper = ProjectHelper.getProjectHelper
-      helper.import_stack.add(Object.new)
-      p.addReference(ProjectHelper::PROJECTHELPER_REFERENCE, helper)
-      options.each_pair {|k,v| p.send("set_#{k}", v) }
-    end
+    process_arguments unless options[:run] == false || Ant.run || @location.file_name != $0
+    define_tasks(&block)
   end
 
   def properties
     @project.properties
+  end
+
+  def define_tasks(&code)
+    code.arity == 1 ? code[self] : instance_eval(&code) if code
   end
 
   # Add a target (two forms)
@@ -58,7 +40,7 @@ class Ant
   alias target add_target
 
   def [](name)
-    if @project.targets.containsKey(name)
+    if @project.targets.containsKey(name.to_s)
       TargetWrapper.new(@project, name)
     else
       MissingWrapper.new(@project, name)
@@ -109,10 +91,14 @@ class Ant
     @elements[name + clazz.to_s] = Element.new(self, name, clazz)
   end
 
-  def _element(name, *args, &block)
-#     raise "unknown element #{name}!" unless @helper.get_definition(name)
-    element = acquire_element(name, nil)
-    element.call(@current_target, *args, &block)
+  def _element(name, args = {}, &block)
+    definition = @helper.get_definition(name)
+    clazz = definition.getTypeClass(@project) if definition
+    Element.new(self, name, clazz).call(@current_target, args, &block)
+  end
+
+  def method_missing(name, *args, &block)
+    _element(name, *args, &block)
   end
 
   def run(*targets)
@@ -123,18 +109,7 @@ class Ant
     end
   end
 
-  private
-  def generate_children(collection)
-    collection.each do |name, clazz|
-      element = acquire_element(name, clazz)
-      self.class.send(:define_method, Ant.safe_method_name(name)) do |*a, &b|
-        element.call(@current_target, *a, &b)
-      end
-    end
-  end
-
-  def handle_argv
-    argv = ARGV
+  def process_arguments(argv = ARGV, run_at_exit = true)
     properties = []
     targets = []
     argv.each {|a| a =~ /^-D/ ? properties << a[2..-1] : targets << a }
@@ -150,6 +125,39 @@ class Ant
         warn e.message
         exit 1
       end
+    end if run_at_exit
+  end
+
+  private
+  def create_project(options)
+    # If we are calling into a rakefile from ant then we already have a project to use
+    return $project if defined?($project) && $project
+
+    options[:basedir] ||= '.'
+    output_level = options.delete(:output_level) || 2
+
+    Project.new.tap do |p|
+      p.init
+      p.add_build_listener(DefaultLogger.new.tap do |log|
+        log.output_print_stream = Java::java.lang.System.out
+        log.error_print_stream = Java::java.lang.System.err
+        log.emacs_mode = true
+        log.message_output_level = output_level
+        @log = log
+      end)
+      helper = ProjectHelper.getProjectHelper
+      helper.import_stack.add(Java::java.io.File.new(@location.file_name))
+      p.addReference(ProjectHelper::PROJECTHELPER_REFERENCE, helper)
+      options.each_pair {|k,v| p.send("set_#{k}", v) if p.respond_to?("set_#{k}") }
+    end
+  end
+
+  def generate_children(collection)
+    collection.each do |name, clazz|
+      element = acquire_element(name, clazz)
+      self.class.send(:define_method, Ant.safe_method_name(name)) do |*a, &b|
+        element.call(@current_target, *a, &b)
+      end
     end
   end
 
@@ -164,15 +172,23 @@ class Ant
       end
     end
 
+    def location_from_caller
+      file, line = caller.detect{|el| el !~ /^#{File.dirname(__FILE__)}/}.split(/:/)
+      Location.new(file, line.to_i, 1)
+    end
+
     def ant(options={}, &code)
       if options.respond_to? :to_hash
         @ant ||= Ant.new options.to_hash
-        code.arity==1 ? code[@ant] : @ant.instance_eval(&code) if block_given?
+        @ant.define_tasks(&code)
         @ant
       else
         options = options.join(" ") if options.respond_to? :to_ary
         sh "ant #{options.to_s}"  # FIXME: Make this more secure if using array form
       end
+    rescue => e
+      warn e.message
+      warn e.backtrace.join("\n")
     end
   end
 end
