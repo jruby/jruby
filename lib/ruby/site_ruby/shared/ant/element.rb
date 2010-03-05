@@ -33,7 +33,7 @@ class Ant
     end
 
     def call(parent, args={}, &code)
-      element = create parent
+      element = create_element
       assign_attributes element, args
       define_nested_elements element if @clazz
       code.arity==1 ? code[element] : element.instance_eval(&code) if block_given?
@@ -53,7 +53,7 @@ class Ant
     end
 
     private
-    def create(parent) # See ProjectHelper2.ElementHelper
+    def create_element # See ProjectHelper2.ElementHandler
       UnknownElement.new(@name).tap do |e|
         e.ant = @ant
         e.project = @ant.project

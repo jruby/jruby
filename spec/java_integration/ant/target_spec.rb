@@ -21,4 +21,31 @@ describe Ant, "targets", :type => :ant do
     end
     ant.project.targets.keys.to_a.should include("a", "b")
   end
+
+  it "should heed :if and :unless conditions" do
+    message = ""
+    ant = Ant.new :output_level => 0 do
+      property :name => "foo", :value => "defined"
+      target :will_never_execute, :if => "not.defined" do
+        message << "will_never_execute?"
+      end
+
+      target :also_will_never_execute, :unless => "foo" do
+        message << "also_will_never_execute"
+      end
+
+      target :may_execute, :if => "bar" do
+        message << "executed"
+      end
+    end
+
+    ant.execute_target(:will_never_execute)
+    ant.execute_target(:also_will_never_execute)
+    ant.execute_target(:may_execute)
+    message.should == ""
+
+    ant.property :name => "bar", :value => "defined"
+    ant.execute_target(:may_execute)
+    message.should_not == ""
+  end
 end

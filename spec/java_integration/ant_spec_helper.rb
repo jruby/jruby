@@ -8,31 +8,6 @@ class Ant
         Ant.send(:instance_variable_set, "@ant", nil)
       end
 
-      # Validates the tasks in a target look sane. Currently just
-      # checks owning_target.
-      class ValidTasksMatcher
-        def description
-          "have valid tasks"
-        end
-
-        def matches?(target)
-          @target = target
-          result = true
-          @target.tasks.each do |t|
-            result &&= (t.owning_target == @target)
-          end
-          result
-        end
-
-        def failure_message_for_should
-          "expected #{@target.inspect} to have valid tasks"
-        end
-
-        def failure_message_for_should_not
-          "expected #{@target.inspect} to not have valid tasks"
-        end
-      end
-
       # Allows matching task structure with a nested hash as follows.
       #
       # { :_name => "jar", :destfile => "spec-test.jar", :compress => "true", :index => "true",
@@ -59,7 +34,7 @@ class Ant
         def matches?(actual)
           @actual = actual
           result = true
-          tasks = actual.tasks
+          tasks = actual.defined_tasks
           if Hash === @expected && tasks.length != 1 || tasks.length != @expected.length
             @message = "task list length different"
             return false
@@ -121,10 +96,6 @@ class Ant
           require 'pp'
           "expected #{@actual.name} to not have structure:\n#{@expected.pretty_inspect}\n#{@message}"
         end
-      end
-
-      def have_valid_tasks
-        ValidTasksMatcher.new
       end
 
       def have_structure(hash)
