@@ -206,36 +206,51 @@ module JRuby::Compiler
       end
     end
 
+    def static_init
+      return <<JAVA
+  static {
+    __ruby__.getLoadService().lockAndRequire(\"#{script_name}\");
+    RubyClass metaclass = __ruby__.getClass(\"#{name}\");
+    metaclass.setClassAllocator(#{name}.class);
+    if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
+    __metaclass__ = metaclass;
+  }
+JAVA
+    end
+
+    def annotations_string
+      annotations.map do |a|
+        params = (a[0] || []).map do |k,v|
+          "#{k} = #{format_anno_value(v)}"
+        end.join(',')
+
+        "@#{a.shift}(#{params})"
+      end.join("\n")
+    end
+
+    def methods_string
+      methods.map(&:to_s).join("\n")
+    end
+
     def to_s
-      imps_string = imports_string
-      ifc_string = interface_string
+      class_string = <<JAVA
+#{imports_string}
 
-      anno_string = annotations.map {|a| "@#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
-      class_string = "#{imps_string}\n\n#{anno_string}\npublic class #{name} extends RubyObject #{ifc_string} {\n"
-      class_string << "  private static final Ruby __ruby__ = Ruby.getGlobalRuntime();\n"
-      class_string << "  private static final RubyClass __metaclass__;\n"
+#{annotations_string}
+public class #{name} extends RubyObject #{interface_string} {
+  private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
+  private static final RubyClass __metaclass__;
 
-      static_init = "  static {\n"
-      if script_name
-        static_init << "    __ruby__.getLoadService().lockAndRequire(\"#{script_name}\");\n"
-      end
-      static_init << "    RubyClass metaclass = __ruby__.getClass(\"#{name}\");\n"
-      static_init << "    metaclass.setClassAllocator(#{name}.class);\n"
-      static_init << "    if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");\n"
-      static_init << "        __metaclass__ = metaclass;\n"
-      static_init << "  }\n"
+#{static_init}
 
-      class_string << static_init
-
-      class_string << <<EOJ
   public #{name}() {
     super(__ruby__, __metaclass__);
   }
-EOJ
-      
-      class_string << methods.map(&:to_s).join("\n\n")
-      class_string << "\n}"
 
+#{methods_string}
+}
+JAVA
+      
       class_string
     end
 
@@ -269,17 +284,15 @@ EOJ
     end
 
     def to_s
-      signature = java_signature
-
-      if signature.parameter_list.size != args.size
+      if java_signature.parameter_list.size != args.size
         raise "signature and method argument counts do not match"
       end
 
-      ret = signature.return_type
+      ret = java_signature.return_type
 
       var_names = []
       i = 0;
-      args_string = signature.parameter_list.map do |a|
+      args_string = java_signature.parameter_list.map do |a|
         type = a.type.name
         if a.variable_name
           var_name = a.variable_name
@@ -293,16 +306,16 @@ EOJ
       end.join(', ')
 
       passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
-      passed_args = ', ' + passed_args if signature.parameter_list.size > 0
+      passed_args = ', ' + passed_args if java_signature.parameter_list.size > 0
 
       conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
 
       anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
 
-      java_name = signature.name
+      java_name = java_signature.name
 
       if ret.void?
-        ret_string = ""
+        ret_string = "return;"
       else
         ret_string = "return (#{ret.wrapper_name})ruby_result.toJava(#{ret.name}.class);"
       end
@@ -319,9 +332,39 @@ EOJ
     end
   end
 
+  module VisitorBuilder
+    def visit(name, &block)
+      define_method :"visit_#{name}_node" do |node|
+        log "entering: #{node.node_type}"
+        with_node(node) do
+          instance_eval(&block)
+        end
+      end
+    end
+
+    def visit_default(&block)
+      define_method :method_missing do |name, node|
+        super unless name.to_s =~ /^visit/
+
+        with_node(node) do
+          block.call
+        end
+      end
+    end
+  end
+
   class ClassNodeWalker
-    include org.jruby.ast.visitor.NodeVisitor
-    import org.jruby.ast.NodeType
+    AST = org.jruby.ast
+    
+    include AST::visitor::NodeVisitor
+    
+    import AST::NodeType
+    import org.jruby.parser.JavaSignatureParser
+    import java.io.ByteArrayInputStream
+    
+    extend VisitorBuilder
+
+    attr_accessor :class_stack, :method_stack, :signature, :script, :annotations, :node
 
     def initialize(script_name = nil)
       @script = RubyScript.new(script_name)
@@ -330,9 +373,8 @@ EOJ
       @signature = nil
       @annotations = []
       @name = nil
+      @node = nil
     end
-
-    attr_accessor :class_stack, :method_stack, :signature, :script, :annotations
 
     def add_import(name)
       @script.add_import(name)
@@ -420,8 +462,9 @@ EOJ
     end
 
     def build_signature(signature_args)
-      if org.jruby.ast.StrNode === signature_args
-        sig_node = org.jruby.parser.JavaSignatureParser.parse(java.io.ByteArrayInputStream.new(signature_args.value.to_java_bytes))
+      if AST::StrNode === signature_args
+        bytes = signature_args.value.to_java_bytes
+        sig_node = JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
 
         sig_node
       else
@@ -444,79 +487,107 @@ EOJ
     end
 
     def name_or_value(node)
-      return node.name if node.respond_to? :name
-      return node.value if node.respond_to? :value
+      return node.name if defined? node.name
+      return node.value if defined? node.value
       raise "unknown node :" + node.to_s
     end
 
-    def method_missing(name, *args)
-      if name.to_s =~ /^visit/
-        node = args[0]
-        puts "* entering: #{node.node_type}" if $VERBOSE
-        case node.node_type
-        when NodeType::ARGSNODE
-          # Duby-style arg specification, only pre supported for now
-          if node.pre && node.pre.child_nodes.find {|pre_arg| pre_arg.respond_to? :type_node}
-            current_method.java_signature = build_args_signature(node.pre)
-          end
-          node.pre && node.pre.child_nodes.each do |pre_arg|
-            current_method.args << pre_arg.name
-          end
-          node.opt_args && node.opt_args.child_nodes.each do |pre_arg|
-            current_method.args << pre_arg.name
-          end
-          node.post && node.post.child_nodes.each do |post_arg|
-            current_method.args << post_arg.name
-          end
-          if node.rest_arg >= 0
-            current_method.args << node.rest_arg_node.name
-          end
-          if node.block
-            current_method.args << node.block.name
-          end
-        when NodeType::BLOCKNODE
-          node.child_nodes.each {|n| n.accept self}
-        when NodeType::CALLNODE
-          case node.name
-          when '+@'
-            add_annotation(node.receiver_node,
-              *(node.args_node ? node.args_node.child_nodes : []))
-          end
-        when NodeType::CLASSNODE
-          new_class(node.cpath.name)
-          node.body_node.accept(self)
-          pop_class
-        when NodeType::DEFNNODE
-          new_method(node.name)
-          node.args_node.accept(self)
-          pop_method
-        when NodeType::DEFSNODE
-          new_static_method(node.name)
-          node.args_node.accept(self)
-          pop_method
-        when NodeType::FCALLNODE
-          case node.name
-          when 'java_import'
-            add_import node.args_node.child_nodes[0].value
-          when 'java_signature'
-            set_signature build_signature(node.args_node.child_nodes[0])
-          when 'java_annotation'
-            add_annotation(*node.args_node.child_nodes)
-          when 'java_implements'
-            add_interface(*node.args_node.child_nodes)
-          end
-        when NodeType::NEWLINENODE
-          node.next_node.accept(self)
-        when NodeType::NILNODE
-          # nothing
-        when NodeType::ROOTNODE
-          node.body_node.accept(self)
-        else
-          puts 'unknown: ' + args[0].node_type.to_s
-        end
-      else
-        super
+    def with_node(node)
+      begin
+        old, @node = @node, node
+        yield
+      ensure
+        @node = old
       end
+    end
+
+    def error(message)
+      long_message =  "#{node.position}: #{message}"
+      raise long_message
+    end
+
+    def log(str)
+      puts "[jrubyc] #{str}" if $VERBOSE
+    end
+
+    visit :args do
+      # Duby-style arg specification, only pre supported for now
+      if node.pre && node.pre.child_nodes.find {|pre_arg| pre_arg.respond_to? :type_node}
+        current_method.java_signature = build_args_signature(node.pre)
+      end
+      node.pre && node.pre.child_nodes.each do |pre_arg|
+        current_method.args << pre_arg.name
+      end
+      node.opt_args && node.opt_args.child_nodes.each do |pre_arg|
+        current_method.args << pre_arg.name
+      end
+      node.post && node.post.child_nodes.each do |post_arg|
+        current_method.args << post_arg.name
+      end
+      if node.rest_arg >= 0
+        current_method.args << node.rest_arg_node.name
+      end
+      if node.block
+        current_method.args << node.block.name
+      end
+    end
+
+    visit :call do
+      case node.name
+      when '+@'
+        add_annotation(node.receiver_node,
+          *(node.args_node ? node.args_node.child_nodes : []))
+      end
+    end
+
+    visit :class do
+      new_class(node.cpath.name)
+      node.body_node.accept(self)
+      pop_class
+    end
+
+    visit :defn do
+      new_method(node.name)
+      node.args_node.accept(self)
+      pop_method
+    end
+
+    visit :defs do
+      new_static_method(node.name)
+      node.args_node.accept(self)
+      pop_method
+    end
+
+    visit :fcall do
+      case node.name
+      when 'java_import'
+        add_import node.args_node.child_nodes[0].value
+      when 'java_signature'
+        set_signature build_signature(node.args_node.child_nodes[0])
+      when 'java_annotation'
+        add_annotation(*node.args_node.child_nodes)
+      when 'java_implements'
+        add_interface(*node.args_node.child_nodes)
+      end
+    end
+
+    visit :block do
+      node.child_nodes.each {|n| n.accept self}
+    end
+
+    visit :newline do
+      node.next_node.accept(self)
+    end
+
+    visit :nil do
+    end
+
+    visit :root do
+      node.body_node.accept(self)
+    end
+
+    visit_default do
+      error "unknown node encountered: #{node.node_type.to_s}"
     end
   end
 
