@@ -230,12 +230,13 @@ public class RubyNKF {
             decoder = Charset.forName(decodeCharset).newDecoder();
             encoder = Charset.forName(encodeCharset).newEncoder();
         } catch (UnsupportedCharsetException e) {
-            throw runtime.newArgumentError("invalid encoding");
+            throw runtime.newArgumentError("invalid charset");
         }
         
         ByteBuffer buf = ByteBuffer.wrap(str.getUnsafeBytes(), str.begin(), str.length());
         try {
             CharBuffer cbuf = decoder.decode(buf);
+            encoder.onUnmappableCharacter(java.nio.charset.CodingErrorAction.IGNORE);
             buf = encoder.encode(cbuf);
         } catch (CharacterCodingException e) {
             throw runtime.newArgumentError("invalid encoding");
