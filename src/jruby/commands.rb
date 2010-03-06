@@ -75,13 +75,11 @@ module JRuby
           next if File.exist?("#{fn}.bat")
           next unless File.open(fn) {|io| (io.readline rescue "") =~ /^#!.*ruby/}
           puts "Generating #{File.basename(fn)}.bat"
-          # FIXME: Outdated BAT template, update!
           File.open("#{fn}.bat", "wb") do |f|
-            f << "@echo off\n"
-            f << "call \"%~dp0jruby\" -S #{File.basename(fn)} %*\n"
+            f << "@ECHO OFF\r\n"
+            f << "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
           end
-          # FIXME: foo.bat? Really? There is no foo.bat anywhere.
-        end if File.writable?(File.join(Config::CONFIG['bindir'], 'foo.bat'))
+        end if File.writable?(File.join(Config::CONFIG['bindir'], 'jirb.bat'))
       end
 
       def method_missing(name, *)
