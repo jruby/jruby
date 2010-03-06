@@ -1396,7 +1396,7 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="dist-bin,dist-src,dist-jar-complete"/>
+  <target name="dist" depends="install-gems,dist-bin,dist-src,dist-jar-complete"/>
 
   <target name="dist-clean">
     <delete dir="${dist.dir}"/>
