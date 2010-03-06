@@ -126,7 +126,16 @@ public class RubyTempfile extends RubyFile {
                     if (tmp.createNewFile()) {
                         tmpFile = tmp;
                         path = tmp.getPath();
-                        tmpFile.deleteOnExit();
+                        try {
+                            tmpFile.deleteOnExit();
+                        } catch (NullPointerException npe) {
+                            // See JRUBY-4624.
+                            // Due to JDK bug, NPE could be thrown
+                            // when shutdown is in progress.
+                            // Do nothing.
+                        } catch (IllegalStateException ise) {
+                            // do nothing, shutdown in progress
+                        }
                         initializeOpen();
                         referenceSet.put(reaper = new Reaper(this, runtime, tmpFile, openFile), Boolean.TRUE);
                         return this;
