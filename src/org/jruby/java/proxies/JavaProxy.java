@@ -83,6 +83,11 @@ public class JavaProxy extends RubyObject {
             javaObject = JavaObject.wrap(getRuntime(), object);
         }
     }
+
+    @Override
+    public Class getJavaClass() {
+        return object.getClass();
+    }
     
     public static RubyClass createJavaProxy(ThreadContext context) {
         Ruby runtime = context.getRuntime();
