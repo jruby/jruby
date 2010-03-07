@@ -1,2 +1,1 @@
-fails(JRUBY-4093,macos,hang):IO::popen allows the io to be closed inside the block
 fails(JRUBY-4171,linux,intermittent failure):IO::popen writes to a write-only pipe
