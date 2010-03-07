@@ -89,7 +89,7 @@ public class RubyJRuby {
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
 
         for (String name : new String[] {"name", "class_name", "original_script", "code"}) {
-            compiledScriptClass.addReadAttribute(context, name);
+            compiledScriptClass.addReadWriteAttribute(context, name);
         }
         compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
 
