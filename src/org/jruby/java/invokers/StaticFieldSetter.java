@@ -16,7 +16,9 @@ public class StaticFieldSetter extends FieldMethodOne {
         try {
             field.set(null, arg.toJava(field.getType()));
         } catch (IllegalAccessException iae) {
-            throw context.getRuntime().newTypeError("illegal access setting variable: " + iae.getMessage());
+            throw context.getRuntime().newSecurityError(iae.getMessage());
+        } catch (IllegalArgumentException iae) {
+            throw context.getRuntime().newTypeError(iae.getMessage());
         }
         return arg;
     }
