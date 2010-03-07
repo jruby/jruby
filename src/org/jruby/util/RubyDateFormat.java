@@ -345,7 +345,7 @@ public class RubyDateFormat extends DateFormat {
 
     private int addOutputFormatter(String pattern, int index) {
         if (ruby_1_9) {
-            TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern);
+            TimeOutputFormatter outputFormatter = TimeOutputFormatter.getFormatter(pattern.substring(index - 1));
             if (outputFormatter != null) {
                 index += outputFormatter.getFormatter().length();
                 compiledPattern.add(new Token(FORMAT_OUTPUT, outputFormatter));
