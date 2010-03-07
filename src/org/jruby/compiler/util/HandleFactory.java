@@ -28,6 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.compiler.util;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.jruby.compiler.JITCompiler;
@@ -223,6 +226,47 @@ public class HandleFactory {
             m.invokevirtual(p(boxType), paramClass.toString() + "Value", sig(paramClass));
         } else if (paramClass != Object.class) {
             m.checkcast(p(paramClass));
+        }
+    }
+
+    private static class FakeLoader extends ClassLoader {
+        public FakeLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            return super.loadClass(name, resolve);
+        }
+    };
+    public static class Tool {
+        public static void main(String[] args) {
+            if (args.length != 2) {
+                System.err.println("Usage:\n  tool <java class> <target dir>");
+                System.exit(1);
+            }
+
+            String classname = args[0];
+            String target = args[1];
+
+            FakeLoader loader = new FakeLoader(Tool.class.getClassLoader());
+            try {
+                Class klass = loader.loadClass(classname, false);
+                for (Method method : klass.getMethods()) {
+                    String name = createHandleName(method);
+                    byte[] bytes = createHandleBytes(method, name);
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(new File(target, name + ".class"));
+                        fos.write(bytes);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    } finally {
+                        try {fos.close();} catch (IOException ioe) {}
+                    }
+                }
+            } catch (ClassNotFoundException cnfe) {
+                throw new RuntimeException(cnfe);
+            }
         }
     }
     
