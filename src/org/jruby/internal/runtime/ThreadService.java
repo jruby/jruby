@@ -30,22 +30,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.nio.channels.Channel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import java.util.WeakHashMap;
+import java.util.Hashtable;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
-import org.jruby.RubyIO;
 import org.jruby.RubyThread;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
@@ -55,10 +49,11 @@ public class ThreadService {
     private ThreadContext mainContext;
     private ThreadLocal<SoftReference<ThreadContext>> localContext;
     private ThreadGroup rubyThreadGroup;
-    private Map<Object, RubyThread> rubyThreadMap;
+
+    private RubyThreadMap rubyThreadMap;
+    private Map<RubyThread,ThreadContext> threadContextMap;
     
     private ReentrantLock criticalLock = new ReentrantLock();
-    private Map<RubyThread,ThreadContext> threadContextMap;
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
@@ -71,8 +66,8 @@ public class ThreadService {
             this.rubyThreadGroup = Thread.currentThread().getThreadGroup();
         }
 
-        this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
-        this.threadContextMap = Collections.synchronizedMap(new WeakHashMap<RubyThread,ThreadContext>());
+        this.threadContextMap = new Hashtable<RubyThread, ThreadContext>();
+        this.rubyThreadMap = new RubyThreadMap(threadContextMap);
         
         // Must be called from main thread (it is currently, but this bothers me)
         localContext.set(new SoftReference<ThreadContext>(mainContext));
@@ -154,8 +149,10 @@ public class ThreadService {
         synchronized(rubyThreadMap) {
             List<RubyThread> rtList = new ArrayList<RubyThread>(rubyThreadMap.size());
         
-            for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
-                Object key = entry.getKey();
+            for (Map.Entry<RubyThreadMap.RubyThreadWeakReference<Object>, RubyThread> entry : rubyThreadMap.entrySet()) {
+                Object key = entry.getKey().get();
+                if (key == null) continue;
+                
                 if (key instanceof Thread) {
                     Thread t = (Thread)key;
 
@@ -178,10 +175,6 @@ public class ThreadService {
         }
     }
 
-    public Map getRubyThreadMap() {
-        return rubyThreadMap;
-    }
-    
     public ThreadGroup getRubyThreadGroup() {
     	return rubyThreadGroup;
     }
