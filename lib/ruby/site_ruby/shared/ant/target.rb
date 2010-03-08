@@ -46,7 +46,7 @@ class Ant
       # override inner part of execute
       if_cond, unless_cond = if_condition, unless_condition
       if if_cond && unless_cond
-        define_target.execute
+        execute_target
       elsif !if_cond
         project.log(self, "Skipped because property '#{if_cond}' not set.", Project::MSG_VERBOSE)
       else
@@ -80,12 +80,16 @@ class Ant
       project.get_property(val).nil? && val
     end
 
+    def execute_target
+      @ant.instance_eval(&@block)
+    end
+
     def define_target
       Target.new.tap do |t|
         t.name = ""
         begin
           @ant.current_target = t
-          @ant.instance_eval(&@block)
+          execute_target
         ensure
           @ant.current_target = nil
         end

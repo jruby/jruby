@@ -48,4 +48,14 @@ describe Ant, "targets", :type => :ant do
     ant.execute_target(:may_execute)
     message.should_not == ""
   end
+
+  it "should execute target tasks and non-tasks in order" do
+    ant = Ant.new :output_level => 0 do
+      target :foo do
+        property :name => "bar", :value => "true"
+        ant.properties["bar"].should == "true"
+      end
+    end
+    ant.execute_target(:foo)
+  end
 end
