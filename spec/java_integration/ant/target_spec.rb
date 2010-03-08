@@ -2,7 +2,7 @@ require File.expand_path('../../ant_spec_helper', __FILE__)
 
 describe Ant, "targets", :type => :ant do
   it "should delay executing tasks in targets until the target is executed" do
-    ant = Ant.new :name => "foo", :output_level => 0 do
+    ant = example_ant :name => "foo" do
       target :foo do
         property :name => "foo", :value => "bar"
       end
@@ -24,7 +24,7 @@ describe Ant, "targets", :type => :ant do
 
   it "should heed :if and :unless conditions" do
     message = ""
-    ant = Ant.new :output_level => 0 do
+    ant = example_ant do
       property :name => "foo", :value => "defined"
       target :will_never_execute, :if => "not.defined" do
         message << "will_never_execute?"
@@ -50,7 +50,7 @@ describe Ant, "targets", :type => :ant do
   end
 
   it "should execute target tasks and non-tasks in order" do
-    ant = Ant.new :output_level => 0 do
+    ant = example_ant do
       target :foo do
         property :name => "bar", :value => "true"
         ant.properties["bar"].should == "true"

@@ -106,6 +106,10 @@ class Ant
         TaskStructureMatcher.new(hash, true)
       end
 
+      def example_ant(options = {}, &block)
+        Ant.new({:basedir => "/tmp", :run => false, :output_level => 0}.merge(options),&block)
+      end
+
       ::Spec::Example::ExampleGroupFactory.register(:ant, self)
     end
   end

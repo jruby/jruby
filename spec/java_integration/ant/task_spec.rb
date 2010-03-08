@@ -5,7 +5,7 @@ describe Ant, "tasks:", :type => :ant do
     # The single example ant project these specs will validate
     @output = output = "ant-file#{rand}.txt"
     @message = message = ""
-    @ant = Ant.new :output_level => 0 do
+    @ant = example_ant :basedir => "." do
       property :name => "jar", :value => "spec-test.jar"
       property :name => "dir", :value => "build"
       taskdef :name => "jarjar", :classname => "com.tonicsystems.jarjar.JarJarTask",

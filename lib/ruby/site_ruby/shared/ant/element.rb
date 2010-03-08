@@ -68,7 +68,7 @@ class Ant
       @ant.project.log "instance.task_name #{instance.task_name} #{name}", 5
       wrapper = RuntimeConfigurable.new instance, instance.task_name
       args.each do |key, value|
-        wrapper.set_attribute key, @ant.project.replace_properties(value)
+        wrapper.set_attribute key, @ant.project.replace_properties(to_string(value))
       end
     end
 
@@ -80,6 +80,16 @@ class Ant
         meta_class.send(:define_method, Ant.safe_method_name(element_name)) do |*args, &block|
           element.call(instance, *args, &block)
         end
+      end
+    end
+
+    def to_string(value)
+      if String === value
+        value
+      elsif value.respond_to?(:to_str)
+        value.to_str
+      else
+        value.to_s
       end
     end
   end

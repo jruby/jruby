@@ -25,7 +25,7 @@ end
 
 describe Ant, :type => :ant do
   before :each do
-    @ant = Ant.new :basedir => "/tmp", :run => false, :output_level => 0
+    @ant = example_ant
   end
 
   it "should define methods corresponding to ant tasks" do
