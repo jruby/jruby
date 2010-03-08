@@ -1,5 +1,7 @@
 require File.expand_path('../../ant_spec_helper', __FILE__)
 require 'rake'
+# Do this hoo-hah with import because we don't want Rake's version of "import".
+def import(*args); java_import(*args); end
 require 'ant/rake'
 
 describe Ant, "Rake helpers", :type => :ant do
