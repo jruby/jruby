@@ -1,5 +1,6 @@
 require File.expand_path('../spec_helper', __FILE__)
 require 'ant'
+require 'tmpdir'
 
 class Ant
   module Spec
@@ -107,7 +108,7 @@ class Ant
       end
 
       def example_ant(options = {}, &block)
-        Ant.new({:basedir => "/tmp", :run => false, :output_level => 0}.merge(options),&block)
+        Ant.new({:basedir => Dir::tmpdir, :run => false, :output_level => 0}.merge(options),&block)
       end
 
       ::Spec::Example::ExampleGroupFactory.register(:ant, self)

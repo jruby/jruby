@@ -6,7 +6,7 @@ describe Ant, "project", :type => :ant do
   end
 
   it "should have the 'basedir' set" do
-    @ant.project.base_dir.path.should == "/tmp"
+    @ant.project.base_dir.path.should == Dir::tmpdir
   end
 
   it "should have a project helper created" do
