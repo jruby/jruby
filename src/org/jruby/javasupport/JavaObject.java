@@ -269,8 +269,17 @@ public class JavaObject extends RubyObject {
         }
     }
 
+    @Override
     public Object toJava(Class cls) {
-        return JavaUtil.coerceJavaObjectToType(getRuntime().getCurrentContext(), getValue(), cls);
+        if (getValue() == null) {
+            // THIS SHOULD NEVER HAPPEN, but it DOES
+            return getValue();
+        }
+        
+        if (cls.isAssignableFrom(getValue().getClass())) {
+            return getValue();
+        }
+        throw getRuntime().newTypeError("cannot convert instance of " + getValue().getClass() + " to " + cls);
     }
 
     private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {

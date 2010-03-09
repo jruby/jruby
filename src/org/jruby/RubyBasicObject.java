@@ -754,7 +754,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
             return innerWrapper.getValue();
         } else {
-            return JavaUtil.coerceOtherToType(getRuntime().getCurrentContext(), this, target);
+            if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
+                if (!respondsTo("java_object")) {
+                    return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
+                }
+            }
+
+            // it's either as converted as we can make it via above logic or it's
+            // not one of the types we convert, so just pass it out as-is without wrapping
+            return this;
         }
     }
 

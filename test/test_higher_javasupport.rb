@@ -274,7 +274,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
       length matches notify notifyAll notify_all regionMatches region_matches replace
       replaceAll replaceFirst replace_all replace_first split startsWith starts_with
       subSequence sub_sequence substring taint tainted? toCharArray toLowerCase
-      toString toUpperCase to_char_array to_java_object to_lower_case to_string
+      toString toUpperCase to_char_array to_lower_case to_string
       to_upper_case trim wait]
 
     jstring_methods.each { |method| assert(JString.public_instance_methods.include?(method), "#{method} is missing from JString") }

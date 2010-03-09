@@ -7173,7 +7173,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @Override
     public Object toJava(Class target) {
-        return JavaUtil.coerceStringToType(this, target);
+        if (target.isAssignableFrom(String.class)) {
+            try {
+                // 1.9 support for encodings
+                if (getRuntime().is1_9()) {
+                    return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
+                }
+
+                return new String(value.getUnsafeBytes(), value.begin(), value.length(), "UTF8");
+            } catch (UnsupportedEncodingException uee) {
+                return toString();
+            }
+        } else if (target.isAssignableFrom(ByteList.class)) {
+            return value;
+        } else {
+            throw getRuntime().newTypeError("cannot convert instance of String to " + target);
+        }
     }
 
     /**

@@ -250,11 +250,6 @@ public class JavaProxy extends RubyObject {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject to_java_object(IRubyObject recv) {
-        return recv.getInstanceVariables().fastGetInstanceVariable("@java_class");
-    }
-
     @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
@@ -296,7 +291,8 @@ public class JavaProxy extends RubyObject {
         Ruby runtime = context.getRuntime();
 
         if (argTypesAry.size() != 1) {
-            throw JavaMethod.newArgSizeMismatchError(runtime, (Class)argTypesAry.eltInternal(0).toJava(Class.class));
+            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+            throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
         }
 
         Class argTypeClass = (Class)argTypesAry.eltInternal(0).toJava(Class.class);
@@ -314,7 +310,8 @@ public class JavaProxy extends RubyObject {
         int argsLen = args.length - 2;
 
         if (argTypesAry.size() != argsLen) {
-            throw JavaMethod.newArgSizeMismatchError(runtime, (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]));
+            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+            throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
         }
 
         Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argsLen]);
@@ -407,7 +404,7 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object toJava(Class type) {
-        getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+        if (Java.OBJECT_PROXY_CACHE) getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
         return getObject();
     }
     
