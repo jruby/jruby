@@ -1,36 +1,12 @@
 require File.expand_path('../spec_helper', __FILE__)
 require 'ant'
+require 'tmpdir'
 
 class Ant
   module Spec
     class AntExampleGroup < ::Spec::Example::ExampleGroup
       after :each do
         Ant.send(:instance_variable_set, "@ant", nil)
-      end
-
-      # Validates the tasks in a target look sane. Currently just
-      # checks owning_target.
-      class ValidTasksMatcher
-        def description
-          "have valid tasks"
-        end
-
-        def matches?(target)
-          @target = target
-          result = true
-          @target.tasks.each do |t|
-            result &&= (t.owning_target == @target)
-          end
-          result
-        end
-
-        def failure_message_for_should
-          "expected #{@target.inspect} to have valid tasks"
-        end
-
-        def failure_message_for_should_not
-          "expected #{@target.inspect} to not have valid tasks"
-        end
       end
 
       # Allows matching task structure with a nested hash as follows.
@@ -59,7 +35,7 @@ class Ant
         def matches?(actual)
           @actual = actual
           result = true
-          tasks = actual.tasks
+          tasks = actual.defined_tasks
           if Hash === @expected && tasks.length != 1 || tasks.length != @expected.length
             @message = "task list length different"
             return false
@@ -123,16 +99,16 @@ class Ant
         end
       end
 
-      def have_valid_tasks
-        ValidTasksMatcher.new
-      end
-
       def have_structure(hash)
         TaskStructureMatcher.new(hash)
       end
 
       def have_configured_structure(hash)
         TaskStructureMatcher.new(hash, true)
+      end
+
+      def example_ant(options = {}, &block)
+        Ant.new({:basedir => Dir::tmpdir, :run => false, :output_level => 0}.merge(options),&block)
       end
 
       ::Spec::Example::ExampleGroupFactory.register(:ant, self)

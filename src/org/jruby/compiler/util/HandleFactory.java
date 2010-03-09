@@ -28,20 +28,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.compiler.util;
 
-import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.util.ASMifierClassVisitor;
 import static org.jruby.util.CodegenUtils.*;
 import static org.objectweb.asm.Opcodes.*;
 
 public class HandleFactory {
-    private static final boolean DEBUG = false;
-    
     public static class Handle {
         private Error fail() { return new AbstractMethodError("invalid call signature for target method: " + getClass()); }
         public Object invoke(Object receiver) { throw fail(); }
@@ -53,34 +53,36 @@ public class HandleFactory {
         public Object invoke(Object receiver, Object... args) { throw fail(); }
     }
     
-    public static Handle createHandle(JRubyClassLoader classLoader, Method method, boolean debug) {
-        ClassVisitor cv;
-        if (debug) {
-            cv = new ASMifierClassVisitor(new PrintWriter(System.out));
-        } else {
-            cv = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        }
+    public static Handle createHandle(JRubyClassLoader classLoader, Method method) {
+        String name = createHandleName(method);
 
-        Class returnType = method.getReturnType();
-        Class[] paramTypes = method.getParameterTypes();
-        ClassLoader loader = method.getDeclaringClass().getClassLoader();
-        if (loader == null) {
-            loader = ClassLoader.getSystemClassLoader();
-        }
-        
-        String name = 
-                method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") +
-                "#" + Math.abs(loader.hashCode()) +
-                "#" + method.getName() +
-                "#" + Math.abs(pretty(returnType, paramTypes).hashCode());
-        
+        Class handleClass;
         try {
-            Class existing = classLoader.loadClass(name);
-            return (Handle)existing.newInstance();
+            handleClass = classLoader.loadClass(name);
+            return (Handle)handleClass.newInstance();
         } catch (Exception e) {
         }
-        cv.visit(ACC_PUBLIC | ACC_FINAL | ACC_SUPER, V1_5, name, null, p(Handle.class), null);
+
+        handleClass = createHandleClass(classLoader, method, name);
         
+        try {
+            return (Handle)handleClass.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Class createHandleClass(JRubyClassLoader classLoader, Method method, String name) {
+        byte[] bytes = createHandleBytes(method, name);
+        return (classLoader != null ? classLoader : new JRubyClassLoader(JRubyClassLoader.class.getClassLoader())).defineClass(name, bytes);
+    }
+
+    public static byte[] createHandleBytes(Method method, String name) {
+        Class returnType = method.getReturnType();
+        Class[] paramTypes = method.getParameterTypes();
+        ClassVisitor cv = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        cv.visit(ACC_PUBLIC | ACC_FINAL | ACC_SUPER, V1_5, name, null, p(Handle.class), null);
+
         SkinnyMethodAdapter m;
         String signature;
         boolean needsArgsVersion = true;
@@ -109,9 +111,9 @@ public class HandleFactory {
             break;
         }
         m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", signature, null, null));
-        
+
         m.start();
-        
+
         // load receiver
         if (!Modifier.isStatic(method.getModifiers())) {
             m.aload(1); // receiver
@@ -119,7 +121,7 @@ public class HandleFactory {
                 m.checkcast(p(method.getDeclaringClass()));
             }
         }
-        
+
         // load arguments
         switch (paramTypes.length) {
         case 0:
@@ -148,7 +150,7 @@ public class HandleFactory {
             }
             break;
         }
-        
+
         if (Modifier.isStatic(method.getModifiers())) {
             m.invokestatic(p(method.getDeclaringClass()), method.getName(), sig(returnType, paramTypes));
         } else if (Modifier.isInterface(method.getDeclaringClass().getModifiers())) {
@@ -156,7 +158,7 @@ public class HandleFactory {
         } else {
             m.invokevirtual(p(method.getDeclaringClass()), method.getName(), sig(returnType, paramTypes));
         }
-        
+
         if (returnType == void.class) {
             m.aconst_null();
         } else if (returnType.isPrimitive()) {
@@ -191,7 +193,7 @@ public class HandleFactory {
             m.areturn();
             m.end();
         }
-        
+
         // constructor
         m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<init>", sig(void.class), null, null));
         m.start();
@@ -199,23 +201,17 @@ public class HandleFactory {
         m.invokespecial(p(Handle.class), "<init>", sig(void.class));
         m.voidreturn();
         m.end();
-        
-        cv.visitEnd();
-        
-        if (debug) {
-            ((ASMifierClassVisitor)cv).print(new PrintWriter(System.out));
-            return createHandle(classLoader, method, false);
-        } else {
-            byte[] bytes = ((ClassWriter)cv).toByteArray();
-        
-            Class handleClass = (classLoader != null ? classLoader : new JRubyClassLoader(JRubyClassLoader.class.getClassLoader())).defineClass(name, bytes);
 
-            try {
-                return (Handle)handleClass.newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        cv.visitEnd();
+
+        byte[] bytes = ((ClassWriter)cv).toByteArray();
+
+        return bytes;
+    }
+    private static String createHandleName(Method method) {
+        Class returnType = method.getReturnType();
+        Class[] paramTypes = method.getParameterTypes();
+        return method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") + "#" + method.getName() + "#" + JITCompiler.getHashForString(pretty(returnType, paramTypes));
     }
     
     public static void loadUnboxedArgument(SkinnyMethodAdapter m, int index, Class type) {
@@ -232,9 +228,46 @@ public class HandleFactory {
             m.checkcast(p(paramClass));
         }
     }
-    
-    public static Handle createHandle(JRubyClassLoader classLoader, Method method) {
-        return createHandle(classLoader, method, DEBUG);
+
+    private static class FakeLoader extends ClassLoader {
+        public FakeLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            return super.loadClass(name, resolve);
+        }
+    };
+    public static class Tool {
+        public static void main(String[] args) {
+            if (args.length != 2) {
+                System.err.println("Usage:\n  tool <java class> <target dir>");
+                System.exit(1);
+            }
+
+            String classname = args[0];
+            String target = args[1];
+
+            FakeLoader loader = new FakeLoader(Tool.class.getClassLoader());
+            try {
+                Class klass = loader.loadClass(classname, false);
+                for (Method method : klass.getMethods()) {
+                    String name = createHandleName(method);
+                    byte[] bytes = createHandleBytes(method, name);
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(new File(target, name + ".class"));
+                        fos.write(bytes);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    } finally {
+                        try {fos.close();} catch (IOException ioe) {}
+                    }
+                }
+            } catch (ClassNotFoundException cnfe) {
+                throw new RuntimeException(cnfe);
+            }
+        }
     }
     
     public static void main(String[] args) {
@@ -250,27 +283,10 @@ public class HandleFactory {
             for (int i = 0; i < 10; i++) {
                 long time;
                 
-                System.out.print("handle invocation: ");
-                time = System.currentTimeMillis();
-                for (int j = 0; j < 50000000; j++) {
-                    result = handle.invoke(null, prop1);
-                    if (j % 10000000 == 0) {
-                        System.out.println(result);
-                    }
-                    handle.invoke(null, prop2);
-                    tmp = prop1;
-                    prop1 = prop2;
-                    prop2 = tmp;
-                }
-                System.out.println(System.currentTimeMillis() - time);
-                
                 System.out.print("reflected invocation: ");
                 time = System.currentTimeMillis();
                 for (int j = 0; j < 50000000; j++) {
                     result = method.invoke(null, prop1);
-                    if (j % 10000000 == 0) {
-                        System.out.println(result);
-                    }
                     method.invoke(null, prop2);
                     tmp = prop1;
                     prop1 = prop2;
@@ -285,10 +301,21 @@ public class HandleFactory {
                 time = System.currentTimeMillis();
                 for (int j = 0; j < 50000000; j++) {
                     result = dummy(prop1);
-                    if (j % 10000000 == 0) {
-                        System.out.println(result);
-                    }
                     dummy(prop2);
+                    tmp = prop1;
+                    prop1 = prop2;
+                    prop2 = tmp;
+                    if (j % 10000000 == 0) {
+                        System.out.println(prop2);
+                    }
+                }
+                System.out.println(System.currentTimeMillis() - time);
+
+                System.out.print("handle invocation: ");
+                time = System.currentTimeMillis();
+                for (int j = 0; j < 50000000; j++) {
+                    result = handle.invoke(null, prop1);
+                    handle.invoke(null, prop2);
                     tmp = prop1;
                     prop1 = prop2;
                     prop2 = tmp;

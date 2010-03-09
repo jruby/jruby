@@ -4,7 +4,8 @@ describe Ant, "tasks:", :type => :ant do
   before :all do
     # The single example ant project these specs will validate
     @output = output = "ant-file#{rand}.txt"
-    @ant = Ant.new :output_level => 0 do
+    @message = message = ""
+    @ant = example_ant :basedir => "." do
       property :name => "jar", :value => "spec-test.jar"
       property :name => "dir", :value => "build"
       taskdef :name => "jarjar", :classname => "com.tonicsystems.jarjar.JarJarTask",
@@ -33,6 +34,10 @@ describe Ant, "tasks:", :type => :ant do
       target :greet do
         greet :msg => "Ant"
       end
+
+      target :rubygreet do
+        message << "Hello Ruby!"
+      end
     end
   end
 
@@ -40,12 +45,14 @@ describe Ant, "tasks:", :type => :ant do
     File.unlink(@output) if File.exist?(@output)
   end
 
+  before :each do
+    @message.replace("")
+  end
+
   describe "jar" do
     subject do
       @ant.project.targets["jar"]
     end
-
-    it { should have_valid_tasks }
 
     it { should have_structure([{:_name => "jar", :destfile => "spec-test.jar", :compress => "true", :index => "true",
                                  :_children => [ { :_name => "fileset", :dir => "build" }] }]) }
@@ -60,8 +67,6 @@ describe Ant, "tasks:", :type => :ant do
       @ant.project.targets["jarjar"]
     end
 
-    it { should have_valid_tasks }
-
     it { should have_structure([{:_name => "jarjar", :destfile => "spec-test.jar", :compress => "true",
                                  :_children => [ { :_name => "fileset", :dir => "build" },
                                                  { :_name => "zipfileset", :src => "./lib/jruby.jar" }] }]) }
@@ -75,6 +80,14 @@ describe Ant, "tasks:", :type => :ant do
     it "should be defined and invokable from a target" do
       @ant.execute_target(:greet)
       File.read(@output).should == "Hello Ant"
+    end
+  end
+
+  describe "rubygreet" do
+    it "should execute the code block when the target is executed" do
+      @message.should == ""
+      @ant.execute_target(:rubygreet)
+      @message.should == "Hello Ruby!"
     end
   end
 end

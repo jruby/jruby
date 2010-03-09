@@ -987,14 +987,28 @@ public class RubyKernel {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(name = "load", required = 1, optional = 1, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "load", required = 1, optional = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyString file = args[0].convertToString();
+        return loadCommon(args[0], recv.getRuntime(), args, block);
+    }
+
+    @JRubyMethod(name = "load", required = 1, optional = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject load19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        IRubyObject file = args[0];
+        if (!(file instanceof RubyString) && file.respondsTo("to_path")) {
+            file = file.callMethod(context, "to_path");
+        }
+
+        return loadCommon(file, context.getRuntime(), args, block);
+    }
+
+    private static IRubyObject loadCommon(IRubyObject fileName, Ruby runtime, IRubyObject[] args, Block block) {
+        RubyString file = fileName.convertToString();
+
         boolean wrap = args.length == 2 ? args[1].isTrue() : false;
 
         runtime.getLoadService().load(file.getByteList().toString(), wrap);
-        
+
         return runtime.getTrue();
     }
 

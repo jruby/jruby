@@ -88,7 +88,9 @@ public class RubyJRuby {
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
 
-        compiledScriptClass.attr_accessor(context, new IRubyObject[]{runtime.newSymbol("name"), runtime.newSymbol("class_name"), runtime.newSymbol("original_script"), runtime.newSymbol("code")});
+        for (String name : new String[] {"name", "class_name", "original_script", "code"}) {
+            compiledScriptClass.addReadWriteAttribute(context, name);
+        }
         compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
 
         RubyClass threadLocalClass = jrubyModule.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR);

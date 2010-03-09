@@ -38,7 +38,24 @@ class Ant
       set_project ant.project
       hash = extract_options(options)
       hash.each_pair {|k,v| send("set_#{k}", v) }
-      define_target(ant, &block) if block
+      @ant, @block = ant, block
+    end
+
+    def execute
+      # Have to dupe this logic b/c Ant doesn't provide a way to
+      # override inner part of execute
+      if_cond, unless_cond = if_condition, unless_condition
+      if if_cond && unless_cond
+        execute_target
+      elsif !if_cond
+        project.log(self, "Skipped because property '#{if_cond}' not set.", Project::MSG_VERBOSE)
+      else
+        project.log(self, "Skipped because property '#{unless_cond}' set.", Project::MSG_VERBOSE)
+      end
+    end
+
+    def defined_tasks
+      define_target.tasks
     end
 
     private
@@ -49,11 +66,34 @@ class Ant
       hash
     end
 
-    def define_target(ant, &block)
-      ant.current_target = self
-      ant.instance_eval(&block)
-    ensure
-      ant.current_target = nil
+    def if_condition
+      cond = get_if
+      return true unless cond
+      val = project.replace_properties(cond)
+      project.get_property(val) && val
+    end
+
+    def unless_condition
+      cond = get_unless
+      return true unless cond
+      val = project.replace_properties(cond)
+      project.get_property(val).nil? && val
+    end
+
+    def execute_target
+      @ant.instance_eval(&@block)
+    end
+
+    def define_target
+      Target.new.tap do |t|
+        t.name = ""
+        begin
+          @ant.current_target = t
+          execute_target
+        ensure
+          @ant.current_target = nil
+        end
+      end
     end
   end
 

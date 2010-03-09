@@ -100,6 +100,7 @@ import org.jruby.util.SafePropertyAccessor;
 @JRubyModule(name = "Java")
 public class Java implements Library {
     public static final boolean NEW_STYLE_EXTENSION = SafePropertyAccessor.getBoolean("jruby.ji.newStyleExtension", false);
+    public static final boolean OBJECT_PROXY_CACHE = SafePropertyAccessor.getBoolean("jruby.ji.objectProxyCache", true);
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
@@ -335,8 +336,12 @@ public class Java implements Library {
      */
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject) {
         if (rawJavaObject != null) {
-            return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject,
-                    (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass())));
+            if (OBJECT_PROXY_CACHE) {
+                return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject,
+                        (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass())));
+            } else {
+                return allocateProxy(rawJavaObject, (RubyClass)getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass())));
+            }
         }
         return runtime.getNil();
     }

@@ -30,6 +30,9 @@ package org.jruby;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.platform.Platform;
@@ -38,14 +41,22 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ReferenceReaper;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.OpenFile;
 
 /**
  * An implementation of tempfile.rb in Java.
  */
 @JRubyClass(name="Tempfile", parent="File")
 public class RubyTempfile extends RubyFile {
+
+    /** Keep strong references to the Reaper until cleanup */
+    private static final ConcurrentMap<Reaper, Boolean> referenceSet
+            = new ConcurrentHashMap<Reaper, Boolean>();
+    private transient volatile Reaper reaper;
+
     private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyFile instance = new RubyTempfile(runtime, klass);
@@ -115,8 +126,18 @@ public class RubyTempfile extends RubyFile {
                     if (tmp.createNewFile()) {
                         tmpFile = tmp;
                         path = tmp.getPath();
-                        tmpFile.deleteOnExit();
+                        try {
+                            tmpFile.deleteOnExit();
+                        } catch (NullPointerException npe) {
+                            // See JRUBY-4624.
+                            // Due to JDK bug, NPE could be thrown
+                            // when shutdown is in progress.
+                            // Do nothing.
+                        } catch (IllegalStateException ise) {
+                            // do nothing, shutdown in progress
+                        }
                         initializeOpen();
+                        referenceSet.put(reaper = new Reaper(this, runtime, tmpFile, openFile), Boolean.TRUE);
                         return this;
                     }
                 } catch (IOException e) {
@@ -204,6 +225,8 @@ public class RubyTempfile extends RubyFile {
 
     @JRubyMethod(name = "close!", frame = true, visibility = Visibility.PUBLIC)
     public IRubyObject close_bang(ThreadContext context) {
+         referenceSet.remove(reaper);
+         reaper.released = true;
         _close(context);
         tmpFile.delete();
         return context.getRuntime().getNil();
@@ -211,7 +234,10 @@ public class RubyTempfile extends RubyFile {
 
     @JRubyMethod(name = {"unlink", "delete"}, frame = true)
     public IRubyObject unlink(ThreadContext context) {
-        if (tmpFile.exists()) tmpFile.delete();
+        if (!tmpFile.exists() || tmpFile.delete()) {
+            referenceSet.remove(reaper);
+            reaper.released = true;
+        }
         return context.getRuntime().getNil();
     }
 
@@ -241,5 +267,45 @@ public class RubyTempfile extends RubyFile {
         }
 
         return tempfile;
+    }
+
+    private static final class Reaper extends ReferenceReaper.Phantom<RubyTempfile> implements Runnable {
+        private volatile boolean released = false;
+        private final Ruby runtime;
+        private final File tmpFile;
+        private final OpenFile openFile;
+
+        Reaper(RubyTempfile file, Ruby runtime, File tmpFile, OpenFile openFile) {
+            super(file);
+            this.runtime = runtime;
+            this.tmpFile = tmpFile;
+            this.openFile = openFile;
+        }
+
+        public final void run() {
+            referenceSet.remove(this);
+            release();
+            clear();
+        }
+
+        final void release() {
+            if (!released) {
+                released = true;
+                if (openFile != null) {
+                    openFile.cleanup(runtime, false);
+                }
+                if (tmpFile.exists()) {
+                    boolean deleted = tmpFile.delete();
+                    if (runtime.getDebug().isTrue()) {
+                        String msg = "removing " + tmpFile.getPath() + " ... ";
+                        if (deleted) {
+                            runtime.getErr().println(msg + "done");
+                        } else {
+                            runtime.getErr().println(msg + "can't delete");
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -10,7 +10,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ThreadContext;
@@ -29,23 +28,19 @@ public final class FFIUtil {
         Map<NativeType, com.kenai.jffi.Type> m = new EnumMap<NativeType, com.kenai.jffi.Type>(NativeType.class);
         m.put(NativeType.VOID, com.kenai.jffi.Type.VOID);
         m.put(NativeType.BOOL, com.kenai.jffi.Type.UINT8);
-        m.put(NativeType.CHAR, com.kenai.jffi.Type.SINT8);
-        m.put(NativeType.SHORT, com.kenai.jffi.Type.SINT16);
-        m.put(NativeType.INT, com.kenai.jffi.Type.SINT32);
-        m.put(NativeType.LONG_LONG, com.kenai.jffi.Type.SINT64);
 
-        m.put(NativeType.UCHAR, com.kenai.jffi.Type.UINT8);
-        m.put(NativeType.USHORT, com.kenai.jffi.Type.UINT16);
-        m.put(NativeType.UINT, com.kenai.jffi.Type.UINT32);
-        m.put(NativeType.ULONG_LONG, com.kenai.jffi.Type.UINT64);
+        m.put(NativeType.CHAR, com.kenai.jffi.Type.SCHAR);
+        m.put(NativeType.SHORT, com.kenai.jffi.Type.SSHORT);
+        m.put(NativeType.INT, com.kenai.jffi.Type.SINT);
+        m.put(NativeType.LONG, com.kenai.jffi.Type.SLONG);
+        m.put(NativeType.LONG_LONG, com.kenai.jffi.Type.SLONG_LONG);
 
-        if (Platform.getPlatform().longSize() == 32) {
-            m.put(NativeType.LONG, com.kenai.jffi.Type.SINT32);
-            m.put(NativeType.ULONG, com.kenai.jffi.Type.UINT32);
-        } else {
-            m.put(NativeType.LONG, com.kenai.jffi.Type.SINT64);
-            m.put(NativeType.ULONG, com.kenai.jffi.Type.UINT64);
-        }
+        m.put(NativeType.UCHAR, com.kenai.jffi.Type.UCHAR);
+        m.put(NativeType.USHORT, com.kenai.jffi.Type.USHORT);
+        m.put(NativeType.UINT, com.kenai.jffi.Type.UINT);
+        m.put(NativeType.ULONG, com.kenai.jffi.Type.ULONG);
+        m.put(NativeType.ULONG_LONG, com.kenai.jffi.Type.ULONG_LONG);
+
         m.put(NativeType.FLOAT, com.kenai.jffi.Type.FLOAT);
         m.put(NativeType.DOUBLE, com.kenai.jffi.Type.DOUBLE);
         m.put(NativeType.POINTER, com.kenai.jffi.Type.POINTER);

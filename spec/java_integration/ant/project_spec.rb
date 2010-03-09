@@ -2,11 +2,11 @@ require File.expand_path('../../ant_spec_helper', __FILE__)
 
 describe Ant, "project", :type => :ant do
   before :each do
-    @ant = Ant.new :name => "spec project", :description => "spec description", :basedir => "/tmp", :run => false
+    @ant = example_ant :name => "spec project", :description => "spec description"
   end
 
   it "should have the 'basedir' set" do
-    @ant.project.base_dir.path.should == "/tmp"
+    @ant.project.base_dir.path.should == Dir::tmpdir
   end
 
   it "should have a project helper created" do

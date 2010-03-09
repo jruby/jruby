@@ -120,7 +120,7 @@ class Ant
     end
     at_exit do
       begin
-        run(*targets) unless Ant.run
+        run(*targets) if (!targets.empty? || @project.default_target) && !Ant.run
       rescue => e
         warn e.message
         exit 1

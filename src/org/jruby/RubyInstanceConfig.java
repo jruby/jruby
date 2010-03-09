@@ -53,6 +53,7 @@ import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
@@ -285,6 +286,9 @@ public class RubyInstanceConfig {
 
         LoadServiceCreator DEFAULT = new LoadServiceCreator() {
                 public LoadService create(Ruby runtime) {
+                    if (runtime.is1_9()) {
+                        return new LoadService19(runtime);
+                    }
                     return new LoadService(runtime);
                 }
             };

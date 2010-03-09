@@ -1,11 +1,4 @@
 fails:Kernel#load returns __FILE__ as an absolute path
 fails:Kernel#load calls #to_path on non-String arguments
 fails:Kernel#load allows wrapping the code in the file in an anonymous module
-fails(JRUBY-4543):Kernel#load (path resolution) calls #to_path on non-String objects
-fails(JRUBY-4543):Kernel#load (path resolution) calls #to_str on non-String objects returned by #to_path
-fails(JRUBY-4543):Kernel#load (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
 fails(JRUBY-4543):Kernel#load sets the enclosing scope to an anonymous module if passed true for 'wrap'
-fails(JRUBY-4543):Kernel#load (shell expansion) expands a tilde to the HOME environment variable as the path to load
-fails(JRUBY-4543):Kernel.load (path resolution) calls #to_path on non-String objects
-fails(JRUBY-4543):Kernel.load (path resolution) calls #to_str on non-String objects returned by #to_path
-fails(JRUBY-4543):Kernel.load (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries

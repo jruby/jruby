@@ -215,10 +215,21 @@ public class RubyUDPSocket extends RubyIPSocket {
                 RubyString nameStr = args[2].convertToString();
                 RubyString data = args[0].convertToString();
                 ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+                int port;
+                if (args[3] instanceof RubyString) {
+                    Integer portInteger = IANA.serviceToPort.get(args[3].asJavaString() + "/udp");
+                    if (portInteger != null) {
+                        port = portInteger.intValue();
+                    } else {
+                        port = (int)args[3].convertToInteger("to_i").getLongValue();
+                    }
+                } else {
+                    port = (int)args[3].convertToInteger().getLongValue();
+                }
 
                 InetAddress address = RubySocket.getRubyInetAddress(nameStr.getByteList());
                 InetSocketAddress addr =
-                        new InetSocketAddress(address, RubyNumeric.fix2int(args[3]));
+                        new InetSocketAddress(address, port);
                 written = ((DatagramChannel) this.getChannel()).send(buf, addr);
             } else {
                 RubyString data = args[0].convertToString();

@@ -102,6 +102,14 @@ public class LoadServiceResource {
         }
     }
 
+    public String getAbsolutePath() {
+        try {
+            return new File(getURL().getFile()).getCanonicalPath();
+        } catch (IOException e) {
+            return resource.toString();
+        }
+    }
+
     public boolean isAbsolute() {
         return absolute;
     }

@@ -138,10 +138,13 @@ namespace :spec do
     mspec :compile_mode => "FORCE", :jit_threshold => 0, :compat => "RUBY1_9"
   end
 
+  # Put Rake on the load path for JI specs without requiring rubygems
+  rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
   gem 'rspec'
   require 'spec/rake/spectask'
   desc "Runs Java Integration Specs"
   Spec::Rake::SpecTask.new("ji" => "build/jruby-test-classes.jar") do |t|
+    t.libs << rake_location
     t.spec_opts ||= []
     t.spec_opts << "--options" << "spec/java_integration/spec.opts"
     t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
@@ -149,6 +152,7 @@ namespace :spec do
 
   desc "Runs Java Integration specs quietly"
   Spec::Rake::SpecTask.new("ji:quiet" => "build/jruby-test-classes.jar") do |t|
+    t.libs << rake_location
     t.spec_opts ||= []
     t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
     t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
