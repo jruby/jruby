@@ -28,7 +28,7 @@ public class NailMain {
             config.setCurrentDirectory(context.getWorkingDirectory());
             config.setEnvironment(context.getEnv());
 
-            return main.run();
+            return main.run().getStatus();
         } catch (MainExitException mee) {
             if (!mee.isAborted()) {
                 config.getOutput().println(mee.getMessage());

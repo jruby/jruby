@@ -132,7 +132,7 @@ public class ShellLauncher {
         }
         public void run() {
             try {
-                this.result = new Main(config).run(argArray);
+                this.result = (new Main(config).run(argArray)).getStatus();
             } catch (Throwable throwable) {
                 throwable.printStackTrace(this.config.getError());
                 this.result = -1;
