@@ -12,7 +12,7 @@ public final class ReferenceReaper {
     private final Thread reaperThread;
     
     private ReferenceReaper() {
-        reaperThread = new Thread(reaper);
+        reaperThread = new Thread(reaper, "ReferenceReaper");
         reaperThread.setDaemon(true);
         reaperThread.start();
     }

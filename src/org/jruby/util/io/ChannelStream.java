@@ -56,7 +56,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 
 /**
- * <p>This file implements a seekable IO file.</p>
+ * This file implements a seekable IO file.
  */
 public class ChannelStream implements Stream, Finalizable {
     private final static boolean DEBUG = false;
@@ -85,7 +85,7 @@ public class ChannelStream implements Stream, Finalizable {
     private final static int BULK_READ_SIZE = 16 * 1024;
     private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
-    private Ruby runtime;
+    private volatile Ruby runtime;
     protected ModeFlags modes;
     protected boolean sync = false;
 
@@ -105,6 +105,7 @@ public class ChannelStream implements Stream, Finalizable {
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
         this.reading = true;
+        runtime.addInternalFinalizer(this);
     }
 
     private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
@@ -539,37 +540,24 @@ public class ChannelStream implements Stream, Finalizable {
         return !reading && buffer.hasRemaining();
     }
 
-
     /**
-     * <p>Close IO handler resources.</p>
-     * @throws IOException
-     * @throws BadDescriptorException
+     * Closes IO handler resources.
      *
-     * @see org.jruby.util.IOHandler#close()
-     */
-    public synchronized void fclose() throws IOException, BadDescriptorException {
-        closedExplicitly = true;
-        close(false); // not closing from finalize
-    }
-
-    /**
-     * Internal close, to safely work for finalizing.
-     * @param finalizing true if this is in a finalizing context
      * @throws IOException
      * @throws BadDescriptorException
      */
-    private void close(boolean finalizing) throws IOException, BadDescriptorException {
+    public void fclose() throws IOException, BadDescriptorException {
         try {
-            flushWrite();
-
-            descriptor.close();
-            buffer = EMPTY_BUFFER;
-
-            if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
-                    + descriptor.getFileno() + " closed by stream");
+            synchronized (this) {
+                closedExplicitly = true;
+                close(); // not closing from finalize
+            }
         } finally {
             Ruby localRuntime = getRuntime();
-            if (!finalizing && localRuntime != null) localRuntime.removeInternalFinalizer(this);
+
+            // Make sure we remove finalizers while not holding self lock,
+            // otherwise there is a possibility for a deadlock!
+            if (localRuntime != null) localRuntime.removeInternalFinalizer(this);
 
             // clear runtime so it doesn't get stuck in memory (JRUBY-2933)
             runtime = null;
@@ -577,25 +565,41 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     /**
-     * Internal close, to safely work for finalizing.
-     * @param finalizing true if this is in a finalizing context
+     * Internal close.
+     *
      * @throws IOException
      * @throws BadDescriptorException
      */
+    private void close() throws IOException, BadDescriptorException {
+        flushWrite();
+
+        descriptor.close();
+        buffer = EMPTY_BUFFER;
+
+        if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
+                + descriptor.getFileno() + " closed by stream");
+    }
+
+    /**
+     * Internal close, to safely work for finalizing.
+     * Silences possible exceptions.
+     */
     private void closeForFinalize() {
         try {
-            close(true);
+            close();
         } catch (BadDescriptorException ex) {
             // silence
         } catch (IOException ex) {
             // silence
+        } finally {
+            // clear runtime so it doesn't get stuck in memory (JRUBY-2933)
+            runtime = null;
         }
     }
 
     /**
      * @throws IOException
      * @throws BadDescriptorException
-     * @see org.jruby.util.IOHandler#flush()
      */
     public synchronized int fflush() throws IOException, BadDescriptorException {
         checkWritable();
@@ -1133,11 +1137,15 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     /**
-     * Ensure close (especially flush) when we're finished with
+     * Ensure close (especially flush) when we're finished with.
      */
     @Override
     public synchronized void finalize() {
         if (closedExplicitly) return;
+
+        if (DEBUG) {
+            getLogger("ChannelStream").info("finalize() for not explicitly closed stream");
+        }
 
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
         if (descriptor != null && descriptor.isSeekable() && descriptor.isOpen()) {
@@ -1509,7 +1517,7 @@ public class ChannelStream implements Stream, Finalizable {
         public void close() throws IOException {
             try {
                 synchronized (stream) {
-                    stream.close(false);
+                    stream.fclose();
                 }
             } catch (BadDescriptorException ex) {
                 throw new IOException(ex.getMessage());
@@ -1579,7 +1587,7 @@ public class ChannelStream implements Stream, Finalizable {
         public void close() throws IOException {
             try {
                 synchronized (stream) {
-                    stream.close(false);
+                    stream.fclose();
                 }
             } catch (BadDescriptorException ex) {
                 throw new IOException(ex.getMessage());
