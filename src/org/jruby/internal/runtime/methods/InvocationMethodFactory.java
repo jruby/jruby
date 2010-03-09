@@ -245,7 +245,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
                         mv.start();
-                        mv.line(0);
+                        mv.line(-1);
                         
                         // check arity
                         mv.aloadMany(0, 1, 4, 5); // method, context, name, args, required
@@ -296,7 +296,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         }
                         mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
                         mv.start();
-                        mv.line(0);
+                        mv.line(-1);
 
                         mv.aloadMany(0, 1, 2, 3, 4);
                         for (int i = 1; i <= scope.getRequiredArgs(); i++) {
@@ -327,8 +327,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
 
                     mv.visitCode();
-                    Label line = new Label();
-                    mv.visitLineNumber(0, line);
+                    mv.line(-1);
 
                     // invoke pre method stuff
                     if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -697,8 +696,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                     mv = beginMethod(cw, "call", specificArity, hasBlock);
                     mv.visitCode();
-                    Label line = new Label();
-                    mv.visitLineNumber(0, line);
+                    mv.line(-1);
 
                     createAnnotatedMethodInvocation(desc, mv, superClassString, specificArity, hasBlock);
 
@@ -786,8 +784,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 mv = beginMethod(cw, "call", specificArity, block);
                 mv.visitCode();
-                Label line = new Label();
-                mv.visitLineNumber(0, line);
+                mv.line(-1);
 
                 createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, block);
 
@@ -811,7 +808,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (c == null) {
                     ClassWriter cw = createBlockCtor(mnamePath, typeClass);
                     SkinnyMethodAdapter mv = startBlockCall(cw);
-                    mv.line(0);
+                    mv.line(-1);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
                     mv.aloadMany(1, 2, 3, 4);
@@ -845,7 +842,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (c == null) {
                     ClassWriter cw = createBlockCtor19(mnamePath, typeClass);
                     SkinnyMethodAdapter mv = startBlockCall19(cw);
-                    mv.line(0);
+                    mv.line(-1);
                     mv.aload(0);
                     mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
                     mv.aloadMany(1, 2, 3, 4);
@@ -892,7 +889,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
-        mv.line(0);
+        mv.line(-1);
         mv.aload(0);
         mv.invokespecial(p(CompiledBlockCallback.class), "<init>", sig(void.class));
         mv.aloadMany(0, 1);
@@ -910,7 +907,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
-        mv.line(0);
+        mv.line(-1);
         mv.aload(0);
         mv.invokespecial(p(Object.class), "<init>", sig(void.class));
         mv.aloadMany(0, 1);
@@ -1013,9 +1010,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitSource(shortPath, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null));
         mv.visitCode();
+        mv.line(-1);
         mv.aload(0);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", "()V");
-        mv.visitLineNumber(0, new Label());
+        mv.visitLineNumber(-1, new Label());
         mv.voidreturn();
         mv.end();
 
@@ -1028,9 +1026,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         cw.visitSource(namePath.replace('.', '/') + ".gen", null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null));
         mv.start();
+        mv.line(-1);
         mv.aloadMany(0, 1, 2);
         mv.visitMethodInsn(INVOKESPECIAL, sup, "<init>", JAVA_SUPER_SIG);
-        mv.visitLineNumber(0, new Label());
+        mv.visitLineNumber(-1, new Label());
         mv.voidreturn();
         mv.end();
         
