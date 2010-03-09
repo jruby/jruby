@@ -48,8 +48,12 @@ public final class ReferenceReaper {
             for ( ; ; ) {
                 try {
                     Reference r = referenceQueue.remove();
-                    if (r instanceof Runnable) {
-                        ((Runnable) r).run();
+                    try {
+                        if (r instanceof Runnable) {
+                            ((Runnable) r).run();
+                        }
+                    } finally {
+                        r.clear();
                     }
                 } catch (InterruptedException ex) {
                     break;
