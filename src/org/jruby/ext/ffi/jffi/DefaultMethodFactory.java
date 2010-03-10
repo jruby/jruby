@@ -317,7 +317,7 @@ public final class DefaultMethodFactory {
      */
     private static final class BooleanInvoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.getRuntime().newBoolean(invoker.invokeInt(function, args) != 0);
+            return context.getRuntime().newBoolean((invoker.invokeInt(function, args) & 0xff) != 0);
         }
         public static final FunctionInvoker INSTANCE = new BooleanInvoker();
     }
@@ -344,7 +344,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Signed8Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned8(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newSigned8(context.getRuntime(), (byte) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed8Invoker();
     }
@@ -355,7 +355,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Unsigned8Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned8(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newUnsigned8(context.getRuntime(), (byte) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned8Invoker();
     }
@@ -366,7 +366,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Signed16Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned16(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newSigned16(context.getRuntime(), (short) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed16Invoker();
     }
@@ -377,7 +377,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Unsigned16Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned16(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newUnsigned16(context.getRuntime(), (short) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned16Invoker();
     }

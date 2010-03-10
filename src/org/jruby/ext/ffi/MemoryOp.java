@@ -80,11 +80,11 @@ abstract class MemoryOp {
 
     static final class BooleanOp extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
-            io.putInt(offset, value.isTrue() ? 1 : 0);
+            io.putByte(offset, (byte) (value.isTrue() ? 1 : 0));
         }
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
-            return runtime.newBoolean(io.getInt(offset) != 0);
+            return runtime.newBoolean(io.getByte(offset) != 0);
         }
     }
 

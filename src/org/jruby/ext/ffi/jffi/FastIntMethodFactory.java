@@ -187,31 +187,31 @@ public class FastIntMethodFactory extends MethodFactory {
     static final class BooleanResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new BooleanResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return context.getRuntime().newBoolean(value != 0);
+            return context.getRuntime().newBoolean((value & 0xff) != 0);
         }
     }
     static final class Signed8ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Signed8ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newSigned8(context.getRuntime(), value);
+            return Util.newSigned8(context.getRuntime(), (byte) value);
         }
     }
     static final class Unsigned8ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Unsigned8ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newUnsigned8(context.getRuntime(), value);
+            return Util.newUnsigned8(context.getRuntime(), (byte) value);
         }
     }
     static final class Signed16ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Signed16ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newSigned16(context.getRuntime(), value);
+            return Util.newSigned16(context.getRuntime(), (short) value);
         }
     }
     static final class Unsigned16ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Unsigned16ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newUnsigned16(context.getRuntime(), value);
+            return Util.newUnsigned16(context.getRuntime(), (short) value);
         }
     }
     static final class Signed32ResultConverter implements IntResultConverter {
