@@ -664,6 +664,31 @@ public class JRubyEngineTest {
         instance = null;
     }
 
+    // This code worked successfully on command-line but never with JUnit
+    // <script>:1: undefined method `+' for nil:NilClass (NoMethodError)
+    // raised at "Object obj1 = engine1.eval("$Value + 2010.to_s");" 
+    //@Test
+    public void testMultipleEngineStates() throws ScriptException {
+        System.out.println("Multiple Engine States");
+        System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+        ScriptEngineManager manager = new ScriptEngineManager();
+        List<ScriptEngineFactory> factories = manager.getEngineFactories();
+        ScriptEngineFactory factory = null;
+        while (factories.iterator().hasNext()) {
+            factory = factories.iterator().next();
+            if ("ruby".equals(factory.getLanguageName())) {
+                break;
+            }
+        }
+        ScriptEngine engine1 = factory.getScriptEngine();
+        ScriptEngine engine2 = factory.getScriptEngine();
+        engine1.put("Value", new String("value of the first engine"));
+        engine2.put("Value", new Double(-0.0149));
+        Object obj1 = engine1.eval("$Value + 2010.to_s");
+        Object obj2 = engine2.eval("$Value + 2010");
+        assertNotSame(obj1, obj2);
+    }
+
     @Test
     public void testTermination() throws ScriptException {
         System.out.println("Termination Test");
