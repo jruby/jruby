@@ -220,4 +220,9 @@ describe "Needed implementation methods for interfaces" do
   it "should have to_s method" do 
     BeanLikeInterface.new.methods.should include("to_s")
   end
+
+  it "should be able to access Java methods of core Ruby Methods via $method" do
+    MethodNames.new.initialize__method.should == "foo"
+    MethodNames.__send____method.should == "foo"
+  end
 end
