@@ -48,7 +48,7 @@ import org.jruby.util.StringSupport;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
-    public static final Charset UTF8 = Charset.forName("UTF8");
+    public static final Charset UTF8 = Charset.forName("UTF-8");
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
