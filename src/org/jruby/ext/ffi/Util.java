@@ -135,13 +135,13 @@ public final class Util {
                     + parameter + " is not an integer");
     }
     public static final IRubyObject newSigned8(Ruby runtime, byte value) {
-        return runtime.newFixnum(value < 0x80 ? value : -0x80 + (value - 0x80));
+        return runtime.newFixnum(value);
     }
     public static final IRubyObject newUnsigned8(Ruby runtime, byte value) {
         return runtime.newFixnum(value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
     }
     public static final IRubyObject newSigned16(Ruby runtime, short value) {
-        return runtime.newFixnum(value < 0x8000 ? value : -0x8000 + (value - 0x8000));
+        return runtime.newFixnum(value);
     }
     public static final IRubyObject newUnsigned16(Ruby runtime, short value) {
         return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
