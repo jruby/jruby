@@ -119,6 +119,7 @@ public class RubyNKF {
 
     @JRubyMethod(name = "guess", required = 1, module = true)
     public static IRubyObject guess(ThreadContext context, IRubyObject recv, IRubyObject s) {
+        // TODO: Fix charset usage for JRUBY-4553
         Ruby runtime = context.getRuntime();
         if (!s.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + s.getMetaClass() + " into String");

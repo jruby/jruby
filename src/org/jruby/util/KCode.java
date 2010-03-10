@@ -28,27 +28,30 @@
 
 package org.jruby.util;
 
+import java.nio.charset.Charset;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class KCode {
-    public static final KCode NIL = new KCode(null, "ASCII", 0);
-    public static final KCode NONE = new KCode("NONE", "ASCII", 0);
-    public static final KCode UTF8 = new KCode("UTF8", "NonStrictUTF8", 64);
-    public static final KCode SJIS = new KCode("SJIS", "NonStrictSJIS", 48);
-    public static final KCode EUC = new KCode("EUC", "NonStrictEUCJP", 32);
+    public static final KCode NIL = new KCode(null, "ASCII", 0, Charset.forName("ISO-8859-1"));
+    public static final KCode NONE = new KCode("NONE", "ASCII", 0, Charset.forName("ISO-8859-1"));
+    public static final KCode UTF8 = new KCode("UTF8", "NonStrictUTF8", 64, Charset.forName("UTF8"));
+    public static final KCode SJIS = new KCode("SJIS", "NonStrictSJIS", 48, Charset.forName("SJIS"));
+    public static final KCode EUC = new KCode("EUC", "NonStrictEUCJP", 32, Charset.forName("EUC-JP"));
 
     private final String kcode;
     private final String encodingName;
     private final int code;
+    private final Charset charset;
 
     private volatile Encoding encoding;
 
-    private KCode(String kcode, String encodingName, int code) {
+    private KCode(String kcode, String encodingName, int code, Charset charset) {
         this.kcode = kcode;
         this.encodingName = encodingName;
         this.code = code;
+        this.charset = charset;
     }
 
     public static KCode create(Ruby runtime, String lang) {
@@ -80,6 +83,10 @@ public final class KCode {
 
     public String getKCode() {
         return kcode;
+    }
+
+    public Charset getCharset() {
+        return charset;
     }
 
     public int bits() {

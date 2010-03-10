@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.MetaClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
@@ -179,11 +180,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public static String getHashForString(String str) {
-        try {
-            return getHashForBytes(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException(uee);
-        }
+        return getHashForBytes(RubyEncoding.encodeUTF8(str));
     }
 
     public static String getHashForBytes(byte[] bytes) {

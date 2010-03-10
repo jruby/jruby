@@ -373,12 +373,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
         assert value != null;
-        byte[] bytes = null;
-        try {
-            bytes = value.toString().getBytes("UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-            bytes = ByteList.plain(value);
-        }
+        byte[] bytes = RubyEncoding.encodeUTF8(value);
         this.value = new ByteList(bytes, false);
     }
 
@@ -475,11 +470,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     public static RubyString newUnicodeString(Ruby runtime, String str) {
-        try {
-            return new RubyString(runtime, runtime.getString(), new ByteList(str.getBytes("UTF8"), false));
-        } catch (UnsupportedEncodingException uee) {
-            return new RubyString(runtime, runtime.getString(), str);
-        }
+        return new RubyString(runtime, runtime.getString(), new ByteList(RubyEncoding.encodeUTF8(str), false));
     }
 
     // String construction routines by NOT byte[] buffer and making the target String shared 
@@ -7164,11 +7155,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      * 
      */
     public String getUnicodeValue() {
-        try {
-            return new String(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), "UTF-8");
-        } catch (Exception e) {
-            throw new RuntimeException("Something's seriously broken with encodings", e);
-        }
+        return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
     }
 
     @Override
@@ -7176,11 +7163,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (target.isAssignableFrom(String.class)) {
             try {
                 // 1.9 support for encodings
+                // TODO: Fix charset use for JRUBY-4553
                 if (getRuntime().is1_9()) {
                     return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
                 }
 
-                return new String(value.getUnsafeBytes(), value.begin(), value.length(), "UTF8");
+                return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
             } catch (UnsupportedEncodingException uee) {
                 return toString();
             }

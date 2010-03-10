@@ -331,13 +331,7 @@ public final class Ruby {
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        byte[] bytes;
-        
-        try {
-            bytes = script.getBytes(KCode.NONE.getKCode());
-        } catch (UnsupportedEncodingException e) {
-            bytes = script.getBytes();
-        }
+        byte[] bytes = RubyEncoding.encode(script, KCode.NONE.getCharset());
 
         Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
@@ -2226,13 +2220,7 @@ public final class Ruby {
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        byte[] bytes;
-        
-        try {
-            bytes = content.getBytes(KCode.NONE.getKCode());
-        } catch (UnsupportedEncodingException e) {
-            bytes = content.getBytes();
-        }
+        byte[] bytes = RubyEncoding.encode(content, KCode.NONE.getCharset());
         
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, bytes, scope,
@@ -2242,13 +2230,7 @@ public final class Ruby {
     @Deprecated
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        byte[] bytes;
-        
-        try {
-            bytes = content.getBytes(KCode.NONE.getKCode());
-        } catch (UnsupportedEncodingException e) {
-            bytes = content.getBytes();
-        }
+        byte[] bytes = RubyEncoding.encode(content, KCode.NONE.getCharset());
 
         return parser.parse(file, bytes, scope,
                 new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, true, config));

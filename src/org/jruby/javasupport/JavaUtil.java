@@ -51,6 +51,7 @@ import org.jruby.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
@@ -814,11 +815,7 @@ public class JavaUtil {
         } else if (javaClass == String.class) {
             RubyString rubyString = (RubyString) rubyObject.callMethod(context, "to_s");
             ByteList bytes = rubyString.getByteList();
-            try {
-                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
-            } catch (UnsupportedEncodingException uee) {
-                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-            }
+            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         } else if (javaClass == ByteList.class) {
             return rubyObject.convertToString().getByteList();
         } else if (javaClass == BigInteger.class) {
@@ -1213,12 +1210,8 @@ public class JavaUtil {
             javaObject = new Double(((RubyFloat) object).getValue());
             break;
         case ClassIndex.STRING:
-            try {
-                ByteList bytes = ((RubyString) object).getByteList();
-                javaObject = new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
-            } catch (UnsupportedEncodingException uee) {
-                javaObject = object.toString();
-            }
+            ByteList bytes = ((RubyString) object).getByteList();
+            javaObject = RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             break;
         case ClassIndex.TRUE:
             javaObject = Boolean.TRUE;
@@ -1303,11 +1296,12 @@ public class JavaUtil {
             ByteList bytes = string.getByteList();
 
             // 1.9 support for encodings
+            // TODO: Fix charset use for JRUBY-4553
             if (string.getRuntime().is1_9()) {
                 return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
             }
 
-            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         } catch (UnsupportedEncodingException uee) {
             return string.toString();
         }

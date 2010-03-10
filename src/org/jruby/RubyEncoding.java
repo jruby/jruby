@@ -25,7 +25,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -45,6 +48,7 @@ import org.jruby.util.StringSupport;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
+    public static final Charset UTF8 = Charset.forName("UTF8");
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -147,6 +151,44 @@ public class RubyEncoding extends RubyObject {
         }
         if (cr1 == StringSupport.CR_7BIT) return enc2;
         return null;
+    }
+
+    public static byte[] encodeUTF8(CharSequence cs) {
+        return encode(cs, UTF8);
+    }
+
+    public static byte[] encodeUTF8(String str) {
+        return encode(str, UTF8);
+    }
+
+    public static byte[] encode(CharSequence cs, Charset charset) {
+        ByteBuffer buffer = charset.encode(cs.toString());
+        byte[] bytes = new byte[buffer.limit()];
+        buffer.get(bytes);
+        return bytes;
+    }
+
+    public static byte[] encode(String str, Charset charset) {
+        ByteBuffer buffer = charset.encode(str);
+        byte[] bytes = new byte[buffer.limit()];
+        buffer.get(bytes);
+        return bytes;
+    }
+
+    public static String decodeUTF8(byte[] bytes, int start, int length) {
+        return decode(bytes, start, length, UTF8);
+    }
+
+    public static String decodeUTF8(byte[] bytes) {
+        return decode(bytes, UTF8);
+    }
+
+    public static String decode(byte[] bytes, int start, int length, Charset charset) {
+        return charset.decode(ByteBuffer.wrap(bytes, start, length)).toString();
+    }
+
+    public static String decode(byte[] bytes, Charset charset) {
+        return charset.decode(ByteBuffer.wrap(bytes)).toString();
     }
 
     @JRubyMethod(name = "list", meta = true)
