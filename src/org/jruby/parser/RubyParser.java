@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.io.IOException;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.LexerSource;
 
@@ -35,6 +36,6 @@ import org.jruby.lexer.yacc.LexerSource;
  * Common interface specifying the contract of Ruby parsers (1.8.6 + 1.9)
  */
 public interface RubyParser {
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source);
+    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException;
     public void setWarnings(IRubyWarnings warnings);
 }

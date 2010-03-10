@@ -1329,15 +1329,6 @@ public class Ruby19Parser implements RubyParser {
     return "[unknown]";
   }
 
-  /** thrown for irrecoverable syntax errors and stack overflow.
-      Nested for convenience, does not depend on parser class.
-    */
-  public static class yyException extends java.lang.Exception {
-    private static final long serialVersionUID = 1L;
-    public yyException (String message) {
-      super(message);
-    }
-  }
 
   /** must be implemented by a scanner object to supply input to the parser.
       Nested for convenience, does not depend on parser class.
@@ -1416,10 +1407,9 @@ public class Ruby19Parser implements RubyParser {
       @param yyLex scanner.
       @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
       @return result of the last reduction, if any.
-      @throws yyException on irrecoverable parse error.
     */
   public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
-				throws java.io.IOException, yyException {
+				throws java.io.IOException {
     this.yydebug = (jay.yydebug.yyDebug)ayydebug;
     return yyparse(yyLex);
   }
@@ -1444,9 +1434,8 @@ public class Ruby19Parser implements RubyParser {
       Maintains a dynamic state and value stack.
       @param yyLex scanner.
       @return result of the last reduction, if any.
-      @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException, yyException {
+  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException {
     if (yyMax <= 0) yyMax = 256;			// initial size
     int yyState = 0, yyStates[] = new int[yyMax];	// state stack
     Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack
@@ -1509,12 +1498,12 @@ public class Ruby19Parser implements RubyParser {
                 if (yydebug != null) yydebug.pop(yyStates[yyTop]);
               } while (-- yyTop >= 0);
               if (yydebug != null) yydebug.reject();
-              throw new yyException("irrecoverable syntax error");
+              yyerror("irrecoverable syntax error");
   
             case 3:
               if (yyToken == 0) {
                 if (yydebug != null) yydebug.reject();
-                throw new yyException("irrecoverable syntax error at end-of-file");
+                yyerror("irrecoverable syntax error at end-of-file");
               }
               if (yydebug != null)
                 yydebug.discard(yyState, yyToken, yyName(yyToken),
@@ -4286,7 +4275,7 @@ public Object case241_line938(Object yyVal, Object[] yyVals, int yyTop) {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) {
+    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
@@ -4294,27 +4283,22 @@ public Object case241_line938(Object yyVal, Object[] yyVals, int yyTop) {
         lexer.reset();
         lexer.setSource(source);
         lexer.setEncoding(configuration.getKCode().getEncoding());
-        try {
-            Object debugger = null;
-            if (configuration.isDebug()) {
-                try {
-                    Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                    debugger = yyDebugAdapterClass.newInstance();
-                } catch (IllegalAccessException iae) {
-                    // ignore, no debugger present
-                } catch (InstantiationException ie) {
-                    // ignore, no debugger present
-                } catch (ClassNotFoundException cnfe) {
-                    // ignore, no debugger present
-                }
+
+        Object debugger = null;
+        if (configuration.isDebug()) {
+            try {
+                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
+                debugger = yyDebugAdapterClass.newInstance();
+            } catch (IllegalAccessException iae) {
+                // ignore, no debugger present
+            } catch (InstantiationException ie) {
+                // ignore, no debugger present
+            } catch (ClassNotFoundException cnfe) {
+                // ignore, no debugger present
             }
-	    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-            yyparse(lexer, debugger);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (yyException e) {
-            e.printStackTrace();
         }
+        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
+        yyparse(lexer, debugger);
         
         return support.getResult();
     }
@@ -4340,4 +4324,4 @@ public Object case241_line938(Object yyVal, Object[] yyVals, int yyTop) {
         return lexer.getPosition();
     }
 }
-					// line 8134 "-"
+					// line 8118 "-"

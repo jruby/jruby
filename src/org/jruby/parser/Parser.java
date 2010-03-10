@@ -120,6 +120,10 @@ public class Parser {
                 runtime.setVerbose(verbose);
             	result.setEndOffset(-1);
             }
+        } catch (IOException e) {
+            // Enebo: We may want to change this error to be more specific,
+            // but I am not sure which conditions leads to this...so lame message.
+            throw runtime.newSyntaxError("Problem reading source: " + e);
         } catch (SyntaxException e) {
             StringBuilder buffer = new StringBuilder(100);
             buffer.append(e.getPosition().getFile()).append(':');

@@ -1901,7 +1901,7 @@ none_block_pass: /* none */ {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) {
+    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
@@ -1909,27 +1909,23 @@ none_block_pass: /* none */ {
         lexer.reset();
         lexer.setSource(source);
         lexer.setEncoding(configuration.getKCode().getEncoding());
-        try {
-            Object debugger = null;
-            if (configuration.isDebug()) {
-                try {
-                    Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                    debugger = yyDebugAdapterClass.newInstance();
-                } catch (IllegalAccessException iae) {
-                    // ignore, no debugger present
-                } catch (InstantiationException ie) {
-                    // ignore, no debugger present
-                } catch (ClassNotFoundException cnfe) {
-                    // ignore, no debugger present
-                }
+
+        Object debugger = null;
+        if (configuration.isDebug()) {
+            try {
+                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
+                debugger = yyDebugAdapterClass.newInstance();
+            } catch (IllegalAccessException iae) {
+              // ignore, no debugger present
+            } catch (InstantiationException ie) {
+              // ignore, no debugger present
+            } catch (ClassNotFoundException cnfe) {
+              // ignore, no debugger present
             }
-	    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-            yyparse(lexer, debugger);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (yyException e) {
-            e.printStackTrace();
         }
+        // convenience: awt debugger
+        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
+        yyparse(lexer, debugger);
         
         return support.getResult();
     }
