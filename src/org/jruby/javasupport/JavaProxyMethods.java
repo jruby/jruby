@@ -59,11 +59,6 @@ public class JavaProxyMethods {
         return ((JavaObject)recv.dataGetStruct()).hash();
     }
     
-    @JRubyMethod
-    public static IRubyObject to_java_object(IRubyObject recv) {
-        return (JavaObject)recv.dataGetStruct();
-    }
-    
     @JRubyMethod(name = "synchronized")
     public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, Block block) {
         return ((JavaObject)recv.dataGetStruct()).ruby_synchronized(context, block);

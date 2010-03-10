@@ -307,10 +307,23 @@ public class Java implements Library {
             IRubyObject constant,
             IRubyObject javaClass,
             IRubyObject module) {
+        Ruby runtime = recv.getRuntime();
+
         if (!(module instanceof RubyModule)) {
-            throw recv.getRuntime().newTypeError(module, recv.getRuntime().getModule());
+            throw runtime.newTypeError(module, runtime.getModule());
         }
-        return ((RubyModule) module).const_set(constant, get_proxy_class(recv, javaClass));
+        IRubyObject proxyClass = get_proxy_class(recv, javaClass);
+        RubyModule m = (RubyModule)module;
+        String constName = constant.asJavaString();
+        IRubyObject existing = m.getConstantNoConstMissing(constName);
+
+        if (existing != null
+                && existing != RubyBasicObject.UNDEF
+                && existing != proxyClass) {
+            runtime.getWarnings().warn("replacing " + existing + " with " + proxyClass + " in constant '" + constName + " on class/module " + m);
+        }
+        
+        return ((RubyModule) module).setConstantQuiet(constant.asJavaString(), get_proxy_class(recv, javaClass));
     }
 
     public static IRubyObject get_java_class(IRubyObject recv, IRubyObject name) {

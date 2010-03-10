@@ -41,6 +41,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.JRubyFile;
 import org.jruby.util.ReferenceReaper;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
@@ -122,7 +123,8 @@ public class RubyTempfile extends RubyFile {
                     // We do this b/c make_tmpname might be overridden
                     IRubyObject tmpname = callMethod(runtime.getCurrentContext(),
                                                      "make_tmpname", new IRubyObject[] {basename, runtime.newFixnum(counter)});
-                    tmp = new File(dir.convertToString().toString(), tmpname.convertToString().toString());
+                    tmp = JRubyFile.create(getRuntime().getCurrentDirectory(),
+                                           new File(dir.convertToString().toString(), tmpname.convertToString().toString()).getPath());
                     if (tmp.createNewFile()) {
                         tmpFile = tmp;
                         path = tmp.getPath();

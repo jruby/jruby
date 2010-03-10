@@ -12,7 +12,7 @@ public final class ReferenceReaper {
     private final Thread reaperThread;
     
     private ReferenceReaper() {
-        reaperThread = new Thread(reaper);
+        reaperThread = new Thread(reaper, "ReferenceReaper");
         reaperThread.setDaemon(true);
         reaperThread.start();
     }
@@ -48,8 +48,12 @@ public final class ReferenceReaper {
             for ( ; ; ) {
                 try {
                     Reference r = referenceQueue.remove();
-                    if (r instanceof Runnable) {
-                        ((Runnable) r).run();
+                    try {
+                        if (r instanceof Runnable) {
+                            ((Runnable) r).run();
+                        }
+                    } finally {
+                        r.clear();
                     }
                 } catch (InterruptedException ex) {
                     break;

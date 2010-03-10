@@ -2772,7 +2772,7 @@ public final class Ruby {
         }
 
         if (finalizers != null) {
-            synchronized (finalizers) {
+            synchronized (finalizersMutex) {
                 for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
                     Finalizable f = finalIter.next();
                     if (f != null) {

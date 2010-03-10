@@ -51,6 +51,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1310,6 +1311,26 @@ public class RubyClass extends RubyModule {
         if (classAnnotations == null) classAnnotations = new Hashtable<Class,Map<String,Object>>();
 
         classAnnotations.put(annotation, fields);
+    }
+
+    @Override
+    public Object toJava(Class klass) {
+        Class returnClass = null;
+        
+        if (klass.isAssignableFrom(Class.class)) {
+            if (respondsTo("java_class")) {
+                JavaClass javaClass = (JavaClass)callMethod("java_class");
+                returnClass = (Class)javaClass.getValue();
+            } else {
+                returnClass = getReifiedClass();
+            }
+        }
+
+        if (returnClass == null) {
+            throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + klass);
+        }
+
+        return returnClass;
     }
 
     protected final Ruby runtime;

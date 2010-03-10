@@ -2653,23 +2653,50 @@ public class RubyModule extends RubyObject {
         
         return runtime.getLoadService().autoload(getName() + "::" + name);
     }
-    
+
+    /**
+     * Set the named constant on this module. Also, if the value provided is another Module and
+     * that module has not yet been named, assign it the specified name. This version does not
+     * warn if the constant has already been set.
+     *
+     * @param name The name to assign
+     * @param value The value to assign to it; if an unnamed Module, also set its basename to name
+     * @return The result of setting the variable.
+     */
+    public IRubyObject setConstantQuiet(String name, IRubyObject value) {
+        return setConstantCommon(name, value, false);
+    }
+
     /**
      * Set the named constant on this module. Also, if the value provided is another Module and
      * that module has not yet been named, assign it the specified name.
-     * 
+     *
      * @param name The name to assign
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
+        return setConstantCommon(name, value, true);
+    }
+
+    /**
+     * Set the named constant on this module. Also, if the value provided is another Module and
+     * that module has not yet been named, assign it the specified name.
+     *
+     * @param name The name to assign
+     * @param value The value to assign to it; if an unnamed Module, also set its basename to name
+     * @return The result of setting the variable.
+     */
+    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
         if (oldValue != null) {
             Ruby runtime = getRuntime();
             if (oldValue == UNDEF) {
                 runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
             } else {
-                runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
+                if (warn) {
+                    runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
+                }
             }
         }
 

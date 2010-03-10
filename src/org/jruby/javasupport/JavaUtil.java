@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -135,7 +136,8 @@ public class JavaUtil {
 
     public static IRubyObject convertJavaArrayElementToRuby(Ruby runtime, JavaConverter converter, Object array, int i) {
         if (converter == null || converter == JAVA_DEFAULT_CONVERTER) {
-            return convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
+            IRubyObject x = convertJavaToUsableRubyObject(runtime, ((Object[])array)[i]);
+            return x;
         }
         return converter.get(runtime, array, i);
     }
@@ -173,10 +175,15 @@ public class JavaUtil {
     }
 
     public static Object convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class target) {
+        return convertProcToInterface(context, (RubyBasicObject)rubyObject, target);
+    }
+
+    public static Object convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class target) {
         Ruby runtime = context.getRuntime();
-        IRubyObject javaInterfaceModule = Java.get_interface_module(runtime, JavaClass.get(runtime, target));
+        RubyModule javaInterfaceModule = (RubyModule)Java.get_interface_module(runtime, JavaClass.get(runtime, target));
         if (!((RubyModule) javaInterfaceModule).isInstance(rubyObject)) {
-            rubyObject.extend(new IRubyObject[]{javaInterfaceModule});
+            javaInterfaceModule.callMethod(context, "extend_object", rubyObject);
+            javaInterfaceModule.callMethod(context, "extended", rubyObject);
         }
 
         if (rubyObject instanceof RubyProc) {
@@ -212,64 +219,12 @@ public class JavaUtil {
         return jo.getValue();
     }
 
-    public static Object coerceJavaObjectToType(ThreadContext context, Object javaObject, Class target) {
-        if (javaObject != null && isDuckTypeConvertable(javaObject.getClass(), target)) {
-            RubyObject rubyObject = (RubyObject) javaObject;
-            if (!rubyObject.respondsTo("java_object")) {
-                return convertProcToInterface(context, rubyObject, target);
-            }
-
-            // can't be converted any more, return it
-            return javaObject;
-        } else {
-            return javaObject;
-        }
-    }
-
     public static NumericConverter getNumericConverter(Class target) {
         NumericConverter converter = NUMERIC_CONVERTERS.get(target);
         if (converter == null) {
             return NUMERIC_TO_OTHER;
         }
         return converter;
-    }
-
-    // FIXME: This doesn't actually support anything but String
-    public static Object coerceStringToType(RubyString string, Class target) {
-        try {
-            ByteList bytes = string.getByteList();
-
-            // 1.9 support for encodings
-            if (string.getRuntime().is1_9()) {
-                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
-            }
-
-            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
-        } catch (UnsupportedEncodingException uee) {
-            return string.toString();
-        }
-    }
-
-    public static Object coerceOtherToType(ThreadContext context, IRubyObject arg, Class target) {
-        Ruby runtime = context.getRuntime();
-
-        if (isDuckTypeConvertable(arg.getClass(), target)) {
-            RubyObject rubyObject = (RubyObject) arg;
-            if (!rubyObject.respondsTo("java_object")) {
-                return convertProcToInterface(context, rubyObject, target);
-            }
-        } else if (arg.respondsTo("to_java_object")) {
-            Object javaObject = arg.callMethod(context, "to_java_object");
-            if (javaObject instanceof JavaObject) {
-                runtime.getJavaSupport().getObjectProxyCache().put(((JavaObject) javaObject).getValue(), arg);
-                javaObject = ((JavaObject)javaObject).getValue();
-            }
-            return javaObject;
-        }
-
-        // it's either as converted as we can make it via above logic or it's
-        // not one of the types we convert, so just pass it out as-is without wrapping
-        return arg;
     }
 
     public static boolean isJavaObject(IRubyObject candidate) {
@@ -823,11 +778,6 @@ public class JavaUtil {
             if(rubyObject == null) {
                 throw new RuntimeException("java_object returned null for " + origObject.getType().getName());
             }
-        } else if (rubyObject.respondsTo("to_java_object")) {
-            rubyObject = rubyObject.callMethod(context, "to_java_object");
-            if(rubyObject == null) {
-                throw new RuntimeException("to_java_object returned null for " + origObject.getType().getName());
-            }
         }
 
         if (rubyObject instanceof JavaObject) {
@@ -1344,5 +1294,51 @@ public class JavaUtil {
             return JavaUtil.convertJavaToUsableRubyObject(runtime, ((JavaObject) object).getValue());
         }
         return object;
+    }
+
+    // FIXME: This doesn't actually support anything but String
+    @Deprecated
+    public static Object coerceStringToType(RubyString string, Class target) {
+        try {
+            ByteList bytes = string.getByteList();
+
+            // 1.9 support for encodings
+            if (string.getRuntime().is1_9()) {
+                return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), string.getEncoding().toString());
+            }
+
+            return new String(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), "UTF8");
+        } catch (UnsupportedEncodingException uee) {
+            return string.toString();
+        }
+    }
+
+    @Deprecated
+    public static Object coerceOtherToType(ThreadContext context, IRubyObject arg, Class target) {
+        if (isDuckTypeConvertable(arg.getClass(), target)) {
+            RubyObject rubyObject = (RubyObject) arg;
+            if (!rubyObject.respondsTo("java_object")) {
+                return convertProcToInterface(context, rubyObject, target);
+            }
+        }
+
+        // it's either as converted as we can make it via above logic or it's
+        // not one of the types we convert, so just pass it out as-is without wrapping
+        return arg;
+    }
+
+    @Deprecated
+    public static Object coerceJavaObjectToType(ThreadContext context, Object javaObject, Class target) {
+        if (javaObject != null && isDuckTypeConvertable(javaObject.getClass(), target)) {
+            RubyObject rubyObject = (RubyObject) javaObject;
+            if (!rubyObject.respondsTo("java_object")) {
+                return convertProcToInterface(context, rubyObject, target);
+            }
+
+            // can't be converted any more, return it
+            return javaObject;
+        } else {
+            return javaObject;
+        }
     }
 }

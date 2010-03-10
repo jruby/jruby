@@ -94,9 +94,9 @@ public class Main {
         Main main = new Main();
         
         try {
-            int status = main.run(args);
-            if (status != 0) {
-                System.exit(status);
+            Status status = main.run(args);
+            if (status.isExit()) {
+                System.exit(status.getStatus());
             }
         } catch (RaiseException re) {
             throw re;
@@ -111,7 +111,7 @@ public class Main {
         }
     }
 
-    public int run(String[] args) {
+    public Status run(String[] args) {
         try {
             config.processArguments(args);
             return run();
@@ -122,7 +122,7 @@ public class Main {
                     printUsage();
                 }
             }
-            return mee.getStatus();
+            return new Status(mee.getStatus());
         } catch (OutOfMemoryError oome) {
             // produce a nicer error since Rubyists aren't used to seeing this
             System.gc();
@@ -141,7 +141,7 @@ public class Main {
             } else {
                 config.getError().println("Specify -w for full OutOfMemoryError stack trace");
             }
-            return 1;
+            return new Status(1);
         } catch (StackOverflowError soe) {
             // produce a nicer error since Rubyists aren't used to seeing this
             System.gc();
@@ -160,7 +160,7 @@ public class Main {
             } else {
                 config.getError().println("Specify -w for full StackOverflowError stack trace");
             }
-            return 1;
+            return new Status(1);
         } catch (UnsupportedClassVersionError ucve) {
             config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
             config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
@@ -171,13 +171,13 @@ public class Main {
             } else {
                 config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
             }
-            return 1;
+            return new Status(1);
         } catch (ThreadKill kill) {
-            return 0;
+            return new Status();
         }
     }
 
-    public int run() {
+    public Status run() {
         if (config.isShowVersion()) {
             showVersion();
         }
@@ -193,7 +193,7 @@ public class Main {
             if (config.shouldPrintProperties()) {
                 printProperties();
             }
-            return 0;
+            return new Status();
         }
 
         InputStream in   = config.getScriptSource();
@@ -258,7 +258,7 @@ public class Main {
                     }
                 }
             }
-            return status;
+            return new Status(status);
         } else {
             long now = -1;
 
@@ -290,15 +290,17 @@ public class Main {
                     IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
                     if (status != null && !status.isNil()) {
-                        return RubyNumeric.fix2int(status);
+                        return new Status(RubyNumeric.fix2int(status));
+                    } else {
+                        return new Status(0);
                     }
                 } else {
                     runtime.printError(raisedException);
-                    return 1;
+                    return new Status(1);
                 }
             }
         }
-        return 0;
+        return new Status();
     }
 
     private void showVersion() {
@@ -387,6 +389,32 @@ public class Main {
             } catch (IOException ex) {}
         }
         return result;
+    }
+
+    public static class Status {
+        private boolean isExit = false;
+        private int status = 0;
+
+        /**
+         * Creates a status object with the specified value and with explicit
+         * exit flag. An exit flag means that Kernel.exit() has been explicitly
+         * invoked during the run.
+         *
+         * @param status
+         *            The status value.
+         */
+        Status(int status) {
+            this.isExit = true;
+            this.status = status;
+        }
+
+        /**
+         * Creates a status object with 0 value and no explicit exit flag. 
+         */
+        Status() {}
+
+        public boolean isExit() { return isExit; }
+        public int getStatus() { return status; }
     }
 
     protected boolean isShebangLine(String line) {

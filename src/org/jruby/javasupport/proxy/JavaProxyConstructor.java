@@ -216,12 +216,18 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                 for (int i = nargs.length; --i >= 0; ) {
                     newArgs[i] = JavaUtil.convertJavaToUsableRubyObject(runtime, nargs[i]);
                 }
-                
+
+                IRubyObject result = null;
                 if (v < 0 || v == (newArgs.length)) {
-                    return RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs).toJava(m.getReturnType());
+                    result = RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs);
                 } else {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
-                    return RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK).toJava(m.getReturnType());
+                    result = RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK);
+                }
+                if (m.getReturnType() == void.class) {
+                    return null;
+                } else {
+                    return result.toJava(m.getReturnType());
                 }
             }
         };

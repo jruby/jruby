@@ -6,7 +6,8 @@ describe Ant, "project", :type => :ant do
   end
 
   it "should have the 'basedir' set" do
-    @ant.project.base_dir.path.should == Dir::tmpdir
+    # expand_path is used to avoid / and \\ mismatch on Windows
+    File.expand_path(@ant.project.base_dir.path).should == Dir::tmpdir
   end
 
   it "should have a project helper created" do
