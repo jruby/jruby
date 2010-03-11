@@ -331,7 +331,7 @@ public final class Ruby {
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        byte[] bytes = RubyEncoding.encode(script, KCode.NONE.getCharset());
+        byte[] bytes = script.getBytes();
 
         Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
@@ -2220,7 +2220,7 @@ public final class Ruby {
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        byte[] bytes = RubyEncoding.encode(content, KCode.NONE.getCharset());
+        byte[] bytes = content.getBytes();
         
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, bytes, scope,
@@ -2230,7 +2230,7 @@ public final class Ruby {
     @Deprecated
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        byte[] bytes = RubyEncoding.encode(content, KCode.NONE.getCharset());
+        byte[] bytes = content.getBytes();
 
         return parser.parse(file, bytes, scope,
                 new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, true, config));
