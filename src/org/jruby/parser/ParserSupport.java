@@ -1430,4 +1430,117 @@ public class ParserSupport {
 
         return new BlockArgNode(position, getCurrentScope().getLocalScope().addVariable(identifier), identifier);
     }
+
+    /**
+     * generate parsing error
+     */
+    public void yyerror(String message) {
+        throw new SyntaxException(PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), message);
+    }
+
+    /**
+     * generate parsing error
+     * @param message text to be displayed.
+     * @param expected list of acceptable tokens, if available.
+     */
+    public void yyerror(String message, String[] expected, String found) {
+        String text = message + ", unexpected " + found + "\n";
+        throw new SyntaxException(PID.GRAMMAR_ERROR, lexer.getPosition(), lexer.getCurrentLine(), text, found);
+    }
+
+    public ISourcePosition getPosition(ISourcePositionHolder start) {
+        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
+    }
+
+    public void warn(ID id, ISourcePosition position, String message, Object... data) {
+        warnings.warn(id, position, message, data);
+    }
+
+    public void warning(ID id, ISourcePosition position, String message, Object... data) {
+        if (warnings.isVerbose()) {
+            warnings.warning(id, position, message, data);
+        }
+    }
+
+    // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
+    public boolean is_local_id(Token identifier) {
+        String name = (String) identifier.getValue();
+
+        return getCurrentScope().getLocalScope().isDefined(name) < 0;
+    }
+
+    // 1.9
+    public ListNode list_append(Node list, Node item) {
+        if (list == null) return new ArrayNode(item.getPosition(), item);
+        if (!(list instanceof ListNode)) return new ArrayNode(list.getPosition(), list).add(item);
+
+        return ((ListNode) list).add(item);
+    }
+
+    // 1.9
+    public Node new_bv(Token identifier) {
+        if (!is_local_id(identifier)) {
+            getterIdentifierError(identifier.getPosition(), (String) identifier.getValue());
+        }
+        shadowing_lvar(identifier);
+        arg_var(identifier);
+
+        return null;
+    }
+
+    // 1.9
+    public int arg_var(Token identifier) {
+        return getCurrentScope().addVariableThisScope((String) identifier.getValue());
+    }
+
+    // 1.9
+    public void shadowing_lvar(Token identifier) {
+        String name = (String) identifier.getValue();
+
+        if (getCurrentScope().isDefined(name) > 0) {
+            if (warnings.isVerbose()) warnings.warning(ID.STATEMENT_NOT_REACHED, identifier.getPosition(), "shadowing outer local variable - " + name);
+        }
+    }
+
+    // 1.9
+    public ListNode list_concat(Node first, Node second) {
+        if (first instanceof ListNode) {
+            if (second instanceof ListNode) {
+                return ((ListNode) first).addAll((ListNode) second);
+            } else {
+                return ((ListNode) first).addAll(second);
+            }
+        }
+
+        return new ArrayNode(first.getPosition(), first).add(second);
+    }
+
+    // 1.9
+    /**
+     * If node is a splat and it is splatting a literal array then return the literal array.
+     * Otherwise return null.  This allows grammar to not splat into a Ruby Array if splatting
+     * a literal array.
+     */
+    public Node splat_array(Node node) {
+        if (node instanceof SplatNode) node = ((SplatNode) node).getValue();
+        if (node instanceof ArrayNode) return node;
+        return null;
+    }
+
+    // 1.9
+    public Node arg_append(Node node1, Node node2) {
+        if (node1 == null) return new ArrayNode(node2.getPosition(), node2);
+        if (node1 instanceof ListNode) return ((ListNode) node1).add(node2);
+        if (node1 instanceof BlockPassNode) return arg_append(((BlockPassNode) node1).getBodyNode(), node2);
+        if (node1 instanceof ArgsPushNode) {
+            ArgsPushNode pushNode = (ArgsPushNode) node1;
+            Node body = pushNode.getSecondNode();
+
+            return new ArgsCatNode(pushNode.getPosition(), pushNode.getFirstNode(),
+                    new ArrayNode(body.getPosition(), body).add(node2));
+        }
+
+        return new ArgsPushNode(position(node1, node2), node1, node2);
+    }
+
 }

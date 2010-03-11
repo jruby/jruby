@@ -72,25 +72,6 @@ t    return "[unknown]";
 t  }
 t
 .
-.  /** simplified error message.
-.      @see #yyerror(java.lang.String, java.lang.String[])
-.    */
-.  public void yyerror (String message) {
-.    //new Exception().printStackTrace();
-.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), message);
-.  }
-.
-.  /** (syntax) error message.
-.      Can be overwritten to control message format.
-.      @param message text to be displayed.
-.      @param expected list of acceptable tokens, if available.
-.    */
-.  public void yyerror (String message, String[] expected, String found) {
-.    String text = message + ", unexpected " + found + "\n";
-.    //new Exception().printStackTrace();
-.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), text, found);
-.  }
-.
 .  /** computes list of expected tokens on error by tracing the tables.
 .      @param state for which to compute the list.
 .      @return list of token names.
@@ -200,7 +181,7 @@ t              yydebug.shift(yyState, yyTable[yyN], yyErrorFlag-1);
 .            switch (yyErrorFlag) {
 .  
 .            case 0:
-.              yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
+.              support.yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
 t              if (yydebug != null) yydebug.error("syntax error");
 .  
 .            case 1: case 2:
@@ -218,12 +199,12 @@ t                    yydebug.shift(yyStates[yyTop], yyTable[yyN], 3);
 t                if (yydebug != null) yydebug.pop(yyStates[yyTop]);
 .              } while (-- yyTop >= 0);
 t              if (yydebug != null) yydebug.reject();
-.              yyerror("irrecoverable syntax error");
+.              support.yyerror("irrecoverable syntax error");
 .  
 .            case 3:
 .              if (yyToken == 0) {
 t                if (yydebug != null) yydebug.reject();
-.                yyerror("irrecoverable syntax error at end-of-file");
+.                support.yyerror("irrecoverable syntax error at end-of-file");
 .              }
 t              if (yydebug != null)
 t                yydebug.discard(yyState, yyToken, yyName(yyToken),

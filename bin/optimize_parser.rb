@@ -40,7 +40,7 @@ class PostProcessor
   end
 
   def generate_action_body_method(label, code_body)
-    @out.puts "public Object #{label}(Object yyVal, Object[] yyVals, int yyTop) {"
+    @out.puts "public static Object #{label}(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {"
     code_body.each { |line| @out.puts line }
     @out.puts "    return yyVal;"
     @out.puts "}"
@@ -72,7 +72,7 @@ class PostProcessor
 
     label = "case#{case_number}_line#{line_number}"
 
-    @out.puts "case #{case_number}: yyVal = #{label}(yyVal, yyVals, yyTop); // line #{line_number}"
+    @out.puts "case #{case_number}: yyVal = #{label}(support, lexer, yyVal, yyVals, yyTop); // line #{line_number}"
 
     body = []
     last_line = nil
