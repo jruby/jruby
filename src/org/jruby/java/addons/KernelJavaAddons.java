@@ -85,7 +85,7 @@ public class KernelJavaAddons {
     }
 
     @JRubyMethod(rest = true)
-    public static IRubyObject java_requires(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject java_require(IRubyObject recv, IRubyObject[] args) {
         // empty stub for now
         return recv.getRuntime().getNil();
     }

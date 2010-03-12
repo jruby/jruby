@@ -217,7 +217,7 @@ module JRuby::Compiler
     def static_init
       return <<JAVA
   static {
-    #{requires_string}
+#{requires_string}
     RubyClass metaclass = __ruby__.getClass(\"#{name}\");
     metaclass.setClassAllocator(#{name}.class);
     if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
@@ -330,11 +330,6 @@ JAVA
           "#{type} #{var_name}"
         end.join(', ')
 
-        passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
-        passed_args = ', ' + passed_args if java_signature.parameters.size > 0
-
-        conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
-
         java_name = java_signature.name
         
         if ret.void?
@@ -344,11 +339,17 @@ JAVA
         end
       else
         ret = "Object"
-        args_string = ""
+        var_names = []
+        args_string = args.map{|a| var_names << a; "Object #{a}"}.join(", ")
         java_name = @name
         passed_args = ""
         ret_string = "return ruby_result.toJava(Object.class);"
       end
+
+      passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+      passed_args = ', ' + passed_args if args.size > 0
+
+      conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
 
       anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
 
@@ -608,7 +609,7 @@ EOJ
         add_annotation(*node.args_node.child_nodes)
       when 'java_implements'
         add_interface(*node.args_node.child_nodes)
-      when "java_requires"
+      when "java_require"
         add_requires(*node.args_node.child_nodes)
       when "java_package"
         set_package(*node.args_node.child_nodes)

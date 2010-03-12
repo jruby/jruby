@@ -104,6 +104,26 @@ public class JavaUtil {
         return convertJavaToUsableRubyObjectWithConverter(runtime, object, getJavaConverter(javaClass));
     }
 
+    public static IRubyObject convertJavaToRuby(Ruby runtime, int i) {
+        return runtime.newFixnum(i);
+    }
+
+    public static IRubyObject convertJavaToRuby(Ruby runtime, long l) {
+        return runtime.newFixnum(l);
+    }
+
+    public static IRubyObject convertJavaToRuby(Ruby runtime, float f) {
+        return runtime.newFloat(f);
+    }
+
+    public static IRubyObject convertJavaToRuby(Ruby runtime, double d) {
+        return runtime.newFloat(d);
+    }
+
+    public static IRubyObject convertJavaToRuby(Ruby runtime, boolean b) {
+        return runtime.newBoolean(b);
+    }
+
     /**
      * Returns a usable RubyObject; for types that are not converted to Ruby native
      * types, a Java proxy will be returned.
@@ -996,31 +1016,6 @@ public class JavaUtil {
         RUBY_CONVERTERS.put(Float.TYPE, RUBY_FLOAT_CONVERTER);
         RUBY_CONVERTERS.put(Double.class, RUBY_DOUBLE_CONVERTER);
         RUBY_CONVERTERS.put(Double.TYPE, RUBY_DOUBLE_CONVERTER);
-    }
-
-    @Deprecated
-    public static IRubyObject convertJavaToRuby(Ruby runtime, int i) {
-        return runtime.newFixnum(i);
-    }
-
-    @Deprecated
-    public static IRubyObject convertJavaToRuby(Ruby runtime, long l) {
-        return runtime.newFixnum(l);
-    }
-
-    @Deprecated
-    public static IRubyObject convertJavaToRuby(Ruby runtime, float f) {
-        return runtime.newFloat(f);
-    }
-
-    @Deprecated
-    public static IRubyObject convertJavaToRuby(Ruby runtime, double d) {
-        return runtime.newFloat(d);
-    }
-
-    @Deprecated
-    public static IRubyObject convertJavaToRuby(Ruby runtime, boolean b) {
-        return runtime.newBoolean(b);
     }
 
     @Deprecated
