@@ -153,16 +153,21 @@ module JRuby::Compiler
       @classes = []
       @script_name = script_name
       @imports = imports
+      @requires = []
     end
 
-    attr_accessor :classes, :imports, :script_name
+    attr_accessor :classes, :imports, :script_name, :requires
 
     def add_import(name)
       @imports << name
     end
 
+    def add_require(require)
+      @requires << require
+    end
+
     def new_class(name, annotations = [])
-      cls = RubyClass.new(name, imports, script_name, annotations)
+      cls = RubyClass.new(name, imports, script_name, annotations, requires)
       @classes << cls
       cls
     end
@@ -177,16 +182,17 @@ module JRuby::Compiler
   end
 
   class RubyClass
-    def initialize(name, imports = [], script_name = nil, annotations = [])
+    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [])
       @name = name
       @imports = imports
       @script_name = script_name
       @methods = []
       @annotations = annotations
       @interfaces = []
+      @requires = requires
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires
 
     def new_method(name, java_signature = nil, annotations = [])
       method = RubyMethod.new(name, java_signature, annotations)
@@ -209,7 +215,7 @@ module JRuby::Compiler
     def static_init
       return <<JAVA
   static {
-    __ruby__.getLoadService().lockAndRequire(\"#{script_name}\");
+    #{requires_string}
     RubyClass metaclass = __ruby__.getClass(\"#{name}\");
     metaclass.setClassAllocator(#{name}.class);
     if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
@@ -230,6 +236,12 @@ JAVA
 
     def methods_string
       methods.map(&:to_s).join("\n")
+    end
+
+    def requires_string
+      requires.map do |r|
+        "    __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
+      end.join("\n")
     end
 
     def to_s
@@ -284,41 +296,49 @@ JAVA
     end
 
     def to_s
-      if java_signature.parameter_list.size != args.size
-        raise "signature and method argument counts do not match"
-      end
-
-      ret = java_signature.return_type
-
-      var_names = []
-      i = 0;
-      args_string = java_signature.parameter_list.map do |a|
-        type = a.type.name
-        if a.variable_name
-          var_name = a.variable_name
-        else
-          var_name = args[i]
-          i+=1
+      if java_signature
+        if java_signature.parameters.size != args.size
+          raise "signature and method argument counts do not match"
         end
 
-        var_names << var_name
-        "#{type} #{var_name}"
-      end.join(', ')
+        ret = java_signature.return_type
 
-      passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
-      passed_args = ', ' + passed_args if java_signature.parameter_list.size > 0
+        var_names = []
+        i = 0;
+        args_string = java_signature.parameters.map do |a|
+          type = a.type.name
+          if a.variable_name
+            var_name = a.variable_name
+          else
+            var_name = args[i]
+            i+=1
+          end
 
-      conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+          var_names << var_name
+          "#{type} #{var_name}"
+        end.join(', ')
+
+        passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+        passed_args = ', ' + passed_args if java_signature.parameters.size > 0
+
+        conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+
+        java_name = java_signature.name
+        
+        if ret.void?
+          ret_string = "return;"
+        else
+          ret_string = "return (#{ret.wrapper_name})ruby_result.toJava(#{ret.name}.class);"
+        end
+      else
+        ret = "Object"
+        args_string = ""
+        java_name = @name
+        passed_args = ""
+        ret_string = "return ruby_result.toJava(Object.class);"
+      end
 
       anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
-
-      java_name = java_signature.name
-
-      if ret.void?
-        ret_string = "return;"
-      else
-        ret_string = "return (#{ret.wrapper_name})ruby_result.toJava(#{ret.name}.class);"
-      end
 
       method_string = <<EOJ
 #{anno_string}
@@ -486,6 +506,10 @@ EOJ
       sig
     end
 
+    def add_requires(*requires)
+      requires.each {|r| @script.add_require(name_or_value(r))}
+    end
+
     def name_or_value(node)
       return node.name if defined? node.name
       return node.value if defined? node.value
@@ -568,6 +592,8 @@ EOJ
         add_annotation(*node.args_node.child_nodes)
       when 'java_implements'
         add_interface(*node.args_node.child_nodes)
+      when "java_requires"
+        add_requires(*node.args_node.child_nodes)
       end
     end
 
