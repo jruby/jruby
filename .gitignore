@@ -19,6 +19,11 @@ lib/ruby/gems/1.8/doc
 lib/ruby/gems/1.8/gems
 lib/ruby/gems/1.8/specifications
 lib/ruby/gems/1.8/cache
+lib/ruby/gems/1.9/source_cache
+lib/ruby/gems/1.9/doc
+lib/ruby/gems/1.9/gems
+lib/ruby/gems/1.9/specifications
+lib/ruby/gems/1.9/cache
 lib/ruby/site_ruby/1.8/rubygems/defaults/jruby_native.rb
 nbproject/private
 share
