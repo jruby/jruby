@@ -3,7 +3,6 @@ require 'ant/element'
 require 'ant/target'
 
 class Ant
-  java_import org.apache.tools.ant.ComponentHelper
   java_import org.apache.tools.ant.DefaultLogger
   java_import org.apache.tools.ant.Location
   java_import org.apache.tools.ant.Project
@@ -17,7 +16,8 @@ class Ant
     @location = Ant.location_from_caller
     @project = create_project options
     @current_target = nil
-    initialize_elements
+    generate_methods @project.data_type_definitions
+    generate_methods @project.task_definitions
     process_arguments unless options[:run] == false || Ant.run || @location.file_name != $0
     define_tasks(&block)
   end
@@ -66,38 +66,20 @@ class Ant
     }.join("\n")
   end
 
-
-  # We generate top-level methods for all default data types and task definitions for this instance
-  # of ant.  This eliminates the need to rely on method_missing.
-  def initialize_elements
-    @elements = {}
-    @helper = ComponentHelper.get_component_helper @project
-    generate_children @project.data_type_definitions
-    generate_children @project.task_definitions
+  def ant(*args)
+    raise "ant is known to be broken and is unsupported in the ant library"
   end
 
-  # All elements (including nested elements) are registered so we can access them easily.
-  def acquire_element(name, clazz)
-    element = @elements[name + clazz.to_s]
-    return element if element
-
-    # Not registered in ant's type registry for this project (nested el?)
-    unless @helper.get_definition(name)
-      @project.log "Adding #{name} -> #{clazz.inspect}", 5
-      @helper.add_data_type_definition(name, clazz)
-    end
-
-    @elements[name + clazz.to_s] = :give_it_something_to_prevent_endless_recursive_defs
-    @elements[name + clazz.to_s] = Element.new(self, name, clazz)
+  def antcall(*args)
+    raise "antcall is known to be broken and is unsupported in the ant library"
   end
 
   def _element(name, args = {}, &block)
-    definition = @helper.get_definition(name)
-    clazz = definition.getTypeClass(@project) if definition
-    Element.new(self, name, clazz).call(@current_target, args, &block)
+    Element.new(self, name).call(@current_target, args, &block)
   end
 
   def method_missing(name, *args, &block)
+    project.log "invoking method_missing: #{name} on Ant instance", 5
     _element(name, *args, &block)
   end
 
@@ -123,6 +105,7 @@ class Ant
         run(*targets) if (!targets.empty? || @project.default_target) && !Ant.run
       rescue => e
         warn e.message
+        puts e.backtrace.join("\n") if $DEBUG
         exit 1
       end
     end if run_at_exit
@@ -152,12 +135,13 @@ class Ant
     end
   end
 
-  def generate_children(collection)
+  def generate_methods(collection)
     collection.each do |name, clazz|
-      element = acquire_element(name, clazz)
-      self.class.send(:define_method, Ant.safe_method_name(name)) do |*a, &b|
+      element = Element.new(self, name, clazz)
+      method_name = Ant.safe_method_name(name)
+      (class << self; self; end).send(:define_method, method_name) do |*a, &b|
         element.call(@current_target, *a, &b)
-      end
+      end unless respond_to?(method_name)
     end
   end
 
