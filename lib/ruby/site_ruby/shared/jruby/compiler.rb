@@ -247,7 +247,11 @@ JAVA
     end
 
     def package_string
-      "package #{package};"
+      if package.empty?
+        ""
+      else
+        "package #{package};"
+      end
     end
 
     def to_s
