@@ -136,12 +136,13 @@ class Ant
   end
 
   def generate_methods(collection)
+    existing_methods = Ant.instance_methods(false)
     collection.each do |name, clazz|
       element = Element.new(self, name, clazz)
       method_name = Ant.safe_method_name(name)
       (class << self; self; end).send(:define_method, method_name) do |*a, &b|
         element.call(@current_target, *a, &b)
-      end unless respond_to?(method_name)
+      end unless existing_methods.include?(method_name)
     end
   end
 
