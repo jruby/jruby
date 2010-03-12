@@ -130,7 +130,7 @@ module JRuby::Compiler
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
       end
       classpath_string = classpath.size > 0 ? classpath.join(":") : "."
-      compile_string = "javac -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
+      compile_string = "javac -d #{target} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
       puts compile_string
       system compile_string
     end
@@ -154,9 +154,10 @@ module JRuby::Compiler
       @script_name = script_name
       @imports = imports
       @requires = []
+      @package = ""
     end
 
-    attr_accessor :classes, :imports, :script_name, :requires
+    attr_accessor :classes, :imports, :script_name, :requires, :package
 
     def add_import(name)
       @imports << name
@@ -167,7 +168,7 @@ module JRuby::Compiler
     end
 
     def new_class(name, annotations = [])
-      cls = RubyClass.new(name, imports, script_name, annotations, requires)
+      cls = RubyClass.new(name, imports, script_name, annotations, requires, package)
       @classes << cls
       cls
     end
@@ -182,7 +183,7 @@ module JRuby::Compiler
   end
 
   class RubyClass
-    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [])
+    def initialize(name, imports = [], script_name = nil, annotations = [], requires = [], package = "")
       @name = name
       @imports = imports
       @script_name = script_name
@@ -190,9 +191,10 @@ module JRuby::Compiler
       @annotations = annotations
       @interfaces = []
       @requires = requires
+      @package = package
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package
 
     def new_method(name, java_signature = nil, annotations = [])
       method = RubyMethod.new(name, java_signature, annotations)
@@ -244,8 +246,14 @@ JAVA
       end.join("\n")
     end
 
+    def package_string
+      "package #{package};"
+    end
+
     def to_s
       class_string = <<JAVA
+#{package_string}
+
 #{imports_string}
 
 #{annotations_string}
@@ -510,6 +518,10 @@ EOJ
       requires.each {|r| @script.add_require(name_or_value(r))}
     end
 
+    def set_package(package)
+      @script.package = name_or_value(package)
+    end
+
     def name_or_value(node)
       return node.name if defined? node.name
       return node.value if defined? node.value
@@ -594,6 +606,8 @@ EOJ
         add_interface(*node.args_node.child_nodes)
       when "java_requires"
         add_requires(*node.args_node.child_nodes)
+      when "java_package"
+        set_package(*node.args_node.child_nodes)
       end
     end
 

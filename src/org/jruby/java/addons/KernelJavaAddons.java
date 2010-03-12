@@ -90,6 +90,12 @@ public class KernelJavaAddons {
         return recv.getRuntime().getNil();
     }
 
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_package(IRubyObject recv, IRubyObject[] args) {
+        // empty stub for now
+        return recv.getRuntime().getNil();
+    }
+
     private static JavaClass getTargetType(ThreadContext context, Ruby runtime, IRubyObject type) {
         JavaClass targetType;
 
