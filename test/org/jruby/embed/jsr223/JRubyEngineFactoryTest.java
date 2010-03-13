@@ -29,8 +29,17 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import javax.script.ScriptEngine;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -44,6 +53,11 @@ import static org.junit.Assert.*;
  * @author Yoko Harada
  */
 public class JRubyEngineFactoryTest {
+    String basedir = System.getProperty("user.dir");
+
+    static Logger logger0 = Logger.getLogger(JRubyEngineFactoryTest.class.getName());
+    static Logger logger1 = Logger.getLogger(JRubyEngineFactoryTest.class.getName());
+    static OutputStream outStream = null;
 
     public JRubyEngineFactoryTest() {
     }
@@ -54,11 +68,21 @@ public class JRubyEngineFactoryTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        outStream.close();
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException {
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+
+        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @After
@@ -70,7 +94,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetEngineName() {
-        System.out.println("getEngineName");
+        logger1.info("getEngineName");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "JSR 223 JRuby Engine";
         String result = instance.getEngineName();
@@ -84,7 +108,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetEngineVersion() {
-        System.out.println("getEngineVersion");
+        logger1.info("getEngineVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "0.2.1";
         String result = instance.getEngineVersion();
@@ -98,7 +122,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetExtensions() {
-        System.out.println("getExtensions");
+        logger1.info("getExtensions");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         List expResult = new ArrayList();
         expResult.add("rb");
@@ -113,7 +137,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetLanguageName() {
-        System.out.println("getLanguageName");
+        logger1.info("getLanguageName");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "ruby";
         String result = instance.getLanguageName();
@@ -127,12 +151,12 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetLanguageVersion() {
-        System.out.println("getLanguageVersion");
+        logger1.info("getLanguageVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "jruby 1.5.0";
         String result = instance.getLanguageVersion();
         assertTrue(result.startsWith(expResult));
-        System.out.println(result);
+        logger1.info(result);
 
         instance = null;
     }
@@ -142,7 +166,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetMethodCallSyntax() {
-        System.out.println("getMethodCallSyntax");
+        logger1.info("getMethodCallSyntax");
         String obj = "receiver";
         String m = "establish_connection";
         String[] args = {"localhost", "1099"};
@@ -159,7 +183,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetMimeTypes() {
-        System.out.println("getMimeTypes");
+        logger1.info("getMimeTypes");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         List expResult = new ArrayList();
         expResult.add("application/x-ruby");
@@ -174,7 +198,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetNames() {
-        System.out.println("getNames");
+        logger1.info("getNames");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         List expResult = new ArrayList();
         expResult.add("ruby");
@@ -190,7 +214,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetOutputStatement() {
-        System.out.println("getOutputStatement");
+        logger1.info("getOutputStatement");
         String toDisplay = "abc";
         JRubyEngineFactory instance = new JRubyEngineFactory();
         String expResult = "puts abc\nor\nprint abc";
@@ -205,7 +229,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetParameter() {
-        System.out.println("getParameter");
+        logger1.info("getParameter");
         String key = "";
         JRubyEngineFactory instance = new JRubyEngineFactory();
         Object expResult = null;
@@ -250,7 +274,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetProgram() {
-        System.out.println("getProgram");
+        logger1.info("getProgram");
         String[] statements =
             {"1.upto(7) {|i| print i, \" \"}",
              "hh = {\"p\" => 3.14, \"e\" => 2.22}"};
@@ -268,7 +292,7 @@ public class JRubyEngineFactoryTest {
      */
     @Test
     public void testGetScriptEngine() {
-        System.out.println("getScriptEngine");
+        logger1.info("getScriptEngine");
         JRubyEngineFactory instance = new JRubyEngineFactory();
         Object expResult = instance;
         ScriptEngine engine = instance.getScriptEngine();

@@ -29,12 +29,21 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import org.jruby.embed.AttributeName;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -48,6 +57,10 @@ import static org.junit.Assert.*;
  * @author Yoko Harada
  */
 public class JRubyCompiledScriptTest {
+    String basedir = System.getProperty("user.dir");
+    static Logger logger0 = Logger.getLogger(JRubyCompiledScriptTest.class.getName());
+    static Logger logger1 = Logger.getLogger(JRubyCompiledScriptTest.class.getName());
+    static OutputStream outStream = null;
 
     public JRubyCompiledScriptTest() {
     }
@@ -58,11 +71,21 @@ public class JRubyCompiledScriptTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        outStream.close();
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException {
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+
+        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @After
@@ -74,13 +97,13 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval() throws Exception {
-        System.out.println("eval");
+        logger1.info("eval");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
-        String script = "puts \"Hello World!!!\"";
+        String script = "return \"Hello World!!!\"";
 
         JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
-        Object expResult = null;
+        Object expResult = "Hello World!!!";
         Object result = instance.eval();
         assertEquals(expResult, result);
     }
@@ -90,7 +113,7 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval_context() throws Exception {
-        System.out.println("eval with context");
+        logger1.info("eval with context");
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
@@ -148,7 +171,7 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testEval_bindings() throws Exception {
-        System.out.println("eval with bindings");
+        logger1.info("eval with bindings");
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
@@ -184,7 +207,7 @@ public class JRubyCompiledScriptTest {
      */
     @Test
     public void testGetEngine() throws ScriptException {
-        System.out.println("getEngine");
+        logger1.info("getEngine");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         String script = "puts \"Hello World!!!\"";
@@ -197,7 +220,7 @@ public class JRubyCompiledScriptTest {
 
     @Test
     public void testTerminate() throws ScriptException {
-        System.out.println("termination");
+        logger1.info("termination");
         JRubyEngineFactory factory = new JRubyEngineFactory();
         JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
         engine.eval("$x='GVar'");

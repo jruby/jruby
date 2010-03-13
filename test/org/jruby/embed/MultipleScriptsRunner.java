@@ -31,10 +31,21 @@ package org.jruby.embed;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import org.jruby.CompatVersion;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -47,12 +58,16 @@ import static org.junit.Assert.*;
  *
  * @author Yoko Harada <yokolet@gmial.com>
  */
-public class MultipleScriptsRunnerTest {
+public class MultipleScriptsRunner {
     List<String> loadPaths;
     List<String> ruby19loadPaths;
     String basedir = System.getProperty("user.dir");
 
-    public MultipleScriptsRunnerTest() {
+    static Logger logger0 = Logger.getLogger(MultipleScriptsRunner.class.getName());
+    static Logger logger1 = Logger.getLogger(MultipleScriptsRunner.class.getName());
+    static OutputStream outStream = null;
+
+    public MultipleScriptsRunner() {
     }
 
     @BeforeClass
@@ -61,11 +76,11 @@ public class MultipleScriptsRunnerTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        
+        outStream.close();
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException, IOException {
         String[] paths = {
             basedir + "/lib/ruby/1.8",
             basedir + "/lib/ruby/1.8/rdoc",
@@ -84,6 +99,14 @@ public class MultipleScriptsRunnerTest {
             basedir
         };
         ruby19loadPaths = Arrays.asList(paths);
+        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @After
@@ -92,23 +115,26 @@ public class MultipleScriptsRunnerTest {
 
     @Test
     public void testScripts() throws FileNotFoundException {
-        System.out.println("[multiple scripts runner]");
+        logger0.info("[multiple scripts runner]");
         ScriptingContainer instance = null;
         List<String> scriptnames = getScriptNames(basedir + "/test");
         Iterator itr = scriptnames.iterator();
         while (itr.hasNext()) {
             try {
                 String testname = (String) itr.next();
-                System.out.println("\n[" + testname + "]");
+                logger1.info("\n[" + testname + "]");
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setObjectSpaceEnabled(true);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
+                instance.setError(new PrintStream(outStream, true));
+                instance.setOutput(new PrintStream(outStream, true));
+                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
                 // test_backquote.rb fails when the current directory is set.
                 //instance.getProvider().getRubyInstanceConfig().setCurrentDirectory(basedir + "/test");
                 instance.runScriptlet(PathType.CLASSPATH, testname);
             } catch (Throwable t) {
-                t.printStackTrace();
+                t.printStackTrace(new PrintStream(outStream));
             } finally {
                 instance.getVarMap().clear();
                 instance.terminate();
@@ -156,7 +182,10 @@ public class MultipleScriptsRunnerTest {
     private boolean isTestable(String filename) {
         String[] skipList = {
             "foo_for_test_require_once.rb",
+            "load_error.rb",
+            "parse_error.rb",
             "junit_testrunner.rb",
+            "test_auto_load.rb",
             "test_backtraces.rb",
             "test_command_line_switches.rb",
             "test_dir.rb",
@@ -223,21 +252,24 @@ public class MultipleScriptsRunnerTest {
     
     @Test
     public void testRuby19Script() throws FileNotFoundException {
-        System.out.println("[ruby 1.9 script]");
+        logger0.info("[ruby 1.9 script]");
         ScriptingContainer instance = null;
         List<String> ruby19names = getRuby19Names(basedir + "/test");
         Iterator itr = ruby19names.iterator();
         while (itr.hasNext()) {
             String testname = (String)itr.next();
-            System.out.println("\n[" + testname + "]");
+            logger1.info("\n[" + testname + "]");
             try {
                 instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
                 instance.getProvider().getRubyInstanceConfig().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
+                instance.setError(new PrintStream(outStream, true));
+                instance.setOutput(new PrintStream(outStream, true));
+                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
                 instance.runScriptlet(PathType.CLASSPATH, testname);
             } catch (Throwable t) {
-                t.printStackTrace();
+                t.printStackTrace(new PrintStream(outStream));
             } finally {
                 instance.terminate();
                 instance = null;
@@ -250,7 +282,8 @@ public class MultipleScriptsRunnerTest {
      *                           succeeds when loaded from classpath.
      */
     @Test
-    public void testByAbsolutePath() throws FileNotFoundException {
+    public void testByAbsolutePath() throws FileNotFoundException, IOException {
+        logger0.info("[absolute path]");
         String[] testnames = {
             "test_dir.rb",
             "test_file.rb",
@@ -259,27 +292,36 @@ public class MultipleScriptsRunnerTest {
             "test_load.rb",
             "test_load_class_before_rb.rb"
         };
-        for (int i=0; i<testnames.length; i++) {
-            System.out.println("[" + testnames[i] + "]");
+        for (int i = 0; i < testnames.length; i++) {
+            logger1.info("[" + testnames[i] + "]");
             String testname = basedir + "/test/" + testnames[i];
-            ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-            instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
-            instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
-            instance.runScriptlet(PathType.ABSOLUTE, testname);
-
-            instance.getVarMap().clear();
-            instance.terminate();
-            instance = null;
+            ScriptingContainer instance = null;
+            try {
+                instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+                instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
+                instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
+                instance.setError(new PrintStream(outStream, true));
+                instance.setOutput(new PrintStream(outStream, true));
+                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
+                instance.runScriptlet(PathType.ABSOLUTE, testname);
+                instance.getVarMap().clear();
+            } catch (Throwable t) {
+                t.printStackTrace(new PrintStream(outStream));
+            } finally {
+                instance.terminate();
+                instance = null;
+            }
         }
     }
 
     @Test
     public void test19ByAbsolutePath() throws FileNotFoundException {
+        logger0.info("[ruby 1.9 absolute path]");
         String[] testnames = {
             "test_io_1_9.rb"
         };
         for (int i=0; i<testnames.length; i++) {
-            System.out.println("[" + testnames[i] + "]");
+            logger1.info("[" + testnames[i] + "]");
             String testname = basedir + "/test/" + testnames[i];
             ScriptingContainer instance = null;
             try {
@@ -287,9 +329,12 @@ public class MultipleScriptsRunnerTest {
                 instance.getProvider().getRubyInstanceConfig().setLoadPaths(ruby19loadPaths);
                 instance.getProvider().getRubyInstanceConfig().setCompatVersion(CompatVersion.RUBY1_9);
                 instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
+                instance.setError(new PrintStream(outStream, true));
+                instance.setOutput(new PrintStream(outStream, true));
+                instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
                 instance.runScriptlet(PathType.ABSOLUTE, testname);
             } catch (Throwable t) {
-                t.printStackTrace();
+                t.printStackTrace(new PrintStream(outStream));
             } finally {
                 instance.terminate();
                 instance = null;
@@ -303,17 +348,20 @@ public class MultipleScriptsRunnerTest {
      *                    <SystemExit> expected but was
      *                    <Thread>.
      */
-    @Test
-    public void testWithJavaLibrary() throws FileNotFoundException {
+    //@Test
+    public void testWithJavaLibrary() throws FileNotFoundException, IOException {
         String[] testnames = {
             //"test_backtraces.rb"
         };
         for (int i=0; i<testnames.length; i++) {
-            System.out.println("[" + testnames[i] + "]");
+            logger1.info("[" + testnames[i] + "]");
             String testname = testnames[i];
             ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
             instance.getProvider().getRubyInstanceConfig().setLoadPaths(loadPaths);
             instance.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
+            instance.setError(new PrintStream(outStream, true));
+            instance.setOutput(new PrintStream(outStream, true));
+            instance.setWriter(new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true));
             instance.runScriptlet("require 'java'");
             instance.runScriptlet(PathType.CLASSPATH, testname);
 
