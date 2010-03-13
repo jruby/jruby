@@ -824,27 +824,24 @@ public final class DefaultMethodFactory {
                         + parameter.getMetaClass().getName() + " (expected instance of FFI::Struct)");
             }
 
-            IRubyObject memory = ((Struct) parameter).getMemory();
-            if (!(memory instanceof AbstractMemory)) {
-                throw context.getRuntime().newTypeError("wrong struct memory type "
-                        + memory.getMetaClass().getName());
-            }
-
-            if (((AbstractMemory) memory).getSize() < layout.getSize()) {
+            final AbstractMemory memory = ((Struct) parameter).getMemory();
+            if (memory.getSize() < layout.getSize()) {
                 throw context.getRuntime().newArgumentError("struct memory too small for parameter");
             }
 
-            MemoryIO io = ((AbstractMemory) memory).getMemoryIO();
+            final MemoryIO io = memory.getMemoryIO();
             if (io instanceof DirectMemoryIO) {
                 if (io.isNull()) {
                     throw context.getRuntime().newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
                 }
                 buffer.putStruct(((DirectMemoryIO) io).getAddress());
+
             } else if (io instanceof ArrayMemoryIO) {
                 ArrayMemoryIO aio = (ArrayMemoryIO) io;
                 buffer.putStruct(aio.array(), aio.arrayOffset());
+
             } else {
-                throw context.getRuntime().newRuntimeError("Invalid struct memory");
+                throw context.getRuntime().newRuntimeError("invalid struct memory");
             }
         }
 
