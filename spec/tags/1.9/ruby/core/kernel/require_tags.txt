@@ -6,23 +6,3 @@ fails:Kernel#require performs tilde expansion before storing paths in $LOADED_FE
 fails:Kernel#require collapses multiple consecutive path separators before storing in $LOADED_FEATURES
 fails:Kernel#require collapses '../' inside an absolute path before storing in $LOADED_FEATURES
 fails:Kernel#require produces __FILE__ as the given filename and __LINE__ as the source line number
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) stores an absolute path
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) stores ../ relative paths as absolute paths
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) stores ./ relative paths as absolute paths
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) collapses duplicate path separators
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) canonicalizes non-unique absolute paths
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) adds the suffix of the resolved filename
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) does not load a non-canonical path for a file already loaded
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) does not load a ./ relative path for a file already loaded
-windows(JRUBY-4651):Kernel#require ($LOAD_FEATURES) does not load a ../ relative path for a file already loaded
-windows(JRUBY-4651):Kernel#require (shell expansion) performs tilde expansion before storing paths in $LOADED_FEATURES
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) stores an absolute path
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) stores ../ relative paths as absolute paths
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) stores ./ relative paths as absolute paths
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) collapses duplicate path separators
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) canonicalizes non-unique absolute paths
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) adds the suffix of the resolved filename
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) does not load a non-canonical path for a file already loaded
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) does not load a ./ relative path for a file already loaded
-windows(JRUBY-4651):Kernel.require ($LOAD_FEATURES) does not load a ../ relative path for a file already loaded
-windows(JRUBY-4651):Kernel.require (shell expansion) performs tilde expansion before storing paths in $LOADED_FEATURES
