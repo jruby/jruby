@@ -1,0 +1,2 @@
+fails:StringScanner#getch is multi-byte character sensitive
+fails(JRUBY-4648):StringScanner#getch always returns instance of String, never a String subclass

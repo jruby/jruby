@@ -1,1 +1,2 @@
 fails:String#unpack with 'Q' and 'q' directives pads nil when the string is short
+fails(JRUBY-4647):String#unpack with 'M' directive decodes across new lines

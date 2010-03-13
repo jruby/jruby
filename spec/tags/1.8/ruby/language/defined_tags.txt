@@ -1,2 +1,1 @@
-fails:The defined? keyword returns 'local-variable' when defined? is called on a block var
 fails(JRUBY-4645):The defined? keyword for an expression returns 'assignment' for assigning multiple variables
