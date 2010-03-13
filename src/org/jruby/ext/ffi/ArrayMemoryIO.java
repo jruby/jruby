@@ -431,7 +431,7 @@ public final class ArrayMemoryIO implements MemoryIO {
     }
     private static final class LE32ArrayIO extends LittleEndianArrayIO {
         public final long getAddress(byte[] buffer, int offset) {
-            return ((long) getInt32(buffer, offset)) & 0xffffffffL;
+            return getInt32(buffer, offset);
         }
         public final void putAddress(byte[] buffer, int offset, long value) {
             putInt32(buffer, offset, (int) value);
@@ -447,7 +447,7 @@ public final class ArrayMemoryIO implements MemoryIO {
     }
     private static final class BE32ArrayIO extends BigEndianArrayIO {
         public final long getAddress(byte[] buffer, int offset) {
-            return ((long) getInt32(buffer, offset)) & 0xffffffffL;
+            return getInt32(buffer, offset);
         }
         public final void putAddress(byte[] buffer, int offset, long value) {
             putInt32(buffer, offset, (int) value);
