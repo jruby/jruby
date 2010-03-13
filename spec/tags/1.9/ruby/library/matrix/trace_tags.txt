@@ -1,0 +1,1 @@
+fails(JRUBY-3716):Matrix#trace returns the sum of diagonal elements in a rectangular Matrix

@@ -1,0 +1,5 @@
+fails(JRUBY-3716):Matrix.[] requires arrays as parameters
+fails(JRUBY-3716):Matrix.[] creates an empty Matrix with no arguments
+fails(JRUBY-3716):Matrix.[] raises for non-rectangular matrices
+fails(JRUBY-3716):Matrix.[] accepts vector arguments
+fails(JRUBY-3716):Matrix.[] tries to calls :to_ary on arguments

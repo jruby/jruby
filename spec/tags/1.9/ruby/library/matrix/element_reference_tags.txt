@@ -1,0 +1,1 @@
+fails(JRUBY-3716):Matrix#[] returns nil for an invalid index pair

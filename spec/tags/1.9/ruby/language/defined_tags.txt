@@ -1,2 +1,19 @@
 fails:The defined? keyword returns 'local-variable' when defined? is called on a block var
 fails(JRUBY-4645):The defined? keyword for an expression returns 'assignment' for assigning multiple variables
+fails(JRUBY-4655):The defined? keyword when called with a method name having a local variable as receiver calls #respond_to_missing?
+fails(JRUBY-4655):The defined? keyword for an expression returns 'method' for an expression with '!~'
+fails(JRUBY-4655):The defined? keyword for an expression with a dynamic String returns 'expression' when the String contains a call to an undefined method
+fails(JRUBY-4655):The defined? keyword for an expression with a dynamic String does not call the method in the String
+fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp returns 'expression' when the Regexp contains a call to an undefined method
+fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp does not call the method in the Regexp
+fails(JRUBY-4655):The defined? keyword for variables returns 'local-variable' when called with the name of a block local
+fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $&
+fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $`
+fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $'
+fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $+
+fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for the capture references
+fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $&
+fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $`
+fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $'
+fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $+
+fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for the capture references

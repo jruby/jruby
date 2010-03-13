@@ -1,0 +1,4 @@
+fails(JRUBY-4654):Enumerable#each_entry yields multiple arguments as an array
+fails(JRUBY-4654):Enumerable#each_entry returns an enumerator if no block
+fails(JRUBY-4654):Enumerable#each_entry raises an Argument error when extra arguments
+fails(JRUBY-4654):Enumerable#each_entry passes extra arguments to #each
