@@ -28,6 +28,7 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 
 public class LoadService19 extends LoadService {
     
@@ -37,6 +38,10 @@ public class LoadService19 extends LoadService {
 
     @Override
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
-        return foundResource.getAbsolutePath();
+        String path = foundResource.getAbsolutePath();
+        if (Platform.IS_WINDOWS) {
+            path = path.replace('\\', '/');
+        }
+        return path;
     }
 }
