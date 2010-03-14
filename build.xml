@@ -100,6 +100,9 @@
             <os family="windows"/>
         </not>
     </condition>
+    <condition property="spec.windows.flag" value="-g windows">
+      <os family="windows"/>
+    </condition>
     <copy file="${basedir}/bin/jruby.sh" tofile="${basedir}/bin/jruby" overwrite="false"/>
     <chmod perm="755" file="${basedir}/bin/jruby"/>
   </target>
@@ -1128,7 +1131,7 @@
         <sysproperty key="jruby.home" value="${basedir}"/>
         <sysproperty key="jruby.launch.inproc" value="false"/>
         <arg line="${mspec.dir}/bin/mspec"/>
-        <arg line="-f s -g fails -g critical -g windows --dry-run"/>
+        <arg line="-f s -g fails -g critical ${spec.windows.flag} --dry-run"/>
         <arg line="-T--@{spec.mode}"/>
         <arg line="-B ${spec.dir}/jruby.@{spec.mode}.mspec"/>
         <arg value=":ci_files"/>
