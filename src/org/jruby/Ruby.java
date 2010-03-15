@@ -2732,6 +2732,14 @@ public final class Ruby {
      * things that need to be cleaned up at shutdown.
      */
     public void tearDown() {
+        tearDown(true);
+    }
+
+    // tearDown(boolean) has been added for embedding API. When an error
+    // occurs in Ruby code, JRuby does system exit abruptly, no chance to
+    // catch exception. This makes debugging really hard. This is why
+    // tearDown(boolean) exists.
+    public void tearDown(boolean systemExit) {
         int status = 0;
 
         while (!atExitBlocks.empty()) {
@@ -2786,7 +2794,7 @@ public final class Ruby {
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
-        if (status != 0) {
+        if (systemExit && status != 0) {
             throw newSystemExit(status);
         }
     }

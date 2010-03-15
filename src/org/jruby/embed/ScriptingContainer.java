@@ -1640,6 +1640,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     public void terminate() {
-        getProvider().getRuntime().tearDown();
+        getProvider().getRuntime().tearDown(false);
     }
 }
