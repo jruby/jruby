@@ -252,11 +252,11 @@ public class JRubyEngineTest {
 
         String[] big5 = {"Alaska", "Texas", "California", "Montana", "New Mexico"};
         context.setAttribute("@list", Arrays.asList(big5), ScriptContext.ENGINE_SCOPE);
-        StringWriter writer = new StringWriter();
-        context.setWriter(writer);
+        StringWriter sw = new StringWriter();
+        context.setWriter(sw);
         instance.eval(reader, context);
         String expResult = "Alaska >> Texas >> California >> Montana >> New Mexico: 5 in total";
-        assertEquals(expResult, writer.toString().trim());
+        assertEquals(expResult, sw.toString().trim());
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
         instance = null;
@@ -505,14 +505,14 @@ public class JRubyEngineTest {
         ScriptEngineManager manager = new ScriptEngineManager();
         JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
         ScriptContext ctx = new SimpleScriptContext();
-        StringWriter writer = new StringWriter();
-        writer.write("Have a great summer!");
-        ctx.setWriter(writer);
+        StringWriter sw = new StringWriter();
+        sw.write("Have a great summer!");
+        ctx.setWriter(sw);
         instance.setContext(ctx);
         ScriptContext result = instance.getContext();
         Writer w = result.getWriter();
         Object expResult = "Have a great summer!";
-        assertTrue(writer == result.getWriter());
+        assertTrue(sw == result.getWriter());
         assertEquals(expResult, (result.getWriter()).toString());
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
@@ -725,17 +725,17 @@ public class JRubyEngineTest {
         ScriptEngineManager manager = new ScriptEngineManager();
         JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
         instance.eval("$x='GVar'");
-        StringWriter writer = new StringWriter();
-        instance.getContext().setWriter(writer);
+        StringWriter sw = new StringWriter();
+        instance.getContext().setWriter(sw);
         instance.eval("at_exit { puts \"#{$x} in an at_exit block\" }");
         String expResult = "";
-        assertEquals(expResult, writer.toString().trim());
+        assertEquals(expResult, sw.toString().trim());
 
-        writer = new StringWriter();
-        instance.getContext().setWriter(writer);
+        sw = new StringWriter();
+        instance.getContext().setWriter(sw);
         instance.getContext().setAttribute("org.jruby.embed.termination", true, ScriptContext.ENGINE_SCOPE);
         instance.eval("");
         expResult = "GVar in an at_exit block";
-        assertEquals(expResult, writer.toString().trim());
+        assertEquals(expResult, sw.toString().trim());
     }
 }

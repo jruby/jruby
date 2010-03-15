@@ -33,12 +33,11 @@ import org.jruby.embed.internal.LocalContextProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PropertyResourceBundle;
@@ -209,7 +208,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         try {
             initConfig();
         } catch (URISyntaxException ex) {
-            ex.printStackTrace();
+            Writer w = getErrorWriter();
+            ex.printStackTrace((PrintWriter)w);
             throw new RuntimeException(ex);
         }
     }

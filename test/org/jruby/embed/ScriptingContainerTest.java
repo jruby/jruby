@@ -568,17 +568,13 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         EmbedEvalUnit result;
-        /*
-         * FIX ME
-         * FileNotFoundException could not be caught at all.
+        
         try {
             result = instance.parse(type, filename, lines);
         } catch (Throwable t) {
             assertTrue(t.getCause() instanceof FileNotFoundException);
-            //t.printStackTrace(new PrintStream(outStream));
+            t.printStackTrace(new PrintStream(outStream));
         }
-         *
-         */
 
         filename = basedir + "/test/org/jruby/embed/ruby/next_year.rb";
         result = instance.parse(PathType.ABSOLUTE, filename);
@@ -793,17 +789,12 @@ public class ScriptingContainerTest {
 
         Object expResult = null;
         Object result;
-        /*
-         * FIX ME
-         * FileNotFoundException could not be caught at all.
         try {
             result = instance.parse(type, filename);
         } catch (Throwable e) {
             assertTrue(e.getCause() instanceof FileNotFoundException);
             e.printStackTrace(new PrintStream(outStream));
         }
-         *
-         */
 
         // absolute path
         filename = basedir + "/test/org/jruby/embed/ruby/next_year.rb";
@@ -2279,12 +2270,12 @@ public class ScriptingContainerTest {
         filename = "["+this.getClass().getCanonicalName()+"]";
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         instance.setScriptFilename(filename);
-        StringWriter writer = new StringWriter();
-        instance.setErrorWriter(writer);
+        StringWriter sw = new StringWriter();
+        instance.setErrorWriter(sw);
         try {
             instance.runScriptlet("puts \"Hello");
         } catch (RuntimeException e) {
-            assertTrue(writer.toString().contains(filename));
+            assertTrue(sw.toString().contains(filename));
         }
 
         instance = null;
