@@ -724,6 +724,7 @@
     copy-test-files,
     install-gems,
     run-junit-compiled,
+    run-junit-embed,
     test-rake-targets"
     description="Runs unit tests.">
   </target>
