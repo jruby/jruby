@@ -119,6 +119,7 @@ public class RubyNKF {
 
     @JRubyMethod(name = "guess", required = 1, module = true)
     public static IRubyObject guess(ThreadContext context, IRubyObject recv, IRubyObject s) {
+        // TODO: Fix charset usage for JRUBY-4553
         Ruby runtime = context.getRuntime();
         if (!s.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + s.getMetaClass() + " into String");
@@ -229,12 +230,13 @@ public class RubyNKF {
             decoder = Charset.forName(decodeCharset).newDecoder();
             encoder = Charset.forName(encodeCharset).newEncoder();
         } catch (UnsupportedCharsetException e) {
-            throw runtime.newArgumentError("invalid encoding");
+            throw runtime.newArgumentError("invalid charset");
         }
         
         ByteBuffer buf = ByteBuffer.wrap(str.getUnsafeBytes(), str.begin(), str.length());
         try {
             CharBuffer cbuf = decoder.decode(buf);
+            encoder.onUnmappableCharacter(java.nio.charset.CodingErrorAction.IGNORE);
             buf = encoder.encode(cbuf);
         } catch (CharacterCodingException e) {
             throw runtime.newArgumentError("invalid encoding");

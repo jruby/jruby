@@ -29,10 +29,19 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import javax.script.ScriptEngine;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
@@ -48,6 +57,11 @@ import static org.junit.Assert.*;
  * @author Yoko Harada
  */
 public class JRubyBindingsTest {
+    String basedir = System.getProperty("user.dir");
+    
+    static Logger logger0 = Logger.getLogger(JRubyBindingsTest.class.getName());
+    static Logger logger1 = Logger.getLogger(JRubyBindingsTest.class.getName());
+    static OutputStream outStream = null;
 
     public JRubyBindingsTest() {
     }
@@ -58,10 +72,19 @@ public class JRubyBindingsTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        outStream.close();
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException {
+        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @After
@@ -73,7 +96,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testSize() {
-        System.out.println("size");
+        logger1.info("size");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         int expResult = 0;
         int result = instance.size();
@@ -93,7 +116,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testIsEmpty() {
-        System.out.println("isEmpty");
+        logger1.info("isEmpty");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         boolean expResult = true;
         boolean result = instance.isEmpty();
@@ -113,7 +136,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testContainsKey() {
-        System.out.println("containsKey");
+        logger1.info("containsKey");
         String key = "abc";
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         boolean expResult = false;
@@ -135,7 +158,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testContainsValue() {
-        System.out.println("containsValue");
+        logger1.info("containsValue");
         Object value = null;
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         boolean expResult = false;
@@ -156,7 +179,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testGet() {
-        System.out.println("get");
+        logger1.info("get");
         String key = null;
         Object result = null;
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
@@ -184,7 +207,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testPut() {
-        System.out.println("put");
+        logger1.info("put");
         String key = "";
         Object value = null;
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
@@ -212,7 +235,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testRemove() {
-        System.out.println("remove");
+        logger1.info("remove");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put(ScriptEngine.FILENAME, "filename");
         String key = ScriptEngine.FILENAME;
@@ -230,7 +253,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testPutAll() {
-        System.out.println("putAll");
+        logger1.info("putAll");
         Map t = null;
         Object expResult = null;
         Object result = null;
@@ -262,7 +285,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testClear() {
-        System.out.println("clear");
+        logger1.info("clear");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
@@ -279,7 +302,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testKeySet() {
-        System.out.println("keySet");
+        logger1.info("keySet");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
@@ -287,7 +310,7 @@ public class JRubyBindingsTest {
         Set result = instance.keySet();
         assertEquals(3, result.size());
         for (Object key : result) {
-            System.out.println(key);
+            logger1.info(key.toString());
         }
     }
 
@@ -296,7 +319,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testValues() {
-        System.out.println("values");
+        logger1.info("values");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
@@ -304,7 +327,7 @@ public class JRubyBindingsTest {
         Collection result = instance.values();
         assertEquals(3, result.size());
         for (Object value : result) {
-            System.out.println(value);
+            logger1.info(value.toString());
         }
     }
 
@@ -313,7 +336,7 @@ public class JRubyBindingsTest {
      */
     @Test
     public void testEntrySet() {
-        System.out.println("entrySet");
+        logger1.info("entrySet");
         JRubyBindings instance = new JRubyBindings(new ScriptingContainer(LocalContextScope.THREADSAFE));
         instance.put("@abc", "abbc");
         instance.put("$abc", "abcc");
@@ -323,7 +346,7 @@ public class JRubyBindingsTest {
         for (Map.Entry entry : result) {
             Object key = entry.getKey();
             Object value = entry.getValue();
-            System.out.println(key + ": " + value);
+            logger1.info(key + ": " + value);
         }
     }
 }

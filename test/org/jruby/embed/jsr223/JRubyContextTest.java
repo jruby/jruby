@@ -29,7 +29,12 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -42,6 +47,12 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.junit.After;
@@ -56,6 +67,13 @@ import static org.junit.Assert.*;
  * @author Yoko Harada
  */
 public class JRubyContextTest {
+    String basedir = System.getProperty("user.dir");
+
+    static Logger logger0 = Logger.getLogger(JRubyContextTest.class.getName());
+    static Logger logger1 = Logger.getLogger(JRubyContextTest.class.getName());
+    static OutputStream outStream = null;
+    PrintStream pstream = null;
+    FileWriter writer = null;
 
     public JRubyContextTest() {
     }
@@ -66,11 +84,23 @@ public class JRubyContextTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        outStream.close();
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException, IOException {
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
+
+        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        pstream = new PrintStream(outStream, true);
+        writer = new FileWriter(basedir + "/build/test-results/run-junit-embed.txt", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @After
@@ -82,7 +112,7 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetAttribute_String() {
-        System.out.println("getAttribute");
+        logger1.info("getAttribute");
         String name = "";
         Object expResult = null;
         Object result = null;
@@ -110,7 +140,7 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetAttribute_String_int() throws ScriptException {
-        System.out.println("getAttribute");
+        logger1.info("getAttribute");
         // livetribe javax.script impl has a bug to handle global scope.
         //ScriptEngineManager manager = new ScriptEngineManager();
         JRubyScriptEngineManager manager = new JRubyScriptEngineManager();
@@ -157,7 +187,7 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetAttributesScope() throws ScriptException {
-        System.out.println("getAttributesScope");
+        logger1.info("getAttributesScope");
         // livetribe javax.script impl has a bug to handle global scope.
         //ScriptEngineManager manager = new ScriptEngineManager();
         JRubyScriptEngineManager manager = new JRubyScriptEngineManager();
@@ -190,8 +220,12 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetBindings() throws ScriptException {
-        System.out.println("getBindings");
-        ScriptingContainer container = new ScriptingContainer();
+        logger1.info("getBindings");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        container.setError(pstream);
+        container.setOutput(pstream);
+        container.setWriter(writer);
+        container.setErrorWriter(writer);
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine engine = manager.getEngineByName("jruby");
         JRubyContext instance = (JRubyContext) engine.getContext();
@@ -225,8 +259,13 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetErrorWriter() {
-        System.out.println("getErrorWriter");
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        logger1.info("getErrorWriter");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        container.setError(pstream);
+        container.setOutput(pstream);
+        container.setWriter(writer);
+        container.setErrorWriter(writer);
+        JRubyContext instance = new JRubyContext(container);
         Writer errorWriter = new StringWriter();
         instance.setErrorWriter(errorWriter);
         Writer expResult = errorWriter;
@@ -239,8 +278,9 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetReader() {
-        System.out.println("getReader");
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        logger1.info("getReader");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
         Reader reader = new StringReader("");
         instance.setReader(reader);
         Reader expResult = reader;
@@ -253,8 +293,9 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetScopes() {
-        System.out.println("getScopes");
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        logger1.info("getScopes");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
         List<Integer> expResult = new ArrayList();
         expResult.add(ScriptContext.ENGINE_SCOPE);
         expResult.add(ScriptContext.GLOBAL_SCOPE);
@@ -267,7 +308,7 @@ public class JRubyContextTest {
             result.add(1000);
             assertEquals(3, result.size());
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(new PrintStream(outStream));
         }
     }
 
@@ -276,11 +317,12 @@ public class JRubyContextTest {
      */
     @Test
     public void testGetWriter() {
-        System.out.println("getWriter");
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
-        Writer writer = new StringWriter();
-        instance.setWriter(writer);
-        Writer expResult = writer;
+        logger1.info("getWriter");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
+        Writer sw = new StringWriter();
+        instance.setWriter(sw);
+        Writer expResult = sw;
         Writer result = instance.getWriter();
         assertEquals(expResult, result);
     }
@@ -290,7 +332,7 @@ public class JRubyContextTest {
      */
     @Test
     public void testRemoveAttribute() throws ScriptException {
-        System.out.println("removeAttribute");
+        logger1.info("removeAttribute");
         String name = "abc";
         int priority = 0;
         // livetribe javax.script impl has a bug to handle global scope.
@@ -342,8 +384,9 @@ public class JRubyContextTest {
      */
     @Test
     public void testSetAttribute() {
-        System.out.println("setAttribute");
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        logger1.info("setAttribute");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
         instance.setAttribute("PAI", 3.1415, ScriptContext.ENGINE_SCOPE);
         Object expResult = 3.1415;
         Object result = instance.getAttribute("PAI", ScriptContext.ENGINE_SCOPE);
@@ -355,7 +398,7 @@ public class JRubyContextTest {
      */
     @Test
     public void testSetBindings() throws ScriptException {
-        System.out.println("setBindings");
+        logger1.info("setBindings");
         Object expResult = null;
         Object result = null;
         ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
@@ -410,9 +453,10 @@ public class JRubyContextTest {
      */
     @Test
     public void testSetErrorWriter() throws IOException {
-        System.out.println("setErrorWriter");
+        logger1.info("setErrorWriter");
         Writer errorWriter = null;
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
         instance.setErrorWriter(errorWriter);
 
         errorWriter = new StringWriter();
@@ -430,8 +474,9 @@ public class JRubyContextTest {
      */
     @Test
     public void testSetReader() throws IOException {
-        System.out.println("setReader");
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
+        logger1.info("setReader");
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
         Reader reader = null;
         instance.setReader(reader);
 
@@ -456,17 +501,18 @@ public class JRubyContextTest {
      */
     @Test
     public void testSetWriter() throws IOException {
-        System.out.println("setWriter");
-        Writer writer = null;
-        JRubyContext instance = new JRubyContext(new ScriptingContainer());
-        instance.setWriter(writer);
+        logger1.info("setWriter");
+        Writer sw = null;
+        ScriptingContainer container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        JRubyContext instance = new JRubyContext(container);
+        instance.setWriter(sw);
 
-        writer = new StringWriter();
-        writer.write("setWriter test");
-        instance.setWriter(writer);
+        sw = new StringWriter();
+        sw.write("setWriter test");
+        instance.setWriter(sw);
 
         Writer w = instance.getWriter();
-        assertTrue(writer == w);
+        assertTrue(sw == w);
         Object expResult = "setWriter test";
         Object result = w.toString();
         assertEquals(expResult, result);

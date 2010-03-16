@@ -81,7 +81,7 @@ class Ant
     end
 
     def execute_target
-      @ant.instance_eval(&@block)
+      @ant.instance_eval(&@block) if @block
     end
 
     def define_target

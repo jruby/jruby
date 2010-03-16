@@ -16,7 +16,7 @@ public class MethodNames {
     public static boolean isSecond1(Object something) {return false;}
     public static boolean hasThird1() {return false;}
     public static boolean hasFourth1(Object something) {return false;}
-    public static String inspect() { return "foo"; }
+    public static String __send__() { return "foo"; }
     
     public void lowercase2() {}
     public void camelCase2() {}
@@ -42,5 +42,4 @@ public class MethodNames {
     public String __type__() {return "foo";}
     public String id() {return "foo";}
     public String __id__() {return "foo";}
-    public String __send__() {return "foo";}
 }

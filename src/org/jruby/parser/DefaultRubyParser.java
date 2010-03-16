@@ -135,7 +135,6 @@ import org.jruby.util.ByteList;
 public class DefaultRubyParser implements RubyParser {
     protected ParserSupport support;
     protected RubyYaccLexer lexer;
-    protected IRubyWarnings warnings;
 
     public DefaultRubyParser() {
         this(new ParserSupport());
@@ -149,12 +148,10 @@ public class DefaultRubyParser implements RubyParser {
     }
 
     public void setWarnings(IRubyWarnings warnings) {
-        this.warnings = warnings;
-
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 158 "-"
+					// line 155 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1293,58 +1290,6 @@ public class DefaultRubyParser implements RubyParser {
     return "[unknown]";
   }
 
-  /** thrown for irrecoverable syntax errors and stack overflow.
-      Nested for convenience, does not depend on parser class.
-    */
-  public static class yyException extends java.lang.Exception {
-    private static final long serialVersionUID = 1L;
-    public yyException (String message) {
-      super(message);
-    }
-  }
-
-  /** must be implemented by a scanner object to supply input to the parser.
-      Nested for convenience, does not depend on parser class.
-    */
-  public interface yyInput {
-
-    /** move on to next token.
-        @return <tt>false</tt> if positioned beyond tokens.
-        @throws IOException on input error.
-      */
-    boolean advance () throws java.io.IOException;
-
-    /** classifies current token.
-        Should not be called if {@link #advance()} returned <tt>false</tt>.
-        @return current <tt>%token</tt> or single character.
-      */
-    int token ();
-
-    /** associated with current token.
-        Should not be called if {@link #advance()} returned <tt>false</tt>.
-        @return value for {@link #token()}.
-      */
-    Object value ();
-  }
-
-  /** simplified error message.
-      @see #yyerror(java.lang.String, java.lang.String[])
-    */
-  public void yyerror (String message) {
-    //new Exception().printStackTrace();
-    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), message);
-  }
-
-  /** (syntax) error message.
-      Can be overwritten to control message format.
-      @param message text to be displayed.
-      @param expected list of acceptable tokens, if available.
-    */
-  public void yyerror (String message, String[] expected, String found) {
-    String text = message + ", unexpected " + found + "\n";
-    //new Exception().printStackTrace();
-    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), text, found);
-  }
 
   /** computes list of expected tokens on error by tracing the tables.
       @param state for which to compute the list.
@@ -1380,10 +1325,9 @@ public class DefaultRubyParser implements RubyParser {
       @param yyLex scanner.
       @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
       @return result of the last reduction, if any.
-      @throws yyException on irrecoverable parse error.
     */
   public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
-				throws java.io.IOException, yyException {
+				throws java.io.IOException {
     this.yydebug = (jay.yydebug.yyDebug)ayydebug;
     return yyparse(yyLex);
   }
@@ -1408,9 +1352,8 @@ public class DefaultRubyParser implements RubyParser {
       Maintains a dynamic state and value stack.
       @param yyLex scanner.
       @return result of the last reduction, if any.
-      @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException, yyException {
+  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException {
     if (yyMax <= 0) yyMax = 256;			// initial size
     int yyState = 0, yyStates[] = new int[yyMax];	// state stack
     Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack
@@ -1455,7 +1398,7 @@ public class DefaultRubyParser implements RubyParser {
             switch (yyErrorFlag) {
   
             case 0:
-              yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
+              support.yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
               if (yydebug != null) yydebug.error("syntax error");
   
             case 1: case 2:
@@ -1473,12 +1416,12 @@ public class DefaultRubyParser implements RubyParser {
                 if (yydebug != null) yydebug.pop(yyStates[yyTop]);
               } while (-- yyTop >= 0);
               if (yydebug != null) yydebug.reject();
-              throw new yyException("irrecoverable syntax error");
+              support.yyerror("irrecoverable syntax error");
   
             case 3:
               if (yyToken == 0) {
                 if (yydebug != null) yydebug.reject();
-                throw new yyException("irrecoverable syntax error at end-of-file");
+                support.yyerror("irrecoverable syntax error at end-of-file");
               }
               if (yydebug != null)
                 yydebug.discard(yyState, yyToken, yyName(yyToken),
@@ -1492,715 +1435,715 @@ public class DefaultRubyParser implements RubyParser {
           yydebug.reduce(yyState, yyStates[yyV-1], yyN, yyRule[yyN], yyLen[yyN]);
         yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
         switch (yyN) {
-case 1: yyVal = case1_line274(yyVal, yyVals, yyTop); // line 274
+case 1: yyVal = case1_line271(support, lexer, yyVal, yyVals, yyTop); // line 271
 break;
-case 2: yyVal = case2_line277(yyVal, yyVals, yyTop); // line 277
+case 2: yyVal = case2_line274(support, lexer, yyVal, yyVals, yyTop); // line 274
 break;
-case 3: yyVal = case3_line289(yyVal, yyVals, yyTop); // line 289
+case 3: yyVal = case3_line286(support, lexer, yyVal, yyVals, yyTop); // line 286
 break;
-case 4: yyVal = case4_line306(yyVal, yyVals, yyTop); // line 306
+case 4: yyVal = case4_line303(support, lexer, yyVal, yyVals, yyTop); // line 303
 break;
-case 6: yyVal = case6_line314(yyVal, yyVals, yyTop); // line 314
+case 6: yyVal = case6_line311(support, lexer, yyVal, yyVals, yyTop); // line 311
 break;
-case 7: yyVal = case7_line317(yyVal, yyVals, yyTop); // line 317
+case 7: yyVal = case7_line314(support, lexer, yyVal, yyVals, yyTop); // line 314
 break;
-case 8: yyVal = case8_line320(yyVal, yyVals, yyTop); // line 320
+case 8: yyVal = case8_line317(support, lexer, yyVal, yyVals, yyTop); // line 317
 break;
-case 9: yyVal = case9_line324(yyVal, yyVals, yyTop); // line 324
+case 9: yyVal = case9_line321(support, lexer, yyVal, yyVals, yyTop); // line 321
 break;
-case 10: yyVal = case10_line326(yyVal, yyVals, yyTop); // line 326
+case 10: yyVal = case10_line323(support, lexer, yyVal, yyVals, yyTop); // line 323
 break;
-case 11: yyVal = case11_line329(yyVal, yyVals, yyTop); // line 329
+case 11: yyVal = case11_line326(support, lexer, yyVal, yyVals, yyTop); // line 326
 break;
-case 12: yyVal = case12_line332(yyVal, yyVals, yyTop); // line 332
+case 12: yyVal = case12_line329(support, lexer, yyVal, yyVals, yyTop); // line 329
 break;
-case 13: yyVal = case13_line335(yyVal, yyVals, yyTop); // line 335
+case 13: yyVal = case13_line332(support, lexer, yyVal, yyVals, yyTop); // line 332
 break;
-case 14: yyVal = case14_line338(yyVal, yyVals, yyTop); // line 338
+case 14: yyVal = case14_line335(support, lexer, yyVal, yyVals, yyTop); // line 335
 break;
-case 15: yyVal = case15_line341(yyVal, yyVals, yyTop); // line 341
+case 15: yyVal = case15_line338(support, lexer, yyVal, yyVals, yyTop); // line 338
 break;
-case 16: yyVal = case16_line344(yyVal, yyVals, yyTop); // line 344
+case 16: yyVal = case16_line341(support, lexer, yyVal, yyVals, yyTop); // line 341
 break;
-case 17: yyVal = case17_line347(yyVal, yyVals, yyTop); // line 347
+case 17: yyVal = case17_line344(support, lexer, yyVal, yyVals, yyTop); // line 344
 break;
-case 18: yyVal = case18_line354(yyVal, yyVals, yyTop); // line 354
+case 18: yyVal = case18_line351(support, lexer, yyVal, yyVals, yyTop); // line 351
 break;
-case 19: yyVal = case19_line361(yyVal, yyVals, yyTop); // line 361
+case 19: yyVal = case19_line358(support, lexer, yyVal, yyVals, yyTop); // line 358
 break;
-case 20: yyVal = case20_line365(yyVal, yyVals, yyTop); // line 365
+case 20: yyVal = case20_line362(support, lexer, yyVal, yyVals, yyTop); // line 362
 break;
-case 21: yyVal = case21_line370(yyVal, yyVals, yyTop); // line 370
+case 21: yyVal = case21_line367(support, lexer, yyVal, yyVals, yyTop); // line 367
 break;
-case 22: yyVal = case22_line375(yyVal, yyVals, yyTop); // line 375
+case 22: yyVal = case22_line372(support, lexer, yyVal, yyVals, yyTop); // line 372
 break;
-case 23: yyVal = case23_line381(yyVal, yyVals, yyTop); // line 381
+case 23: yyVal = case23_line378(support, lexer, yyVal, yyVals, yyTop); // line 378
 break;
-case 24: yyVal = case24_line384(yyVal, yyVals, yyTop); // line 384
+case 24: yyVal = case24_line381(support, lexer, yyVal, yyVals, yyTop); // line 381
 break;
-case 25: yyVal = case25_line393(yyVal, yyVals, yyTop); // line 393
+case 25: yyVal = case25_line390(support, lexer, yyVal, yyVals, yyTop); // line 390
 break;
-case 26: yyVal = case26_line409(yyVal, yyVals, yyTop); // line 409
+case 26: yyVal = case26_line406(support, lexer, yyVal, yyVals, yyTop); // line 406
 break;
-case 27: yyVal = case27_line415(yyVal, yyVals, yyTop); // line 415
+case 27: yyVal = case27_line412(support, lexer, yyVal, yyVals, yyTop); // line 412
 break;
-case 28: yyVal = case28_line420(yyVal, yyVals, yyTop); // line 420
+case 28: yyVal = case28_line417(support, lexer, yyVal, yyVals, yyTop); // line 417
 break;
-case 29: yyVal = case29_line425(yyVal, yyVals, yyTop); // line 425
+case 29: yyVal = case29_line422(support, lexer, yyVal, yyVals, yyTop); // line 422
 break;
-case 30: yyVal = case30_line430(yyVal, yyVals, yyTop); // line 430
+case 30: yyVal = case30_line427(support, lexer, yyVal, yyVals, yyTop); // line 427
 break;
-case 31: yyVal = case31_line433(yyVal, yyVals, yyTop); // line 433
+case 31: yyVal = case31_line430(support, lexer, yyVal, yyVals, yyTop); // line 430
 break;
-case 32: yyVal = case32_line436(yyVal, yyVals, yyTop); // line 436
+case 32: yyVal = case32_line433(support, lexer, yyVal, yyVals, yyTop); // line 433
 break;
-case 33: yyVal = case33_line444(yyVal, yyVals, yyTop); // line 444
+case 33: yyVal = case33_line441(support, lexer, yyVal, yyVals, yyTop); // line 441
 break;
-case 36: yyVal = case36_line453(yyVal, yyVals, yyTop); // line 453
+case 36: yyVal = case36_line450(support, lexer, yyVal, yyVals, yyTop); // line 450
 break;
-case 37: yyVal = case37_line456(yyVal, yyVals, yyTop); // line 456
+case 37: yyVal = case37_line453(support, lexer, yyVal, yyVals, yyTop); // line 453
 break;
-case 38: yyVal = case38_line459(yyVal, yyVals, yyTop); // line 459
+case 38: yyVal = case38_line456(support, lexer, yyVal, yyVals, yyTop); // line 456
 break;
-case 39: yyVal = case39_line462(yyVal, yyVals, yyTop); // line 462
+case 39: yyVal = case39_line459(support, lexer, yyVal, yyVals, yyTop); // line 459
 break;
-case 41: yyVal = case41_line467(yyVal, yyVals, yyTop); // line 467
+case 41: yyVal = case41_line464(support, lexer, yyVal, yyVals, yyTop); // line 464
 break;
-case 44: yyVal = case44_line474(yyVal, yyVals, yyTop); // line 474
+case 44: yyVal = case44_line471(support, lexer, yyVal, yyVals, yyTop); // line 471
 break;
-case 45: yyVal = case45_line477(yyVal, yyVals, yyTop); // line 477
+case 45: yyVal = case45_line474(support, lexer, yyVal, yyVals, yyTop); // line 474
 break;
-case 46: yyVal = case46_line480(yyVal, yyVals, yyTop); // line 480
+case 46: yyVal = case46_line477(support, lexer, yyVal, yyVals, yyTop); // line 477
 break;
-case 48: yyVal = case48_line486(yyVal, yyVals, yyTop); // line 486
+case 48: yyVal = case48_line483(support, lexer, yyVal, yyVals, yyTop); // line 483
 break;
-case 49: yyVal = case49_line489(yyVal, yyVals, yyTop); // line 489
+case 49: yyVal = case49_line486(support, lexer, yyVal, yyVals, yyTop); // line 486
 break;
-case 50: yyVal = case50_line494(yyVal, yyVals, yyTop); // line 494
+case 50: yyVal = case50_line491(support, lexer, yyVal, yyVals, yyTop); // line 491
 break;
-case 51: yyVal = case51_line496(yyVal, yyVals, yyTop); // line 496
+case 51: yyVal = case51_line493(support, lexer, yyVal, yyVals, yyTop); // line 493
 break;
-case 52: yyVal = case52_line502(yyVal, yyVals, yyTop); // line 502
+case 52: yyVal = case52_line499(support, lexer, yyVal, yyVals, yyTop); // line 499
 break;
-case 53: yyVal = case53_line505(yyVal, yyVals, yyTop); // line 505
+case 53: yyVal = case53_line502(support, lexer, yyVal, yyVals, yyTop); // line 502
 break;
-case 54: yyVal = case54_line508(yyVal, yyVals, yyTop); // line 508
+case 54: yyVal = case54_line505(support, lexer, yyVal, yyVals, yyTop); // line 505
 break;
-case 55: yyVal = case55_line511(yyVal, yyVals, yyTop); // line 511
+case 55: yyVal = case55_line508(support, lexer, yyVal, yyVals, yyTop); // line 508
 break;
-case 56: yyVal = case56_line514(yyVal, yyVals, yyTop); // line 514
+case 56: yyVal = case56_line511(support, lexer, yyVal, yyVals, yyTop); // line 511
 break;
-case 57: yyVal = case57_line517(yyVal, yyVals, yyTop); // line 517
+case 57: yyVal = case57_line514(support, lexer, yyVal, yyVals, yyTop); // line 514
 break;
-case 58: yyVal = case58_line520(yyVal, yyVals, yyTop); // line 520
+case 58: yyVal = case58_line517(support, lexer, yyVal, yyVals, yyTop); // line 517
 break;
-case 59: yyVal = case59_line523(yyVal, yyVals, yyTop); // line 523
+case 59: yyVal = case59_line520(support, lexer, yyVal, yyVals, yyTop); // line 520
 break;
-case 61: yyVal = case61_line529(yyVal, yyVals, yyTop); // line 529
+case 61: yyVal = case61_line526(support, lexer, yyVal, yyVals, yyTop); // line 526
 break;
-case 63: yyVal = case63_line535(yyVal, yyVals, yyTop); // line 535
+case 63: yyVal = case63_line532(support, lexer, yyVal, yyVals, yyTop); // line 532
 break;
-case 64: yyVal = case64_line540(yyVal, yyVals, yyTop); // line 540
+case 64: yyVal = case64_line537(support, lexer, yyVal, yyVals, yyTop); // line 537
 break;
-case 65: yyVal = case65_line543(yyVal, yyVals, yyTop); // line 543
+case 65: yyVal = case65_line540(support, lexer, yyVal, yyVals, yyTop); // line 540
 break;
-case 66: yyVal = case66_line547(yyVal, yyVals, yyTop); // line 547
+case 66: yyVal = case66_line544(support, lexer, yyVal, yyVals, yyTop); // line 544
 break;
-case 67: yyVal = case67_line550(yyVal, yyVals, yyTop); // line 550
+case 67: yyVal = case67_line547(support, lexer, yyVal, yyVals, yyTop); // line 547
 break;
-case 68: yyVal = case68_line553(yyVal, yyVals, yyTop); // line 553
+case 68: yyVal = case68_line550(support, lexer, yyVal, yyVals, yyTop); // line 550
 break;
-case 69: yyVal = case69_line556(yyVal, yyVals, yyTop); // line 556
+case 69: yyVal = case69_line553(support, lexer, yyVal, yyVals, yyTop); // line 553
 break;
-case 71: yyVal = case71_line561(yyVal, yyVals, yyTop); // line 561
+case 71: yyVal = case71_line558(support, lexer, yyVal, yyVals, yyTop); // line 558
 break;
-case 72: yyVal = case72_line566(yyVal, yyVals, yyTop); // line 566
+case 72: yyVal = case72_line563(support, lexer, yyVal, yyVals, yyTop); // line 563
 break;
-case 73: yyVal = case73_line569(yyVal, yyVals, yyTop); // line 569
+case 73: yyVal = case73_line566(support, lexer, yyVal, yyVals, yyTop); // line 566
 break;
-case 74: yyVal = case74_line573(yyVal, yyVals, yyTop); // line 573
+case 74: yyVal = case74_line570(support, lexer, yyVal, yyVals, yyTop); // line 570
 break;
-case 75: yyVal = case75_line576(yyVal, yyVals, yyTop); // line 576
+case 75: yyVal = case75_line573(support, lexer, yyVal, yyVals, yyTop); // line 573
 break;
-case 76: yyVal = case76_line579(yyVal, yyVals, yyTop); // line 579
+case 76: yyVal = case76_line576(support, lexer, yyVal, yyVals, yyTop); // line 576
 break;
-case 77: yyVal = case77_line582(yyVal, yyVals, yyTop); // line 582
+case 77: yyVal = case77_line579(support, lexer, yyVal, yyVals, yyTop); // line 579
 break;
-case 78: yyVal = case78_line585(yyVal, yyVals, yyTop); // line 585
+case 78: yyVal = case78_line582(support, lexer, yyVal, yyVals, yyTop); // line 582
 break;
-case 79: yyVal = case79_line588(yyVal, yyVals, yyTop); // line 588
+case 79: yyVal = case79_line585(support, lexer, yyVal, yyVals, yyTop); // line 585
 break;
-case 80: yyVal = case80_line597(yyVal, yyVals, yyTop); // line 597
+case 80: yyVal = case80_line594(support, lexer, yyVal, yyVals, yyTop); // line 594
 break;
-case 81: yyVal = case81_line606(yyVal, yyVals, yyTop); // line 606
+case 81: yyVal = case81_line603(support, lexer, yyVal, yyVals, yyTop); // line 603
 break;
-case 82: yyVal = case82_line611(yyVal, yyVals, yyTop); // line 611
+case 82: yyVal = case82_line608(support, lexer, yyVal, yyVals, yyTop); // line 608
 break;
-case 83: yyVal = case83_line614(yyVal, yyVals, yyTop); // line 614
+case 83: yyVal = case83_line611(support, lexer, yyVal, yyVals, yyTop); // line 611
 break;
-case 84: yyVal = case84_line617(yyVal, yyVals, yyTop); // line 617
+case 84: yyVal = case84_line614(support, lexer, yyVal, yyVals, yyTop); // line 614
 break;
-case 85: yyVal = case85_line620(yyVal, yyVals, yyTop); // line 620
+case 85: yyVal = case85_line617(support, lexer, yyVal, yyVals, yyTop); // line 617
 break;
-case 86: yyVal = case86_line623(yyVal, yyVals, yyTop); // line 623
+case 86: yyVal = case86_line620(support, lexer, yyVal, yyVals, yyTop); // line 620
 break;
-case 87: yyVal = case87_line626(yyVal, yyVals, yyTop); // line 626
+case 87: yyVal = case87_line623(support, lexer, yyVal, yyVals, yyTop); // line 623
 break;
-case 88: yyVal = case88_line635(yyVal, yyVals, yyTop); // line 635
+case 88: yyVal = case88_line632(support, lexer, yyVal, yyVals, yyTop); // line 632
 break;
-case 89: yyVal = case89_line644(yyVal, yyVals, yyTop); // line 644
+case 89: yyVal = case89_line641(support, lexer, yyVal, yyVals, yyTop); // line 641
 break;
-case 90: yyVal = case90_line648(yyVal, yyVals, yyTop); // line 648
+case 90: yyVal = case90_line645(support, lexer, yyVal, yyVals, yyTop); // line 645
 break;
-case 92: yyVal = case92_line653(yyVal, yyVals, yyTop); // line 653
+case 92: yyVal = case92_line650(support, lexer, yyVal, yyVals, yyTop); // line 650
 break;
-case 93: yyVal = case93_line656(yyVal, yyVals, yyTop); // line 656
+case 93: yyVal = case93_line653(support, lexer, yyVal, yyVals, yyTop); // line 653
 break;
-case 94: yyVal = case94_line659(yyVal, yyVals, yyTop); // line 659
+case 94: yyVal = case94_line656(support, lexer, yyVal, yyVals, yyTop); // line 656
 break;
-case 98: yyVal = case98_line665(yyVal, yyVals, yyTop); // line 665
+case 98: yyVal = case98_line662(support, lexer, yyVal, yyVals, yyTop); // line 662
 break;
-case 99: yyVal = case99_line670(yyVal, yyVals, yyTop); // line 670
+case 99: yyVal = case99_line667(support, lexer, yyVal, yyVals, yyTop); // line 667
 break;
-case 100: yyVal = case100_line676(yyVal, yyVals, yyTop); // line 676
+case 100: yyVal = case100_line673(support, lexer, yyVal, yyVals, yyTop); // line 673
 break;
-case 101: yyVal = case101_line679(yyVal, yyVals, yyTop); // line 679
+case 101: yyVal = case101_line676(support, lexer, yyVal, yyVals, yyTop); // line 676
 break;
-case 102: yyVal = case102_line684(yyVal, yyVals, yyTop); // line 684
+case 102: yyVal = case102_line681(support, lexer, yyVal, yyVals, yyTop); // line 681
 break;
-case 103: yyVal = case103_line687(yyVal, yyVals, yyTop); // line 687
+case 103: yyVal = case103_line684(support, lexer, yyVal, yyVals, yyTop); // line 684
 break;
-case 104: yyVal = case104_line691(yyVal, yyVals, yyTop); // line 691
+case 104: yyVal = case104_line688(support, lexer, yyVal, yyVals, yyTop); // line 688
 break;
-case 105: yyVal = case105_line694(yyVal, yyVals, yyTop); // line 694
+case 105: yyVal = case105_line691(support, lexer, yyVal, yyVals, yyTop); // line 691
 break;
-case 106: yyVal = case106_line696(yyVal, yyVals, yyTop); // line 696
+case 106: yyVal = case106_line693(support, lexer, yyVal, yyVals, yyTop); // line 693
 break;
-case 174: yyVal = case174_line715(yyVal, yyVals, yyTop); // line 715
+case 174: yyVal = case174_line712(support, lexer, yyVal, yyVals, yyTop); // line 712
 break;
-case 175: yyVal = case175_line720(yyVal, yyVals, yyTop); // line 720
+case 175: yyVal = case175_line717(support, lexer, yyVal, yyVals, yyTop); // line 717
 break;
-case 176: yyVal = case176_line725(yyVal, yyVals, yyTop); // line 725
+case 176: yyVal = case176_line722(support, lexer, yyVal, yyVals, yyTop); // line 722
 break;
-case 177: yyVal = case177_line741(yyVal, yyVals, yyTop); // line 741
+case 177: yyVal = case177_line738(support, lexer, yyVal, yyVals, yyTop); // line 738
 break;
-case 178: yyVal = case178_line746(yyVal, yyVals, yyTop); // line 746
+case 178: yyVal = case178_line743(support, lexer, yyVal, yyVals, yyTop); // line 743
 break;
-case 179: yyVal = case179_line751(yyVal, yyVals, yyTop); // line 751
+case 179: yyVal = case179_line748(support, lexer, yyVal, yyVals, yyTop); // line 748
 break;
-case 180: yyVal = case180_line756(yyVal, yyVals, yyTop); // line 756
+case 180: yyVal = case180_line753(support, lexer, yyVal, yyVals, yyTop); // line 753
 break;
-case 181: yyVal = case181_line761(yyVal, yyVals, yyTop); // line 761
+case 181: yyVal = case181_line758(support, lexer, yyVal, yyVals, yyTop); // line 758
 break;
-case 182: yyVal = case182_line764(yyVal, yyVals, yyTop); // line 764
+case 182: yyVal = case182_line761(support, lexer, yyVal, yyVals, yyTop); // line 761
 break;
-case 183: yyVal = case183_line767(yyVal, yyVals, yyTop); // line 767
+case 183: yyVal = case183_line764(support, lexer, yyVal, yyVals, yyTop); // line 764
 break;
-case 184: yyVal = case184_line770(yyVal, yyVals, yyTop); // line 770
+case 184: yyVal = case184_line767(support, lexer, yyVal, yyVals, yyTop); // line 767
 break;
-case 185: yyVal = case185_line777(yyVal, yyVals, yyTop); // line 777
+case 185: yyVal = case185_line774(support, lexer, yyVal, yyVals, yyTop); // line 774
 break;
-case 186: yyVal = case186_line783(yyVal, yyVals, yyTop); // line 783
+case 186: yyVal = case186_line780(support, lexer, yyVal, yyVals, yyTop); // line 780
 break;
-case 187: yyVal = case187_line786(yyVal, yyVals, yyTop); // line 786
+case 187: yyVal = case187_line783(support, lexer, yyVal, yyVals, yyTop); // line 783
 break;
-case 188: yyVal = case188_line789(yyVal, yyVals, yyTop); // line 789
+case 188: yyVal = case188_line786(support, lexer, yyVal, yyVals, yyTop); // line 786
 break;
-case 189: yyVal = case189_line792(yyVal, yyVals, yyTop); // line 792
+case 189: yyVal = case189_line789(support, lexer, yyVal, yyVals, yyTop); // line 789
 break;
-case 190: yyVal = case190_line795(yyVal, yyVals, yyTop); // line 795
+case 190: yyVal = case190_line792(support, lexer, yyVal, yyVals, yyTop); // line 792
 break;
-case 191: yyVal = case191_line798(yyVal, yyVals, yyTop); // line 798
+case 191: yyVal = case191_line795(support, lexer, yyVal, yyVals, yyTop); // line 795
 break;
-case 192: yyVal = case192_line801(yyVal, yyVals, yyTop); // line 801
+case 192: yyVal = case192_line798(support, lexer, yyVal, yyVals, yyTop); // line 798
 break;
-case 193: yyVal = case193_line804(yyVal, yyVals, yyTop); // line 804
+case 193: yyVal = case193_line801(support, lexer, yyVal, yyVals, yyTop); // line 801
 break;
-case 194: yyVal = case194_line807(yyVal, yyVals, yyTop); // line 807
+case 194: yyVal = case194_line804(support, lexer, yyVal, yyVals, yyTop); // line 804
 break;
-case 195: yyVal = case195_line814(yyVal, yyVals, yyTop); // line 814
+case 195: yyVal = case195_line811(support, lexer, yyVal, yyVals, yyTop); // line 811
 break;
-case 196: yyVal = case196_line817(yyVal, yyVals, yyTop); // line 817
+case 196: yyVal = case196_line814(support, lexer, yyVal, yyVals, yyTop); // line 814
 break;
-case 197: yyVal = case197_line820(yyVal, yyVals, yyTop); // line 820
+case 197: yyVal = case197_line817(support, lexer, yyVal, yyVals, yyTop); // line 817
 break;
-case 198: yyVal = case198_line823(yyVal, yyVals, yyTop); // line 823
+case 198: yyVal = case198_line820(support, lexer, yyVal, yyVals, yyTop); // line 820
 break;
-case 199: yyVal = case199_line826(yyVal, yyVals, yyTop); // line 826
+case 199: yyVal = case199_line823(support, lexer, yyVal, yyVals, yyTop); // line 823
 break;
-case 200: yyVal = case200_line829(yyVal, yyVals, yyTop); // line 829
+case 200: yyVal = case200_line826(support, lexer, yyVal, yyVals, yyTop); // line 826
 break;
-case 201: yyVal = case201_line832(yyVal, yyVals, yyTop); // line 832
+case 201: yyVal = case201_line829(support, lexer, yyVal, yyVals, yyTop); // line 829
 break;
-case 202: yyVal = case202_line835(yyVal, yyVals, yyTop); // line 835
+case 202: yyVal = case202_line832(support, lexer, yyVal, yyVals, yyTop); // line 832
 break;
-case 203: yyVal = case203_line838(yyVal, yyVals, yyTop); // line 838
+case 203: yyVal = case203_line835(support, lexer, yyVal, yyVals, yyTop); // line 835
 break;
-case 204: yyVal = case204_line841(yyVal, yyVals, yyTop); // line 841
+case 204: yyVal = case204_line838(support, lexer, yyVal, yyVals, yyTop); // line 838
 break;
-case 205: yyVal = case205_line844(yyVal, yyVals, yyTop); // line 844
+case 205: yyVal = case205_line841(support, lexer, yyVal, yyVals, yyTop); // line 841
 break;
-case 206: yyVal = case206_line847(yyVal, yyVals, yyTop); // line 847
+case 206: yyVal = case206_line844(support, lexer, yyVal, yyVals, yyTop); // line 844
 break;
-case 207: yyVal = case207_line850(yyVal, yyVals, yyTop); // line 850
+case 207: yyVal = case207_line847(support, lexer, yyVal, yyVals, yyTop); // line 847
 break;
-case 208: yyVal = case208_line853(yyVal, yyVals, yyTop); // line 853
+case 208: yyVal = case208_line850(support, lexer, yyVal, yyVals, yyTop); // line 850
 break;
-case 209: yyVal = case209_line856(yyVal, yyVals, yyTop); // line 856
+case 209: yyVal = case209_line853(support, lexer, yyVal, yyVals, yyTop); // line 853
 break;
-case 210: yyVal = case210_line859(yyVal, yyVals, yyTop); // line 859
+case 210: yyVal = case210_line856(support, lexer, yyVal, yyVals, yyTop); // line 856
 break;
-case 211: yyVal = case211_line862(yyVal, yyVals, yyTop); // line 862
+case 211: yyVal = case211_line859(support, lexer, yyVal, yyVals, yyTop); // line 859
 break;
-case 212: yyVal = case212_line865(yyVal, yyVals, yyTop); // line 865
+case 212: yyVal = case212_line862(support, lexer, yyVal, yyVals, yyTop); // line 862
 break;
-case 213: yyVal = case213_line868(yyVal, yyVals, yyTop); // line 868
+case 213: yyVal = case213_line865(support, lexer, yyVal, yyVals, yyTop); // line 865
 break;
-case 214: yyVal = case214_line871(yyVal, yyVals, yyTop); // line 871
+case 214: yyVal = case214_line868(support, lexer, yyVal, yyVals, yyTop); // line 868
 break;
-case 215: yyVal = case215_line874(yyVal, yyVals, yyTop); // line 874
+case 215: yyVal = case215_line871(support, lexer, yyVal, yyVals, yyTop); // line 871
 break;
-case 216: yyVal = case216_line877(yyVal, yyVals, yyTop); // line 877
+case 216: yyVal = case216_line874(support, lexer, yyVal, yyVals, yyTop); // line 874
 break;
-case 217: yyVal = case217_line880(yyVal, yyVals, yyTop); // line 880
+case 217: yyVal = case217_line877(support, lexer, yyVal, yyVals, yyTop); // line 877
 break;
-case 218: yyVal = case218_line884(yyVal, yyVals, yyTop); // line 884
+case 218: yyVal = case218_line881(support, lexer, yyVal, yyVals, yyTop); // line 881
 break;
-case 220: yyVal = case220_line890(yyVal, yyVals, yyTop); // line 890
+case 220: yyVal = case220_line887(support, lexer, yyVal, yyVals, yyTop); // line 887
 break;
-case 221: yyVal = case221_line893(yyVal, yyVals, yyTop); // line 893
+case 221: yyVal = case221_line890(support, lexer, yyVal, yyVals, yyTop); // line 890
 break;
-case 222: yyVal = case222_line896(yyVal, yyVals, yyTop); // line 896
+case 222: yyVal = case222_line893(support, lexer, yyVal, yyVals, yyTop); // line 893
 break;
-case 223: yyVal = case223_line899(yyVal, yyVals, yyTop); // line 899
+case 223: yyVal = case223_line896(support, lexer, yyVal, yyVals, yyTop); // line 896
 break;
-case 224: yyVal = case224_line902(yyVal, yyVals, yyTop); // line 902
+case 224: yyVal = case224_line900(support, lexer, yyVal, yyVals, yyTop); // line 900
 break;
-case 225: yyVal = case225_line906(yyVal, yyVals, yyTop); // line 906
+case 225: yyVal = case225_line904(support, lexer, yyVal, yyVals, yyTop); // line 904
 break;
-case 226: yyVal = case226_line909(yyVal, yyVals, yyTop); // line 909
+case 226: yyVal = case226_line907(support, lexer, yyVal, yyVals, yyTop); // line 907
 break;
-case 227: yyVal = case227_line913(yyVal, yyVals, yyTop); // line 913
+case 227: yyVal = case227_line911(support, lexer, yyVal, yyVals, yyTop); // line 911
 break;
-case 228: yyVal = case228_line916(yyVal, yyVals, yyTop); // line 916
+case 228: yyVal = case228_line914(support, lexer, yyVal, yyVals, yyTop); // line 914
 break;
-case 231: yyVal = case231_line923(yyVal, yyVals, yyTop); // line 923
+case 231: yyVal = case231_line921(support, lexer, yyVal, yyVals, yyTop); // line 921
 break;
-case 232: yyVal = case232_line926(yyVal, yyVals, yyTop); // line 926
+case 232: yyVal = case232_line924(support, lexer, yyVal, yyVals, yyTop); // line 924
 break;
-case 233: yyVal = case233_line929(yyVal, yyVals, yyTop); // line 929
+case 233: yyVal = case233_line927(support, lexer, yyVal, yyVals, yyTop); // line 927
 break;
-case 234: yyVal = case234_line933(yyVal, yyVals, yyTop); // line 933
+case 234: yyVal = case234_line931(support, lexer, yyVal, yyVals, yyTop); // line 931
 break;
-case 235: yyVal = case235_line937(yyVal, yyVals, yyTop); // line 937
+case 235: yyVal = case235_line936(support, lexer, yyVal, yyVals, yyTop); // line 936
 break;
-case 236: yyVal = case236_line941(yyVal, yyVals, yyTop); // line 941
+case 236: yyVal = case236_line941(support, lexer, yyVal, yyVals, yyTop); // line 941
 break;
-case 237: yyVal = case237_line945(yyVal, yyVals, yyTop); // line 945
+case 237: yyVal = case237_line945(support, lexer, yyVal, yyVals, yyTop); // line 945
 break;
-case 238: yyVal = case238_line950(yyVal, yyVals, yyTop); // line 950
+case 238: yyVal = case238_line950(support, lexer, yyVal, yyVals, yyTop); // line 950
 break;
-case 239: yyVal = case239_line953(yyVal, yyVals, yyTop); // line 953
+case 239: yyVal = case239_line953(support, lexer, yyVal, yyVals, yyTop); // line 953
 break;
-case 240: yyVal = case240_line956(yyVal, yyVals, yyTop); // line 956
+case 240: yyVal = case240_line956(support, lexer, yyVal, yyVals, yyTop); // line 956
 break;
-case 241: yyVal = case241_line959(yyVal, yyVals, yyTop); // line 959
+case 241: yyVal = case241_line959(support, lexer, yyVal, yyVals, yyTop); // line 959
 break;
-case 242: yyVal = case242_line962(yyVal, yyVals, yyTop); // line 962
+case 242: yyVal = case242_line962(support, lexer, yyVal, yyVals, yyTop); // line 962
 break;
-case 243: yyVal = case243_line966(yyVal, yyVals, yyTop); // line 966
+case 243: yyVal = case243_line966(support, lexer, yyVal, yyVals, yyTop); // line 966
 break;
-case 244: yyVal = case244_line970(yyVal, yyVals, yyTop); // line 970
+case 244: yyVal = case244_line970(support, lexer, yyVal, yyVals, yyTop); // line 970
 break;
-case 245: yyVal = case245_line974(yyVal, yyVals, yyTop); // line 974
+case 245: yyVal = case245_line975(support, lexer, yyVal, yyVals, yyTop); // line 975
 break;
-case 246: yyVal = case246_line978(yyVal, yyVals, yyTop); // line 978
+case 246: yyVal = case246_line980(support, lexer, yyVal, yyVals, yyTop); // line 980
 break;
-case 247: yyVal = case247_line982(yyVal, yyVals, yyTop); // line 982
+case 247: yyVal = case247_line984(support, lexer, yyVal, yyVals, yyTop); // line 984
 break;
-case 248: yyVal = case248_line986(yyVal, yyVals, yyTop); // line 986
+case 248: yyVal = case248_line988(support, lexer, yyVal, yyVals, yyTop); // line 988
 break;
-case 249: yyVal = case249_line990(yyVal, yyVals, yyTop); // line 990
+case 249: yyVal = case249_line992(support, lexer, yyVal, yyVals, yyTop); // line 992
 break;
-case 250: yyVal = case250_line994(yyVal, yyVals, yyTop); // line 994
+case 250: yyVal = case250_line996(support, lexer, yyVal, yyVals, yyTop); // line 996
 break;
-case 251: yyVal = case251_line997(yyVal, yyVals, yyTop); // line 997
+case 251: yyVal = case251_line999(support, lexer, yyVal, yyVals, yyTop); // line 999
 break;
-case 252: yyVal = case252_line1000(yyVal, yyVals, yyTop); // line 1000
+case 252: yyVal = case252_line1002(support, lexer, yyVal, yyVals, yyTop); // line 1002
 break;
-case 253: yyVal = case253_line1002(yyVal, yyVals, yyTop); // line 1002
+case 253: yyVal = case253_line1004(support, lexer, yyVal, yyVals, yyTop); // line 1004
 break;
-case 255: yyVal = case255_line1008(yyVal, yyVals, yyTop); // line 1008
+case 255: yyVal = case255_line1010(support, lexer, yyVal, yyVals, yyTop); // line 1010
 break;
-case 256: yyVal = case256_line1010(yyVal, yyVals, yyTop); // line 1010
+case 256: yyVal = case256_line1012(support, lexer, yyVal, yyVals, yyTop); // line 1012
 break;
-case 257: yyVal = case257_line1014(yyVal, yyVals, yyTop); // line 1014
+case 257: yyVal = case257_line1016(support, lexer, yyVal, yyVals, yyTop); // line 1016
 break;
-case 258: yyVal = case258_line1016(yyVal, yyVals, yyTop); // line 1016
+case 258: yyVal = case258_line1018(support, lexer, yyVal, yyVals, yyTop); // line 1018
 break;
-case 259: yyVal = case259_line1021(yyVal, yyVals, yyTop); // line 1021
+case 259: yyVal = case259_line1023(support, lexer, yyVal, yyVals, yyTop); // line 1023
 break;
-case 260: yyVal = case260_line1026(yyVal, yyVals, yyTop); // line 1026
+case 260: yyVal = case260_line1028(support, lexer, yyVal, yyVals, yyTop); // line 1028
 break;
-case 262: yyVal = case262_line1031(yyVal, yyVals, yyTop); // line 1031
+case 262: yyVal = case262_line1033(support, lexer, yyVal, yyVals, yyTop); // line 1033
 break;
-case 263: yyVal = case263_line1034(yyVal, yyVals, yyTop); // line 1034
+case 263: yyVal = case263_line1037(support, lexer, yyVal, yyVals, yyTop); // line 1037
 break;
-case 264: yyVal = case264_line1038(yyVal, yyVals, yyTop); // line 1038
+case 264: yyVal = case264_line1041(support, lexer, yyVal, yyVals, yyTop); // line 1041
 break;
-case 265: yyVal = case265_line1041(yyVal, yyVals, yyTop); // line 1041
+case 265: yyVal = case265_line1044(support, lexer, yyVal, yyVals, yyTop); // line 1044
 break;
-case 266: yyVal = case266_line1044(yyVal, yyVals, yyTop); // line 1044
+case 266: yyVal = case266_line1047(support, lexer, yyVal, yyVals, yyTop); // line 1047
 break;
-case 275: yyVal = case275_line1056(yyVal, yyVals, yyTop); // line 1056
+case 275: yyVal = case275_line1059(support, lexer, yyVal, yyVals, yyTop); // line 1059
 break;
-case 276: yyVal = case276_line1059(yyVal, yyVals, yyTop); // line 1059
+case 276: yyVal = case276_line1062(support, lexer, yyVal, yyVals, yyTop); // line 1062
 break;
-case 277: yyVal = case277_line1062(yyVal, yyVals, yyTop); // line 1062
+case 277: yyVal = case277_line1065(support, lexer, yyVal, yyVals, yyTop); // line 1065
 break;
-case 278: yyVal = case278_line1064(yyVal, yyVals, yyTop); // line 1064
+case 278: yyVal = case278_line1067(support, lexer, yyVal, yyVals, yyTop); // line 1067
 break;
-case 279: yyVal = case279_line1068(yyVal, yyVals, yyTop); // line 1068
+case 279: yyVal = case279_line1071(support, lexer, yyVal, yyVals, yyTop); // line 1071
 break;
-case 280: yyVal = case280_line1077(yyVal, yyVals, yyTop); // line 1077
+case 280: yyVal = case280_line1080(support, lexer, yyVal, yyVals, yyTop); // line 1080
 break;
-case 281: yyVal = case281_line1080(yyVal, yyVals, yyTop); // line 1080
+case 281: yyVal = case281_line1083(support, lexer, yyVal, yyVals, yyTop); // line 1083
 break;
-case 282: yyVal = case282_line1083(yyVal, yyVals, yyTop); // line 1083
+case 282: yyVal = case282_line1086(support, lexer, yyVal, yyVals, yyTop); // line 1086
 break;
-case 283: yyVal = case283_line1090(yyVal, yyVals, yyTop); // line 1090
+case 283: yyVal = case283_line1093(support, lexer, yyVal, yyVals, yyTop); // line 1093
 break;
-case 284: yyVal = case284_line1099(yyVal, yyVals, yyTop); // line 1099
+case 284: yyVal = case284_line1102(support, lexer, yyVal, yyVals, yyTop); // line 1102
 break;
-case 285: yyVal = case285_line1102(yyVal, yyVals, yyTop); // line 1102
+case 285: yyVal = case285_line1105(support, lexer, yyVal, yyVals, yyTop); // line 1105
 break;
-case 286: yyVal = case286_line1105(yyVal, yyVals, yyTop); // line 1105
+case 286: yyVal = case286_line1108(support, lexer, yyVal, yyVals, yyTop); // line 1108
 break;
-case 287: yyVal = case287_line1108(yyVal, yyVals, yyTop); // line 1108
+case 287: yyVal = case287_line1111(support, lexer, yyVal, yyVals, yyTop); // line 1111
 break;
-case 288: yyVal = case288_line1111(yyVal, yyVals, yyTop); // line 1111
+case 288: yyVal = case288_line1114(support, lexer, yyVal, yyVals, yyTop); // line 1114
 break;
-case 289: yyVal = case289_line1114(yyVal, yyVals, yyTop); // line 1114
+case 289: yyVal = case289_line1117(support, lexer, yyVal, yyVals, yyTop); // line 1117
 break;
-case 290: yyVal = case290_line1117(yyVal, yyVals, yyTop); // line 1117
+case 290: yyVal = case290_line1120(support, lexer, yyVal, yyVals, yyTop); // line 1120
 break;
-case 292: yyVal = case292_line1121(yyVal, yyVals, yyTop); // line 1121
+case 292: yyVal = case292_line1124(support, lexer, yyVal, yyVals, yyTop); // line 1124
 break;
-case 293: yyVal = case293_line1129(yyVal, yyVals, yyTop); // line 1129
+case 293: yyVal = case293_line1132(support, lexer, yyVal, yyVals, yyTop); // line 1132
 break;
-case 294: yyVal = case294_line1132(yyVal, yyVals, yyTop); // line 1132
+case 294: yyVal = case294_line1135(support, lexer, yyVal, yyVals, yyTop); // line 1135
 break;
-case 295: yyVal = case295_line1135(yyVal, yyVals, yyTop); // line 1135
+case 295: yyVal = case295_line1138(support, lexer, yyVal, yyVals, yyTop); // line 1138
 break;
-case 296: yyVal = case296_line1137(yyVal, yyVals, yyTop); // line 1137
+case 296: yyVal = case296_line1140(support, lexer, yyVal, yyVals, yyTop); // line 1140
 break;
-case 297: yyVal = case297_line1139(yyVal, yyVals, yyTop); // line 1139
+case 297: yyVal = case297_line1142(support, lexer, yyVal, yyVals, yyTop); // line 1142
 break;
-case 298: yyVal = case298_line1143(yyVal, yyVals, yyTop); // line 1143
+case 298: yyVal = case298_line1146(support, lexer, yyVal, yyVals, yyTop); // line 1146
 break;
-case 299: yyVal = case299_line1145(yyVal, yyVals, yyTop); // line 1145
+case 299: yyVal = case299_line1148(support, lexer, yyVal, yyVals, yyTop); // line 1148
 break;
-case 300: yyVal = case300_line1147(yyVal, yyVals, yyTop); // line 1147
+case 300: yyVal = case300_line1150(support, lexer, yyVal, yyVals, yyTop); // line 1150
 break;
-case 301: yyVal = case301_line1151(yyVal, yyVals, yyTop); // line 1151
+case 301: yyVal = case301_line1154(support, lexer, yyVal, yyVals, yyTop); // line 1154
 break;
-case 302: yyVal = case302_line1154(yyVal, yyVals, yyTop); // line 1154
+case 302: yyVal = case302_line1157(support, lexer, yyVal, yyVals, yyTop); // line 1157
 break;
-case 303: yyVal = case303_line1162(yyVal, yyVals, yyTop); // line 1162
+case 303: yyVal = case303_line1165(support, lexer, yyVal, yyVals, yyTop); // line 1165
 break;
-case 304: yyVal = case304_line1165(yyVal, yyVals, yyTop); // line 1165
+case 304: yyVal = case304_line1168(support, lexer, yyVal, yyVals, yyTop); // line 1168
 break;
-case 305: yyVal = case305_line1167(yyVal, yyVals, yyTop); // line 1167
+case 305: yyVal = case305_line1170(support, lexer, yyVal, yyVals, yyTop); // line 1170
 break;
-case 306: yyVal = case306_line1169(yyVal, yyVals, yyTop); // line 1169
+case 306: yyVal = case306_line1172(support, lexer, yyVal, yyVals, yyTop); // line 1172
 break;
-case 307: yyVal = case307_line1172(yyVal, yyVals, yyTop); // line 1172
+case 307: yyVal = case307_line1175(support, lexer, yyVal, yyVals, yyTop); // line 1175
 break;
-case 308: yyVal = case308_line1177(yyVal, yyVals, yyTop); // line 1177
+case 308: yyVal = case308_line1180(support, lexer, yyVal, yyVals, yyTop); // line 1180
 break;
-case 309: yyVal = case309_line1183(yyVal, yyVals, yyTop); // line 1183
+case 309: yyVal = case309_line1186(support, lexer, yyVal, yyVals, yyTop); // line 1186
 break;
-case 310: yyVal = case310_line1186(yyVal, yyVals, yyTop); // line 1186
+case 310: yyVal = case310_line1189(support, lexer, yyVal, yyVals, yyTop); // line 1189
 break;
-case 311: yyVal = case311_line1190(yyVal, yyVals, yyTop); // line 1190
+case 311: yyVal = case311_line1193(support, lexer, yyVal, yyVals, yyTop); // line 1193
 break;
-case 312: yyVal = case312_line1196(yyVal, yyVals, yyTop); // line 1196
+case 312: yyVal = case312_line1199(support, lexer, yyVal, yyVals, yyTop); // line 1199
 break;
-case 313: yyVal = case313_line1201(yyVal, yyVals, yyTop); // line 1201
+case 313: yyVal = case313_line1204(support, lexer, yyVal, yyVals, yyTop); // line 1204
 break;
-case 314: yyVal = case314_line1207(yyVal, yyVals, yyTop); // line 1207
+case 314: yyVal = case314_line1210(support, lexer, yyVal, yyVals, yyTop); // line 1210
 break;
-case 315: yyVal = case315_line1210(yyVal, yyVals, yyTop); // line 1210
+case 315: yyVal = case315_line1213(support, lexer, yyVal, yyVals, yyTop); // line 1213
 break;
-case 316: yyVal = case316_line1219(yyVal, yyVals, yyTop); // line 1219
+case 316: yyVal = case316_line1222(support, lexer, yyVal, yyVals, yyTop); // line 1222
 break;
-case 317: yyVal = case317_line1221(yyVal, yyVals, yyTop); // line 1221
+case 317: yyVal = case317_line1224(support, lexer, yyVal, yyVals, yyTop); // line 1224
 break;
-case 318: yyVal = case318_line1225(yyVal, yyVals, yyTop); // line 1225
+case 318: yyVal = case318_line1228(support, lexer, yyVal, yyVals, yyTop); // line 1228
 break;
-case 319: yyVal = case319_line1233(yyVal, yyVals, yyTop); // line 1233
+case 319: yyVal = case319_line1236(support, lexer, yyVal, yyVals, yyTop); // line 1236
 break;
-case 320: yyVal = case320_line1236(yyVal, yyVals, yyTop); // line 1236
+case 320: yyVal = case320_line1239(support, lexer, yyVal, yyVals, yyTop); // line 1239
 break;
-case 321: yyVal = case321_line1239(yyVal, yyVals, yyTop); // line 1239
+case 321: yyVal = case321_line1242(support, lexer, yyVal, yyVals, yyTop); // line 1242
 break;
-case 322: yyVal = case322_line1242(yyVal, yyVals, yyTop); // line 1242
+case 322: yyVal = case322_line1245(support, lexer, yyVal, yyVals, yyTop); // line 1245
 break;
-case 323: yyVal = case323_line1246(yyVal, yyVals, yyTop); // line 1246
+case 323: yyVal = case323_line1249(support, lexer, yyVal, yyVals, yyTop); // line 1249
 break;
-case 332: yyVal = case332_line1261(yyVal, yyVals, yyTop); // line 1261
+case 332: yyVal = case332_line1264(support, lexer, yyVal, yyVals, yyTop); // line 1264
 break;
-case 334: yyVal = case334_line1266(yyVal, yyVals, yyTop); // line 1266
+case 334: yyVal = case334_line1269(support, lexer, yyVal, yyVals, yyTop); // line 1269
 break;
-case 336: yyVal = case336_line1271(yyVal, yyVals, yyTop); // line 1271
+case 336: yyVal = case336_line1274(support, lexer, yyVal, yyVals, yyTop); // line 1274
 break;
-case 337: yyVal = case337_line1274(yyVal, yyVals, yyTop); // line 1274
+case 337: yyVal = case337_line1278(support, lexer, yyVal, yyVals, yyTop); // line 1278
 break;
-case 338: yyVal = case338_line1277(yyVal, yyVals, yyTop); // line 1277
+case 338: yyVal = case338_line1281(support, lexer, yyVal, yyVals, yyTop); // line 1281
 break;
-case 339: yyVal = case339_line1281(yyVal, yyVals, yyTop); // line 1281
+case 339: yyVal = case339_line1285(support, lexer, yyVal, yyVals, yyTop); // line 1285
 break;
-case 340: yyVal = case340_line1288(yyVal, yyVals, yyTop); // line 1288
+case 340: yyVal = case340_line1292(support, lexer, yyVal, yyVals, yyTop); // line 1292
 break;
-case 341: yyVal = case341_line1291(yyVal, yyVals, yyTop); // line 1291
+case 341: yyVal = case341_line1295(support, lexer, yyVal, yyVals, yyTop); // line 1295
 break;
-case 342: yyVal = case342_line1294(yyVal, yyVals, yyTop); // line 1294
+case 342: yyVal = case342_line1298(support, lexer, yyVal, yyVals, yyTop); // line 1298
 break;
-case 343: yyVal = case343_line1297(yyVal, yyVals, yyTop); // line 1297
+case 343: yyVal = case343_line1301(support, lexer, yyVal, yyVals, yyTop); // line 1301
 break;
-case 344: yyVal = case344_line1300(yyVal, yyVals, yyTop); // line 1300
+case 344: yyVal = case344_line1304(support, lexer, yyVal, yyVals, yyTop); // line 1304
 break;
-case 345: yyVal = case345_line1303(yyVal, yyVals, yyTop); // line 1303
+case 345: yyVal = case345_line1307(support, lexer, yyVal, yyVals, yyTop); // line 1307
 break;
-case 346: yyVal = case346_line1306(yyVal, yyVals, yyTop); // line 1306
+case 346: yyVal = case346_line1310(support, lexer, yyVal, yyVals, yyTop); // line 1310
 break;
-case 347: yyVal = case347_line1309(yyVal, yyVals, yyTop); // line 1309
+case 347: yyVal = case347_line1313(support, lexer, yyVal, yyVals, yyTop); // line 1313
 break;
-case 348: yyVal = case348_line1312(yyVal, yyVals, yyTop); // line 1312
+case 348: yyVal = case348_line1316(support, lexer, yyVal, yyVals, yyTop); // line 1316
 break;
-case 349: yyVal = case349_line1315(yyVal, yyVals, yyTop); // line 1315
+case 349: yyVal = case349_line1319(support, lexer, yyVal, yyVals, yyTop); // line 1319
 break;
-case 350: yyVal = case350_line1318(yyVal, yyVals, yyTop); // line 1318
+case 350: yyVal = case350_line1322(support, lexer, yyVal, yyVals, yyTop); // line 1322
 break;
-case 352: yyVal = case352_line1323(yyVal, yyVals, yyTop); // line 1323
+case 352: yyVal = case352_line1327(support, lexer, yyVal, yyVals, yyTop); // line 1327
 break;
-case 353: yyVal = case353_line1327(yyVal, yyVals, yyTop); // line 1327
+case 353: yyVal = case353_line1331(support, lexer, yyVal, yyVals, yyTop); // line 1331
 break;
-case 354: yyVal = case354_line1331(yyVal, yyVals, yyTop); // line 1331
+case 354: yyVal = case354_line1335(support, lexer, yyVal, yyVals, yyTop); // line 1335
 break;
-case 355: yyVal = case355_line1341(yyVal, yyVals, yyTop); // line 1341
+case 355: yyVal = case355_line1345(support, lexer, yyVal, yyVals, yyTop); // line 1345
 break;
-case 356: yyVal = case356_line1343(yyVal, yyVals, yyTop); // line 1343
+case 356: yyVal = case356_line1347(support, lexer, yyVal, yyVals, yyTop); // line 1347
 break;
-case 357: yyVal = case357_line1349(yyVal, yyVals, yyTop); // line 1349
+case 357: yyVal = case357_line1353(support, lexer, yyVal, yyVals, yyTop); // line 1353
 break;
-case 358: yyVal = case358_line1360(yyVal, yyVals, yyTop); // line 1360
+case 358: yyVal = case358_line1364(support, lexer, yyVal, yyVals, yyTop); // line 1364
 break;
-case 359: yyVal = case359_line1363(yyVal, yyVals, yyTop); // line 1363
+case 359: yyVal = case359_line1367(support, lexer, yyVal, yyVals, yyTop); // line 1367
 break;
-case 360: yyVal = case360_line1367(yyVal, yyVals, yyTop); // line 1367
+case 360: yyVal = case360_line1371(support, lexer, yyVal, yyVals, yyTop); // line 1371
 break;
-case 361: yyVal = case361_line1370(yyVal, yyVals, yyTop); // line 1370
+case 361: yyVal = case361_line1374(support, lexer, yyVal, yyVals, yyTop); // line 1374
 break;
-case 362: yyVal = case362_line1373(yyVal, yyVals, yyTop); // line 1373
+case 362: yyVal = case362_line1377(support, lexer, yyVal, yyVals, yyTop); // line 1377
 break;
-case 363: yyVal = case363_line1376(yyVal, yyVals, yyTop); // line 1376
+case 363: yyVal = case363_line1380(support, lexer, yyVal, yyVals, yyTop); // line 1380
 break;
-case 364: yyVal = case364_line1379(yyVal, yyVals, yyTop); // line 1379
+case 364: yyVal = case364_line1383(support, lexer, yyVal, yyVals, yyTop); // line 1383
 break;
-case 365: yyVal = case365_line1382(yyVal, yyVals, yyTop); // line 1382
+case 365: yyVal = case365_line1386(support, lexer, yyVal, yyVals, yyTop); // line 1386
 break;
-case 366: yyVal = case366_line1387(yyVal, yyVals, yyTop); // line 1387
+case 366: yyVal = case366_line1391(support, lexer, yyVal, yyVals, yyTop); // line 1391
 break;
-case 367: yyVal = case367_line1389(yyVal, yyVals, yyTop); // line 1389
+case 367: yyVal = case367_line1393(support, lexer, yyVal, yyVals, yyTop); // line 1393
 break;
-case 368: yyVal = case368_line1393(yyVal, yyVals, yyTop); // line 1393
+case 368: yyVal = case368_line1397(support, lexer, yyVal, yyVals, yyTop); // line 1397
 break;
-case 369: yyVal = case369_line1395(yyVal, yyVals, yyTop); // line 1395
+case 369: yyVal = case369_line1399(support, lexer, yyVal, yyVals, yyTop); // line 1399
 break;
-case 370: yyVal = case370_line1400(yyVal, yyVals, yyTop); // line 1400
+case 370: yyVal = case370_line1404(support, lexer, yyVal, yyVals, yyTop); // line 1404
 break;
-case 372: yyVal = case372_line1405(yyVal, yyVals, yyTop); // line 1405
+case 372: yyVal = case372_line1409(support, lexer, yyVal, yyVals, yyTop); // line 1409
 break;
-case 373: yyVal = case373_line1408(yyVal, yyVals, yyTop); // line 1408
+case 373: yyVal = case373_line1412(support, lexer, yyVal, yyVals, yyTop); // line 1412
 break;
-case 376: yyVal = case376_line1415(yyVal, yyVals, yyTop); // line 1415
+case 376: yyVal = case376_line1419(support, lexer, yyVal, yyVals, yyTop); // line 1419
 break;
-case 377: yyVal = case377_line1428(yyVal, yyVals, yyTop); // line 1428
+case 377: yyVal = case377_line1432(support, lexer, yyVal, yyVals, yyTop); // line 1432
 break;
-case 378: yyVal = case378_line1432(yyVal, yyVals, yyTop); // line 1432
+case 378: yyVal = case378_line1436(support, lexer, yyVal, yyVals, yyTop); // line 1436
 break;
-case 381: yyVal = case381_line1438(yyVal, yyVals, yyTop); // line 1438
+case 381: yyVal = case381_line1442(support, lexer, yyVal, yyVals, yyTop); // line 1442
 break;
-case 383: yyVal = case383_line1443(yyVal, yyVals, yyTop); // line 1443
+case 383: yyVal = case383_line1447(support, lexer, yyVal, yyVals, yyTop); // line 1447
 break;
-case 386: yyVal = case386_line1454(yyVal, yyVals, yyTop); // line 1454
+case 386: yyVal = case386_line1458(support, lexer, yyVal, yyVals, yyTop); // line 1458
 break;
-case 388: yyVal = case388_line1461(yyVal, yyVals, yyTop); // line 1461
+case 388: yyVal = case388_line1465(support, lexer, yyVal, yyVals, yyTop); // line 1465
 break;
-case 390: yyVal = case390_line1467(yyVal, yyVals, yyTop); // line 1467
+case 390: yyVal = case390_line1471(support, lexer, yyVal, yyVals, yyTop); // line 1471
 break;
-case 391: yyVal = case391_line1472(yyVal, yyVals, yyTop); // line 1472
+case 391: yyVal = case391_line1476(support, lexer, yyVal, yyVals, yyTop); // line 1476
 break;
-case 392: yyVal = case392_line1478(yyVal, yyVals, yyTop); // line 1478
+case 392: yyVal = case392_line1482(support, lexer, yyVal, yyVals, yyTop); // line 1482
 break;
-case 393: yyVal = case393_line1495(yyVal, yyVals, yyTop); // line 1495
+case 393: yyVal = case393_line1499(support, lexer, yyVal, yyVals, yyTop); // line 1499
 break;
-case 394: yyVal = case394_line1511(yyVal, yyVals, yyTop); // line 1511
+case 394: yyVal = case394_line1515(support, lexer, yyVal, yyVals, yyTop); // line 1515
 break;
-case 395: yyVal = case395_line1514(yyVal, yyVals, yyTop); // line 1514
+case 395: yyVal = case395_line1518(support, lexer, yyVal, yyVals, yyTop); // line 1518
 break;
-case 396: yyVal = case396_line1520(yyVal, yyVals, yyTop); // line 1520
+case 396: yyVal = case396_line1524(support, lexer, yyVal, yyVals, yyTop); // line 1524
 break;
-case 397: yyVal = case397_line1523(yyVal, yyVals, yyTop); // line 1523
+case 397: yyVal = case397_line1527(support, lexer, yyVal, yyVals, yyTop); // line 1527
 break;
-case 399: yyVal = case399_line1528(yyVal, yyVals, yyTop); // line 1528
+case 399: yyVal = case399_line1532(support, lexer, yyVal, yyVals, yyTop); // line 1532
 break;
-case 400: yyVal = case400_line1533(yyVal, yyVals, yyTop); // line 1533
+case 400: yyVal = case400_line1537(support, lexer, yyVal, yyVals, yyTop); // line 1537
 break;
-case 401: yyVal = case401_line1536(yyVal, yyVals, yyTop); // line 1536
+case 401: yyVal = case401_line1540(support, lexer, yyVal, yyVals, yyTop); // line 1540
 break;
-case 402: yyVal = case402_line1542(yyVal, yyVals, yyTop); // line 1542
+case 402: yyVal = case402_line1546(support, lexer, yyVal, yyVals, yyTop); // line 1546
 break;
-case 403: yyVal = case403_line1545(yyVal, yyVals, yyTop); // line 1545
+case 403: yyVal = case403_line1549(support, lexer, yyVal, yyVals, yyTop); // line 1549
 break;
-case 404: yyVal = case404_line1550(yyVal, yyVals, yyTop); // line 1550
+case 404: yyVal = case404_line1554(support, lexer, yyVal, yyVals, yyTop); // line 1554
 break;
-case 405: yyVal = case405_line1553(yyVal, yyVals, yyTop); // line 1553
+case 405: yyVal = case405_line1557(support, lexer, yyVal, yyVals, yyTop); // line 1557
 break;
-case 406: yyVal = case406_line1557(yyVal, yyVals, yyTop); // line 1557
+case 406: yyVal = case406_line1561(support, lexer, yyVal, yyVals, yyTop); // line 1561
 break;
-case 407: yyVal = case407_line1560(yyVal, yyVals, yyTop); // line 1560
+case 407: yyVal = case407_line1564(support, lexer, yyVal, yyVals, yyTop); // line 1564
 break;
-case 408: yyVal = case408_line1565(yyVal, yyVals, yyTop); // line 1565
+case 408: yyVal = case408_line1569(support, lexer, yyVal, yyVals, yyTop); // line 1569
 break;
-case 409: yyVal = case409_line1568(yyVal, yyVals, yyTop); // line 1568
+case 409: yyVal = case409_line1572(support, lexer, yyVal, yyVals, yyTop); // line 1572
 break;
-case 410: yyVal = case410_line1572(yyVal, yyVals, yyTop); // line 1572
+case 410: yyVal = case410_line1576(support, lexer, yyVal, yyVals, yyTop); // line 1576
 break;
-case 411: yyVal = case411_line1576(yyVal, yyVals, yyTop); // line 1576
+case 411: yyVal = case411_line1580(support, lexer, yyVal, yyVals, yyTop); // line 1580
 break;
-case 412: yyVal = case412_line1582(yyVal, yyVals, yyTop); // line 1582
+case 412: yyVal = case412_line1586(support, lexer, yyVal, yyVals, yyTop); // line 1586
 break;
-case 413: yyVal = case413_line1590(yyVal, yyVals, yyTop); // line 1590
+case 413: yyVal = case413_line1594(support, lexer, yyVal, yyVals, yyTop); // line 1594
 break;
-case 414: yyVal = case414_line1593(yyVal, yyVals, yyTop); // line 1593
+case 414: yyVal = case414_line1597(support, lexer, yyVal, yyVals, yyTop); // line 1597
 break;
-case 415: yyVal = case415_line1596(yyVal, yyVals, yyTop); // line 1596
+case 415: yyVal = case415_line1600(support, lexer, yyVal, yyVals, yyTop); // line 1600
 break;
-case 417: yyVal = case417_line1603(yyVal, yyVals, yyTop); // line 1603
+case 417: yyVal = case417_line1607(support, lexer, yyVal, yyVals, yyTop); // line 1607
 break;
-case 422: yyVal = case422_line1613(yyVal, yyVals, yyTop); // line 1613
+case 422: yyVal = case422_line1617(support, lexer, yyVal, yyVals, yyTop); // line 1617
 break;
-case 424: yyVal = case424_line1630(yyVal, yyVals, yyTop); // line 1630
+case 424: yyVal = case424_line1634(support, lexer, yyVal, yyVals, yyTop); // line 1634
 break;
-case 425: yyVal = case425_line1633(yyVal, yyVals, yyTop); // line 1633
+case 425: yyVal = case425_line1637(support, lexer, yyVal, yyVals, yyTop); // line 1637
 break;
-case 426: yyVal = case426_line1636(yyVal, yyVals, yyTop); // line 1636
+case 426: yyVal = case426_line1640(support, lexer, yyVal, yyVals, yyTop); // line 1640
 break;
-case 432: yyVal = case432_line1642(yyVal, yyVals, yyTop); // line 1642
+case 432: yyVal = case432_line1646(support, lexer, yyVal, yyVals, yyTop); // line 1646
 break;
-case 433: yyVal = case433_line1645(yyVal, yyVals, yyTop); // line 1645
+case 433: yyVal = case433_line1649(support, lexer, yyVal, yyVals, yyTop); // line 1649
 break;
-case 434: yyVal = case434_line1648(yyVal, yyVals, yyTop); // line 1648
+case 434: yyVal = case434_line1652(support, lexer, yyVal, yyVals, yyTop); // line 1652
 break;
-case 435: yyVal = case435_line1651(yyVal, yyVals, yyTop); // line 1651
+case 435: yyVal = case435_line1655(support, lexer, yyVal, yyVals, yyTop); // line 1655
 break;
-case 436: yyVal = case436_line1654(yyVal, yyVals, yyTop); // line 1654
+case 436: yyVal = case436_line1658(support, lexer, yyVal, yyVals, yyTop); // line 1658
 break;
-case 437: yyVal = case437_line1657(yyVal, yyVals, yyTop); // line 1657
+case 437: yyVal = case437_line1661(support, lexer, yyVal, yyVals, yyTop); // line 1661
 break;
-case 438: yyVal = case438_line1662(yyVal, yyVals, yyTop); // line 1662
+case 438: yyVal = case438_line1666(support, lexer, yyVal, yyVals, yyTop); // line 1666
 break;
-case 439: yyVal = case439_line1667(yyVal, yyVals, yyTop); // line 1667
+case 439: yyVal = case439_line1671(support, lexer, yyVal, yyVals, yyTop); // line 1671
 break;
-case 442: yyVal = case442_line1675(yyVal, yyVals, yyTop); // line 1675
+case 442: yyVal = case442_line1679(support, lexer, yyVal, yyVals, yyTop); // line 1679
 break;
-case 443: yyVal = case443_line1678(yyVal, yyVals, yyTop); // line 1678
+case 443: yyVal = case443_line1682(support, lexer, yyVal, yyVals, yyTop); // line 1682
 break;
-case 444: yyVal = case444_line1680(yyVal, yyVals, yyTop); // line 1680
+case 444: yyVal = case444_line1684(support, lexer, yyVal, yyVals, yyTop); // line 1684
 break;
-case 445: yyVal = case445_line1683(yyVal, yyVals, yyTop); // line 1683
+case 445: yyVal = case445_line1687(support, lexer, yyVal, yyVals, yyTop); // line 1687
 break;
-case 446: yyVal = case446_line1689(yyVal, yyVals, yyTop); // line 1689
+case 446: yyVal = case446_line1692(support, lexer, yyVal, yyVals, yyTop); // line 1692
 break;
-case 447: yyVal = case447_line1695(yyVal, yyVals, yyTop); // line 1695
+case 447: yyVal = case447_line1698(support, lexer, yyVal, yyVals, yyTop); // line 1698
 break;
-case 448: yyVal = case448_line1700(yyVal, yyVals, yyTop); // line 1700
+case 448: yyVal = case448_line1703(support, lexer, yyVal, yyVals, yyTop); // line 1703
 break;
-case 449: yyVal = case449_line1703(yyVal, yyVals, yyTop); // line 1703
+case 449: yyVal = case449_line1706(support, lexer, yyVal, yyVals, yyTop); // line 1706
 break;
-case 450: yyVal = case450_line1706(yyVal, yyVals, yyTop); // line 1706
+case 450: yyVal = case450_line1709(support, lexer, yyVal, yyVals, yyTop); // line 1709
 break;
-case 451: yyVal = case451_line1709(yyVal, yyVals, yyTop); // line 1709
+case 451: yyVal = case451_line1712(support, lexer, yyVal, yyVals, yyTop); // line 1712
 break;
-case 452: yyVal = case452_line1712(yyVal, yyVals, yyTop); // line 1712
+case 452: yyVal = case452_line1715(support, lexer, yyVal, yyVals, yyTop); // line 1715
 break;
-case 453: yyVal = case453_line1715(yyVal, yyVals, yyTop); // line 1715
+case 453: yyVal = case453_line1718(support, lexer, yyVal, yyVals, yyTop); // line 1718
 break;
-case 454: yyVal = case454_line1718(yyVal, yyVals, yyTop); // line 1718
+case 454: yyVal = case454_line1721(support, lexer, yyVal, yyVals, yyTop); // line 1721
 break;
-case 455: yyVal = case455_line1721(yyVal, yyVals, yyTop); // line 1721
+case 455: yyVal = case455_line1724(support, lexer, yyVal, yyVals, yyTop); // line 1724
 break;
-case 456: yyVal = case456_line1724(yyVal, yyVals, yyTop); // line 1724
+case 456: yyVal = case456_line1727(support, lexer, yyVal, yyVals, yyTop); // line 1727
 break;
-case 457: yyVal = case457_line1729(yyVal, yyVals, yyTop); // line 1729
+case 457: yyVal = case457_line1732(support, lexer, yyVal, yyVals, yyTop); // line 1732
 break;
-case 458: yyVal = case458_line1732(yyVal, yyVals, yyTop); // line 1732
+case 458: yyVal = case458_line1735(support, lexer, yyVal, yyVals, yyTop); // line 1735
 break;
-case 459: yyVal = case459_line1735(yyVal, yyVals, yyTop); // line 1735
+case 459: yyVal = case459_line1738(support, lexer, yyVal, yyVals, yyTop); // line 1738
 break;
-case 460: yyVal = case460_line1738(yyVal, yyVals, yyTop); // line 1738
+case 460: yyVal = case460_line1741(support, lexer, yyVal, yyVals, yyTop); // line 1741
 break;
-case 461: yyVal = case461_line1741(yyVal, yyVals, yyTop); // line 1741
+case 461: yyVal = case461_line1744(support, lexer, yyVal, yyVals, yyTop); // line 1744
 break;
-case 462: yyVal = case462_line1752(yyVal, yyVals, yyTop); // line 1752
+case 462: yyVal = case462_line1755(support, lexer, yyVal, yyVals, yyTop); // line 1755
 break;
-case 463: yyVal = case463_line1757(yyVal, yyVals, yyTop); // line 1757
+case 463: yyVal = case463_line1760(support, lexer, yyVal, yyVals, yyTop); // line 1760
 break;
-case 464: yyVal = case464_line1761(yyVal, yyVals, yyTop); // line 1761
+case 464: yyVal = case464_line1764(support, lexer, yyVal, yyVals, yyTop); // line 1764
 break;
-case 465: yyVal = case465_line1767(yyVal, yyVals, yyTop); // line 1767
+case 465: yyVal = case465_line1770(support, lexer, yyVal, yyVals, yyTop); // line 1770
 break;
-case 466: yyVal = case466_line1774(yyVal, yyVals, yyTop); // line 1774
+case 466: yyVal = case466_line1777(support, lexer, yyVal, yyVals, yyTop); // line 1777
 break;
-case 467: yyVal = case467_line1785(yyVal, yyVals, yyTop); // line 1785
+case 467: yyVal = case467_line1788(support, lexer, yyVal, yyVals, yyTop); // line 1788
 break;
-case 468: yyVal = case468_line1788(yyVal, yyVals, yyTop); // line 1788
+case 468: yyVal = case468_line1791(support, lexer, yyVal, yyVals, yyTop); // line 1791
 break;
-case 471: yyVal = case471_line1796(yyVal, yyVals, yyTop); // line 1796
+case 471: yyVal = case471_line1799(support, lexer, yyVal, yyVals, yyTop); // line 1799
 break;
-case 472: yyVal = case472_line1805(yyVal, yyVals, yyTop); // line 1805
+case 472: yyVal = case472_line1808(support, lexer, yyVal, yyVals, yyTop); // line 1808
 break;
-case 475: yyVal = case475_line1813(yyVal, yyVals, yyTop); // line 1813
+case 475: yyVal = case475_line1816(support, lexer, yyVal, yyVals, yyTop); // line 1816
 break;
-case 476: yyVal = case476_line1817(yyVal, yyVals, yyTop); // line 1817
+case 476: yyVal = case476_line1820(support, lexer, yyVal, yyVals, yyTop); // line 1820
 break;
-case 477: yyVal = case477_line1820(yyVal, yyVals, yyTop); // line 1820
+case 477: yyVal = case477_line1823(support, lexer, yyVal, yyVals, yyTop); // line 1823
 break;
-case 478: yyVal = case478_line1824(yyVal, yyVals, yyTop); // line 1824
+case 478: yyVal = case478_line1827(support, lexer, yyVal, yyVals, yyTop); // line 1827
 break;
-case 479: yyVal = case479_line1828(yyVal, yyVals, yyTop); // line 1828
+case 479: yyVal = case479_line1831(support, lexer, yyVal, yyVals, yyTop); // line 1831
 break;
-case 480: yyVal = case480_line1830(yyVal, yyVals, yyTop); // line 1830
+case 480: yyVal = case480_line1833(support, lexer, yyVal, yyVals, yyTop); // line 1833
 break;
-case 481: yyVal = case481_line1842(yyVal, yyVals, yyTop); // line 1842
+case 481: yyVal = case481_line1845(support, lexer, yyVal, yyVals, yyTop); // line 1845
 break;
-case 482: yyVal = case482_line1845(yyVal, yyVals, yyTop); // line 1845
+case 482: yyVal = case482_line1848(support, lexer, yyVal, yyVals, yyTop); // line 1848
 break;
-case 483: yyVal = case483_line1848(yyVal, yyVals, yyTop); // line 1848
+case 483: yyVal = case483_line1851(support, lexer, yyVal, yyVals, yyTop); // line 1851
 break;
-case 485: yyVal = case485_line1857(yyVal, yyVals, yyTop); // line 1857
+case 485: yyVal = case485_line1860(support, lexer, yyVal, yyVals, yyTop); // line 1860
 break;
-case 486: yyVal = case486_line1862(yyVal, yyVals, yyTop); // line 1862
+case 486: yyVal = case486_line1865(support, lexer, yyVal, yyVals, yyTop); // line 1865
 break;
-case 506: yyVal = case506_line1881(yyVal, yyVals, yyTop); // line 1881
+case 506: yyVal = case506_line1884(support, lexer, yyVal, yyVals, yyTop); // line 1884
 break;
-case 509: yyVal = case509_line1887(yyVal, yyVals, yyTop); // line 1887
+case 509: yyVal = case509_line1889(support, lexer, yyVal, yyVals, yyTop); // line 1889
 break;
-case 510: yyVal = case510_line1891(yyVal, yyVals, yyTop); // line 1891
+case 510: yyVal = case510_line1892(support, lexer, yyVal, yyVals, yyTop); // line 1892
 break;
-case 511: yyVal = case511_line1895(yyVal, yyVals, yyTop); // line 1895
+case 511: yyVal = case511_line1896(support, lexer, yyVal, yyVals, yyTop); // line 1896
 break;
 // ACTIONS_END
         }
@@ -2232,397 +2175,307 @@ break;
     }
   }
 
-public Object case458_line1732(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyerror("formal argument cannot be a instance variable");
+public static Object case355_line1345(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.pushBlockScope();
     return yyVal;
 }
-public Object case457_line1729(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyerror("formal argument cannot be a constant");
+public static Object case352_line1327(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ZeroArgNode(((Token)yyVals[-1+yyTop]).getPosition());
+                  lexer.commandStart = true;
     return yyVal;
 }
-public Object case400_line1533(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new ZArrayNode(getPosition(((Token)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case361_line1370(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case49_line486(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public Object case360_line1367(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+public static Object case79_line585(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+		      support.yyerror("dynamic constant assignment");
+		  }
+
+		  ISourcePosition position = support.getPosition(((Node)yyVals[-2+yyTop]));
+
+                  yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
     return yyVal;
 }
-public Object case188_line789(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "*", ((Node)yyVals[0+yyTop]), getPosition());
+public static Object case27_line412(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public Object case297_line1139(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
-                  yyVal = new WhileNode(getPosition(((Token)yyVals[-6+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), body);
+public static Object case299_line1148(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.getConditionState().end();
     return yyVal;
 }
-public Object case480_line1830(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case393_line1499(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  int options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
+		  Node node = ((Node)yyVals[-1+yyTop]);
+
+		  if (node == null) {
+                      yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
+		  } else if (node instanceof StrNode) {
+                      yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+		  } else if (node instanceof DStrNode) {
+                      yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
+		  } else {
+		      yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
+                  }
+    return yyVal;
+}
+public static Object case362_line1377(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case358_line1364(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case99_line667(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_END);
+                  yyVal = yyVals[0+yyTop];
+    return yyVal;
+}
+public static Object case78_line582(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case233_line927(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case307_line1175(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+                      support.yyerror("class definition in method body");
+                  }
+		  support.pushLocalScope();
+    return yyVal;
+}
+public static Object case63_line532(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((Token)yyVals[-2+yyTop]).getPosition(), support.newArrayNode(((Token)yyVals[-2+yyTop]).getPosition(), ((MultipleAsgnNode)yyVals[-1+yyTop])), null);
+    return yyVal;
+}
+public static Object case279_line1071(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((Node)yyVals[-1+yyTop]) != null) {
+                      /* compstmt position includes both parens around it*/
+                      ((ISourcePositionHolder) ((Node)yyVals[-1+yyTop])).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
+                      yyVal = ((Node)yyVals[-1+yyTop]);
+                  } else {
+                      yyVal = new NilNode(((Token)yyVals[-2+yyTop]).getPosition());
+                  }
+    return yyVal;
+}
+public static Object case179_line748(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case54_line505(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case227_line911(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]));
+    return yyVal;
+}
+public static Object case103_line684(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case458_line1735(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   support.yyerror("formal argument cannot be a instance variable");
+    return yyVal;
+}
+public static Object case222_line893(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case213_line865(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newAndNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case15_line338(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new IfNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), null);
+    return yyVal;
+}
+public static Object case21_line367(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.getResult().addBeginNode(new PreExeNode(((Token)yyVals[-4+yyTop]).getPosition(), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
+                  support.popCurrentScope();
+                  yyVal = null; /*XXX 0;*/
+    return yyVal;
+}
+public static Object case480_line1833(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-2+yyTop]) == null) {
-                      yyerror("can't define single method for ().");
+                      support.yyerror("can't define single method for ().");
                   } else if (((Node)yyVals[-2+yyTop]) instanceof ILiteralNode) {
-                      yyerror("can't define single method for literals.");
+                      support.yyerror("can't define single method for literals.");
                   }
 		  support.checkExpression(((Node)yyVals[-2+yyTop]));
                   yyVal = ((Node)yyVals[-2+yyTop]);
     return yyVal;
 }
-public Object case468_line1788(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.appendToBlock(((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+public static Object case401_line1540(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		   yyVal = ((ListNode)yyVals[-1+yyTop]);
+                   ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public Object case435_line1651(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new Token("false", Tokens.kFALSE, ((Token)yyVals[0+yyTop]).getPosition());
+public static Object case400_line1537(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new ZArrayNode(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public Object case434_line1648(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new Token("true", Tokens.kTRUE, ((Token)yyVals[0+yyTop]).getPosition());
+public static Object case361_line1374(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public Object case349_line1315(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((Token)yyVals[0+yyTop])), null, new StarNode(getPosition(((Token)yyVals[0+yyTop]))));
+public static Object case51_line493(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                    yyVal = support.new_iter(support.getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
+                    support.popCurrentScope();
     return yyVal;
 }
-public Object case266_line1044(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newSplatNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+public static Object case266_line1047(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newSplatNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case187_line786(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "-", ((Node)yyVals[0+yyTop]), getPosition());
+public static Object case23_line378(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case298_line1143(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case298_line1146(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getConditionState().begin();
     return yyVal;
 }
-public Object case174_line715(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-		  /* FIXME: Consider fixing node_assign itself rather than single case*/
-		  ((Node)yyVal).setPosition(getPosition(((Node)yyVals[-2+yyTop])));
+public static Object case101_line676(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new LiteralNode(((Token)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case89_line644(Object yyVal, Object[] yyVals, int yyTop) {
-                   support.backrefAssignError(((Node)yyVals[0+yyTop]));
+public static Object case83_line611(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public Object case466_line1774(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case105_line691(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_FNAME);
+    return yyVal;
+}
+public static Object case234_line931(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition pos = ((ListNode)yyVals[-1+yyTop]).getPosition();
+                  yyVal = support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-1+yyTop])));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case65_line540(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+/*mirko: check*/
+                  yyVal = new MultipleAsgnNode(support.getPosition(((Node)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]).add(((Node)yyVals[0+yyTop])), null);
+    return yyVal;
+}
+public static Object case236_line941(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-3+yyTop]).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case212_line862(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">>", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case466_line1777(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                    String identifier = (String) ((Token)yyVals[-2+yyTop]).getValue();
 
                    if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
-                       yyerror("duplicate optional argument name");
+                       support.yyerror("duplicate optional argument name");
                    }
 		   support.getCurrentScope().getLocalScope().addVariable(identifier);
                    yyVal = support.assignable(((Token)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case417_line1603(Object yyVal, Object[] yyVals, int yyTop) {
-                   lexer.setState(LexState.EXPR_END);
-                   yyVal = ((Token)yyVals[0+yyTop]);
-		   ((ISourcePositionHolder)yyVal).setPosition(getPosition(((Token)yyVals[-1+yyTop])));
+public static Object case435_line1655(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new Token("false", Tokens.kFALSE, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public Object case365_line1382(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case349_line1319(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((Token)yyVals[0+yyTop]).getPosition(), null, new StarNode(((Token)yyVals[0+yyTop]).getPosition()));
+    return yyVal;
+}
+public static Object case61_line526(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case207_line847(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case243_line966(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-6+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-6+yyTop])), ((Node)yyVals[-6+yyTop])).addAll(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case417_line1607(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   lexer.setState(LexState.EXPR_END);
+                   yyVal = ((Token)yyVals[0+yyTop]);
+		   ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-1+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case365_line1386(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ZSuperNode(((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public Object case190_line795(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "%", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case426_line1636(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.negateFloat(((FloatNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case395_line1514(Object yyVal, Object[] yyVals, int yyTop) {
-		   yyVal = ((ListNode)yyVals[-1+yyTop]);
-                   ((ISourcePositionHolder)yyVal).setPosition(getPosition(((Token)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case49_line489(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case79_line588(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-		      yyerror("dynamic constant assignment");
-		  }
-
-		  ISourcePosition position = getPosition(((Node)yyVals[-2+yyTop]));
-
-                  yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case27_line415(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
-    return yyVal;
-}
-public Object case233_line929(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case447_line1695(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = ((Node)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case433_line1645(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new Token("self", Tokens.kSELF, ((Token)yyVals[0+yyTop]).getPosition());
-    return yyVal;
-}
-public Object case348_line1312(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((Node)yyVals[0+yyTop])), null, ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case347_line1309(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(getPosition(((Token)yyVals[-3+yyTop])), null, new StarNode(getPosition(((Token)yyVals[-3+yyTop])))));
-    return yyVal;
-}
-public Object case227_line913(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((Token)yyVals[-3+yyTop])), ((Node)yyVals[-2+yyTop]));
-    return yyVal;
-}
-public Object case78_line585(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case63_line535(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((Token)yyVals[-2+yyTop])), support.newArrayNode(getPosition(((Token)yyVals[-2+yyTop])), ((MultipleAsgnNode)yyVals[-1+yyTop])), null);
-    return yyVal;
-}
-public Object case236_line941(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-3+yyTop]).add(new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case54_line508(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case103_line687(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case71_line561(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case243_line966(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((Node)yyVals[-6+yyTop])), support.newArrayNode(getPosition(((Node)yyVals[-6+yyTop])), ((Node)yyVals[-6+yyTop])).addAll(new HashNode(getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case396_line1520(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new ArrayNode(getPosition());
-    return yyVal;
-}
-public Object case394_line1511(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new ZArrayNode(getPosition(((Token)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case222_line896(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case234_line933(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case213_line868(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newAndNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case506_line1881(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyerrok();
-    return yyVal;
-}
-public Object case446_line1689(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = ((Node)yyVals[-2+yyTop]);
-                   ((ISourcePositionHolder)yyVal).setPosition(getPosition(((Token)yyVals[-3+yyTop])));
-                   lexer.setState(LexState.EXPR_BEG);
-                   lexer.commandStart = true;
-    return yyVal;
-}
-public Object case445_line1683(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyerrok();
-                   yyVal = null;
-    return yyVal;
-}
-public Object case277_line1062(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_ENDARG); 
-    return yyVal;
-}
-public Object case101_line679(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new LiteralNode(((Token)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case83_line614(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case105_line694(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_FNAME);
-    return yyVal;
-}
-public Object case28_line420(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
-    return yyVal;
-}
-public Object case65_line543(Object yyVal, Object[] yyVals, int yyTop) {
-/*mirko: check*/
-                  yyVal = new MultipleAsgnNode(getPosition(((Node)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]).add(((Node)yyVals[0+yyTop])), null);
-    return yyVal;
-}
-public Object case276_line1059(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new BeginNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case212_line865(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">>", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case51_line496(Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.new_iter(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
-                    support.popCurrentScope();
-    return yyVal;
-}
-public Object case284_line1099(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new HashNode(getPosition(((Token)yyVals[-2+yyTop])), ((ListNode)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case450_line1706(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), null, ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case334_line1266(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case322_line1242(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new RetryNode(((Token)yyVals[0+yyTop]).getPosition());
-    return yyVal;
-}
-public Object case321_line1239(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new RedoNode(((Token)yyVals[0+yyTop]).getPosition());
-    return yyVal;
-}
-public Object case61_line529(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case58_line520(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop])); /* .setPosFrom($2);*/
-    return yyVal;
-}
-public Object case104_line691(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newUndef(getPosition(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case238_line950(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_blk_pass(support.newSplatNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case64_line540(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[0+yyTop])), ((ListNode)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case367_line1389(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_iter(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
-                  support.popCurrentScope();
-    return yyVal;
-}
-public Object case357_line1349(Object yyVal, Object[] yyVals, int yyTop) {
-                  /* Workaround for JRUBY-2326 (MRI does not enter this production for some reason)*/
-                  if (((Node)yyVals[-1+yyTop]) instanceof YieldNode) {
-                      throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, getPosition(((Node)yyVals[-1+yyTop])), lexer.getCurrentLine(), "block given to yield");
-                  }
-	          if (((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
-                      throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition(((Node)yyVals[-1+yyTop])), lexer.getCurrentLine(), "Both block arg and actual block given.");
-                  }
-		  yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
-		  ((Node)yyVal).setPosition(getPosition(((Node)yyVals[-1+yyTop])));
-    return yyVal;
-}
-public Object case50_line494(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case50_line491(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     support.pushBlockScope();
     return yyVal;
 }
-public Object case24_line384(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case24_line381(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 		  if (((MultipleAsgnNode)yyVals[-2+yyTop]).getHeadNode() != null) {
-		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(new ToAryNode(getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
+		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(new ToAryNode(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
 		  } else {
-		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(support.newArrayNode(getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
+		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(support.newArrayNode(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
 		  }
 		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
     return yyVal;
 }
-public Object case317_line1221(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.setInSingle(support.getInSingle() + 1);
-		  support.pushLocalScope();
-                  lexer.setState(LexState.EXPR_END); /* force for args */
+public static Object case300_line1150(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
+                  yyVal = new UntilNode(((Token)yyVals[-6+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), body);
     return yyVal;
 }
-public Object case206_line847(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NotNode(getPosition(((Node)yyVals[-2+yyTop])), support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), getPosition()));
+public static Object case206_line844(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NotNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), lexer.getPosition()));
     return yyVal;
 }
-public Object case290_line1117(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new FCallNoArgBlockNode(getPosition(((Token)yyVals[-1+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((IterNode)yyVals[0+yyTop]));
+public static Object case37_line453(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newOrNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case37_line456(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newOrNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+public static Object case44_line471(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ReturnNode(((Token)yyVals[-1+yyTop]).getPosition(), support.ret_args(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]).getPosition()));
     return yyVal;
 }
-public Object case44_line474(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ReturnNode(getPosition(((Token)yyVals[-1+yyTop])), support.ret_args(((Node)yyVals[0+yyTop]), getPosition(((Token)yyVals[-1+yyTop]))));
-    return yyVal;
-}
-public Object case74_line573(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case74_line570(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
     return yyVal;
 }
-public Object case217_line880(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]);
+public static Object case447_line1698(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = ((Node)yyVals[-1+yyTop]);
     return yyVal;
 }
-public Object case264_line1038(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
+public static Object case395_line1518(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		   yyVal = ((ListNode)yyVals[-1+yyTop]);
+                   ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public Object case316_line1219(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_FNAME);
+public static Object case220_line887(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public Object case486_line1862(Object yyVal, Object[] yyVals, int yyTop) {
-                  ISourcePosition position;
-                  if (((Node)yyVals[-2+yyTop]) == null && ((Node)yyVals[0+yyTop]) == null) {
-                      position = getPosition(((Token)yyVals[-1+yyTop]));
-                  } else {
-                      position = getPosition(((Node)yyVals[-2+yyTop]));
-                  }
-
-                  yyVal = support.newArrayNode(position, ((Node)yyVals[-2+yyTop])).add(((Node)yyVals[0+yyTop]));
+public static Object case433_line1649(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new Token("self", Tokens.kSELF, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public Object case383_line1443(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((Node)yyVals[0+yyTop]) != null) {
-                      yyVal = ((Node)yyVals[0+yyTop]);
-                  } else {
-                      yyVal = new NilNode(getPosition());
-                  }
+public static Object case348_line1316(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((Token)yyVals[-1+yyTop]).getPosition(), null, ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case2_line277(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case2_line274(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[0+yyTop]) != null) {
                       /* last expression should not be void */
                       if (((Node)yyVals[0+yyTop]) instanceof BlockNode) {
@@ -2631,92 +2484,1164 @@ public Object case2_line277(Object yyVal, Object[] yyVals, int yyTop) {
                           support.checkUselessStatement(((Node)yyVals[0+yyTop]));
                       }
                   }
-                  support.getResult().setAST(support.addRootNode(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[0+yyTop]))));
+                  support.getResult().setAST(support.addRootNode(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop]))));
     return yyVal;
 }
-public Object case1_line274(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case238_line950(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_blk_pass(support.newSplatNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case340_line1292(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((ListNode)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null);
+    return yyVal;
+}
+public static Object case183_line764(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.backrefAssignError(((Node)yyVals[-2+yyTop]));
+    return yyVal;
+}
+public static Object case1_line271(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_BEG);
                   support.initTopLocalVariables();
     return yyVal;
 }
-public Object case247_line982(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop])).addAll(((ListNode)yyVals[-3+yyTop])).add(new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
+public static Object case181_line758(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          support.yyerror("constant re-assignment");
+    return yyVal;
+}
+public static Object case185_line774(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.checkExpression(((Node)yyVals[-2+yyTop]));
+		  support.checkExpression(((Node)yyVals[0+yyTop]));
+                  boolean isLiteral = ((Node)yyVals[-2+yyTop]) instanceof FixnumNode && ((Node)yyVals[0+yyTop]) instanceof FixnumNode;
+                  yyVal = new DotNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), true, isLiteral);
+    return yyVal;
+}
+public static Object case506_line1884(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+    return yyVal;
+}
+public static Object case451_line1712(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((ISourcePositionHolder)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null, null, null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case396_line1524(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new ArrayNode(lexer.getPosition());
+    return yyVal;
+}
+public static Object case394_line1515(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new ZArrayNode(((Token)yyVals[-2+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case381_line1442(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case80_line594(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+		      support.yyerror("dynamic constant assignment");
+		  }
+
+                  ISourcePosition position = support.getPosition(((Token)yyVals[-1+yyTop]));
+
+                  yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+    return yyVal;
+}
+public static Object case277_line1065(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_ENDARG); 
+    return yyVal;
+}
+public static Object case450_line1709(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), null, ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case445_line1687(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = null;
+    return yyVal;
+}
+public static Object case334_line1269(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case322_line1245(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new RetryNode(((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case93_line653(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_colon2(((Token)yyVals[0+yyTop]).getPosition(), null, (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case350_line1322(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case199_line823(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=>", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case317_line1224(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.setInSingle(support.getInSingle() + 1);
+		  support.pushLocalScope();
+                  lexer.setState(LexState.EXPR_END); /* force for args */
+    return yyVal;
+}
+public static Object case284_line1102(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new HashNode(((Token)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case177_line738(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = support.new_opElementAsgnNode(support.getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case486_line1865(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition position;
+                  if (((Node)yyVals[-2+yyTop]) == null && ((Node)yyVals[0+yyTop]) == null) {
+                      position = ((Token)yyVals[-1+yyTop]).getPosition();
+                  } else {
+                      position = ((Node)yyVals[-2+yyTop]).getPosition();
+                  }
+
+                  yyVal = support.newArrayNode(position, ((Node)yyVals[-2+yyTop])).add(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case409_line1572(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = lexer.getStrTerm();
+		   lexer.setStrTerm(null);
+		   lexer.setState(LexState.EXPR_BEG);
+    return yyVal;
+}
+public static Object case399_line1532(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.literal_concat(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case85_line617(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case308_line1180(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
+
+                  yyVal = new ClassNode(((Token)yyVals[-5+yyTop]).getPosition(), ((Colon3Node)yyVals[-4+yyTop]), support.getCurrentScope(), body, ((Node)yyVals[-3+yyTop]));
+                  support.popCurrentScope();
+    return yyVal;
+}
+public static Object case186_line780(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "+", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case247_line984(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop])).addAll(((ListNode)yyVals[-3+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case478_line1824(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case19_line358(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
+	          yyVal = new RescueNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), new RescueBodyNode(support.getPosition(((Node)yyVals[-2+yyTop])), null, body, null), null);
+    return yyVal;
+}
+public static Object case383_line1447(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((Node)yyVals[0+yyTop]) != null) {
+                      yyVal = ((Node)yyVals[0+yyTop]);
+                  } else {
+                      yyVal = new NilNode(lexer.getPosition());
+                  }
+    return yyVal;
+}
+public static Object case296_line1140(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  lexer.getConditionState().end();
+    return yyVal;
+}
+public static Object case192_line798(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition()), "-@");
+    return yyVal;
+}
+public static Object case478_line1827(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = ((Node)yyVals[0+yyTop]);
                   support.checkExpression(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case471_line1796(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case471_line1799(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   String identifier = (String) ((Token)yyVals[0+yyTop]).getValue();
 
                   if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
-                      yyerror("duplicate rest argument name");
+                      support.yyerror("duplicate rest argument name");
                   }
 
-                  yyVal = new RestArgNode(getPosition(((Token)yyVals[-1+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue(), support.getCurrentScope().getLocalScope().addVariable(identifier));
+                  yyVal = new RestArgNode(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue(), support.getCurrentScope().getLocalScope().addVariable(identifier));
     return yyVal;
 }
-public Object case461_line1741(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case461_line1744(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                    String identifier = (String) ((Token)yyVals[0+yyTop]).getValue();
                    if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
-                       yyerror("duplicate argument name");
+                       support.yyerror("duplicate argument name");
                    }
 
 		   support.getCurrentScope().getLocalScope().addVariable(identifier);
                    yyVal = ((Token)yyVals[0+yyTop]);
     return yyVal;
 }
-public Object case414_line1593(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case98_line662(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_END);
+                  yyVal = ((Token)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case46_line477(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NextNode(((Token)yyVals[-1+yyTop]).getPosition(), support.ret_args(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]).getPosition()));
+    return yyVal;
+}
+public static Object case76_line576(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case295_line1138(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.getConditionState().begin();
+    return yyVal;
+}
+public static Object case197_line817(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "^", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case479_line1831(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_BEG);
+    return yyVal;
+}
+public static Object case414_line1597(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new InstVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public Object case12_line332(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new VAliasNode(getPosition(((Token)yyVals[-2+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), "$" + ((BackRefNode)yyVals[0+yyTop]).getType()); /* XXX*/
+public static Object case69_line553(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((Token)yyVals[0+yyTop]).getPosition(), null, new StarNode(lexer.getPosition()));
     return yyVal;
 }
-public Object case314_line1207(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case81_line603(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          support.backrefAssignError(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case464_line1764(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   support.allowDubyExtension(((ISourcePositionHolder)yyVals[-4+yyTop]).getPosition());
+                   ((ListNode)yyVals[-4+yyTop]).add(new TypedArgumentNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-2+yyTop]).getValue(), ((Node)yyVals[0+yyTop])));
+                   ((ListNode)yyVals[-4+yyTop]).setPosition(((ListNode)yyVals[-4+yyTop]).getPosition());
+		   yyVal = ((ListNode)yyVals[-4+yyTop]);
+    return yyVal;
+}
+public static Object case286_line1108(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_yield(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case8_line317(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case232_line924(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_blk_pass(((ListNode)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case102_line681(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((LiteralNode)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case377_line1432(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = null;
+    return yyVal;
+}
+public static Object case366_line1391(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.pushBlockScope();
+    return yyVal;
+}
+public static Object case346_line1310(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((Token)yyVals[-4+yyTop]).getPosition(), null, ((Node)yyVals[-3+yyTop])));
+    return yyVal;
+}
+public static Object case345_line1307(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((ListNode)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-2+yyTop]), new StarNode(((Token)yyVals[0+yyTop]).getPosition()));
+    return yyVal;
+}
+public static Object case221_line890(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case7_line314(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop]), support.newline_node(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop]))));
+    return yyVal;
+}
+public static Object case310_line1189(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = Integer.valueOf(support.getInSingle());
+                  support.setInSingle(0);
+		  support.pushLocalScope();
+    return yyVal;
+}
+public static Object case231_line921(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case388_line1465(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]) instanceof EvStrNode ? new DStrNode(((Node)yyVals[0+yyTop]).getPosition()).add(((Node)yyVals[0+yyTop])) : ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case282_line1086(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((Node)yyVals[-3+yyTop]) instanceof SelfNode) {
+                      yyVal = support.new_fcall(new Token("[]", support.getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]), null);
+                  } else {
+                      yyVal = support.new_aref(((Node)yyVals[-3+yyTop]), new Token("[]", support.getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  }
+    return yyVal;
+}
+public static Object case3_line286(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node node = ((Node)yyVals[-3+yyTop]);
+
+		  if (((RescueBodyNode)yyVals[-2+yyTop]) != null) {
+		      node = new RescueNode(support.getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop]), ((RescueBodyNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
+		  } else if (((Node)yyVals[-1+yyTop]) != null) {
+		      support.warn(ID.ELSE_WITHOUT_RESCUE, support.getPosition(((Node)yyVals[-3+yyTop])), "else without rescue is useless");
+                      node = support.appendToBlock(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
+		  }
+		  if (((Node)yyVals[0+yyTop]) != null) {
+                      if (node == null) node = NilImplicitNode.NIL;
+		      node = new EnsureNode(support.getPosition(((Node)yyVals[-3+yyTop])), node, ((Node)yyVals[0+yyTop]));
+		  }
+
+	          yyVal = node;
+    return yyVal;
+}
+public static Object case311_line1193(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new SClassNode(((Token)yyVals[-7+yyTop]).getPosition(), ((Node)yyVals[-5+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
+                  support.popCurrentScope();
+                  support.setInDef(((Boolean)yyVals[-4+yyTop]).booleanValue());
+                  support.setInSingle(((Integer)yyVals[-2+yyTop]).intValue());
+    return yyVal;
+}
+public static Object case312_line1199(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) { 
+                      support.yyerror("module definition in method body");
+                  }
+		  support.pushLocalScope();
+    return yyVal;
+}
+public static Object case56_line511(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case456_line1727(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, null);
+    return yyVal;
+}
+public static Object case215_line871(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new DefinedNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case32_line433(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((MultipleAsgnNode)yyVals[-2+yyTop]).getHeadNode() != null) {
+		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(new ToAryNode(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
+		  } else {
+		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(support.newArrayNode(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
+		  }
+		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
+    return yyVal;
+}
+public static Object case204_line838(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case306_line1172(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ForNode(((Token)yyVals[-8+yyTop]).getPosition(), ((Node)yyVals[-7+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-4+yyTop]));
+    return yyVal;
+}
+public static Object case449_line1706(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), ((ListNode)yyVals[-1+yyTop]), null, null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case386_line1458(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  /* FIXME: We may be intern'ing more than once.*/
+                  yyVal = new SymbolNode(((Token)yyVals[0+yyTop]).getPosition(), ((String) ((Token)yyVals[0+yyTop]).getValue()).intern());
+    return yyVal;
+}
+public static Object case344_line1304(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case262_line1033(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition pos = ((Node)yyVals[0+yyTop]) == null ? lexer.getPosition() : ((Node)yyVals[0+yyTop]).getPosition();
+                  yyVal = support.newArrayNode(pos, ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case39_line459(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NotNode(((Token)yyVals[-1+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case16_line341(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new IfNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), null, ((Node)yyVals[-2+yyTop]));
+    return yyVal;
+}
+public static Object case225_line904(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ArrayNode(((Token)yyVals[-2+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case443_line1682(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   lexer.setState(LexState.EXPR_BEG);
+    return yyVal;
+}
+public static Object case442_line1679(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = null;
+    return yyVal;
+}
+public static Object case332_line1264(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new IfNode(((Token)yyVals[-4+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case289_line1117(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new DefinedNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case180_line753(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case205_line841(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "===", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case467_line1788(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new BlockNode(((Node)yyVals[0+yyTop]).getPosition()).add(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case211_line859(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<<", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case208_line850(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NotNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case41_line464(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case283_line1093(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition position = ((Token)yyVals[-2+yyTop]).getPosition();
+                  if (((Node)yyVals[-1+yyTop]) == null) {
+                      yyVal = new ZArrayNode(position); /* zero length array */
+                  } else {
+                      yyVal = ((Node)yyVals[-1+yyTop]);
+                      ((ISourcePositionHolder)yyVal).setPosition(position);
+                  }
+    return yyVal;
+}
+public static Object case22_line372(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+                      support.warn(ID.END_IN_METHOD, ((Token)yyVals[-3+yyTop]).getPosition(), "END in method; use at_exit");
+                  }
+                  yyVal = new PostExeNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case439_line1671(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
+    return yyVal;
+}
+public static Object case422_line1617(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   lexer.setState(LexState.EXPR_END);
+
+                   /* DStrNode: :"some text #{some expression}"*/
+                   /* StrNode: :"some text"*/
+                   /* EvStrNode :"#{some expression}"*/
+                   if (((Node)yyVals[-1+yyTop]) == null) support.yyerror("empty symbol literal");
+
+                   if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
+                       yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((DStrNode)yyVals[-1+yyTop]));
+                   } else {
+                       yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition());
+                       ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop]));
+                   }
+    return yyVal;
+}
+public static Object case241_line959(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_blk_pass(support.newArrayNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case244_line970(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition pos = ((ListNode)yyVals[-1+yyTop]).getPosition();
+                  yyVal = support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-1+yyTop])));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case53_line502(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_fcall(((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
+    return yyVal;
+}
+public static Object case476_line1820(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((BlockArgNode)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case364_line1383(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case14_line335(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case260_line1028(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((BlockPassNode)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case425_line1637(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.negateInteger(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case242_line962(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-4+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case18_line351(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
+                      yyVal = new UntilNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
+                  } else {
+                      yyVal = new UntilNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), true);
+                  }
+    return yyVal;
+}
+public static Object case257_line1016(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  lexer.setState(LexState.EXPR_ENDARG);
+    return yyVal;
+}
+public static Object case194_line804(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isLiteral(((Node)yyVals[0+yyTop]))) {
+		      yyVal = ((Node)yyVals[0+yyTop]);
+		  } else {
+                      yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "+@");
+		  }
+    return yyVal;
+}
+public static Object case481_line1845(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ArrayNode(lexer.getPosition());
+    return yyVal;
+}
+public static Object case438_line1666(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.gettable(((Token)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case256_line1012(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.warn(ID.ARGUMENT_EXTRA_SPACE, ((Token)yyVals[-2+yyTop]).getPosition(), "don't put space before argument parentheses");
+	          yyVal = null;
+    return yyVal;
+}
+public static Object case36_line450(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newAndNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case437_line1661(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new Token("__LINE__", Tokens.k__LINE__, ((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case436_line1658(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new Token("__FILE__", Tokens.k__FILE__, ((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case368_line1397(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.pushBlockScope();
+    return yyVal;
+}
+public static Object case356_line1347(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_iter(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
+                  support.popCurrentScope();
+    return yyVal;
+}
+public static Object case246_line980(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case251_line999(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+    return yyVal;
+}
+public static Object case275_line1059(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new FCallNoArgNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case511_line1896(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = null;
+    return yyVal;
+}
+public static Object case404_line1554(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new StrNode(lexer.getPosition(), ByteList.create(""));
+    return yyVal;
+}
+public static Object case342_line1298(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((ListNode)yyVals[-6+yyTop]).getPosition(), ((ListNode)yyVals[-6+yyTop]), ((Node)yyVals[-3+yyTop])));
+    return yyVal;
+}
+public static Object case25_line390(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+ 	          support.checkExpression(((Node)yyVals[0+yyTop]));
+
+		  String asgnOp = (String) ((Token)yyVals[-1+yyTop]).getValue();
+		  if (asgnOp.equals("||")) {
+	              ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
+	              yyVal = new OpAsgnOrNode(support.getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
+		  } else if (asgnOp.equals("&&")) {
+	              ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
+                      yyVal = new OpAsgnAndNode(support.getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
+		  } else {
+                      ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), asgnOp, ((Node)yyVals[0+yyTop])));
+                      ((AssignableNode)yyVals[-2+yyTop]).setPosition(support.getPosition(((AssignableNode)yyVals[-2+yyTop])));
+		      yyVal = ((AssignableNode)yyVals[-2+yyTop]);
+		  }
+    return yyVal;
+}
+public static Object case454_line1721(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((RestArgNode)yyVals[-1+yyTop]).getPosition(), null, null, ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case402_line1546(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new ArrayNode(lexer.getPosition());
+    return yyVal;
+}
+public static Object case359_line1367(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case191_line795(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case87_line623(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+		      support.yyerror("dynamic constant assignment");
+		  }
+			
+		  ISourcePosition position = support.getPosition(((Node)yyVals[-2+yyTop]));
+
+                  yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+    return yyVal;
+}
+public static Object case315_line1213(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  /* TODO: We should use implicit nil for body, but problem (punt til later)*/
+                  Node body = ((Node)yyVals[-1+yyTop]); /*$5 == null ? NilImplicitNode.NIL : $5;*/
+
+                  /* NOEX_PRIVATE for toplevel */
+                  yyVal = new DefnNode(((Token)yyVals[-5+yyTop]).getPosition(), new ArgumentNode(((Token)yyVals[-4+yyTop]).getPosition(), (String) ((Token)yyVals[-4+yyTop]).getValue()), ((ArgsNode)yyVals[-2+yyTop]), support.getCurrentScope(), body);
+                  support.popCurrentScope();
+                  support.setInDef(false);
+    return yyVal;
+}
+public static Object case338_line1281(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case337_line1278(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case226_line907(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[-2+yyTop]);
+		  ((Node)yyVal).setPosition(((Token)yyVals[-3+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case86_line620(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case71_line558(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case353_line1331(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ZeroArgNode(((Token)yyVals[0+yyTop]).getPosition());
+                  lexer.commandStart = true;
+    return yyVal;
+}
+public static Object case48_line483(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case303_line1165(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  yyVal = ((Node)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case68_line550(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(((Token)yyVals[-1+yyTop]).getPosition(), null, ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case178_line743(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case287_line1111(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ZYieldNode(((Token)yyVals[-2+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case452_line1715(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((ListNode)yyVals[-3+yyTop]).getPosition(), null, ((ListNode)yyVals[-3+yyTop]), ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case397_line1527(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]) instanceof EvStrNode ? new DStrNode(((ListNode)yyVals[-2+yyTop]).getPosition()).add(((Node)yyVals[-1+yyTop])) : ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case391_line1476(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[-1+yyTop]);
+                  ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case336_line1274(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+    return yyVal;
+}
+public static Object case28_line417(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case198_line820(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "&", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case20_line362(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+                      support.yyerror("BEGIN in method");
+                  }
+		  support.pushLocalScope();
+    return yyVal;
+}
+public static Object case408_line1569(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case6_line311(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newline_node(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case294_line1135(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new IfNode(((Token)yyVals[-5+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-2+yyTop]));
+    return yyVal;
+}
+public static Object case223_line896(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition pos = ((ListNode)yyVals[-1+yyTop]).getPosition();
+                  yyVal = support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-1+yyTop])));
+    return yyVal;
+}
+public static Object case58_line517(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop])); /* .setPosFrom($2);*/
+    return yyVal;
+}
+public static Object case104_line688(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newUndef(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case64_line537(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(support.getPosition(((ListNode)yyVals[0+yyTop])), ((ListNode)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case465_line1770(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   ((ListNode)yyVals[-2+yyTop]).add(new ArgumentNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue()));
+                   ((ListNode)yyVals[-2+yyTop]).setPosition(((ListNode)yyVals[-2+yyTop]).getPosition());
+		   yyVal = ((ListNode)yyVals[-2+yyTop]);
+    return yyVal;
+}
+public static Object case412_line1586(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		   lexer.setStrTerm(((StrTerm)yyVals[-2+yyTop]));
+                   lexer.getConditionState().restart();
+	           lexer.getCmdArgumentState().restart();
+
+		   yyVal = support.newEvStrNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case407_line1564(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.literal_concat(support.getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case217_line877(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case224_line900(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  yyVal = new NewlineNode(((Token)yyVals[-2+yyTop]).getPosition(), support.newSplatNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])));
+    return yyVal;
+}
+public static Object case9_line321(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_FNAME);
+    return yyVal;
+}
+public static Object case100_line673(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new LiteralNode(((Token)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case237_line945(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[-1+yyTop]));
+		  yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-6+yyTop])), ((ListNode)yyVals[-6+yyTop]).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case301_line1154(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newCaseNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case457_line1732(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   support.yyerror("formal argument cannot be a constant");
+    return yyVal;
+}
+public static Object case75_line573(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case38_line456(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NotNode(((Token)yyVals[-1+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case297_line1142(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
+                  yyVal = new WhileNode(((Token)yyVals[-6+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), body);
+    return yyVal;
+}
+public static Object case468_line1791(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.appendToBlock(((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case462_line1755(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                    support.allowDubyExtension(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition());
+                    yyVal = new ListNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition());
+                    ((ListNode) yyVal).add(new TypedArgumentNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-2+yyTop]).getValue(), ((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case376_line1419(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node node;
+                  if (((Node)yyVals[-3+yyTop]) != null) {
+                     node = support.appendToBlock(support.node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(((Token)yyVals[-5+yyTop]).getPosition(), "$!")), ((Node)yyVals[-1+yyTop]));
+                     if(((Node)yyVals[-1+yyTop]) != null) {
+                        node.setPosition(support.unwrapNewlineNode(((Node)yyVals[-1+yyTop])).getPosition());
+                     }
+		  } else {
+		     node = ((Node)yyVals[-1+yyTop]);
+                  }
+                  Node body = node == null ? NilImplicitNode.NIL : node;
+                  yyVal = new RescueBodyNode(((Token)yyVals[-5+yyTop]).getPosition(), ((Node)yyVals[-4+yyTop]), body, ((RescueBodyNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case360_line1371(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case434_line1652(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new Token("true", Tokens.kTRUE, ((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case372_line1409(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case253_line1004(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
+                  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case210_line856(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "~");
+    return yyVal;
+}
+public static Object case12_line329(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new VAliasNode(((Token)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-1+yyTop]).getValue(), "$" + ((BackRefNode)yyVals[0+yyTop]).getType()); /* XXX*/
+    return yyVal;
+}
+public static Object case509_line1889(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+    return yyVal;
+}
+public static Object case448_line1703(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((ListNode)yyVals[-5+yyTop]).getPosition(), ((ListNode)yyVals[-5+yyTop]), ((ListNode)yyVals[-3+yyTop]), ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case30_line427(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.backrefAssignError(((Node)yyVals[-2+yyTop]));
+    return yyVal;
+}
+public static Object case240_line956(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_blk_pass(support.newArrayNode(support.getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop])).addAll(((ListNode)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case11_line326(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new VAliasNode(((Token)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-1+yyTop]).getValue(), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case426_line1640(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.negateFloat(((FloatNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case285_line1105(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  yyVal = new ReturnNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
+    return yyVal;
+}
+public static Object case182_line761(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.yyerror("constant re-assignment");
+    return yyVal;
+}
+public static Object case347_line1313(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((Token)yyVals[-3+yyTop]).getPosition(), null, new StarNode(((Token)yyVals[-1+yyTop]).getPosition())));
+    return yyVal;
+}
+public static Object case203_line835(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case459_line1738(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   support.yyerror("formal argument cannot be an global variable");
+    return yyVal;
+}
+public static Object case378_line1436(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case92_line650(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_colon3(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case33_line441(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
+		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
+                  ((MultipleAsgnNode)yyVals[-2+yyTop]).setPosition(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])));
+    return yyVal;
+}
+public static Object case252_line1002(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          yyVal = Long.valueOf(lexer.getCmdArgumentState().begin());
+    return yyVal;
+}
+public static Object case281_line1083(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_colon3(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case26_line406(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = support.new_opElementAsgnNode(support.getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+
+    return yyVal;
+}
+public static Object case446_line1692(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = ((Node)yyVals[-2+yyTop]);
+                   ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-3+yyTop]).getPosition());
+                   lexer.setState(LexState.EXPR_BEG);
+                   lexer.commandStart = true;
+    return yyVal;
+}
+public static Object case265_line1044(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case276_line1062(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new BeginNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case444_line1684(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = ((Node)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case321_line1242(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new RedoNode(((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case290_line1120(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new FCallNoArgBlockNode(support.getPosition(((Token)yyVals[-1+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((IterNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case189_line789(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "/", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case84_line614(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case309_line1186(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = Boolean.valueOf(support.isInDef());
+                  support.setInDef(false);
+    return yyVal;
+}
+public static Object case248_line988(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-6+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-6+yyTop])), ((Node)yyVals[-6+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case263_line1037(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case367_line1393(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_iter(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
+                  support.popCurrentScope();
+    return yyVal;
+}
+public static Object case357_line1353(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  /* Workaround for JRUBY-2326 (MRI does not enter this production for some reason)*/
+                  if (((Node)yyVals[-1+yyTop]) instanceof YieldNode) {
+                      throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "block given to yield");
+                  }
+	          if (((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
+                      throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
+                  }
+		  yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+		  ((Node)yyVal).setPosition(support.getPosition(((Node)yyVals[-1+yyTop])));
+    return yyVal;
+}
+public static Object case59_line520(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_yield(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case264_line1041(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case316_line1222(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.setState(LexState.EXPR_FNAME);
+    return yyVal;
+}
+public static Object case313_line1204(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
+
+                  yyVal = new ModuleNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Colon3Node)yyVals[-3+yyTop]), support.getCurrentScope(), body);
+                  support.popCurrentScope();
+    return yyVal;
+}
+public static Object case432_line1646(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new Token("nil", Tokens.kNIL, ((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case90_line645(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.yyerror("class/module name must be CONSTANT");
+    return yyVal;
+}
+public static Object case29_line422(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+
+                  yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case235_line936(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition pos = ((ListNode)yyVals[-4+yyTop]).getPosition();
+                  yyVal = support.arg_concat(pos, support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case175_line717(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition position = ((Token)yyVals[-1+yyTop]).getPosition();
+                  Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
+                  yyVal = support.node_assign(((Node)yyVals[-4+yyTop]), new RescueNode(position, ((Node)yyVals[-2+yyTop]), new RescueBodyNode(position, null, body, null), null));
+    return yyVal;
+}
+public static Object case45_line474(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new BreakNode(((Token)yyVals[-1+yyTop]).getPosition(), support.ret_args(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]).getPosition()));
+    return yyVal;
+}
+public static Object case196_line814(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "|", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case341_line1295(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), null));
+    return yyVal;
+}
+public static Object case195_line811(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "-@");
+    return yyVal;
+}
+public static Object case278_line1067(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.warning(ID.GROUPED_EXPRESSION, ((Token)yyVals[-4+yyTop]).getPosition(), "(...) interpreted as grouped expression");
+                  yyVal = ((Node)yyVals[-3+yyTop]);
+    return yyVal;
+}
+public static Object case258_line1018(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.warn(ID.ARGUMENT_EXTRA_SPACE, ((Token)yyVals[-3+yyTop]).getPosition(), "don't put space before argument parentheses");
+		  yyVal = ((Node)yyVals[-2+yyTop]);
+    return yyVal;
+}
+public static Object case218_line881(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          support.checkExpression(((Node)yyVals[0+yyTop]));
+	          yyVal = ((Node)yyVals[0+yyTop]);   
+    return yyVal;
+}
+public static Object case460_line1741(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   support.yyerror("formal argument cannot be a class variable");
+    return yyVal;
+}
+public static Object case424_line1634(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = ((FloatNode)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case370_line1404(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newWhenNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case228_line914(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-4+yyTop]).add(((Node)yyVals[-2+yyTop]));
+    return yyVal;
+}
+public static Object case314_line1210(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   support.setInDef(true);
 		  support.pushLocalScope();
     return yyVal;
 }
-public Object case183_line767(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.backrefAssignError(((Node)yyVals[-2+yyTop]));
+public static Object case82_line608(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
     return yyVal;
 }
-public Object case185_line777(Object yyVal, Object[] yyVals, int yyTop) {
-		  support.checkExpression(((Node)yyVals[-2+yyTop]));
-		  support.checkExpression(((Node)yyVals[0+yyTop]));
-                  boolean isLiteral = ((Node)yyVals[-2+yyTop]) instanceof FixnumNode && ((Node)yyVals[0+yyTop]) instanceof FixnumNode;
-                  yyVal = new DotNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), true, isLiteral);
+public static Object case55_line508(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
     return yyVal;
 }
-public Object case295_line1135(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.getConditionState().begin();
-    return yyVal;
-}
-public Object case80_line597(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-		      yyerror("dynamic constant assignment");
-		  }
-
-                  ISourcePosition position = getPosition(((Token)yyVals[-1+yyTop]));
-
-                  yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case463_line1757(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case463_line1760(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = new ListNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition());
                     ((ListNode) yyVal).add(new ArgumentNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue()));
     return yyVal;
 }
-public Object case460_line1738(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyerror("formal argument cannot be a class variable");
+public static Object case413_line1594(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new GlobalVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public Object case411_line1576(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case410_line1576(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		   lexer.setStrTerm(((StrTerm)yyVals[-1+yyTop]));
+	           yyVal = new EvStrNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case320_line1239(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NextNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
+    return yyVal;
+}
+public static Object case106_line693(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.appendToBlock(((Node)yyVals[-3+yyTop]), support.newUndef(((Node)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case73_line566(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case214_line868(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newOrNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case250_line996(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_blk_pass(support.newSplatNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case259_line1023(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+                  yyVal = new BlockPassNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case57_line514(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
+    return yyVal;
+}
+public static Object case485_line1860(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-2+yyTop]).addAll(((ListNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case483_line1851(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((ListNode)yyVals[-1+yyTop]).size() % 2 != 0) {
+                      support.yyerror("odd number list for Hash.");
+                  }
+                  yyVal = ((ListNode)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case411_line1580(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
 		   yyVal = lexer.getStrTerm();
 		   lexer.setStrTerm(null);
 		   lexer.setState(LexState.EXPR_BEG);
@@ -2724,8 +3649,8 @@ public Object case411_line1576(Object yyVal, Object[] yyVals, int yyTop) {
 	           lexer.getCmdArgumentState().stop();
     return yyVal;
 }
-public Object case392_line1478(Object yyVal, Object[] yyVals, int yyTop) {
-                  ISourcePosition position = getPosition(((Token)yyVals[-2+yyTop]));
+public static Object case392_line1482(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition position = ((Token)yyVals[-2+yyTop]).getPosition();
 
 		  if (((Node)yyVals[-1+yyTop]) == null) {
 		      yyVal = new XStrNode(position, null);
@@ -2740,1160 +3665,274 @@ public Object case392_line1478(Object yyVal, Object[] yyVals, int yyTop) {
 		  }
     return yyVal;
 }
-public Object case30_line430(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.backrefAssignError(((Node)yyVals[-2+yyTop]));
+public static Object case67_line547(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(support.getPosition(((ListNode)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]), new StarNode(lexer.getPosition()));
     return yyVal;
 }
-public Object case93_line656(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_colon2(getPosition(((Token)yyVals[0+yyTop])), null, (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case485_line1857(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-2+yyTop]).addAll(((ListNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case483_line1848(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((ListNode)yyVals[-1+yyTop]).size() % 2 != 0) {
-                      yyerror("odd number list for Hash.");
-                  }
-                  yyVal = ((ListNode)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case464_line1761(Object yyVal, Object[] yyVals, int yyTop) {
-                   support.allowDubyExtension(((ISourcePositionHolder)yyVals[-4+yyTop]).getPosition());
-                   ((ListNode)yyVals[-4+yyTop]).add(new TypedArgumentNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-2+yyTop]).getValue(), ((Node)yyVals[0+yyTop])));
-                   ((ListNode)yyVals[-4+yyTop]).setPosition(getPosition(((ListNode)yyVals[-4+yyTop])));
-		   yyVal = ((ListNode)yyVals[-4+yyTop]);
-    return yyVal;
-}
-public Object case345_line1303(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[-2+yyTop])), ((ListNode)yyVals[-2+yyTop]), new StarNode(getPosition()));
-    return yyVal;
-}
-public Object case199_line826(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=>", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case286_line1105(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_yield(getPosition(((Token)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case388_line1461(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]) instanceof EvStrNode ? new DStrNode(getPosition(((Node)yyVals[0+yyTop]))).add(((Node)yyVals[0+yyTop])) : ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case373_line1408(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new SplatNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case310_line1186(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = Integer.valueOf(support.getInSingle());
-                  support.setInSingle(0);
-		  support.pushLocalScope();
-    return yyVal;
-}
-public Object case406_line1557(Object yyVal, Object[] yyVals, int yyTop) {
-		   yyVal = null;
-    return yyVal;
-}
-public Object case282_line1083(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((Node)yyVals[-3+yyTop]) instanceof SelfNode) {
-                      yyVal = support.new_fcall(new Token("[]", getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]), null);
-                  } else {
-                      yyVal = support.new_aref(((Node)yyVals[-3+yyTop]), new Token("[]", getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  }
-    return yyVal;
-}
-public Object case311_line1190(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new SClassNode(getPosition(((Token)yyVals[-7+yyTop])), ((Node)yyVals[-5+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
-                  support.popCurrentScope();
-                  support.setInDef(((Boolean)yyVals[-4+yyTop]).booleanValue());
-                  support.setInSingle(((Integer)yyVals[-2+yyTop]).intValue());
-    return yyVal;
-}
-public Object case312_line1196(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) { 
-                      yyerror("module definition in method body");
-                  }
-		  support.pushLocalScope();
-    return yyVal;
-}
-public Object case186_line783(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "+", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case456_line1724(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(support.createEmptyArgsNodePosition(getPosition()), null, null, null, null, null);
-    return yyVal;
-}
-public Object case390_line1467(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.literal_concat(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case386_line1454(Object yyVal, Object[] yyVals, int yyTop) {
-                  /* FIXME: We may be intern'ing more than once.*/
-                  yyVal = new SymbolNode(((Token)yyVals[0+yyTop]).getPosition(), ((String) ((Token)yyVals[0+yyTop]).getValue()).intern());
-    return yyVal;
-}
-public Object case344_line1300(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case189_line792(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "/", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case449_line1703(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((ListNode)yyVals[-1+yyTop]), null, null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case442_line1675(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = null;
-    return yyVal;
-}
-public Object case98_line665(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_END);
-                  yyVal = ((Token)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case305_line1167(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.getConditionState().end();
-    return yyVal;
-}
-public Object case76_line579(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case332_line1261(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new IfNode(getPosition(((Token)yyVals[-4+yyTop])), support.getConditionNode(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case289_line1114(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new DefinedNode(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case262_line1031(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition2(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case69_line556(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((Token)yyVals[0+yyTop])), null, new StarNode(getPosition()));
-    return yyVal;
-}
-public Object case81_line606(Object yyVal, Object[] yyVals, int yyTop) {
-	          support.backrefAssignError(((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case232_line926(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_blk_pass(((ListNode)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case467_line1785(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new BlockNode(getPosition(((Node)yyVals[0+yyTop]))).add(((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case422_line1613(Object yyVal, Object[] yyVals, int yyTop) {
-                   lexer.setState(LexState.EXPR_END);
-
-                   /* DStrNode: :"some text #{some expression}"*/
-                   /* StrNode: :"some text"*/
-                   /* EvStrNode :"#{some expression}"*/
-                   if (((Node)yyVals[-1+yyTop]) == null) yyerror("empty symbol literal");
-
-                   if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
-                       yyVal = new DSymbolNode(getPosition(((Token)yyVals[-2+yyTop])), ((DStrNode)yyVals[-1+yyTop]));
-                   } else {
-                       yyVal = new DSymbolNode(getPosition(((Token)yyVals[-2+yyTop])));
-                       ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop]));
-                   }
-    return yyVal;
-}
-public Object case283_line1090(Object yyVal, Object[] yyVals, int yyTop) {
-                  ISourcePosition position = getPosition(((Token)yyVals[-2+yyTop]));
-                  if (((Node)yyVals[-1+yyTop]) == null) {
-                      yyVal = new ZArrayNode(position); /* zero length array */
-                  } else {
-                      yyVal = ((Node)yyVals[-1+yyTop]);
-                      ((ISourcePositionHolder)yyVal).setPosition(position);
-                  }
-    return yyVal;
-}
-public Object case192_line801(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), getPosition()), "-@");
-    return yyVal;
-}
-public Object case231_line923(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case363_line1376(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop]), null, null);
-    return yyVal;
-}
-public Object case175_line720(Object yyVal, Object[] yyVals, int yyTop) {
-                  ISourcePosition position = getPosition(((Token)yyVals[-1+yyTop]));
-                  Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
-                  yyVal = support.node_assign(((Node)yyVals[-4+yyTop]), new RescueNode(position, ((Node)yyVals[-2+yyTop]), new RescueBodyNode(position, null, body, null), null));
-    return yyVal;
-}
-public Object case293_line1129(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new IfNode(getPosition(((Token)yyVals[-5+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case7_line317(Object yyVal, Object[] yyVals, int yyTop) {
-	          yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop]), support.newline_node(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[0+yyTop]))));
-    return yyVal;
-}
-public Object case102_line684(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((LiteralNode)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case425_line1633(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.negateInteger(((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case3_line289(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node node = ((Node)yyVals[-3+yyTop]);
-
-		  if (((RescueBodyNode)yyVals[-2+yyTop]) != null) {
-		      node = new RescueNode(getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop]), ((RescueBodyNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
-		  } else if (((Node)yyVals[-1+yyTop]) != null) {
-		      warnings.warn(ID.ELSE_WITHOUT_RESCUE, getPosition(((Node)yyVals[-3+yyTop])), "else without rescue is useless");
-                      node = support.appendToBlock(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
-		  }
-		  if (((Node)yyVals[0+yyTop]) != null) {
-                      if (node == null) node = NilImplicitNode.NIL;
-		      node = new EnsureNode(getPosition(((Node)yyVals[-3+yyTop])), node, ((Node)yyVals[0+yyTop]));
-		  }
-
-	          yyVal = node;
-    return yyVal;
-}
-public Object case221_line893(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case56_line514(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case215_line874(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new DefinedNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case82_line611(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case225_line906(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ArrayNode(getPosition(((Token)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case260_line1026(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((BlockPassNode)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case55_line511(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
-    return yyVal;
-}
-public Object case32_line436(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((MultipleAsgnNode)yyVals[-2+yyTop]).getHeadNode() != null) {
-		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(new ToAryNode(getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
-		  } else {
-		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(support.newArrayNode(getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
-		  }
-		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
-    return yyVal;
-}
-public Object case438_line1662(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.gettable(((Token)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case241_line959(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_blk_pass(support.newArrayNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case214_line871(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newOrNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case244_line970(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case16_line344(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new IfNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), null, ((Node)yyVals[-2+yyTop]));
-    return yyVal;
-}
-public Object case257_line1014(Object yyVal, Object[] yyVals, int yyTop) {
-		  lexer.setState(LexState.EXPR_ENDARG);
-    return yyVal;
-}
-public Object case481_line1842(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ArrayNode(getPosition());
-    return yyVal;
-}
-public Object case436_line1654(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new Token("__FILE__", Tokens.k__FILE__, ((Token)yyVals[0+yyTop]).getPosition());
-    return yyVal;
-}
-public Object case368_line1393(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.pushBlockScope();
-    return yyVal;
-}
-public Object case356_line1343(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_iter(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
-                  support.popCurrentScope();
-    return yyVal;
-}
-public Object case180_line756(Object yyVal, Object[] yyVals, int yyTop) {
-		  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
-    return yyVal;
-}
-public Object case280_line1077(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_colon2(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case205_line844(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "===", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case67_line550(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]), new StarNode(getPosition()));
-    return yyVal;
-}
-public Object case404_line1550(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new StrNode(((Token)yyVals[0+yyTop]).getPosition(), ByteList.create(""));
-    return yyVal;
-}
-public Object case342_line1294(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg18(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(getPosition(((ListNode)yyVals[-6+yyTop])), ((ListNode)yyVals[-6+yyTop]), ((Node)yyVals[-3+yyTop])));
-    return yyVal;
-}
-public Object case208_line853(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NotNode(getPosition(((Node)yyVals[-2+yyTop])), support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case242_line962(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((Node)yyVals[-4+yyTop])), support.newArrayNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case41_line467(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case22_line375(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-                      warnings.warn(ID.END_IN_METHOD, getPosition(((Token)yyVals[-3+yyTop])), "END in method; use at_exit");
-                  }
-                  yyVal = new PostExeNode(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case256_line1010(Object yyVal, Object[] yyVals, int yyTop) {
-                  warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition(((Token)yyVals[-2+yyTop])), "don't put space before argument parentheses");
-	          yyVal = null;
-    return yyVal;
-}
-public Object case275_line1056(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new FCallNoArgNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case402_line1542(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new ArrayNode(getPosition());
-    return yyVal;
-}
-public Object case359_line1363(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case255_line1008(Object yyVal, Object[] yyVals, int yyTop) {
-		  lexer.setState(LexState.EXPR_ENDARG);
-    return yyVal;
-}
-public Object case251_line997(Object yyVal, Object[] yyVals, int yyTop) {
-    return yyVal;
-}
-public Object case53_line505(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_fcall(((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
-    return yyVal;
-}
-public Object case337_line1274(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case315_line1210(Object yyVal, Object[] yyVals, int yyTop) {
-                  /* TODO: We should use implicit nil for body, but problem (punt til later)*/
-                  Node body = ((Node)yyVals[-1+yyTop]); /*$5 == null ? NilImplicitNode.NIL : $5;*/
-
-                  /* NOEX_PRIVATE for toplevel */
-                  yyVal = new DefnNode(getPosition(((Token)yyVals[-5+yyTop])), new ArgumentNode(((Token)yyVals[-4+yyTop]).getPosition(), (String) ((Token)yyVals[-4+yyTop]).getValue()), ((ArgsNode)yyVals[-2+yyTop]), support.getCurrentScope(), body);
-                  support.popCurrentScope();
-                  support.setInDef(false);
-    return yyVal;
-}
-public Object case14_line338(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case279_line1068(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((Node)yyVals[-1+yyTop]) != null) {
-                      /* compstmt position includes both parens around it*/
-                      ((ISourcePositionHolder) ((Node)yyVals[-1+yyTop])).setPosition(getPosition(((Token)yyVals[-2+yyTop])));
-                      yyVal = ((Node)yyVals[-1+yyTop]);
-                  } else {
-                      yyVal = new NilNode(getPosition(((Token)yyVals[-2+yyTop])));
-                  }
-    return yyVal;
-}
-public Object case511_line1895(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = null;
-    return yyVal;
-}
-public Object case18_line354(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
-                      yyVal = new UntilNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
-                  } else {
-                      yyVal = new UntilNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), true);
-                  }
-    return yyVal;
-}
-public Object case401_line1536(Object yyVal, Object[] yyVals, int yyTop) {
-		   yyVal = ((ListNode)yyVals[-1+yyTop]);
-                   ((ISourcePositionHolder)yyVal).setPosition(getPosition(((Token)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case397_line1523(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]) instanceof EvStrNode ? new DStrNode(getPosition(((ListNode)yyVals[-2+yyTop]))).add(((Node)yyVals[-1+yyTop])) : ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case391_line1472(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[-1+yyTop]);
-                  ((ISourcePositionHolder)yyVal).setPosition(getPosition(((Token)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case184_line770(Object yyVal, Object[] yyVals, int yyTop) {
-		  support.checkExpression(((Node)yyVals[-2+yyTop]));
-		  support.checkExpression(((Node)yyVals[0+yyTop]));
-    
-                  boolean isLiteral = ((Node)yyVals[-2+yyTop]) instanceof FixnumNode && ((Node)yyVals[0+yyTop]) instanceof FixnumNode;
-                  yyVal = new DotNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), false, isLiteral);
-    return yyVal;
-}
-public Object case201_line832(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">=", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case194_line807(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isLiteral(((Node)yyVals[0+yyTop]))) {
-		      yyVal = ((Node)yyVals[0+yyTop]);
-		  } else {
-                      yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "+@");
-		  }
-    return yyVal;
-}
-public Object case303_line1162(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyVal = ((Node)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case452_line1712(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((ListNode)yyVals[-3+yyTop])), null, ((ListNode)yyVals[-3+yyTop]), ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case408_line1565(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case336_line1271(Object yyVal, Object[] yyVals, int yyTop) {
-    return yyVal;
-}
-public Object case36_line453(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newAndNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case412_line1582(Object yyVal, Object[] yyVals, int yyTop) {
-		   lexer.setStrTerm(((StrTerm)yyVals[-2+yyTop]));
-                   lexer.getConditionState().restart();
-	           lexer.getCmdArgumentState().restart();
-
-		   yyVal = support.newEvStrNode(getPosition(((Token)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case407_line1560(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.literal_concat(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case294_line1132(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new IfNode(getPosition(((Token)yyVals[-5+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-2+yyTop]));
-    return yyVal;
-}
-public Object case25_line393(Object yyVal, Object[] yyVals, int yyTop) {
- 	          support.checkExpression(((Node)yyVals[0+yyTop]));
-
-		  String asgnOp = (String) ((Token)yyVals[-1+yyTop]).getValue();
-		  if (asgnOp.equals("||")) {
-	              ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-	              yyVal = new OpAsgnOrNode(getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
-		  } else if (asgnOp.equals("&&")) {
-	              ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-                      yyVal = new OpAsgnAndNode(getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
-		  } else {
-                      ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), asgnOp, ((Node)yyVals[0+yyTop])));
-                      ((AssignableNode)yyVals[-2+yyTop]).setPosition(getPosition(((AssignableNode)yyVals[-2+yyTop])));
-		      yyVal = ((AssignableNode)yyVals[-2+yyTop]);
-		  }
-    return yyVal;
-}
-public Object case300_line1147(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
-                  yyVal = new UntilNode(getPosition(((Token)yyVals[-6+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), body);
-    return yyVal;
-}
-public Object case191_line798(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case87_line626(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-		      yyerror("dynamic constant assignment");
-		  }
-			
-		  ISourcePosition position = getPosition(((Node)yyVals[-2+yyTop]));
-
-                  yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case226_line909(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[-2+yyTop]);
-		  ((Node)yyVal).setPosition(getPosition(((Token)yyVals[-3+yyTop])));
-    return yyVal;
-}
-public Object case301_line1151(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newCaseNode(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case376_line1415(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node node;
-                  if (((Node)yyVals[-3+yyTop]) != null) {
-                     node = support.appendToBlock(support.node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(getPosition(((Token)yyVals[-5+yyTop])), "$!")), ((Node)yyVals[-1+yyTop]));
-                     if(((Node)yyVals[-1+yyTop]) != null) {
-                        node.setPosition(support.unwrapNewlineNode(((Node)yyVals[-1+yyTop])).getPosition());
-                     }
-		  } else {
-		     node = ((Node)yyVals[-1+yyTop]);
-                  }
-                  Node body = node == null ? NilImplicitNode.NIL : node;
-                  yyVal = new RescueBodyNode(getPosition(((Token)yyVals[-5+yyTop])), ((Node)yyVals[-4+yyTop]), body, ((RescueBodyNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case372_line1405(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case340_line1288(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]), null);
-    return yyVal;
-}
-public Object case86_line623(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case462_line1752(Object yyVal, Object[] yyVals, int yyTop) {
-                    support.allowDubyExtension(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition());
-                    yyVal = new ListNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition());
-                    ((ListNode) yyVal).add(new TypedArgumentNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-2+yyTop]).getValue(), ((Node)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case381_line1438(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case48_line486(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case68_line553(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((Token)yyVals[-1+yyTop])), null, ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case178_line746(Object yyVal, Object[] yyVals, int yyTop) {
-		  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
-    return yyVal;
-}
-public Object case77_line582(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case198_line823(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "&", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case237_line945(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[-1+yyTop]));
-		  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-6+yyTop])), ((ListNode)yyVals[-6+yyTop]).add(new HashNode(getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case20_line365(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-                      yyerror("BEGIN in method");
-                  }
-		  support.pushLocalScope();
-    return yyVal;
-}
-public Object case451_line1709(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(((ISourcePositionHolder)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null, null, null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case448_line1700(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((ListNode)yyVals[-5+yyTop])), ((ListNode)yyVals[-5+yyTop]), ((ListNode)yyVals[-3+yyTop]), ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case350_line1318(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg18(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case253_line1002(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
-                  yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case223_line899(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((ListNode)yyVals[-1+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
-    return yyVal;
-}
-public Object case6_line314(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newline_node(((Node)yyVals[0+yyTop]), getPosition(((Node)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case509_line1887(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyerrok();
-    return yyVal;
-}
-public Object case99_line670(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_END);
-                  yyVal = yyVals[0+yyTop];
-    return yyVal;
-}
-public Object case285_line1102(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyVal = new ReturnNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case224_line902(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyVal = new NewlineNode(getPosition(((Token)yyVals[-2+yyTop])), support.newSplatNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop])));
-    return yyVal;
-}
-public Object case409_line1568(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = lexer.getStrTerm();
-		   lexer.setStrTerm(null);
-		   lexer.setState(LexState.EXPR_BEG);
-    return yyVal;
-}
-public Object case399_line1528(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.literal_concat(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case378_line1432(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case9_line324(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_FNAME);
-    return yyVal;
-}
-public Object case100_line676(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new LiteralNode(((Token)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case179_line751(Object yyVal, Object[] yyVals, int yyTop) {
-		  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
-    return yyVal;
-}
-public Object case459_line1735(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyerror("formal argument cannot be an global variable");
-    return yyVal;
-}
-public Object case240_line956(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_blk_pass(support.newArrayNode(getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop])).addAll(((ListNode)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case38_line459(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NotNode(getPosition(((Token)yyVals[-1+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case15_line341(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new IfNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), null);
-    return yyVal;
-}
-public Object case21_line370(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.getResult().addBeginNode(new PreExeNode(getPosition(((Node)yyVals[-1+yyTop])), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
-                  support.popCurrentScope();
-                  yyVal = null; /*XXX 0;*/
-    return yyVal;
-}
-public Object case308_line1177(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
-
-                  yyVal = new ClassNode(getPosition(((Token)yyVals[-5+yyTop])), ((Colon3Node)yyVals[-4+yyTop]), support.getCurrentScope(), body, ((Node)yyVals[-3+yyTop]));
-                  support.popCurrentScope();
-    return yyVal;
-}
-public Object case75_line576(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case281_line1080(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_colon3(getPosition(((Token)yyVals[-1+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case444_line1680(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = ((Node)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case296_line1137(Object yyVal, Object[] yyVals, int yyTop) {
-		  lexer.getConditionState().end();
-    return yyVal;
-}
-public Object case265_line1041(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case252_line1000(Object yyVal, Object[] yyVals, int yyTop) {
-	          yyVal = Long.valueOf(lexer.getCmdArgumentState().begin());
-    return yyVal;
-}
-public Object case23_line381(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case210_line859(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "~");
-    return yyVal;
-}
-public Object case207_line850(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case479_line1828(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.setState(LexState.EXPR_BEG);
-    return yyVal;
-}
-public Object case309_line1183(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = Boolean.valueOf(support.isInDef());
-                  support.setInDef(false);
-    return yyVal;
-}
-public Object case11_line329(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new VAliasNode(getPosition(((Token)yyVals[-2+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case220_line890(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case263_line1034(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case432_line1642(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new Token("nil", Tokens.kNIL, ((Token)yyVals[0+yyTop]).getPosition());
-    return yyVal;
-}
-public Object case377_line1428(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = null;
-    return yyVal;
-}
-public Object case366_line1387(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.pushBlockScope();
-    return yyVal;
-}
-public Object case346_line1306(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg18(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(getPosition(((Node)yyVals[-3+yyTop])), null, ((Node)yyVals[-3+yyTop])));
-    return yyVal;
-}
-public Object case182_line764(Object yyVal, Object[] yyVals, int yyTop) {
-		  yyerror("constant re-assignment");
-    return yyVal;
-}
-public Object case248_line986(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((Node)yyVals[-6+yyTop])), support.newArrayNode(getPosition(((Node)yyVals[-6+yyTop])), ((Node)yyVals[-6+yyTop])).add(new HashNode(getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case313_line1201(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
-
-                  yyVal = new ModuleNode(getPosition(((Token)yyVals[-4+yyTop])), ((Colon3Node)yyVals[-3+yyTop]), support.getCurrentScope(), body);
-                  support.popCurrentScope();
-    return yyVal;
-}
-public Object case341_line1291(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg18(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), null));
-    return yyVal;
-}
-public Object case203_line838(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case181_line761(Object yyVal, Object[] yyVals, int yyTop) {
-	          yyerror("constant re-assignment");
-    return yyVal;
-}
-public Object case424_line1630(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = ((FloatNode)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case370_line1400(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newWhenNode(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case278_line1064(Object yyVal, Object[] yyVals, int yyTop) {
-		 if (warnings.isVerbose()) warnings.warning(ID.GROUPED_EXPRESSION, getPosition(((Token)yyVals[-4+yyTop])), "(...) interpreted as grouped expression");
-                  yyVal = ((Node)yyVals[-3+yyTop]);
-    return yyVal;
-}
-public Object case92_line653(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_colon3(getPosition(((Token)yyVals[-1+yyTop])), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case33_line444(Object yyVal, Object[] yyVals, int yyTop) {
-                  ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
-                  ((MultipleAsgnNode)yyVals[-2+yyTop]).setPosition(getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])));
-    return yyVal;
-}
-public Object case26_line409(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = support.new_opElementAsgnNode(getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
-
-    return yyVal;
-}
-public Object case413_line1590(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new GlobalVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case410_line1572(Object yyVal, Object[] yyVals, int yyTop) {
-		   lexer.setStrTerm(((StrTerm)yyVals[-1+yyTop]));
-	           yyVal = new EvStrNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case306_line1169(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ForNode(getPosition(((Token)yyVals[-8+yyTop])), ((Node)yyVals[-7+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-4+yyTop]));
-    return yyVal;
-}
-public Object case258_line1016(Object yyVal, Object[] yyVals, int yyTop) {
-                  warnings.warn(ID.ARGUMENT_EXTRA_SPACE, getPosition(((Token)yyVals[-3+yyTop])), "don't put space before argument parentheses");
-		  yyVal = ((Node)yyVals[-2+yyTop]);
-    return yyVal;
-}
-public Object case443_line1678(Object yyVal, Object[] yyVals, int yyTop) {
-                   lexer.setState(LexState.EXPR_BEG);
-    return yyVal;
-}
-public Object case320_line1236(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NextNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case250_line994(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_blk_pass(support.newSplatNode(getPosition(((Token)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case235_line937(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-4+yyTop])), support.newArrayNode(getPosition(((ListNode)yyVals[-4+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case259_line1021(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-                  yyVal = new BlockPassNode(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case84_line617(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case439_line1667(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
-    return yyVal;
-}
-public Object case405_line1553(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.literal_concat(getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case59_line523(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_yield(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case177_line741(Object yyVal, Object[] yyVals, int yyTop) {
-		  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = support.new_opElementAsgnNode(getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case472_line1805(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
-    return yyVal;
-}
-public Object case364_line1379(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case29_line425(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-
-                  yyVal = new OpAsgnNode(getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
-    return yyVal;
-}
-public Object case45_line477(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new BreakNode(getPosition(((Token)yyVals[-1+yyTop])), support.ret_args(((Node)yyVals[0+yyTop]), getPosition(((Token)yyVals[-1+yyTop]))));
-    return yyVal;
-}
-public Object case19_line361(Object yyVal, Object[] yyVals, int yyTop) {
-                  Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
-	          yyVal = new RescueNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), new RescueBodyNode(getPosition(((Node)yyVals[-2+yyTop])), null, body, null), null);
-    return yyVal;
-}
-public Object case292_line1121(Object yyVal, Object[] yyVals, int yyTop) {
-	          if (((Node)yyVals[-1+yyTop]) != null && 
-                      ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
-                      throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, getPosition(((Node)yyVals[-1+yyTop])), lexer.getCurrentLine(), "Both block arg and actual block given.");
-		  }
-		  yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
-		  ((Node)yyVal).setPosition(getPosition(((Node)yyVals[-1+yyTop])));
-    return yyVal;
-}
-public Object case196_line817(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "|", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case85_line620(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case90_line648(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyerror("class/module name must be CONSTANT");
-    return yyVal;
-}
-public Object case477_line1820(Object yyVal, Object[] yyVals, int yyTop) {
-	          yyVal = null;
-    return yyVal;
-}
-public Object case476_line1817(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((BlockArgNode)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case455_line1721(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((BlockArgNode)yyVals[0+yyTop])), null, null, null, null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case218_line884(Object yyVal, Object[] yyVals, int yyTop) {
-	          support.checkExpression(((Node)yyVals[0+yyTop]));
-	          yyVal = ((Node)yyVals[0+yyTop]);   
-    return yyVal;
-}
-public Object case195_line814(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "-@");
-    return yyVal;
-}
-public Object case228_line916(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-4+yyTop]).add(((Node)yyVals[-2+yyTop]));
-    return yyVal;
-}
-public Object case339_line1281(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (((ListNode)yyVals[0+yyTop]).size() == 1) {
-                      yyVal = ((ListNode)yyVals[0+yyTop]).get(0);
-                  } else {
-                      yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[0+yyTop])), ((ListNode)yyVals[0+yyTop]), null);
-                  }
-    return yyVal;
-}
-public Object case46_line480(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NextNode(getPosition(((Token)yyVals[-1+yyTop])), support.ret_args(((Node)yyVals[0+yyTop]), getPosition(((Token)yyVals[-1+yyTop]))));
-    return yyVal;
-}
-public Object case197_line820(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "^", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case475_line1813(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg(((Token)yyVals[-1+yyTop]).getPosition(), ((Token)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case369_line1395(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_iter(getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
-                  support.popCurrentScope();
-    return yyVal;
-}
-public Object case323_line1246(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.checkExpression(((Node)yyVals[0+yyTop]));
-		  yyVal = ((Node)yyVals[0+yyTop]);
-    return yyVal;
-}
-public Object case106_line696(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.appendToBlock(((Node)yyVals[-3+yyTop]), support.newUndef(getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case73_line569(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]));
-    return yyVal;
-}
-public Object case57_line517(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
-    return yyVal;
-}
-public Object case482_line1845(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-1+yyTop]);
-    return yyVal;
-}
-public Object case437_line1657(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new Token("__LINE__", Tokens.k__LINE__, ((Token)yyVals[0+yyTop]).getPosition());
-    return yyVal;
-}
-public Object case318_line1225(Object yyVal, Object[] yyVals, int yyTop) {
-                  /* TODO: We should use implicit nil for body, but problem (punt til later)*/
-                  Node body = ((Node)yyVals[-1+yyTop]); /*$8 == null ? NilImplicitNode.NIL : $8;*/
-
-                  yyVal = new DefsNode(getPosition(((Token)yyVals[-8+yyTop])), ((Node)yyVals[-7+yyTop]), new ArgumentNode(((Token)yyVals[-4+yyTop]).getPosition(), (String) ((Token)yyVals[-4+yyTop]).getValue()), ((ArgsNode)yyVals[-2+yyTop]), support.getCurrentScope(), body);
-                  support.popCurrentScope();
-                  support.setInSingle(support.getInSingle() - 1);
-    return yyVal;
-}
-public Object case176_line725(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case176_line722(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
 		  String asgnOp = (String) ((Token)yyVals[-1+yyTop]).getValue();
 
 		  if (asgnOp.equals("||")) {
 	              ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-	              yyVal = new OpAsgnOrNode(getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
+	              yyVal = new OpAsgnOrNode(support.getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
 		  } else if (asgnOp.equals("&&")) {
 	              ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-                      yyVal = new OpAsgnAndNode(getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
+                      yyVal = new OpAsgnAndNode(support.getPosition(((AssignableNode)yyVals[-2+yyTop])), support.gettable2(((AssignableNode)yyVals[-2+yyTop])), ((AssignableNode)yyVals[-2+yyTop]));
 		  } else {
 		      ((AssignableNode)yyVals[-2+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-2+yyTop])), asgnOp, ((Node)yyVals[0+yyTop])));
-                      ((AssignableNode)yyVals[-2+yyTop]).setPosition(getPosition(((AssignableNode)yyVals[-2+yyTop])));
+                      ((AssignableNode)yyVals[-2+yyTop]).setPosition(support.getPosition(((AssignableNode)yyVals[-2+yyTop])));
 		      yyVal = ((AssignableNode)yyVals[-2+yyTop]);
 		  }
     return yyVal;
 }
-public Object case216_line877(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new IfNode(getPosition(((Node)yyVals[-4+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+public static Object case216_line874(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new IfNode(support.getPosition(((Node)yyVals[-4+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case72_line566(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case72_line563(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public Object case8_line320(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((Node)yyVals[0+yyTop]);
+public static Object case66_line544(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new MultipleAsgnNode(support.getPosition(((ListNode)yyVals[-2+yyTop])), ((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public Object case343_line1297(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newBlockArg18(getPosition(((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(getPosition(((ListNode)yyVals[-5+yyTop])), ((ListNode)yyVals[-5+yyTop]), new StarNode(getPosition())));
-    return yyVal;
-}
-public Object case66_line547(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new MultipleAsgnNode(getPosition(((ListNode)yyVals[-2+yyTop])), ((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case239_line953(Object yyVal, Object[] yyVals, int yyTop) {
-    return yyVal;
-}
-public Object case4_line306(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case4_line303(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-1+yyTop]) instanceof BlockNode) {
                       support.checkUselessStatements(((BlockNode)yyVals[-1+yyTop]));
 		  }
                   yyVal = ((Node)yyVals[-1+yyTop]);
     return yyVal;
 }
-public Object case17_line347(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case17_line344(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
-                      yyVal = new WhileNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
+                      yyVal = new WhileNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
                   } else {
-                      yyVal = new WhileNode(getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), true);
+                      yyVal = new WhileNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), true);
                   }
     return yyVal;
 }
-public Object case31_line433(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), support.newSValueNode(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
+public static Object case31_line430(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), support.newSValueNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public Object case403_line1545(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case472_line1808(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+    return yyVal;
+}
+public static Object case405_line1557(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.literal_concat(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case373_line1412(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new SplatNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case292_line1124(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          if (((Node)yyVals[-1+yyTop]) != null && 
+                      ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
+                      throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
+		  }
+		  yyVal = ((BlockAcceptingNode)yyVals[-1+yyTop]).setIterNode(((IterNode)yyVals[0+yyTop]));
+		  ((Node)yyVal).setPosition(((Node)yyVals[-1+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case477_line1823(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+	          yyVal = null;
+    return yyVal;
+}
+public static Object case455_line1724(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((BlockArgNode)yyVals[0+yyTop]).getPosition(), null, null, null, null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case406_line1561(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		   yyVal = null;
+    return yyVal;
+}
+public static Object case88_line632(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (support.isInDef() || support.isInSingle()) {
+		      support.yyerror("dynamic constant assignment");
+		  }
+
+                  ISourcePosition position = support.getPosition(((Token)yyVals[-1+yyTop]));
+
+                  yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+    return yyVal;
+}
+public static Object case209_line853(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new NotNode(support.getPosition(((Token)yyVals[-1+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
+    return yyVal;
+}
+public static Object case52_line499(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
+    return yyVal;
+}
+public static Object case390_line1471(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.literal_concat(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case239_line953(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+    return yyVal;
+}
+public static Object case305_line1170(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.getConditionState().end();
+    return yyVal;
+}
+public static Object case475_line1816(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg(((Token)yyVals[-1+yyTop]).getPosition(), ((Token)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case339_line1285(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  if (((ListNode)yyVals[0+yyTop]).size() == 1) {
+                      yyVal = ((ListNode)yyVals[0+yyTop]).get(0);
+                  } else {
+                      yyVal = new MultipleAsgnNode(((ListNode)yyVals[0+yyTop]).getPosition(), ((ListNode)yyVals[0+yyTop]), null);
+                  }
+    return yyVal;
+}
+public static Object case323_line1249(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.checkExpression(((Node)yyVals[0+yyTop]));
+		  yyVal = ((Node)yyVals[0+yyTop]);
+    return yyVal;
+}
+public static Object case201_line829(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">=", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case10_line323(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newAlias(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case369_line1399(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_iter(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
+                  support.popCurrentScope();
+    return yyVal;
+}
+public static Object case318_line1228(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  /* TODO: We should use implicit nil for body, but problem (punt til later)*/
+                  Node body = ((Node)yyVals[-1+yyTop]); /*$8 == null ? NilImplicitNode.NIL : $8;*/
+
+                  yyVal = new DefsNode(((Token)yyVals[-8+yyTop]).getPosition(), ((Node)yyVals[-7+yyTop]), new ArgumentNode(((Token)yyVals[-4+yyTop]).getPosition(), (String) ((Token)yyVals[-4+yyTop]).getValue()), ((ArgsNode)yyVals[-2+yyTop]), support.getCurrentScope(), body);
+                  support.popCurrentScope();
+                  support.setInSingle(support.getInSingle() - 1);
+    return yyVal;
+}
+public static Object case13_line332(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  support.yyerror("can't make alias for the number variables");
+    return yyVal;
+}
+public static Object case184_line767(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  support.checkExpression(((Node)yyVals[-2+yyTop]));
+		  support.checkExpression(((Node)yyVals[0+yyTop]));
+    
+                  boolean isLiteral = ((Node)yyVals[-2+yyTop]) instanceof FixnumNode && ((Node)yyVals[0+yyTop]) instanceof FixnumNode;
+                  yyVal = new DotNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), false, isLiteral);
+    return yyVal;
+}
+public static Object case245_line975(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  ISourcePosition pos = ((ListNode)yyVals[-4+yyTop]).getPosition();
+                  yyVal = support.arg_concat(pos, support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case200_line826(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case482_line1848(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = ((ListNode)yyVals[-1+yyTop]);
+    return yyVal;
+}
+public static Object case94_line656(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_colon2(((Node)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case202_line832(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<", ((Node)yyVals[0+yyTop]), lexer.getPosition());
+    return yyVal;
+}
+public static Object case293_line1132(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new IfNode(((Token)yyVals[-5+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
+    return yyVal;
+}
+public static Object case363_line1380(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_call(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop]), null, null);
+    return yyVal;
+}
+public static Object case193_line801(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((FloatNode)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition()), "-@");
+    return yyVal;
+}
+public static Object case249_line992(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-8+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-8+yyTop])), ((Node)yyVals[-8+yyTop])).addAll(((ListNode)yyVals[-6+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case403_line1549(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public Object case246_line978(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newArrayNode(getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop])).add(new HashNode(getPosition(), ((ListNode)yyVals[-1+yyTop])));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case245_line974(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((ListNode)yyVals[-4+yyTop])), support.newArrayNode(getPosition(((ListNode)yyVals[-4+yyTop])), new HashNode(getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case454_line1718(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((RestArgNode)yyVals[-1+yyTop])), null, null, ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case415_line1596(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = new ClassVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case338_line1277(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case209_line856(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NotNode(getPosition(((Token)yyVals[-1+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case302_line1154(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case302_line1157(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
 /* TODO: MRI is just a when node.  We need this extra logic for IDE consumers (null in casenode statement should be implicit nil)*/
 /*                  if (support.getConfiguration().hasExtraPositionInformation()) {*/
-                      yyVal = support.newCaseNode(getPosition(((Token)yyVals[-3+yyTop])), null, ((Node)yyVals[-1+yyTop]));
+                      yyVal = support.newCaseNode(((Token)yyVals[-3+yyTop]).getPosition(), null, ((Node)yyVals[-1+yyTop]));
 /*                  } else {*/
 /*                      $$ = $3;*/
 /*                  }*/
     return yyVal;
 }
-public Object case249_line990(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.arg_concat(getPosition(((Node)yyVals[-8+yyTop])), support.newArrayNode(getPosition(((Node)yyVals[-8+yyTop])), ((Node)yyVals[-8+yyTop])).addAll(((ListNode)yyVals[-6+yyTop])).add(new HashNode(getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
-                  yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
+public static Object case343_line1301(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((ListNode)yyVals[-5+yyTop]).getPosition(), ((ListNode)yyVals[-5+yyTop]), new StarNode(((Token)yyVals[-3+yyTop]).getPosition())));
     return yyVal;
 }
-public Object case204_line841(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), getPosition());
+public static Object case188_line786(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "*", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public Object case88_line635(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-		      yyerror("dynamic constant assignment");
-		  }
-
-                  ISourcePosition position = getPosition(((Token)yyVals[-1+yyTop]));
-
-                  yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
+public static Object case187_line783(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "-", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public Object case353_line1327(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ZeroArgNode(getPosition(((Token)yyVals[0+yyTop])));
-                  lexer.commandStart = true;
+public static Object case319_line1236(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new BreakNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
     return yyVal;
 }
-public Object case39_line462(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new NotNode(getPosition(((Token)yyVals[-1+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
+public static Object case280_line1080(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.new_colon2(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public Object case354_line1331(Object yyVal, Object[] yyVals, int yyTop) {
+public static Object case288_line1114(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = new ZYieldNode(((Token)yyVals[0+yyTop]).getPosition());
+    return yyVal;
+}
+public static Object case174_line712(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+		  /* FIXME: Consider fixing node_assign itself rather than single case*/
+		  ((Node)yyVal).setPosition(support.getPosition(((Node)yyVals[-2+yyTop])));
+    return yyVal;
+}
+public static Object case89_line641(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   support.backrefAssignError(((Node)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case304_line1168(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  lexer.getConditionState().begin();
+    return yyVal;
+}
+public static Object case510_line1892(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = null;
+    return yyVal;
+}
+public static Object case453_line1718(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = support.new_args(((ListNode)yyVals[-1+yyTop]).getPosition(), null, ((ListNode)yyVals[-1+yyTop]), null, null, ((BlockArgNode)yyVals[0+yyTop]));
+    return yyVal;
+}
+public static Object case415_line1600(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   yyVal = new ClassVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
+    return yyVal;
+}
+public static Object case354_line1335(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[-1+yyTop]);
                   lexer.commandStart = true;
 
@@ -3903,117 +3942,24 @@ public Object case354_line1331(Object yyVal, Object[] yyVals, int yyTop) {
 		  } 
     return yyVal;
 }
-public Object case319_line1233(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new BreakNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
+public static Object case255_line1010(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+		  lexer.setState(LexState.EXPR_ENDARG);
     return yyVal;
 }
-public Object case304_line1165(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.getConditionState().begin();
+public static Object case190_line792(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "%", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public Object case287_line1108(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ZYieldNode(getPosition(((Token)yyVals[-2+yyTop])));
+public static Object case77_line579(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                  yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public Object case52_line502(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case288_line1111(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ZYieldNode(getPosition(((Token)yyVals[0+yyTop])));
-    return yyVal;
-}
-public Object case10_line326(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.newAlias(getPosition(((Token)yyVals[-3+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case453_line1715(Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(getPosition(((ListNode)yyVals[-1+yyTop])), null, ((ListNode)yyVals[-1+yyTop]), null, null, ((BlockArgNode)yyVals[0+yyTop]));
-    return yyVal;
-}
-public Object case355_line1341(Object yyVal, Object[] yyVals, int yyTop) {
-                  support.pushBlockScope();
-    return yyVal;
-}
-public Object case352_line1323(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new ZeroArgNode(getPosition(((Token)yyVals[-1+yyTop])));
-                  lexer.commandStart = true;
-    return yyVal;
-}
-public Object case200_line829(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case211_line862(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<<", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case13_line335(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyerror("can't make alias for the number variables");
-    return yyVal;
-}
-public Object case393_line1495(Object yyVal, Object[] yyVals, int yyTop) {
-		  int options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
-		  Node node = ((Node)yyVals[-1+yyTop]);
-
-		  if (node == null) {
-                      yyVal = new RegexpNode(getPosition(((Token)yyVals[-2+yyTop])), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
-		  } else if (node instanceof StrNode) {
-                      yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
-		  } else if (node instanceof DStrNode) {
-                      yyVal = new DRegexpNode(getPosition(((Token)yyVals[-2+yyTop])), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
-		  } else {
-		      yyVal = new DRegexpNode(getPosition(((Token)yyVals[-2+yyTop])), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                  }
-    return yyVal;
-}
-public Object case362_line1373(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case358_line1360(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
-    return yyVal;
-}
-public Object case94_line659(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.new_colon2(getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
-    return yyVal;
-}
-public Object case202_line835(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<", ((Node)yyVals[0+yyTop]), getPosition());
-    return yyVal;
-}
-public Object case299_line1145(Object yyVal, Object[] yyVals, int yyTop) {
-                  lexer.getConditionState().end();
-    return yyVal;
-}
-public Object case510_line1891(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = null;
-    return yyVal;
-}
-public Object case465_line1767(Object yyVal, Object[] yyVals, int yyTop) {
-                   ((ListNode)yyVals[-2+yyTop]).add(new ArgumentNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue()));
-                   ((ListNode)yyVals[-2+yyTop]).setPosition(getPosition(((ListNode)yyVals[-2+yyTop])));
-		   yyVal = ((ListNode)yyVals[-2+yyTop]);
-    return yyVal;
-}
-public Object case193_line804(Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((FloatNode)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), getPosition()), "-@");
-    return yyVal;
-}
-public Object case307_line1172(Object yyVal, Object[] yyVals, int yyTop) {
-                  if (support.isInDef() || support.isInSingle()) {
-                      yyerror("class definition in method body");
-                  }
-		  support.pushLocalScope();
-    return yyVal;
-}
-					// line 1900 "DefaultRubyParser.y"
+					// line 1901 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) {
+    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
@@ -4021,50 +3967,25 @@ public Object case307_line1172(Object yyVal, Object[] yyVals, int yyTop) {
         lexer.reset();
         lexer.setSource(source);
         lexer.setEncoding(configuration.getKCode().getEncoding());
-        try {
-            Object debugger = null;
-            if (configuration.isDebug()) {
-                try {
-                    Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
-                    debugger = yyDebugAdapterClass.newInstance();
-                } catch (IllegalAccessException iae) {
-                    // ignore, no debugger present
-                } catch (InstantiationException ie) {
-                    // ignore, no debugger present
-                } catch (ClassNotFoundException cnfe) {
-                    // ignore, no debugger present
-                }
+
+        Object debugger = null;
+        if (configuration.isDebug()) {
+            try {
+                Class yyDebugAdapterClass = Class.forName("jay.yydebug.yyDebugAdapter");
+                debugger = yyDebugAdapterClass.newInstance();
+            } catch (IllegalAccessException iae) {
+              // ignore, no debugger present
+            } catch (InstantiationException ie) {
+              // ignore, no debugger present
+            } catch (ClassNotFoundException cnfe) {
+              // ignore, no debugger present
             }
-	    //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
-            yyparse(lexer, debugger);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (yyException e) {
-            e.printStackTrace();
         }
+        // convenience: awt debugger
+        //yyparse(lexer, new jay.yydebug.yyAnim("JRuby", 9));
+        yyparse(lexer, debugger);
         
         return support.getResult();
     }
-
-    // +++
-    // Helper Methods
-    
-    void yyerrok() {}
-
-    /**
-     * Since we can recieve positions at times we know can be null we
-     * need an extra safety net here.
-     */
-    private ISourcePosition getPosition2(ISourcePositionHolder pos) {
-        return pos == null ? lexer.getPosition() : pos.getPosition();
-    }
-
-    private ISourcePosition getPosition(ISourcePositionHolder start) {
-        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
-    }
-
-    private ISourcePosition getPosition() {
-        return lexer.getPosition();
-    }
 }
-					// line 7897 "-"
+					// line 7818 "-"

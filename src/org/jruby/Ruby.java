@@ -331,13 +331,7 @@ public final class Ruby {
      * @return The last value of the script
      */
     public IRubyObject executeScript(String script, String filename) {
-        byte[] bytes;
-        
-        try {
-            bytes = script.getBytes(KCode.NONE.getKCode());
-        } catch (UnsupportedEncodingException e) {
-            bytes = script.getBytes();
-        }
+        byte[] bytes = script.getBytes();
 
         Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
@@ -2226,13 +2220,7 @@ public final class Ruby {
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        byte[] bytes;
-        
-        try {
-            bytes = content.getBytes(KCode.NONE.getKCode());
-        } catch (UnsupportedEncodingException e) {
-            bytes = content.getBytes();
-        }
+        byte[] bytes = content.getBytes();
         
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, bytes, scope,
@@ -2242,13 +2230,7 @@ public final class Ruby {
     @Deprecated
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        byte[] bytes;
-        
-        try {
-            bytes = content.getBytes(KCode.NONE.getKCode());
-        } catch (UnsupportedEncodingException e) {
-            bytes = content.getBytes();
-        }
+        byte[] bytes = content.getBytes();
 
         return parser.parse(file, bytes, scope,
                 new ParserConfiguration(getKCode(), lineNumber, extraPositionInformation, false, true, config));
@@ -2750,6 +2732,14 @@ public final class Ruby {
      * things that need to be cleaned up at shutdown.
      */
     public void tearDown() {
+        tearDown(true);
+    }
+
+    // tearDown(boolean) has been added for embedding API. When an error
+    // occurs in Ruby code, JRuby does system exit abruptly, no chance to
+    // catch exception. This makes debugging really hard. This is why
+    // tearDown(boolean) exists.
+    public void tearDown(boolean systemExit) {
         int status = 0;
 
         while (!atExitBlocks.empty()) {
@@ -2804,7 +2794,7 @@ public final class Ruby {
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
-        if (status != 0) {
+        if (systemExit && status != 0) {
             throw newSystemExit(status);
         }
     }

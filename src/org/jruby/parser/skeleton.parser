@@ -71,58 +71,6 @@ t    if ((name = yyNames[token]) != null) return name;
 t    return "[unknown]";
 t  }
 t
-.  /** thrown for irrecoverable syntax errors and stack overflow.
-.      Nested for convenience, does not depend on parser class.
-.    */
-.  public static class yyException extends java.lang.Exception {
-.    private static final long serialVersionUID = 1L;
-.    public yyException (String message) {
-.      super(message);
-.    }
-.  }
-.
-.  /** must be implemented by a scanner object to supply input to the parser.
-.      Nested for convenience, does not depend on parser class.
-.    */
-.  public interface yyInput {
-.
-.    /** move on to next token.
-.        @return <tt>false</tt> if positioned beyond tokens.
-.        @throws IOException on input error.
-.      */
-.    boolean advance () throws java.io.IOException;
-.
-.    /** classifies current token.
-.        Should not be called if {@link #advance()} returned <tt>false</tt>.
-.        @return current <tt>%token</tt> or single character.
-.      */
-.    int token ();
-.
-.    /** associated with current token.
-.        Should not be called if {@link #advance()} returned <tt>false</tt>.
-.        @return value for {@link #token()}.
-.      */
-.    Object value ();
-.  }
-.
-.  /** simplified error message.
-.      @see #yyerror(java.lang.String, java.lang.String[])
-.    */
-.  public void yyerror (String message) {
-.    //new Exception().printStackTrace();
-.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), message);
-.  }
-.
-.  /** (syntax) error message.
-.      Can be overwritten to control message format.
-.      @param message text to be displayed.
-.      @param expected list of acceptable tokens, if available.
-.    */
-.  public void yyerror (String message, String[] expected, String found) {
-.    String text = message + ", unexpected " + found + "\n";
-.    //new Exception().printStackTrace();
-.    throw new SyntaxException(PID.GRAMMAR_ERROR, getPosition(null), lexer.getCurrentLine(), text, found);
-.  }
 .
 .  /** computes list of expected tokens on error by tracing the tables.
 .      @param state for which to compute the list.
@@ -158,10 +106,9 @@ t
 .      @param yyLex scanner.
 .      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
 .      @return result of the last reduction, if any.
-.      @throws yyException on irrecoverable parse error.
 .    */
 .  public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
-.				throws java.io.IOException, yyException {
+.				throws java.io.IOException {
 t    this.yydebug = (jay.yydebug.yyDebug)ayydebug;
 .    return yyparse(yyLex);
 .  }
@@ -186,9 +133,8 @@ t    this.yydebug = (jay.yydebug.yyDebug)ayydebug;
 .      Maintains a dynamic state and value stack.
 .      @param yyLex scanner.
 .      @return result of the last reduction, if any.
-.      @throws yyException on irrecoverable parse error.
 .    */
-.  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException, yyException {
+.  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException {
 .    if (yyMax <= 0) yyMax = 256;			// initial size
 .    int yyState = 0, yyStates[] = new int[yyMax];	// state stack
 .    Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack
@@ -235,7 +181,7 @@ t              yydebug.shift(yyState, yyTable[yyN], yyErrorFlag-1);
 .            switch (yyErrorFlag) {
 .  
 .            case 0:
-.              yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
+.              support.yyerror("syntax error", yyExpecting(yyState), yyNames[yyToken]);
 t              if (yydebug != null) yydebug.error("syntax error");
 .  
 .            case 1: case 2:
@@ -253,12 +199,12 @@ t                    yydebug.shift(yyStates[yyTop], yyTable[yyN], 3);
 t                if (yydebug != null) yydebug.pop(yyStates[yyTop]);
 .              } while (-- yyTop >= 0);
 t              if (yydebug != null) yydebug.reject();
-.              throw new yyException("irrecoverable syntax error");
+.              support.yyerror("irrecoverable syntax error");
 .  
 .            case 3:
 .              if (yyToken == 0) {
 t                if (yydebug != null) yydebug.reject();
-.                throw new yyException("irrecoverable syntax error at end-of-file");
+.                support.yyerror("irrecoverable syntax error at end-of-file");
 .              }
 t              if (yydebug != null)
 t                yydebug.discard(yyState, yyToken, yyName(yyToken),

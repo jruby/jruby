@@ -398,10 +398,12 @@ public class ReaderInputStream extends InputStream {
             int start = position + off;
             start = start < totalBytes ? start : totalBytes - 1;
             int end = start + len;
-            end = end < totalBytes ? end : totalBytes;
-            System.arraycopy(bytes, start, b, 0, end - start);
-            position = end;
-            return end - start;
+            end = end < totalBytes ? end : totalBytes - 1;
+            int actuallyRead = Math.min((end - start) + 1, len);
+            System.arraycopy(bytes, start, b, 0, actuallyRead);
+            position += actuallyRead;
+            return actuallyRead;
+
         }
     }
 

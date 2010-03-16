@@ -1,0 +1,3 @@
+fails(JRUBY-3716):Matrix#* returns a zero matrix if (nx0) * (0xn)
+fails(JRUBY-3716):Matrix#* returns an empty matrix if (0xn) * (nx0)
+fails(JRUBY-3716):Matrix#* returns a 0xm matrix if (0xm) * (mxn)

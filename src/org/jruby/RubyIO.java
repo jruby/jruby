@@ -875,6 +875,12 @@ public class RubyIO extends RubyObject {
 
             if (modes == null) modes = descriptor.getOriginalModes();
 
+            if (openFile.isOpen()) {
+                // JRUBY-4650: Make sure we clean up the old data,
+                // if it's present.
+                openFile.cleanup(getRuntime(), false);
+            }
+
             openFile.setMode(modes.getOpenFileFlags());
             openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
@@ -974,6 +980,12 @@ public class RubyIO extends RubyObject {
             } else {
                 // use original modes
                 modes = descriptor.getOriginalModes();
+            }
+
+            if (openFile.isOpen()) {
+                // JRUBY-4650: Make sure we clean up the old data,
+                // if it's present.
+                openFile.cleanup(getRuntime(), false);
             }
 
             openFile.setMode(modes.getOpenFileFlags());

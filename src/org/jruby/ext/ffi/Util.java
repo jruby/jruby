@@ -134,18 +134,16 @@ public final class Util {
         throw parameter.getRuntime().newRangeError("Value "
                     + parameter + " is not an integer");
     }
-    public static final IRubyObject newSigned8(Ruby runtime, int value) {
-        value &= 0xff;
-        return runtime.newFixnum(value < 0x80 ? value : -0x80 + (value - 0x80));
+    public static final IRubyObject newSigned8(Ruby runtime, byte value) {
+        return runtime.newFixnum(value);
     }
-    public static final IRubyObject newUnsigned8(Ruby runtime, int value) {
+    public static final IRubyObject newUnsigned8(Ruby runtime, byte value) {
         return runtime.newFixnum(value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
     }
-    public static final IRubyObject newSigned16(Ruby runtime, int value) {
-        value &= 0xffff;
-        return runtime.newFixnum(value < 0x8000 ? value : -0x8000 + (value - 0x8000));
+    public static final IRubyObject newSigned16(Ruby runtime, short value) {
+        return runtime.newFixnum(value);
     }
-    public static final IRubyObject newUnsigned16(Ruby runtime, int value) {
+    public static final IRubyObject newUnsigned16(Ruby runtime, short value) {
         return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
     }
     public static final IRubyObject newSigned32(Ruby runtime, int value) {

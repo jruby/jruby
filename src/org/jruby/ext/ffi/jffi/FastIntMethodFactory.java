@@ -187,31 +187,31 @@ public class FastIntMethodFactory extends MethodFactory {
     static final class BooleanResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new BooleanResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return context.getRuntime().newBoolean(value != 0);
+            return context.getRuntime().newBoolean((value & 0xff) != 0);
         }
     }
     static final class Signed8ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Signed8ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newSigned8(context.getRuntime(), value);
+            return Util.newSigned8(context.getRuntime(), (byte) value);
         }
     }
     static final class Unsigned8ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Unsigned8ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newUnsigned8(context.getRuntime(), value);
+            return Util.newUnsigned8(context.getRuntime(), (byte) value);
         }
     }
     static final class Signed16ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Signed16ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newSigned16(context.getRuntime(), value);
+            return Util.newSigned16(context.getRuntime(), (short) value);
         }
     }
     static final class Unsigned16ResultConverter implements IntResultConverter {
         public static final IntResultConverter INSTANCE = new Unsigned16ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            return Util.newUnsigned16(context.getRuntime(), value);
+            return Util.newUnsigned16(context.getRuntime(), (short) value);
         }
     }
     static final class Signed32ResultConverter implements IntResultConverter {
@@ -233,21 +233,17 @@ public class FastIntMethodFactory extends MethodFactory {
         }
     }
     static final class PointerResultConverter implements IntResultConverter {
-        static final long ADDRESS_MASK = Platform.getPlatform().addressSize() == 32
-                ? 0xffffffffL : 0xffffffffffffffffL;
         public static final IntResultConverter INSTANCE = new PointerResultConverter();
+
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            final long address = ((long) value) & ADDRESS_MASK;
-            return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
+            return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), value));
         }
     }
 
     static final class StringResultConverter implements IntResultConverter {
-        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
         public static final IntResultConverter INSTANCE = new StringResultConverter();
         public final IRubyObject fromNative(ThreadContext context, int value) {
-            long address = ((long) value) & PointerResultConverter.ADDRESS_MASK;
-            return FFIUtil.getString(context.getRuntime(), address);
+            return FFIUtil.getString(context.getRuntime(), value);
         }
     }
     static abstract class BaseParameterConverter implements IntParameterConverter {

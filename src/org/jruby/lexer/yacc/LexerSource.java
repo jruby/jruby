@@ -175,6 +175,19 @@ public abstract class LexerSource {
         }
     }
 
+    protected void uncaptureFeature(int c) {
+        int end = lineBuffer.length() - 1;
+        if (end >= 0 && lineBuffer.charAt(end) == c) {
+            lineBuffer.deleteCharAt(end);
+        } else if (c == '\n' && list != null && !list.isEmpty()) {
+            lineBuffer = new StringBuilder(list.remove(list.size() - 1));
+            end = lineBuffer.length() - 1;
+            if (lineBuffer.charAt(end) == '\n') {
+                lineBuffer.deleteCharAt(end);
+            }
+        }
+    }
+
     public String getCurrentLine() {
         int errorLocation = lineBuffer.length() - 1;
 

@@ -21,6 +21,10 @@ describe Ant, "new", :type => :ant do
       ant.properties["foo"].should == "bar"
     end
   end
+
+  it "should have a valid location" do
+    File.should be_exist(Ant.new.location.file_name)
+  end
 end
 
 describe Ant, :type => :ant do
@@ -30,10 +34,6 @@ describe Ant, :type => :ant do
 
   it "should define methods corresponding to ant tasks" do
     @ant.methods.should include("java", "antcall", "property", "import", "path", "patternset")
-  end
-
-  it "should have a valid location" do
-    File.should be_exist(@ant.location.file_name)
   end
 
   it "should execute the default target" do

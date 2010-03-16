@@ -1,0 +1,15 @@
+fails(JRUBY-4645):The defined? keyword for an expression returns 'assignment' for assigning multiple variables
+fails(JRUBY-4656):The defined? keyword for an expression returns 'assignment' for assigning an instance variable
+fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with != and an undefined method
+fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with !~ and an undefined method
+fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with 'not' and an undefined method
+fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with 'not' and an unset class variable
+fails(JRUBY-4656):The defined? keyword for an expression does not propagate an exception raised by a method in a 'not' expression
+fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with '!' and an undefined method
+fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with '!' and an unset class variable
+fails(JRUBY-4656):The defined? keyword for an expression with a dynamic String returns nil when the String contains a call to an undefined method
+fails(JRUBY-4656):The defined? keyword for an expression with a dynamic String returns nil if any of the interpolated method calls are undefined
+fails(JRUBY-4656):The defined? keyword for an expression with a dynamic String returns nil and stops processing if any of the interpolated method calls are undefined
+fails(JRUBY-4656):The defined? keyword for an expression with a dynamic Regexp returns nil when the Regexp contains a call to an undefined method
+fails(JRUBY-4656):The defined? keyword for an expression with a dynamic Regexp returns nil if any of the interpolated method calls are undefined
+fails(JRUBY-4656):The defined? keyword for an expression with a dynamic Regexp returns nil and stops processing if any of the interpolated method calls are undefined

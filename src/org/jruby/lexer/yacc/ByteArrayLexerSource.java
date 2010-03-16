@@ -99,6 +99,9 @@ public class ByteArrayLexerSource extends LexerSource {
         if (c == RubyYaccLexer.EOF) {
             return;
         }
+        if (captureSource) {
+            uncaptureFeature(c);
+        }
         readCursor.unread(c);
     }
 

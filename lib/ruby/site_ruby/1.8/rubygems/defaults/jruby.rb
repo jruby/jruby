@@ -49,7 +49,7 @@ module Gem
   # JRuby: We don't want gems installed in lib/jruby/gems, but rather
   # to preserve the old location: lib/ruby/gems.
   def self.default_dir
-    File.join ConfigMap[:libdir], 'ruby', 'gems', ConfigMap[:ruby_version]
+    File.join ConfigMap[:libdir], 'ruby', 'gems', '1.8'
   end
 
   ##

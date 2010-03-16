@@ -34,6 +34,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import org.jruby.RubyEncoding;
 
 import org.jruby.ext.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
@@ -789,26 +790,14 @@ public class Dir {
     }
 
     private static byte[] getBytesInUTF8(String s) {
-        try {
-            return s.getBytes("UTF-8");
-        } catch (java.io.UnsupportedEncodingException ex) {
-            return s.getBytes(); // NOT REACHED HERE
-        }
+        return RubyEncoding.encodeUTF8(s);
     }
 
     private static String newStringFromUTF8(byte[] buf, int offset, int len) {
-        try {
-            return new String(buf, offset, len, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException ex) {
-            return new String(buf, offset, len); // NOT REACHED HERE
-        }
+        return RubyEncoding.decodeUTF8(buf, offset, len);
     }
 
     private static String newStringFromUTF8(byte[] buf) {
-        try {
-            return new String(buf, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException ex) {
-            return new String(buf); // NOT REACHED HERE
-        }
+        return RubyEncoding.decodeUTF8(buf);
     }
 }

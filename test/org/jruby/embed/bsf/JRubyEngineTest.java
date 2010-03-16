@@ -29,7 +29,18 @@
  */
 package org.jruby.embed.bsf;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
@@ -48,6 +59,10 @@ import static org.junit.Assert.*;
 public class JRubyEngineTest {
     private String basedir;
 
+    static Logger logger0 = Logger.getLogger(JRubyEngineTest.class.getName());
+    static Logger logger1 = Logger.getLogger(JRubyEngineTest.class.getName());
+    static OutputStream outStream = null;
+
     public JRubyEngineTest() {
     }
 
@@ -57,13 +72,23 @@ public class JRubyEngineTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        outStream.close();
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws FileNotFoundException {
         basedir = System.getProperty("user.dir");
         System.setProperty("org.jruby.embed.localcontext.scope", "threadsafe");
         System.setProperty("org.jruby.embed.class.path", basedir + "/test");
+
+        outStream = new FileOutputStream(basedir + "/build/test-results/run-junit-embed.log", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @After
@@ -75,7 +100,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testApply() throws BSFException {
-        System.out.println("apply");
+        logger1.info("apply");
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
         instance.initialize(manager, "jruby", null);
@@ -115,7 +140,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testEval() throws Exception {
-        System.out.println("eval");
+        logger1.info("eval");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
@@ -143,7 +168,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testExec() throws Exception {
-        System.out.println("exec");
+        logger1.info("exec");
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
         instance.initialize(manager, "jruby", null);
@@ -187,7 +212,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testCall() throws Exception {
-        System.out.println("call");
+        logger1.info("call");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         BSFManager manager = new BSFManager();
         JRubyEngine instance = (JRubyEngine) manager.loadScriptingEngine("jruby");
@@ -228,7 +253,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testInitialize() throws Exception {
-        System.out.println("initialize");
+        logger1.info("initialize");
         BSFManager manager = new BSFManager();;
         String language = "";
         Vector someDeclaredBeans = null;
@@ -241,7 +266,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testDeclareBean() throws Exception {
-        System.out.println("declareBean");
+        logger1.info("declareBean");
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
         instance.initialize(manager, "jruby", null);
@@ -255,7 +280,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testUndeclareBean() throws Exception {
-        System.out.println("undeclareBean");
+        logger1.info("undeclareBean");
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
         instance.initialize(manager, "jruby", null);
@@ -269,7 +294,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testHandleException() throws BSFException {
-        System.out.println("handleException");
+        logger1.info("handleException");
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
         instance.initialize(manager, "jruby", null);
@@ -282,7 +307,7 @@ public class JRubyEngineTest {
      */
     @Test
     public void testTerminate() throws BSFException {
-        System.out.println("terminate");
+        logger1.info("terminate");
         BSFManager manager = new BSFManager();
         JRubyEngine instance = new JRubyEngine();
         instance.initialize(manager, "jruby", null);
@@ -291,7 +316,7 @@ public class JRubyEngineTest {
 
     @Test
     public void testPathTyp() throws BSFException {
-        System.out.println("PathType");
+        logger1.info("PathType");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         BSFManager manager = new BSFManager();
         JRubyEngine instance = (JRubyEngine) manager.loadScriptingEngine("jruby");
@@ -308,7 +333,7 @@ public class JRubyEngineTest {
 
     @Test
     public void testRubyVersion() throws BSFException {
-        System.out.println("RubyVersion");
+        logger1.info("RubyVersion");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
         BSFManager manager = new BSFManager();
         JRubyEngine instance = (JRubyEngine) manager.loadScriptingEngine("jruby");
@@ -330,11 +355,14 @@ public class JRubyEngineTest {
                 "org.jruby.embed.bsf.JRubyEngine", new String[]{"rb"});
         BSFManager bsf = new BSFManager();
         bsf.eval("jruby", "(java)", 1, 1, "$x='GVar'");
-        bsf.eval("jruby", "(java)", 1, 1, "puts \"$x = #{$x}\"");
+        bsf.eval("jruby", "(java)", 1, 1, "@gvar = \"$x = #{$x}\"");
 
         bsf.eval("jruby", "(java)", 1, 1, "x='LVar'");
-        bsf.eval("jruby", "(java)", 1, 1, "at_exit { puts \"#{x} and #{$x} in an at_exit block\" }");
-        bsf.eval("jruby", "(java)", 1, 1, "puts \"x = #{x}\"");
+        bsf.eval("jruby", "(java)", 1, 1, "at_exit { @result =  \"#{x} and #{$x} in an at_exit block\" }");
+        Object ret = bsf.eval("jruby", "(java)", 1, 1, "@lvar = \"x = #{x}\";return @gvar, @lvar");
+        List<String> expResult = Arrays.asList("$x = GVar", "x = LVar");
+        assertEquals(expResult, ret);
+        logger1.info(ret.toString());
         bsf.terminate();
     }
 

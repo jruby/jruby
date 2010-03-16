@@ -6,7 +6,7 @@ class Ant
   java_import org.apache.tools.ant.UnknownElement
 
   class UnknownElement
-    attr_accessor :ant
+    attr_accessor :ant, :nesting
     # undef some method names that might collide with ant task/type names
     %w(test fail abort raise exec trap).each {|m| undef_method(m)}
     Object.instance_methods.grep(/java/).each {|m| undef_method(m)}
@@ -16,6 +16,7 @@ class Ant
     end
 
     def method_missing(name, *args, &block)
+      ant.project.log "#{location.to_s}: #{' ' * nesting}#{task_name} -> #{name}", 5
       _element(name, *args, &block)
     end
   end
@@ -33,19 +34,17 @@ class Ant
     end
 
     def call(parent, args={}, &code)
-      element = create_element
+      element = create_element(parent)
       assign_attributes element, args
       define_nested_elements element if @clazz
       code.arity==1 ? code[element] : element.instance_eval(&code) if block_given?
-      if parent.respond_to? :add_task # Target
-        @ant.project.log "Adding #{name} to #{parent}", 5
-        parent.add_task element
-      elsif parent.respond_to? :add_child # Task
-        @ant.project.log "Adding #{name} to #{parent.component_name}", 5
+      if parent.respond_to? :add_child # Task
         parent.add_child element
         parent.runtime_configurable_wrapper.add_child element.runtime_configurable_wrapper
+      elsif parent.respond_to? :add_task # Target
+        parent.add_task element
       else # Just run it now
-        @ant.project.log "Executing #{name}", 5
+        @ant.project.log "#{element.location.to_s}: Executing #{name}", 5
         element.owning_target = Target.new.tap {|t| t.name = ""}
         element.maybe_configure
         element.execute
@@ -53,8 +52,13 @@ class Ant
     end
 
     private
-    def create_element # See ProjectHelper2.ElementHandler
+    def create_element(parent) # See ProjectHelper2.ElementHandler
       UnknownElement.new(@name).tap do |e|
+        if parent.respond_to?(:nesting)
+          e.nesting = parent.nesting + 1
+        else
+          e.nesting = 1
+        end
         e.ant = @ant
         e.project = @ant.project
         e.task_name = @name
@@ -65,7 +69,6 @@ class Ant
 
     # This also subsumes configureId to only have to traverse args once
     def assign_attributes(instance, args)
-      @ant.project.log "instance.task_name #{instance.task_name} #{name}", 5
       wrapper = RuntimeConfigurable.new instance, instance.task_name
       args.each do |key, value|
         wrapper.set_attribute key, @ant.project.replace_properties(to_string(value))
@@ -76,8 +79,9 @@ class Ant
       meta_class = class << instance; self; end
       @helper = IntrospectionHelper.get_helper(@ant.project, @clazz)
       @helper.get_nested_element_map.each do |element_name, clazz|
-        element = @ant.acquire_element(element_name, clazz)
+        element = Element.new(@ant, element_name, clazz)
         meta_class.send(:define_method, Ant.safe_method_name(element_name)) do |*args, &block|
+          instance.ant.project.log "#{instance.location.to_s}: #{' ' * instance.nesting}#{instance.task_name} . #{element_name}", 5
           element.call(instance, *args, &block)
         end
       end

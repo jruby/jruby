@@ -114,7 +114,7 @@ public final class FFIUtil {
         com.kenai.jffi.Type componentType = FFIUtil.getFFIType(arrayType.getComponentType());
 
         if (componentType == null) {
-            throw arrayType.getRuntime().newTypeError("unsupported array element type " + componentType);
+            throw arrayType.getRuntime().newTypeError("unsupported array element type " + arrayType.getComponentType());
         }
 
         return new com.kenai.jffi.Array(componentType, arrayType.length());

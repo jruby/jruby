@@ -98,8 +98,19 @@ public class Main {
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
-        } catch (RaiseException re) {
-            throw re;
+        } catch (RaiseException rj) {
+            RubyException raisedException = rj.getException();
+            Ruby runtime = raisedException.getRuntime();
+            if (runtime.getSystemExit().isInstance(raisedException)) {
+                IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
+
+                if (status != null && !status.isNil()) {
+                    System.exit(RubyNumeric.fix2int(status));
+                }
+            } else {
+                rj.printStackTrace(System.err);
+                System.exit(1);
+            }
         } catch (Throwable t) {
             // print out as a nice Ruby backtrace
             System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));

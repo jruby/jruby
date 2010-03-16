@@ -58,4 +58,35 @@ describe Ant, "targets", :type => :ant do
     end
     ant.execute_target(:foo)
   end
+
+  it "should be executable if it doesn't have a block" do
+    ant = example_ant do
+      target :foo do
+        property :name => "bar", :value => "true"
+        ant.properties["bar"].should == "true"
+      end
+      target :bar, :depends => :foo
+    end
+    ant.execute_target(:bar)
+  end
+
+  it "does not support antcall for calling other targets" do
+    ant = example_ant do
+      target :foo
+      target :bar do
+        antcall :target => :foo
+      end
+    end
+    lambda { ant.execute_target(:bar) }.should raise_error
+  end
+
+  it "does not support ant for calling other buildfiles" do
+    a = example_ant do
+      target :foo
+      target :bar do
+        ant :antfile => "some-file", :target => :foo
+      end
+    end
+    lambda { a.execute_target(:bar) }.should raise_error
+  end
 end

@@ -317,7 +317,7 @@ public final class DefaultMethodFactory {
      */
     private static final class BooleanInvoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.getRuntime().newBoolean(invoker.invokeInt(function, args) != 0);
+            return context.getRuntime().newBoolean((invoker.invokeInt(function, args) & 0xff) != 0);
         }
         public static final FunctionInvoker INSTANCE = new BooleanInvoker();
     }
@@ -344,7 +344,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Signed8Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned8(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newSigned8(context.getRuntime(), (byte) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed8Invoker();
     }
@@ -355,7 +355,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Unsigned8Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned8(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newUnsigned8(context.getRuntime(), (byte) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned8Invoker();
     }
@@ -366,7 +366,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Signed16Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newSigned16(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newSigned16(context.getRuntime(), (short) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Signed16Invoker();
     }
@@ -377,7 +377,7 @@ public final class DefaultMethodFactory {
      */
     private static final class Unsigned16Invoker extends BaseInvoker {
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return Util.newUnsigned16(context.getRuntime(), invoker.invokeInt(function, args));
+            return Util.newUnsigned16(context.getRuntime(), (short) invoker.invokeInt(function, args));
         }
         public static final FunctionInvoker INSTANCE = new Unsigned16Invoker();
     }
@@ -824,27 +824,24 @@ public final class DefaultMethodFactory {
                         + parameter.getMetaClass().getName() + " (expected instance of FFI::Struct)");
             }
 
-            IRubyObject memory = ((Struct) parameter).getMemory();
-            if (!(memory instanceof AbstractMemory)) {
-                throw context.getRuntime().newTypeError("wrong struct memory type "
-                        + memory.getMetaClass().getName());
-            }
-
-            if (((AbstractMemory) memory).getSize() < layout.getSize()) {
+            final AbstractMemory memory = ((Struct) parameter).getMemory();
+            if (memory.getSize() < layout.getSize()) {
                 throw context.getRuntime().newArgumentError("struct memory too small for parameter");
             }
 
-            MemoryIO io = ((AbstractMemory) memory).getMemoryIO();
+            final MemoryIO io = memory.getMemoryIO();
             if (io instanceof DirectMemoryIO) {
                 if (io.isNull()) {
                     throw context.getRuntime().newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
                 }
                 buffer.putStruct(((DirectMemoryIO) io).getAddress());
+
             } else if (io instanceof ArrayMemoryIO) {
                 ArrayMemoryIO aio = (ArrayMemoryIO) io;
                 buffer.putStruct(aio.array(), aio.arrayOffset());
+
             } else {
-                throw context.getRuntime().newRuntimeError("Invalid struct memory");
+                throw context.getRuntime().newRuntimeError("invalid struct memory");
             }
         }
 

@@ -233,22 +233,17 @@ public class FastLongMethodFactory {
     }
 
     static final class PointerResultConverter implements LongResultConverter {
-        static final long ADDRESS_MASK = Platform.getPlatform().addressSize() == 32
-                ? 0xffffffffL : 0xffffffffffffffffL;
         public static final LongResultConverter INSTANCE = new PointerResultConverter();
         public final IRubyObject fromNative(ThreadContext context, long value) {
-            final long address = ((long) value) & ADDRESS_MASK;
-            return new Pointer(context.getRuntime(),
-                    NativeMemoryIO.wrap(context.getRuntime(), address));
+            return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), value));
         }
     }
 
     static final class StringResultConverter implements LongResultConverter {
-        private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
         public static final LongResultConverter INSTANCE = new StringResultConverter();
+
         public final IRubyObject fromNative(ThreadContext context, long value) {
-            long address = value & PointerResultConverter.ADDRESS_MASK;
-            return FFIUtil.getString(context.getRuntime(), address);
+            return FFIUtil.getString(context.getRuntime(), value);
         }
     }
     static abstract class BaseParameterConverter implements LongParameterConverter {

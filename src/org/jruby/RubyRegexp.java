@@ -675,7 +675,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (pattern == null) throw getRuntime().newTypeError("uninitialized Regexp");
     }
 
-    @JRubyMethod(name = {"new", "compile"}, required = 1, optional = 2, meta = true)
+    @JRubyMethod(name = {"new", "compile"}, rest = true, meta = true)
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
 

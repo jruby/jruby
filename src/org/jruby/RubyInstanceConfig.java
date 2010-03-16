@@ -608,7 +608,7 @@ public class RubyInstanceConfig {
     }
 
     public String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2009 The JRuby Community (and contribs)";
+        return "JRuby - Copyright (C) 2001-2010 The JRuby Community (and contribs)";
     }
 
     public void processArguments(String[] arguments) {

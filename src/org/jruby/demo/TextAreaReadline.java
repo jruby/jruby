@@ -26,6 +26,7 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
 import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -156,12 +157,7 @@ public class TextAreaReadline implements KeyListener {
                 final ReadRequest request = (ReadRequest)args[0];
                 final String line = (String)args[2];
                 if (line.length() != 0) {
-                    byte[] bytes;
-                    try {
-                        bytes = line.getBytes("UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        bytes = line.getBytes();
-                    }
+                    byte[] bytes = RubyEncoding.encodeUTF8(line);
                     return request.perform(join, new InputBuffer(bytes));
                 } else {
                     return -1;
@@ -601,20 +597,12 @@ public class TextAreaReadline implements KeyListener {
 
         @Override
         public void write(byte[] b, int off, int len) {
-            try {
-                writeLine(new String(b, off, len, "UTF-8"));
-            } catch (UnsupportedEncodingException ex) {
-                writeLine(new String(b, off, len));
-            }
+            writeLine(RubyEncoding.decodeUTF8(b, off, len));
         }
 
         @Override
         public void write(byte[] b) {
-            try {
-                writeLine(new String(b, "UTF-8"));
-            } catch (UnsupportedEncodingException ex) {
-                writeLine(new String(b));
-            }
+            writeLine(RubyEncoding.decodeUTF8(b));
         }
     }
 }

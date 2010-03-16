@@ -577,7 +577,7 @@ public final class StructLayout extends Type {
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof Member && ((Member) obj).offset == offset;
+            return obj instanceof Field && ((Field) obj).offset == offset;
         }
 
         @Override

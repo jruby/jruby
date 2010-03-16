@@ -30,7 +30,6 @@
 package org.jruby.embed.jsr223;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +39,7 @@ import javax.script.ScriptEngineFactory;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.LocalVariableBehavior;
+import org.jruby.embed.util.PropertyReader;
 import org.jruby.embed.util.SystemPropertyCatcher;
 
 /**
@@ -49,7 +49,7 @@ import org.jruby.embed.util.SystemPropertyCatcher;
  */
 public class JRubyEngineFactory implements ScriptEngineFactory {
     private static final String jsr223Props = "org/jruby/embed/jsr223/Jsr223JRubyEngine.properties";
-    private final ScriptingContainer container;
+    private ScriptingContainer container = null;
     private final String engineName;
     private final String engineVersion;
     private final List<String> extensions;
@@ -62,39 +62,15 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     private Map<String, Object> parameters;
 
     public JRubyEngineFactory() {
-        LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
-        LocalVariableBehavior behavior = SystemPropertyCatcher.getBehavior(LocalVariableBehavior.GLOBAL);
-        container = new ScriptingContainer(scope, behavior, jsr223Props);
-        SystemPropertyCatcher.setConfiguration(container);
-        
-        engineName = getSingleValue("engine.name").trim();
-        engineVersion = getSingleValue("engine.version").trim();
-        extensions = Collections.unmodifiableList(getMultipleValue("language.extension"));
-        languageName = getSingleValue("language.name").trim();
-        mimeTypes = Collections.unmodifiableList(getMultipleValue("language.mimetypes"));
-        engineIds = Collections.unmodifiableList(getMultipleValue("engine.ids"));
+        PropertyReader propertyReader = new PropertyReader(jsr223Props);
+        engineName = propertyReader.getSingleValue("engine.name").trim();
+        engineVersion = propertyReader.getSingleValue("engine.version").trim();
+        extensions = Collections.unmodifiableList(propertyReader.getMultipleValue("language.extension"));
+        languageName = propertyReader.getSingleValue("language.name").trim();
+        mimeTypes = Collections.unmodifiableList(propertyReader.getMultipleValue("language.mimetypes"));
+        engineIds = Collections.unmodifiableList(propertyReader.getMultipleValue("engine.ids"));
         // does followings on demand to avoid runtime initialization
         //languageVersion = container.getSupportedRubyVersion();
-    }
-
-    private String getSingleValue(String key) {
-        String[] array = container.getProperty(key);
-        if (array == null) {
-            throw new NullPointerException(key + "is not defined");
-        }
-        return array[0];
-    }
-
-    private List getMultipleValue(String key) {
-        String[] array = container.getProperty(key);
-        if (array == null) {
-            throw new NullPointerException(key + "is not defined");
-        }
-        List list = new ArrayList();
-        for (String s : array) {
-            list.add(s);
-        }
-        return list;
     }
 
     private void initParameters() {
@@ -125,6 +101,9 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
 
     public String getLanguageVersion() {
         if (languageVersion == null) {
+            if (container == null) {
+                getScriptEngine();
+            }
             languageVersion = container.getSupportedRubyVersion();
         }
         return languageVersion;
@@ -189,6 +168,10 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     }
 
     public ScriptEngine getScriptEngine() {
+        LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
+        LocalVariableBehavior behavior = SystemPropertyCatcher.getBehavior(LocalVariableBehavior.GLOBAL);
+        container = new ScriptingContainer(scope, behavior, null);
+        SystemPropertyCatcher.setConfiguration(container);
         JRubyEngine engine = new JRubyEngine(container, this);
         return (ScriptEngine)engine;
     }

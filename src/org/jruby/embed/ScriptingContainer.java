@@ -33,12 +33,11 @@ import org.jruby.embed.internal.LocalContextProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PropertyResourceBundle;
@@ -60,6 +59,7 @@ import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
+import org.jruby.embed.util.PropertyReader;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
@@ -160,7 +160,8 @@ import org.jruby.util.KCode;
  */
 public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     private static final String defaultProps = "org/jruby/embed/jruby-embed.properties";
-    private final Map<String, String[]> properties;
+    //private final Map<String, String[]> properties;
+    private PropertyReader propertyReader = null;
     private LocalContextProvider provider = null;
     private EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
     private EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
@@ -201,16 +202,14 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, String propertyname) {
         provider = getProviderInstance(scope, behavior);
-        Map map = new HashMap<String, String[]>();
-        properties = Collections.unmodifiableMap(map);
-        if (propertyname == null || propertyname.length() == 0) {
-            return;
+        if (propertyname != null && propertyname.length() != 0) {
+            propertyReader = new PropertyReader(propertyname);
         }
-        prepareProperties(propertyname, map);
         try {
             initConfig();
         } catch (URISyntaxException ex) {
-            ex.printStackTrace();
+            Writer w = getErrorWriter();
+            ex.printStackTrace((PrintWriter)w);
             throw new RuntimeException(ex);
         }
     }
@@ -942,7 +941,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return values associated to the key
      */
     public String[] getProperty(String key) {
-        return properties.get(key);
+        return propertyReader.getProperty(key);
     }
 
     /**
@@ -1641,6 +1640,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     public void terminate() {
-        getProvider().getRuntime().tearDown();
+        getProvider().getRuntime().tearDown(false);
     }
 }

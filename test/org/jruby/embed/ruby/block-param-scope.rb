@@ -7,11 +7,11 @@ x = "bear"
 # A block local variable x is used in this block. (Two "x"s work together)
 ["dog", "cat", "panda"].each do |x|
   # This x is a block local variable.
-  p x
+  #p x
   break if x == "cat"
 end
 
 # This x is a local variable since it is used outside of the block.
-p x
+#p x
 x
 
