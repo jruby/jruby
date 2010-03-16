@@ -215,7 +215,7 @@ JAVA
 
       method_string = <<EOJ
 #{anno_string}
-      public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
+  public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
 #{conv_string}
     IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
     #{ret_string}
