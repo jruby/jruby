@@ -1,2 +1,0 @@
-fails(JRUBY-4653):Math#rsqrt raises an Math::DomainError if the argument is a negative number
-fails(JRUBY-4653):Math.rsqrt raises an Math::DomainError if the argument is a negative number

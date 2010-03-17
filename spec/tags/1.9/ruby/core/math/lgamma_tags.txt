@@ -1,2 +1,1 @@
 fails:Math.lgamma returns correct values only given - infinity
-fails(JRUBY-4653):Math.lgamma raises Math::DomainError when passed -Infinity
