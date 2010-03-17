@@ -162,6 +162,6 @@ if $0 == __FILE__
   ARGV.shift
   Tracer.on
   require $0
-elsif caller(0).size == 1
+elsif caller(0).size == 2 # HACK for JRUBY-4484
   Tracer.on
 end
