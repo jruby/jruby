@@ -103,7 +103,7 @@ JAVA
     def requires_string
       if requires.size == 0
         source = File.read script_name
-        source_chunks = source.unpack("a32000" * (source.size / 32000))
+        source_chunks = source.unpack("a32000" * (source.size / 32000 + 1))
         source_chunks.each do |chunk|
           chunk.gsub!(/([\\"])/, '\\\\\1')
           chunk.gsub!("\n", "\\n\" +\n        \"")
