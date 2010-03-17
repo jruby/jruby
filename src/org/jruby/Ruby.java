@@ -1320,6 +1320,8 @@ public final class Ruby {
                 undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
             }
+
+            mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
             recursiveKey = newSymbol("__recursive_key__");
         }
 
@@ -2087,6 +2089,10 @@ public final class Ruby {
 
     public RubyClass getFloatDomainError() {
         return floatDomainError;
+    }
+
+    public RubyClass getMathDomainError() {
+        return mathDomainError;
     }
 
     public RubyClass getEncodingError() {
@@ -3233,6 +3239,10 @@ public final class Ruby {
         return newRaiseException(getFloatDomainError(), message);
     }
 
+    public RaiseException newMathDomainError(String message) {
+        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - \"" + message + "\"");
+    }
+
     public RaiseException newEncodingError(String message){
         return newRaiseException(getEncodingError(), message);
     }
@@ -3724,7 +3734,7 @@ public final class Ruby {
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
             systemCallError, fatal, interrupt, typeError, argumentError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
-            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError,
+            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
             invalidByteSequenceError, randomClass;
 

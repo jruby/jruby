@@ -55,9 +55,15 @@ public class RubyMath {
     }
     
     
-    private static void domainCheck(IRubyObject recv, double value, String msg) {  
+    private static void domainCheck(IRubyObject recv, double value, String msg) {
         if (Double.isNaN(value)) {
             throw recv.getRuntime().newErrnoEDOMError(msg);
+        }
+    }
+
+    private static void domainCheck19(IRubyObject recv, double value, String msg) {
+        if (Double.isNaN(value)) {
+            throw recv.getRuntime().newMathDomainError(msg);
         }
     }
 
@@ -180,23 +186,6 @@ public class RubyMath {
         domainCheck(recv, result, "acos");
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     
     @JRubyMethod(name = "atan", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat atan(IRubyObject recv, IRubyObject x) {
@@ -369,7 +358,9 @@ public class RubyMath {
 
     @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat atanh(IRubyObject recv, IRubyObject x) {
-        return atanh_common(recv, x);
+        double result = atanh_common(recv, x);
+        domainCheck(recv, result, "atanh");
+        return RubyFloat.newFloat(recv.getRuntime(), result);
     }
 
     @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
@@ -379,10 +370,12 @@ public class RubyMath {
         if (y==1.0) {
             throw recv.getRuntime().newErrnoEDOMError("atanh");
         }
-        return atanh_common(recv, x);
+        double result = atanh_common(recv, x);
+        domainCheck19(recv, result, "atanh");
+        return RubyFloat.newFloat(recv.getRuntime(), result);
     }
 
-    private static RubyFloat atanh_common(IRubyObject recv, IRubyObject x) {
+    private static double atanh_common(IRubyObject recv, IRubyObject x) {
         double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
         double  y = Math.abs(value);
         double  result;
@@ -401,8 +394,8 @@ public class RubyMath {
             result = Double.NaN;
         }
 
-        domainCheck(recv, result, "atanh");
-        return RubyFloat.newFloat(recv.getRuntime(),result);        
+        return result;
+
     }
     
     @JRubyMethod(name = "exp", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
@@ -498,7 +491,7 @@ public class RubyMath {
             result = Math.sqrt(value);
         }
         
-        domainCheck(recv, result, "sqrt");
+        domainCheck19(recv, result, "sqrt");
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
@@ -877,7 +870,7 @@ public class RubyMath {
             return RubyFloat.newFloat(recv.getRuntime(), Double.NaN);
         }
 
-        domainCheck(recv, result, "gamma");
+        domainCheck19(recv, result, "gamma");
         return RubyFloat.newFloat(recv.getRuntime(), result);
 
     }
@@ -896,6 +889,11 @@ public class RubyMath {
     public static RubyArray lgamma(IRubyObject recv, IRubyObject x) {
         Ruby runtime      = recv.getRuntime();
         double value      = RubyKernel.new_float(recv, x).getDoubleValue();
+        // JRUBY-4653: Could this error checking done more elegantly?
+        if (value < 0 && Double.isInfinite(value)) {
+            throw recv.getRuntime().newMathDomainError("lgamma");
+        }
+
         NemesLogGamma l   = new NemesLogGamma(value);
         IRubyObject[] ary = new IRubyObject[2];
         ary[0] = RubyFloat.newFloat(runtime, l.value);
