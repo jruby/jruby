@@ -114,6 +114,13 @@
 # subclasses.  Subclasses should redefine \_\_getobj\_\_.  For a concrete
 # implementation, see SimpleDelegator.
 #
+require 'jruby'
+require 'java'
+
+# we use a pure-Java Delegator to avoid the nastiness of the code below, and to
+# boost performance a bit
+require 'delegate_internal'
+=begin
 class Delegator
   IgnoreBacktracePat = %r"\A#{Regexp.quote(__FILE__)}:\d+:in `"
 
@@ -186,7 +193,7 @@ class Delegator
     __setobj__(obj)
   end
 end
-
+=end
 #
 # A concrete implementation of Delegator, this class provides the means to
 # delegate all supported method calls to the object passed into the constructor
