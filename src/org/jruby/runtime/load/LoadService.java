@@ -1229,7 +1229,15 @@ public class LoadService {
             // the classpath scheme explicitly
             if (!isClasspathScheme && loc.toString().startsWith("jar:file:") && isRequireable(loc)) {
                 // Make sure this is not a directory or unavailable in some way
-                path = loc.getPath();
+                try {
+                    path = loc.toURI().getSchemeSpecificPart();
+                } catch (java.net.URISyntaxException urise) {
+                    if (runtime.getInstanceConfig().isDebug()) {
+                        runtime.getErr().println("URISyntaxException trying to parse " + loc + ", stack trace follows:");
+                        urise.printStackTrace(runtime.getErr());
+                    }
+                    return null;
+                }
             }
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);
             debugLogFound(foundResource);
