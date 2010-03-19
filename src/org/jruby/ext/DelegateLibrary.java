@@ -6,6 +6,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.runtime.Block;
@@ -55,6 +56,12 @@ public class DelegateLibrary implements Library{
         public static IRubyObject method(ThreadContext context, IRubyObject self, IRubyObject name) {
             final String methodName = name.asJavaString();
             final IRubyObject object = self.callMethod(context, "__getobj__");
+
+            // try to get method from self, falling back on delegated object
+            if (self.respondsTo(methodName)) {
+                return (RubyMethod)((RubyObject)self).method(name);
+            }
+
             final RubyMethod method = (RubyMethod)((RubyObject)object).method(name);
             return RubyMethod.newMethod(self.getMetaClass(), methodName, self.getMetaClass(), methodName, new JavaMethodNBlock(self.getMetaClass(), Visibility.PUBLIC) {
                 @Override
@@ -69,6 +76,7 @@ public class DelegateLibrary implements Library{
 
         @JRubyMethod(name = "respond_to?")
         public static IRubyObject repond_to_p(ThreadContext context, IRubyObject self, IRubyObject name) {
+            if (self.getMetaClass().isMethodBound(name.asJavaString(), false)) return context.getRuntime().getTrue();
             return ((RubyObject)self.callMethod(context, "__getobj__")).callMethod(context, "respond_to?", name);
         }
 
