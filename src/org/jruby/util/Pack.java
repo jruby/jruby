@@ -1081,7 +1081,7 @@ public class Pack {
                                 if (!encode.hasRemaining()) break;
                                 encode.mark();
                                 int c1 = safeGet(encode);
-                                if (c1 == '\n') continue;
+                                if (c1 == '\r' && (c1 = safeGet(encode)) == '\n') continue;
                                 int d1 = Character.digit(c1, 16);
                                 if (d1 == -1) {
                                     encode.reset();
