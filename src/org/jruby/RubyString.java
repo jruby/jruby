@@ -639,9 +639,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     /* rb_str_subseq */
+    public final RubyString makeSharedString(Ruby runtime, int index, int len) {
+        return makeShared(runtime, runtime.getString(), index, len);
+    }
+
     public final RubyString makeShared(Ruby runtime, int index, int len) {
+        return makeShared(runtime, getMetaClass(), index, len);
+    }
+
+    public final RubyString makeShared(Ruby runtime, RubyClass meta, int index, int len) {
         final RubyString shared;
-        RubyClass meta = getMetaClass();
         if (len == 0) {
             shared = newEmptyString(runtime, meta);
         } else if (len == 1) {
