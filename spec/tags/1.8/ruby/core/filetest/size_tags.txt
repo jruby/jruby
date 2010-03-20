@@ -1,4 +1,2 @@
-fails:FileTest.size? accepts an object that has a #to_path method
-fails:FileTest.size accepts an object that has a #to_path method
 fails(JRUBY-4667):FileTest.size? accepts a String-like (to_str) parameter
 fails(JRUBY-4667):FileTest.size accepts a String-like (to_str) parameter

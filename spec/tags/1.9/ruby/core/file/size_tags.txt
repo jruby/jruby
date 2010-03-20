@@ -7,3 +7,5 @@ fails:File#size returns the cached size of the file if subsequently deleted
 fails:File#size returns the file's current size even if modified
 fails:File#size returns 0 for an empty file
 fails:File#size follows symlinks if necessary
+fails(JRUBY-4667):File.size? accepts a String-like (to_str) parameter
+fails(JRUBY-4667):File.size accepts a String-like (to_str) parameter
