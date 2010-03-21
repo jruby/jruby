@@ -1,0 +1,2 @@
+fails:SimpleDelegator#method returns a method object for a valid method
+fails:SimpleDelegator#method raises a NameError if method is no longer valid because object has changed
