@@ -34,18 +34,18 @@ import java.util.*;
  * @author <a href="http://www.cs.auckland.ac.nz/~robert/">Robert Egglestone</a>
  */
 public class WeakHashSet<T> implements Set<T> {
-    private WeakHashMap<T,T> map;
+    private WeakHashMap<T,Object> map;
 
     public WeakHashSet() {
-        map = new WeakHashMap<T,T>();
+        map = new WeakHashMap<T,Object>();
     }
 
     public WeakHashSet(int size) {
-        map = new WeakHashMap<T,T>(size);
+        map = new WeakHashMap<T,Object>(size);
     }
 
     public boolean add(T o) {
-        T previousValue = map.put(o, null);
+        Object previousValue = map.put(o, null);
         return previousValue == null;
     }
 
