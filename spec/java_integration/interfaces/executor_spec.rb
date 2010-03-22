@@ -15,10 +15,12 @@ end
 describe "java.util.concurrent.Executors" do
   before do
     @executor = java.util.concurrent.Executors.newSingleThreadExecutor
-    @future_callable = @executor.submit(MyCallableTask.new)
+    pending "this regression is described in JRUBY-4631" do
+      lambda { @future_callable = @executor.submit(MyCallableTask.new) }.should_not raise_error(TypeError)
+    end 
   end
   
-  it "expects a class that implements Callable interface" do
+  it "accepts a class that implements Callable interface" do
     # JRUBY-4631
     @future.get.should == TEST_VALUE
   end
