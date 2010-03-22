@@ -33,8 +33,12 @@ module JRuby::Compiler
         target = tgt
       end
 
-      opts.on("-j", "--java", "Generate normal Java classes to accompany the script") do
+      opts.on("-j", "--java", "Generate .java classes to accompany the script") do
         java = true
+      end
+
+      opts.on("-J", "--javac", "Generate and compile .java classes to accompany the script") do
+        javac = true
       end
 
       opts.on("-c", "--classpath CLASSPATH", "Add a jar to the classpath for building") do |cp|
@@ -48,11 +52,11 @@ module JRuby::Compiler
       raise "No files or directories specified"
     end
 
-    compile_files(argv, basedir, prefix, target, java, classpath)
+    compile_files(argv, basedir, prefix, target, java, javac, classpath)
   end
   module_function :compile_argv
 
-  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false, classpath = [])
+  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false, javac = false, classpath = [])
     runtime = JRuby.runtime
 
     unless File.exist? target
@@ -73,7 +77,7 @@ module JRuby::Compiler
         source = file.read
         node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
 
-        if java
+        if java || javac
           ruby_script = process_script(node, filename)
           ruby_script.classes.each do |cls|
             puts "Generating Java class #{cls.name} to #{cls.name}.java"
@@ -125,7 +129,7 @@ module JRuby::Compiler
       end
     end
 
-    if java
+    if javac
       files_string = files.join(' ')
       jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
