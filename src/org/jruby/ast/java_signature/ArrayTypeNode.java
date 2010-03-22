@@ -9,7 +9,7 @@ package org.jruby.ast.java_signature;
  *
  * @author enebo
  */
-public class ArrayTypeNode extends TypeNode {
+public class ArrayTypeNode extends ReferenceTypeNode {
     private final TypeNode typeForArray;
 
     public ArrayTypeNode(TypeNode typeForArray) {
@@ -24,12 +24,12 @@ public class ArrayTypeNode extends TypeNode {
     }
 
     @Override
-    public boolean isArray() {
-        return true;
+    public String getFullyTypedName() {
+        return typeForArray.getFullyTypedName() + "[]";
     }
 
     @Override
-    public String toString() {
-        return getName();
+    public boolean isArray() {
+        return true;
     }
 }

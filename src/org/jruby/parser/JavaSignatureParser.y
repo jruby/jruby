@@ -82,30 +82,32 @@ public class JavaSignatureParser {
 %token <String> RSHIFT // '>>'
 %token <String> URSHIFT // '>>>'
 
-%type <MethodSignatureNode> method_declarator
+%type <MethodSignatureNode> method_declarator, method_header
 %type <List> formal_parameter_list_opt, formal_parameter_list // <ParameterNode>
 %type <List> modifiers_opt, modifiers, modifiers_none, throws, class_type_list
 %type <ParameterNode> formal_parameter
-%type <TypeNode> primitive_type, type, reference_type, array_type
-%type <ReferenceTypeNode> class_or_interface, class_or_interface_type, interface_type, class_type
+%type <TypeNode> primitive_type, type
+%type <ReferenceTypeNode> class_or_interface, class_or_interface_type, array_type
+%type <ReferenceTypeNode> interface_type, class_type, reference_type
 %type <String> name, type_variable, variable_declarator_id
+%type <String> type_bound_1, additional_bound, additional_bound_list_1
+%type <String> wildcard, type_argument, type_argument_list
+%type <String> type_argument_1, type_argument_2, type_argument_3
+%type <String> wildcard_1, wildcard_2, wildcard_3
+%type <String> reference_type_1, reference_type_2, reference_type_3
+%type <String> type_argument_list_1, type_argument_list_2, type_argument_list_3
+%type <String> type_parameter, type_parameter_1
+%type <String> type_parameter_list, type_parameter_list_1, 
+%type <String> type_bound_opt, type_bound, additional_bound_list, additional_bound_list_opt
 %type <Modifier> modifier
 %type <Object> dims
-%type <Object> wildcard, wildcard_1, wildcard_2, wildcard_3
-%type <Object> reference_type_1, reference_type_2, reference_type_3
-%type <Object> type_argument_list, type_argument_list_1, type_argument_list_2, type_argument_list_3
-%type <Object> type_argument, type_argument_1, type_argument_2, type_argument_3
-%type <Object> type_parameter_list_1, type_parameter_1, type_bound_1, additional_bound_list_1, additional_bound, additional_bound_list
-
-%type <Object> type_parameter_list, type_parameter, type_bound_opt, type_bound
 %type <Object> none
-%type <Object> method_header
 
 %%
 
 program : method_header
 
-type : primitive_type | reference_type
+type : primitive_type | reference_type { $$ = $<TypeNode>1; }
 
 // PrimitiveTypeNode
 primitive_type : BYTE {
@@ -133,11 +135,13 @@ primitive_type : BYTE {
      $$ = PrimitiveTypeNode.DOUBLE;
  }
 
-// TypeNode
+// ReferenceTypeNode
 reference_type : class_or_interface_type {
      $$ = $1;
  }
- | array_type
+ | array_type {
+     $$ = $<ReferenceTypeNode>1;
+ }
 
 // String
 type_variable : IDENTIFIER { 
@@ -149,13 +153,17 @@ class_or_interface : name {
      $$ = new ReferenceTypeNode($1);
  }
  | class_or_interface LT type_argument_list_1 DOT name {
-     $$ = $1; // FIXME: Add generics to ref type
+     String genericTyping = "<" + $3 + "." + $5;
+     $$ = $1;
+     $1.setGenericsTyping(genericTyping);
  }
 
 // ReferenceTypeNode
 class_or_interface_type : class_or_interface
  | class_or_interface LT type_argument_list_1 {
-     $$ = $1; // FIXME: Add generics to ref type
+     String genericTyping = "<" + $3;
+     $$ = $1;
+     $1.setGenericsTyping(genericTyping);
  }
 
 // ReferenceTypeNode
@@ -164,7 +172,7 @@ class_type : class_or_interface_type
 // ReferenceTypeNode
 interface_type : class_or_interface_type
 
-// TypeNode
+// ReferenceTypeNode
 array_type : primitive_type dims {
      $$ = new ArrayTypeNode($1);
  }
@@ -172,54 +180,110 @@ array_type : primitive_type dims {
      $$ = new ArrayTypeNode(new ReferenceTypeNode($1));
  }
  | class_or_interface LT type_argument_list_1 DOT name dims {
-     $$ = new ArrayTypeNode($1); // FIXME: Add generics to ref type
+     String genericTyping = "<" + $3 + "." + $5;
+     $$ = new ArrayTypeNode($1);
+     $<ReferenceTypeNode>$.setGenericsTyping(genericTyping);
  }
  | class_or_interface LT type_argument_list_1 dims {
-     $$ = new ArrayTypeNode($1); // FIXME: Add generics to ref type
+     String genericTyping = "<" + $3;
+     $$ = new ArrayTypeNode($1);
+     $<ReferenceTypeNode>$.setGenericsTyping(genericTyping);
  }
 
-wildcard : QUESTION { $$ = $1; }// FIXME:
-         | QUESTION EXTENDS reference_type { $$ = $1; } // FIXME:
-         | QUESTION SUPER reference_type { $$ = $1; } // FIXME:
+// String
+wildcard : QUESTION { 
+     $$ = "?";
+ } | QUESTION EXTENDS reference_type {
+     $$ = "? extends " + $3.getFullyTypedName();
+ } | QUESTION SUPER reference_type { 
+     $$ = "? super " + $3.getFullyTypedName();
+ }
 
-wildcard_1 : QUESTION GT { $$ = $1; }// FIXME:
-           | QUESTION EXTENDS reference_type_1 { $$ = $1; }// FIXME:
-           | QUESTION SUPER reference_type_1 { $$ = $1; }// FIXME:
+// String
+wildcard_1 : QUESTION GT {
+     $$ = "?>"; 
+ } | QUESTION EXTENDS reference_type_1 {
+     $$ = "? extends " + $3;
+ } | QUESTION SUPER reference_type_1 { 
+     $$ = "? super " + $3;
+ }
 
-wildcard_2 : QUESTION RSHIFT { $$ = $1; }// FIXME:
-           | QUESTION EXTENDS reference_type_2 { $$ = $1; }// FIXME:
-           | QUESTION SUPER reference_type_2 { $$ = $1; }// FIXME:
+// String
+wildcard_2 : QUESTION RSHIFT { 
+     $$ = "?>>"; 
+ } | QUESTION EXTENDS reference_type_2 { 
+     $$ = "? extends " + $3;
+ } | QUESTION SUPER reference_type_2 { 
+     $$ = "? super " + $3;
+ }
 
-wildcard_3 : QUESTION URSHIFT { $$ = $1; }// FIXME:
-           | QUESTION EXTENDS reference_type_3 { $$ = $1; }// FIXME:
-           | QUESTION SUPER reference_type_3 { $$ = $1; }// FIXME:
+// String
+wildcard_3 : QUESTION URSHIFT {
+     $$ = "?>>";
+ } | QUESTION EXTENDS reference_type_3 {
+     $$ = "? extends " + $3;
+ } | QUESTION SUPER reference_type_3 {
+     $$ = "? super " + $3;
+ }
 
-reference_type_1 : reference_type GT { $$ = $1; }// FIXME:
-                 | class_or_interface LT type_argument_list_2 { $$ = $1; }// FIXME:
+// String
+reference_type_1 : reference_type GT { 
+     $$ = $1.getFullyTypedName() + ">";
+ } | class_or_interface LT type_argument_list_2 {
+     $$ = $1.getFullyTypedName() + "<" + $3;
+ }
 
-reference_type_2 : reference_type RSHIFT { $$ = $1; }// FIXME:
-                 | class_or_interface LT type_argument_list_3 { $$ = $1; }// FIXME:
+// String
+reference_type_2 : reference_type RSHIFT { 
+     $$ = $1.getFullyTypedName() + ">>";
+ } | class_or_interface LT type_argument_list_3 {
+     $$ = $1.getFullyTypedName() + "<" + $3;
+ }
 
-reference_type_3 : reference_type URSHIFT { $$ = $1; }// FIXME:
+// String
+reference_type_3 : reference_type URSHIFT {
+     $$ = $1.getFullyTypedName() + ">>>";
+ }
 
-type_argument_list : type_argument
-                   | type_argument_list COMMA type_argument
+// String
+type_argument_list : type_argument {
+     $$ = $1;
+ }
+ | type_argument_list COMMA type_argument {
+     $$ = $1 + ", " + $3;
+ }
 
+// String
 type_argument_list_1 : type_argument_1
-                     | type_argument_list COMMA type_argument_1
+ | type_argument_list COMMA type_argument_1 {
+     $$ = $1 + ", " + $3;
+ }
 
+// String
 type_argument_list_2 : type_argument_2
-                     | type_argument_list COMMA type_argument_2
+ | type_argument_list COMMA type_argument_2 {
+     $$ = $1 + ", " + $3;
+ }
 
+// String
 type_argument_list_3 : type_argument_3
-                     | type_argument_list COMMA type_argument_3
+ | type_argument_list COMMA type_argument_3 {
+     $$ = $1 + ", " + $3;
+ }
 
-type_argument : reference_type | wildcard
+// String
+type_argument : reference_type {
+     $$ = $1.getFullyTypedName();
+ }
+ | wildcard
 
+// String
 type_argument_1 : reference_type_1 | wildcard_1
 
+// String
 type_argument_2 : reference_type_2 | wildcard_2
 
+// String
 type_argument_3 : reference_type_3 | wildcard_3
 
 // List<Modifier>
@@ -323,35 +387,74 @@ variable_declarator_id : IDENTIFIER {
                            $$ = $<String>$ + "[]";
                        }
 
-type_parameter_list : type_parameter_list COMMA type_parameter
-                    | type_parameter
+// String
+type_parameter_list : type_parameter_list COMMA type_parameter {
+     $$ = $1 + ", " + $3;
+ } | type_parameter
 
+// String
 type_parameter_list_1 : type_parameter_1
-                      | type_parameter_list COMMA type_parameter_1
+ | type_parameter_list COMMA type_parameter_1 {
+     $$ = $1 + ", " + $3;
+ }
 
-type_parameter : type_variable type_bound_opt
+// String
+type_parameter : type_variable type_bound_opt {
+     $$ = $1 + $2;
+ }
 
-type_parameter_1 : type_variable GT { $$ = $1; }
-                 | type_variable type_bound_1
+// String
+type_parameter_1 : type_variable GT { 
+     $$ = $1 + ">"; 
+ }
+ | type_variable type_bound_1 {
+     $$ = $1 + $2;
+ }
 
-type_bound_1 : EXTENDS reference_type_1 { $$ = $1; }
-             | EXTENDS reference_type additional_bound_list_1 { $$ = $1; }
+// String
+type_bound_1 : EXTENDS reference_type_1 { 
+     $$ = " extends " + $1;
+ }
+ | EXTENDS reference_type additional_bound_list_1 { 
+     $$ = " extends " + $2.getFullyTypedName() + $3;
+ }
 
-type_bound_opt : type_bound | none
+// String
+type_bound_opt : type_bound 
+ | none {
+     $$ = "";
+ }
 
-type_bound : EXTENDS reference_type additional_bound_list_opt { $$ = $1; }
+// String
+type_bound : EXTENDS reference_type additional_bound_list_opt { 
+     $$ = "extends " + $2.getFullyTypedName() + $3;
+ }
 
-additional_bound_list_opt : additional_bound_list | none
+// String
+additional_bound_list_opt : additional_bound_list 
+ | none {
+     $$ = "";
+ }
 
-additional_bound_list : additional_bound additional_bound_list
-                      | additional_bound
+// String
+additional_bound_list : additional_bound additional_bound_list {
+     $$ = $1 + $2;
+ } | additional_bound
 
-additional_bound_list_1 : additional_bound additional_bound_list_1
-                        | AND reference_type_1 { $$ = $1;}
+// String
+additional_bound_list_1 : additional_bound additional_bound_list_1 {
+     $$ = $1 + $2;
+ }
+ | AND reference_type_1 { 
+     $$ = " & " + $1;
+ }
 
-additional_bound : AND interface_type { $$ = $1; }
+// String
+additional_bound : AND interface_type { 
+     $$ = " & " + $2.getFullyTypedName();
+}
 
-none : { $$ = null; } ;
+none : { $$ = null; }
 
 method_header : modifiers_opt type method_declarator throws {
                   $$ = $3;
@@ -362,7 +465,8 @@ method_header : modifiers_opt type method_declarator throws {
               | modifiers_opt LT type_parameter_list_1 type method_declarator throws {
                   $$ = $5;
                   $<MethodSignatureNode>$.setModifiers($1);
-                  $<MethodSignatureNode>$.setReturnType($4); // FIXME: <> part needs to be added
+                  $<MethodSignatureNode>$.setExtraTypeInfo("<" + $3);
+                  $<MethodSignatureNode>$.setReturnType($4);
                   $<MethodSignatureNode>$.setThrows($6);
               }
               | modifiers_opt VOID method_declarator throws {
@@ -374,6 +478,7 @@ method_header : modifiers_opt type method_declarator throws {
               | modifiers_opt LT type_parameter_list_1 VOID method_declarator throws {
                   $$ = $5;
                   $<MethodSignatureNode>$.setModifiers($1);
+                  $<MethodSignatureNode>$.setExtraTypeInfo("<" + $3);
                   $<MethodSignatureNode>$.setReturnType(PrimitiveTypeNode.VOID);
                   $<MethodSignatureNode>$.setThrows($6);
               }

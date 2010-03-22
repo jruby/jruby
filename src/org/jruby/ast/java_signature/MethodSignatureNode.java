@@ -9,6 +9,7 @@ public class MethodSignatureNode {
     protected List<Modifier> modifiers;
     protected String name;
     protected List<ParameterNode> parameterList;
+    protected String extraTypeInfo;
     protected TypeNode returnType;
     protected List<TypeNode> throwTypes;
 
@@ -37,6 +38,10 @@ public class MethodSignatureNode {
         this.modifiers = modifiers;
     }
 
+    public void setExtraTypeInfo(String extraTypeInfo) {
+        this.extraTypeInfo = extraTypeInfo;
+    }
+
     public List<Modifier> getModifiers() {
         return modifiers;
     }
@@ -55,6 +60,10 @@ public class MethodSignatureNode {
 
         for (Modifier modifier: modifiers) {
             builder.append(modifier).append(' ');
+        }
+
+        if (extraTypeInfo != null) {
+            builder.append(extraTypeInfo).append(' ');
         }
         
         builder.append(returnType).append(' ');

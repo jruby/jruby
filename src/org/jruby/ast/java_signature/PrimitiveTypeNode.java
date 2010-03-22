@@ -39,9 +39,4 @@ public class PrimitiveTypeNode extends TypeNode {
     public String getWrapperName() {
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
-
-    @Override
-    public String toString() {
-        return name;
-    }
 }

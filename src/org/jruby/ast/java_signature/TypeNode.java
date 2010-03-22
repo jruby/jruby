@@ -22,7 +22,18 @@ public class TypeNode {
         return false;
     }
 
+    /**
+     * Get the boxed or wrapper class name of the type.  Note: this
+     * will only return something different for primitive types.
+     */
     public String getWrapperName() {
+        return name;
+    }
+
+    /**
+     * Get the name of the class with all of its potential generic glory.
+     */
+    public String getFullyTypedName() {
         return name;
     }
 
@@ -32,5 +43,10 @@ public class TypeNode {
 
     public boolean isArray() {
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return getFullyTypedName();
     }
 }
