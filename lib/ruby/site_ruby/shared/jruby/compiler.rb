@@ -15,6 +15,7 @@ module JRuby::Compiler
     prefix = ""
     target = Dir.pwd
     java = false
+    javac = false
     classpath = []
 
     opt_parser = OptionParser.new("", 24, '  ') do |opts|
