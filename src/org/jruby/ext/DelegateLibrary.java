@@ -6,7 +6,6 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.runtime.Block;
@@ -57,11 +56,12 @@ public class DelegateLibrary implements Library{
             final String methodName = name.asJavaString();
             final IRubyObject object = self.callMethod(context, "__getobj__");
 
-            // try to get method from self, falling back on delegated object
-            if (self.respondsTo(methodName)) {
+            // try to get method from self's metaclass
+            if (!self.getMetaClass().searchMethod(methodName).isUndefined()) {
                 return (RubyMethod)((RubyObject)self).method(name);
             }
 
+            // try to get method from delegated object
             final RubyMethod method = (RubyMethod)((RubyObject)object).method(name);
             return RubyMethod.newMethod(self.getMetaClass(), methodName, self.getMetaClass(), methodName, new JavaMethodNBlock(self.getMetaClass(), Visibility.PUBLIC) {
                 @Override
