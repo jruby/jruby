@@ -168,6 +168,12 @@ namespace :spec do
     t.spec_files = FileList['spec/ffi/**/*_spec.rb']
   end
 
+  Spec::Rake::SpecTask.new("java_signature_parser") do |t|
+    t.spec_opts ||= []
+#    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
+    t.spec_files = FileList['spec/grammar/**/*_spec.rb']
+  end
+
   # Complimentary tasks for running specs
 
   task :fetch_latest_specs => [:install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo]
