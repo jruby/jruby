@@ -46,6 +46,22 @@ public class TypeNode {
     }
 
     @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof TypeNode)) return false;
+
+
+        return (name == null && ((TypeNode) other).name == null) ||
+                name.equals(((TypeNode) other).name);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 97 * hash + (this.name != null ? this.name.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
     public String toString() {
         return getFullyTypedName();
     }

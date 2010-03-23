@@ -387,11 +387,12 @@ formal_parameter : type variable_declarator_id {
 
 // String
 variable_declarator_id : IDENTIFIER {
-                           $$ = $1;
-                       }
-                       | variable_declarator_id LBRACK RBRACK {
-                           $$ = $<String>$ + "[]";
-                       }
+     $$ = $1;
+ } | variable_declarator_id LBRACK RBRACK {
+     // We know this is always preceeded by 'type' production.
+     $<Object>0 = new ArrayTypeNode($<TypeNode>0); 
+     $$ = $1;
+ }
 
 // String
 type_parameter_list : type_parameter_list COMMA type_parameter {

@@ -21,6 +21,21 @@ public class ReferenceTypeNode extends TypeNode {
     }
 
     @Override
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof ReferenceTypeNode)) return false;
+
+        return genericString.equals(((ReferenceTypeNode) other).genericString) &&
+                super.equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 97 * hash + (this.genericString != null ? this.genericString.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
     public String getFullyTypedName() {
         return getName() + genericString;
     }

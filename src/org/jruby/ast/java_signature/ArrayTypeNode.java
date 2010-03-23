@@ -32,6 +32,20 @@ public class ArrayTypeNode extends ReferenceTypeNode {
     }
 
     @Override
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof ArrayTypeNode)) return false;
+
+        return typeForArray.equals(((ArrayTypeNode) other).typeForArray);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + (this.typeForArray != null ? this.typeForArray.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
     public String getName() {
         return typeForArray.getName() + "[]";
     }
