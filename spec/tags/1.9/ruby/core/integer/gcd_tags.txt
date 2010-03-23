@@ -1,0 +1,1 @@
+fails:Integer#gcd raises a TypeError unless the argument is an Integer

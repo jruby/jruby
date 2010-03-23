@@ -458,7 +458,6 @@ public class RubyObject extends RubyBasicObject {
 
         try {
             IRubyObject valueInYield;
-            boolean aValue;
 
             // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
             block = block.cloneBlock();

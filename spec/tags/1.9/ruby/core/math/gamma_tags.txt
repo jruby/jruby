@@ -1,2 +1,0 @@
-fails(JRUBY-4653):Math.gamma raises Math::DomainError given -1
-fails(JRUBY-4653):Math.gamma raises Math::DomainError given negative infinity

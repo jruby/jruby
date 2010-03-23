@@ -1322,7 +1322,7 @@ public class RubyClass extends RubyModule {
                 JavaClass javaClass = (JavaClass)callMethod("java_class");
                 returnClass = (Class)javaClass.getValue();
             } else {
-                returnClass = getReifiedClass();
+                return this;
             }
         }
 

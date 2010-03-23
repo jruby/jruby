@@ -564,6 +564,8 @@ public class RubyInstanceConfig {
                 .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
                 .append("    jruby.process.noUnwrap=true|false\n")
                 .append("       Do not unwrap process streams (IBM Java 6 issue). Default is false.\n")
+                .append("    jruby.interfaces.useProxy=true|false\n")
+                .append("       Use java.lang.reflect.Proxy for interface impl. Default is false.\n")
                 .append("\nDEBUGGING/LOGGING:\n")
                 .append("    jruby.debug.loadService=true|false\n")
                 .append("       LoadService logging\n")

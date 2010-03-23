@@ -384,6 +384,23 @@ public class RubyComplex extends RubyNumeric {
         return f_complex_polar(context, clazz, abs, arg);
     }
 
+    /** nucomp_s_polar
+     *
+     */
+    @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject polar19(ThreadContext context, IRubyObject clazz, IRubyObject[] args) {
+        IRubyObject abs = args[0];
+        IRubyObject arg;
+        if (args.length < 2) {
+            arg = RubyFixnum.zero(context.getRuntime());
+        } else {
+            arg = args[1];
+        }
+        realCheck(context, abs);
+        realCheck(context, arg);
+        return f_complex_polar(context, clazz, abs, arg);
+    }
+
     /** rb_Complex1
      * 
      */

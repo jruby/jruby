@@ -114,79 +114,100 @@
 # subclasses.  Subclasses should redefine \_\_getobj\_\_.  For a concrete
 # implementation, see SimpleDelegator.
 #
-class Delegator
-  IgnoreBacktracePat = %r"\A#{Regexp.quote(__FILE__)}:\d+:in `"
-
-  #
-  # Pass in the _obj_ to delegate method calls to.  All methods supported by
-  # _obj_ will be delegated to.
-  #
-  def initialize(obj)
-    preserved = ::Kernel.public_instance_methods(false)
-    preserved -= ["to_s","to_a","inspect","==","=~","==="]
-    for t in self.class.ancestors
-      preserved |= t.public_instance_methods(false)
-      preserved |= t.private_instance_methods(false)
-      preserved |= t.protected_instance_methods(false)
-      break if t == Delegator
-    end
-    preserved << "singleton_method_added"
-    for method in obj.methods
-      next if preserved.include? method
-      begin
-	eval <<-EOS, nil, __FILE__, __LINE__+1
-	  def self.#{method}(*args, &block)
-	    begin
-	      __getobj__.__send__(:#{method}, *args, &block)
-	    ensure
-	      $@.delete_if{|s|IgnoreBacktracePat=~s} if $@
-	    end
-	  end
-	EOS
-      rescue SyntaxError
-        raise NameError, "invalid identifier %s" % method, caller(4)
+if defined?(ENV_JAVA) && ENV_JAVA['jruby.delegate.native'] =~ /true/i
+  # use a pure-Java Delegator
+  require 'delegate_internal'
+else
+  # original, but slightly improved pure-Ruby Delegator
+  require 'thread'
+  class Delegator
+    IgnoreBacktracePat = %r"\A#{Regexp.quote(__FILE__)}:\d+:in `"
+    LOCK = Mutex.new
+    DelegatorModules = Hash.new do |hash, classes|
+      objclass, deleclass = *classes
+      LOCK.synchronize do
+        hash[classes] = Module.new do
+          preserved = ::Kernel.public_instance_methods(false)
+          preserved -= ["to_s","to_a","inspect","==","=~","==="]
+          for t in deleclass.ancestors
+            preserved |= t.public_instance_methods(false)
+            preserved |= t.private_instance_methods(false)
+            preserved |= t.protected_instance_methods(false)
+            break if t == Delegator
+          end
+          preserved << "singleton_method_added"
+          for method in objclass.instance_methods
+            next if preserved.include? method
+            begin
+              eval <<-EOS, nil, __FILE__, __LINE__+1
+                def #{method}(*args, &block)
+                  begin
+                    __getobj__.__send__(:#{method}, *args, &block)
+                  ensure
+                    $@.delete_if{|s|IgnoreBacktracePat=~s} if $@
+                  end
+                end
+              EOS
+            rescue SyntaxError
+              raise NameError, "invalid identifier %s" % method, caller(4)
+            end
+          end
+        end
       end
     end
-  end
-  alias initialize_methods initialize
-
-  # Handles the magic of delegation through \_\_getobj\_\_.
-  def method_missing(m, *args)
-    target = self.__getobj__
-    unless target.respond_to?(m)
-      super(m, *args)
+    
+    #
+    # Pass in the _obj_ to delegate method calls to.  All methods supported by
+    # _obj_ will be delegated to.
+    #
+    def initialize(obj)
+      # This modification caches the generated set of methods for a given pair
+      # of object class + delegate subclass and extends it onto future objects.
+      # This avoids all the overhead of that class generation on each object
+      # construction, but introduces the overhead of .extend and does not
+      # properly define singleton methods (though they'll still dispatch ok
+      # through method_missing)
+      extend DelegatorModules[[obj.class, self.class]]
     end
-    target.__send__(m, *args)
-  end
+    alias initialize_methods initialize
 
-  # 
-  # Checks for a method provided by this the delegate object by fowarding the 
-  # call through \_\_getobj\_\_.
-  # 
-  def respond_to?(m, include_private = false)
-    return true if super
-    return self.__getobj__.respond_to?(m, include_private)
-  end
+    # Handles the magic of delegation through \_\_getobj\_\_.
+    def method_missing(m, *args)
+      target = self.__getobj__
+      unless target.respond_to?(m)
+        super(m, *args)
+      end
+      target.__send__(m, *args)
+    end
 
-  #
-  # This method must be overridden by subclasses and should return the object
-  # method calls are being delegated to.
-  #
-  def __getobj__
-    raise NotImplementedError, "need to define `__getobj__'"
-  end
+    # 
+    # Checks for a method provided by this the delegate object by fowarding the 
+    # call through \_\_getobj\_\_.
+    # 
+    def respond_to?(m, include_private = false)
+      return true if super
+      return self.__getobj__.respond_to?(m, include_private)
+    end
 
-  # Serialization support for the object returned by \_\_getobj\_\_.
-  def marshal_dump
-    __getobj__
-  end
-  # Reinitializes delegation from a serialized object.
-  def marshal_load(obj)
-    initialize_methods(obj)
-    __setobj__(obj)
+    #
+    # This method must be overridden by subclasses and should return the object
+    # method calls are being delegated to.
+    #
+    def __getobj__
+      raise NotImplementedError, "need to define `__getobj__'"
+    end
+
+    # Serialization support for the object returned by \_\_getobj\_\_.
+    def marshal_dump
+      __getobj__
+    end
+    # Reinitializes delegation from a serialized object.
+    def marshal_load(obj)
+      initialize_methods(obj)
+      __setobj__(obj)
+    end
   end
 end
-
 #
 # A concrete implementation of Delegator, this class provides the means to
 # delegate all supported method calls to the object passed into the constructor

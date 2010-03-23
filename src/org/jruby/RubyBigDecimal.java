@@ -780,12 +780,18 @@ public class RubyBigDecimal extends RubyNumeric {
         if(rb == null) {
             IRubyObject ee = callCoerced(context, "<=>",r);
             if(ee.isNil()) {
-                return getRuntime().getNil();
+                if (op == '*') {
+                    return getRuntime().getNil();
+                } else if (op == '=' || isNaN()){
+                    return getRuntime().getFalse();
+                } else {
+                    throw getRuntime().newArgumentError("nil could not be coerced into a BigDecmil");
+                }
             }
             e = RubyNumeric.fix2int(ee);
         } else {
             if (isNaN() | rb.isNaN()) {
-                return getRuntime().getNil();
+                return (op == '*') ? getRuntime().getNil() : getRuntime().getFalse();
             }
             if (infinitySign != 0 || rb.infinitySign != 0) {
                 e = infinitySign - rb.infinitySign;

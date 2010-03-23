@@ -1030,9 +1030,8 @@ public final class Ruby {
         // initialize the root of the class hierarchy completely
         initRoot();
 
-        // Modified for JRUBY-4484
-        // prepare a temporary toplevel frame during init, for consumers like TOPLEVEL_BINDING
-        tc.preTopLevel(objectClass, topSelf);
+        // Construct the top-level execution frame and scope for the main thread
+        tc.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
         bootstrap();
@@ -1049,19 +1048,11 @@ public final class Ruby {
 
         // initialize builtin libraries
         initBuiltins();
-
-        // Modified for JRUBY-4484
-        // remove the temporary toplevel frame
-        tc.postTopLevel();
         
         // Require in all libraries specified on command line
         for (String scriptName : config.requiredLibraries()) {
             loadService.smartLoad(scriptName);
         }
-
-        // Modified for JRUBY-4484
-        // Construct the final toplevel frame and scope for the main thread
-        tc.preTopLevel(objectClass, topSelf);
     }
 
     private void bootstrap() {
@@ -1320,6 +1311,8 @@ public final class Ruby {
                 undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
             }
+
+            mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
             recursiveKey = newSymbol("__recursive_key__");
         }
 
@@ -1404,6 +1397,7 @@ public final class Ruby {
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.libraries.IOWaitLibrary");
         addLazyBuiltin("etc.jar", "etc", "org.jruby.libraries.EtcLibrary");
         addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRef$WeakRefLibrary");
+        addLazyBuiltin("delegate_internal.jar", "delegate_internal", "org.jruby.ext.DelegateLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.Timeout");
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.RubySocket$Service");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
@@ -2087,6 +2081,10 @@ public final class Ruby {
 
     public RubyClass getFloatDomainError() {
         return floatDomainError;
+    }
+
+    public RubyClass getMathDomainError() {
+        return mathDomainError;
     }
 
     public RubyClass getEncodingError() {
@@ -3233,6 +3231,10 @@ public final class Ruby {
         return newRaiseException(getFloatDomainError(), message);
     }
 
+    public RaiseException newMathDomainError(String message) {
+        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - \"" + message + "\"");
+    }
+
     public RaiseException newEncodingError(String message){
         return newRaiseException(getEncodingError(), message);
     }
@@ -3724,7 +3726,7 @@ public final class Ruby {
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
             systemCallError, fatal, interrupt, typeError, argumentError, indexError, stopIteration,
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
-            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError,
+            regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
             invalidByteSequenceError, randomClass;
 

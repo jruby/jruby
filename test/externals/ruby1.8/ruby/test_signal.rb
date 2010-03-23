@@ -24,7 +24,8 @@ class TestSignal < Test::Unit::TestCase
       oldtrap = trap "SIGINT", proc{|sig| $x = 2}
       Process.kill "SIGINT", $$
       t = Time.now
-      while (Time.now - t) < 1
+      while (Time.now - t) < 5
+        sleep 0.1
         break if $x == 2
       end
       assert_equal(2, $x)

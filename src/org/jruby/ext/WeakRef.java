@@ -68,6 +68,11 @@ public class WeakRef extends RubyObject {
         
         return obj;
     }
+
+    @JRubyMethod(name = "__setobj__")
+    public IRubyObject setobj(IRubyObject obj) {
+        return getRuntime().getNil();
+    }
     
     @JRubyMethod(name = "new", required = 1, meta = true)
     public static IRubyObject newInstance(IRubyObject clazz, IRubyObject arg) {

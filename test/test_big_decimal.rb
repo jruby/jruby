@@ -230,4 +230,13 @@ class TestBigDecimal < Test::Unit::TestCase
     assert neg_inf < 0
     assert BigDecimal.new("5E-69999999").to_f < Float::EPSILON
   end
+  
+  #JRUBY-3818
+  def test_decimal_format
+    require 'java'
+    format = java.text.DecimalFormat.new("#,##0.00")
+    value = java.math.BigDecimal.new("10")
+    assert format.format(value) == "10.00"
+  end
+
 end

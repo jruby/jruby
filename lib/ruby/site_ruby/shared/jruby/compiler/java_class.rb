@@ -54,7 +54,7 @@ module JRuby::Compiler
       @package = package
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile
 
     def new_method(name, java_signature = nil, annotations = [])
       method = RubyMethod.new(name, java_signature, annotations)
@@ -101,9 +101,21 @@ JAVA
     end
 
     def requires_string
-      requires.map do |r|
-        "    __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
-      end.join("\n")
+      if requires.size == 0
+        source = File.read script_name
+        source_chunks = source.unpack("a32000" * (source.size / 32000 + 1))
+        source_chunks.each do |chunk|
+          chunk.gsub!(/([\\"])/, '\\\\\1')
+          chunk.gsub!("\n", "\\n\" +\n        \"")
+        end
+        source_line = source_chunks.join("\")\n      .append(\"");
+
+        "    String source = new StringBuilder(\"#{source_line}\").toString();\n    __ruby__.evalScriptlet(source);"
+      else
+        requires.map do |r|
+          "    __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
+        end.join("\n")
+      end
     end
 
     def package_string
@@ -215,7 +227,7 @@ JAVA
 
       method_string = <<EOJ
 #{anno_string}
-      public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
+  public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
 #{conv_string}
     IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
     #{ret_string}
@@ -491,8 +503,8 @@ EOJ
       node.body_node.accept(self)
     end
 
-    visit_default do
-      error "unknown node encountered: #{node.node_type.to_s}"
+    visit_default do |node|
+      # ignore other nodes
     end
   end
 

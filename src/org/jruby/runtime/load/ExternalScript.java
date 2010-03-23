@@ -48,10 +48,6 @@ public class ExternalScript implements Library {
         try {
             in = resource.getInputStream();
             String name = normalizeSeps(resource.getName());
-            try {
-                // TODO: Fix charset use for JRUBY-4553
-                name = java.net.URLDecoder.decode(name, "ISO-8859-1");
-            } catch(Exception ignored) {}
 
             if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
                 runtime.compileAndLoadFile(name, in, wrap);

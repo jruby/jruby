@@ -9,13 +9,40 @@ package org.jruby.ast.java_signature;
  *
  * @author enebo
  */
-public class ArrayTypeNode extends TypeNode {
-    private final TypeNode typeForArray;
+public class ArrayTypeNode extends ReferenceTypeNode {
+    protected TypeNode typeForArray;
+
+    public ArrayTypeNode() {
+        super(null);
+    }
 
     public ArrayTypeNode(TypeNode typeForArray) {
-        super(null);
+        this();
 
         this.typeForArray = typeForArray;
+    }
+
+    public void setTypeForArray(TypeNode referenceType) {
+        // This may be a chain of [][][] arrays.  We want to set in last in chain.
+        if (typeForArray != null && typeForArray instanceof ArrayTypeNode) {
+            ((ArrayTypeNode) typeForArray).setTypeForArray(referenceType);
+        } else {
+            this.typeForArray = referenceType;
+        }
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof ArrayTypeNode)) return false;
+
+        return typeForArray.equals(((ArrayTypeNode) other).typeForArray);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + (this.typeForArray != null ? this.typeForArray.hashCode() : 0);
+        return hash;
     }
 
     @Override
@@ -24,12 +51,12 @@ public class ArrayTypeNode extends TypeNode {
     }
 
     @Override
-    public boolean isArray() {
-        return true;
+    public String getFullyTypedName() {
+        return typeForArray.getFullyTypedName() + "[]";
     }
 
     @Override
-    public String toString() {
-        return getName();
+    public boolean isArray() {
+        return true;
     }
 }
