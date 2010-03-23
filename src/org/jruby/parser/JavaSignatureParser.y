@@ -100,7 +100,7 @@ public class JavaSignatureParser {
 %type <String> type_parameter_list, type_parameter_list_1, 
 %type <String> type_bound_opt, type_bound, additional_bound_list, additional_bound_list_opt
 %type <Modifier> modifier
-%type <Object> dims
+%type <ArrayTypeNode> dims
 %type <Object> none
 
 %%
@@ -174,20 +174,22 @@ interface_type : class_or_interface_type
 
 // ReferenceTypeNode
 array_type : primitive_type dims {
-     $$ = new ArrayTypeNode($1);
+     $2.setTypeForArray($1);
+     $$ = $2;
  }
  | name dims {
-     $$ = new ArrayTypeNode(new ReferenceTypeNode($1));
+     $2.setTypeForArray(new ReferenceTypeNode($1));
+     $$ = $2;
  }
  | class_or_interface LT type_argument_list_1 DOT name dims {
-     String genericTyping = "<" + $3 + "." + $5;
-     $$ = new ArrayTypeNode($1);
-     $<ReferenceTypeNode>$.setGenericsTyping(genericTyping);
+     $1.setGenericsTyping("<" + $3 + "." + $5);
+     $6.setTypeForArray($1);
+     $$ = $6;
  }
  | class_or_interface LT type_argument_list_1 dims {
-     String genericTyping = "<" + $3;
-     $$ = new ArrayTypeNode($1);
-     $<ReferenceTypeNode>$.setGenericsTyping(genericTyping);
+     $1.setGenericsTyping("<" + $3);
+     $4.setTypeForArray($1);
+     $$ = $4;
  }
 
 // String
@@ -318,8 +320,12 @@ modifier : PUBLIC { $$ = Modifier.PUBLIC; }
 name : IDENTIFIER { $$ = $1; }                  // Foo (or foo)
  | name DOT IDENTIFIER { $$ = $1 + "." + $3; }  // foo.Foo 
 
-// Object -- we do not use this for any info
-dims : LBRACK RBRACK { $$ = null; } | dims LBRACK RBRACK { $$ = null; }
+// String -- we do not use this for any info
+dims : LBRACK RBRACK { 
+     $$ = new ArrayTypeNode(); 
+ } | dims LBRACK RBRACK { 
+     $$ = new ArrayTypeNode($1);
+ }
 
 // List<TypeNode>
 throws : THROWS class_type_list { $$ = $2; } 
