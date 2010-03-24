@@ -119,6 +119,18 @@ public class RubyJRuby {
         runtime.getString().defineAnnotatedMethods(JRubyStringExtensions.class);
     }
 
+    public static class JRubySynchronizedMeta {
+        @JRubyMethod
+        public static IRubyObject append_features(IRubyObject self, IRubyObject target) {
+            if (target instanceof RubyClass && self instanceof RubyModule) { // should always be true
+                RubyClass targetModule = ((RubyClass)target);
+                targetModule.becomeSynchronized();
+                return ((RubyModule)self).append_features(target);
+            }
+            throw target.getRuntime().newTypeError(self + " can only be included into classes");
+        }
+    }
+
     public static class ExtLibrary implements Library {
         public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyJRuby.createJRubyExt(runtime);
@@ -130,6 +142,13 @@ public class RubyJRuby {
     public static class CoreExtLibrary implements Library {
         public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyJRuby.createJRubyCoreExt(runtime);
+        }
+    }
+
+    public static class SynchronizedLibrary implements Library {
+        public void load(Ruby runtime, boolean wrap) throws IOException {
+            RubyModule syncModule = runtime.getOrCreateModule("JRuby").defineModuleUnder("Synchronized");
+            syncModule.getSingletonClass().defineAnnotatedMethods(JRubySynchronizedMeta.class);
         }
     }
     

@@ -311,7 +311,7 @@ public class RubyClass extends RubyModule {
     protected RubyClass(Ruby runtime, RubyClass superClass, boolean objectSpace) {
         super(runtime, runtime.getClassClass(), objectSpace);
         this.runtime = runtime;
-        this.superClass = superClass; // this is the only case it might be null here (in MetaClass construction)
+        setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
 
     /** separate path for MetaClass and IncludedModuleWrapper construction
@@ -321,7 +321,7 @@ public class RubyClass extends RubyModule {
     protected RubyClass(Ruby runtime, RubyClass superClass, Generation generation, boolean objectSpace) {
         super(runtime, runtime.getClassClass(), generation, objectSpace);
         this.runtime = runtime;
-        this.superClass = superClass; // this is the only case it might be null here (in MetaClass construction)
+        setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
     
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
@@ -338,7 +338,7 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz) {
         this(runtime);
-        superClass = superClazz;
+        setSuperClass(superClazz);
         marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
         allocator = superClazz.allocator;
@@ -351,7 +351,7 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz, CallSite[] extraCallSites) {
         this(runtime);
-        this.superClass = superClazz;
+        setSuperClass(superClazz);
         this.marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
         
@@ -819,7 +819,7 @@ public class RubyClass extends RubyModule {
     }
 
     private IRubyObject initializeCommon(RubyClass superClazz, Block block, boolean callInheritBeforeSuper) {
-        superClass = superClazz;
+        setSuperClass(superClazz);
         allocator = superClazz.allocator;
         makeMetaClass(superClazz.getMetaClass());
 
@@ -858,7 +858,7 @@ public class RubyClass extends RubyModule {
         // add us to new superclass's child classes
         superClass.addSubclass(this);
         // update superclass reference
-        this.superClass = superClass;
+        setSuperClass(superClass);
     }
     
     public Collection subclasses(boolean includeDescendants) {
@@ -929,6 +929,17 @@ public class RubyClass extends RubyModule {
 
             oldSubclasses.remove(subclass);
             oldSubclasses.add(newSubclass);
+        }
+    }
+
+    public void becomeSynchronized() {
+        // make this class and all subclasses sync
+        synchronized (getRuntime().getHierarchyLock()) {
+            super.becomeSynchronized();
+            Set<RubyClass> mySubclasses = subclasses;
+            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
+                subclass.becomeSynchronized();
+            }
         }
     }
 

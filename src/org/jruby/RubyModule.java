@@ -76,6 +76,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
+import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -330,6 +331,7 @@ public class RubyModule extends RubyObject {
     protected void setSuperClass(RubyClass superClass) {
         // update superclass reference
         this.superClass = superClass;
+        if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
     }
 
     public RubyModule getParent() {
@@ -923,8 +925,35 @@ public class RubyModule extends RubyObject {
         return null;
     }
     
+    protected static abstract class CacheEntryFactory {
+        public abstract CacheEntry newCacheEntry(DynamicMethod method, Object token);
+    }
+
+    protected static CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
+        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+            return new CacheEntry(method, token);
+        }
+    };
+
+    protected static CacheEntryFactory SynchronizedCacheEntryFactory = new CacheEntryFactory() {
+        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+            return new CacheEntry(new SynchronizedDynamicMethod(method), token);
+        }
+    };
+
+    private volatile CacheEntryFactory cacheEntryFactory = NormalCacheEntryFactory;
+
+    // modifies this class only; used to make the Synchronized module synchronized
+    public void becomeSynchronized() {
+        cacheEntryFactory = SynchronizedCacheEntryFactory;
+    }
+
+    public boolean isSynchronized() {
+        return cacheEntryFactory == SynchronizedCacheEntryFactory;
+    }
+
     private CacheEntry addToCache(String name, DynamicMethod method, Object token) {
-        CacheEntry entry = new CacheEntry(method, token);
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(method, token);
         getCachedMethodsForWrite().put(name, entry);
 
         return entry;
