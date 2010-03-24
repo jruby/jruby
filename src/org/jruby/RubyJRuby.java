@@ -14,6 +14,7 @@
  *
  * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2009 MenTaLguY <mental@rydia.net>
+ * Copyright (C) 2010 Charles Oliver Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -72,6 +73,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import java.util.Map;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 
 /**
  * Module which defines JRuby-specific methods for use. 
@@ -120,7 +122,7 @@ public class RubyJRuby {
     }
 
     public static class JRubySynchronizedMeta {
-        @JRubyMethod
+        @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
         public static IRubyObject append_features(IRubyObject self, IRubyObject target) {
             if (target instanceof RubyClass && self instanceof RubyModule) { // should always be true
                 RubyClass targetModule = ((RubyClass)target);
@@ -128,6 +130,17 @@ public class RubyJRuby {
                 return ((RubyModule)self).append_features(target);
             }
             throw target.getRuntime().newTypeError(self + " can only be included into classes");
+        }
+
+        @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject extend_object(IRubyObject self, IRubyObject obj) {
+            if (self instanceof RubyModule) {
+                RubyClass singletonClass = obj.getSingletonClass();
+                singletonClass.becomeSynchronized();
+                return ((RubyModule)self).extend_object(obj);
+            }
+            // should never happen
+            throw self.getRuntime().newTypeError("JRuby::Singleton.extend_object called against " + self);
         }
     }
 
@@ -149,6 +162,9 @@ public class RubyJRuby {
         public void load(Ruby runtime, boolean wrap) throws IOException {
             RubyModule syncModule = runtime.getOrCreateModule("JRuby").defineModuleUnder("Synchronized");
             syncModule.getSingletonClass().defineAnnotatedMethods(JRubySynchronizedMeta.class);
+
+            // make Synchronized itself be synchronized, so subclasses created later pick that up
+            syncModule.becomeSynchronized();
         }
     }
     
