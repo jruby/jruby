@@ -37,7 +37,6 @@ import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.Ruby;
@@ -221,10 +220,11 @@ public class JavaSupport {
     }
     
     public Object getJavaObjectVariable(Object o, int i) {
+        if (i == -1) return null;
+        
         synchronized (javaObjectVariables) {
             Object[] vars = javaObjectVariables.get(o);
-            if (vars == null) return null;
-            if (vars.length <= i) return null;
+            if (vars == null || vars.length <= i) return null;
             return vars[i];
         }
     }
