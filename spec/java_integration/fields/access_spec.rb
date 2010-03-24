@@ -10,7 +10,7 @@ class PrivateField
 end
 
 class ProtectedField
-  field_accessor :strField => :field
+  field_reader :strField => :field
 end
 
 class PackageField
@@ -38,14 +38,8 @@ describe "JRuby-wrapped Java Objects" do
   
   it "should expose protected Java fields when field_accessor used" do
     lambda {
-      ProtectedField.new.field.should == "1765"
-    }.should_not raise_error
-    
-    lambda {
-      obj = ProtectedField.new
-      obj.field = "foo"
-      obj.field.should == "foo"
-    }.should_not raise_error
+      ProtectedField.new.field.should == "1765" 
+   }.should_not raise_error
   end
   
   it "should expose public-visible fields" do
