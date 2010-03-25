@@ -57,8 +57,9 @@ module FFI
     #
     # The C function return type is provided last.
 
-    def attach_function(mname, a3, a4, a5=nil)
-      cname, arg_types, ret_type = a5 ? [ a3, a4, a5 ] : [ mname.to_s, a3, a4 ]
+    def attach_function(mname, a2, a3, a4=nil, a5 = nil)
+      cname, arg_types, ret_type, opts = (a4 && (a2.is_a?(String) || a2.is_a?(Symbol))) ? [ a2, a3, a4, a5 ] : [ mname.to_s, a2, a3, a4 ]
+
 
       # Convert :foo to the native type
       arg_types.map! { |e| find_type(e) }
@@ -66,6 +67,7 @@ module FFI
       options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
       options[:type_map] = defined?(@ffi_typedefs) ? @ffi_typedefs : nil
       options[:enums] = defined?(@ffi_enum_map) ? @ffi_enum_map : nil
+      options.merge!(opts) if opts.is_a?(Hash)
 
       # Try to locate the function in any of the libraries
       invokers = []
