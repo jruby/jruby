@@ -217,9 +217,9 @@ public class RubyUDPSocket extends RubyIPSocket {
                 ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
                 int port;
                 if (args[3] instanceof RubyString) {
-                    Integer portInteger = IANA.serviceToPort.get(args[3].asJavaString() + "/udp");
-                    if (portInteger != null) {
-                        port = portInteger.intValue();
+                    jnr.netdb.Service service = jnr.netdb.Service.getServiceByName(args[3].asJavaString(), "udp");
+                    if (service != null) {
+                        port = service.getPort();
                     } else {
                         port = (int)args[3].convertToInteger("to_i").getLongValue();
                     }
