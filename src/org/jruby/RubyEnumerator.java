@@ -70,7 +70,7 @@ public class RubyEnumerator extends RubyObject {
         runtime.setEnumerator(enmr);
 
         if (runtime.is1_9()) {
-            runtime.getLoadService().lockAndRequire("generator");
+            runtime.getLoadService().lockAndRequire("generator_internal");
             RubyYielder.createYielderClass(runtime);
         }
     }
@@ -404,13 +404,13 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "next", frame = true)
     public static IRubyObject next(ThreadContext context, IRubyObject self) {
-        context.getRuntime().getLoadService().lockAndRequire("generator");
+        context.getRuntime().getLoadService().lockAndRequire("generator_internal");
         return self.callMethod(context, "next");
     }
 
     @JRubyMethod(name = "rewind", frame = true)
     public static IRubyObject rewind(ThreadContext context, IRubyObject self) {
-        context.getRuntime().getLoadService().lockAndRequire("generator");
+        context.getRuntime().getLoadService().lockAndRequire("generator_internal");
         return self.callMethod(context, "rewind");
     }
 }

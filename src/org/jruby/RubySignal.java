@@ -69,7 +69,7 @@ public class RubySignal {
     @JRubyMethod(name = "trap", required = 1, optional = 1, frame = true, module = true)
     public static IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
-        runtime.getLoadService().require("jsignal");
+        runtime.getLoadService().require("jsignal_internal");
         return RuntimeHelpers.invoke(context, runtime.getKernel(), "__jtrap", args, block);
     }
     
