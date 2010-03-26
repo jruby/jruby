@@ -662,3 +662,49 @@ describe "String\#to_java" do
     cs.class.should == java.lang.String
   end
 end
+
+describe "Class\#to_java" do
+  describe "when passed java.lang.Class.class" do
+    cls = java.lang.Class
+    it "coerces core classes to their Java class object" do
+      # TODO: add all core, native types here
+      [Object, Array, String, Hash, File, IO].each do |rubycls|
+        rubycls.to_java(cls).should == eval("cls.forName('org.jruby.Ruby#{rubycls}')")
+      end
+    end
+
+    it "provides nearest reified class for unreified user classes" do
+      rubycls = Class.new
+      rubycls.to_java(cls).should == cls.forName('org.jruby.RubyObject');
+    end
+
+    it "returns reified class for reified used classes" do
+      rubycls = Class.new
+      rubycls.become_java!
+      rubycls.to_java(cls).should == JRuby.reference(rubycls).reified_class
+    end
+
+    it "converts Java proxy classes to their JavaClass/java.lang.Class equivalent" do
+      java.util.ArrayList.to_java(cls).should == java.util.ArrayList.java_class
+    end
+  end
+
+  describe "when passed java.lang.Object.class" do
+    cls = java.lang.Object
+    it "coerces core classes to their Ruby class object" do
+      # TODO: add all core, native types here
+      [Object, Array, String, Hash, File, IO].each do |rubycls|
+        rubycls.to_java(cls).should == rubycls
+      end
+    end
+
+    it "coerces user classes to their Ruby class object" do
+      rubycls = Class.new
+      rubycls.to_java(cls).should == rubycls;
+    end
+
+    it "converts Java proxy classes to their proxy class (Ruby class) equivalent" do
+      java.util.ArrayList.to_java(cls).should == java.util.ArrayList
+    end
+  end
+end

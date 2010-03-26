@@ -3876,14 +3876,14 @@ public class RubyArray extends RubyObject implements List {
 
     public Object[] toArray(final Object[] arg) {
         Object[] array = arg;
+        Class type = array.getClass().getComponentType();
         if (array.length < realLength) {
-            Class type = array.getClass().getComponentType();
             array = (Object[]) Array.newInstance(type, realLength);
         }
         int length = realLength - begin;
 
         for (int i = 0; i < length; i++) {
-            array[i] = values[i + begin].toJava(Object.class);
+            array[i] = values[i + begin].toJava(type);
         }
         return array;
     }
