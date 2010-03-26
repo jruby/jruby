@@ -1429,7 +1429,7 @@ public final class Ruby {
                              "yaml/rubytypes", "yaml/store", "yaml/stream", 
                              "yaml/stringio", "yaml/tag", "yaml/types", 
                              "yaml/yamlnode", "yaml/ypath", 
-                             "jsignal", "generator", "prelude"};
+                             "jsignal", "generator"};
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }
@@ -1439,8 +1439,8 @@ public final class Ruby {
         if(is1_9()) {
             // see ruby.c's ruby_init_gems function
             defineModule("Gem"); // dummy Gem module for prelude
-            getLoadService().require("builtin/prelude.rb");
-            getLoadService().require("builtin/gem_prelude.rb");
+            loadFile("builtin/prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/prelude.rb"), false);
+            loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
         }
 
         getLoadService().require("builtin/core_ext/symbol");
