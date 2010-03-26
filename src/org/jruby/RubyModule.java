@@ -76,6 +76,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
+import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -181,11 +182,11 @@ public class RubyModule extends RubyObject {
     }
 
     public Map<String, IRubyObject> getConstantMap() {
-        return constants == null ? DUMMY_CONSTANTS : constants;
+        return constants;
     }
 
     public synchronized Map<String, IRubyObject> getConstantMapForWrite() {
-        return constants == null ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
+        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
     }
     
     protected static class Generation {
@@ -201,7 +202,7 @@ public class RubyModule extends RubyObject {
     public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
             Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
-            if (oldIncludingHierarchies == null) includingHierarchies = oldIncludingHierarchies = new WeakHashSet(4);
+            if (oldIncludingHierarchies == Collections.EMPTY_SET) includingHierarchies = oldIncludingHierarchies = new WeakHashSet(4);
             oldIncludingHierarchies.add(hierarchy);
         }
     }
@@ -330,6 +331,7 @@ public class RubyModule extends RubyObject {
     protected void setSuperClass(RubyClass superClass) {
         // update superclass reference
         this.superClass = superClass;
+        if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
     }
 
     public RubyModule getParent() {
@@ -341,15 +343,12 @@ public class RubyModule extends RubyObject {
     }
     
     public Map<String, DynamicMethod> getMethods() {
-        Map<String, DynamicMethod> methods = this.methods;
-        return methods == null ?
-            DUMMY_METHODS :
-            methods;
+        return this.methods;
     }
 
     public synchronized Map<String, DynamicMethod> getMethodsForWrite() {
         Map<String, DynamicMethod> methods = this.methods;
-        return methods == null ?
+        return methods == Collections.EMPTY_MAP ?
             this.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1) :
             methods;
     }
@@ -898,15 +897,12 @@ public class RubyModule extends RubyObject {
     }
 
     private final Map<String, CacheEntry> getCachedMethods() {
-        Map<String, CacheEntry> cachedMethods = this.cachedMethods;
-        return cachedMethods == null ?
-            DUMMY_CACHED_METHODS :
-            cachedMethods;
+        return this.cachedMethods;
     }
 
     private final Map<String, CacheEntry> getCachedMethodsForWrite() {
         Map<String, CacheEntry> cachedMethods = this.cachedMethods;
-        return cachedMethods == null ?
+        return cachedMethods == Collections.EMPTY_MAP ?
             this.cachedMethods = new ConcurrentHashMap<String, CacheEntry>(0, 0.75f, 1) :
             cachedMethods;
     }
@@ -923,8 +919,35 @@ public class RubyModule extends RubyObject {
         return null;
     }
     
+    protected static abstract class CacheEntryFactory {
+        public abstract CacheEntry newCacheEntry(DynamicMethod method, Object token);
+    }
+
+    protected static CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
+        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+            return new CacheEntry(method, token);
+        }
+    };
+
+    protected static CacheEntryFactory SynchronizedCacheEntryFactory = new CacheEntryFactory() {
+        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+            return new CacheEntry(new SynchronizedDynamicMethod(method), token);
+        }
+    };
+
+    private volatile CacheEntryFactory cacheEntryFactory = NormalCacheEntryFactory;
+
+    // modifies this class only; used to make the Synchronized module synchronized
+    public void becomeSynchronized() {
+        cacheEntryFactory = SynchronizedCacheEntryFactory;
+    }
+
+    public boolean isSynchronized() {
+        return cacheEntryFactory == SynchronizedCacheEntryFactory;
+    }
+
     private CacheEntry addToCache(String name, DynamicMethod method, Object token) {
-        CacheEntry entry = new CacheEntry(method, token);
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(method, token);
         getCachedMethodsForWrite().put(name, entry);
 
         return entry;
@@ -942,7 +965,7 @@ public class RubyModule extends RubyObject {
         generation.update();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
-            if (includingHierarchies != null) for (RubyClass includingHierarchy : includingHierarchies) {
+            for (RubyClass includingHierarchy : includingHierarchies) {
                 includingHierarchy.invalidateCacheDescendants();
             }
         }
@@ -1427,7 +1450,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void syncConstants(RubyModule other) {
-        if (other.getConstantMap() != DUMMY_CONSTANTS) {
+        if (other.getConstantMap() != Collections.EMPTY_MAP) {
             getConstantMapForWrite().putAll(other.getConstantMap());
         }
     }
@@ -2871,15 +2894,14 @@ public class RubyModule extends RubyObject {
     //
 
     protected synchronized Map<String, IRubyObject> getClassVariables() {
-        if (classVariables == null) {
+        if (classVariables == Collections.EMPTY_MAP) {
             classVariables = new Hashtable<String, IRubyObject>(4);
         }
         return classVariables;
     }
 
-    @SuppressWarnings("unchecked")
     protected Map<String, IRubyObject> getClassVariablesForRead() {
-        return classVariables == null ? Collections.EMPTY_MAP : classVariables;
+        return classVariables;
     }
     
     public boolean hasClassVariable(String name) {
@@ -3145,16 +3167,12 @@ public class RubyModule extends RubyObject {
     // If it is null, then it an anonymous class.
     protected String classId;
 
-    private static final Map<String, IRubyObject> DUMMY_CONSTANTS = Collections.unmodifiableMap(new HashMap(0));
-    private static final Map<String, CacheEntry> DUMMY_CACHED_METHODS = Collections.unmodifiableMap(new HashMap(0));
-    private static final Map<String, DynamicMethod> DUMMY_METHODS = Collections.unmodifiableMap(new HashMap(0));
-
-    private volatile Map<String, IRubyObject> constants;
-    private volatile Map<String, DynamicMethod> methods;
-    private Map<String, CacheEntry> cachedMethods;
+    private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
+    private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
+    private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected final Generation generation;
 
-    protected volatile Set<RubyClass> includingHierarchies;
+    protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
 
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax.
@@ -3168,5 +3186,5 @@ public class RubyModule extends RubyObject {
 
     public int index;
 
-    private volatile Map<String, IRubyObject> classVariables;
+    private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
 }

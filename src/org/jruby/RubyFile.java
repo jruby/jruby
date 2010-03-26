@@ -1388,36 +1388,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = "lstat", required = 1, meta = true)
     public static IRubyObject lstat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = get_path(context, filename).getUnicodeValue();
-        if(f.startsWith("file:") && f.indexOf('!') != -1) {
-            f = f.substring(5, f.indexOf("!"));
-        }
         return context.getRuntime().newFileStat(f, true);
     }
 
     @JRubyMethod(name = "stat", required = 1, meta = true)
     public static IRubyObject stat(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = get_path(context, filename).getUnicodeValue();
-        if(f.startsWith("file:") && f.indexOf('!') != -1) {
-            f = f.substring(5, f.indexOf("!"));
-        }
         return context.getRuntime().newFileStat(f, false);
     }
 
     @JRubyMethod(name = "atime", required = 1, meta = true)
     public static IRubyObject atime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = get_path(context, filename).getUnicodeValue();
-        if(f.startsWith("file:") && f.indexOf('!') != -1) {
-            f = f.substring(5, f.indexOf("!"));
-        }
         return context.getRuntime().newFileStat(f, false).atime();
     }
 
     @JRubyMethod(name = "ctime", required = 1, meta = true)
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         String f = get_path(context, filename).getUnicodeValue();
-        if(f.startsWith("file:") && f.indexOf('!') != -1) {
-            f = f.substring(5, f.indexOf("!"));
-        }
         return context.getRuntime().newFileStat(f, false).ctime();
     }
 

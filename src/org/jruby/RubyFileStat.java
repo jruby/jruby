@@ -34,6 +34,9 @@
 package org.jruby;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -79,7 +82,7 @@ public class RubyFileStat extends RubyObject {
     
     public static RubyFileStat newFileStat(Ruby runtime, String filename, boolean lstat) {
         RubyFileStat stat = new RubyFileStat(runtime, runtime.getFileStat());
-        
+
         stat.setup(filename, lstat);
         
         return stat;
@@ -102,6 +105,23 @@ public class RubyFileStat extends RubyObject {
                 && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
             filename += "/";
         }
+
+        if (filename.startsWith("file:") && filename.indexOf('!') != -1) {
+            // file: URL handling
+            String zipFileEntry = filename.substring(filename.indexOf("!") + 1);
+            if (zipFileEntry.charAt(0) == '/') zipFileEntry = zipFileEntry.substring(1);
+            filename = filename.substring(5, filename.indexOf("!"));
+            
+            try {
+                ZipFile zipFile = new ZipFile(filename);
+                ZipEntry zipEntry = zipFile.getEntry(zipFileEntry);
+
+                stat = new ZipFileStat(zipEntry);
+                return;
+            } catch (IOException ioe) {
+                // fall through and use the zip file as the file to stat
+            }
+        }
             
         file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename);
 
@@ -110,6 +130,171 @@ public class RubyFileStat extends RubyObject {
         } else {
             stat = getRuntime().getPosix().stat(file.getAbsolutePath());
         }
+    }
+
+    public static class ZipFileStat implements FileStat {
+        private final ZipEntry zipEntry;
+
+        public ZipFileStat(ZipEntry zipEntry) {
+            this.zipEntry = zipEntry;
+        }
+        
+        public long atime() {
+            return zipEntry.getTime();
+        }
+
+        public long blocks() {
+            return zipEntry.getSize();
+        }
+
+        public long blockSize() {
+            return 1L;
+        }
+
+        public long ctime() {
+            return zipEntry.getTime();
+        }
+
+        public long dev() {
+            return -1;
+        }
+
+        public String ftype() {
+            return "zip file entry";
+        }
+
+        public int gid() {
+            return -1;
+        }
+
+        public boolean groupMember(int i) {
+            return false;
+        }
+
+        public long ino() {
+            return -1;
+        }
+
+        public boolean isBlockDev() {
+            return false;
+        }
+
+        public boolean isCharDev() {
+            return false;
+        }
+
+        public boolean isDirectory() {
+            return zipEntry.isDirectory();
+        }
+
+        public boolean isEmpty() {
+            return zipEntry.getSize() == 0;
+        }
+
+        public boolean isExecutable() {
+            return false;
+        }
+
+        public boolean isExecutableReal() {
+            return false;
+        }
+
+        public boolean isFifo() {
+            return false;
+        }
+
+        public boolean isFile() {
+            return !zipEntry.isDirectory();
+        }
+
+        public boolean isGroupOwned() {
+            return false;
+        }
+
+        public boolean isIdentical(FileStat fs) {
+            return fs instanceof ZipFileStat && ((ZipFileStat)fs).zipEntry.equals(zipEntry);
+        }
+
+        public boolean isNamedPipe() {
+            return false;
+        }
+
+        public boolean isOwned() {
+            return false;
+        }
+
+        public boolean isROwned() {
+            return false;
+        }
+
+        public boolean isReadable() {
+            return true;
+        }
+
+        public boolean isReadableReal() {
+            return true;
+        }
+
+        public boolean isWritable() {
+            return false;
+        }
+
+        public boolean isWritableReal() {
+            return false;
+        }
+
+        public boolean isSetgid() {
+            return false;
+        }
+
+        public boolean isSetuid() {
+            return false;
+        }
+
+        public boolean isSocket() {
+            return false;
+        }
+
+        public boolean isSticky() {
+            return false;
+        }
+
+        public boolean isSymlink() {
+            return false;
+        }
+
+        public int major(long l) {
+            return -1;
+        }
+
+        public int minor(long l) {
+            return -1;
+        }
+
+        public int mode() {
+            return -1;
+        }
+
+        public long mtime() {
+            return zipEntry.getTime();
+        }
+
+        public int nlink() {
+            return -1;
+        }
+
+        public long rdev() {
+            return -1;
+        }
+
+        public long st_size() {
+            return zipEntry.getSize();
+        }
+
+        public int uid() {
+            return 0;
+        }
+
     }
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)

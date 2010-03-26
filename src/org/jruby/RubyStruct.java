@@ -34,7 +34,6 @@ package org.jruby;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 
-import java.util.List;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -53,6 +52,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 
 /**
@@ -330,6 +330,7 @@ public class RubyStruct extends RubyObject {
 
         RubyArray result = recv.getRuntime().newArray(member.getLength());
         for (int i = 0,k=member.getLength(); i < k; i++) {
+            // this looks weird, but it's because they're RubySymbol and that's java.lang.String internally
             result.append(recv.getRuntime().newString(member.eltInternal(i).asJavaString()));
         }
 
@@ -555,11 +556,11 @@ public class RubyStruct extends RubyObject {
         output.registerLinkTarget(struct);
         output.dumpDefaultObjectHeader('S', struct.getMetaClass());
 
-        List members = ((RubyArray) getInternalVariable(struct.classOf(), "__member__")).getList();
-        output.writeInt(members.size());
+        RubyArray array = (RubyArray)getInternalVariable(struct.classOf(), "__member__");
+        output.writeInt(array.size());
 
-        for (int i = 0; i < members.size(); i++) {
-            RubySymbol name = (RubySymbol) members.get(i);
+        for (int i = 0; i < array.size(); i++) {
+            RubySymbol name = (RubySymbol) array.eltInternal(i);
             output.dumpObject(name);
             output.dumpObject(struct.values[i]);
         }
@@ -577,10 +578,15 @@ public class RubyStruct extends RubyObject {
         RubyArray mem = members(rbClass, Block.NULL_BLOCK);
 
         int len = input.unmarshalInt();
-        IRubyObject[] values = new IRubyObject[len];
-        for(int i = 0; i < len; i++) {
-            values[i] = runtime.getNil();
+        IRubyObject[] values;
+        if (len == 0) {
+            values = IRubyObject.NULL_ARRAY;
+        } else {
+            values = new IRubyObject[len];
+            RuntimeHelpers.fillNil(values, runtime);
         }
+
+        // FIXME: This could all be more efficient, but it's how struct works
         RubyStruct result = newStruct(rbClass, values, Block.NULL_BLOCK);
         input.registerLinkTarget(result);
         for(int i = 0; i < len; i++) {

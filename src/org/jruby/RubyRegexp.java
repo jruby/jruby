@@ -2098,7 +2098,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(regexp);
-        output.writeString(new String(regexp.str.getUnsafeBytes(), regexp.str.getBegin(), regexp.str.getRealSize()));
+        output.writeString(regexp.str);
         output.writeByte(regexp.pattern.getOptions() & EMBEDDABLE);
     }
 }

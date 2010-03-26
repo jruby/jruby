@@ -37,9 +37,7 @@ package org.jruby.runtime.marshal;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -54,13 +52,11 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.IncludedModuleWrapper;
-import org.jruby.RubyBasicObject;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.util.ByteList;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 /**
@@ -117,6 +113,10 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
+    public void registerSymbol(String sym) {
+        cache.registerSymbol(sym);
+    }
+
     static boolean shouldBeRegistered(IRubyObject value) {
         if (value.isNil()) {
             return false;
@@ -130,6 +130,15 @@ public class MarshalStream extends FilterOutputStream {
 
     private static boolean isMarshalFixnum(RubyFixnum fixnum) {
         return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
+    }
+
+    private void writeAndRegisterSymbol(String sym) throws IOException {
+        if (cache.isSymbolRegistered(sym)) {
+            cache.writeSymbolLink(this, sym);
+        } else {
+            registerSymbol(sym);
+            dumpSymbol(sym);
+        }
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
@@ -283,13 +292,10 @@ public class MarshalStream extends FilterOutputStream {
                 writeString(value.convertToString().getByteList());
                 return;
             case ClassIndex.STRUCT:
-                //            write('S');
                 RubyStruct.marshalTo((RubyStruct)value, this);
                 return;
             case ClassIndex.SYMBOL:
-                registerLinkTarget(value);
-                write(':');
-                writeString(value.toString());
+                writeAndRegisterSymbol(((RubySymbol)value).asJavaString());
                 return;
             case ClassIndex.TRUE:
                 write('T');
@@ -312,7 +318,7 @@ public class MarshalStream extends FilterOutputStream {
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         RubyClass metaclass = value.getMetaClass().getRealClass();
-        dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
+        writeAndRegisterSymbol(metaclass.getName());
 
         IRubyObject marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
         dumpObject(marshaled);
@@ -338,7 +344,7 @@ public class MarshalStream extends FilterOutputStream {
         write(TYPE_USERDEF);
         RubyClass metaclass = value.getMetaClass().getRealClass();
 
-        dumpObject(RubySymbol.newSymbol(runtime, metaclass.getName()));
+        writeAndRegisterSymbol(metaclass.getName());
 
         writeString(marshaled.getByteList());
 
@@ -356,39 +362,21 @@ public class MarshalStream extends FilterOutputStream {
         }
         
         // w_symbol
-        dumpObject(runtime.newSymbol(type.getName()));
-    }
-    
-    /**
-     * @deprecated superseded by {@link #dumpVariables()} 
-     */
-    public void dumpInstanceVars(Map instanceVars) throws IOException {
-
-        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "internal: deprecated dumpInstanceVars() called", "dumpInstanceVars");
-
-        writeInt(instanceVars.size());
-        for (Iterator iter = instanceVars.keySet().iterator(); iter.hasNext();) {
-            String name = (String) iter.next();
-            IRubyObject value = (IRubyObject)instanceVars.get(name);
-            writeAndRegister(runtime.newSymbol(name));
-            dumpObject(value);
-        }
+        writeAndRegisterSymbol(type.getName());
     }
     
     public void dumpVariables(List<Variable<Object>> vars) throws IOException {
         writeInt(vars.size());
         for (Variable<Object> var : vars) {
             if (var.getValue() instanceof IRubyObject) {
-                writeAndRegister(runtime.newSymbol(var.getName()));
+                writeAndRegisterSymbol(var.getName());
                 dumpObject((IRubyObject)var.getValue());
             }
         }
     }
     
     private boolean hasSingletonMethods(RubyClass type) {
-        for(Iterator iter = type.getMethods().entrySet().iterator(); iter.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            DynamicMethod method = (DynamicMethod) entry.getValue();
+        for(DynamicMethod method : type.getMethods().values()) {
             // We do not want to capture cached methods
             if(method.getImplementationClass() == type) {
                 return true;
@@ -409,7 +397,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         while(type.isIncluded()) {
             write('e');
-            dumpObject(RubySymbol.newSymbol(runtime, ((IncludedModuleWrapper)type).getNonIncludedClass().getName()));
+            writeAndRegisterSymbol(((IncludedModuleWrapper)type).getNonIncludedClass().getName());
             type = type.getSuperClass();
         }
         return type;
@@ -422,12 +410,12 @@ public class MarshalStream extends FilterOutputStream {
     public void dumpDefaultObjectHeader(char tp, RubyClass type) throws IOException {
         dumpExtended(type);
         write(tp);
-        RubySymbol classname = RubySymbol.newSymbol(runtime, getPathFromClass(type.getRealClass()));
-        dumpObject(classname);
+        writeAndRegisterSymbol(getPathFromClass(type.getRealClass()));
     }
 
     public void writeString(String value) throws IOException {
         writeInt(value.length());
+        // FIXME: should preserve unicode?
         out.write(RubyString.stringToBytes(value));
     }
 
@@ -439,8 +427,7 @@ public class MarshalStream extends FilterOutputStream {
 
     public void dumpSymbol(String value) throws IOException {
         write(':');
-        writeInt(value.length());
-        out.write(RubyString.stringToBytes(value));
+        writeString(value);
     }
 
     public void writeInt(int value) throws IOException {

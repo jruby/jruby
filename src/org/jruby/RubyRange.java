@@ -703,6 +703,7 @@ public class RubyRange extends RubyObject {
             
             unmarshalStream.registerLinkTarget(range);
 
+            // FIXME: Maybe we can just gank these off the line directly?
             unmarshalStream.defaultVariablesUnmarshal(range);
             
             range.begin = (IRubyObject)range.removeInternalVariable("begin");

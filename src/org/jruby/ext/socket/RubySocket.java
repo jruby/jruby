@@ -325,12 +325,13 @@ public class RubySocket extends RubyBasicSocket {
         Ruby runtime = context.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
         String name = args[0].convertToString().toString();
-        String service = argc == 1 ? "tcp" : args[1].convertToString().toString();
-        Integer port = IANA.serviceToPort.get(name + "/" + service);
-        if(port == null) {
-            throw sockerr(runtime, "no such service " + name + "/" + service);
+        String proto = argc == 1 ? "tcp" : args[1].convertToString().toString();
+        
+        jnr.netdb.Service service = jnr.netdb.Service.getServiceByName(name, proto);
+        if(service == null) {
+            throw sockerr(runtime, "no such service " + name + "/" + proto);
         }
-        return runtime.newFixnum(port.intValue());
+        return runtime.newFixnum(service.getPort());
     }
 
     @Deprecated
@@ -754,9 +755,9 @@ public class RubySocket extends RubyBasicSocket {
             host = addr.getHostAddress();
         }
         if ((flags & NI_NUMERICSERV.value()) == 0) {
-            String serv = IANA.portToService.get(Integer.parseInt(port));
+            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
             if (serv != null) {
-                port = serv.substring(0, serv.indexOf('/') );
+                port = Integer.toString(serv.getPort());
             }
         }
         return runtime.newArray(runtime.newString(host), runtime.newString(port));
