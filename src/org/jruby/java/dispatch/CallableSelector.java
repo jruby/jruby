@@ -80,10 +80,16 @@ public class CallableSelector {
     private static ParameterTypes findMatchingCallableForArgs(IRubyObject recv, Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
         ParameterTypes method = findCallable(methods, Exact, args);
         if (method == null) {
+            method = findCallable(methods, Assignable, args);
+        }
+        if (method == null) {
             method = findCallable(methods, AssignableAndPrimitivable, args);
         }
         if (method == null) {
             method = findCallable(methods, AssignableOrDuckable, args);
+        }
+        if (method == null) {
+            method = findCallable(methods, AssignableWithVarargs, args);
         }
         if (method == null) {
             method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
@@ -116,8 +122,6 @@ public class CallableSelector {
         if (paramTypes.isVarArgs()) {
             // varargs exactness gives the last N args as +1 since they'll already
             // have been determined to fit
-            Class varArgArrayType = types[types.length - 1];
-            Class varArgType = varArgArrayType.getComponentType();
 
             // dig out as many trailing args as possible that match varargs type
             int nonVarargs = types.length - 1;
@@ -155,6 +159,18 @@ public class CallableSelector {
 
         public boolean accept(ParameterTypes types, IRubyObject[] args) {
             return assignableAndPrimitivable(types, args);
+        }
+    };
+    private static final CallableAcceptor Assignable = new CallableAcceptor() {
+
+        public boolean accept(ParameterTypes types, IRubyObject[] args) {
+            return assignable(types, args);
+        }
+    };
+    private static final CallableAcceptor AssignableWithVarargs = new CallableAcceptor() {
+
+        public boolean accept(ParameterTypes types, IRubyObject[] args) {
+            return assignableWithVarargs(types, args);
         }
     };
     private static final CallableAcceptor AssignableOrDuckable = new CallableAcceptor() {
@@ -200,6 +216,16 @@ public class CallableSelector {
         return true;
     }
 
+    private static boolean assignable(ParameterTypes paramTypes, IRubyObject... args) {
+        Class[] types = paramTypes.getParameterTypes();
+        for (int i = 0; i < types.length; i++) {
+            if (!(assignable(types[i], args[i]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static boolean assignableAndPrimitivableWithVarargs(ParameterTypes paramTypes, IRubyObject... args) {
         // bail out if this is not a varargs method
         if (!paramTypes.isVarArgs()) return false;
@@ -220,6 +246,32 @@ public class CallableSelector {
         // check remaining args
         for (int i = 0; i < nonVarargs; i++) {
             if (!(assignable(types[i], args[i]) || primitivable(types[i], args[i]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean assignableWithVarargs(ParameterTypes paramTypes, IRubyObject... args) {
+        // bail out if this is not a varargs method
+        if (!paramTypes.isVarArgs()) return false;
+
+        Class[] types = paramTypes.getParameterTypes();
+
+        Class varArgArrayType = types[types.length - 1];
+        Class varArgType = varArgArrayType.getComponentType();
+
+        // dig out as many trailing args as will fit, ensuring they match varargs type
+        int nonVarargs = types.length - 1;
+        for (int i = args.length - 1; i >= nonVarargs; i--) {
+            if (!(assignable(varArgType, args[i]))) {
+                return false;
+            }
+        }
+
+        // check remaining args
+        for (int i = 0; i < nonVarargs; i++) {
+            if (!(assignable(types[i], args[i]))) {
                 return false;
             }
         }
