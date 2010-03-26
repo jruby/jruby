@@ -2895,7 +2895,7 @@ public class RubyModule extends RubyObject {
 
     protected synchronized Map<String, IRubyObject> getClassVariables() {
         if (classVariables == Collections.EMPTY_MAP) {
-            classVariables = new Hashtable<String, IRubyObject>(4);
+            classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
         }
         return classVariables;
     }
