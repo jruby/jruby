@@ -121,3 +121,4 @@ test_jarred_gems_with_spaces_in_directory
 test_weak_drb_id_conv
 test_kernel
 test_dir_with_plusses
+test_jar_file
