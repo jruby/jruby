@@ -22,65 +22,8 @@ class Object
   # using either its base name or by using a name returned from an optional block,
   # passing all specified classes in turn and providing the block package name
   # and base class name.
-  def include_class(include_class)
-    if include_class.respond_to? "java_class"
-      # FIXME: When I changed this user const_set instead of eval below Comparator got lost
-      # which means I am missing something.
-      constant = include_class.java_class.to_s.split(".").last
-      
-      # JRUBY-3453: Make import not complain if Java already has already imported the specific Java class
-      # If no constant is defined, or the constant is not already set to the include_class, assign it
-      eval_str = "if !defined?(#{constant}) || #{constant} != include_class; #{constant} = include_class; end"
-      if (Module === self)
-        return class_eval(eval_str, __FILE__, __LINE__)
-      else
-        return eval(eval_str, binding, __FILE__, __LINE__)
-      end
-    end
-    
-    if include_class.respond_to? "_name"
-      return self.class.instance_eval { import(include_class._name) }
-    end
-    
-    # else, pull in the class
-    class_names = [*include_class]
-
-    class_names.each do |full_class_name|
-      if !full_class_name.respond_to? :match
-        raise ArgumentError.new "Invalid java class/interface: #{full_class_name}"
-      end
-
-      package_name, class_name = full_class_name.match(/((.*)\.)?([^\.]*)/)[2,3]
-
-      if block_given?
-        constant = yield(package_name, class_name)
-      else
-        constant = class_name
-      end
-      
-      cls = self.kind_of?(Module) ? self : self.class
-
-	  # Constant already exists...do not let proxy get created unless the collision is the proxy
-	  # you are trying to include.
-      existing_constant = cls.instance_eval(constant) rescue nil
-      proxy = nil
-      if existing_constant
-        proxy = JavaUtilities.get_proxy_class(full_class_name)
-        warn "redefining #{constant}" unless existing_constant == proxy
-      end
-
-      if existing_constant && existing_constant == proxy
-        return proxy
-      end
-
-      # FIXME: When I changed this user const_set instead of eval below Comparator got lost
-      # which means I am missing something.
-      if (Module === self)
-        class_eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")", __FILE__, __LINE__)
-      else
-        eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")", binding, __FILE__, __LINE__)
-      end
-    end
+  def include_class(include_class, &block)
+    java_import(include_class, &block)
   end
   
   # TODO: this can go away now, but people may be using it
@@ -91,8 +34,55 @@ class Object
     return other.java_class.assignable_from?(self.java_class)
   end
 
-  def java_import(*args, &block)
-    include_class(*args, &block)
+  def java_import(import_class)
+    case import_class
+    when Array
+      import_class.each do |arg|
+        java_import(arg)
+      end
+      return
+    when String
+      # pull in the class
+      import_class = JavaUtilities.get_proxy_class(import_class);
+    when Module
+      # do nothing, assume we already have it
+    else
+      raise ArgumentError.new "Invalid java class/interface: #{import_class}"
+    end
+
+    full_name = import_class.java_class.name
+    package = import_class.java_class.package
+    # package can be nil if it's default or no package was defined by the classloader
+    package_name = package ? package.name : full_name[0...full_name.rindex('.')]
+    if package_name.length > 0
+      class_name = full_name[(package_name.length + 1)..-1]
+    else
+      class_name = full_name
+    end
+
+    if block_given?
+      constant = yield(package_name, class_name)
+    else
+      constant = class_name
+
+      # Inner classes are separated with $
+      if constant =~ /\$/
+        constant = constant.split(/\$/).last
+      end
+
+      if constant[0,1].upcase != constant[0,1]
+        raise ArgumentError.new "cannot import class `" + class_name + "' as `" + constant + "'"
+      end
+    end
+
+    # JRUBY-3453: Make import not complain if Java already has already imported the specific Java class
+    # If no constant is defined, or the constant is not already set to the include_class, assign it
+    eval_str = "if !defined?(#{constant}) || #{constant} != import_class; #{constant} = import_class; end"
+    if (Module === self)
+      return class_eval(eval_str, __FILE__, __LINE__)
+    else
+      return eval(eval_str, binding, __FILE__, __LINE__)
+    end
   end
   
   private :java_import

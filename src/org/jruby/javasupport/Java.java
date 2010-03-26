@@ -95,6 +95,7 @@ import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name = "Java")
@@ -488,10 +489,9 @@ public class Java implements Library {
 
     private static RubyClass createProxyClass(Ruby runtime, RubyClass baseType,
             JavaClass javaClass, boolean invokeInherited) {
-	// JRUBY-2938 the proxy class might already exist
-	RubyClass proxyClass = javaClass.getProxyClass();
-	if (proxyClass != null)
-	    return proxyClass;
+        // JRUBY-2938 the proxy class might already exist
+        RubyClass proxyClass = javaClass.getProxyClass();
+        if (proxyClass != null) return proxyClass;
 
         // this needs to be split, since conditional calling #inherited doesn't fit standard ruby semantics
         RubyClass.checkInheritable(baseType);
@@ -737,23 +737,29 @@ public class Java implements Library {
     // package scheme 2: separate module for each full package name, constructed 
     // from the camel-cased package segments: Java::JavaLang::Object, 
     private static void addToJavaPackageModule(RubyModule proxyClass, JavaClass javaClass) {
+        Ruby runtime = proxyClass.getRuntime();
         Class<?> clazz = javaClass.javaClass();
         String fullName;
         if ((fullName = clazz.getName()) == null) {
             return;
         }
         int endPackage = fullName.lastIndexOf('.');
-        // we'll only map conventional class names to modules 
-        if (fullName.indexOf('$') != -1 || !Character.isUpperCase(fullName.charAt(endPackage + 1))) {
-            return;
+        RubyModule parentModule;
+        String className;
+
+        // inner classes must be nested
+        if (fullName.indexOf('$') != -1) {
+            parentModule = getProxyClass(runtime, (JavaClass)javaClass.declaring_class());
+            className = clazz.getSimpleName();
+        } else {
+            String packageString = endPackage < 0 ? "" : fullName.substring(0, endPackage);
+            parentModule = getJavaPackageModule(runtime, packageString);
+            className = parentModule == null ? fullName : fullName.substring(endPackage + 1);
         }
-        Ruby runtime = proxyClass.getRuntime();
-        String packageString = endPackage < 0 ? "" : fullName.substring(0, endPackage);
-        RubyModule packageModule = getJavaPackageModule(runtime, packageString);
-        if (packageModule != null) {
-            String className = fullName.substring(endPackage + 1);
-            if (packageModule.getConstantAt(className) == null) {
-                packageModule.const_set(runtime.newSymbol(className), proxyClass);
+        
+        if (parentModule != null && IdUtil.isConstant(className)) {
+            if (parentModule.getConstantAt(className) == null) {
+                parentModule.setConstant(className, proxyClass);
             }
         }
     }
@@ -968,11 +974,18 @@ public class Java implements Library {
         }
     }
 
-    private static void memoizePackageOrClass(RubyModule parentPackage, String name, final IRubyObject value) {
+    private static void memoizePackageOrClass(final RubyModule parentPackage, final String name, final IRubyObject value) {
         RubyClass singleton = parentPackage.getSingletonClass();
         singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                Arity.checkArgumentCount(context.getRuntime(), args, 0, 0);
+                if (args.length != 0) {
+                    throw context.getRuntime().newArgumentError(
+                            "Java package `"
+                            + parentPackage.callMethod("package_name")
+                            + "' does not have a method `"
+                            + name
+                            + "'");
+                }
                 return call(context, self, clazz, name);
             }
 

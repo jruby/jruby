@@ -10,7 +10,7 @@ module Java
    end
 
    def method_missing(sym, *args)
-     raise ArgumentError, "wrong number of arguments (#{args.length} for 0)" unless args.empty?
+      raise ArgumentError, "Java package `java' does not have a method `#{sym}'" unless args.empty?
      JavaUtilities.get_top_level_proxy_or_package sym
    end
  end
@@ -47,7 +47,7 @@ module JavaPackageModuleTemplate
     private :const_missing
     
     def method_missing(sym, *args)
-      raise ArgumentError, "wrong number of arguments (#{args.length} for 0)" unless args.empty?
+      raise ArgumentError, "Java package `#{package_name}' does not have a method `#{sym}'" unless args.empty?
       JavaUtilities.get_proxy_or_package_under_package self, sym
     end
     private :method_missing
