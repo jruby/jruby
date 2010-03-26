@@ -35,8 +35,6 @@ package org.jruby.runtime.marshal;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -55,8 +53,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.Variable;
-import org.jruby.runtime.component.VariableEntry;
 import org.jruby.util.ByteList;
 
 /**
@@ -311,15 +307,13 @@ public class UnmarshalStream extends InputStream {
     public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
         int count = unmarshalInt();
 
-        List<Variable<Object>> attrs = new ArrayList<Variable<Object>>(count);
-
+        RubyClass cls = object.getMetaClass().getRealClass();
         for (int i = count; --i >= 0; ) {
             String name = unmarshalObject().asJavaString();
             IRubyObject value = unmarshalObject();
-            attrs.add(new VariableEntry<Object>(name, value));
-        }
 
-        object.syncVariables(attrs);
+            cls.getVariableAccessorForWrite(name).set(object, value);
+        }
     }
 
     private IRubyObject uclassUnmarshall() throws IOException {

@@ -1742,9 +1742,8 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash result = newHash(input.getRuntime());
         input.registerLinkTarget(result);
         int size = input.unmarshalInt();
-        ThreadContext context = input.getRuntime().getCurrentContext();
         for (int i = 0; i < size; i++) {
-            result.op_aset(context, input.unmarshalObject(), input.unmarshalObject());
+            result.fastASetCheckString(input.getRuntime(), input.unmarshalObject(), input.unmarshalObject());
         }
         if (defaultValue) result.default_value_set(input.unmarshalObject());
         return result;

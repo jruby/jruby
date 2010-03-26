@@ -155,6 +155,8 @@ public class RubySystemCallError extends RubyException {
             RubySystemCallError exc = (RubySystemCallError) type.allocate();
             
             unmarshalStream.registerLinkTarget(exc);
+            // FIXME: Can't just pull these off the wire directly? Or maybe we should
+            // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
             
             exc.message = (IRubyObject)exc.removeInternalVariable("mesg");

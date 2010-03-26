@@ -3809,18 +3809,27 @@ public class RubyArray extends RubyObject implements List {
 
     public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {
         output.registerLinkTarget(array);
-        output.writeInt(array.getList().size());
-        for (Iterator iter = array.getList().iterator(); iter.hasNext();) {
-            output.dumpObject((IRubyObject) iter.next());
+        
+        int length = array.realLength;
+        int begin = array.begin;
+        IRubyObject[] ary = array.values;
+        
+        output.writeInt(length);
+        for (int i = 0; i < length; i++) {
+            output.dumpObject(ary[i + begin]);
         }
     }
 
     public static RubyArray unmarshalFrom(UnmarshalStream input) throws IOException {
-        RubyArray result = input.getRuntime().newArray();
-        input.registerLinkTarget(result);
         int size = input.unmarshalInt();
+        IRubyObject[] values = new IRubyObject[size];
+        
+        // we create this now with an empty, nulled array so it's available for links in the marshal data
+        RubyArray result = input.getRuntime().newArrayNoCopy(values);
+
+        input.registerLinkTarget(result);
         for (int i = 0; i < size; i++) {
-            result.append(input.unmarshalObject());
+            values[i] = input.unmarshalObject();
         }
         return result;
     }
