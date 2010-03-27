@@ -1577,4 +1577,9 @@ public class RubyKernel {
         String name = f != null ? f.getName() : null;
         return name != null ? context.getRuntime().newSymbol(name) : context.getRuntime().getNil();
     }
+
+    @JRubyMethod(module = true, frame = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject singleton_class(IRubyObject recv) {
+        return recv.getSingletonClass();
+    }
 }
