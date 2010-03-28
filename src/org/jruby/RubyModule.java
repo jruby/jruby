@@ -1240,11 +1240,16 @@ public class RubyModule extends RubyObject {
      *
      */
     public void exportMethod(String name, Visibility visibility) {
-        if (this == getRuntime().getObject()) {
+        Ruby runtime = getRuntime();
+        if (this == runtime.getObject()) {
             getRuntime().secure(4);
         }
 
         DynamicMethod method = searchMethod(name);
+
+        if (method.isUndefined() && isModule()) {
+            method = runtime.getObject().searchMethod(name);
+        }
 
         if (method.isUndefined()) {
             throw getRuntime().newNameError("undefined method '" + name + "' for " +
@@ -1954,8 +1959,9 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule module_function(ThreadContext context, IRubyObject[] args) {
-        if (context.getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw context.getRuntime().newSecurityError("Insecure: can't change method visibility");
+        Ruby runtime = context.getRuntime();
+        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
+            throw runtime.newSecurityError("Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1963,10 +1969,17 @@ public class RubyModule extends RubyObject {
         } else {
             setMethodVisibility(args, PRIVATE);
 
+            // FIXME: This is duplicated in exportMethod; should be unified.
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
                 DynamicMethod method = searchMethod(name);
-                assert !method.isUndefined() : "undefined method '" + name + "'";
+                if (method.isUndefined() && isModule()) {
+                    method = runtime.getObject().searchMethod(name);
+                }
+                if (method.isUndefined()) {
+                    throw getRuntime().newNameError("undefined method '" + name + "' for " +
+                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
+                }
                 getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
                 callMethod(context, "singleton_method_added", context.getRuntime().fastNewSymbol(name));
             }
