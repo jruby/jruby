@@ -1095,8 +1095,8 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void reify(String classDumpDir) {
         Class reifiedParent = RubyObject.class;
-        String javaName = "ruby." + getBaseName();
-        String javaPath = "ruby/" + getBaseName();
+        String javaName = "ruby." + getName().replaceAll("::", ".");
+        String javaPath = "ruby/" + getName().replaceAll("::", "/");
         JRubyClassLoader parentCL = runtime.getJRubyClassLoader();
 
         if (superClass.reifiedClass != null) {
@@ -1327,21 +1327,27 @@ public class RubyClass extends RubyModule {
     @Override
     public Object toJava(Class klass) {
         Class returnClass = null;
-        
-        if (klass.isAssignableFrom(Class.class)) {
+
+        if (klass == Class.class) {
+            // Class requested; try java_class or else return nearest reified class
             if (respondsTo("java_class")) {
-                JavaClass javaClass = (JavaClass)callMethod("java_class");
-                returnClass = (Class)javaClass.getValue();
+                return callMethod("java_class").toJava(klass);
             } else {
-                return this;
+                for (RubyClass current = this; current != null; current = current.getSuperClass()) {
+                    returnClass = current.getReifiedClass();
+                    if (returnClass != null) return returnClass;
+                }
             }
+            // should never fall through, since RubyObject has a reified class
         }
 
-        if (returnClass == null) {
-            throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + klass);
+        if (klass.isAssignableFrom(RubyClass.class)) {
+            // they're asking for something RubyClass extends, give them that
+            return this;
         }
 
-        return returnClass;
+        // they're asking for something we can't provide
+        throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + klass);
     }
 
     protected final Ruby runtime;

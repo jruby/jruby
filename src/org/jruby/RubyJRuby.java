@@ -611,8 +611,11 @@ public class RubyJRuby {
                 throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
             }
 
-            if (clazz.getReifiedClass() == null) {
-                return context.getRuntime().getNil();
+            for (RubyClass current = clazz; current != null; current = current.getSuperClass()) {
+                if (current.getReifiedClass() != null) {
+                    clazz = current;
+                    break;
+                }
             }
 
             return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), clazz.getReifiedClass());

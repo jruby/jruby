@@ -109,7 +109,17 @@ public class RubyFileStat extends RubyObject {
         if (filename.startsWith("file:") && filename.indexOf('!') != -1) {
             // file: URL handling
             String zipFileEntry = filename.substring(filename.indexOf("!") + 1);
-            if (zipFileEntry.charAt(0) == '/') zipFileEntry = zipFileEntry.substring(1);
+            if (zipFileEntry.length() > 0) {
+                if (zipFileEntry.charAt(0) == '/') {
+                    if (zipFileEntry.length() > 1) {
+                        zipFileEntry = zipFileEntry.substring(1);
+                    } else {
+                        throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
+                    }
+                }
+            } else {
+                throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
+            }
             filename = filename.substring(5, filename.indexOf("!"));
             
             try {

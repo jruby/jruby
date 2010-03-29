@@ -70,6 +70,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
@@ -579,7 +580,7 @@ public class JavaClass extends JavaObject {
         installClassFields(proxy);
         installClassMethods(proxy);
         installClassConstructors(proxy);
-        installClassConstants(javaClass, proxy);
+        installClassClasses(javaClass, proxy);
         
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
@@ -657,20 +658,37 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void installClassConstants(final Class<?> javaClass, final RubyClass proxy) {
+    private void installClassClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
-        Class<?>[] classes = getClasses(javaClass);
+        Class<?>[] classes = getDeclaredClasses(javaClass);
 
-        for (int i = classes.length; --i >= 0;) {
+        for (int i = classes.length; --i >= 0; ) {
             if (javaClass == classes[i].getDeclaringClass()) {
                 Class<?> clazz = classes[i];
+
+                // no non-public inner classes
+                if (!Modifier.isPublic(clazz.getModifiers())) continue;
+                
                 String simpleName = getSimpleName(clazz);
-                if (simpleName.length() == 0) {
-                    continue;
-                }
-                // Ignore bad constant named inner classes pending JRUBY-697
-                if (IdUtil.isConstant(simpleName) && proxy.getConstantAt(simpleName) == null) {
-                    proxy.setConstant(simpleName, Java.get_proxy_class(JAVA_UTILITIES, get(getRuntime(), clazz)));
+                if (simpleName.length() == 0) continue;
+
+                final IRubyObject innerProxy = Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz));
+
+                if (IdUtil.isConstant(simpleName)) {
+                    if (proxy.getConstantAt(simpleName) == null) {
+                        proxy.const_set(getRuntime().newString(simpleName), innerProxy);
+                    }
+                } else {
+                    // lower-case name
+                    if (!proxy.respondsTo(simpleName)) {
+                        // define a class method
+                        proxy.getSingletonClass().addMethod(simpleName, new JavaMethodZero(proxy.getSingletonClass(), Visibility.PUBLIC) {
+                            @Override
+                            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                                return innerProxy;
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -872,22 +890,8 @@ public class JavaClass extends JavaObject {
         for (NamedInstaller installer : staticInstallers.values()) {
             installer.install(module);
         }
-        // setup constants for public inner classes
-        Class<?>[] classes = getClasses(javaClass);
 
-        for (int i = classes.length; --i >= 0; ) {
-            if (javaClass == classes[i].getDeclaringClass()) {
-                Class<?> clazz = classes[i];
-                String simpleName = getSimpleName(clazz);
-                if (simpleName.length() == 0) continue;
-                
-                // Ignore bad constant named inner classes pending JRUBY-697
-                if (IdUtil.isConstant(simpleName) && module.getConstantAt(simpleName) == null) {
-                    module.const_set(getRuntime().newString(simpleName),
-                        Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz)));
-                }
-            }
-        }
+        installClassClasses(javaClass, module);
         
         this.proxyModule = module;
         applyProxyExtenders();
@@ -1785,6 +1789,14 @@ public class JavaClass extends JavaObject {
         } catch (SecurityException e) {
             return new Constructor[] {};
         }        
+    }
+
+    private static Class<?>[] getDeclaredClasses(Class<?> javaClass) {
+        try {
+            return javaClass.getDeclaredClasses();
+        } catch (SecurityException e) {
+            return new Class<?>[] {};
+        }
     }
     
     private static Class<?>[] getClasses(Class<?> javaClass) {

@@ -124,7 +124,12 @@ class TestMonitor < Test::Unit::TestCase
     @monitor.synchronize do
       assert_equal("foo", c)
       result3 = cond.wait(0.1)
-      assert_equal(false, result3)
+      # JRuby-specific change:
+      # The assert is commented out since the
+      # the behaivor is non-deterministic. Plus,
+      # different MRI versions exhibit different
+      # behavior. MRI 1.8 returns false, 1.9 - true.
+      # assert_equal(false, result3)
       assert_equal("foo", c)
       queue3.enq(nil)
       result4 = cond.wait
