@@ -100,6 +100,7 @@ class TestThread < Test::Unit::TestCase
       e = error
     end
     assert(! e.nil?)
+    assert_match /thread [0-9a-z]+ tried to join itself/, e.message
   end
 
   def test_raise

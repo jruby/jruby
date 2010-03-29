@@ -456,7 +456,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
         if (isCurrent()) {
-            throw getRuntime().newThreadError("thread tried to join itself");
+            throw getRuntime().newThreadError("thread " + identityString() + " tried to join itself");
         }
         try {
             if (threadService.getCritical()) {
@@ -536,8 +536,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // FIXME: There's some code duplication here with RubyObject#inspect
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":0x");
-        part.append(Integer.toHexString(System.identityHashCode(this)));
+        part.append("#<").append(cname).append(":");
+        part.append(identityString());
         part.append(" ");
         part.append(status.toString().toLowerCase());
         part.append(">");
@@ -1037,5 +1037,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public String toString() {
         return threadImpl.toString();
+    }
+
+    private String identityString() {
+        return "0x" + Integer.toHexString(System.identityHashCode(this));
     }
 }
