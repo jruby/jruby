@@ -478,7 +478,9 @@ public class RubyStringIO extends RubyObject {
         if (data.pos < 0) {
             throw getRuntime().newErrnoEINVALError("Invalid argument");
         }
-
+        if (data.pos < data.internal.getByteList().length()) {
+            data.eof = false;
+        }
         return getRuntime().getNil();
     }
 
