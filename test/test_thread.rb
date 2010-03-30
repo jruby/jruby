@@ -2,6 +2,10 @@ require 'test/unit'
 require 'thread'
 
 class TestThread < Test::Unit::TestCase
+  def teardown
+    Thread.critical = false
+  end
+
   def test_running_and_finishing
     thread = Thread.new {
       $toto = 1
@@ -323,6 +327,46 @@ class TestThread < Test::Unit::TestCase
     def test_thread_exclusive
       out = Thread.exclusive { :result }
       assert_equal(:result, out)
+    end
+  end
+
+  def test_mutual_join
+    t1 = Thread.current
+    begin
+      t2 = Thread.new { t1.join }.join
+      fail
+    rescue ThreadError => e
+      assert_match /Thread#join: deadlock \w+ - mutual join\(\w+\)/, e.message
+    end
+  end
+
+  if RUBY_VERSION < "1.9"
+    def test_deadlock_by_critical_from_main
+      t = Thread.new { sleep }
+      begin
+        Thread.critical = true
+        t.join
+        fail
+      rescue Exception => e
+        assert_equal 'fatal', e.class.to_s.downcase
+        assert_match /Thread\(\w+\): deadlock/, e.message
+      end
+    end
+
+    # Thread.critical doesn't work like CRuby 1.8 in JRuby native thread mode.
+    # Isn't it good to remove Thread.critical like CRuby 1.9?
+    def TODO_test_deadlock_by_critical_from_sub
+      begin
+        Thread.new {
+          Thread.critical = true
+          sleep
+        }.join
+        fail
+      rescue Exception => e
+        # TODO: 'Fatal' in JRuby, 'fatal' in CRuby.
+        assert_equal 'fatal', e.class.to_s.downcase
+        assert_match /Thread\(\w+\): deadlock/, e.message
+      end
     end
   end
 end

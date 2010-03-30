@@ -85,6 +85,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private IRubyObject finalResult;
     private RaiseException exitingException;
     private RubyThreadGroup threadGroup;
+    private RubyThread joiningThread;
 
     private final ThreadService threadService;
 
@@ -446,56 +447,48 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // than or equal to zero returns immediately; returns nil
             timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
             if (timeoutMillis <= 0) {
-	        // TODO: not sure that we should skip calling join() altogether.
-		// Thread.join() has some implications for Java Memory Model, etc.
-	        if (threadImpl.isAlive()) {
-		   return getRuntime().getNil();
-		} else {   
-                   return this;
-		}
-            }
-        }
-        if (isCurrent()) {
-            throw getRuntime().newThreadError("thread " + identityString() + " tried to join itself");
-        }
-        try {
-            if (threadService.getCritical()) {
-                // If the target thread is sleeping or stopped, wake it
-                synchronized (this) {
-                    notify();
+                // TODO: not sure that we should skip calling join() altogether.
+                // Thread.join() has some implications for Java Memory Model, etc.
+                if (threadImpl.isAlive()) {
+                    return getRuntime().getNil();
+                } else {
+                    return this;
                 }
-                
-                // interrupt the target thread in case it's blocking or waiting
-                // WARNING: We no longer interrupt the target thread, since this usually means
-                // interrupting IO and with NIO that means the channel is no longer usable.
-                // We either need a new way to handle waking a target thread that's waiting
-                // on IO, or we need to accept that we can't wake such threads and must wait
-                // for them to complete their operation.
-                //threadImpl.interrupt();
             }
-
+        }
+        if (threadService.getCritical()) deadlock();
+        if (status != Status.DEAD) {
             RubyThread currentThread = getRuntime().getCurrentContext().getThread();
-            final long timeToWait = Math.min(timeoutMillis, 200);
-
-            // We need this loop in order to be able to "unblock" the
-            // join call without actually calling interrupt.
-            long start = System.currentTimeMillis();
-            while(true) {
-                currentThread.pollThreadEvents();
-                threadImpl.join(timeToWait);
-                if (!threadImpl.isAlive()) {
-                    break;
-                }
-                if (System.currentTimeMillis() - start > timeoutMillis) {
-                    break;
-                }
+            if (currentThread == this) {
+                throw getRuntime().newThreadError("thread " + identityString() + " tried to join itself");
+            } else if (currentThread == this.joiningThread) {
+                throw getRuntime().newThreadError(String.format("Thread#join: deadlock %s - mutual join(%s)", currentThread.identityString(), identityString()));
             }
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
-            assert false : ie;
-        } catch (ExecutionException ie) {
-            ie.printStackTrace();
-            assert false : ie;
+            try {
+                final long timeToWait = Math.min(timeoutMillis, 200);
+                // We need this loop in order to be able to "unblock" the
+                // join call without actually calling interrupt.
+                long start = System.currentTimeMillis();
+                while(true) {
+                    currentThread.pollThreadEvents();
+                    currentThread.joiningThread = this;
+                    threadImpl.join(timeToWait);
+                    if (!threadImpl.isAlive()) {
+                        break;
+                    }
+                    if (System.currentTimeMillis() - start > timeoutMillis) {
+                        break;
+                    }
+                }
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+                assert false : ie;
+            } catch (ExecutionException ie) {
+                ie.printStackTrace();
+                assert false : ie;
+            } finally {
+                currentThread.joiningThread = null;
+            }
         }
 
         if (exitingException != null) {
@@ -506,7 +499,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return getRuntime().getNil();
         } else {
             return this;
-	}
+        }
     }
 
     @JRubyMethod(name = "value", frame = true)
@@ -1035,11 +1028,24 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return hash;
     }
 
+    @Override
     public String toString() {
         return threadImpl.toString();
     }
 
     private String identityString() {
         return "0x" + Integer.toHexString(System.identityHashCode(this));
+    }
+
+    private void deadlock() {
+        Ruby runtime = getRuntime();
+        RubyThread current = runtime.getCurrentContext().getThread();
+        String msg = String.format("Thread(%s): deadlock", current.identityString());
+        RaiseException exception = new RaiseException(runtime, runtime.getFatal(), msg, true);
+        if (current == threadService.getMainThread()) {
+            throw exception;
+        } else {
+            threadService.getMainThread().raise(new IRubyObject[]{exception.getException()}, Block.NULL_BLOCK);
+        }
     }
 }
