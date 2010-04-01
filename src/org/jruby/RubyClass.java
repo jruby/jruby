@@ -1095,8 +1095,17 @@ public class RubyClass extends RubyModule {
      */
     public synchronized void reify(String classDumpDir) {
         Class reifiedParent = RubyObject.class;
-        String javaName = "ruby." + getName().replaceAll("::", ".");
-        String javaPath = "ruby/" + getName().replaceAll("::", "/");
+
+        // calculate an appropriate name, using "Anonymous####" if none is present
+        String name;
+        if (getBaseName() == null) {
+            name = "Anonymous" + id;
+        } else {
+            name = getName();
+        }
+        
+        String javaName = "ruby." + name.replaceAll("::", ".");
+        String javaPath = "ruby/" + name.replaceAll("::", "/");
         JRubyClassLoader parentCL = runtime.getJRubyClassLoader();
 
         if (superClass.reifiedClass != null) {

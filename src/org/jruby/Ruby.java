@@ -2969,6 +2969,11 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EPIPE"), "Broken pipe");
     }
 
+    public RaiseException newErrnoECONNABORTEDError() {
+        return newRaiseException(getErrno().fastGetClass("ECONNABORTED"),
+                "An established connection was aborted by the software in your host machine");
+    }
+
     public RaiseException newErrnoECONNREFUSEDError() {
         return newRaiseException(getErrno().fastGetClass("ECONNREFUSED"), "Connection refused");
     }

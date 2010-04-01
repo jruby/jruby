@@ -2591,16 +2591,31 @@ public class RubyIO extends RubyObject {
         } catch (EOFException e) {
             throw getRuntime().newEOFError();
     	} catch (IOException e) {
-            // All errors to sysread should be SystemCallErrors, but on a closed stream
-            // Ruby returns an IOError.  Java throws same exception for all errors so
-            // we resort to this hack...
-            if ("File not open".equals(e.getMessage())) {
-                    throw getRuntime().newIOError(e.getMessage());
-            }
-    	    throw getRuntime().newSystemCallError(e.getMessage());
+            synthesizeSystemCallError(e);
+            return null;
     	} finally {
             context.getThread().afterBlockingCall();
         }
+    }
+
+    /**
+     * Java does not give us enough information for specific error conditions
+     * so we are reduced to divining them through string matches...
+     */
+    // TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
+    // TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+    private void synthesizeSystemCallError(IOException e) {
+        String errorMessage = e.getMessage();
+        // All errors to sysread should be SystemCallErrors, but on a closed stream
+        // Ruby returns an IOError.  Java throws same exception for all errors so
+        // we resort to this hack...
+        if ("File not open".equals(errorMessage)) {
+            throw getRuntime().newIOError(e.getMessage());
+        } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
+            throw getRuntime().newErrnoECONNABORTEDError();
+        }
+
+        throw getRuntime().newSystemCallError(e.getMessage());
     }
     
     public IRubyObject read(IRubyObject[] args) {
