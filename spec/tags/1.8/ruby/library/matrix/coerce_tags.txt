@@ -1,1 +1,0 @@
-fails(JRUBY-3716):Matrix#coerce allows the division of fixnum by a Matrix 

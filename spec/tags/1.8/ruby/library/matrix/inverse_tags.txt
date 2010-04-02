@@ -1,2 +1,1 @@
-fails(JRUBY-4176):Matrix#inverse returns the inverse of the Matrix (other case)
 fails(JRUBY-4176):Matrix#inverse raises a ErrDimensionMismatch if the Matrix is not square
