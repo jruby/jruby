@@ -55,7 +55,7 @@ module JRuby::Compiler
       @constructor = false;
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile, :constructor
 
     def new_method(name, java_signature = nil, annotations = [])
       @constructor ||= name == "initialize"
@@ -202,7 +202,7 @@ JAVA
       @constructor = name == "initialize"
     end
 
-    attr_accessor :args, :name, :java_signature, :static, :annotations
+    attr_accessor :args, :name, :java_signature, :static, :annotations, :constructor
 
     def format_anno_value(value)
       case value
@@ -267,7 +267,7 @@ JAVA
   public #{@ruby_class.name}(#{args_string}) {
     this(__ruby__, __metaclass__);
 #{conv_string}
-    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\" #{passed_args});
+    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
   }
 JAVA
       else
