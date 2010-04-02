@@ -59,11 +59,16 @@ import org.jruby.util.TypeConverter;
  */
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
     private static final boolean DEBUG = false;
+    private static final Object[] NULL_OBJECT_ARRAY = new Object[0];
     
     // The class of this object
     protected transient RubyClass metaClass;
 
-    protected int flags; // zeroed by jvm
+    // zeroed by jvm
+    protected int flags;
+
+    // variable table, lazily allocated as needed (if needed)
+    private volatile Object[] varTable = NULL_OBJECT_ARRAY;
 
     /**
      * The error message used when some one tries to modify an
@@ -1082,9 +1087,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             getRuntime().removeFinalizer(finalizer);
         }
     }
-
-    private static final Object[] NULL_OBJECT_ARRAY = new Object[0];
-    private volatile Object[] varTable = NULL_OBJECT_ARRAY;
 
     private Object[] getVariableTableForRead() {
         return varTable;
