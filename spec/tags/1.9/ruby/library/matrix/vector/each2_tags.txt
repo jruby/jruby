@@ -1,2 +1,0 @@
-fails(JRUBY-3716):Vector.each2 given one argument returns self when given a block
-fails(JRUBY-3716):Vector.each2 given one argument returns an enumerator if no block given

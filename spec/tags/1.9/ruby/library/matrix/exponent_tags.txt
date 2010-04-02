@@ -1,1 +1,0 @@
-fails(JRUBY-3716):Matrix#** raises a ErrOperationNotImplemented exception for powers that aren't Integers

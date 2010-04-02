@@ -1,1 +1,0 @@
-fails(JRUBY-3716):Matrix#rank works for some easy rectangular matrices
