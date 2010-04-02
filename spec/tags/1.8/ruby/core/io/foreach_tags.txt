@@ -1,0 +1,2 @@
+fails:IO.foreach when the filename starts with | gets data from the standard out of the subprocess
+fails:IO.foreach when the filename starts with | gets data from a fork when passed -

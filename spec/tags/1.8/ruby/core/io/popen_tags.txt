@@ -1,1 +1,2 @@
 fails(JRUBY-4171,linux,intermittent failure):IO::popen writes to a write-only pipe
+fails:IO.popen starts returns a forked process if the command is -
