@@ -1,4 +1,0 @@
-fails:IO.try_convert returns self for IO objects
-fails:IO.try_convert converts using :to_io
-fails:IO.try_convert returns nil when the argument doesn't respond to :to_io
-fails:IO.try_convert checks the result of the conversion
