@@ -52,12 +52,14 @@ module JRuby::Compiler
       @interfaces = []
       @requires = requires
       @package = package
+      @constructor = false;
     end
 
     attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile
 
     def new_method(name, java_signature = nil, annotations = [])
-      method = RubyMethod.new(name, java_signature, annotations)
+      @constructor ||= name == "initialize"
+      method = RubyMethod.new(self, name, java_signature, annotations)
       methods << method
       method
     end
@@ -139,7 +141,7 @@ public class #{name} extends RubyObject #{interface_string} {
 
 #{static_init}
 
-  public #{name}() {
+  #{@constructor ? "private" : "public"} #{name}() {
     super(__ruby__, __metaclass__);
   }
 
@@ -158,12 +160,14 @@ JAVA
   end
 
   class RubyMethod
-    def initialize(name, java_signature = nil, annotations = [])
+    def initialize(ruby_class, name, java_signature = nil, annotations = [])
+      @ruby_class = ruby_class
       @name = name
       @java_signature = java_signature
       @static = false;
       @args = []
       @annotations = annotations
+      @constructor = name == "initialize"
     end
 
     attr_accessor :args, :name, :java_signature, :static, :annotations
@@ -225,7 +229,17 @@ JAVA
 
       anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
 
-      method_string = <<EOJ
+      if @constructor
+        method_string = <<JAVA
+#{anno_string}
+  public #{@ruby_class.name}(#{args_string}) {
+    this();
+#{conv_string}
+    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
+  }
+JAVA
+      else
+        method_string = <<EOJ
 #{anno_string}
   public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
 #{conv_string}
@@ -233,6 +247,8 @@ JAVA
     #{ret_string}
   }
 EOJ
+      end
+
       method_string
     end
   end
