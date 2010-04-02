@@ -90,11 +90,7 @@ JAVA
 
     def annotations_string
       annotations.map do |a|
-        params = (a[0] || []).map do |k,v|
-          "#{k} = #{format_anno_value(v)}"
-        end.join(',')
-
-        "@#{a.shift}(#{params})"
+        "@" + a
       end.join("\n")
     end
 
@@ -204,15 +200,14 @@ JAVA
 
     attr_accessor :args, :name, :java_signature, :static, :annotations, :constructor
 
-    def format_anno_value(value)
-      case value
-      when String
-        %Q["#{value}"]
-      when Fixnum
-        value.to_s
-      when Array
-        "{" + value.map {|v| format_anno_value(v)}.join(',') + "}"
-      end
+    def annotations_string
+      annotations.map do |a|
+        "@" + a
+      end.join("\n")
+    end
+
+    def conversion_string(var_names)
+      var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
     end
 
     def to_s
@@ -257,24 +252,20 @@ JAVA
       passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
       passed_args = ', ' + passed_args if args.size > 0
 
-      conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
-
-      anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
-
       if @constructor
         method_string = <<JAVA
-#{anno_string}
+#{annotations_string}
   public #{@ruby_class.name}(#{args_string}) {
     this(__ruby__, __metaclass__);
-#{conv_string}
+#{conversion_string(var_names)}
     RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
   }
 JAVA
       else
         method_string = <<EOJ
-#{anno_string}
+#{annotations_string}
   public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
-#{conv_string}
+#{conversion_string(var_names)}
     IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
     #{ret_string}
   }
@@ -337,32 +328,10 @@ EOJ
       @signature = name
     end
 
-    def prepare_anno_value(value)
-      case value.node_type
-      when NodeType::STRNODE
-        value.value
-      when NodeType::ARRAYNODE
-        value.child_nodes.map {|v| prepare_anno_value(v)}
-      end
-    end
-
-    def add_annotation(*child_nodes)
-      name = name_or_value(child_nodes[0])
-      args = child_nodes[1]
-      if args && args.list_node.size > 0
-        anno_args = {}
-        child_assocs = args.list_node.child_nodes
-        for i in 0...(child_assocs.size / 2)
-          key = child_assocs[i * 2]
-          value = child_assocs[i * 2 + 1]
-          k_name = name_or_value(key)
-          v_value = prepare_anno_value(value)
-
-          anno_args[k_name] = v_value
-        end
-        @annotations << [name, anno_args]
-      else
-        @annotations << [name]
+    def add_annotation(nodes)
+      nodes.each do
+        name = name_or_value(nodes[0])
+        @annotations << name
       end
     end
 
@@ -493,14 +462,6 @@ EOJ
       end
     end
 
-    visit :call do
-      case node.name
-      when '+@'
-        add_annotation(node.receiver_node,
-          *(node.args_node ? node.args_node.child_nodes : []))
-      end
-    end
-
     visit :class do
       new_class(node.cpath.name)
       node.body_node.accept(self)
@@ -526,7 +487,7 @@ EOJ
       when 'java_signature'
         set_signature build_signature(node.args_node.child_nodes[0])
       when 'java_annotation'
-        add_annotation(*node.args_node.child_nodes)
+        add_annotation(node.args_node.child_nodes)
       when 'java_implements'
         add_interface(*node.args_node.child_nodes)
       when "java_require"
