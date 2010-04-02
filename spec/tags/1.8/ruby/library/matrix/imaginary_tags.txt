@@ -1,2 +1,0 @@
-fails(JRUBY-4176):Matrix#imaginary returns a matrix with the imaginary part of the elements of the receiver
-fails(JRUBY-4176):Matrix#imaginary returns empty matrices on the same size if empty

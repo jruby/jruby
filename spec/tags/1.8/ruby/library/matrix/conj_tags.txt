@@ -1,2 +1,0 @@
-fails(JRUBY-4176):Matrix#conj returns a matrix with all entries 'conjugated'
-fails(JRUBY-4176):Matrix#conj returns empty matrices on the same size if empty
