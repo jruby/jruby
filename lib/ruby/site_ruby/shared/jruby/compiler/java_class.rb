@@ -320,8 +320,10 @@ EOJ
       @node = nil
     end
 
-    def add_import(name)
-      @script.add_import(name)
+    def add_imports(nodes)
+      nodes.each do |n|
+        @script.add_import(name_or_value(n))
+      end
     end
 
     def set_signature(name)
@@ -483,7 +485,7 @@ EOJ
     visit :fcall do
       case node.name
       when 'java_import'
-        add_import node.args_node.child_nodes[0].value
+        add_imports node.args_node.child_nodes
       when 'java_signature'
         set_signature build_signature(node.args_node.child_nodes[0])
       when 'java_annotation'
