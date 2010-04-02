@@ -175,6 +175,12 @@ public class RubyUDPSocket extends RubyIPSocket {
             ((DatagramChannel) this.getChannel()).configureBlocking(false);
             context.getThread().select(this, SelectionKey.OP_READ);
             InetSocketAddress sender = (InetSocketAddress) ((DatagramChannel) this.getChannel()).receive(buf);
+
+            // see JRUBY-4678
+            if (sender == null) {
+                throw context.getRuntime().newErrnoECONNRESETError();
+            }
+
             IRubyObject addressArray = context.getRuntime().newArray(new IRubyObject[]{
                 context.getRuntime().newString("AF_INET"),
                 context.getRuntime().newFixnum(sender.getPort()),
@@ -195,13 +201,21 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             int length = RubyNumeric.fix2int(args[0]);
             ByteBuffer buf = ByteBuffer.allocate(length);
+            ((DatagramChannel) this.getChannel()).configureBlocking(false);
             context.getThread().select(this, SelectionKey.OP_READ);
-            ((DatagramChannel) this.getChannel()).receive(buf);
+            InetSocketAddress sender = (InetSocketAddress) ((DatagramChannel) this.getChannel()).receive(buf);
+
+            // see JRUBY-4678
+            if (sender == null) {
+                throw context.getRuntime().newErrnoECONNRESETError();
+            }
+
             return context.getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
         } catch (IOException e) {
             throw sockerr(context.getRuntime(), "recv: name or service not known");
         }
     }
+
     @Deprecated
     public IRubyObject send(IRubyObject[] args) {
         return send(getRuntime().getCurrentContext(), args);
