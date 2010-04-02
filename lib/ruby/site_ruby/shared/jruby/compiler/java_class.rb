@@ -81,7 +81,7 @@ module JRuby::Compiler
   static {
 #{requires_string}
     RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-    metaclass.setClassAllocator(#{name}.class);
+    metaclass.setRubyClassAllocator(#{name}.class);
     if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
     __metaclass__ = metaclass;
   }
@@ -128,6 +128,40 @@ JAVA
       end
     end
 
+    def constructor_string
+      str = <<JAVA
+  /**
+   * Standard Ruby object constructor, for construction-from-Ruby purposes.
+   * Generally not for user consumption.
+   *
+   * @param ruby The JRuby instance this object will belong to
+   * @param metaclass The RubyClass representing the Ruby class of this object
+   */
+  public #{name}(Ruby ruby, RubyClass metaclass) {
+    super(ruby, metaclass);
+  }
+JAVA
+
+      unless @constructor
+        str << <<JAVA
+  /**
+   * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
+   * Ruby and RubyClass instances assocated with this class, and then invokes the
+   * no-argument 'initialize' method in Ruby.
+   *
+   * @param ruby The JRuby instance this object will belong to
+   * @param metaclass The RubyClass representing the Ruby class of this object
+   */
+  public #{name}() {
+    this(__ruby__, __metaclass__);
+    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
+  }
+JAVA
+      end
+
+      str
+    end
+
     def to_s
       class_string = <<JAVA
 #{package_string}
@@ -141,9 +175,7 @@ public class #{name} extends RubyObject #{interface_string} {
 
 #{static_init}
 
-  #{@constructor ? "private" : "public"} #{name}() {
-    super(__ruby__, __metaclass__);
-  }
+#{constructor_string}
 
 #{methods_string}
 }
@@ -233,9 +265,9 @@ JAVA
         method_string = <<JAVA
 #{anno_string}
   public #{@ruby_class.name}(#{args_string}) {
-    this();
+    this(__ruby__, __metaclass__);
 #{conv_string}
-    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
+    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\" #{passed_args});
   }
 JAVA
       else
@@ -524,12 +556,26 @@ EOJ
     end
   end
 
-  def process_script(node, script_name = nil)
-    walker = ClassNodeWalker.new(script_name)
+  module JavaGenerator
+    module_function
+    
+    def generate_java(node, script_name = nil)
+      walker = ClassNodeWalker.new(script_name)
 
-    node.accept(walker)
+      node.accept(walker)
 
-    walker.script
+      walker.script
+    end
+
+    def generate_javac(files, classpath, target)
+      files_string = files.join(' ')
+      jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
+        File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
+      end
+      classpath_string = classpath.size > 0 ? classpath.join(":") : "."
+      compile_string = "javac -d #{target} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
+
+      compile_string
+    end
   end
-  module_function :process_script
 end
