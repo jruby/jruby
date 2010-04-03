@@ -1,2 +1,0 @@
-fails(JRUBY-3716):Matrix#determinant returns 1 for an empty Matrix
-fails(JRUBY-3716):Matrix#determinant returns the determinant of a Matrices containing 0 as first entry

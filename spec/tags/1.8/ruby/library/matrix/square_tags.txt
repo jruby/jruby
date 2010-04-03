@@ -1,2 +1,1 @@
-fails(JRUBY-3716):"Matrix#square? returns false when the Matrix is not square\n    and the first row has the same number of columns as the matrix has rows."
 fails(JRUBY-4176):Matrix#square? returns handles empty matrices

@@ -1,0 +1,2 @@
+fails:IO.read from a pipe opens a pipe to a fork if the rest is -
+fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset

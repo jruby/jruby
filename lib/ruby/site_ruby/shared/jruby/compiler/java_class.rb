@@ -52,12 +52,14 @@ module JRuby::Compiler
       @interfaces = []
       @requires = requires
       @package = package
+      @constructor = false;
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile, :constructor
 
     def new_method(name, java_signature = nil, annotations = [])
-      method = RubyMethod.new(name, java_signature, annotations)
+      @constructor ||= name == "initialize"
+      method = RubyMethod.new(self, name, java_signature, annotations)
       methods << method
       method
     end
@@ -79,7 +81,7 @@ module JRuby::Compiler
   static {
 #{requires_string}
     RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-    metaclass.setClassAllocator(#{name}.class);
+    metaclass.setRubyClassAllocator(#{name}.class);
     if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
     __metaclass__ = metaclass;
   }
@@ -88,11 +90,7 @@ JAVA
 
     def annotations_string
       annotations.map do |a|
-        params = (a[0] || []).map do |k,v|
-          "#{k} = #{format_anno_value(v)}"
-        end.join(',')
-
-        "@#{a.shift}(#{params})"
+        "@" + a
       end.join("\n")
     end
 
@@ -126,6 +124,40 @@ JAVA
       end
     end
 
+    def constructor_string
+      str = <<JAVA
+  /**
+   * Standard Ruby object constructor, for construction-from-Ruby purposes.
+   * Generally not for user consumption.
+   *
+   * @param ruby The JRuby instance this object will belong to
+   * @param metaclass The RubyClass representing the Ruby class of this object
+   */
+  public #{name}(Ruby ruby, RubyClass metaclass) {
+    super(ruby, metaclass);
+  }
+JAVA
+
+      unless @constructor
+        str << <<JAVA
+  /**
+   * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
+   * Ruby and RubyClass instances assocated with this class, and then invokes the
+   * no-argument 'initialize' method in Ruby.
+   *
+   * @param ruby The JRuby instance this object will belong to
+   * @param metaclass The RubyClass representing the Ruby class of this object
+   */
+  public #{name}() {
+    this(__ruby__, __metaclass__);
+    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
+  }
+JAVA
+      end
+
+      str
+    end
+
     def to_s
       class_string = <<JAVA
 #{package_string}
@@ -139,9 +171,7 @@ public class #{name} extends RubyObject #{interface_string} {
 
 #{static_init}
 
-  public #{name}() {
-    super(__ruby__, __metaclass__);
-  }
+#{constructor_string}
 
 #{methods_string}
 }
@@ -158,25 +188,26 @@ JAVA
   end
 
   class RubyMethod
-    def initialize(name, java_signature = nil, annotations = [])
+    def initialize(ruby_class, name, java_signature = nil, annotations = [])
+      @ruby_class = ruby_class
       @name = name
       @java_signature = java_signature
       @static = false;
       @args = []
       @annotations = annotations
+      @constructor = name == "initialize"
     end
 
-    attr_accessor :args, :name, :java_signature, :static, :annotations
+    attr_accessor :args, :name, :java_signature, :static, :annotations, :constructor
 
-    def format_anno_value(value)
-      case value
-      when String
-        %Q["#{value}"]
-      when Fixnum
-        value.to_s
-      when Array
-        "{" + value.map {|v| format_anno_value(v)}.join(',') + "}"
-      end
+    def annotations_string
+      annotations.map do |a|
+        "@" + a
+      end.join("\n")
+    end
+
+    def conversion_string(var_names)
+      var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
     end
 
     def to_s
@@ -221,18 +252,26 @@ JAVA
       passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
       passed_args = ', ' + passed_args if args.size > 0
 
-      conv_string = var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
-
-      anno_string = annotations.map {|a| "  @#{a.shift}(" + (a[0] || []).map {|k,v| "#{k} = #{format_anno_value(v)}"}.join(',') + ")"}.join("\n")
-
-      method_string = <<EOJ
-#{anno_string}
+      if @constructor
+        method_string = <<JAVA
+#{annotations_string}
+  public #{@ruby_class.name}(#{args_string}) {
+    this(__ruby__, __metaclass__);
+#{conversion_string(var_names)}
+    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
+  }
+JAVA
+      else
+        method_string = <<EOJ
+#{annotations_string}
   public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
-#{conv_string}
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\" #{passed_args});
+#{conversion_string(var_names)}
+    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
     #{ret_string}
   }
 EOJ
+      end
+
       method_string
     end
   end
@@ -281,40 +320,20 @@ EOJ
       @node = nil
     end
 
-    def add_import(name)
-      @script.add_import(name)
+    def add_imports(nodes)
+      nodes.each do |n|
+        @script.add_import(name_or_value(n))
+      end
     end
 
     def set_signature(name)
       @signature = name
     end
 
-    def prepare_anno_value(value)
-      case value.node_type
-      when NodeType::STRNODE
-        value.value
-      when NodeType::ARRAYNODE
-        value.child_nodes.map {|v| prepare_anno_value(v)}
-      end
-    end
-
-    def add_annotation(*child_nodes)
-      name = name_or_value(child_nodes[0])
-      args = child_nodes[1]
-      if args && args.list_node.size > 0
-        anno_args = {}
-        child_assocs = args.list_node.child_nodes
-        for i in 0...(child_assocs.size / 2)
-          key = child_assocs[i * 2]
-          value = child_assocs[i * 2 + 1]
-          k_name = name_or_value(key)
-          v_value = prepare_anno_value(value)
-
-          anno_args[k_name] = v_value
-        end
-        @annotations << [name, anno_args]
-      else
-        @annotations << [name]
+    def add_annotation(nodes)
+      nodes.each do
+        name = name_or_value(nodes[0])
+        @annotations << name
       end
     end
 
@@ -445,14 +464,6 @@ EOJ
       end
     end
 
-    visit :call do
-      case node.name
-      when '+@'
-        add_annotation(node.receiver_node,
-          *(node.args_node ? node.args_node.child_nodes : []))
-      end
-    end
-
     visit :class do
       new_class(node.cpath.name)
       node.body_node.accept(self)
@@ -474,11 +485,11 @@ EOJ
     visit :fcall do
       case node.name
       when 'java_import'
-        add_import node.args_node.child_nodes[0].value
+        add_imports node.args_node.child_nodes
       when 'java_signature'
         set_signature build_signature(node.args_node.child_nodes[0])
       when 'java_annotation'
-        add_annotation(*node.args_node.child_nodes)
+        add_annotation(node.args_node.child_nodes)
       when 'java_implements'
         add_interface(*node.args_node.child_nodes)
       when "java_require"
@@ -508,12 +519,26 @@ EOJ
     end
   end
 
-  def process_script(node, script_name = nil)
-    walker = ClassNodeWalker.new(script_name)
+  module JavaGenerator
+    module_function
+    
+    def generate_java(node, script_name = nil)
+      walker = ClassNodeWalker.new(script_name)
 
-    node.accept(walker)
+      node.accept(walker)
 
-    walker.script
+      walker.script
+    end
+
+    def generate_javac(files, classpath, target)
+      files_string = files.join(' ')
+      jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
+        File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
+      end
+      classpath_string = classpath.size > 0 ? classpath.join(":") : "."
+      compile_string = "javac -d #{target} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
+
+      compile_string
+    end
   end
-  module_function :process_script
 end

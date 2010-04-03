@@ -3642,6 +3642,11 @@ public class RubyIO extends RubyObject {
             throw runtime.newIOErrorFromException(ioe);
         }
     }
+
+    @JRubyMethod(name = "try_convert", meta = true, backtrace = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return arg.respondsTo("to_io") ? convertToIO(context, arg) : context.getRuntime().getNil();
+    }
     
     /**
      * Add a thread to the list of blocking threads for this IO.

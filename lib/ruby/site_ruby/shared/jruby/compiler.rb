@@ -79,7 +79,7 @@ module JRuby::Compiler
         node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
 
         if java || javac
-          ruby_script = process_script(node, filename)
+          ruby_script = JavaGenerator.generate_java(node, filename)
           ruby_script.classes.each do |cls|
             puts "Generating Java class #{cls.name} to #{cls.name}.java"
             java_src = cls.name + ".java";
@@ -131,14 +131,9 @@ module JRuby::Compiler
     end
 
     if javac
-      files_string = files.join(' ')
-      jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
-        File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
-      end
-      classpath_string = classpath.size > 0 ? classpath.join(":") : "."
-      compile_string = "javac -d #{target} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
-      puts compile_string
-      system compile_string
+      javac_string = JavaGenerator.generate_javac(files, classpath, target)
+      puts javac_string
+      system javac_string
     end
 
     errors

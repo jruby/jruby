@@ -6,3 +6,4 @@ fails:IO#codepoints does not change $_
 fails:IO#codepoints raises an IOError when self is not readable
 fails:IO#codepoints ignores a given block
 fails:IO#codepoints does not yield to a block
+fails:IO#codepoints calls the given block

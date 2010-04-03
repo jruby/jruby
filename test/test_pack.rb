@@ -86,4 +86,10 @@ class TestPack < Test::Unit::TestCase
   def test_pack_M_regression
     assert_equal("ABCDEF=\n", ['ABCDEF'].pack('M'))
   end
+
+  # JRuby-4647
+  def test_unpack_M
+    assert_equal(["foo\r\n\r\r\r1\r2\r\r\r\rvvs"], "foo\r\n\r\r\r1\r=\r\n2\r\r\r\rvvs".unpack("M"))
+    assert_equal(["foo\r\n"], "foo\r\n".unpack("M"))
+  end
 end

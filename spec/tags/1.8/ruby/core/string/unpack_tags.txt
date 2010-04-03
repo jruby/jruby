@@ -1,1 +1,0 @@
-fails(JRUBY-4647):String#unpack with 'M' directive decodes across new lines

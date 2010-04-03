@@ -1,1 +1,1 @@
-fails(JRUBY-3716):Matrix#column_size returns 0 for empty matrices
+fails(JRUBY-4176):Matrix#column_size returns 0 for empty matrices

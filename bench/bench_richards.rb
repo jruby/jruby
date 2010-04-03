@@ -8,12 +8,10 @@ DEVICEA = 4
 DEVICEB = 5
 
 MAXTASKS = 6
-$layout = 0
 
 
-def main
-  count = Integer(ARGV.shift || 10000)
-
+def main(count)
+  $layout = 0
   startTicks = Process.times.utime
 
   s = Scheduler.new
@@ -365,4 +363,7 @@ class Packet
 
 end
 
-main
+require 'benchmark'
+5.times do
+  puts Benchmark.measure {main(Integer(ARGV[0] || 10000))}
+end

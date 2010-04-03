@@ -1,1 +1,0 @@
-fails(JRUBY-3716):Matrix#inverse raises a ErrDimensionMismatch if the Matrix is not square

@@ -1,2 +1,3 @@
-fails(JRUBY-3716):Matrix#determinant returns the determinant of a square Matrix
-fails(JRUBY-3716):Matrix#determinant returns 1 for an empty Matrix
+fails(JRUBY-4176):Matrix#determinant returns the determinant of a square Matrix
+fails(JRUBY-4176):Matrix#determinant returns 1 for an empty Matrix
+fails(JRUBY-4176):Matrix#determinant raises an error for rectangular matrices

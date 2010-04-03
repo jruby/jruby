@@ -1,0 +1,1 @@
+fails:IO#readlines when passed a string that starts with a | gets data from a fork when passed -

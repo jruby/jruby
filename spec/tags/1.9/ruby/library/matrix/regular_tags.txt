@@ -1,1 +1,0 @@
-fails(JRUBY-3716):Matrix#regular? returns false if the determinant is 0
