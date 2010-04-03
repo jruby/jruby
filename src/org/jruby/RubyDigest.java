@@ -64,7 +64,7 @@ public class RubyDigest {
             public Object run() {
                 try {
                     return Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance();
-                } catch(Exception e) {
+                } catch(Throwable t) {
                     // provider is not available
                     return null;
                 }
