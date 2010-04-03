@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<project name="ant_example">
+  <property name="set_from_ant" value="absolutely"/>
+</project>
