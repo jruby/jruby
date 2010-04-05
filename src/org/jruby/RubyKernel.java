@@ -902,46 +902,52 @@ public class RubyKernel {
         // FIXME: Pass block down?
         Ruby runtime = context.getRuntime();
 
-        if (args.length == 0) {
-            IRubyObject lastException = runtime.getGlobalVariables().get("$!");
-            if (lastException.isNil()) {
-                throw new RaiseException(runtime, runtime.getRuntimeError(), "", false);
-            } 
-            throw new RaiseException((RubyException) lastException);
+        RaiseException raise;
+        switch (args.length) {
+            case 0:
+                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                if (lastException.isNil()) {
+                    raise = new RaiseException(runtime, runtime.getRuntimeError(), "", false);
+                } else {
+                    // non RubyException value is allowed to be assigned as $!.
+                    raise = new RaiseException((RubyException) lastException);
+                }
+                break;
+            case 1:
+                if (args[0] instanceof RubyString) {
+                    raise = new RaiseException((RubyException) runtime.getRuntimeError().newInstance(context, args, block));
+                } else {
+                    raise = new RaiseException(convertToException(runtime, args[0], null));
+                }
+                break;
+            default:
+                raise = new RaiseException(convertToException(runtime, args[0], args[1]));
+                if (args.length > 2) {
+                    raise.getException().set_backtrace(args[2]);
+                }
+                break;
         }
+        if (runtime.getDebug().isTrue()) {
+            printExceptionSummary(context, runtime, raise.getException());
+        }
+        throw raise;
+    }
 
+    private static RubyException convertToException(Ruby runtime, IRubyObject obj, IRubyObject optionalMessage) {
+        if (!obj.respondsTo("exception")) {
+            throw runtime.newTypeError("exception class/object expected");
+        }
         IRubyObject exception;
-        
-        if (args.length == 1) {
-            if (args[0] instanceof RubyString) {
-                throw new RaiseException((RubyException)runtime.getRuntimeError().newInstance(context, args, block));
-            }
-            
-            if (!args[0].respondsTo("exception")) {
-                throw runtime.newTypeError("exception class/object expected");
-            }
-            exception = args[0].callMethod(context, "exception");
+        if (optionalMessage == null) {
+            exception = obj.callMethod(runtime.getCurrentContext(), "exception");
         } else {
-            if (!args[0].respondsTo("exception")) {
-                throw runtime.newTypeError("exception class/object expected");
-            }
-
-            exception = args[0].callMethod(context, "exception", args[1]);
+            exception = obj.callMethod(runtime.getCurrentContext(), "exception", optionalMessage);
         }
-        
-        if (!runtime.fastGetClass("Exception").isInstance(exception)) {
+        try {
+            return (RubyException) exception;
+        } catch (ClassCastException cce) {
             throw runtime.newTypeError("exception object expected");
         }
-        
-        if (args.length == 3) {
-            ((RubyException) exception).set_backtrace(args[2]);
-        }
-
-        if (runtime.getDebug().isTrue()) {
-            printExceptionSummary(context, runtime, (RubyException) exception);
-        }
-
-        throw new RaiseException((RubyException) exception);
     }
 
     private static void printExceptionSummary(ThreadContext context, Ruby runtime, RubyException rEx) {
