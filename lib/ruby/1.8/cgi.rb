@@ -284,7 +284,7 @@ class CGI
   # Standard internet newline sequence
   EOL = CR + LF
 
-  REVISION = '$Id$' #:nodoc:
+  REVISION = '$Id: cgi.rb 26086 2009-12-14 02:40:07Z shyouhei $' #:nodoc:
 
   NEEDS_BINMODE = true if /WIN/ni.match(RUBY_PLATFORM) 
 
@@ -306,7 +306,7 @@ class CGI
     "METHOD_NOT_ALLOWED"  => "405 Method Not Allowed",
     "NOT_ACCEPTABLE"      => "406 Not Acceptable",
     "LENGTH_REQUIRED"     => "411 Length Required",
-    "PRECONDITION_FAILED" => "412 Rrecondition Failed",
+    "PRECONDITION_FAILED" => "412 Precondition Failed",
     "SERVER_ERROR"        => "500 Internal Server Error",
     "NOT_IMPLEMENTED"     => "501 Method Not Implemented",
     "BAD_GATEWAY"         => "502 Bad Gateway",
@@ -385,7 +385,7 @@ class CGI
           end
         end
       when /\A#x([0-9a-f]+)\z/ni then
-        if $1.hex < 256
+        if $1.hex < 128
           $1.hex.chr
         else
           if $1.hex < 65536 and ($KCODE[0] == ?u or $KCODE[0] == ?U)
@@ -822,8 +822,8 @@ class CGI
       super(@value)
     end
 
-    attr_accessor("name", "value", "path", "domain", "expires")
-    attr_reader("secure")
+    attr_accessor("name", "path", "domain", "expires")
+    attr_reader("secure", "value")
 
     # Set whether the Cookie is a secure cookie or not.
     #
@@ -833,16 +833,16 @@ class CGI
       @secure
     end
 
+    def value=(val)
+      @value.replace(Array(val))
+    end
+
     # Convert the Cookie to its string representation.
     def to_s
       buf = ""
       buf += @name + '='
 
-      if @value.kind_of?(String)
-        buf += CGI::escape(@value)
-      else
-        buf += @value.collect{|v| CGI::escape(v) }.join("&")
-      end
+      buf += @value.map { |v| CGI::escape(v) }.join("&")
 
       if @domain
         buf += '; domain=' + @domain
@@ -1089,7 +1089,12 @@ class CGI
             %|(offline mode: enter name=value pairs on standard input)\n|
           )
         end
-        readlines.join(' ').gsub(/\n/n, '')
+        array = readlines rescue nil
+        if not array.nil?
+          array.join(' ').gsub(/\n/n, '')
+        else
+          ""
+        end
       end.gsub(/\\=/n, '%3D').gsub(/\\&/n, '%26')
 
       words = Shellwords.shellwords(string)

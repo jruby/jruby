@@ -1,8 +1,8 @@
 #
 #   irb/multi-irb.rb - multiple irb module
 #   	$Release Version: 0.9.5$
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 25814 $
+#   	$Date: 2009-11-17 15:51:29 +0900 (Tue, 17 Nov 2009) $
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -15,7 +15,7 @@ require "thread"
 module IRB
   # job management class
   class JobManager
-    @RCS_ID='-$Id$-'
+    @RCS_ID='-$Id: multi-irb.rb 25814 2009-11-17 06:51:29Z shyouhei $-'
 
     def initialize
       # @jobs = [[thread, irb],...]
@@ -70,7 +70,7 @@ module IRB
     end    
 
     def search(key)
-      case key
+      job = case key
       when Integer
 	@jobs[key]
       when Irb
@@ -78,10 +78,10 @@ module IRB
       when Thread
 	@jobs.assoc(key)
       else
-	assoc = @jobs.find{|k, v| v.context.main.equal?(key)}
-	IRB.fail NoSuchJob, key if assoc.nil?
-	assoc
+	@jobs.find{|k, v| v.context.main.equal?(key)}
       end
+      IRB.fail NoSuchJob, key if job.nil?
+      job
     end
 
     def delete(key)

@@ -1,4 +1,4 @@
-# $Id$
+# $Id: test_nowrite.rb 11708 2007-02-12 23:01:19Z shyouhei $
 
 require 'fileutils'
 require 'fileasserts'
