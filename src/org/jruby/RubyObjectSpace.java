@@ -41,6 +41,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.func.Function1;
 
 @JRubyModule(name="ObjectSpace")
 public class RubyObjectSpace {
@@ -112,40 +113,46 @@ public class RubyObjectSpace {
         }
     }
     
-    public static IRubyObject each_object(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyModule rubyClass;
+    public static IRubyObject each_object(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        RubyModule tmpClass;
         if (args.length == 0) {
-            rubyClass = recv.getRuntime().getObject();
+            tmpClass = recv.getRuntime().getObject();
         } else {
             if (!(args[0] instanceof RubyModule)) throw recv.getRuntime().newTypeError("class or module required");
-            rubyClass = (RubyModule) args[0];
+            tmpClass = (RubyModule) args[0];
         }
+        final RubyModule rubyClass = tmpClass;
         Ruby runtime = recv.getRuntime();
-        int count = 0;
-        if (rubyClass != runtime.getClassClass()) {
+        final int[] count = {0};
+        if (rubyClass == runtime.getClassClass() ||
+                rubyClass == runtime.getModule()) {
+            runtime.eachModule(new Function1<Object, IRubyObject>() {
+                public Object apply(IRubyObject arg1) {
+                    if (rubyClass.isInstance(arg1)) {
+                        if (arg1 instanceof IncludedModuleWrapper ||
+                                (arg1 instanceof RubyClass && ((RubyClass)arg1).isSingleton())) {
+                            // do nothing for included wrappers or singleton classes
+                        } else {
+                            count[0]++;
+                            block.yield(context, arg1);
+                        }
+                    }
+                    return null;
+                }
+            });
+        } else {
             if (!runtime.isObjectSpaceEnabled()) {
                 throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
             }
             Iterator iter = recv.getRuntime().getObjectSpace().iterator(rubyClass);
-            
+
             IRubyObject obj = null;
             while ((obj = (IRubyObject)iter.next()) != null) {
-                count++;
-                block.yield(context, obj);
-            }
-        } else {
-            Iterator iter = runtime.getObject().subclasses(true).iterator();
-            
-            while (iter.hasNext()) {
-                IRubyObject obj = (IRubyObject)iter.next();
-                if (obj instanceof RubyClass && ((RubyClass)obj).isIncluded()) {
-                    continue;
-                }
-                count++;
+                count[0]++;
                 block.yield(context, obj);
             }
         }
-        return recv.getRuntime().newFixnum(count);
+        return recv.getRuntime().newFixnum(count[0]);
     }
 
     @JRubyMethod(name = "each_object", optional = 1, frame = true, module = true, visibility = Visibility.PRIVATE)

@@ -39,6 +39,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.util.func.Function1;
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -134,6 +135,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
+import org.jruby.runtime.CallBlock;
 import org.jruby.threading.DaemonThreadFactory;
 
 /**
@@ -736,6 +738,19 @@ public final class Ruby {
     }
     public int allocModuleId() {
         return moduleLastId.incrementAndGet();
+    }
+    public int allocModuleId(RubyModule module) {
+        synchronized (allModules) {
+            allModules.add(module);
+        }
+        return allocModuleId();
+    }
+    public void eachModule(Function1<Object, IRubyObject> func) {
+        synchronized (allModules) {
+            for (RubyModule module : allModules) {
+                func.apply(module);
+            }
+        }
     }
 
     /**
@@ -3820,6 +3835,9 @@ public final class Ruby {
     // Atomic integers for symbol and method IDs
     private AtomicInteger symbolLastId = new AtomicInteger(128);
     private AtomicInteger moduleLastId = new AtomicInteger(0);
+
+    // Weak map of all Modules in the system (and by extension, all Classes
+    private Set<RubyModule> allModules = new WeakHashSet<RubyModule>();
 
     private Object respondToMethod;
 
