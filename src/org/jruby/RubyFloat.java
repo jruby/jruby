@@ -67,6 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.ConvertDouble;
 import org.jruby.util.Sprintf;
 
 /**
@@ -811,8 +812,23 @@ public class RubyFloat extends RubyNumeric {
     }
         
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyFloat result = RubyFloat.newFloat(input.getRuntime(), org.jruby.util.ConvertDouble.byteListToDouble(input.unmarshalString(),false));
+        ByteList value = input.unmarshalString();
+        RubyFloat result;
+        if (value.equals(NAN_BYTELIST)) {
+            result = RubyFloat.newFloat(input.getRuntime(), RubyFloat.NAN);
+        } else if (value.equals(NEGATIVE_INFINITY_BYTELIST)) {
+            result = RubyFloat.newFloat(input.getRuntime(), Double.NEGATIVE_INFINITY);
+        } else if (value.equals(INFINITY_BYTELIST)) {
+            result = RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
+        } else {
+            result = RubyFloat.newFloat(input.getRuntime(),
+                    ConvertDouble.byteListToDouble(value, false));
+        }
         input.registerLinkTarget(result);
         return result;
     }
+
+    private static final ByteList NAN_BYTELIST = new ByteList(new String("nan").getBytes());
+    private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList(new String("-inf").getBytes());
+    private static final ByteList INFINITY_BYTELIST = new ByteList(new String("inf").getBytes());
 }
