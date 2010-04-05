@@ -7,12 +7,6 @@
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 
-if defined?(JRUBY_VERSION)
-  require 'jruby/util'
-  # useful for code completion
-  JRuby::Util.objectspace = true
-end
-
 require "irb"
 
 if __FILE__ == $0
