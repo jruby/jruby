@@ -343,20 +343,32 @@ class TestKernel < Test::Unit::TestCase
   def test_raise_in_debug_mode
     require 'stringio'
     old_debug, $DEBUG = $DEBUG, true
+
+    # by Exception Class
     $stderr = StringIO.new
     raise StandardError rescue nil
-    assert_match(
-      /Exception `StandardError' at #{Regexp.quote(__FILE__)}:#{__LINE__ - 2} - StandardError/,
-      $stderr.string
-    )
+    tobe = "Exception `StandardError' at #{__FILE__}:#{__LINE__ - 1} - StandardError"
+    assert_equal(tobe, $stderr.string.split("\n")[0])
 
+    # by String
     $stderr.reopen
+    raise "TEST_ME" rescue nil
+    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    assert_equal(tobe, $stderr.string.split("\n")[0])
 
+    # by Exception
+    $stderr.reopen
     raise RuntimeError.new("TEST_ME") rescue nil
-    assert_match(
-      /Exception `RuntimeError' at #{Regexp.quote(__FILE__)}:#{__LINE__ - 2} - TEST_ME/,
-      $stderr.string
-    )
+    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    assert_equal(tobe, $stderr.string.split("\n")[0])
+
+    # by re-raise
+    $stderr.reopen
+    raise "TEST_ME" rescue raise rescue nil
+    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    traces = $stderr.string.split("\n")
+    assert_equal(tobe, traces[0])
+    assert_equal(tobe, traces[1])
   ensure
     $DEBUG = old_debug
     $stderr = STDERR
