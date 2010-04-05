@@ -749,7 +749,12 @@ public class Java implements Library {
 
         // inner classes must be nested
         if (fullName.indexOf('$') != -1) {
-            parentModule = getProxyClass(runtime, (JavaClass)javaClass.declaring_class());
+            IRubyObject declClass = javaClass.declaring_class();
+            if (declClass.isNil()) {
+                // no containing class for a $ class; treat it as internal and don't define a constant
+                return;
+            }
+            parentModule = getProxyClass(runtime, (JavaClass)declClass);
             className = clazz.getSimpleName();
         } else {
             String packageString = endPackage < 0 ? "" : fullName.substring(0, endPackage);

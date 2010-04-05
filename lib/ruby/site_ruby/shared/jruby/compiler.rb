@@ -1,4 +1,5 @@
 require 'optparse'
+require 'fileutils'
 require 'jruby'
 require 'jruby/compiler/java_class'
 
@@ -81,8 +82,13 @@ module JRuby::Compiler
         if java || javac
           ruby_script = JavaGenerator.generate_java(node, filename)
           ruby_script.classes.each do |cls|
-            puts "Generating Java class #{cls.name} to #{cls.name}.java"
-            java_src = cls.name + ".java";
+            java_dir = File.join(target, cls.package.gsub('.', '/'))
+
+            FileUtils.mkdir_p java_dir
+
+            java_src = File.join(java_dir, cls.name + ".java")
+            puts "Generating Java class #{cls.name} to #{java_src}"
+            
             files << java_src
 
             File.open(java_src, 'w') do |f|

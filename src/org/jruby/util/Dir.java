@@ -565,7 +565,7 @@ public class Dir {
 
             if (bytes[begin] == '/' || (DOSISH && begin+2<end && bytes[begin+1] == ':' && isdirsep(bytes[begin+2]))) {
                 if (new JavaSecuredFile(newStringFromUTF8(bytes, begin, end - begin)).exists()) {
-                    status = func.call(bytes, begin, end, arg);
+                    status = func.call(bytes, begin, end - begin, arg);
                 }
             } else if (isJarFilePath(bytes, begin, end)) {
                 int ix = end;
