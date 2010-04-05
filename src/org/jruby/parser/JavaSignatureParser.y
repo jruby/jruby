@@ -23,19 +23,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ast.java_signature.ArrayTypeNode;
+import org.jruby.ast.java_signature.ConstructorSignatureNode;
 import org.jruby.ast.java_signature.MethodSignatureNode;
 import org.jruby.ast.java_signature.Modifier;
 import org.jruby.ast.java_signature.ParameterNode;
 import org.jruby.ast.java_signature.PrimitiveTypeNode;
 import org.jruby.ast.java_signature.ReferenceTypeNode;
+import org.jruby.ast.java_signature.SignatureNode;
 import org.jruby.ast.java_signature.TypeNode;
 import org.jruby.lexer.JavaSignatureLexer;
 
 public class JavaSignatureParser {
     private static JavaSignatureParser parser = new JavaSignatureParser();
 
-    public static MethodSignatureNode parse(InputStream in) throws IOException, ParserSyntaxException {
-        return (MethodSignatureNode) parser.yyparse(JavaSignatureLexer.create(in));
+    public static SignatureNode parse(InputStream in) throws IOException, ParserSyntaxException {
+        return (SignatureNode) parser.yyparse(JavaSignatureLexer.create(in));
     }
 %}
 
@@ -83,6 +85,7 @@ public class JavaSignatureParser {
 %token <String> URSHIFT // '>>>'
 
 %type <MethodSignatureNode> method_declarator, method_header
+%type <ConstructorSignatureNode> constructor_declarator, constructor_declaration
 %type <List> formal_parameter_list_opt, formal_parameter_list // <ParameterNode>
 %type <List> modifiers_opt, modifiers, modifiers_none, throws, class_type_list
 %type <ParameterNode> formal_parameter
@@ -102,10 +105,15 @@ public class JavaSignatureParser {
 %type <Modifier> modifier
 %type <ArrayTypeNode> dims
 %type <Object> none
+%type <SignatureNode> program
 
 %%
 
-program : method_header
+program : method_header {
+     $$ = $1;
+ } | constructor_declaration {
+     $$ = $1;
+ }
 
 type : primitive_type | reference_type { $$ = $<TypeNode>1; }
 
@@ -462,6 +470,21 @@ additional_bound : AND interface_type {
 }
 
 none : { $$ = null; }
+
+constructor_declaration : modifiers_opt constructor_declarator throws {
+     $$ = $2;
+     $<ConstructorSignatureNode>$.setModifiers($1);
+     $<ConstructorSignatureNode>$.setThrows($3);
+ } | modifiers_opt LT type_parameter_list_1 constructor_declarator throws {
+     $$ = $4;
+     $<ConstructorSignatureNode>$.setModifiers($1);
+     $<ConstructorSignatureNode>$.setExtraTypeInfo("<" + $3);
+     $<ConstructorSignatureNode>$.setThrows($5);
+ }
+
+constructor_declarator : name LPAREN formal_parameter_list_opt RPAREN {
+     $$ = new ConstructorSignatureNode($1, $3);
+ }
 
 method_header : modifiers_opt type method_declarator throws {
                   $$ = $3;
