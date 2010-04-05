@@ -3687,24 +3687,22 @@ public final class Ruby {
 
     private int stackTraces = 0;
 
-    private ObjectSpace objectSpace = new ObjectSpace();
+    private final ObjectSpace objectSpace = new ObjectSpace();
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
+    private final Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
 
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
     private Random random = new Random();
 
-    private List<EventHook> eventHooks = new Vector<EventHook>();
+    private final List<EventHook> eventHooks = new Vector<EventHook>();
     private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
     
     private final Set<Script> jittedMethods = Collections.synchronizedSet(new WeakHashSet<Script>());
-    
-    private static ThreadLocal<Ruby> currentRuntime = new ThreadLocal<Ruby>();
     
     private long globalState = 1;
     
@@ -3814,7 +3812,7 @@ public final class Ruby {
         }
     }
 
-    private Parser parser = new Parser(this);
+    private final Parser parser = new Parser(this);
 
     private LoadService loadService;
 
@@ -3822,26 +3820,26 @@ public final class Ruby {
     private EncodingService encodingService;
 
     private GlobalVariables globalVariables = new GlobalVariables(this);
-    private RubyWarnings warnings = new RubyWarnings(this);
+    private final RubyWarnings warnings = new RubyWarnings(this);
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
-    private Stack<RubyProc> atExitBlocks = new Stack<RubyProc>();
+    private final Stack<RubyProc> atExitBlocks = new Stack<RubyProc>();
 
     private Profile profile;
 
     private KCode kcode = KCode.NONE;
 
     // Atomic integers for symbol and method IDs
-    private AtomicInteger symbolLastId = new AtomicInteger(128);
-    private AtomicInteger moduleLastId = new AtomicInteger(0);
+    private final AtomicInteger symbolLastId = new AtomicInteger(128);
+    private final AtomicInteger moduleLastId = new AtomicInteger(0);
 
     // Weak map of all Modules in the system (and by extension, all Classes
-    private Set<RubyModule> allModules = new WeakHashSet<RubyModule>();
+    private final Set<RubyModule> allModules = new WeakHashSet<RubyModule>();
 
     private Object respondToMethod;
 
-    private Map<String, DateTimeZone> timeZoneCache = new HashMap<String,DateTimeZone>();
+    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<String,DateTimeZone>();
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
      * weakly referenced, to be executed on tearDown.
@@ -3864,8 +3862,8 @@ public final class Ruby {
     private ExecutorService executor;
 
     // A global object lock for class hierarchy mutations
-    private Object hierarchyLock = new Object();
+    private final Object hierarchyLock = new Object();
 
     // An atomic long for generating DynamicMethod serial numbers
-    private AtomicLong dynamicMethodSerial = new AtomicLong(0);
+    private final AtomicLong dynamicMethodSerial = new AtomicLong(0);
 }
