@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -48,6 +49,7 @@ public class FastLongMethodFactory {
                 case ULONG_LONG:
                 case POINTER:
                 case STRING:
+                case STRPTR:
                 case LONG:
                 case ULONG:
                     return true;
@@ -153,6 +155,10 @@ public class FastLongMethodFactory {
                 return PointerResultConverter.INSTANCE;
             case STRING:
                 return StringResultConverter.INSTANCE;
+
+            case STRPTR:
+                return StrptrResultConverter.INSTANCE;
+
             default:
                 throw new IllegalArgumentException("Unknown type " + type);
         }
@@ -251,6 +257,17 @@ public class FastLongMethodFactory {
             return FFIUtil.getString(context.getRuntime(), address);
         }
     }
+
+    static final class StrptrResultConverter implements LongResultConverter {
+        public static final LongResultConverter INSTANCE = new StrptrResultConverter();
+        public final IRubyObject fromNative(ThreadContext context, long value) {
+            long address = value & PointerResultConverter.ADDRESS_MASK;
+            return RubyArray.newArray(context.getRuntime(),
+                    FFIUtil.getString(context.getRuntime(), address),
+                    new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address)));
+        }
+    }
+    
     static abstract class BaseParameterConverter implements LongParameterConverter {
         static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
     }

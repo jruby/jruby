@@ -90,6 +90,9 @@ module FFI
   # Converts NUL-terminated C strings
   add_typedef(Type::STRING, :string)
 
+  # Returns a [ String, Pointer ] tuple so the C memory for the string can be freed
+  add_typedef(Type::STRPTR, :strptr)
+
   # Converts FFI::Buffer objects
   add_typedef(Type::BUFFER_IN, :buffer_in)
   add_typedef(Type::BUFFER_OUT, :buffer_out)

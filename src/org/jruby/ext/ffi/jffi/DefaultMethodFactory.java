@@ -7,6 +7,7 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
@@ -23,6 +24,7 @@ import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.StructByValue;
@@ -189,6 +191,10 @@ public final class DefaultMethodFactory {
                 return Float64Invoker.INSTANCE;
             case STRING:
                 return StringInvoker.INSTANCE;
+
+            case STRPTR:
+                return StrptrInvoker.INSTANCE;
+
             default:
                 throw new IllegalArgumentException("Invalid return type: " + returnType);
         }
@@ -511,6 +517,18 @@ public final class DefaultMethodFactory {
             }
             return new JFFIInvoker(context.getRuntime(), address, returnType, parameterTypes, convention);
         }
+    }
+
+    private static final class StrptrInvoker extends BaseInvoker {
+        public static final FunctionInvoker INSTANCE = new StrptrInvoker();
+
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            final long address = invoker.invokeAddress(function, args);
+            return RubyArray.newArray(context.getRuntime(),
+                    FFIUtil.getString(context.getRuntime(), address),
+                    new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address)));
+        }
+
     }
 
     /*------------------------------------------------------------------------*/

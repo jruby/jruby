@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -53,6 +54,7 @@ public class FastIntMethodFactory extends MethodFactory {
                     return true;
                 case POINTER:
                 case STRING:
+                case STRPTR:
                     return Platform.getPlatform().addressSize() == 32;
                 case LONG:
                 case ULONG:
@@ -158,22 +160,27 @@ public class FastIntMethodFactory extends MethodFactory {
                 if (Platform.getPlatform().longSize() == 32) {
                     return Signed32ResultConverter.INSTANCE;
                 }
-                throw new IllegalArgumentException("Long is too big for int parameter");
+                throw new IllegalArgumentException(":long is too big for int result");
             case ULONG:
                 if (Platform.getPlatform().longSize() == 32) {
                     return Unsigned32ResultConverter.INSTANCE;
                 }
-                throw new IllegalArgumentException("Long is too big for int parameter");
+                throw new IllegalArgumentException(":ulong is too big for int result");
             case POINTER:
                 if (Platform.getPlatform().addressSize() == 32) {
                     return PointerResultConverter.INSTANCE;
                 }
-                throw new IllegalArgumentException("Pointer is too big for int parameter");
+                throw new IllegalArgumentException(":pointer is too big for int result");
             case STRING:
                 if (Platform.getPlatform().addressSize() == 32) {
                     return StringResultConverter.INSTANCE;
                 }
-                throw new IllegalArgumentException("Long is too big for int parameter");
+                throw new IllegalArgumentException(":string is too big for int result");
+            case STRPTR:
+                if (Platform.getPlatform().addressSize() == 32) {
+                    return StrptrResultConverter.INSTANCE;
+                }
+                throw new IllegalArgumentException(":strptr is too big for int result");
             default:
                 throw new IllegalArgumentException("Unknown type " + type);
         }
@@ -250,6 +257,18 @@ public class FastIntMethodFactory extends MethodFactory {
             return FFIUtil.getString(context.getRuntime(), address);
         }
     }
+
+    static final class StrptrResultConverter implements IntResultConverter {
+        public static final IntResultConverter INSTANCE = new StrptrResultConverter();
+
+        public final IRubyObject fromNative(ThreadContext context, int value) {
+            long address = ((long) value) & PointerResultConverter.ADDRESS_MASK;
+            return RubyArray.newArray(context.getRuntime(),
+                    FFIUtil.getString(context.getRuntime(), address),
+                    new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address)));
+        }
+    }
+
     static abstract class BaseParameterConverter implements IntParameterConverter {
         static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
 

@@ -304,6 +304,7 @@ public abstract class Type extends RubyObject {
             case POINTER:
             case STRING:
             case RBXSTRING:
+            case STRPTR:
             case WIN32PTR:
                 return true;
             default:
