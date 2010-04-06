@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
- * 
+ * Copyright (C) 2010 Charles O Nutter <headius@headius.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,6 +27,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-public class ThreadKill extends RuntimeException implements Unrescuable {
-	private static final long serialVersionUID = -6885888060743175327L;
+/**
+ * This marker interface is for JRuby internal exceptions that can't be caught
+ * by Ruby exception handling.
+ * 
+ * @author headius
+ */
+public interface Unrescuable {
+
 }

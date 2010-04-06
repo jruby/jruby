@@ -41,6 +41,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -106,37 +107,7 @@ public class RescueNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (runtime.getJavaSupport().isActive() && UnsafeFactory.getUnsafe() != null) {
-            return interpretWithJavaExceptions(runtime, context, self, aBlock);
-        } else {
-            return interpretWithoutJavaExceptions(runtime, context, self, aBlock);
-        }
-    }
-    
-    private IRubyObject interpretWithoutJavaExceptions(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RescuedBlock : while (true) {
-            IRubyObject globalExceptionState = runtime.getGlobalVariables().get("$!");
-            boolean anotherExceptionRaised = false;
-            try {
-                return executeBody(runtime, context, self, aBlock);
-            } catch (RaiseException raiseJump) {
-                try {
-                    return handleException(runtime, context, self, aBlock, raiseJump);
-                } catch (JumpException.RetryJump rj) {
-                    // let RescuedBlock continue
-                } catch (RaiseException je) {
-                    anotherExceptionRaised = true;
-                    throw je;
-                }
-            } catch (JumpException.FlowControlException flow) {
-                // just rethrow
-                throw flow;
-            } finally {
-                // clear exception when handled or retried
-                if (!anotherExceptionRaised)
-                    runtime.getGlobalVariables().set("$!", globalExceptionState);
-            }
-        }
+        return interpretWithJavaExceptions(runtime, context, self, aBlock);
     }
     
     private IRubyObject interpretWithJavaExceptions(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
@@ -158,6 +129,9 @@ public class RescueNode extends Node {
                 // just rethrow
                 throw flow;
             } catch (Throwable t) {
+                if (t instanceof Unrescuable) {
+                    UnsafeFactory.getUnsafe().throwException(t);
+                }
                 try {
                     return handleJavaException(runtime, context, self, aBlock, t);
                 } catch (JumpException.RetryJump rj) {

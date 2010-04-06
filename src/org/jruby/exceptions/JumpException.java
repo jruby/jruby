@@ -42,7 +42,7 @@ import org.jruby.RubyInstanceConfig;
 public class JumpException extends RuntimeException {
     private static final long serialVersionUID = -228162532535826617L;
     
-    public static class FlowControlException extends JumpException {
+    public static class FlowControlException extends JumpException implements Unrescuable {
         protected int target;
         protected Object value;
 

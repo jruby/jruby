@@ -42,6 +42,8 @@ import java.util.List;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.JumpException.FlowControlException;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -276,6 +278,20 @@ public class RubyException extends RubyObject {
         StringBuilder sb = new StringBuilder("#<");
         sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
         return getRuntime().newString(sb.toString());
+    }
+
+    @JRubyMethod(name = "===", meta = true)
+    public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        // special case non-FlowControlException Java exceptions so they'll be caught by rescue Exception
+        if (recv == runtime.getException() && other instanceof ConcreteJavaProxy) {
+            Object object = ((ConcreteJavaProxy)other).getObject();
+            if (object instanceof Throwable && !(object instanceof FlowControlException)) {
+                return context.getRuntime().getTrue();
+            }
+        }
+        // fall back on default logic
+        return ((RubyClass)recv).op_eqq(context, other);
     }
 
     @Override

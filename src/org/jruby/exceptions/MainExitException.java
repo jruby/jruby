@@ -26,7 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
-public class MainExitException extends RuntimeException {
+public class MainExitException extends RuntimeException implements Unrescuable {
     private static final long serialVersionUID = -8585821821150293755L;
     boolean usageError;
     int status;
