@@ -3167,7 +3167,7 @@ public final class Ruby {
             origException.printStackTrace(getErrorStream());
         }
         return new RaiseException(new RubyNameError(
-                this, getNameError(), message, name), true);
+                this, getNameError(), message, name), false);
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
