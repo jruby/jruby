@@ -107,7 +107,12 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         IRubyObject enums = null;
         if (args.length > optionsIndex && args[optionsIndex] instanceof RubyHash) {
             options = (RubyHash) args[optionsIndex];
-            convention = options.fastARef(context.getRuntime().newSymbol("convention")).asJavaString();
+
+            IRubyObject rbConvention = options.fastARef(context.getRuntime().newSymbol("convention"));
+            if (rbConvention != null && !rbConvention.isNil()) {
+                convention = rbConvention.asJavaString();
+            }
+
             enums = options.fastARef(context.getRuntime().newSymbol("enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash)) {
                 throw context.getRuntime().newTypeError("wrong type for options[:enum] "
@@ -115,6 +120,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
             }
         }
+
         CallingConvention callConvention = "stdcall".equals(convention)
                         ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
         if (fptr == null && proc != null) {

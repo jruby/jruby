@@ -203,7 +203,8 @@ end
 def ant_import(filename = 'build.xml')
   ant = Ant.ant
 
-  Ant::ProjectHelper.configure_project ant.project, java.io.File.new(filename)
+  abs_name = File.expand_path(filename)
+  Ant::ProjectHelper.configure_project ant.project, java.io.File.new(abs_name)
 
   ant.project.targets.each do |target_name, target|
     name = Rake.application.lookup(target_name) ? "ant_" + target_name : target_name

@@ -5,8 +5,9 @@ require 'ant'
 
 class TestAnt < Test::Unit::TestCase
   def test_ant_import
-    ant_file = File.expand_path('../ant_example.xml', __FILE__)
-    ant_import ant_file
-    assert_equal 'absolutely', ant.properties['set_from_ant']
+    Dir.chdir(File.dirname(__FILE__)) do
+      ant_import 'ant_example.xml'
+      assert_equal 'surely', ant.properties['set_from_ant']
+    end
   end
 end

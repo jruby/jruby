@@ -1041,7 +1041,8 @@ public class RubyKernel {
         }
         if (args.length > 3) {
             // file given, use it and force it into binding
-            binding.setLine((int) args[3].convertToInteger().getLongValue());
+            // -1 because parser uses zero offsets and other code compensates
+            binding.setLine(((int) args[3].convertToInteger().getLongValue()) - 1);
         } else {
             // no binding given, use 0 for both
             binding.setLine(0);

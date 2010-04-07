@@ -21,4 +21,8 @@ describe JavaSignatureParser do
     signature('int[] foo(int bar)').should have_signature(arrayOf(INT), 'foo', [INT])
     signature('int[][] foo(int bar)').should have_signature(arrayOf(arrayOf(INT)), 'foo', [INT])
   end
+
+  it "should parse constructor signatures like 'public Foo(int, String)'" do
+    signature('Foo(int, String)').should have_constructor_signature('Foo', [INT, :String])
+  end
 end

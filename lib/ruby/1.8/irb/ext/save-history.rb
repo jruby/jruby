@@ -2,8 +2,8 @@
 #
 #   save-history.rb - 
 #   	$Release Version: 0.9.5$
-#   	$Revision$
-#   	$Date$
+#   	$Revision: 24483 $
+#   	$Date: 2009-08-09 17:44:15 +0900 (Sun, 09 Aug 2009) $
 #   	by Keiju ISHITSUKAkeiju@ruby-lang.org)
 #
 # --
@@ -15,7 +15,7 @@ require "readline"
 
 module IRB
   module HistorySavingAbility
-    @RCS_ID='-$Id$-'
+    @RCS_ID='-$Id: save-history.rb 24483 2009-08-09 08:44:15Z shyouhei $-'
   end
 
   class Context
@@ -50,23 +50,24 @@ module IRB
   module HistorySavingAbility
     include Readline
 
-    def HistorySavingAbility.create_finalizer
-      proc do
-	if num = IRB.conf[:SAVE_HISTORY] and (num = num.to_i) > 0
-	  if hf = IRB.conf[:HISTORY_FILE]
-	    file = File.expand_path(hf)
-	  end
-	  file = IRB.rc_file("_history") unless file
-	  open(file, 'w' ) do |f|
-	    hist = HISTORY.to_a
-	    f.puts(hist[-num..-1] || hist)
-	  end
-	end
-      end
-    end
+#     def HistorySavingAbility.create_finalizer
+#       proc do
+# 	if num = IRB.conf[:SAVE_HISTORY] and (num = num.to_i) > 0
+# 	  if hf = IRB.conf[:HISTORY_FILE]
+# 	    file = File.expand_path(hf)
+# 	  end
+# 	  file = IRB.rc_file("_history") unless file
+# 	  open(file, 'w' ) do |f|
+# 	    hist = HISTORY.to_a
+# 	    f.puts(hist[-num..-1] || hist)
+# 	  end
+# 	end
+#       end
+#     end
 
     def HistorySavingAbility.extended(obj)
-      ObjectSpace.define_finalizer(obj, HistorySavingAbility.create_finalizer)
+#      ObjectSpace.define_finalizer(obj, HistorySavingAbility.create_finalizer)
+      IRB.conf[:AT_EXIT].push proc{obj.save_history}
       obj.load_history
       obj
     end
@@ -77,6 +78,19 @@ module IRB
       if File.exist?(hist)
 	open(hist) do |f|
 	  f.each {|l| HISTORY << l.chomp}
+	end
+      end
+    end
+
+    def save_history
+      if num = IRB.conf[:SAVE_HISTORY] and (num = num.to_i) > 0
+	if history_file = IRB.conf[:HISTORY_FILE]
+	  history_file = File.expand_path(history_file)
+	end
+	history_file = IRB.rc_file("_history") unless history_file
+	open(history_file, 'w' ) do |f|
+	  hist = HISTORY.to_a
+	  f.puts(hist[-num..-1] || hist)
 	end
       end
     end

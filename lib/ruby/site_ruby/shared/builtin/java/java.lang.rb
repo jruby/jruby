@@ -30,8 +30,13 @@ module java::lang::Comparable
   end
 end
 
-class java::lang::Exception
-  def self.===(rhs)
-    (NativeException == rhs.class) && (java_class.assignable_from?(rhs.cause.java_class))
+class << java::lang::Exception
+  alias :old_eqq :===
+  def ===(rhs)
+    if (NativeException == rhs.class) && (java_class.assignable_from?(rhs.cause.java_class))
+      true
+    else
+      old_eqq(rhs)
+    end
   end
 end

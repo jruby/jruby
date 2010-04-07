@@ -897,10 +897,6 @@ public class RubyClass extends RubyModule {
     /**
      * Remove a subclass from the weak set of subclasses.
      *
-     * This version always constructs a new set to avoid having to synchronize
-     * against the set when iterating it for invalidation in
-     * invalidateCacheDescendants.
-     *
      * @param subclass The subclass to remove
      */
     public synchronized void removeSubclass(RubyClass subclass) {
@@ -914,10 +910,6 @@ public class RubyClass extends RubyModule {
 
     /**
      * Replace an existing subclass with a new one.
-     *
-     * This version always constructs a new set to avoid having to synchronize
-     * against the set when iterating it for invalidation in
-     * invalidateCacheDescendants.
      *
      * @param subclass The subclass to remove
      * @param newSubclass The subclass to replace it with
