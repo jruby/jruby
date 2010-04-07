@@ -185,9 +185,13 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                 node = container.getProvider().getRuntime().parseFile((InputStream)input, filename, scope, line);
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
-            if (compileMode == CompileMode.JIT || compileMode == CompileMode.FORCE) {
+            if (compileMode == CompileMode.FORCE) {
                 Script script = runtime.tryCompile(node);
-                return new EmbedEvalUnitImpl(container, node, scope, script);
+                if (script != null) {
+                    return new EmbedEvalUnitImpl(container, node, scope, script);
+                } else {
+                    return new EmbedEvalUnitImpl(container, node, scope);
+                }
             }
             return new EmbedEvalUnitImpl(container, node, scope);
         } catch (RaiseException e) {

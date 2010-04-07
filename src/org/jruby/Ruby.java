@@ -666,7 +666,7 @@ public final class Ruby {
      * This is used for the "gets" loop, and we bypass 'load' to use an
      * already-prepared, already-pushed scope for the script body.
      */
-    private IRubyObject runScriptBody(Script script) {
+    public IRubyObject runScriptBody(Script script) {
         ThreadContext context = getCurrentContext();
 
         try {
