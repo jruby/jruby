@@ -111,8 +111,8 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             }
             IRubyObject ret;
             CompileMode mode = container.getProvider().getRuntime().getInstanceConfig().getCompileMode();
-            if (mode == CompileMode.FORCE || mode == CompileMode.JIT) {
-                ret = container.getProvider().getRuntime().runScript(script);
+            if (mode == CompileMode.FORCE) {
+                ret = container.getProvider().getRuntime().runScriptBody(script);
             } else {
                 ret = container.getProvider().getRuntime().runInterpreter(node);
             }

@@ -905,7 +905,8 @@ public class RuntimeHelpers {
     }
 
     private static boolean checkJavaException(Throwable throwable, IRubyObject catchable, ThreadContext context) {
-        if (context.getRuntime().getException().op_ge(catchable).isTrue()) {
+        if (context.getRuntime().getException().op_ge(catchable).isTrue()
+                || context.getRuntime().getObject() == catchable) {
             if (throwable instanceof RaiseException) {
                 return isExceptionHandled(((RaiseException)throwable).getException(), catchable, context).isTrue();
             }

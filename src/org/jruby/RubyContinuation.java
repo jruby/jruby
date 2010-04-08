@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
@@ -41,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="Continuation")
 public class RubyContinuation extends RubyObject {
-    public static class Continuation extends Error {
+    public static class Continuation extends Error implements Unrescuable {
         public Continuation() {tag = null;}
         public Continuation(String tag) {
             this.tag = tag.intern();

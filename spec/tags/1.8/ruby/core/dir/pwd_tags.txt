@@ -1,1 +1,0 @@
-fails(JRUBY-4608,macos):Dir.pwd correctly displays dirs with unicode characters in them

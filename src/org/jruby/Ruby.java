@@ -131,6 +131,7 @@ import java.io.File;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
@@ -666,7 +667,7 @@ public final class Ruby {
      * This is used for the "gets" loop, and we bypass 'load' to use an
      * already-prepared, already-pushed scope for the script body.
      */
-    private IRubyObject runScriptBody(Script script) {
+    public IRubyObject runScriptBody(Script script) {
         ThreadContext context = getCurrentContext();
 
         try {
@@ -3400,7 +3401,7 @@ public final class Ruby {
         IRubyObject call(IRubyObject obj, boolean recur);
     }
 
-    private static class RecursiveError extends Error {
+    private static class RecursiveError extends Error implements Unrescuable {
         public RecursiveError(Object tag) {
             this.tag = tag;
         }

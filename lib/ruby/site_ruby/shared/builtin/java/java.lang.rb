@@ -30,13 +30,38 @@ module java::lang::Comparable
   end
 end
 
-class << java::lang::Exception
-  alias :old_eqq :===
-  def ===(rhs)
-    if (NativeException == rhs.class) && (java_class.assignable_from?(rhs.cause.java_class))
-      true
-    else
-      old_eqq(rhs)
+class java::lang::Throwable
+  def backtrace
+    @backtrace ||= stack_trace.map(&:to_s)
+  end
+
+  def set_backtrace(trace)
+    unless trace.kind_of?(Array) && trace.all? {|x| x.kind_of?(String)}
+      raise TypeError.new("backtrace must be an Array of String")
+    end
+    @backtrace = trace
+  end
+
+  def to_s
+    message
+  end
+
+  def to_str
+    to_s
+  end
+
+  def inspect
+    to_string
+  end
+
+  class << self
+    alias :old_eqq :===
+    def ===(rhs)
+      if (NativeException == rhs.class) && (java_class.assignable_from?(rhs.cause.java_class))
+        true
+      else
+        old_eqq(rhs)
+      end
     end
   end
 end
