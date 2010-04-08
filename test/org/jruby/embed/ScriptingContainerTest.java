@@ -2574,17 +2574,30 @@ public class ScriptingContainerTest {
      * Test for JRUBY-4695. JIT mode allows sharing variables, but FORCE mode doesn't so far.
      */
     @Test
-    public void testSharingVariableOverJITMode() {
+    public void testSharingVariableWithCompileMode() {
         logger1.info("sharing vars over JIT mode");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setErrorWriter(writer);
         
+        instance.put("my_var", "Hullo!");
+
         StringWriter sw = new StringWriter();
         instance.setWriter(sw);
+        instance.setCompileMode(CompileMode.OFF);
+        instance.runScriptlet("puts my_var");
+        assertEquals("Hullo!", sw.toString().trim());
+
+        sw = new StringWriter();
+        instance.setWriter(sw);
         instance.setCompileMode(CompileMode.JIT);
-        instance.put("my_var", "Hullo!");
+        instance.runScriptlet("puts my_var");
+        assertEquals("Hullo!", sw.toString().trim());
+
+        sw = new StringWriter();
+        instance.setWriter(sw);
+        instance.setCompileMode(CompileMode.FORCE);
         instance.runScriptlet("puts my_var");
         assertEquals("Hullo!", sw.toString().trim());
 

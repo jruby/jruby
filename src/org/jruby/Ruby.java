@@ -570,23 +570,46 @@ public final class Ruby {
             return runInterpreter(scriptNode);
         }
     }
-    
+
+    /**
+     * Try to compile the code associated with the given Node, returning an
+     * instance of the successfully-compiled Script or null if the script could
+     * not be compiled.
+     *
+     * @param node The node to attempt to compiled
+     * @return an instance of the successfully-compiled Script, or null.
+     */
     public Script tryCompile(Node node) {
-        return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()));
+        return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()), false);
     }
-    
-    private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader) {
-        return tryCompile(node, cachedClassName, classLoader, false);
+
+    /**
+     * Try to compile the code associated with the given Node, returning an
+     * instance of the successfully-compiled Script or null if the script could
+     * not be compiled. This version accepts an ASTInspector instance assumed to
+     * have appropriate flags set for compile optimizations, such as to turn
+     * on heap-based local variables to share an existing scope.
+     *
+     * @param node The node to attempt to compiled
+     * @param inspector The ASTInspector to use for making optimization decisions
+     * @return an instance of the successfully-compiled Script, or null.
+     */
+    public Script tryCompile(Node node, ASTInspector inspector) {
+        return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()), inspector, false);
     }
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
+        ASTInspector inspector = new ASTInspector();
+        inspector.inspect(node);
+
+        return tryCompile(node, cachedClassName, classLoader, inspector, dump);
+    }
+
+    private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, ASTInspector inspector, boolean dump) {
         Script script = null;
         try {
             String filename = node.getPosition().getFile();
             String classname = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
-
-            ASTInspector inspector = new ASTInspector();
-            inspector.inspect(node);
 
             StandardASMCompiler asmCompiler = null;
             if (RubyInstanceConfig.JIT_CODE_CACHE != null && cachedClassName != null) {
@@ -2566,7 +2589,7 @@ public final class Ruby {
             if (script == null) {
                 Node scriptNode = parseFile(readStream, filename, null);
 
-                script = tryCompile(scriptNode, className, new JRubyClassLoader(jrubyClassLoader));
+                script = tryCompile(scriptNode, className, new JRubyClassLoader(jrubyClassLoader), false);
             }
             
             if (script == null) {
