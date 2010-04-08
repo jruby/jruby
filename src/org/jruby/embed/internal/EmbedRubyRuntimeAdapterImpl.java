@@ -44,6 +44,7 @@ import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyRuntimeAdapter;
@@ -159,16 +160,16 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         if (filename == null || filename.length() == 0) {
             filename = container.getScriptFilename();
         }
-        IAccessor d = new ValueAccessor(RubyString.newString(container.getProvider().getRuntime(), filename));
-        container.getProvider().getRuntime().getGlobalVariables().define("$PROGRAM_NAME", d);
-        container.getProvider().getRuntime().getGlobalVariables().define("$0", d);
+        Ruby runtime = container.getProvider().getRuntime();
+        IAccessor d = new ValueAccessor(RubyString.newString(runtime, filename));
+        runtime.getGlobalVariables().define("$PROGRAM_NAME", d);
+        runtime.getGlobalVariables().define("$0", d);
 
         int line = 0;
         if (lines != null && lines.length > 0) {
             line = lines[0];
         }
         try {
-            Ruby runtime = container.getProvider().getRuntime();
             ManyVarsDynamicScope scope  = null;
             boolean sharing_variables = true;
             Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
@@ -180,13 +181,17 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             Node node = null;
             if (input instanceof String) {
-                node = container.getProvider().getRuntime().parseEval((String)input, filename, scope, line);
+                node = runtime.parseEval((String)input, filename, scope, line);
             } else {
-                node = container.getProvider().getRuntime().parseFile((InputStream)input, filename, scope, line);
+                node = runtime.parseFile((InputStream)input, filename, scope, line);
             }
             CompileMode compileMode = runtime.getInstanceConfig().getCompileMode();
             if (compileMode == CompileMode.FORCE) {
-                Script script = runtime.tryCompile(node);
+                // we pass in an ASTInspector that will force heap variables, so
+                // it uses our shared scope
+                ASTInspector inspector = new ASTInspector();
+                inspector.setFlag(ASTInspector.SCOPE_AWARE);
+                Script script = runtime.tryCompile(node, inspector);
                 if (script != null) {
                     return new EmbedEvalUnitImpl(container, node, scope, script);
                 } else {
@@ -195,7 +200,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return new EmbedEvalUnitImpl(container, node, scope);
         } catch (RaiseException e) {
-            container.getProvider().getRuntime().printError(e.getException());
+            runtime.printError(e.getException());
             throw new ParseFailedException(e.getMessage(), e);
         } catch (Throwable e) {
             Writer w = container.getErrorWriter();

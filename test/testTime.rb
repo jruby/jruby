@@ -140,7 +140,6 @@ test_equal("Thursday csütörtök", Time.mktime(2009,1,1,0,0).strftime("%A csüt
 
 test_exception {Time.mktime(2009,1,1,0,0).strftime(12345)}
 
-=begin Disabled, see http://jira.codehaus.org/browse/JRUBY-3079
 old_tz = ENV['TZ']
 begin
   ENV['TZ']='Europe/Helsinki'
@@ -150,7 +149,6 @@ begin
 ensure
   ENV['TZ'] = old_tz
 end
-=end
 
 # JRUBY-3873
 test_equal "12:00AM%", Time.utc(2007,01,01,0,0).strftime("%I:%M%p%")

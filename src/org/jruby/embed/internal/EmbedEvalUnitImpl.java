@@ -32,6 +32,7 @@ package org.jruby.embed.internal;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
@@ -98,6 +99,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         if (node == null && script == null) {
             return null;
         }
+        Ruby runtime = container.getProvider().getRuntime();
         BiVariableMap vars = container.getVarMap();
         boolean sharing_variables = true;
         Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
@@ -107,24 +109,24 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         try {
             if (sharing_variables) {
                 vars.inject(scope, 0, null);
-                container.getProvider().getRuntime().getCurrentContext().pushScope(scope);
+                runtime.getCurrentContext().pushScope(scope);
             }
             IRubyObject ret;
-            CompileMode mode = container.getProvider().getRuntime().getInstanceConfig().getCompileMode();
+            CompileMode mode = runtime.getInstanceConfig().getCompileMode();
             if (mode == CompileMode.FORCE) {
-                ret = container.getProvider().getRuntime().runScriptBody(script);
+                ret = runtime.runScriptBody(script);
             } else {
-                ret = container.getProvider().getRuntime().runInterpreter(node);
+                ret = runtime.runInterpreter(node);
             }
             if (sharing_variables) {
                 vars.retrieve(ret);
             }
             return ret;
         } catch (RaiseException e) {
-            container.getProvider().getRuntime().printError(e.getException());
+            runtime.printError(e.getException());
             throw new EvalFailedException(e.getMessage(), e);
         } catch (StackOverflowError soe) {
-            throw container.getProvider().getRuntime().newSystemStackError("stack level too deep", soe);
+            throw runtime.newSystemStackError("stack level too deep", soe);
         } catch (Throwable e) {
             Writer w = container.getErrorWriter();
             if (w instanceof PrintWriter) {
@@ -139,7 +141,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             throw new EvalFailedException(e);
         } finally {
             if (sharing_variables) {
-                container.getProvider().getRuntime().getCurrentContext().popScope();
+                runtime.getCurrentContext().popScope();
             }
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
