@@ -143,9 +143,9 @@ test_exception {Time.mktime(2009,1,1,0,0).strftime(12345)}
 old_tz = ENV['TZ']
 begin
   ENV['TZ']='Europe/Helsinki'
-  test_equal "+0300 EEST", Time.now.strftime('%z %Z')
+  test_equal "+0200 EET", Time.local(2010,1,1,0,0).strftime('%z %Z')
   ENV['TZ']='America/New_York'
-  test_equal "-0400 EDT", Time.now.strftime('%z %Z')
+  test_equal "-0400 EDT", Time.local(2010,5,1,0,0).strftime('%z %Z')
 ensure
   ENV['TZ'] = old_tz
 end
