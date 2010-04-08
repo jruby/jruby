@@ -253,19 +253,23 @@ public class RubyFixnum extends RubyInteger {
      */
     @Override
     public IRubyObject times(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
-        long lvalue = this.value;
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-            IRubyObject nil = runtime.getNil();
-            for (long i = 0; i < lvalue; i++) {
-                block.yield(context, nil);
+        if (block.isGiven()) {
+            Ruby runtime = context.getRuntime();
+            long lvalue = this.value;
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                IRubyObject nil = runtime.getNil();
+                for (long i = 0; i < lvalue; i++) {
+                    block.yield(context, nil);
+                }
+            } else {
+                for (long i = 0; i < lvalue; i++) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
             }
+            return this;
         } else {
-            for (long i = 0; i < lvalue; i++) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
-            }
+            return RubyEnumerator.enumeratorize(context.getRuntime(), this, "times");
         }
-        return this;
     }
 
     /** fix_to_s
