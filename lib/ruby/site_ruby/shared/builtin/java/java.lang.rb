@@ -35,7 +35,10 @@ class java::lang::Throwable
     @backtrace ||= stack_trace.map(&:to_s)
   end
 
-  def backtrace=(trace)
+  def set_backtrace(trace)
+    unless trace.kind_of?(Array) && trace.all? {|x| x.kind_of?(String)}
+      raise TypeError.new("backtrace must be an Array of String")
+    end
     @backtrace = trace
   end
 
