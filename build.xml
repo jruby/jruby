@@ -7,9 +7,6 @@
 
   <!-- First try to load machine-specific properties. -->
   <property file="build.properties"/>
-  <!-- Load revision number for the ruby specs, in a known good state.
-       There should be no spec failures with such revision. -->
-  <property file="rubyspecs.revision"/>
 
   <!-- And then load the defaults. It seems backwards to set defaults AFTER
        setting local overrides, but that's how Ant works. -->
