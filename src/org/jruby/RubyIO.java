@@ -3614,7 +3614,7 @@ public class RubyIO extends RubyObject {
 
         if (arg2 instanceof RubyString) {
             io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
-        } else if (arg1 instanceof RubyIO) {
+        } else if (arg2 instanceof RubyIO) {
             io2 = (RubyIO) arg2;
         } else {
             throw runtime.newTypeError("Should be String or IO");
