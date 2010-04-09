@@ -52,14 +52,25 @@ module JRuby::Compiler
       @interfaces = []
       @requires = requires
       @package = package
-      @constructor = false;
+      @has_constructor = false;
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile, :constructor
+    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile
+
+    def constructor?
+      @has_constructor
+    end
 
     def new_method(name, java_signature = nil, annotations = [])
-      @constructor ||= name == "initialize"
-      method = RubyMethod.new(self, name, java_signature, annotations)
+      is_constructor = name == "initialize"
+      @has_constructor ||= is_constructor
+
+      if is_constructor
+        method = RubyConstructor.new(self, java_signature, annotations)
+      else
+        method = RubyMethod.new(self, name, java_signature, annotations)
+      end
+
       methods << method
       method
     end
@@ -138,7 +149,7 @@ JAVA
   }
 JAVA
 
-      unless @constructor
+      unless @has_constructor
         str << <<JAVA
   /**
    * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
@@ -192,35 +203,57 @@ JAVA
       @ruby_class = ruby_class
       @name = name
       @java_signature = java_signature
-      @static = false;
+      @static = false
       @args = []
       @annotations = annotations
-      @constructor = name == "initialize"
     end
 
-    attr_accessor :args, :name, :java_signature, :static, :annotations, :constructor
+    attr_accessor :args, :name, :java_signature, :static, :annotations
 
-    def annotations_string
-      annotations.map do |a|
-        "@" + a
-      end.join("\n")
+    def constructor?
+      false
     end
 
-    def conversion_string(var_names)
-      var_names.map {|a| '    IRubyObject ruby_' + a + ' = JavaUtil.convertJavaToRuby(__ruby__, ' + a + ');'}.join("\n")
+    def declarator_string(&body)
+      <<JAVA
+  #{annotations_string}
+  #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
+#{body.call}
+  }
+JAVA
     end
 
     def to_s
+      declarator_string do
+        <<-JAVA
+#{conversion_string(var_names)}
+    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
+    #{return_string}
+        JAVA
+      end
+    end
+
+    private
+
+    def annotations_string
+      annotations.map { |a| "@" + a }.join("\n")
+    end
+
+    def conversion_string(var_names)
+      var_names.map { |a| "    IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+    end
+
+    # FIXME: We should allow all valid modifiers
+    def modifier_string
+      static ? 'public static' : 'public'
+    end
+
+    def typed_args
+      return @typed_args if @typed_args
+
       if java_signature
-        if java_signature.parameters.size != args.size
-          raise "signature and method argument counts do not match"
-        end
-
-        ret = java_signature.return_type
-
-        var_names = []
         i = 0;
-        args_string = java_signature.parameters.map do |a|
+        @typed_args = java_signature.parameters.map do |a|
           type = a.type.name
           if a.variable_name
             var_name = a.variable_name
@@ -229,50 +262,76 @@ JAVA
             i+=1
           end
 
-          var_names << var_name
-          "#{type} #{var_name}"
-        end.join(', ')
-
-        java_name = java_signature.name
-
-        if ret.void?
-          ret_string = "return;"
-        else
-          ret_string = "return (#{ret.wrapper_name})ruby_result.toJava(#{ret.name}.class);"
+          {:name => var_name, :type => type}
         end
       else
-        ret = "Object"
-        var_names = []
-        args_string = args.map{|a| var_names << a; "Object #{a}"}.join(", ")
-        java_name = @name
-        passed_args = ""
-        ret_string = "return ruby_result.toJava(Object.class);"
+        args.map do |a|
+          {:name => a, :type => 'Object'}
+        end
       end
+    end
 
-      passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
-      passed_args = ', ' + passed_args if args.size > 0
+    def declared_args
+      @declared_args ||= typed_args.map { |a| "#{a[:type]} #{a[:name]}" }.join(', ')
+    end
 
-      if @constructor
-        method_string = <<JAVA
-#{annotations_string}
-  public #{@ruby_class.name}(#{args_string}) {
+    def var_names
+      @var_names ||= typed_args.map {|a| a[:name]}
+    end
+
+    def passed_args
+      return @passed_args if @passed_args
+
+      @passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+      @passed_args = ', ' + @passed_args if args.size > 0
+    end
+
+    def return_type
+      java_signature ? java_signature.return_type : 'Object'
+    end
+
+    def return_string
+      if java_signature
+        if return_type.void?
+          "return;"
+        else
+          "return (#{return_type.wrapper_name})ruby_result.toJava(#{return_type.name}.class);"
+        end
+      else
+        "return ruby_result.toJava(Object.class);"
+      end
+    end
+
+    def java_name
+      java_signature ? java_signature.name : @name
+    end
+  end
+
+  class RubyConstructor < RubyMethod
+    def initialize(ruby_class, java_signature = nil, annotations = [])
+      super(ruby_class, 'initialize', java_signature, annotations)
+    end
+
+    def constructor?
+      true
+    end
+
+    def java_name
+      @ruby_class.name
+    end
+
+    def return_type
+      ''
+    end
+
+    def to_s
+      declarator_string do
+        <<-JAVA
     this(__ruby__, __metaclass__);
 #{conversion_string(var_names)}
     RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
-  }
-JAVA
-      else
-        method_string = <<EOJ
-#{annotations_string}
-  public #{static ? 'static ' : ''}#{ret} #{java_name}(#{args_string}) {
-#{conversion_string(var_names)}
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
-    #{ret_string}
-  }
-EOJ
+        JAVA
       end
-
-      method_string
     end
   end
 
