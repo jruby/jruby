@@ -70,6 +70,6 @@ public class LambdaNode extends IterNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyProc.newProc(runtime, Interpreted19Block.newInterpretedClosure(context, getBlockBody(), self), Block.Type.LAMBDA);
+        return RubyProc.newProc(runtime, Interpreted19Block.newInterpretedClosure(context, getBlockBody(), self), Block.Type.LAMBDA, getPosition());
     }
 }
