@@ -23,11 +23,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Method selection logic for calling from Ruby to Java.
  */
 public class CallableSelector {
-    public static ParameterTypes matchingCallableArityN(IRubyObject recv, Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
+    public static ParameterTypes matchingCallableArityN(Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         ParameterTypes method = (ParameterTypes)cache.get(signatureCode);
         if (method == null) {
-            method = findMatchingCallableForArgs(recv, cache, signatureCode, methods, args);
+            method = findMatchingCallableForArgs(cache, signatureCode, methods, args);
         }
         return method;
     }
@@ -35,52 +35,52 @@ public class CallableSelector {
     // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
     // when there's already a cached match. Do not condense them into a single
     // method.
-    public static JavaCallable matchingCallableArityN(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
+    public static JavaCallable matchingCallableArityN(Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, args);
+            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, args);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityOne(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0) {
+    public static JavaCallable matchingCallableArityOne(Map cache, JavaCallable[] methods, IRubyObject arg0) {
         int signatureCode = argsHashCode(arg0);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0);
+            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityTwo(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
+    public static JavaCallable matchingCallableArityTwo(Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
         int signatureCode = argsHashCode(arg0, arg1);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1);
+            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0, arg1);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityThree(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public static JavaCallable matchingCallableArityThree(Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         int signatureCode = argsHashCode(arg0, arg1, arg2);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2);
+            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0, arg1, arg2);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityFour(IRubyObject recv, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    public static JavaCallable matchingCallableArityFour(Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(recv, cache, signatureCode, methods, arg0, arg1, arg2, arg3);
+            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0, arg1, arg2, arg3);
         }
         return method;
     }
 
-    private static ParameterTypes findMatchingCallableForArgs(IRubyObject recv, Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
+    private static ParameterTypes findMatchingCallableForArgs(Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
         ParameterTypes method = null;
 
         // try the new way first
@@ -200,24 +200,6 @@ public class CallableSelector {
             return assignableAndPrimitivable(types, args);
         }
     };
-    private static final CallableAcceptor Primitivable = new CallableAcceptor() {
-
-        public boolean accept(ParameterTypes types, IRubyObject[] args) {
-            return primitivable(types, args);
-        }
-    };
-    private static final CallableAcceptor Assignable = new CallableAcceptor() {
-
-        public boolean accept(ParameterTypes types, IRubyObject[] args) {
-            return assignable(types, args);
-        }
-    };
-    private static final CallableAcceptor AssignableWithVarargs = new CallableAcceptor() {
-
-        public boolean accept(ParameterTypes types, IRubyObject[] args) {
-            return assignableWithVarargs(types, args);
-        }
-    };
     private static final CallableAcceptor AssignableOrDuckable = new CallableAcceptor() {
 
         public boolean accept(ParameterTypes types, IRubyObject[] args) {
@@ -281,30 +263,10 @@ public class CallableSelector {
         return true;
     }
 
-    private static boolean primitivable(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
-        for (int i = 0; i < types.length; i++) {
-            if (!(PRIMITIVABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static boolean assignableOrDuckable(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
         for (int i = 0; i < types.length; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) || DUCKABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean assignable(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
-        for (int i = 0; i < types.length; i++) {
-            if (!(ASSIGNABLE.match(types[i], args[i]))) {
                 return false;
             }
         }
@@ -331,32 +293,6 @@ public class CallableSelector {
         // check remaining args
         for (int i = 0; i < nonVarargs; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) || PRIMITIVABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean assignableWithVarargs(ParameterTypes paramTypes, IRubyObject... args) {
-        // bail out if this is not a varargs method
-        if (!paramTypes.isVarArgs()) return false;
-
-        Class[] types = paramTypes.getParameterTypes();
-
-        Class varArgArrayType = types[types.length - 1];
-        Class varArgType = varArgArrayType.getComponentType();
-
-        // dig out as many trailing args as will fit, ensuring they match varargs type
-        int nonVarargs = types.length - 1;
-        for (int i = args.length - 1; i >= nonVarargs; i--) {
-            if (!(ASSIGNABLE.match(varArgType, args[i]))) {
-                return false;
-            }
-        }
-
-        // check remaining args
-        for (int i = 0; i < nonVarargs; i++) {
-            if (!(ASSIGNABLE.match(types[i], args[i]))) {
                 return false;
             }
         }

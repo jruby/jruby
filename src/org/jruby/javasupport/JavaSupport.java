@@ -133,9 +133,9 @@ public class JavaSupport {
         Class primitiveClass;
         if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
-                return Class.forName(className, true, runtime.getJRubyClassLoader());
+                return Class.forName(className, false, runtime.getJRubyClassLoader());
             }
-            return Class.forName(className);
+            return Class.forName(className, false, Ruby.getClassLoader());
         }
         return primitiveClass;
     }

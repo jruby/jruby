@@ -125,13 +125,18 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_upto
      * 
      */
+    @JRubyMethod(name = "upto", frame = true)
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
-        if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-            fixnumUpto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
+        if (block.isGiven()) {
+            if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
+                fixnumUpto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
+            } else {
+                duckUpto(context, this, to, block);
+            }
+            return this;
         } else {
-            duckUpto(context, this, to, block);
+            return enumeratorize(context.getRuntime(), this, "upto", to);
         }
-        return this;
     }
 
     private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
@@ -161,22 +166,22 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "upto", frame = true)
-    public IRubyObject upto19(final ThreadContext context, IRubyObject to, final Block block) {
-        return block.isGiven() ? upto(context, to, block) : enumeratorize(context.getRuntime(), this, "upto", to);
-    }
-
     /** int_downto
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
+    @JRubyMethod(name = "downto", frame = true)
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
-        if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-            fixnumDownto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
+        if (block.isGiven()) {
+            if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
+                fixnumDownto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
+            } else {
+                duckDownto(context, this, to, block);
+            }
+            return this;
         } else {
-            duckDownto(context, this, to, block);
+            return enumeratorize(context.getRuntime(), this, "downto", to);
         }
-        return this;
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
@@ -206,28 +211,23 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "downto", frame = true)
-    public IRubyObject downto19(final ThreadContext context, IRubyObject to, final Block block) {
-        return block.isGiven() ? downto(context, to, block) : enumeratorize(context.getRuntime(), this, "downto", to);
-    }
-
-    public IRubyObject times(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
-        IRubyObject i = RubyFixnum.zero(runtime);
-        RubyFixnum one = RubyFixnum.one(runtime);
-        while (true) {
-            if (!i.callMethod(context, "<", this).isTrue()) {
-                break;
-            }
-            block.yield(context, i);
-            i = i.callMethod(context, "+", one);
-        }
-        return this;
-    }
-
     @JRubyMethod(name = "times", frame = true)
-    public IRubyObject times19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? times(context, block) : enumeratorize(context.getRuntime(), this, "times");
+    public IRubyObject times(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            Ruby runtime = context.getRuntime();
+            IRubyObject i = RubyFixnum.zero(runtime);
+            RubyFixnum one = RubyFixnum.one(runtime);
+            while (true) {
+                if (!i.callMethod(context, "<", this).isTrue()) {
+                    break;
+                }
+                block.yield(context, i);
+                i = i.callMethod(context, "+", one);
+            }
+            return this;
+        } else {
+            return enumeratorize(context.getRuntime(), this, "times");
+        }
     }
 
     /** int_succ

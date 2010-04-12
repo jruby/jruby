@@ -532,6 +532,8 @@ public class RubyInstanceConfig {
                 .append("       or -::method_name for anon/singleton classes/modules. Comma-delimited.\n")
                 .append("    jruby.jit.cache=true|false\n")
                 .append("       Cache jitted method in-memory bodies across runtimes and loads. Default is true.\n")
+                .append("    jruby.jit.codeCache=<dir>\n")
+                .append("       Save jitted methods to <dir> as they're compiled, for future runs.\n")
                 .append("\nNATIVE SUPPORT:\n")
                 .append("    jruby.native.enabled=true|false\n")
                 .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true\n")

@@ -714,10 +714,10 @@ public class ShellLauncher {
                 // processes seem to have some peculiar locking sequences, so we
                 // need to ensure nobody is trying to close/destroy while we are
                 synchronized (this) {
+                    child.destroy();
                     if (inputPumper != null) synchronized(inputPumper) {inputPumper.quit();}
                     if (inerrPumper != null) synchronized(inerrPumper) {inerrPumper.quit();}
                     if (outputPumper != null) synchronized(outputPumper) {outputPumper.quit();}
-                    child.destroy();
                 }
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);

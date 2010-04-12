@@ -126,7 +126,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
 
-                    Set<String> frameOrScopeAwareMethods = new HashSet<String>();
+                    Set<String> frameAwareMethods = new HashSet<String>();
                     Set<String> scopeAwareMethods = new HashSet<String>();
 
                     int methodCount = 0;
@@ -180,10 +180,33 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         methodDescs.add(md);
 
                         // check for frame field reads or writes
-                        if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
-                            // add all names for this annotation
-                            frameOrScopeAwareMethods.addAll(Arrays.asList(anno.name()));
+                        boolean frame = false;
+                        boolean scope = false;
+                        if (anno.frame()) {
+                            frame = true;
                         }
+                        if (anno.reads() != null) for (FrameField read : anno.reads()) {
+                            switch (read) {
+                            case BACKREF:
+                            case LASTLINE:
+                                scope = true;
+                                break;
+                            default:
+                                frame = true;
+                            }
+                        }
+                        if (anno.writes() != null) for (FrameField write : anno.writes()) {
+                            switch (write) {
+                            case BACKREF:
+                            case LASTLINE:
+                                scope = true;
+                                break;
+                            default:
+                                frame = true;
+                            }
+                        }
+                        if (frame) frameAwareMethods.addAll(Arrays.asList(anno.name()));
+                        if (scope) scopeAwareMethods.addAll(Arrays.asList(anno.name()));
                     }
 
                     if (methodCount == 0) {
@@ -224,19 +247,28 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("    }");
 
                     // write out a static initializer for frame names, so it only fires once
-                    if (!frameOrScopeAwareMethods.isEmpty()) {
+                    out.println("    static {");
+                    if (!frameAwareMethods.isEmpty()) {
                         StringBuffer frameMethodsString = new StringBuffer();
                         boolean first = true;
-                        for (String name : frameOrScopeAwareMethods) {
+                        for (String name : frameAwareMethods) {
                             if (!first) frameMethodsString.append(',');
                             first = false;
                             frameMethodsString.append('"').append(name).append('"');
                         }
-                        out.println("    static {");
                         out.println("        ASTInspector.addFrameAwareMethods(" + frameMethodsString + ");");
-                        out.println("        ASTInspector.addScopeAwareMethods(" + frameMethodsString + ");");
-                        out.println("     }");
                     }
+                    if (!scopeAwareMethods.isEmpty()) {
+                        StringBuffer scopeMethodsString = new StringBuffer();
+                        boolean first = true;
+                        for (String name : scopeAwareMethods) {
+                            if (!first) scopeMethodsString.append(',');
+                            first = false;
+                            scopeMethodsString.append('"').append(name).append('"');
+                        }
+                        out.println("        ASTInspector.addScopeAwareMethods(" + scopeMethodsString + ");");
+                    }
+                    out.println("     }");
 
                     out.println("}");
                     out.close();

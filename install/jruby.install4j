@@ -75,7 +75,6 @@
           <entry location="pom.xml" fileType="regular" />
           <entry location="Rakefile" fileType="regular" />
           <entry location="README" fileType="regular" />
-          <entry location="rubyspecs.revision" fileType="regular" />
           <entry location="share" fileType="regular" />
           <entry location="spec" fileType="regular" />
           <entry location="src" fileType="regular" />

@@ -2589,12 +2589,15 @@ public class ScriptingContainerTest {
         instance.runScriptlet("puts my_var");
         assertEquals("Hullo!", sw.toString().trim());
 
+        // need to put the lvar again since lvars vanish after eval on a transient setting
+        instance.put("my_var", "Hullo!"); 
         sw = new StringWriter();
         instance.setWriter(sw);
         instance.setCompileMode(CompileMode.JIT);
         instance.runScriptlet("puts my_var");
         assertEquals("Hullo!", sw.toString().trim());
 
+        instance.put("my_var", "Hullo!");
         sw = new StringWriter();
         instance.setWriter(sw);
         instance.setCompileMode(CompileMode.FORCE);

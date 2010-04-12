@@ -85,7 +85,7 @@ public class RubyFixnum extends RubyInteger {
         }
 
         return fixnum;
-    }    
+    }
     
     private final long value;
     private static final int BIT_SIZE = 64;
@@ -147,18 +147,6 @@ public class RubyFixnum extends RubyInteger {
 
     @Override
     public Class<?> getJavaClass() {
-        // this precision-guessing needs to be thought out more, since in the
-        // case of coercing to Object we generally want to get the same type
-        // always
-//        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-//            return byte.class;
-//        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-//            return short.class;
-//        } else if (value >= Character.MIN_VALUE && value <= Character.MAX_VALUE) {
-//            return char.class;
-//        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-//            return int.class;
-//        }
         return long.class;
     }
 
@@ -253,19 +241,23 @@ public class RubyFixnum extends RubyInteger {
      */
     @Override
     public IRubyObject times(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
-        long lvalue = this.value;
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-            IRubyObject nil = runtime.getNil();
-            for (long i = 0; i < lvalue; i++) {
-                block.yield(context, nil);
+        if (block.isGiven()) {
+            Ruby runtime = context.getRuntime();
+            long lvalue = this.value;
+            if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+                IRubyObject nil = runtime.getNil();
+                for (long i = 0; i < lvalue; i++) {
+                    block.yield(context, nil);
+                }
+            } else {
+                for (long i = 0; i < lvalue; i++) {
+                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                }
             }
+            return this;
         } else {
-            for (long i = 0; i < lvalue; i++) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
-            }
+            return RubyEnumerator.enumeratorize(context.getRuntime(), this, "times");
         }
-        return this;
     }
 
     /** fix_to_s

@@ -3602,44 +3602,62 @@ public class RubyIO extends RubyObject {
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
             IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
-        RubyIO io1;
-        RubyIO io2;
-        if (arg1 instanceof RubyString) {
-            io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
-        } else if (arg1 instanceof RubyIO) {
-            io1 = (RubyIO) arg1;
-        } else {
-            throw runtime.newTypeError("Should be String or IO");
-        }
 
-        if (arg2 instanceof RubyString) {
-            io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
-        } else if (arg1 instanceof RubyIO) {
-            io2 = (RubyIO) arg2;
-        } else {
-            throw runtime.newTypeError("Should be String or IO");
-        }
-
-        ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
-        if (!d1.isSeekable()) {
-            throw context.getRuntime().newTypeError("only supports file-to-file copy");
-        }
-        ChannelDescriptor d2 = io2.openFile.getMainStream().getDescriptor();
-        if (!d2.isSeekable()) {
-            throw context.getRuntime().newTypeError("only supports file-to-file copy");
-        }
-
-        FileChannel f1 = (FileChannel)d1.getChannel();
-        FileChannel f2 = (FileChannel)d2.getChannel();
+        RubyIO io1 = null;
+        boolean close_io1 = false;
+        RubyIO io2 = null;
+        boolean close_io2 = false;
 
         try {
-            long size = f1.size();
+            if (arg1 instanceof RubyString) {
+                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
+                close_io1 = true;
+            } else if (arg1 instanceof RubyIO) {
+                io1 = (RubyIO) arg1;
+            } else {
+                throw runtime.newTypeError("Should be String or IO");
+            }
 
-            f1.transferTo(f2.position(), size, f2);
+            if (arg2 instanceof RubyString) {
+                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
+            } else if (arg2 instanceof RubyIO) {
+                io2 = (RubyIO) arg2;
+                close_io2 = true;
+            } else {
+                throw runtime.newTypeError("Should be String or IO");
+            }
 
-            return context.getRuntime().newFixnum(size);
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
+            if (!d1.isSeekable()) {
+                throw context.getRuntime().newTypeError("only supports file-to-file copy");
+            }
+            ChannelDescriptor d2 = io2.openFile.getMainStream().getDescriptor();
+            if (!d2.isSeekable()) {
+                throw context.getRuntime().newTypeError("only supports file-to-file copy");
+            }
+
+            FileChannel f1 = (FileChannel)d1.getChannel();
+            FileChannel f2 = (FileChannel)d2.getChannel();
+
+            try {
+                long size = f1.size();
+
+                f1.transferTo(f2.position(), size, f2);
+
+                return context.getRuntime().newFixnum(size);
+            } catch (IOException ioe) {
+                throw runtime.newIOErrorFromException(ioe);
+            }
+        } finally {
+            try {
+                if (io1 != null) {
+                    io1.close();
+                }
+            } finally {
+                if (io2 != null) {
+                    io2.close();
+                }
+            }
         }
     }
 

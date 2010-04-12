@@ -9,7 +9,7 @@
 #    precompiled  - AOT (or FORCE) 
 #  RUBYSPEC:
 #    latest       - grab head of rubyspecs
-#    stable       - get saved blessed version (see ${rubyspecs.version})
+#    stable       - get saved blessed version (see RUBYSPECS_VERSION)
 
 # FIXME: Make Rubyspecs FAILED message appear?
 
@@ -180,19 +180,16 @@ namespace :spec do
 
   task :fetch_stable_specs => :fetch_latest_specs do
     if stable_specs_changed?
-      rubyspecs_revision = ant.properties['rubyspecs.revision']
-      mspec_revision = ant.properties['mspec.revision']
-
       puts "Rolling rubyspec to stable version"
-      git_checkout('rubyspec', rubyspecs_revision, RUBYSPEC_DIR)
+      git_checkout('rubyspec', RUBYSPECS_REVISION, RUBYSPEC_DIR)
 
       puts "Rolling mspec to stable version"
-      git_checkout('mspec', mspec_revision, MSPEC_DIR)
+      git_checkout('mspec', MSPEC_REVISION, MSPEC_DIR)
 
       ant.propertyfile(:file => "#{SPEC_DIR}/rubyspecs.current.revision",
                        :comment => "Revision of downloaded specs") do
-        entry :key => "rubyspecs.current.revision", :value => rubyspecs_revision
-        entry :key => "mspec.current.revision", :value => mspec_revision
+        entry :key => "rubyspecs.current.revision", :value => RUBYSPECS_REVISION
+        entry :key => "mspec.current.revision", :value => MSPEC_REVISION
       end
     end
   end
@@ -222,14 +219,12 @@ namespace :spec do
   end
 
   def stable_specs_changed?
-    # FIXME: Should I conditionally load there property files?
-    ant.property :file => "rubyspecs.revision"
     ant.property :file => "${SPEC_DIR}/rubyspecs.current.revision"
     p = ant.properties
 
     !File.exists?(RUBYSPEC_DIR) || !File.exists?(MSPEC_DIR) ||
-    p['rubyspecs.revision'] != p['rubyspecs.current.revision'] ||
-    p['mspec.revision'] != p['mspec.current.revision']
+      RUBYSPECS_REVISION != p['rubyspecs.current.revision'] ||
+      MSPEC_REVISION != p['mspec.current.revision']
   end
 
   def clean_spec_dirs(wipe_spec_dir = false)

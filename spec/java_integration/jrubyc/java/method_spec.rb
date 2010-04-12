@@ -25,7 +25,7 @@ describe "A Ruby class generating a Java stub" do
       method = cls.methods[0]
       method.should_not be nil
       method.name.should == "bar"
-      method.constructor.should == false
+      method.constructor?.should == false
       method.java_signature.should == nil
       method.args.length.should == 0
 
@@ -41,7 +41,7 @@ describe "A Ruby class generating a Java stub" do
       method = cls.methods[0]
       method.should_not be nil
       method.name.should == "bar"
-      method.constructor.should == false
+      method.constructor?.should == false
       method.java_signature.should == nil
       method.args.length.should == 1
 
@@ -56,7 +56,7 @@ describe "A Ruby class generating a Java stub" do
 
       method = cls.methods[0]
       method.name.should == "bar"
-      method.constructor.should == false
+      method.constructor?.should == false
       method.java_signature.should_not == nil
       method.java_signature.to_s.should == "void bar(String)"
       method.args.length.should == 1
@@ -81,7 +81,7 @@ describe "A Ruby class generating a Java stub" do
       cls.methods.length.should == 2
       vs_method = cls.methods[0]
       vs_method.name.should == "bar_str"
-      vs_method.constructor.should == false
+      vs_method.constructor?.should == false
       vs_method.java_signature.should_not == nil
       vs_method.java_signature.to_s.should == "void bar(String)"
       vs_method.args.length.should == 1
@@ -90,7 +90,7 @@ describe "A Ruby class generating a Java stub" do
 
       oo_method = cls.methods[1]
       oo_method.name.should == "bar_int"
-      oo_method.constructor.should == false
+      oo_method.constructor?.should == false
       oo_method.java_signature.should_not == nil
       oo_method.java_signature.to_s.should == "void bar(int)"
       oo_method.args.length.should == 1

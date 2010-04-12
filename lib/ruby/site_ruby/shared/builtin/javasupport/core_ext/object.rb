@@ -45,7 +45,11 @@ class Object
       # pull in the class
       import_class = JavaUtilities.get_proxy_class(import_class);
     when Module
-      # do nothing, assume we already have it
+      if import_class.respond_to? "java_class"
+        # ok, it's a proxy
+      else
+        raise ArgumentError.new "Not a Java class or interface: #{import_class}"
+      end
     else
       raise ArgumentError.new "Invalid java class/interface: #{import_class}"
     end
@@ -53,7 +57,18 @@ class Object
     full_name = import_class.java_class.name
     package = import_class.java_class.package
     # package can be nil if it's default or no package was defined by the classloader
-    package_name = package ? package.name : full_name[0...full_name.rindex('.')]
+    if package
+      package_name = package.name
+    else
+      dot_index = full_name.rindex('.')
+      if dot_index
+        package_name = full_name[0...full_name.rindex('.')]
+      else
+        # class in default package
+        package_name = ""
+      end
+    end
+    
     if package_name.length > 0
       class_name = full_name[(package_name.length + 1)..-1]
     else

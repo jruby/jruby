@@ -389,7 +389,7 @@ public class JITCompiler implements JITCompilerMBean {
         
         if (className == null) className = "<anon class>";
 
-        System.err.print(message + ":" + className + "." + name);
+        System.err.print(message + ":" + className + "." + name + " at " + method.getPosition());
         
         if (reason.length > 0) {
             System.err.print(" because of: \"");

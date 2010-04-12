@@ -39,8 +39,10 @@ gem/pkg
 *.orig
 *.rej
 *~
+tool/nailgun/Makefile
 tool/nailgun/ng
 tool/nailgun/config.log
+tool/nailgun/config.status
 jruby-findbugs.html
 .debug.properties
 test/testapp/testapp

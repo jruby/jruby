@@ -242,7 +242,7 @@ public class ByteArrayLexerSource extends LexerSource {
                 return parent.read();
             }
             int c = region.get(index);
-            region.length(index);
+            region.setRealSize(index);
             return forward(c);
         }
         public void unread(int c) {
