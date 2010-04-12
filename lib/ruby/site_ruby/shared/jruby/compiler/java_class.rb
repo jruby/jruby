@@ -253,7 +253,26 @@ JAVA
 
     # FIXME: We should allow all valid modifiers
     def modifier_string
-      static ? 'public static' : 'public'
+      modifiers = {}
+      java_signature.modifiers.each {|m| modifiers[m.to_s] = m.to_s}
+      is_static = static || modifiers["static"]
+      static_str = is_static ? ' static' : ''
+      abstract_str = modifiers["abstract"] ? ' abstract' : ''
+      final_str = modifiers["final"] ? ' final' : ''
+      native_str = modifiers["native"] ? ' native' : ''
+      synchronized_str = modifiers["synchronized"] ? ' synchronized' : ''
+      # only make sense for fields
+      #is_transient = modifiers["transient"]
+      #is_volatile = modifiers["volatile"]
+      strictfp_str = modifiers["strictfp"] ? ' strictfp' : ''
+      visibilities = modifiers.keys.to_a.grep(/public|private|protected/)
+      if visibilities.size > 0
+        visibility_str = "#{visibilities[0]}"
+      else
+        visibility_str = 'public'
+      end
+      
+      "#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
 
     def typed_args
@@ -457,9 +476,7 @@ JAVA
     def build_signature(signature)
       if signature.kind_of? String
         bytes = signature.to_java_bytes
-        sig_node = JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
-
-        sig_node
+        return JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
       else
         raise "java_signature must take a literal string"
       end
