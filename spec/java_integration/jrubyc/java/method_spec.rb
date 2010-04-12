@@ -13,6 +13,22 @@ describe "A Ruby class generating a Java stub" do
     /public *(.*) *Object bar\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar"\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
   OBJECT_OBJECT_BAR_PATTERN =
     /public *(.*) *Object bar\(Object \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar", .*\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
+  BYTE_VOID_BAR_PATTERN =
+    /public *(.*) *byte bar_byte\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_byte"\);\s+return \(Byte\)ruby_result\.toJava\(byte\.class\);/
+  SHORT_VOID_BAR_PATTERN =
+    /public *(.*) *short bar_short\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_short"\);\s+return \(Short\)ruby_result\.toJava\(short\.class\);/
+  CHAR_VOID_BAR_PATTERN =
+    /public *(.*) *char bar_char\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_char"\);\s+return \(Character\)ruby_result\.toJava\(char\.class\);/
+  INT_VOID_BAR_PATTERN =
+    /public *(.*) *int bar_int\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_int"\);\s+return \(Integer\)ruby_result\.toJava\(int\.class\);/
+  LONG_VOID_BAR_PATTERN =
+    /public *(.*) *long bar_long\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_long"\);\s+return \(Long\)ruby_result\.toJava\(long\.class\);/
+  FLOAT_VOID_BAR_PATTERN =
+    /public *(.*) *float bar_float\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_float"\);\s+return \(Float\)ruby_result\.toJava\(float\.class\);/
+  DOUBLE_VOID_BAR_PATTERN =
+    /public *(.*) *double bar_double\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_double"\);\s+return \(Double\)ruby_result\.toJava\(double\.class\);/
+  BOOLEAN_VOID_BAR_PATTERN =
+    /public *(.*) *boolean bar_boolean\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar_boolean"\);\s+return \(Boolean\)ruby_result\.toJava\(boolean\.class\);/
   VOID_STRING_BAR_PATTERN =
     /public *(.*) *void bar\(String \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
   VOID_INT_BAR_PATTERN =
@@ -31,6 +47,94 @@ describe "A Ruby class generating a Java stub" do
 
       java = method.to_s
       java.should match OBJECT_VOID_BAR_PATTERN
+    end
+  end
+
+  describe "with a no-arg method with a primtive return" do
+    it "generates a primitive-returning method" do
+      cls = generate("
+class Foo
+  java_signature 'byte bar_byte()'; def bar_byte; end
+  java_signature 'short bar_short()'; def bar_short; end
+  java_signature 'char bar_char()'; def bar_char; end
+  java_signature 'int bar_int()'; def bar_int; end
+  java_signature 'long bar_long()'; def bar_long; end
+  java_signature 'float bar_float()'; def bar_float; end
+  java_signature 'double bar_double()'; def bar_double; end
+  java_signature 'boolean bar_boolean()'; def bar_boolean; end
+end").classes[0]
+
+      method = cls.methods[0]
+      method.should_not be nil
+      method.name.should == "bar_byte"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "byte bar_byte()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match BYTE_VOID_BAR_PATTERN
+
+      method = cls.methods[1]
+      method.should_not be nil
+      method.name.should == "bar_short"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "short bar_short()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match SHORT_VOID_BAR_PATTERN
+
+      method = cls.methods[2]
+      method.should_not be nil
+      method.name.should == "bar_char"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "char bar_char()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match CHAR_VOID_BAR_PATTERN
+
+      method = cls.methods[3]
+      method.should_not be nil
+      method.name.should == "bar_int"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "int bar_int()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match INT_VOID_BAR_PATTERN
+
+      method = cls.methods[4]
+      method.should_not be nil
+      method.name.should == "bar_long"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "long bar_long()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match LONG_VOID_BAR_PATTERN
+
+      method = cls.methods[5]
+      method.should_not be nil
+      method.name.should == "bar_float"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "float bar_float()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match FLOAT_VOID_BAR_PATTERN
+
+      method = cls.methods[6]
+      method.should_not be nil
+      method.name.should == "bar_double"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "double bar_double()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match DOUBLE_VOID_BAR_PATTERN
+
+      method = cls.methods[7]
+      method.should_not be nil
+      method.name.should == "bar_boolean"
+      method.constructor?.should == false
+      method.java_signature.to_s.should == "boolean bar_boolean()"
+      method.args.length.should == 0
+      java = method.to_s
+      java.should match BOOLEAN_VOID_BAR_PATTERN
     end
   end
 
