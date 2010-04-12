@@ -232,7 +232,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             callConfig = CallConfiguration.FrameBacktraceScopeFull;
                             break;
                         case FrameNoneScopeNone:
-                            callConfig = CallConfiguration.FrameBacktraceScopeDummy;
+                            callConfig = CallConfiguration.FrameBacktraceScopeNone;
                             break;
                         }
                     }
