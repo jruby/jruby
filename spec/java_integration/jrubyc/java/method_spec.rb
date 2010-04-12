@@ -10,9 +10,9 @@ describe "A Ruby class generating a Java stub" do
   end
   
   OBJECT_VOID_BAR_PATTERN =
-    /public *(.*) *Object bar\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar"\);\s+return ruby_result\.toJava\(Object\.class\);/
+    /public *(.*) *Object bar\(\) {\s+.*IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar"\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
   OBJECT_OBJECT_BAR_PATTERN =
-    /public *(.*) *Object bar\(Object \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar", .*\);\s+return ruby_result\.toJava\(Object\.class\);/
+    /public *(.*) *Object bar\(Object \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar", .*\);\s+return \(Object\)ruby_result\.toJava\(Object\.class\);/
   VOID_STRING_BAR_PATTERN =
     /public *(.*) *void bar\(String \w+\) {\s+IRubyObject \S+ = JavaUtil\.convertJavaToRuby\(__ruby__, \S+\);\s+IRubyObject ruby_result = RuntimeHelpers\.invoke\(.*, this, "bar\S*", .*\);\s+return;/
   VOID_INT_BAR_PATTERN =
@@ -26,7 +26,7 @@ describe "A Ruby class generating a Java stub" do
       method.should_not be nil
       method.name.should == "bar"
       method.constructor?.should == false
-      method.java_signature.should == nil
+      method.java_signature.to_s.should == "Object bar()"
       method.args.length.should == 0
 
       java = method.to_s
@@ -42,7 +42,7 @@ describe "A Ruby class generating a Java stub" do
       method.should_not be nil
       method.name.should == "bar"
       method.constructor?.should == false
-      method.java_signature.should == nil
+      method.java_signature.to_s.should == "Object bar(Object a)"
       method.args.length.should == 1
 
       java = method.to_s

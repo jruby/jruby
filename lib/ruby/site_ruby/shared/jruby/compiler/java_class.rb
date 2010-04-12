@@ -224,15 +224,6 @@ JAVA
       false
     end
 
-    def declarator_string(&body)
-      <<JAVA
-    #{annotations_string}
-    #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
-#{body.call}
-    }
-JAVA
-    end
-
     def to_s
       declarator_string do
         <<-JAVA
@@ -243,7 +234,14 @@ JAVA
       end
     end
 
-    private
+    def declarator_string(&body)
+      <<JAVA
+    #{annotations_string}
+    #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
+#{body.call}
+    }
+JAVA
+    end
 
     def annotations_string
       annotations.map { |a| "@" + a }.join("\n")
@@ -261,23 +259,17 @@ JAVA
     def typed_args
       return @typed_args if @typed_args
 
-      if java_signature
-        i = 0;
-        @typed_args = java_signature.parameters.map do |a|
-          type = a.type.name
-          if a.variable_name
-            var_name = a.variable_name
-          else
-            var_name = args[i]
-            i+=1
-          end
+      i = 0;
+      @typed_args = java_signature.parameters.map do |a|
+        type = a.type.name
+        if a.variable_name
+          var_name = a.variable_name
+        else
+          var_name = args[i]
+          i+=1
+        end
 
-          {:name => var_name, :type => type}
-        end
-      else
-        args.map do |a|
-          {:name => a, :type => 'Object'}
-        end
+        {:name => var_name, :type => type}
       end
     end
 
@@ -297,7 +289,11 @@ JAVA
     end
 
     def return_type
-      java_signature ? java_signature.return_type : 'Object'
+      if java_signature
+        java_signature.return_type
+      else
+        raise "no java_signature has been set for method #{name}"
+      end
     end
 
     def return_string
@@ -308,12 +304,16 @@ JAVA
           "return (#{return_type.wrapper_name})ruby_result.toJava(#{return_type.name}.class);"
         end
       else
-        "return ruby_result.toJava(Object.class);"
+        raise "no java_signature has been set for method #{name}"
       end
     end
 
     def java_name
-      java_signature ? java_signature.name : @name
+      if java_signature
+        java_signature.name
+      else
+        raise "no java_signature has been set for method #{name}"
+      end
     end
   end
 
@@ -454,9 +454,9 @@ JAVA
       method_stack.pop
     end
 
-    def build_signature(signature_args)
-      if AST::StrNode === signature_args
-        bytes = signature_args.value.to_java_bytes
+    def build_signature(signature)
+      if signature.kind_of? String
+        bytes = signature.to_java_bytes
         sig_node = JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
 
         sig_node
@@ -531,6 +531,13 @@ JAVA
       if node.block
         current_method.args << node.block.name
       end
+
+      # if method still has no signature, generate one
+      unless current_method.java_signature
+        args_string = current_method.args.map{|a| "Object #{a}"}.join(",")
+        sig_string = "Object #{current_method.name}(#{args_string})"
+        current_method.java_signature = build_signature(sig_string)
+      end
     end
 
     visit :class do
@@ -556,7 +563,7 @@ JAVA
       when 'java_import'
         add_imports node.args_node.child_nodes
       when 'java_signature'
-        set_signature build_signature(node.args_node.child_nodes[0])
+        set_signature build_signature(node.args_node.child_nodes[0].value)
       when 'java_annotation'
         add_annotation(node.args_node.child_nodes)
       when 'java_implements'
