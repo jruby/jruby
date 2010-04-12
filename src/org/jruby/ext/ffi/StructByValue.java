@@ -62,6 +62,16 @@ public final class StructByValue extends Type {
         return RubyString.newString(context.getRuntime(), String.format("#<FFI::StructByValue:%s>", structClass.getName()));
     }
 
+    @JRubyMethod(name = "layout")
+    public final IRubyObject layout(ThreadContext context) {
+        return structLayout;
+    }
+
+    @JRubyMethod(name = "struct_class")
+    public final IRubyObject struct_class(ThreadContext context) {
+        return structClass;
+    }
+
     public final StructLayout getStructLayout() {
         return structLayout;
     }
