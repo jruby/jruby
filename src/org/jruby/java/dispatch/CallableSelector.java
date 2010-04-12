@@ -200,24 +200,6 @@ public class CallableSelector {
             return assignableAndPrimitivable(types, args);
         }
     };
-    private static final CallableAcceptor Primitivable = new CallableAcceptor() {
-
-        public boolean accept(ParameterTypes types, IRubyObject[] args) {
-            return primitivable(types, args);
-        }
-    };
-    private static final CallableAcceptor Assignable = new CallableAcceptor() {
-
-        public boolean accept(ParameterTypes types, IRubyObject[] args) {
-            return assignable(types, args);
-        }
-    };
-    private static final CallableAcceptor AssignableWithVarargs = new CallableAcceptor() {
-
-        public boolean accept(ParameterTypes types, IRubyObject[] args) {
-            return assignableWithVarargs(types, args);
-        }
-    };
     private static final CallableAcceptor AssignableOrDuckable = new CallableAcceptor() {
 
         public boolean accept(ParameterTypes types, IRubyObject[] args) {
@@ -281,30 +263,10 @@ public class CallableSelector {
         return true;
     }
 
-    private static boolean primitivable(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
-        for (int i = 0; i < types.length; i++) {
-            if (!(PRIMITIVABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static boolean assignableOrDuckable(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
         for (int i = 0; i < types.length; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) || DUCKABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean assignable(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
-        for (int i = 0; i < types.length; i++) {
-            if (!(ASSIGNABLE.match(types[i], args[i]))) {
                 return false;
             }
         }
@@ -331,32 +293,6 @@ public class CallableSelector {
         // check remaining args
         for (int i = 0; i < nonVarargs; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) || PRIMITIVABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean assignableWithVarargs(ParameterTypes paramTypes, IRubyObject... args) {
-        // bail out if this is not a varargs method
-        if (!paramTypes.isVarArgs()) return false;
-
-        Class[] types = paramTypes.getParameterTypes();
-
-        Class varArgArrayType = types[types.length - 1];
-        Class varArgType = varArgArrayType.getComponentType();
-
-        // dig out as many trailing args as will fit, ensuring they match varargs type
-        int nonVarargs = types.length - 1;
-        for (int i = args.length - 1; i >= nonVarargs; i--) {
-            if (!(ASSIGNABLE.match(varArgType, args[i]))) {
-                return false;
-            }
-        }
-
-        // check remaining args
-        for (int i = 0; i < nonVarargs; i++) {
-            if (!(ASSIGNABLE.match(types[i], args[i]))) {
                 return false;
             }
         }
