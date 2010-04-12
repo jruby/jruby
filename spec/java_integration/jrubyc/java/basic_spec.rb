@@ -19,8 +19,13 @@ describe "A Ruby class generating a Java stub" do
     # a few sanity checks for default behaviors
     java.should match /import org\.jruby\.Ruby;/
     java.should match /public class Foo {/
+    java.should match /private static final Ruby __ruby__ = Ruby\.getGlobalRuntime\(\);/
+    java.should match /private static final RubyClass __metaclass__;/
     java.should match /static {/
-    java.should match /public Foo\(Ruby \w+, RubyClass \w+\)/
+    java.should match /metaclass = __ruby__\.getClass\("Foo"\);/
+    java.should match /__ruby__\.executeScript\(source, "#{__FILE__}"\)/
+    java.should match /private Foo\(Ruby \w+, RubyClass \w+\)/
+    java.should match /public static IRubyObject __allocate__\(Ruby \w+, RubyClass \w+\)/
   end
 
   it "generates a javac command" do

@@ -89,13 +89,13 @@ module JRuby::Compiler
 
     def static_init
       return <<JAVA
-  static {
+    static {
 #{requires_string}
-    RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-    metaclass.setRubyClassAllocator(#{name}.class);
-    if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
-    __metaclass__ = metaclass;
-  }
+        RubyClass metaclass = __ruby__.getClass(\"#{name}\");
+        metaclass.setRubyStaticAllocator(#{name}.class);
+        if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
+        __metaclass__ = metaclass;
+    }
 JAVA
     end
 
@@ -115,14 +115,14 @@ JAVA
         source_chunks = source.unpack("a32000" * (source.size / 32000 + 1))
         source_chunks.each do |chunk|
           chunk.gsub!(/([\\"])/, '\\\\\1')
-          chunk.gsub!("\n", "\\n\" +\n        \"")
+          chunk.gsub!("\n", "\\n\" +\n            \"")
         end
-        source_line = source_chunks.join("\")\n      .append(\"");
+        source_line = source_chunks.join("\")\n          .append(\"");
 
-        "    String source = new StringBuilder(\"#{source_line}\").toString();\n    __ruby__.evalScriptlet(source);"
+        "        String source = new StringBuilder(\"#{source_line}\").toString();\n        __ruby__.executeScript(source, \"#{script_name}\");"
       else
         requires.map do |r|
-          "    __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
+          "        __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
         end.join("\n")
       end
     end
@@ -137,32 +137,44 @@ JAVA
 
     def constructor_string
       str = <<JAVA
-  /**
-   * Standard Ruby object constructor, for construction-from-Ruby purposes.
-   * Generally not for user consumption.
-   *
-   * @param ruby The JRuby instance this object will belong to
-   * @param metaclass The RubyClass representing the Ruby class of this object
-   */
-  public #{name}(Ruby ruby, RubyClass metaclass) {
-    super(ruby, metaclass);
-  }
+    /**
+     * Standard Ruby object constructor, for construction-from-Ruby purposes.
+     * Generally not for user consumption.
+     *
+     * @param ruby The JRuby instance this object will belong to
+     * @param metaclass The RubyClass representing the Ruby class of this object
+     */
+    private #{name}(Ruby ruby, RubyClass metaclass) {
+        super(ruby, metaclass);
+    }
+
+    /**
+     * A static method used by JRuby for allocating instances of this object
+     * from Ruby. Generally not for user comsumption.
+     *
+     * @param ruby The JRuby instance this object will belong to
+     * @param metaclass The RubyClass representing the Ruby class of this object
+     */
+    public static IRubyObject __allocate__(Ruby ruby, RubyClass metaClass) {
+        return new #{name}(ruby, metaClass);
+    }
 JAVA
 
       unless @has_constructor
         str << <<JAVA
-  /**
-   * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
-   * Ruby and RubyClass instances assocated with this class, and then invokes the
-   * no-argument 'initialize' method in Ruby.
-   *
-   * @param ruby The JRuby instance this object will belong to
-   * @param metaclass The RubyClass representing the Ruby class of this object
-   */
-  public #{name}() {
-    this(__ruby__, __metaclass__);
-    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
-  }
+        
+    /**
+     * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
+     * Ruby and RubyClass instances assocated with this class, and then invokes the
+     * no-argument 'initialize' method in Ruby.
+     *
+     * @param ruby The JRuby instance this object will belong to
+     * @param metaclass The RubyClass representing the Ruby class of this object
+     */
+    public #{name}() {
+        this(__ruby__, __metaclass__);
+        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
+    }
 JAVA
       end
 
@@ -177,13 +189,11 @@ JAVA
 
 #{annotations_string}
 public class #{name} extends RubyObject #{interface_string} {
-  private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
-  private static final RubyClass __metaclass__;
+    private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
+    private static final RubyClass __metaclass__;
 
 #{static_init}
-
 #{constructor_string}
-
 #{methods_string}
 }
 JAVA
@@ -216,10 +226,10 @@ JAVA
 
     def declarator_string(&body)
       <<JAVA
-  #{annotations_string}
-  #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
+    #{annotations_string}
+    #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
 #{body.call}
-  }
+    }
 JAVA
     end
 
@@ -227,8 +237,8 @@ JAVA
       declarator_string do
         <<-JAVA
 #{conversion_string(var_names)}
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
-    #{return_string}
+        IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
+        #{return_string}
         JAVA
       end
     end
@@ -240,7 +250,7 @@ JAVA
     end
 
     def conversion_string(var_names)
-      var_names.map { |a| "    IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+      var_names.map { |a| "        IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
     end
 
     # FIXME: We should allow all valid modifiers
@@ -327,9 +337,9 @@ JAVA
     def to_s
       declarator_string do
         <<-JAVA
-    this(__ruby__, __metaclass__);
+        this(__ruby__, __metaclass__);
 #{conversion_string(var_names)}
-    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
+        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
         JAVA
       end
     end
