@@ -40,12 +40,11 @@ import java.security.Provider;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.runtime.Arity;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 
 /**
@@ -326,6 +325,25 @@ public class RubyDigest {
         public static IRubyObject length(ThreadContext ctx, IRubyObject self) {
             return self.callMethod(ctx, "digest_length");
         }
+
+        @JRubyMethod
+        public static IRubyObject file(ThreadContext ctx, IRubyObject self, IRubyObject filename) {
+            Ruby runtime = self.getRuntime();
+            IRubyObject io = RuntimeHelpers.invoke(ctx, runtime.getFile(),
+                    "open", filename, runtime.newString("rb"));
+
+            try {
+                RubyString buf = runtime.newString();
+                final RubyFixnum bufSize = runtime.newFixnum(16 * 1024);
+                while(!RuntimeHelpers.invoke(ctx, io, "read", bufSize, buf).isNil()) {
+                    self.callMethod(ctx, "update", buf);
+                }
+            } finally {
+                io.callMethod(ctx, "close");
+            }
+
+            return self;
+        }
     }
 
 
@@ -359,6 +377,13 @@ public class RubyDigest {
             Ruby runtime = recv.getRuntime();
             byte[] digest = recv.callMethod(ctx, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyDigest.toHexString(runtime, digest);
+        }
+
+        @JRubyMethod(name = "file", frame = true, meta = true)
+        public static IRubyObject file(ThreadContext ctx, IRubyObject recv, IRubyObject filename) {
+            Ruby runtime = recv.getRuntime();
+            IRubyObject obj = ((RubyClass)recv).newInstance(ctx, new IRubyObject[0], Block.NULL_BLOCK);
+            return obj.callMethod(ctx, "file", filename);
         }
     }
 
