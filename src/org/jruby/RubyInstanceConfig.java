@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007-2009 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007-2010 Nick Sieger <nicksieger@gmail.com>
  * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1314,13 +1315,21 @@ public class RubyInstanceConfig {
                 }
                 return getInput();
             } else {
-                File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
-                if (isxFlag()) {
-                    // search for a shebang line and
-                    // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                    return findScript(file);
+                String script = getScriptFileName();
+                InputStream stream = null;
+                if (script.startsWith("file:") && script.indexOf(".jar!/") != -1) {
+                    stream = new URL("jar:" + script).openStream();
+                } else {
+                    File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
+                    if (isxFlag()) {
+                        // search for a shebang line and
+                        // return the script between shebang and __END__ or CTRL-Z (0x1A)
+                        return findScript(file);
+                    }
+                    stream = new FileInputStream(file);
                 }
-                return new BufferedInputStream(new FileInputStream(file), 8192);
+
+                return new BufferedInputStream(stream, 8192);
             }
         } catch (IOException e) {
             // We haven't found any file directly on the file system,
