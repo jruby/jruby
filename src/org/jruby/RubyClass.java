@@ -33,6 +33,7 @@ package org.jruby;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -124,7 +125,8 @@ public class RubyClass extends RubyModule {
     }
 
     /**
-     * Set an allocator that calls the default constructor for a given class.
+     * Set a reflective allocator that calls a no-arg constructor on the given
+     * class.
      *
      * @param cls The class on which to call the default constructor to allocate
      */
@@ -144,6 +146,12 @@ public class RubyClass extends RubyModule {
         this.reifiedClass = cls;
     }
 
+    /**
+     * Set a reflective allocator that calls the "standard" Ruby object
+     * constructor (Ruby, RubyClass) on the given class.
+     *
+     * @param cls The class from which to grab a standard Ruby constructor
+     */
     public void setRubyClassAllocator(final Class cls) {
         try {
             final Constructor constructor = cls.getConstructor(Ruby.class, RubyClass.class);
@@ -156,6 +164,36 @@ public class RubyClass extends RubyModule {
                         throw runtime.newTypeError("could not allocate " + cls + " with (Ruby, RubyClass) constructor:\n" + ite);
                     } catch (InstantiationException ie) {
                         throw runtime.newTypeError("could not allocate " + cls + " with (Ruby, RubyClass) constructor:\n" + ie);
+                    } catch (IllegalAccessException iae) {
+                        throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
+                    }
+                }
+            };
+
+            this.reifiedClass = cls;
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
+    }
+
+    /**
+     * Set a reflective allocator that calls the "standard" Ruby object
+     * constructor (Ruby, RubyClass) on the given class via a static
+     * __allocate__ method intermediate.
+     *
+     * @param cls The class from which to grab a standard Ruby __allocate__
+     *            method.
+     */
+    public void setRubyStaticAllocator(final Class cls) {
+        try {
+            final Method method = cls.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
+
+            this.allocator = new ObjectAllocator() {
+                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+                    try {
+                        return (IRubyObject)method.invoke(null, runtime, klazz);
+                    } catch (InvocationTargetException ite) {
+                        throw runtime.newTypeError("could not allocate " + cls + " with (Ruby, RubyClass) constructor:\n" + ite);
                     } catch (IllegalAccessException iae) {
                         throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
                     }

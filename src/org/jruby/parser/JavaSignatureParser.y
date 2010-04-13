@@ -119,7 +119,7 @@ type : primitive_type | reference_type { $$ = $<TypeNode>1; }
 
 // PrimitiveTypeNode
 primitive_type : BYTE {
-     $$ = PrimitiveTypeNode.BOOLEAN;
+     $$ = PrimitiveTypeNode.BYTE;
  }
  | SHORT {
      $$ = PrimitiveTypeNode.SHORT;

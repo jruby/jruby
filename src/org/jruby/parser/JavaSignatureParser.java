@@ -474,7 +474,7 @@ case 4:
 case 5:
 					// line 121 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-     yyVal = PrimitiveTypeNode.BOOLEAN;
+     yyVal = PrimitiveTypeNode.BYTE;
  }
   break;
 case 6:

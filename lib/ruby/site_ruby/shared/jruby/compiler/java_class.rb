@@ -89,13 +89,13 @@ module JRuby::Compiler
 
     def static_init
       return <<JAVA
-  static {
+    static {
 #{requires_string}
-    RubyClass metaclass = __ruby__.getClass(\"#{name}\");
-    metaclass.setRubyClassAllocator(#{name}.class);
-    if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
-    __metaclass__ = metaclass;
-  }
+        RubyClass metaclass = __ruby__.getClass(\"#{name}\");
+        metaclass.setRubyStaticAllocator(#{name}.class);
+        if (metaclass == null) throw new NoClassDefFoundError(\"Could not load Ruby class: #{name}\");
+        __metaclass__ = metaclass;
+    }
 JAVA
     end
 
@@ -115,14 +115,14 @@ JAVA
         source_chunks = source.unpack("a32000" * (source.size / 32000 + 1))
         source_chunks.each do |chunk|
           chunk.gsub!(/([\\"])/, '\\\\\1')
-          chunk.gsub!("\n", "\\n\" +\n        \"")
+          chunk.gsub!("\n", "\\n\" +\n            \"")
         end
-        source_line = source_chunks.join("\")\n      .append(\"");
+        source_line = source_chunks.join("\")\n          .append(\"");
 
-        "    String source = new StringBuilder(\"#{source_line}\").toString();\n    __ruby__.evalScriptlet(source);"
+        "        String source = new StringBuilder(\"#{source_line}\").toString();\n        __ruby__.executeScript(source, \"#{script_name}\");"
       else
         requires.map do |r|
-          "    __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
+          "        __ruby__.getLoadService().lockAndRequire(\"#{r}\");"
         end.join("\n")
       end
     end
@@ -137,32 +137,44 @@ JAVA
 
     def constructor_string
       str = <<JAVA
-  /**
-   * Standard Ruby object constructor, for construction-from-Ruby purposes.
-   * Generally not for user consumption.
-   *
-   * @param ruby The JRuby instance this object will belong to
-   * @param metaclass The RubyClass representing the Ruby class of this object
-   */
-  public #{name}(Ruby ruby, RubyClass metaclass) {
-    super(ruby, metaclass);
-  }
+    /**
+     * Standard Ruby object constructor, for construction-from-Ruby purposes.
+     * Generally not for user consumption.
+     *
+     * @param ruby The JRuby instance this object will belong to
+     * @param metaclass The RubyClass representing the Ruby class of this object
+     */
+    private #{name}(Ruby ruby, RubyClass metaclass) {
+        super(ruby, metaclass);
+    }
+
+    /**
+     * A static method used by JRuby for allocating instances of this object
+     * from Ruby. Generally not for user comsumption.
+     *
+     * @param ruby The JRuby instance this object will belong to
+     * @param metaclass The RubyClass representing the Ruby class of this object
+     */
+    public static IRubyObject __allocate__(Ruby ruby, RubyClass metaClass) {
+        return new #{name}(ruby, metaClass);
+    }
 JAVA
 
       unless @has_constructor
         str << <<JAVA
-  /**
-   * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
-   * Ruby and RubyClass instances assocated with this class, and then invokes the
-   * no-argument 'initialize' method in Ruby.
-   *
-   * @param ruby The JRuby instance this object will belong to
-   * @param metaclass The RubyClass representing the Ruby class of this object
-   */
-  public #{name}() {
-    this(__ruby__, __metaclass__);
-    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
-  }
+        
+    /**
+     * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
+     * Ruby and RubyClass instances assocated with this class, and then invokes the
+     * no-argument 'initialize' method in Ruby.
+     *
+     * @param ruby The JRuby instance this object will belong to
+     * @param metaclass The RubyClass representing the Ruby class of this object
+     */
+    public #{name}() {
+        this(__ruby__, __metaclass__);
+        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, "initialize");
+    }
 JAVA
       end
 
@@ -177,13 +189,11 @@ JAVA
 
 #{annotations_string}
 public class #{name} extends RubyObject #{interface_string} {
-  private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
-  private static final RubyClass __metaclass__;
+    private static final Ruby __ruby__ = Ruby.getGlobalRuntime();
+    private static final RubyClass __metaclass__;
 
 #{static_init}
-
 #{constructor_string}
-
 #{methods_string}
 }
 JAVA
@@ -214,60 +224,71 @@ JAVA
       false
     end
 
-    def declarator_string(&body)
-      <<JAVA
-  #{annotations_string}
-  #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
-#{body.call}
-  }
-JAVA
-    end
-
     def to_s
       declarator_string do
         <<-JAVA
 #{conversion_string(var_names)}
-    IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
-    #{return_string}
+        IRubyObject ruby_result = RuntimeHelpers.invoke(__ruby__.getCurrentContext(), #{static ? '__metaclass__' : 'this'}, \"#{name}\"#{passed_args});
+        #{return_string}
         JAVA
       end
     end
 
-    private
+    def declarator_string(&body)
+      <<JAVA
+    #{annotations_string}
+    #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
+#{body.call}
+    }
+JAVA
+    end
 
     def annotations_string
       annotations.map { |a| "@" + a }.join("\n")
     end
 
     def conversion_string(var_names)
-      var_names.map { |a| "    IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+      var_names.map { |a| "        IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
     end
 
     # FIXME: We should allow all valid modifiers
     def modifier_string
-      static ? 'public static' : 'public'
+      modifiers = {}
+      java_signature.modifiers.each {|m| modifiers[m.to_s] = m.to_s}
+      is_static = static || modifiers["static"]
+      static_str = is_static ? ' static' : ''
+      abstract_str = modifiers["abstract"] ? ' abstract' : ''
+      final_str = modifiers["final"] ? ' final' : ''
+      native_str = modifiers["native"] ? ' native' : ''
+      synchronized_str = modifiers["synchronized"] ? ' synchronized' : ''
+      # only make sense for fields
+      #is_transient = modifiers["transient"]
+      #is_volatile = modifiers["volatile"]
+      strictfp_str = modifiers["strictfp"] ? ' strictfp' : ''
+      visibilities = modifiers.keys.to_a.grep(/public|private|protected/)
+      if visibilities.size > 0
+        visibility_str = "#{visibilities[0]}"
+      else
+        visibility_str = 'public'
+      end
+      
+      "#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
 
     def typed_args
       return @typed_args if @typed_args
 
-      if java_signature
-        i = 0;
-        @typed_args = java_signature.parameters.map do |a|
-          type = a.type.name
-          if a.variable_name
-            var_name = a.variable_name
-          else
-            var_name = args[i]
-            i+=1
-          end
+      i = 0;
+      @typed_args = java_signature.parameters.map do |a|
+        type = a.type.name
+        if a.variable_name
+          var_name = a.variable_name
+        else
+          var_name = args[i]
+          i+=1
+        end
 
-          {:name => var_name, :type => type}
-        end
-      else
-        args.map do |a|
-          {:name => a, :type => 'Object'}
-        end
+        {:name => var_name, :type => type}
       end
     end
 
@@ -287,7 +308,11 @@ JAVA
     end
 
     def return_type
-      java_signature ? java_signature.return_type : 'Object'
+      if java_signature
+        java_signature.return_type
+      else
+        raise "no java_signature has been set for method #{name}"
+      end
     end
 
     def return_string
@@ -298,12 +323,16 @@ JAVA
           "return (#{return_type.wrapper_name})ruby_result.toJava(#{return_type.name}.class);"
         end
       else
-        "return ruby_result.toJava(Object.class);"
+        raise "no java_signature has been set for method #{name}"
       end
     end
 
     def java_name
-      java_signature ? java_signature.name : @name
+      if java_signature
+        java_signature.name
+      else
+        raise "no java_signature has been set for method #{name}"
+      end
     end
   end
 
@@ -327,9 +356,9 @@ JAVA
     def to_s
       declarator_string do
         <<-JAVA
-    this(__ruby__, __metaclass__);
+        this(__ruby__, __metaclass__);
 #{conversion_string(var_names)}
-    RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
+        RuntimeHelpers.invoke(__ruby__.getCurrentContext(), this, \"initialize\"#{passed_args});
         JAVA
       end
     end
@@ -444,12 +473,10 @@ JAVA
       method_stack.pop
     end
 
-    def build_signature(signature_args)
-      if AST::StrNode === signature_args
-        bytes = signature_args.value.to_java_bytes
-        sig_node = JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
-
-        sig_node
+    def build_signature(signature)
+      if signature.kind_of? String
+        bytes = signature.to_java_bytes
+        return JavaSignatureParser.parse(ByteArrayInputStream.new(bytes))
       else
         raise "java_signature must take a literal string"
       end
@@ -521,6 +548,13 @@ JAVA
       if node.block
         current_method.args << node.block.name
       end
+
+      # if method still has no signature, generate one
+      unless current_method.java_signature
+        args_string = current_method.args.map{|a| "Object #{a}"}.join(",")
+        sig_string = "Object #{current_method.name}(#{args_string})"
+        current_method.java_signature = build_signature(sig_string)
+      end
     end
 
     visit :class do
@@ -546,7 +580,7 @@ JAVA
       when 'java_import'
         add_imports node.args_node.child_nodes
       when 'java_signature'
-        set_signature build_signature(node.args_node.child_nodes[0])
+        set_signature build_signature(node.args_node.child_nodes[0].value)
       when 'java_annotation'
         add_annotation(node.args_node.child_nodes)
       when 'java_implements'

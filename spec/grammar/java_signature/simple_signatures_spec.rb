@@ -3,6 +3,7 @@ require File.join(File.dirname(__FILE__), 'helpers', 'signature_parser_helper')
 describe JavaSignatureParser do
   it "should parse primitive-only signatures like 'void foo()'" do
     signature('void foo()').should have_signature(VOID, 'foo', [])
+    signature('byte foo()').should have_signature(BYTE, 'foo', [])
     signature('void foo(float)').should have_signature(VOID, 'foo', [FLOAT])
     signature('void foo(float bar)').should have_signature(VOID, 'foo', [FLOAT])
     signature('int foo(float, boolean)').should have_signature(INT, 'foo', [FLOAT, BOOLEAN])

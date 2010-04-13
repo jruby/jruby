@@ -32,6 +32,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Implementation of the Random class.
@@ -39,7 +40,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "Random")
 public class RubyRandom extends RubyObject {
 
-    private final static Random random = new Random();
+    private static final Random globalRandom = new Random();
+    private static IRubyObject globalSeed;
+
+    private final Random random = new Random();
     private IRubyObject seed;
 
     public static RubyClass createRandomClass(Ruby runtime) {
@@ -63,17 +67,26 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public IRubyObject initialize(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        seed = RubyBignum.newBignum(runtime, random.nextLong());
+        long seedLong = random.nextLong();
+        seed = RubyBignum.newBignum(runtime, seedLong);
+        random.setSeed(seedLong);
         return this;
     }
 
     @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
+        long seedLong;
         if (arg instanceof RubyFloat) {
             seed = RubyBignum.num2fix(((RubyFloat) arg).truncate());
+            seedLong = RubyNumeric.num2long(seed);
+        } else if (arg instanceof RubyBignum) {
+            seed = arg;
+            seedLong = new Double(RubyBignum.big2dbl((RubyBignum)arg)).longValue();
         } else {
             seed = arg.convertToInteger();
+            seedLong = RubyNumeric.num2long(seed);
         }
+        random.setSeed(seedLong);
 
         return this;
     }
@@ -81,5 +94,149 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "seed", compat = CompatVersion.RUBY1_9)
     public IRubyObject seed(ThreadContext context) {
         return seed;
+    }
+
+    @JRubyMethod(name = "rand", meta = true, optional = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject arg = context.getRuntime().getNil();
+        if (args.length > 0) {
+            arg = args[0];
+        }
+        return randCommon(context, arg, globalRandom, false);
+    }
+
+    @JRubyMethod(name = "rand", backtrace = true, optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
+        IRubyObject arg = context.getRuntime().getNil();
+        if (args.length > 0) {
+            arg = args[0];
+        }
+        return randCommon(context, arg, random, true);
+    }
+
+    private static IRubyObject randCommon(ThreadContext context, IRubyObject arg, Random random, boolean raiseArgError) {
+        Ruby runtime = context.getRuntime();
+        if (arg.isNil()) {  // NO ARGUMENTS
+            return runtime.newFloat(random.nextFloat());
+        } else if (arg instanceof RubyRange) { // RANGE ARGUMENT
+            RubyRange range = (RubyRange) arg;
+            IRubyObject first = range.first();
+            IRubyObject last = range.last();
+            if (range.include_p19(context, last).isTrue()) {
+                last = last.callMethod(context, "+", runtime.newFixnum(1));
+            }
+
+            if (!first.respondsTo("-") || !first.respondsTo("+") ||
+                    !last.respondsTo("-") || !last.respondsTo("+")) {
+                throw runtime.newArgumentError("invalid argument - " + arg.toString());
+            }
+
+            IRubyObject difference = last.callMethod(context, "-", first);
+            int max = new Long(RubyNumeric.num2long(difference)).intValue();
+
+            int rand = random.nextInt(max);
+
+            return RubyNumeric.num2fix(first.callMethod(context, "+", runtime.newFixnum(rand)));
+        } else if (arg instanceof RubyFloat) { // FLOAT ARGUMENT
+            double max = RubyNumeric.num2dbl(arg);
+            if (max <= 0 && raiseArgError) {
+                throw runtime.newArgumentError("invalid argument - " + arg.toString());
+            }
+            return runtime.newFloat(random.nextFloat() * max);
+        } else { // OTHERWISE
+            int max = 0;
+            if (arg instanceof RubyBignum) {
+                max = new Double(RubyBignum.big2dbl((RubyBignum)arg)).intValue();
+            } else {
+                if (arg.respondsTo("to_i")) {
+                    arg = arg.callMethod(context, "to_i");
+                }
+                max = new Long(RubyNumeric.num2long(arg)).intValue();
+            }
+
+            if (max <= 0 && raiseArgError) {
+                throw runtime.newArgumentError("invalid argument - " + arg.toString());
+            }
+
+            int rand = random.nextInt(max);
+            if (arg instanceof RubyBignum) {
+                return RubyBignum.newBignum(runtime, rand);
+            }
+
+            return runtime.newFixnum(rand);
+        }
+    }
+
+    @JRubyMethod(name = "srand", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject srand(ThreadContext context, IRubyObject recv) {
+        return srand(context, recv, context.getRuntime().getNil());
+    }
+
+    @JRubyMethod(name = "srand", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject srand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject newSeed = arg;
+        IRubyObject previousSeed = globalSeed;
+
+        if (arg.isNil() || RubyNumeric.num2int(arg) == 0) {
+            newSeed = RubyNumeric.int2fix(runtime, System.currentTimeMillis() ^
+                recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
+                runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed()))));
+        }
+
+        globalSeed = newSeed;
+        globalRandom.setSeed(RubyNumeric.fix2long(globalSeed));
+
+        return previousSeed;
+    }
+
+    @Override
+    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.getRuntime();
+        // TODO: mri also compares the "state"
+
+        if (!(obj instanceof RubyRandom)) {
+            return runtime.getFalse();
+        } else {
+            RubyRandom r2 = (RubyRandom) obj;
+            return this.seed(context).callMethod(context, "==", r2.seed(context));
+        }
+    }
+
+    @JRubyMethod(name = "marshal_dump", backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject marshal_dump(ThreadContext context) {
+        RubyArray dump = context.getRuntime().newArray(seed);
+        if (hasVariables()) dump.syncVariables(getVariableList());
+        return dump;
+    }
+
+    @JRubyMethod(name = "marshal_load", backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
+        RubyArray load = arg.convertToArray();
+        if (load.size() > 0) {
+            seed =  load.eltInternal(0);
+            random.setSeed(seed.convertToInteger().getLongValue());
+        }
+        if (load.hasVariables()) syncVariables(load.getVariableList());
+        return this;
+    }
+
+    @JRubyMethod(name = "bytes", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
+        throw context.getRuntime().newNotImplementedError("Random#bytes is not implemented yet");
+    }
+
+    @JRubyMethod(name = "new_seed", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        long rand = getRandomSeed(runtime, recv);
+        return RubyBignum.newBignum(runtime, rand);
+    }
+
+    private static long getRandomSeed(Ruby runtime, IRubyObject recv) {
+        return System.currentTimeMillis() ^
+               recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
+               runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed())));
     }
 }

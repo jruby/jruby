@@ -1,4 +1,4 @@
-JRuby is Copyright (c) 2007-2009 The JRuby project, and is released
+JRuby is Copyright (c) 2007-2010 The JRuby project, and is released
 under a tri CPL/GPL/LGPL license. You can use it, redistribute it
 and/or modify it under the terms of the:
 
@@ -106,7 +106,7 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
  Jyvaml and rbyaml are released under the MIT license, and are
  Copyright (c) 2006 Ola Bini.
 
-The complete text of the Common Public License is as follow:
+The complete text of the Common Public License is as follows:
 
   Common Public License - v 1.0
 
@@ -2108,7 +2108,7 @@ The complete text of the Apache Software License Version 1.1 is as follows:
   *
   */
 
-The complete text of the MIT license is as follow:
+The complete text of the MIT license is as follows:
 
   Permission is hereby granted, free of charge, to any person
   obtaining a copy of this software and associated documentation

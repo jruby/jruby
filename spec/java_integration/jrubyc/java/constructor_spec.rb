@@ -36,7 +36,7 @@ describe "A Ruby class generating a Java stub" do
         init.should_not be nil
         init.name.should == "initialize"
         init.constructor?.should == true
-        init.java_signature.should == nil
+        init.java_signature.to_s.should == "Object initialize()"
         init.args.length.should == 0
 
         java = init.to_s
@@ -52,7 +52,7 @@ describe "A Ruby class generating a Java stub" do
         init = cls.methods[0]
         init.name.should == "initialize"
         init.constructor?.should == true
-        init.java_signature.should == nil
+        init.java_signature.to_s.should == "Object initialize(Object a)"
         init.args.length.should == 1
         init.args[0].should == 'a'
 

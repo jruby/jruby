@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<install4j version="4.2.4" transformSequenceNumber="2">
+<install4j version="4.2.7" transformSequenceNumber="2">
   <directoryPresets config="" />
   <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
@@ -41,31 +41,16 @@
           <entry location="bench" fileType="regular" />
           <entry location="bin" fileType="regular" />
           <entry location="build" fileType="regular" />
-          <entry location="build-config.xml" fileType="regular" />
           <entry location="build.xml" fileType="regular" />
           <entry location="build_lib" fileType="regular" />
           <entry location="default.build.properties" fileType="regular" />
           <entry location="dist" fileType="regular" />
+          <entry location="docs/.cvsignore" fileType="regular" />
           <entry location="docs/rdocs.tar.gz" fileType="regular" />
           <entry location="findbugs.xml" fileType="regular" />
           <entry location="gem" fileType="regular" />
-          <entry location="install/jruby.install4j" fileType="regular" />
+          <entry location="install" fileType="regular" />
           <entry location="ivy" fileType="regular" />
-          <entry location="jruby-bin-${compiler:jruby.version}.tar.gz" fileType="regular" />
-          <entry location="jruby-bin-${compiler:jruby.version}.tar.gz.md5" fileType="regular" />
-          <entry location="jruby-bin-${compiler:jruby.version}.tar.gz.sha1" fileType="regular" />
-          <entry location="jruby-bin-${compiler:jruby.version}.zip" fileType="regular" />
-          <entry location="jruby-bin-${compiler:jruby.version}.zip.md5" fileType="regular" />
-          <entry location="jruby-bin-${compiler:jruby.version}.zip.sha1" fileType="regular" />
-          <entry location="jruby-complete.jar" fileType="regular" />
-          <entry location="jruby-complete.jar.md5" fileType="regular" />
-          <entry location="jruby-complete.jar.sha1" fileType="regular" />
-          <entry location="jruby-src-${compiler:jruby.version}.tar.gz" fileType="regular" />
-          <entry location="jruby-src-${compiler:jruby.version}.tar.gz.md5" fileType="regular" />
-          <entry location="jruby-src-${compiler:jruby.version}.tar.gz.sha1" fileType="regular" />
-          <entry location="jruby-src-${compiler:jruby.version}.zip" fileType="regular" />
-          <entry location="jruby-src-${compiler:jruby.version}.zip.md5" fileType="regular" />
-          <entry location="jruby-src-${compiler:jruby.version}.zip.sha1" fileType="regular" />
           <entry location="jruby.bnd.template" fileType="regular" />
           <entry location="lib/.cvsignore" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
@@ -74,6 +59,7 @@
           <entry location="netbeans-ant.xml" fileType="regular" />
           <entry location="pom.xml" fileType="regular" />
           <entry location="Rakefile" fileType="regular" />
+          <entry location="rakelib" fileType="regular" />
           <entry location="README" fileType="regular" />
           <entry location="share" fileType="regular" />
           <entry location="spec" fileType="regular" />
@@ -83,28 +69,22 @@
           <entry location="tool" fileType="regular" />
         </exclude>
       </dirEntry>
-      <dirEntry mountPoint="102" file="../dist" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="102" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="lib/native" fileType="regular" />
         </exclude>
       </dirEntry>
-      <dirEntry mountPoint="103" file="../dist" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="103" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin" fileType="regular" />
-          <entry location="lib/native/darwin" fileType="regular" />
-          <entry location="lib/native/freebsd-amd64" fileType="regular" />
-          <entry location="lib/native/freebsd-i386" fileType="regular" />
+          <entry location="lib/native/Darwin" fileType="regular" />
+          <entry location="lib/native/i386-FreeBSD" fileType="regular" />
           <entry location="lib/native/i386-Linux" fileType="regular" />
-          <entry location="lib/native/i386-SunOS" fileType="regular" />
-          <entry location="lib/native/linux-amd64" fileType="regular" />
-          <entry location="lib/native/linux-i386" fileType="regular" />
-          <entry location="lib/native/openbsd-i386" fileType="regular" />
-          <entry location="lib/native/s390x-Linux" fileType="regular" />
-          <entry location="lib/native/sunos-amd64" fileType="regular" />
-          <entry location="lib/native/sunos-sparc" fileType="regular" />
-          <entry location="lib/native/sunos-sparcv9" fileType="regular" />
-          <entry location="lib/native/sunos-x86" fileType="regular" />
-          <entry location="lib/native/x86_64-SunOS" fileType="regular" />
+          <entry location="lib/native/ppc-Linux" fileType="regular" />
+          <entry location="lib/native/sparc-SunOS" fileType="regular" />
+          <entry location="lib/native/sparcv9-SunOS" fileType="regular" />
+          <entry location="lib/native/x86_64-FreeBSD" fileType="regular" />
+          <entry location="lib/native/x86_64-Linux" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
       </dirEntry>
@@ -488,7 +468,7 @@
     </applications>
   </installerGui>
   <mediaSets>
-    <win32 name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>
@@ -498,7 +478,17 @@
       <exclude />
       <variables />
     </win32>
-    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.6.0_16" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows (64bit)" id="24" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+      <excludedLaunchers />
+      <excludedComponents />
+      <excludedBeans>
+        <bean refId="26" />
+      </excludedBeans>
+      <overriddenPrincipalLanguage id="en" customLocalizationFile="" />
+      <exclude />
+      <variables />
+    </win32>
+    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.6.0_16" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>
@@ -519,7 +509,7 @@
       <exclude />
       <variables />
     </macosFolder>
-    <unixInstaller name="Unix Installer" id="23" mediaFileName="" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="all" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="">
+    <unixInstaller name="Unix Installer" id="23" mediaFileName="" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="all" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans />

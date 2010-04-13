@@ -29,7 +29,7 @@ Identifier     = [:jletter:] [:jletterdigit:]*
 <YYINITIAL> {
     // primitive types
     "boolean"       { return JavaSignatureParser.BOOLEAN;      }
-    "byte"          { return JavaSignatureParser.VOID;         }
+    "byte"          { return JavaSignatureParser.BYTE;         }
     "short"         { return JavaSignatureParser.SHORT;        }
     "int"           { return JavaSignatureParser.INT;          }
     "long"          { return JavaSignatureParser.LONG;         }

@@ -1069,25 +1069,25 @@
   </target>
 
   <!-- Main spec runs (See rakelib/spec.rake for definitions/descriptions) -->
-  <target name="spec:ci_18" depends="jar"><rake task="spec:ci_18"/></target>
-  <target name="spec:ci_19" depends="jar"><rake task="spec:ci_19"/></target>
-  <target name="spec:ci_interpreted_18_19" depends="jar">
+  <target name="spec:ci_18" depends="install-gems"><rake task="spec:ci_18"/></target>
+  <target name="spec:ci_19" depends="install-gems"><rake task="spec:ci_19"/></target>
+  <target name="spec:ci_interpreted_18_19" depends="install-gems">
     <rake task="spec:ci_interpreted_18_19"/>
   </target>
-  <target name="spec:ci_interpreted_18" depends="jar">
+  <target name="spec:ci_interpreted_18" depends="install-gems">
     <rake task="spec:ci_interpreted_18"/>
   </target>
-  <target name="spec:ci_interpreted_19" depends="jar">
+  <target name="spec:ci_interpreted_19" depends="install-gems">
     <rake task="spec:ci_interpreted_19"/>
   </target>
-  <target name="spec:ci_all_precompiled_18" depends="jar">
+  <target name="spec:ci_all_precompiled_18" depends="install-gems">
     <rake task="spec:ci_all_precompiled_18"/>
   </target>
-  <target name="spec:ci_all_interpreted_18" depends="jar">
+  <target name="spec:ci_all_interpreted_18" depends="install-gems">
     <rake task="spec:ci_all_interpreted_18"/>
   </target>
-  <target name="spec:ci_all" depends="jar"><rake task="spec:ci_all"/></target>
-  <target name="spec:ci_latest" depends="jar"><rake task="spec:ci_latest"/></target>
+  <target name="spec:ci_all" depends="install-gems"><rake task="spec:ci_all"/></target>
+  <target name="spec:ci_latest" depends="install-gems"><rake task="spec:ci_latest"/></target>
 
   <!-- Old compatibility targets which call to newer Rake-based ones -->
   <target name="spec" depends="spec:ci_18"/>
