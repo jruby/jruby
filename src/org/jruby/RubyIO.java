@@ -2032,13 +2032,9 @@ public class RubyIO extends RubyObject {
         // TODO: notify threads waiting on descriptors/IO? probably not...
         
         if (openFile.getProcess() != null) {
-            try {
-                openFile.getProcess().destroy();
-                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().waitFor());
-                runtime.getGlobalVariables().set("$?", processResult);
-            } catch (InterruptedException ie) {
-                // TODO: do something here?
-            }
+            obliterateProcess(openFile.getProcess());
+            IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue());
+            runtime.getGlobalVariables().set("$?", processResult);
         }
         
         return runtime.getNil();
@@ -3455,6 +3451,19 @@ public class RubyIO extends RubyObject {
             ModeFlags modes = new ModeFlags(mode);
         
             ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, modes);
+
+            // Yes, this is gross. java.lang.Process does not appear to be guaranteed
+            // "ready" when we get it back from Runtime#exec, so we try to give it a
+            // chance by waiting for 10ms before we proceed. Only doing this on 1.5
+            // since Hotspot 1.6+ does not seem to exhibit the problem.
+            if (System.getProperty("java.specification.version", "").equals("1.5")) {
+                synchronized (process) {
+                    try {
+                        process.wait(100);
+                    } catch (InterruptedException ie) {}
+                }
+            }
+            
             RubyIO io = new RubyIO(runtime, process, modes);
 
             if (block.isGiven()) {
@@ -3812,5 +3821,47 @@ public class RubyIO extends RubyObject {
 //        }
 
         return modes;
+    }
+
+    /**
+     * Try for around 1s to destroy the child process. This is to work around
+     * issues on some JVMs where if you try to destroy the process too quickly
+     * it may not be ready and may ignore the destroy. A subsequent waitFor
+     * will then hang. This version tries to destroy and call exitValue
+     * repeatedly for up to 1000 calls with 1ms delay between iterations, with
+     * the intent that the target process ought to be "ready to die" fairly
+     * quickly and we don't get stuck in a blocking waitFor call.
+     *
+     * @param runtime The Ruby runtime, for raising an error
+     * @param process The process to obliterate
+     */
+    public static void obliterateProcess(Process process) {
+        int i = 0;
+        Object waitLock = new Object();
+        while (true) {
+            // only try 1000 times with a 1ms sleep between, so we don't hang
+            // forever on processes that ignore SIGTERM
+            if (i >= 1000) {
+                throw new RuntimeException("could not shut down process: " + process);
+            }
+
+            // attempt to destroy (SIGTERM on UNIX, TerminateProcess on Windows)
+            process.destroy();
+            
+            try {
+                // get the exit value; succeeds if it has terminated, throws
+                // IllegalThreadStateException if not.
+                process.exitValue();
+            } catch (IllegalThreadStateException itse) {
+                // increment count and try again after a 1ms sleep
+                i += 1;
+                synchronized (waitLock) {
+                    try {waitLock.wait(1);} catch (InterruptedException ie) {}
+                }
+                continue;
+            }
+            // success!
+            break;
+        }
     }
 }
