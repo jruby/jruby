@@ -1249,6 +1249,7 @@
     <include name="Rakefile"/>
     <include name="build.xml"/>
     <include name="ivy/**"/>
+    <include name="rakelib/**"/>
     <include name="nbproject/*"/>
     <include name=".project"/>
     <include name=".classpath"/>
@@ -1347,7 +1348,14 @@
         <patternset refid="dist.nailgun.files"/>
       </tarfileset>
       <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
-        <include name="tool/nailgun/configure"/>
+          <include name="tool/nailgun/configure"/>
+      </tarfileset>
+      <tarfileset dir="${base.dir}" prefix="jruby-${version.jruby}">
+          <include name="spi/**"/>
+      </tarfileset>
+      <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
+          <include name="test/testapp/testapp"/>
+          <include name="test/testapp/testapp.exe"/>
       </tarfileset>
     </tar>
     <zip destfile="${dist.dir}/jruby-src-${version.jruby}.zip">
@@ -1366,9 +1374,13 @@
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="tool/nailgun/configure"/>
       </zipfileset>
-	  <zipfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
-	    <include name="spi/**"/>
-	  </zipfileset>
+      <zipfileset dir="${base.dir}" prefix="jruby-${version.jruby}">
+	<include name="spi/**"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
+        <include name="test/testapp/testapp"/>
+        <include name="test/testapp/testapp.exe"/>
+      </zipfileset>
     </zip>
 
     <checksum file="${dist.dir}/jruby-src-${version.jruby}.zip" algorithm="md5"/>
