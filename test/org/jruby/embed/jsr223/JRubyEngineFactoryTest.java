@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 import javax.script.ScriptEngine;
+import org.jruby.runtime.Constants;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -153,7 +154,7 @@ public class JRubyEngineFactoryTest {
     public void testGetLanguageVersion() {
         logger1.info("getLanguageVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        String expResult = "jruby 1.5.0";
+        String expResult = "jruby " + Constants.VERSION;
         String result = instance.getLanguageVersion();
         assertTrue(result.startsWith(expResult));
         logger1.info(result);
@@ -257,7 +258,7 @@ public class JRubyEngineFactoryTest {
         assertEquals(expResult, result);
 
         key = ScriptEngine.LANGUAGE_VERSION;
-        expResult = "jruby 1.5.0";
+        expResult = "jruby " + Constants.VERSION;
         result = instance.getParameter(key);
         assertTrue(((String)result).startsWith((String) expResult));
 
