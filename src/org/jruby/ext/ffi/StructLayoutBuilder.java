@@ -58,14 +58,21 @@ public final class StructLayoutBuilder extends RubyObject {
     private final Map<IRubyObject, StructLayout.Field> fields = new LinkedHashMap<IRubyObject, StructLayout.Field>();
     /** The current size of the layout in bytes */
     private int size = 0;
-    /** The current minimum alignment of the layout in bytes */
-    private int minAlign = 1;
-    
+
+    /** The current alignment of the layout in bytes */
+    private int alignment = 1;
+
     /** The number of fields in the struct */
     private int fieldCount = 0;
     
     /** Whether the StructLayout is for a structure or union */
     private boolean isUnion = false;
+
+    /** The minimum alignment of individual struct members */
+    private int minimumAlignment = 1;
+
+    /** Whether members should be packed, and not aligned on natural alignments */
+    private int packing = 0;
 
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -98,7 +105,8 @@ public final class StructLayoutBuilder extends RubyObject {
 
     @JRubyMethod(name = "build")
     public StructLayout build(ThreadContext context) {
-        return new StructLayout(context.getRuntime(), fieldNames, fields, minAlign + ((size - 1) & ~(minAlign - 1)), minAlign);
+        return new StructLayout(context.getRuntime(), fieldNames, fields, 
+                packing != 0 ? this.size : align(size, alignment), alignment);
     }
 
     @JRubyMethod(name = "size")
@@ -115,7 +123,7 @@ public final class StructLayoutBuilder extends RubyObject {
         return context.getRuntime().newFixnum(size);
     }
     
-    private static final int alignMember(int offset, int align) {
+    private static final int align(int offset, int align) {
         return align + ((offset - 1) & ~(align - 1));
     }
     
@@ -136,7 +144,7 @@ public final class StructLayoutBuilder extends RubyObject {
         fields.put(createSymbolKey(runtime, name), field);
         fieldNames.add(createSymbolKey(runtime, name));
         this.size = Math.max(this.size, field.offset() + size);
-        this.minAlign = Math.max(this.minAlign, align);
+        this.alignment = packing != 0 ? packing : Math.max(this.alignment, align);
         return this;
     }
 
@@ -145,11 +153,28 @@ public final class StructLayoutBuilder extends RubyObject {
         this.isUnion = isUnion.isTrue();
         return this;
     }
+
+    @JRubyMethod(name = "packed=")
+    public IRubyObject set_packed(ThreadContext context, IRubyObject packed) {
+        this.packing = packed instanceof RubyInteger ? RubyInteger.num2int(packed) : packed.isTrue() ? 1 : 0;
+        this.alignment = this.packing;
+        this.minimumAlignment = this.packing;
+        
+        return this;
+    }
+
+    @JRubyMethod(name = "alignment=")
+    public IRubyObject set_alignment(ThreadContext context, IRubyObject align) {
+        this.minimumAlignment = RubyNumeric.num2int(align);
+        this.alignment = Math.min(minimumAlignment, alignment);
+
+        return this;
+    }
     
     private final int calculateOffset(IRubyObject[] args, int index, int alignment) {
         return args.length > index && args[index] instanceof RubyInteger
                 ? Util.int32Value(args[index])
-                : isUnion ? 0 : alignMember(this.size, alignment);
+                : isUnion ? 0 : align(this.size, packing != 0 ? packing : Math.max(minimumAlignment, alignment));
     }
 
     private final static boolean checkFieldName(Ruby runtime, IRubyObject fieldName) {

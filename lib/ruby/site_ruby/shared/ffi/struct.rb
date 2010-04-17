@@ -86,6 +86,9 @@ module FFI
 
         builder = FFI::StructLayoutBuilder.new
         builder.union = self < Union
+        builder.packed = @packed if defined?(@packed)
+        builder.alignment = @min_alignment if defined?(@min_alignment)
+        
         if spec[0].kind_of?(Hash)
           hash_layout(builder, spec)
         else
@@ -106,6 +109,15 @@ module FFI
         FFI::CallbackInfo.new(find_type(ret, mod), params.map { |e| find_type(e, mod) })
       end
 
+      def packed(packed = 1)
+        @packed = packed
+      end
+      alias :pack :packed
+
+      def aligned(alignment = 1)
+        @min_alignment = alignment
+      end
+      alias :align :aligned
       
       def enclosing_module
         begin
