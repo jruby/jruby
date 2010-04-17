@@ -1654,7 +1654,7 @@ public class RubyObject extends RubyBasicObject {
         RubyArray array = runtime.newArray(nameList.size());
 
         for (String name : nameList) {
-            array.append(runtime.newString(name).callMethod("to_sym"));
+            array.append(runtime.newSymbol(name));
         }
 
         return array;

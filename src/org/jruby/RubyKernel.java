@@ -854,7 +854,7 @@ public class RubyKernel {
         RubyArray globalVariables = runtime.newArray();
 
         for (String globalVariableName : runtime.getGlobalVariables().getNames()) {
-            globalVariables.append(runtime.newString(globalVariableName).callMethod("to_sym"));
+            globalVariables.append(runtime.newSymbol(globalVariableName));
         }
 
         return globalVariables;
@@ -882,7 +882,7 @@ public class RubyKernel {
         RubyArray localVariables = runtime.newArray();
 
         for (String name: context.getCurrentScope().getAllNamesInScope()) {
-            if (IdUtil.isLocal(name)) localVariables.append(runtime.newString(name).callMethod("to_sym"));
+            if (IdUtil.isLocal(name)) localVariables.append(runtime.newSymbol(name));
         }
 
         return localVariables;
