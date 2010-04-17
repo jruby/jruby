@@ -847,6 +847,19 @@ public class RubyKernel {
         return globalVariables;
     }
 
+    // In 1.9, return symbols
+    @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyArray global_variables19(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        RubyArray globalVariables = runtime.newArray();
+
+        for (String globalVariableName : runtime.getGlobalVariables().getNames()) {
+            globalVariables.append(runtime.newString(globalVariableName).callMethod("to_sym"));
+        }
+
+        return globalVariables;
+    }
+
     /** Returns an Array with the names of all local variables.
      *
      */
@@ -862,6 +875,18 @@ public class RubyKernel {
         return localVariables;
     }
 
+    // In 1.9, return symbols
+    @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.getRuntime();
+        RubyArray localVariables = runtime.newArray();
+
+        for (String name: context.getCurrentScope().getAllNamesInScope()) {
+            if (IdUtil.isLocal(name)) localVariables.append(runtime.newString(name).callMethod("to_sym"));
+        }
+
+        return localVariables;
+    }
     @JRubyMethod(name = "binding", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.getRuntime(), context.currentBinding(recv));
