@@ -88,7 +88,7 @@ public class CallableSelector {
         if (newFinds.size() > 0) {
             // new way found one, so let's go with that
             method = newFinds.get(0);
-            if (args[0].getRuntime().isVerbose()) {
+            if (newFinds.size() > 1 && args[0].getRuntime().isVerbose()) {
                 // multiple potentials, warn the user (should only happen once per ambiguity)
                 RubyClass[] argTypes = new RubyClass[args.length];
                 for (int i = 0; i < argTypes.length; i++) {
