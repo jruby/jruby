@@ -40,7 +40,7 @@ import org.jruby.util.CodegenUtils;
 
 public class JavaProxy extends RubyObject {
     private JavaObject javaObject;
-    private Object object;
+    protected Object object;
     
     public JavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
