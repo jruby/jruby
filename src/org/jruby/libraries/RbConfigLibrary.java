@@ -206,6 +206,12 @@ public class RbConfigLibrary implements Library {
         if (runtime.is1_9()) {
             setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
         }
+
+        // These will be used as jruby defaults for rubygems if found
+        String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");
+        String gempath = SafePropertyAccessor.getProperty("jruby.gem.path");
+        if (gemhome != null) setConfig(configHash, "default_gem_home", gemhome);
+        if (gempath != null) setConfig(configHash, "default_gem_path", gempath);
         
         RubyHash mkmfHash = RubyHash.newHash(runtime);
         

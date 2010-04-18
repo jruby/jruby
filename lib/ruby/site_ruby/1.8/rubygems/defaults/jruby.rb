@@ -1,4 +1,5 @@
 require 'rubygems/config_file'
+require 'rbconfig'
 
 module Gem
 
@@ -22,7 +23,9 @@ module Gem
 
     alias_method :original_default_path, :default_path
     def default_path
-      paths = original_default_path
+      paths = RbConfig::CONFIG["default_gem_path"]
+      paths = paths.split(':').reject {|p| p.empty? }.compact if paths
+      paths ||= original_default_path
       @jar_paths = paths.select {|p| jarred_path? p }
       paths.reject {|p| jarred_path? p }
     end
@@ -51,7 +54,9 @@ module Gem
   # JRuby: We don't want gems installed in lib/jruby/gems, but rather
   # to preserve the old location: lib/ruby/gems.
   def self.default_dir
-    File.join ConfigMap[:libdir], 'ruby', 'gems', '1.8'
+    dir = RbConfig::CONFIG["default_gem_home"]
+    dir ||= File.join(ConfigMap[:libdir], 'ruby', 'gems', '1.8')
+    dir
   end
 
   ##
