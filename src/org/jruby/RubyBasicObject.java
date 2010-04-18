@@ -962,28 +962,32 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
         if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
-            StringBuilder part = new StringBuilder();
-            String cname = getMetaClass().getRealClass().getName();
-            part.append("#<").append(cname).append(":0x");
-            part.append(Integer.toHexString(System.identityHashCode(this)));
-
-            if (runtime.isInspecting(this)) {
-                /* 6:tags 16:addr 1:eos */
-                part.append(" ...>");
-                return runtime.newString(part.toString());
-            }
-            try {
-                runtime.registerInspecting(this);
-                return runtime.newString(inspectObj(part).toString());
-            } finally {
-                runtime.unregisterInspecting(this);
-            }
+            return hashyInspect();
         }
 
         if (isNil()) return RubyNil.inspect(this);
         return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, "to_s");
     }
 
+    public IRubyObject hashyInspect() {
+        Ruby runtime = getRuntime();
+        StringBuilder part = new StringBuilder();
+        String cname = getMetaClass().getRealClass().getName();
+        part.append("#<").append(cname).append(":0x");
+        part.append(Integer.toHexString(System.identityHashCode(this)));
+
+        if (runtime.isInspecting(this)) {
+            /* 6:tags 16:addr 1:eos */
+            part.append(" ...>");
+            return runtime.newString(part.toString());
+        }
+        try {
+            runtime.registerInspecting(this);
+            return runtime.newString(inspectObj(part).toString());
+        } finally {
+            runtime.unregisterInspecting(this);
+        }
+    }
 
     /** inspect_obj
      *

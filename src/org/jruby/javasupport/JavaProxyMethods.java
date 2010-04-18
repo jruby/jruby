@@ -1,6 +1,7 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
@@ -46,6 +47,15 @@ public class JavaProxyMethods {
             return ((JavaObject)recv.dataGetStruct()).to_s();
         } else {
             return ((RubyObject)recv).to_s();
+        }
+    }
+
+    @JRubyMethod
+    public static IRubyObject inspect(IRubyObject recv) {
+        if (recv instanceof RubyBasicObject) {
+            return ((RubyBasicObject)recv).hashyInspect();
+        } else {
+            return recv.inspect();
         }
     }
     
