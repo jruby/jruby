@@ -112,6 +112,23 @@ describe "A Ruby subclass of a Java concrete class" do
     thread.join
     my_arraylist.foo.should == 'foo'
   end
+
+  # JRUBY-4704
+  it "still initializes properly without calling super in initialize" do
+    my_arraylist_cls = Class.new(java.util.ArrayList) do
+      attr_accessor :foo
+      def initialize
+        @foo = 'foo'
+      end
+    end
+
+    my_arraylist = nil
+    lambda do
+      my_arraylist = my_arraylist_cls.new
+    end.should_not raise_error
+    my_arraylist.class.superclass.should == java.util.ArrayList
+    my_arraylist.to_java.should == my_arraylist
+  end
 end
 
 describe "A final Java class" do
