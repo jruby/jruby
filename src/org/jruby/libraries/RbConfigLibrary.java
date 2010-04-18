@@ -124,7 +124,14 @@ public class RbConfigLibrary implements Library {
         if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
             normalizedHome = "SECURITY RESTRICTED";
         }
-        setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getPath());
+
+        // Use property for binDir if available, otherwise fall back to common bin default
+        String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
+        if (binDir == null) {
+            binDir = new NormalizedFile(normalizedHome, "bin").getPath();
+        }
+        setConfig(configHash, "bindir", binDir);
+
         setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
         setConfig(configHash, "ruby_install_name", jrubyScript());
         setConfig(configHash, "SHELL", jrubyShell());
