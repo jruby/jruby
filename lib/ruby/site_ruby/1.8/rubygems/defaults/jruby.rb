@@ -5,6 +5,8 @@ module Gem
   ConfigFile::PLATFORM_DEFAULTS['install'] = '--env-shebang'
   ConfigFile::PLATFORM_DEFAULTS['update']  = '--env-shebang'
 
+  @jar_paths = []
+
   class << self
     alias_method :original_ensure_gem_subdirectories, :ensure_gem_subdirectories
     def ensure_gem_subdirectories(gemdir)
