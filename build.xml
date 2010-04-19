@@ -89,14 +89,6 @@
     <uptodate property="native-libs-uptodate" targetfile="${lib.dir}/native/libs.OK">
       <srcfiles dir= "build_lib" includes="jffi-*.jar"/>
     </uptodate>
-    <condition property="dev.install.gems" value="${dev.windows.gems}">
-        <os family="windows"/>
-    </condition>
-    <condition property="dev.install.gems" value="${dev.gems}">
-        <not>
-            <os family="windows"/>
-        </not>
-    </condition>
     <condition property="spec.windows.flag" value="-g windows">
       <os family="windows"/>
     </condition>
@@ -698,13 +690,23 @@
     </emma>
   </target>
 
-  <target name="install-gems" depends="init,jar">
+  <target name="install-gems" depends="init,jar,install-jruby-launcher-gem">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="--command maybe_install_gems ${dev.install.gems}"/>
+      <arg line="--command maybe_install_gems ${dev.gems}"/>
+    </java>
+  </target>
+
+  <target name="install-jruby-launcher-gem" depends="init,jar">
+    <property name="jruby.home" value="${basedir}"/>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <arg line="--command maybe_install_gems ${jruby.launcher.gem}"/>
     </java>
   </target>
 
