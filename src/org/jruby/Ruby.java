@@ -2162,11 +2162,11 @@ public final class Ruby {
      * @return Value of property isVerbose.
      */
     public IRubyObject getVerbose() {
-        return verbose;
+        return verbose ? trueObject : falseObject;
     }
 
     public boolean isVerbose() {
-        return isVerbose;
+        return verbose;
     }
 
     public boolean warningsEnabled() {
@@ -2177,8 +2177,7 @@ public final class Ruby {
      * @param verbose New value of property isVerbose.
      */
     public void setVerbose(IRubyObject verbose) {
-        this.verbose = verbose;
-        isVerbose = verbose.isTrue();
+        this.verbose = verbose.isTrue();
         warningsEnabled = !verbose.isNil();
     }
 
@@ -2186,6 +2185,10 @@ public final class Ruby {
      * @return Value of property isDebug.
      */
     public IRubyObject getDebug() {
+        return debug ? trueObject : falseObject;
+    }
+
+    public boolean isDebug() {
         return debug;
     }
 
@@ -2193,7 +2196,7 @@ public final class Ruby {
      * @param debug New value of property isDebug.
      */
     public void setDebug(IRubyObject debug) {
-        this.debug = debug;
+        this.debug = debug.isTrue();
     }
 
     public JavaSupport getJavaSupport() {
@@ -3740,9 +3743,7 @@ public final class Ruby {
     private RubyBoolean falseObject;
     public final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
 
-    private IRubyObject verbose;
-    private boolean isVerbose, warningsEnabled;
-    private IRubyObject debug;
+    private boolean verbose, warningsEnabled, debug;
     
     private RubyThreadGroup defaultThreadGroup;
 
