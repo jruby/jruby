@@ -87,15 +87,12 @@ public class CallableSelector {
         List<ParameterTypes> newFinds = findCallable(methods, args);
         if (newFinds.size() > 0) {
             // new way found one, so let's go with that
-            method = newFinds.get(0);
-            if (newFinds.size() > 1 && args[0].getRuntime().isVerbose()) {
-                // multiple potentials, warn the user (should only happen once per ambiguity)
-                RubyClass[] argTypes = new RubyClass[args.length];
-                for (int i = 0; i < argTypes.length; i++) {
-                    argTypes[i] = args[i].getMetaClass();
-                }
-                args[0].getRuntime().getWarnings().warn("multiple Java methods found for argument types (" + Arrays.toString(argTypes) + "): " + newFinds);
+            if (newFinds.size() > 1 && args[0].getRuntime().isDebug()) {
+                // warn about multiple potentials during debug (should only happen once per ambiguity)
+                warnMultipleMatches(args, newFinds);
             }
+            method = newFinds.get(0);
+            return method;
         }
 
         // fall back on old ways
@@ -113,6 +110,27 @@ public class CallableSelector {
         }
         if (method != null) cache.put(signatureCode, method);
         return method;
+    }
+
+    private static void warnMultipleMatches(IRubyObject[] args, List<ParameterTypes> newFinds) {
+        RubyClass[] argTypes = new RubyClass[args.length];
+        for (int i = 0; i < argTypes.length; i++) {
+            argTypes[i] = args[i].getMetaClass();
+        }
+        StringBuilder builder = new StringBuilder("multiple Java methods for arguments (");
+        boolean first = true;
+        for (RubyClass argType : argTypes) {
+            if (!first) {
+                builder.append(",");
+            }
+            first = false;
+            builder.append(argType);
+        }
+        builder.append("), using first:");
+        for (ParameterTypes types : newFinds) {
+            builder.append("\n  ").append(types);
+        }
+        args[0].getRuntime().getErr().println(builder.toString());
     }
 
     private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject... args) {
@@ -135,6 +153,7 @@ public class CallableSelector {
     private static List<ParameterTypes> findCallable(ParameterTypes[] callables, IRubyObject... args) {
         List<ParameterTypes> retainedCallables = new ArrayList<ParameterTypes>(callables.length);
         List<ParameterTypes> incomingCallables = new ArrayList<ParameterTypes>(Arrays.asList(callables));
+        
         for (int currentArg = 0; currentArg < args.length; currentArg++) {
             retainedCallables.clear();
             for (Matcher matcher : MATCH_SEQUENCE) {
@@ -151,6 +170,7 @@ public class CallableSelector {
             incomingCallables.clear();
             incomingCallables.addAll(retainedCallables);
         }
+
         return retainedCallables;
     }
 
