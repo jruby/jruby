@@ -48,8 +48,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
-        createJavaCallables(runtime);
         JavaProxy proxy = castJavaProxy(self);
 
         int len = args.length;
@@ -76,8 +74,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        Ruby runtime = context.getRuntime();
-        createJavaCallables(runtime);
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityZero(self, name);
 
@@ -88,8 +84,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        Ruby runtime = context.getRuntime();
-        createJavaCallables(runtime);
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0});
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityOne(self, name, arg0);
@@ -102,8 +96,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.getRuntime();
-        createJavaCallables(runtime);
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityTwo(self, name, arg0, arg1);
@@ -117,8 +109,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
-        createJavaCallables(runtime);
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityThree(self, name, arg0, arg1, arg2);
@@ -134,7 +124,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             Ruby runtime = context.getRuntime();
-            createJavaCallables(runtime);
             JavaProxy proxy = castJavaProxy(self);
             
             int len = args.length;
@@ -159,8 +148,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.getRuntime();
-            createJavaCallables(runtime);
             JavaProxy proxy = castJavaProxy(self);
 
             RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
@@ -178,8 +165,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.getRuntime();
-            createJavaCallables(runtime);
             JavaProxy proxy = castJavaProxy(self);
 
             RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
@@ -198,8 +183,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.getRuntime();
-            createJavaCallables(runtime);
             JavaProxy proxy = castJavaProxy(self);
 
             RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
@@ -219,8 +202,6 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.getRuntime();
-            createJavaCallables(runtime);
             JavaProxy proxy = castJavaProxy(self);
 
             RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
