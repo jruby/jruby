@@ -1181,7 +1181,7 @@
           description="Creates the Java API docs">
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true"
              windowtitle="JRuby API" source="${javac.version}" useexternalfile="true"
-             maxmemory="128m">
+             maxmemory="256m">
       <fileset dir="${src.dir}">
         <include name="**/*.java"/>
       </fileset>
