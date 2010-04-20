@@ -18,6 +18,7 @@ import org.jruby.javasupport.ParameterTypes;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 
 /**
  * Method selection logic for calling from Ruby to Java.
@@ -130,7 +131,7 @@ public class CallableSelector {
         for (ParameterTypes types : newFinds) {
             builder.append("\n  ").append(types);
         }
-        args[0].getRuntime().getErr().println(builder.toString());
+        args[0].getRuntime().getWarnings().warn(builder.toString());
     }
 
     private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject... args) {
@@ -249,7 +250,8 @@ public class CallableSelector {
 
     private static Matcher EXACT = new Matcher() {
         public boolean match(Class type, IRubyObject arg) {
-            return type.equals(argClass(arg));
+            return type.equals(argClass(arg))
+                    || (type.isPrimitive() && CodegenUtils.getBoxType(type) == argClass(arg));
         }
     };
 
