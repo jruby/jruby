@@ -1259,6 +1259,7 @@
     <include name="jruby.bnd.template"/>
     <include name="pom.xml"/>
     <include name="maven/**"/>
+    <include name="gem/**"/>
     <exclude name="lib/jruby*.jar"/>
   </patternset>
 
