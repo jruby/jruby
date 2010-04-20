@@ -1240,6 +1240,8 @@
     <include name="bench/**"/>
     <include name="src/**"/>
     <include name="test/**"/>
+    <exclude name="test/testapp/testapp"/>
+    <exclude name="test/testapp/testapp.exe"/>
     <include name="spec/**"/>
     <exclude name="spec/mspec"/>
     <exclude name="spec/ruby"/>
