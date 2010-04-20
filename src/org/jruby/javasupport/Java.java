@@ -1140,7 +1140,7 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject generateRealClass(final RubyClass clazz) {
+    public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
         final Class[] interfaces = getInterfacesFromRubyClass(clazz);
 
@@ -1153,7 +1153,7 @@ public class Java implements Library {
         String implClassName;
         if (clazz.getBaseName() == null) {
             // no-name class, generate a bogus name for it
-            implClassName = "anon_class" + System.identityHashCode(clazz) + "_" + Math.abs(interfacesHashCode);
+            implClassName = "anon_class" + Math.abs(System.identityHashCode(clazz)) + "_" + Math.abs(interfacesHashCode);
         } else {
             implClassName = clazz.getName().replaceAll("::", "\\$\\$") + "_" + Math.abs(interfacesHashCode);
         }
@@ -1167,7 +1167,6 @@ public class Java implements Library {
                 superClass = RubyObject.class;
             }
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
-            clazz.setReifiedClass(proxyImplClass);
             
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
             if (NEW_STYLE_EXTENSION &&
@@ -1181,12 +1180,22 @@ public class Java implements Library {
                 });
             }
         }
+        clazz.setReifiedClass(proxyImplClass);
 
+        return proxyImplClass;
+    }
+
+    public static Constructor getRealClassConstructor(Ruby runtime, Class proxyImplClass) {
         try {
-            Constructor proxyConstructor = proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
-            return (IRubyObject)proxyConstructor.newInstance(runtime, clazz);
+            return proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
         } catch (NoSuchMethodException nsme) {
             throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
+        }
+    }
+
+    public static IRubyObject constructProxy(Ruby runtime, Constructor proxyConstructor, RubyClass clazz) {
+        try {
+            return (IRubyObject)proxyConstructor.newInstance(runtime, clazz);
         } catch (InvocationTargetException ite) {
             ite.printStackTrace();
             throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + ite);
