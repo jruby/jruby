@@ -2162,7 +2162,7 @@ public final class Ruby {
      * @return Value of property isVerbose.
      */
     public IRubyObject getVerbose() {
-        return verbose ? trueObject : falseObject;
+        return verboseValue;
     }
 
     public boolean isVerbose() {
@@ -2178,6 +2178,7 @@ public final class Ruby {
      */
     public void setVerbose(IRubyObject verbose) {
         this.verbose = verbose.isTrue();
+        this.verboseValue = verbose;
         warningsEnabled = !verbose.isNil();
     }
 
@@ -3744,6 +3745,7 @@ public final class Ruby {
     public final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
 
     private boolean verbose, warningsEnabled, debug;
+    private IRubyObject verboseValue;
     
     private RubyThreadGroup defaultThreadGroup;
 
