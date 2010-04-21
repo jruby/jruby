@@ -690,12 +690,13 @@
     </emma>
   </target>
 
-  <target name="install-gems" depends="init,jar,install-jruby-launcher-gem">
+  <target name="install-dist-gems" depends="init,jar">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
       <arg line="--command maybe_install_gems ${dev.gems}"/>
     </java>
   </target>
@@ -706,9 +707,12 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
       <arg line="--command maybe_install_gems ${jruby.launcher.gem}"/>
     </java>
   </target>
+
+  <target name="install-gems" depends="install-dist-gems,install-jruby-launcher-gem"/>
 
   <target name="test" depends="
     copy-test-files,
@@ -1421,7 +1425,7 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="install-gems,dist-bin,dist-src,dist-jar-complete"/>
+  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete"/>
 
   <target name="dist-clean">
     <delete dir="${dist.dir}"/>
