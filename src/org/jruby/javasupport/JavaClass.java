@@ -74,6 +74,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -89,6 +90,10 @@ import org.jruby.util.IdUtil;
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
     public static final String METHOD_MANGLE = "__method";
+    
+    // An object that's never wrapped, so we can safely compare it with a
+    // wrapped null and not treat
+    private static final Object NEVER = new Object();
     
     /**
      * Assigned names only override based priority of an assigned type, the type must be less than
@@ -1308,18 +1313,35 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(name = "<=>", required = 1)
-    public RubyFixnum op_cmp(IRubyObject other) {
-        if (! (other instanceof JavaClass)) {
-            throw getRuntime().newTypeError("<=> requires JavaClass (" + other.getType() + " given)");
+    public IRubyObject op_cmp(IRubyObject other) {
+        Class me = javaClass();
+        Class them = null;
+
+        // dig out the other class
+        if (other instanceof JavaClass) {
+            JavaClass otherClass = (JavaClass) other;
+            them = otherClass.javaClass();
+        } else if (other instanceof ConcreteJavaProxy) {
+            ConcreteJavaProxy proxy = (ConcreteJavaProxy)other;
+            if (proxy.getObject() instanceof Class) {
+                them = (Class)proxy.getObject();
+            }
         }
-        JavaClass otherClass = (JavaClass) other;
-        if (this.javaClass() == otherClass.javaClass()) {
-            return getRuntime().newFixnum(0);
+
+        if (them != null) {
+            if (this.javaClass() == them) {
+                return getRuntime().newFixnum(0);
+            }
+            if (them.isAssignableFrom(me)) {
+                return getRuntime().newFixnum(-1);
+            }
+            if (me.isAssignableFrom(them)) {
+                return getRuntime().newFixnum(1);
+            }
         }
-        if (otherClass.javaClass().isAssignableFrom(this.javaClass())) {
-            return getRuntime().newFixnum(-1);
-        }
-        return getRuntime().newFixnum(1);
+
+        // can't do a comparison
+        return getRuntime().getNil();
     }
 
     @JRubyMethod
