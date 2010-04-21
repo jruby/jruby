@@ -32,6 +32,7 @@ package org.jruby.embed.util;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.jruby.embed.PropertyName;
@@ -194,8 +195,8 @@ public class SystemPropertyCatcher {
         if (paths == null) {
             paths = System.getProperty("java.class.path");
         }
-        List<String> loadPaths = Arrays.asList(paths.split(File.pathSeparator));
-        return loadPaths;
+        if (paths == null) return new ArrayList<String>();
+        else return Arrays.asList(paths.split(File.pathSeparator));
     }
 
     /**
