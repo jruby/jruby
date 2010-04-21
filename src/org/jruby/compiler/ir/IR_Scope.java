@@ -63,6 +63,11 @@ public interface IR_Scope {
     public Variable getNewTemporaryVariable();
 
     /**
+     * How many temporary variables are in this scope?
+     */
+    public int getTemporaryVariableSize();
+
+    /**
      *  Get a new label using the provided label prefix
      */
     public Label getNewLabel(String lblPrefix);

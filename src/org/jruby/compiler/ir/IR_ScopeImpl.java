@@ -111,6 +111,10 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return new TemporaryVariable(allocateNextPrefixedName("%v"));
     }
 
+    public int getTemporaryVariableSize() {
+        return getPrefixCountSize("%v");
+    }
+
     public Label getNewLabel(String prefix) {
         return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
     }
@@ -119,13 +123,21 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return getNewLabel("LBL");
     }
 
+    // Enebo: We should just make n primitive int and not take the hash hit
     private int allocateNextPrefixedName(String prefix) {
-        Integer index = _nextVarIndex.get(prefix);
-        if (index == null) index = 0;
+        int index = getPrefixCountSize(prefix);
         
         _nextVarIndex.put(prefix, index + 1);
         
         return index;
+    }
+
+    private int getPrefixCountSize(String prefix) {
+        Integer index = _nextVarIndex.get(prefix);
+
+        if (index == null) return 0;
+
+        return index.intValue();
     }
 
     // ENEBO: Appears to be dead code?
