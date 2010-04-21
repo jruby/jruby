@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.operands.SelfVariable;
 
 /*
  * args field: [self, reciever, *args]
@@ -104,11 +105,11 @@ public class CallInstruction extends MultiOperandInstr {
         } // self.foo(..);
         // If this call instruction is in a class method, we'll fetch a class method
         // If this call instruction is in an instance method, we'll fetch an instance method
-        else if ((receiver instanceof Variable) && ((Variable) receiver).isSelf()) {
-            IR_Class c = null; // SSS FIXME
+        else if (receiver instanceof SelfVariable) {
             return null;
         } else {
             IR_Class c = receiver.getTargetClass();
+
             return c == null ? null : c.getInstanceMethod(mname);
         }
     }

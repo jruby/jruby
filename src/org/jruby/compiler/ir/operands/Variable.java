@@ -4,9 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
-    public boolean isSelf() {
-        return false;
-    }
 
     public abstract String getName();
 

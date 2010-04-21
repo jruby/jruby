@@ -5,11 +5,6 @@ package org.jruby.compiler.ir.operands;
  */
 public class SelfVariable extends Variable {
     @Override
-    public boolean isSelf() {
-        return true;
-    }
-
-    @Override
     public String getName() {
         return "self";
     }
@@ -28,7 +23,7 @@ public class SelfVariable extends Variable {
     public boolean equals(Object other) {
         if (other == null || !(other instanceof SelfVariable)) return false;
 
-        return ((SelfVariable) other).isSelf();
+        return true;
     }
 
     public int compareTo(Object other) {
