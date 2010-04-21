@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
-import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -61,7 +59,6 @@ public abstract class IR_ScopeImpl implements IR_Scope {
     // cases, the lexical scoping and class/method hierarchies are the same.
     final public List<IR_Module> modules = new ArrayList<IR_Module>();
     final public List<IR_Class> classes = new ArrayList<IR_Class>();
-    final public List<IRMethod> methods = new ArrayList<IRMethod>();
     private Map<String, String> aliases; // oldName -> newName for methods
 
     // ENEBO: This is also only for lexical score too right?
@@ -95,6 +92,20 @@ public abstract class IR_ScopeImpl implements IR_Scope {
 
     public IR_Scope getLexicalParent() {
         return _lexicalParent;
+    }
+
+    public IR_Module getNearestModule() {
+        IR_Scope current = _lexicalParent;
+
+        while (current != null && !(current instanceof IR_Module) && !(current instanceof IR_Script)) {
+            current = current.getLexicalParent();
+        }
+        
+        if (current instanceof IR_Script) { // Possible we are a method at top-level.
+            current = ((IR_Script) current).getRootClass();
+        }
+
+        return (IR_Module) current;
     }
 
     public int getNextClosureId() {
@@ -161,26 +172,6 @@ public abstract class IR_ScopeImpl implements IR_Scope {
     public void addClass(IR_Class c) {
         setConstantValue(c._name, new MetaObject(c));
         classes.add(c);
-    }
-
-    public void addMethod(IRMethod m) {
-        methods.add(m);
-
-        if (IR_Module.isAClassRootMethod(m)) return;
-
-        if ((this instanceof IRMethod) && ((IRMethod) this).isAClassRootMethod()) {
-            IR_Module c = (IR_Module) (((MetaObject) this._container)._scope);
-            c.getRootMethod().addInstr(m.isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
-        } else if (m.isInstanceMethod && (this instanceof IR_Module)) {
-            IR_Module c = (IR_Module) this;
-            c.getRootMethod().addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
-        } else if (!m.isInstanceMethod && (this instanceof IR_Module)) {
-            IR_Module c = (IR_Module) this;
-            c.getRootMethod().addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
-        } else {
-            // SSS FIXME: Do I have to generate a define method instruction here??
-            throw new RuntimeException("Encountered method add in a non-class scope!");
-        }
     }
 
     public void addInstr(IR_Instr i) {
@@ -272,12 +263,6 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         if (!classes.isEmpty()) {
             for (IR_Scope c : classes) {
                 c.runCompilerPass(p);
-            }
-        }
-
-        if (!methods.isEmpty()) {
-            for (IR_Scope meth : methods) {
-                meth.runCompilerPass(p);
             }
         }
     }

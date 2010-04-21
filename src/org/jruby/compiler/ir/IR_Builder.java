@@ -1542,7 +1542,7 @@ public class IR_Builder
         }
 
         if (isInstanceMethod) {
-            s.addMethod(m);
+            s.getNearestModule().addMethod(m);
         }
         else {
             // Add 'm' to the meta class of the receiver!
