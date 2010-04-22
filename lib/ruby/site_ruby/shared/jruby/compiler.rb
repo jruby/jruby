@@ -10,10 +10,11 @@ module JRuby::Compiler
   ASTCompiler = org.jruby.compiler.ASTCompiler
   JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
+  DEFAULT_PREFIX = ""
   
   def compile_argv(argv)
     basedir = Dir.pwd
-    prefix = ""
+    prefix = DEFAULT_PREFIX
     target = Dir.pwd
     java = false
     javac = false
@@ -58,7 +59,7 @@ module JRuby::Compiler
   end
   module_function :compile_argv
 
-  def compile_files(filenames, basedir = Dir.pwd, prefix = "ruby", target = Dir.pwd, java = false, javac = false, classpath = [])
+  def compile_files(filenames, basedir = Dir.pwd, prefix = DEFAULT_PREFIX, target = Dir.pwd, java = false, javac = false, classpath = [])
     runtime = JRuby.runtime
 
     unless File.exist? target
