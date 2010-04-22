@@ -972,4 +972,10 @@ class TestFile < Test::Unit::TestCase
       File.unlink(filename)
     end
   end
+
+  def test_file_stat_with_missing_path
+    assert_raise(Errno::ENOENT) {
+      File::Stat.new("file:" + File.expand_path("test/test_jar2.jar") + "!/foo_bar.rb").file?
+    }
+  end
 end
