@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
+
 import java.util.List;
 import java.util.Map;
 
@@ -26,5 +28,9 @@ public abstract class Variable extends Operand implements Comparable {
     @Override
     public void addUsedVariables(List<Variable> l) {
         l.add(this);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return ii.getRenamedVariable(this);
     }
 }

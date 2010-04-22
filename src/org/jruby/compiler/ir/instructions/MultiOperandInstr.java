@@ -6,11 +6,12 @@ import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // This is of the form:
 //   v = OP(args, attribute_array); Ex: v = CALL(args, v2)
 
-public class MultiOperandInstr extends IR_Instr {
+public abstract class MultiOperandInstr extends IR_Instr {
     public Operand[] _args;
 
     public MultiOperandInstr(Operation opType, Variable result, Operand[] args) {
@@ -32,5 +33,14 @@ public class MultiOperandInstr extends IR_Instr {
         for (int i = 0; i < _args.length; i++) {
             _args[i] = _args[i].getSimplifiedOperand(valueMap);
         }
+    }
+
+    public Operand[] cloneOperandsForInlining(InlinerInfo ii) {
+        Operand[] newArgs = new Operand[_args.length];
+        for (int i = 0; i < _args.length; i++) {
+            newArgs[i] = _args[i].cloneForInlining(ii);
+        }
+
+		  return newArgs;
     }
 }

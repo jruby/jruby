@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public abstract class Operand
 {
@@ -39,4 +40,6 @@ public abstract class Operand
 
     /** Append the list of variables used in this operand to the input list */
     public void addUsedVariables(List<Variable> l) { /* Nothing to do by default */ }
+
+	 public Operand cloneForInlining(InlinerInfo ii) { return this; }
 }

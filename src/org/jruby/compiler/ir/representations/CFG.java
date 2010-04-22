@@ -13,11 +13,13 @@ import java.util.Stack;
 
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Closure;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
+import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
@@ -151,6 +153,13 @@ public class CFG {
         }
     }
 
+    private DefaultDirectedGraph<BasicBlock, CFG_Edge> getNewCFG() {
+        return new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
+                    new EdgeFactory<BasicBlock, CFG_Edge>() {
+                        public CFG_Edge createEdge(BasicBlock s, BasicBlock d) { return new CFG_Edge(s, d); }
+                    });
+    }
+
     public void build(List<IR_Instr> instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
@@ -164,13 +173,7 @@ public class CFG {
         // Rescue body end marker instructions are mapped to the bbs that end the rescued bodies
         Map<RESCUED_BODY_END_MARKER_Instr, BasicBlock> rbeMarkers = new HashMap<RESCUED_BODY_END_MARKER_Instr, BasicBlock>();
 
-        DirectedGraph<BasicBlock, CFG_Edge> g = new DefaultDirectedGraph<BasicBlock, CFG_Edge>(
-                new EdgeFactory<BasicBlock, CFG_Edge>() {
-
-                    public CFG_Edge createEdge(BasicBlock s, BasicBlock d) {
-                        return new CFG_Edge(s, d);
-                    }
-                });
+        DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
 
         // Dummy entry basic block (see note at end to see why)
         _entryBB = createNewBB(g, _bbMap);
@@ -349,6 +352,50 @@ public class CFG {
                 _postOrderList.add(b);
             }
         }
+    }
+
+    public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstruction call) {
+        // 1. split callsite bb and move outbound edges from callsite bb to split bb.
+        BasicBlock splitBB = callBB.splitAtInstruction(call, getNewLabel(), false);
+        for (CFG_Edge e: outgoingEdgesOf(callBB)) {
+            _cfg.addEdge(splitBB, e._dst);
+            _cfg.removeEdge(e);
+        }
+
+        // 2. clone callee
+        CFG mcfg = m.getCFG();
+        BasicBlock mEntry = mcfg.getEntryBB(); 
+        BasicBlock mExit  = mcfg.getExitBB(); 
+        DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
+        InlinerInfo ii = new InlinerInfo(call, this);
+        Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
+        for (BasicBlock b: mcfg.getNodes()) {
+            if (b != mEntry && b != mExit) {
+              BasicBlock b2 = b.cloneForInlining(ii);
+              bbRenameMap.put(b, b2);
+              _cfg.addVertex(b2);
+            }
+        }
+
+        // 3. set up new edges
+        for (BasicBlock x: bbRenameMap.keySet()) {
+            BasicBlock rx = bbRenameMap.get(x);
+            for (CFG_Edge e: mcfg.outgoingEdgesOf(x))
+                _cfg.addEdge(rx, bbRenameMap.get(e._dst));
+        }
+
+        // 4. Hook up entry/exit edges
+        for (CFG_Edge e: outgoingEdgesOf(mEntry)) {
+            if (e._dst != mExit)
+                _cfg.addEdge(callBB, bbRenameMap.get(e._dst));
+        }
+
+        for (CFG_Edge e: incomingEdgesOf(mExit)) {
+            if (e._src != mEntry)
+                _cfg.addEdge(bbRenameMap.get(e._src), splitBB);
+        }
+
+        // 5. TODO: Patch up arg set up, return setup, exception edges
     }
 
     public ListIterator<BasicBlock> getPostOrderTraverser() {

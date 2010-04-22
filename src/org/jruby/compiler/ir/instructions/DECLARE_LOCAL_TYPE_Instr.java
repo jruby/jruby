@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class DECLARE_LOCAL_TYPE_Instr extends NoOperandInstr
 {
@@ -15,4 +16,6 @@ public class DECLARE_LOCAL_TYPE_Instr extends NoOperandInstr
     }
 
     public String toString() { return super.toString() + "(" + _argIndex + ":" + _typeName  + ")"; }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

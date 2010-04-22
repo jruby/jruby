@@ -122,6 +122,11 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return new TemporaryVariable(allocateNextPrefixedName("%v"));
     }
 
+    // Generate a new variable for inlined code (just for ease of debugging, use differently named variables for inlined code)
+    public Variable getNewInlineVariable() {
+        return new TemporaryVariable(allocateNextPrefixedName("%i"));
+    }
+
     public int getTemporaryVariableSize() {
         return getPrefixCountSize("%v");
     }

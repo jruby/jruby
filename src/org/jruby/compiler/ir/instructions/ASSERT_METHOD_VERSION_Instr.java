@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // This instruction check that the method version (at the time of execution) is a specific value (at the time of compilation)
 // If this check fails, control is transferred to a label where fixup code compiles a fresh de-optimized version of the method!
@@ -31,4 +32,8 @@ public class ASSERT_METHOD_VERSION_Instr extends IR_Instr
     public Operand[] getOperands() { return new Operand[]{}; }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) { }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new ASSERT_METHOD_VERSION_Instr(_module, _method, _version, ii.getRenamedLabel(_label));
+    }
 }

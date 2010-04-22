@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /*
  * All frame accessible variables are allocated in the nearest method ancestor.  Additionally, all variables 
@@ -34,5 +35,9 @@ public class LOAD_FROM_FRAME_Instr extends GET_Instr {
     @Override
     public String toString() {
         return "\t" + _result + " = FRAME(" + _source + ")." + _ref;
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new LOAD_FROM_FRAME_Instr(ii.getRenamedVariable(_result), (IR_ExecutionScope)((MetaObject)_source)._scope, _ref);
     }
 }

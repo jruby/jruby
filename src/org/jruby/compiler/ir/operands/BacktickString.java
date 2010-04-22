@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -43,5 +45,18 @@ public class BacktickString extends Operand
     {
         for (Operand o: _pieces)
             o.addUsedVariables(l);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) {
+        if (isConstant()) {
+            return this;
+        }
+        else {
+            List<Operand> newPieces = new ArrayList<Operand>();
+            for (Operand p: _pieces) {
+                newPieces.add(p.cloneForInlining(ii));
+            }
+            return new BacktickString(newPieces);
+        }
     }
 }

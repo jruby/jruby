@@ -353,7 +353,7 @@ public class IR_Builder
 
     public static Node skipOverNewlines(IR_Scope s, Node n) {
         if (n.getNodeType() == NodeType.NEWLINENODE)
-            s.addInstr(new LINE_NUM_Instr(n.getPosition().getStartLine()));
+            s.addInstr(new LINE_NUM_Instr(s, n.getPosition().getStartLine()));
 
         while (n.getNodeType() == NodeType.NEWLINENODE)
             n = ((NewlineNode)n).getNextNode();

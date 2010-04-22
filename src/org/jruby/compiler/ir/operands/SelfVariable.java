@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
+
 /**
  * Represents the special variable 'self'
  */
@@ -28,5 +30,9 @@ public class SelfVariable extends Variable {
 
     public int compareTo(Object other) {
         return equals(other) == true ? 0 : 1;
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return ii.getCallReceiver();
     }
 }

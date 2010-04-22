@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
@@ -36,5 +37,9 @@ public class RUBY_INTERNALS_CALL_Instr extends CallInstruction {
     @Override
     public IRMethod getTargetMethodWithReceiver(Operand receiver) {
         return null;
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new RUBY_INTERNALS_CALL_Instr(ii.getRenamedVariable(_result), _methAddr.cloneForInlining(ii), super.cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
     }
 }

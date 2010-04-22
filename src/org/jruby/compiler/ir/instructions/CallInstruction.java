@@ -14,6 +14,7 @@ import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.operands.SelfVariable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /*
  * args field: [self, reciever, *args]
@@ -73,6 +74,16 @@ public class CallInstruction extends MultiOperandInstr {
         }
 
         return callArgs;
+    }
+
+    public Operand[] cloneCallArgs(InlinerInfo ii) {
+        Operand[] clonedArgs = new Operand[_numArgs];
+
+        for (int i = 0; i < _numArgs; i++) {
+            clonedArgs[i] = _args[i + 1].cloneForInlining(ii);
+        }
+
+        return clonedArgs;
     }
 
     @Override
@@ -242,6 +253,11 @@ public class CallInstruction extends MultiOperandInstr {
                 + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
                 + (_closure == null ? "" : ", &" + _closure) + ")";
     }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new CallInstruction(ii.getRenamedVariable(_result), _methAddr.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+	}
+
 // --------------- Private methods ---------------
 
     private static Operand[] buildAllArgs(Operand methAddr, Operand closure, Operand[] callArgs) {

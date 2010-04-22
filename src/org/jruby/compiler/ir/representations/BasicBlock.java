@@ -46,6 +46,40 @@ public class BasicBlock {
         return _rescuedBodyEndBB;
     }
 
+    public BasicBlock splitAtInstruction(IR_Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
+        BasicBlock newBB = new BasicBlock(_cfg, newLabel);
+        int idx = 0;
+        int numInstrs = _instrs.size();
+        boolean found = false;
+        for (IR_Instr i: _instrs) {
+            if (i == splitPoint)
+                found = true;
+
+            // Move instructions from split point into the new bb
+            if (found) {
+                if (includeSplitPointInstr || i != splitPoint)
+                    newBB.addInstr(i);
+            }
+            else {
+                idx++;
+            }
+        }
+
+        // Remove all instructions from current bb that were moved over.
+        for (int j = 0; j < numInstrs-idx; j++) 
+            _instrs.remove(idx);
+
+        return newBB;
+    }
+
+    public BasicBlock cloneForInlining(InlinerInfo ii) {
+        BasicBlock clonedBB = new BasicBlock(ii.callerCFG, ii.getRenamedLabel(_label));
+        for (IR_Instr i: getInstrs())
+            clonedBB.addInstr(i.cloneForInlining(ii));
+
+        return clonedBB;
+    }
+
     @Override
     public String toString() {
         return "BB [" + _id + ":" + _label + "]";

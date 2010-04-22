@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
 
@@ -37,5 +38,9 @@ public class GET_CONST_Instr extends GET_Instr
         else {
             return null;
         }
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_CONST_Instr(ii.getRenamedVariable(_result), _source.cloneForInlining(ii), _ref); 
     }
 }

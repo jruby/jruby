@@ -9,7 +9,7 @@ import org.jruby.compiler.ir.operands.Variable;
 // This is of the form:
 //   v = OP(arg1, arg2, attribute_array); Ex: v = ADD(v1, v2)
 
-public class TwoOperandInstr extends IR_Instr
+public abstract class TwoOperandInstr extends IR_Instr
 {
     Operand _arg1;
     Operand _arg2;

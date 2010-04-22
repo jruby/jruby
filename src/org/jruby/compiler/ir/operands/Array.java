@@ -1,4 +1,5 @@
 package org.jruby.compiler.ir.operands;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -72,5 +73,19 @@ public class Array extends Operand
     {
         for (Operand o: _elts)
             o.addUsedVariables(l);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        if (isConstant()) {
+            return this;
+        }
+        else {
+            Operand[] newElts = new Operand[_elts.length];
+            for (int i = 0; i < _elts.length; i++) {
+                newElts[i] = _elts[i].cloneForInlining(ii);
+            }
+
+            return new Array(newElts);
+        }
     }
 }
