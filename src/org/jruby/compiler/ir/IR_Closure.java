@@ -34,6 +34,11 @@ public class IR_Closure extends IR_ExecutionScope {
     }
 
     @Override
+    public Label getNewLabel() {
+        return getNewLabel("CL" + _closureId + "_LBL");
+    }
+
+    @Override
     public void setConstantValue(String constRef, Operand val) {
         throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a closure!");
     }

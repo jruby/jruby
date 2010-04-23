@@ -53,21 +53,19 @@ public class InlinerInfo {
         return index < callArgs.length ? callArgs[index] : null;
     }
 
-    public Operand getCallArg(int index, boolean restOfArgArray) {
+    public Operand getCallArg(int argIndex, boolean restOfArgArray) {
         if (restOfArgArray == false) {
-            return getCallArg(index);
+            return getCallArg(argIndex);
+        }
+        else if (argIndex >= callArgs.length) {
+            return new Array();
         }
         else {
-            if (index >= callArgs.length) {
-                return new Array();
-            }
-            else {
-                Operand[] args = new Operand[callArgs.length - index];
-                for (int i = index; i < callArgs.length; i++)
-                    args[i-index] = callArgs[i];
+            Operand[] tmp = new Operand[callArgs.length - argIndex];
+            for (int j = argIndex; j < callArgs.length; j++)
+                tmp[j-argIndex] = callArgs[j];
 
-                return new Array(args);
-            }
+            return new Array(tmp);
         }
     }
 

@@ -327,7 +327,7 @@ public class CFG {
         _cfg = g;
     }
 
-    public void inlineClosureAtYieldSite(IR_Closure cl, BasicBlock yieldBB, YIELD_Instr yield) {
+    private void inlineClosureAtYieldSite(InlinerInfo ii, IR_Closure cl, BasicBlock yieldBB, YIELD_Instr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         _cfg.addVertex(splitBB);
@@ -346,7 +346,8 @@ public class CFG {
         for (BasicBlock b: ccfg.getNodes()) {
             if (b != cEntry && b != cExit) {
               _cfg.addVertex(b);
-              b.processClosureArgAndReturnInstrs(yield);
+				  b.updateCFG(this);
+              b.processClosureArgAndReturnInstrs(ii, yield);
             }
         }
         for (CFG_Edge e: ccfg.outgoingEdgesOf(cEntry)) {
@@ -425,7 +426,7 @@ public class CFG {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
 
             Tuple t = (Tuple)yieldSites.get(0);
-            inlineClosureAtYieldSite((IR_Closure)((MetaObject)closureArg)._scope, (BasicBlock)t._a, (YIELD_Instr)t._b);
+            inlineClosureAtYieldSite(ii, (IR_Closure)((MetaObject)closureArg)._scope, (BasicBlock)t._a, (YIELD_Instr)t._b);
         }
     }
 

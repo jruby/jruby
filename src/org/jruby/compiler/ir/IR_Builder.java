@@ -252,6 +252,7 @@ public class IR_Builder
               System.out.println("Asked to inline " + methName);
               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.InlineTest(methName));
               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
 
            if (isDebug) {
@@ -519,7 +520,7 @@ public class IR_Builder
 
     public List<Operand> setupCallArgs(Node receiver, Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
-        argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
+        argsList.add(build(receiver, s)); // SSS FIXME: Is this correct?
         if (args != null) {
            // unwrap newline nodes to get their actual type
            args = skipOverNewlines(s, args);
@@ -531,7 +532,7 @@ public class IR_Builder
 
     public List<Operand> setupCallArgs(Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
-        argsList.add(s.getSelf());
+        argsList.add(s.getSelf()); // SSS FIXME: Is this correct?
         if (args != null) {
            // unwrap newline nodes to get their actual type
            args = skipOverNewlines(s, args);
@@ -2833,8 +2834,19 @@ public class IR_Builder
         return new BacktickString(new StringLiteral(node.getValue()));
     }
 
+    private List<Operand> setupYieldArgs(Node args, IR_Scope s) {
+        List<Operand> argsList = new ArrayList<Operand>();
+        if (args != null) {
+           // unwrap newline nodes to get their actual type
+           args = skipOverNewlines(s, args);
+           buildArgs(argsList, args, s);
+        }
+
+        return argsList;
+    }
+
     public Operand buildYield(YieldNode node, IR_Scope s) {
-        List<Operand> args = setupCallArgs(node.getArgsNode(), s);
+        List<Operand> args = setupYieldArgs(node.getArgsNode(), s);
         Variable      ret  = s.getNewTemporaryVariable();
         s.addInstr(new YIELD_Instr(ret, args.toArray(new Operand[args.size()])));
         return ret;

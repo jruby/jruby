@@ -31,6 +31,11 @@ public class BasicBlock {
         _rescuedBodyEndBB = null;
     }
 
+    public void updateCFG(CFG c) {
+        _cfg = c;
+        _id = c.getNextBBID();
+    }
+
     void setRescuedBodyEndBB(BasicBlock rbEnd) {
         _rescuedBodyEndBB = rbEnd;
     }
@@ -95,8 +100,8 @@ public class BasicBlock {
         return clonedBB;
     }
 
-    public void processClosureArgAndReturnInstrs(YIELD_Instr yi) {
-        Variable  yieldResult = yi._result;
+    public void processClosureArgAndReturnInstrs(InlinerInfo ii, YIELD_Instr yi) {
+        Variable  yieldResult = ii.getRenamedVariable(yi._result);
         Operand[] yieldArgs   = yi.getOperands();
 
         for (ListIterator<IR_Instr> it = ((ArrayList<IR_Instr>)_instrs).listIterator(); it.hasNext(); ) {
@@ -110,13 +115,16 @@ public class BasicBlock {
                 RECV_CLOSURE_ARG_Instr rcai = (RECV_CLOSURE_ARG_Instr)i;
                 int argIndex = rcai._argIndex;
                 boolean restOfArgs = rcai._restOfArgArray;
-                if (argIndex >= yieldArgs.length) {
-                    closureArg = yieldArgs[argIndex];
+                if (argIndex < yieldArgs.length) {
+                    closureArg = yieldArgs[argIndex].cloneForInlining(ii);
+                }
+                else if (argIndex >= yieldArgs.length) {
+                    closureArg = new Array();
                 }
                 else {
                     Operand[] tmp = new Operand[yieldArgs.length - argIndex];
                     for (int j = argIndex; j < yieldArgs.length; j++)
-                        tmp[j-argIndex] = yieldArgs[j];
+                        tmp[j-argIndex] = yieldArgs[j].cloneForInlining(ii);
 
                     closureArg = new Array(tmp);
                 }
