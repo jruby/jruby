@@ -166,10 +166,15 @@ public class RubyBoolean extends RubyObject {
         output.write(isTrue() ? 'T' : 'F');
     }
 
+    @Override
     public Object toJava(Class target) {
-        if (isFalse()) return Boolean.FALSE;
+        if (target.isAssignableFrom(Boolean.class) || target.equals(boolean.class)) {
+            if (isFalse()) return Boolean.FALSE;
 
-        return Boolean.TRUE;
+            return Boolean.TRUE;
+        } else {
+            return super.toJava(target);
+        }
     }
 }
 

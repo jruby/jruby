@@ -408,8 +408,12 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object toJava(Class type) {
-        if (Java.OBJECT_PROXY_CACHE) getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
-        return getObject();
+        if (type.isAssignableFrom(getObject().getClass())) {
+            if (Java.OBJECT_PROXY_CACHE) getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+            return getObject();
+        } else {
+            return super.toJava(type);
+        }
     }
     
     public Object unwrap() {

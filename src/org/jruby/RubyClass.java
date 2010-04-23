@@ -52,7 +52,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -1374,8 +1373,7 @@ public class RubyClass extends RubyModule {
             return this;
         }
 
-        // they're asking for something we can't provide
-        throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + klass);
+        return super.toJava(klass);
     }
 
     protected final Ruby runtime;

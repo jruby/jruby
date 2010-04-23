@@ -7181,7 +7181,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else if (target.isAssignableFrom(ByteList.class)) {
             return value;
         } else {
-            throw getRuntime().newTypeError("cannot convert instance of String to " + target);
+            return super.toJava(target);
         }
     }
 

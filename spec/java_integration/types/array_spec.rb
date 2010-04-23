@@ -709,8 +709,8 @@ describe "A Java primitive Array of type" do
       ary[5].class.should == NilClass
     end
 
-    it "should raise ArgumentError when types can't be coerced" do
-      lambda { [Time.new].to_java :string }.should raise_error(ArgumentError)
+    it "should raise TypeError when types can't be coerced" do
+      lambda { [Time.new].to_java :string }.should raise_error(TypeError)
     end
   end
 
