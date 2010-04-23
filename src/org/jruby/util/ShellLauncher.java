@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
- * 
+ * Copyright (C) 2007-2010 JRuby Team <team@jruby.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -592,7 +592,14 @@ public class ShellLauncher {
                     FieldAccess.getProtectedFieldValue(FilterInputStream.class,
                         "in", filteredStream);
             } catch (Exception e) {
-                break; // break out if we've dug as deep as we can
+                try {
+                    // In IBM JDK it's 'ins'
+                    filteredStream = (InputStream)
+                        FieldAccess.getProtectedFieldValue(FilterInputStream.class,
+                                                           "ins", filteredStream);
+                } catch (Exception e2) {
+                    break; // break out if we've dug as deep as we can
+                }
             }
         }
         return filteredStream;
