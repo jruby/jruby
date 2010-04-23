@@ -28,6 +28,7 @@ public class BUILD_CLOSURE_Instr extends OneOperandInstr
     // SSS FIXME: Later on, we would probably implement simplifyOperands here and simplify the body of the closure .. something to think about.
 
     public IR_Instr cloneForInlining(InlinerInfo ii) { 
-		 throw new RuntimeException("Not implemented yet!");
+        throw new RuntimeException("Not yet implemented!");
+        // Have to clone the entire closure!
 	 }
 }

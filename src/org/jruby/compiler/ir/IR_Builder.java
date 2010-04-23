@@ -216,8 +216,16 @@ public class IR_Builder
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
+
+        String methName = null;
+        if (args.length > i && args[i].equals("-inline")) {
+           methName = args[i+1];
+           i += 2;
+        }
+
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
+
         while (i < args.length) {
            long t1 = new Date().getTime();
            Node ast = buildAST(isCommandLineScript, args[i]);
@@ -236,8 +244,16 @@ public class IR_Builder
            }
            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
            long t5 = new Date().getTime();
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
+//           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
            long t6 = new Date().getTime();
+
+           if (methName != null) {
+              System.out.println("################## After inline pass ##################");
+              System.out.println("Asked to inline " + methName);
+              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.InlineTest(methName));
+              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+           }
+
            if (isDebug) {
                System.out.println("################## After dead code elimination pass ##################");
            }
@@ -250,6 +266,7 @@ public class IR_Builder
            if (isDebug) {
                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
+
            System.out.println("Time to build AST         : " + (t2 - t1));
            System.out.println("Time to build IR          : " + (t3 - t2));
            System.out.println("Time to run local opts    : " + (t4 - t3));
@@ -2773,7 +2790,11 @@ public class IR_Builder
             s.addInstr(new THREAD_POLL_Instr());
 
             s.addInstr(new LABEL_Instr(loop._iterEndLabel));
-            if (!isLoopHeadCondition) {
+            if (isLoopHeadCondition) {
+                // Issue a jump back to the head of the while loop
+                s.addInstr(new JUMP_Instr(loop._loopStartLabel));
+            }
+            else {
                 Operand cv = build(conditionNode, s);
                 s.addInstr(new BEQ_Instr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop._iterStartLabel));
             }

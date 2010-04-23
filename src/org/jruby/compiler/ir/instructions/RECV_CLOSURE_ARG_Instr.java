@@ -9,8 +9,8 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 // The closure receives 'a' via this instruction
 public class RECV_CLOSURE_ARG_Instr extends NoOperandInstr
 {
-    int     _argIndex;
-    boolean _restOfArgArray;
+    public final int     _argIndex;
+    public final boolean _restOfArgArray;
 
     public RECV_CLOSURE_ARG_Instr(Variable dest, int argIndex, boolean restOfArgArray)
     {
@@ -22,6 +22,6 @@ public class RECV_CLOSURE_ARG_Instr extends NoOperandInstr
     public String toString() { return super.toString() + "(" + _argIndex + (_restOfArgArray ? ", ALL" : "") + ")"; }
 
     public IR_Instr cloneForInlining(InlinerInfo ii) { 
-		 throw new RuntimeException("Not implemented yet!");
-	 }
+        throw new RuntimeException("Not implemented yet!");
+    }
 }

@@ -15,6 +15,7 @@ import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
@@ -29,7 +30,10 @@ import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
+import org.jruby.compiler.ir.instructions.YIELD_Instr;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
@@ -323,6 +327,108 @@ public class CFG {
         _cfg = g;
     }
 
+    public void inlineClosureAtYieldSite(IR_Closure cl, BasicBlock yieldBB, YIELD_Instr yield) {
+        // 1. split yield site bb and move outbound edges from yield site bb to split bb.
+        BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
+        _cfg.addVertex(splitBB);
+        List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
+        for (CFG_Edge e: outgoingEdgesOf(yieldBB)) {
+            _cfg.addEdge(splitBB, e._dst);
+            edgesToRemove.add(e);
+        }
+        // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
+        _cfg.removeAllEdges(edgesToRemove);
+
+        // 2. Merge closure cfg into the current cfg
+        CFG ccfg = cl.getCFG();
+        BasicBlock cEntry = ccfg.getEntryBB(); 
+        BasicBlock cExit  = ccfg.getExitBB(); 
+        for (BasicBlock b: ccfg.getNodes()) {
+            if (b != cEntry && b != cExit) {
+              _cfg.addVertex(b);
+              b.processClosureArgAndReturnInstrs(yield);
+            }
+        }
+        for (CFG_Edge e: ccfg.outgoingEdgesOf(cEntry)) {
+            if (e._dst != cExit)
+                _cfg.addEdge(yieldBB, e._dst);
+        }
+        for (CFG_Edge e: ccfg.incomingEdgesOf(cExit)) {
+            if (e._src != cEntry)
+                _cfg.addEdge(e._src, splitBB);
+        }
+
+        // 3. TODO: Patch up exception edges
+    }
+
+    public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstruction call) {
+        InlinerInfo ii =  new InlinerInfo(call, this);
+
+        // 1. split callsite bb and move outbound edges from callsite bb to split bb.
+        BasicBlock splitBB = callBB.splitAtInstruction(call, getNewLabel(), false);
+        _cfg.addVertex(splitBB);
+        List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
+        for (CFG_Edge e: outgoingEdgesOf(callBB)) {
+            _cfg.addEdge(splitBB, e._dst);
+            edgesToRemove.add(e);
+        }
+        // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
+        _cfg.removeAllEdges(edgesToRemove);
+
+        // 2. clone callee
+        CFG mcfg = m.getCFG();
+        BasicBlock mEntry = mcfg.getEntryBB(); 
+        BasicBlock mExit  = mcfg.getExitBB(); 
+        DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
+        Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
+        for (BasicBlock b: mcfg.getNodes()) {
+            if (b != mEntry && b != mExit) {
+              BasicBlock b2 = b.cloneForInlining(ii);
+              bbRenameMap.put(b, b2);
+              _cfg.addVertex(b2);
+            }
+        }
+
+        // 3. set up new edges
+        for (BasicBlock x: bbRenameMap.keySet()) {
+            BasicBlock rx = bbRenameMap.get(x);
+            for (CFG_Edge e: mcfg.outgoingEdgesOf(x)) {
+                BasicBlock b = e._dst;
+                if (b != mExit)
+                    _cfg.addEdge(rx, bbRenameMap.get(b));
+            }
+        }
+
+        // 4. Hook up entry/exit edges
+        for (CFG_Edge e: mcfg.outgoingEdgesOf(mEntry)) {
+            if (e._dst != mExit)
+                _cfg.addEdge(callBB, bbRenameMap.get(e._dst));
+        }
+
+        for (CFG_Edge e: mcfg.incomingEdgesOf(mExit)) {
+            if (e._src != mEntry)
+                _cfg.addEdge(bbRenameMap.get(e._src), splitBB);
+        }
+
+        // 5. TODO: Patch up exception edges
+
+        // 6. Inline any closure argument passed into the call.
+        Operand closureArg = call.getClosureArg();
+        List    yieldSites = ii.getYieldSites();
+        if (closureArg != null && !yieldSites.isEmpty()) {
+            // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
+            // if we inline the closure at all those yield sites!
+            if (yieldSites.size() > 1)
+                throw new RuntimeException("Encountered " + yieldSites.size() + " yield sites.  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
+
+            if (!(closureArg instanceof MetaObject))
+                throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
+
+            Tuple t = (Tuple)yieldSites.get(0);
+            inlineClosureAtYieldSite((IR_Closure)((MetaObject)closureArg)._scope, (BasicBlock)t._a, (YIELD_Instr)t._b);
+        }
+    }
+
     private void buildPostOrderTraversal() {
         _postOrderList = new LinkedList<BasicBlock>();
         BasicBlock root = getEntryBB();
@@ -352,50 +458,6 @@ public class CFG {
                 _postOrderList.add(b);
             }
         }
-    }
-
-    public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstruction call) {
-        // 1. split callsite bb and move outbound edges from callsite bb to split bb.
-        BasicBlock splitBB = callBB.splitAtInstruction(call, getNewLabel(), false);
-        for (CFG_Edge e: outgoingEdgesOf(callBB)) {
-            _cfg.addEdge(splitBB, e._dst);
-            _cfg.removeEdge(e);
-        }
-
-        // 2. clone callee
-        CFG mcfg = m.getCFG();
-        BasicBlock mEntry = mcfg.getEntryBB(); 
-        BasicBlock mExit  = mcfg.getExitBB(); 
-        DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
-        InlinerInfo ii = new InlinerInfo(call, this);
-        Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
-        for (BasicBlock b: mcfg.getNodes()) {
-            if (b != mEntry && b != mExit) {
-              BasicBlock b2 = b.cloneForInlining(ii);
-              bbRenameMap.put(b, b2);
-              _cfg.addVertex(b2);
-            }
-        }
-
-        // 3. set up new edges
-        for (BasicBlock x: bbRenameMap.keySet()) {
-            BasicBlock rx = bbRenameMap.get(x);
-            for (CFG_Edge e: mcfg.outgoingEdgesOf(x))
-                _cfg.addEdge(rx, bbRenameMap.get(e._dst));
-        }
-
-        // 4. Hook up entry/exit edges
-        for (CFG_Edge e: outgoingEdgesOf(mEntry)) {
-            if (e._dst != mExit)
-                _cfg.addEdge(callBB, bbRenameMap.get(e._dst));
-        }
-
-        for (CFG_Edge e: incomingEdgesOf(mExit)) {
-            if (e._src != mEntry)
-                _cfg.addEdge(bbRenameMap.get(e._src), splitBB);
-        }
-
-        // 5. TODO: Patch up arg set up, return setup, exception edges
     }
 
     public ListIterator<BasicBlock> getPostOrderTraverser() {

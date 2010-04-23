@@ -1,13 +1,17 @@
 package org.jruby.compiler.ir.representations;
 
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.CallInstruction;
+import org.jruby.compiler.ir.instructions.YIELD_Instr;
 
 public class InlinerInfo {
     public final CFG callerCFG;
@@ -16,6 +20,7 @@ public class InlinerInfo {
     private Operand[] callArgs;
     private Map<Label, Label> lblRenameMap;
     private Map<Variable, Variable> varRenameMap;
+    private List yieldSites;
 
     public InlinerInfo(CallInstruction call, CFG c) {
         this.call = call;
@@ -23,6 +28,7 @@ public class InlinerInfo {
         this.callerCFG = c;
         this.varRenameMap = new HashMap<Variable, Variable>();
         this.lblRenameMap = new HashMap<Label, Label>();
+        this.yieldSites = new ArrayList();
     }
 
     public Label getRenamedLabel(Label l) {
@@ -48,15 +54,20 @@ public class InlinerInfo {
     }
 
     public Operand getCallArg(int index, boolean restOfArgArray) {
-        if (index >= callArgs.length) {
-            return new Array();
+        if (restOfArgArray == false) {
+            return getCallArg(index);
         }
         else {
-            Operand[] args = new Operand[callArgs.length - index];
-            for (int i = index; i < callArgs.length; i++)
-                args[i-index] = callArgs[i];
+            if (index >= callArgs.length) {
+                return new Array();
+            }
+            else {
+                Operand[] args = new Operand[callArgs.length - index];
+                for (int i = index; i < callArgs.length; i++)
+                    args[i-index] = callArgs[i];
 
-            return new Array(args);
+                return new Array(args);
+            }
         }
     }
 
@@ -70,5 +81,13 @@ public class InlinerInfo {
 
     public Variable getCallResultVariable() {
         return call._result;
+    }
+
+    public void recordYieldSite(BasicBlock bb, YIELD_Instr i) {
+        yieldSites.add(new Tuple<BasicBlock, YIELD_Instr>(bb, i));
+    }
+
+    public List getYieldSites() {
+        return yieldSites;
     }
 }
