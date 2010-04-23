@@ -22,7 +22,7 @@ public class KernelJavaAddons {
         
         if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
             // looks like someone's trying to raise a Java exception. Let them.
-            Object maybeThrowable = ((JavaObject)args[0].dataGetStruct()).getValue();
+            Object maybeThrowable = ((ConcreteJavaProxy)args[0]).getObject();
             
             if (maybeThrowable instanceof Throwable) {
                 // yes, we're cheating here.

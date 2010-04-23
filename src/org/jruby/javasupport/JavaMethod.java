@@ -285,7 +285,7 @@ public class JavaMethod extends JavaCallable {
         Object javaInvokee = null;
 
         if (!isStatic()) {
-            javaInvokee = JavaUtil.unwrapJavaObject(getRuntime(), invokee, "invokee not a java object").getValue();
+            javaInvokee = JavaUtil.unwrapJavaValue(getRuntime(), invokee, "invokee not a java object");
 
             if (! method.getDeclaringClass().isInstance(javaInvokee)) {
                 throw getRuntime().newTypeError("invokee not instance of method's class (" +
