@@ -8,6 +8,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -20,17 +21,26 @@ import org.jruby.util.unsafe.UnsafeFactory;
 public class KernelJavaAddons {
     @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject rbRaise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        
-        if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
+        Ruby runtime = context.getRuntime();
+
+        // Check for a Java exception
+        ConcreteJavaProxy exception = null;
+        if (args.length == 0 && runtime.getGlobalVariables().get("$!") instanceof ConcreteJavaProxy) {
+            exception = (ConcreteJavaProxy)runtime.getGlobalVariables().get("$!");
+        } else if (args.length == 1 && args[0] instanceof ConcreteJavaProxy) {
+            exception = (ConcreteJavaProxy)args[0];
+        }
+
+        if (exception != null) {
             // looks like someone's trying to raise a Java exception. Let them.
-            Object maybeThrowable = ((ConcreteJavaProxy)args[0]).getObject();
+            Object maybeThrowable = exception.getObject();
             
             if (maybeThrowable instanceof Throwable) {
                 // yes, we're cheating here.
                 UnsafeFactory.getUnsafe().throwException((Throwable)maybeThrowable);
                 return recv; // not reached
             } else {
-                throw context.getRuntime().newTypeError("can't raise a non-Throwable Java object");
+                throw runtime.newTypeError("can't raise a non-Throwable Java object");
             }
         } else {
             return RubyKernel.raise(context, recv, args, block);
