@@ -36,6 +36,8 @@ import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 
 public class RubyThreadMap {
+    /** For null keys, to mimic WeakHashMap */
+    private static final Object NULL_KEY = new Object();
 
     private final Map<RubyThreadWeakReference<Object>, RubyThread> map = new Hashtable();
     private final ReferenceQueue<Object> queue = new ReferenceQueue();
@@ -99,17 +101,24 @@ public class RubyThreadMap {
 
     public RubyThread get(Object key) {
         cleanup();
+        key = nullKey(key);
         return map.get(key);
     }
 
     public RubyThread put(Object key, RubyThread value) {
         cleanup();
+        key = nullKey(key);
         return map.put(new RubyThreadWeakReference(key, value), value);
     }
 
     public RubyThread remove(Object key) {
         cleanup();
+        key = nullKey(key);
         RubyThread t = map.remove(key);
         return t;
+    }
+
+    private Object nullKey(Object key) {
+        return key == null ? NULL_KEY : key;
     }
 }
