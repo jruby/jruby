@@ -584,6 +584,7 @@ public class RubySymbol extends RubyObject {
         return result;
     }
 
+    @Override
     public Object toJava(Class target) {
         if (target == String.class || target == CharSequence.class) {
             return symbol;

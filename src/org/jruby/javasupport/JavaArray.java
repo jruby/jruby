@@ -136,7 +136,7 @@ public class JavaArray extends JavaObject {
                                     "index out of bounds for java array (" + intIndex +
                                     " for length " + getLength() + ")");
         } catch (ArrayStoreException e) {
-            throw getRuntime().newArgumentError(
+            throw getRuntime().newTypeError(
                                     "wrong element type " + javaObject.getClass() + "(array contains " +
                                     getValue().getClass().getComponentType().getName() + ")");
         } catch (IllegalArgumentException iae) {

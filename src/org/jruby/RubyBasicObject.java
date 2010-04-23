@@ -748,27 +748,32 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see IRubyObject.toJava
      */
     public Object toJava(Class target) {
-        if (dataGetStruct() instanceof JavaObject) {
+        // for callers that unconditionally pass null retval type (JRUBY-4737)
+        if (target == void.class) return null;
+
+        if (target.isAssignableFrom(getClass())) {
+            return this;
+        } else if (dataGetStruct() instanceof JavaObject) {
             // for interface impls
 
             JavaObject innerWrapper = (JavaObject)dataGetStruct();
 
             // ensure the object is associated with the wrapper we found it in,
             // so that if it comes back we don't re-wrap it
-            getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), this);
+            if (target.isAssignableFrom(innerWrapper.getValue().getClass())) {
+                getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), this);
 
-            return innerWrapper.getValue();
+                return innerWrapper.getValue();
+            }
         } else {
             if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
                 if (!respondsTo("java_object")) {
                     return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
                 }
             }
-
-            // it's either as converted as we can make it via above logic or it's
-            // not one of the types we convert, so just pass it out as-is without wrapping
-            return this;
         }
+        
+        throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);
     }
 
     public IRubyObject dup() {
