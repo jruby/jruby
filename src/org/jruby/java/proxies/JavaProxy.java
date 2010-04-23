@@ -39,6 +39,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
 public class JavaProxy extends RubyObject {
+    private static final boolean DEBUG = false;
     private JavaObject javaObject;
     protected Object object;
     
@@ -46,11 +47,15 @@ public class JavaProxy extends RubyObject {
         super(runtime, klazz);
     }
 
+    @Override
     public Object dataGetStruct() {
+        // for investigating and eliminating code that causes JavaObject to live
+        if (DEBUG) Thread.dumpStack();
         lazyJavaObject();
         return javaObject;
     }
 
+    @Override
     public void dataWrapStruct(Object object) {
         this.javaObject = (JavaObject)object;
         this.object = javaObject.getValue();
@@ -377,11 +382,10 @@ public class JavaProxy extends RubyObject {
     }
 
     private Method getMethod(String name, Class... argTypes) {
-        Class jclass = getJavaObject().getJavaClass();
         try {
-            return jclass.getMethod(name, argTypes);
+            return getObject().getClass().getMethod(name, argTypes);
         } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(getRuntime(), jclass, name + CodegenUtils.prettyParams(argTypes), name);
+            throw JavaMethod.newMethodNotFoundError(getRuntime(), getObject().getClass(), name + CodegenUtils.prettyParams(argTypes), name);
         }
     }
 

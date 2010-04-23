@@ -71,6 +71,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
@@ -357,11 +358,15 @@ public class RubyJRuby {
 
     @JRubyMethod(name = "dereference", required = 1, module = true)
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        if (!(obj.dataGetStruct() instanceof JavaObject)) {
+        Object unwrapped;
+
+        if (obj instanceof JavaProxy) {
+            unwrapped = ((JavaProxy)obj).getObject();
+        } else if (obj.dataGetStruct() instanceof JavaObject) {
+            unwrapped = JavaUtil.unwrapJavaObject(obj);
+        } else {
             throw context.getRuntime().newTypeError("got " + obj + ", expected wrapped Java object");
         }
-        
-        Object unwrapped = JavaUtil.unwrapJavaObject(obj);
 
         if (!(unwrapped instanceof IRubyObject)) {
             throw context.getRuntime().newTypeError("got " + obj + ", expected Java-wrapped Ruby object");

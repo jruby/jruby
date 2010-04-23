@@ -2,9 +2,12 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -38,12 +41,17 @@ public class JavaProxyMethods {
 
     @JRubyMethod(name = {"=="})
     public static IRubyObject op_equal(IRubyObject recv, IRubyObject rhs) {
+        if (recv instanceof JavaProxy) {
+            return JavaObject.op_equal((JavaProxy)recv, rhs);
+        }
         return ((JavaObject)recv.dataGetStruct()).op_equal(rhs);
     }
     
     @JRubyMethod
     public static IRubyObject to_s(IRubyObject recv) {
-        if(recv.dataGetStruct() != null) {
+        if (recv instanceof JavaProxy) {
+            return JavaObject.to_s(recv.getRuntime(), ((JavaProxy)recv).getObject());
+        } else if (recv.dataGetStruct() != null) {
             return ((JavaObject)recv.dataGetStruct()).to_s();
         } else {
             return ((RubyObject)recv).to_s();
@@ -61,11 +69,14 @@ public class JavaProxyMethods {
     
     @JRubyMethod(name = "eql?")
     public static IRubyObject op_eql(IRubyObject recv, IRubyObject rhs) {
-        return ((JavaObject)recv.dataGetStruct()).op_equal(rhs);
+        return op_equal(recv, rhs);
     }
     
     @JRubyMethod
     public static IRubyObject hash(IRubyObject recv) {
+        if (recv instanceof JavaProxy) {
+            return RubyFixnum.newFixnum(recv.getRuntime(), ((JavaProxy)recv).getObject().hashCode());
+        }
         return ((JavaObject)recv.dataGetStruct()).hash();
     }
 
@@ -76,6 +87,9 @@ public class JavaProxyMethods {
     
     @JRubyMethod(name = "synchronized")
     public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, Block block) {
+        if (recv instanceof JavaProxy) {
+            return JavaObject.ruby_synchronized(context, ((JavaProxy)recv).getObject(), block);
+        }
         return ((JavaObject)recv.dataGetStruct()).ruby_synchronized(context, block);
     }
 }
