@@ -4,6 +4,17 @@ import "java_integration.fixtures.ClassWithEnums"
 import "java_integration.fixtures.JavaFields"
 import "java_integration.fixtures.InnerClasses"
 
+describe "Kernel\#java_import" do
+  describe "given a default-package class" do
+    it "imports the class appropriately" do
+      m = Module.new do
+        import Java::DefaultPackageClass
+      end
+      m::DefaultPackageClass.should == Java::DefaultPackageClass
+    end
+  end
+end
+
 describe "Java::JavaClass.for_name" do
   it "should return primitive classes for Java primitive type names" do
     Java::JavaClass.for_name("byte").should == Java::byte.java_class
