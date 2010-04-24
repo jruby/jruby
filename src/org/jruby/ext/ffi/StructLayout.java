@@ -1031,16 +1031,27 @@ public final class StructLayout extends Type {
         public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             if (value.isNil()) {
                 m.getMemoryIO(ptr).putAddress(m.getOffset(ptr), 0L);
+                cache.putReference(m, value);
             } else {
                 Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.getRuntime(), (CallbackInfo) m.type, value);
                 m.getMemoryIO(ptr).putMemoryIO(m.getOffset(ptr), cb.getMemoryIO());
-                cache.putCachedValue(m, cb);
                 cache.putReference(m, cb);
             }
         }
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
-            return Factory.getInstance().newFunction(context.getRuntime(), ((Pointer) ptr).getPointer(context.getRuntime(), m.getOffset(ptr)), (CallbackInfo) m.type);
+            final long address = ((Pointer) ptr).getMemoryIO().getAddress(m.getOffset(ptr));
+            
+            AbstractInvoker fptr = (AbstractInvoker) cache.getCachedValue(m);
+            if (fptr != null && fptr.getAddress() == address) {
+                return fptr;
+            }
+            
+            fptr = Factory.getInstance().newFunction(context.getRuntime(), 
+                    ((Pointer) ptr).getPointer(context.getRuntime(), m.getOffset(ptr)), (CallbackInfo) m.type);
+            cache.putCachedValue(m, fptr);
+
+            return fptr;
         }
 
         public final boolean isCacheable() {
