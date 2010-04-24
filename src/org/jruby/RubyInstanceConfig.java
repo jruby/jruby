@@ -67,17 +67,17 @@ public class RubyInstanceConfig {
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
-    private static final int JIT_MAX_METHODS_LIMIT = 4096;
+    public static final int JIT_MAX_METHODS_LIMIT = 4096;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    private static final int JIT_MAX_SIZE_LIMIT = 10000;
+    public static final int JIT_MAX_SIZE_LIMIT = 10000;
 
     /**
      * The JIT threshold to the specified method invocation count.
      */
-    private static final int JIT_THRESHOLD = 50;
+    public static final int JIT_THRESHOLD = 50;
     
     /** The version to use for generated classes. Set to current JVM version by default */
     public static final int JAVA_VERSION;
@@ -85,7 +85,7 @@ public class RubyInstanceConfig {
     /**
      * Default size for chained compilation.
      */
-    private static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
+    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
     
     /**
      * The number of lines at which a method, class, or block body is split into
