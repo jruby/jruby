@@ -150,6 +150,10 @@ if [ -z "$JAVA_MEM" ] ; then
   JAVA_MEM=-Xmx500m
 fi
 
+if [ -z "$JAVA_MEM_MIN" ] ; then
+  JAVA_MEM_MIN=-Xms256m
+fi
+
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss1024k
 fi
@@ -172,6 +176,8 @@ do
         val=${1:2}
         if [ "${val:0:4}" = "-Xmx" ]; then
             JAVA_MEM=$val
+        elif [ "${val:0:4}" = "-Xms" ]; then
+            JAVA_MEM_MIN=$val
         elif [ "${val:0:4}" = "-Xss" ]; then
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
@@ -273,7 +279,7 @@ ruby_args=("${ruby_args[@]}" "$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 
 JFFI_BOOT=""
 if [ -d $JRUBY_HOME/lib/native/ ]; then
