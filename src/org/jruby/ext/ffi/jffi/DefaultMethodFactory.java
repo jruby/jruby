@@ -499,14 +499,12 @@ public final class DefaultMethodFactory {
      * Returns a {@link Invoker} to ruby.
      */
     private static final class CallbackInvoker extends BaseInvoker {
-        private final Type returnType;
-        private final Type[] parameterTypes;
-        private final CallingConvention convention;
-
+        NativeFunctionInfo functionInfo;
+        
         public CallbackInvoker(CallbackInfo cbInfo) {
-            this.returnType = cbInfo.getReturnType();
-            this.parameterTypes = cbInfo.getParameterTypes();
-            this.convention = cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
+            this.functionInfo = new NativeFunctionInfo(cbInfo.getRuntime(),
+                    cbInfo.getReturnType(), cbInfo.getParameterTypes(),
+                    cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
         }
         
 
@@ -515,7 +513,9 @@ public final class DefaultMethodFactory {
             if (address == 0) {
                 return context.getRuntime().getNil();
             }
-            return new JFFIInvoker(context.getRuntime(), address, returnType, parameterTypes, convention);
+            return new org.jruby.ext.ffi.jffi.Function(context.getRuntime(),
+                    context.getRuntime().fastGetModule("FFI").fastGetClass("Function"),
+                    new CodeMemoryIO(context.getRuntime(), address), functionInfo, null);
         }
     }
 
