@@ -90,6 +90,13 @@ public class RbConfigLibrary implements Library {
         
         return theOSName == null ? OSName : theOSName;
     }
+
+    public static String getArchitecture() {
+        String architecture = Platform.ARCH;
+        if (architecture == null) architecture = "unknown";
+        
+        return architecture;
+    }
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
@@ -140,11 +147,11 @@ public class RbConfigLibrary implements Library {
 
         setConfig(configHash, "host_os", getOSName());
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
-        setConfig(configHash, "host_cpu", Platform.ARCH);
+        setConfig(configHash, "host_cpu", getArchitecture());
         
         setConfig(configHash, "target_os", getOSName());
         
-        setConfig(configHash, "target_cpu", Platform.ARCH);
+        setConfig(configHash, "target_cpu", getArchitecture());
         
         String jrubyJarFile = "jruby.jar";
         URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource(Constants.JRUBY_PROPERTIES);
