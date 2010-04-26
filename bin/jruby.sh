@@ -20,6 +20,7 @@ case "`uname`" in
 esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
+JAVA_VM=-client
 
 ## resolve links - $0 may be a link to  home
 PRG=$0
@@ -71,6 +72,9 @@ for opt in ${JRUBY_OPTS[@]}; do
             esac
         fi
     done
+    if [ $opt == "-server" ]; then # JRUBY-4204
+        JAVA_VM="-server"
+    fi
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 
@@ -82,6 +86,12 @@ else
   fi
   JAVA_CMD="$JAVA_HOME/bin/java"
 fi
+
+for opt in ${JAVA_OPTS[@]}; do # JRUBY-4204
+  if [ $opt == "-server" ]; then
+    JAVA_VM="-server"
+  fi
+done
 
 # If you're seeing odd exceptions, you may have a bad JVM install.
 # Uncomment this and report the version to the JRuby team along with error.
@@ -158,7 +168,6 @@ if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss1024k
 fi
 
-JAVA_VM=-client
 JAVA_ENCODING=""
 
 declare -a java_args
