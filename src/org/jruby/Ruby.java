@@ -1378,6 +1378,10 @@ public final class Ruby {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
             try {
+                // define EAGAIN now, so that future EWOULDBLOCK will alias to it
+                // see MRI's error.c and its explicit ordering of Errno definitions.
+                createSysErr(Errno.EAGAIN.value(), Errno.EAGAIN.name());
+                
                 for (Errno e : Errno.values()) {
                     Constant c = (Constant) e;
                     if (Character.isUpperCase(c.name().charAt(0))) {
@@ -1401,9 +1405,14 @@ public final class Ruby {
      **/
     private void createSysErr(int i, String name) {
         if(profile.allowClass(name)) {
-            RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
-            errnos.put(i, errno);
-            errno.defineConstant("Errno", newFixnum(i));
+            if (errnos.get(i) == null) {
+                RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
+                errnos.put(i, errno);
+                errno.defineConstant("Errno", newFixnum(i));
+            } else {
+                // already defined a class for this errno, reuse it (JRUBY-4747)
+                getErrno().setConstant(name, errnos.get(i));
+            }
         }
     }
 
