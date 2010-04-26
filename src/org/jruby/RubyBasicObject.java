@@ -979,7 +979,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
         part.append("#<").append(cname).append(":0x");
-        part.append(Integer.toHexString(System.identityHashCode(this)));
+        part.append(Integer.toHexString(inspectHashCode()));
 
         if (runtime.isInspecting(this)) {
             /* 6:tags 16:addr 1:eos */
@@ -992,6 +992,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         } finally {
             runtime.unregisterInspecting(this);
         }
+    }
+
+    /**
+     * For most objects, the hash used in the default #inspect is just the
+     * identity hashcode of the actual object.
+     *
+     * See org.jruby.java.proxies.JavaProxy for a divergent case.
+     *
+     * @return The identity hashcode of this object
+     */
+    protected int inspectHashCode() {
+        return System.identityHashCode(this);
     }
 
     /** inspect_obj

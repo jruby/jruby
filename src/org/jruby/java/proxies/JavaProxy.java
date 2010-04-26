@@ -381,6 +381,17 @@ public class JavaProxy extends RubyObject {
         }
     }
 
+    /**
+     * We override RubyBasicObject.inspectHashCode to be the identity hash of
+     * the contained object, so it remains consistent across wrappers.
+     *
+     * @return The identity hashcode of the wrapped object
+     */
+    @Override
+    protected int inspectHashCode() {
+        return System.identityHashCode(object);
+    }
+
     private Method getMethod(String name, Class... argTypes) {
         try {
             return getObject().getClass().getMethod(name, argTypes);
