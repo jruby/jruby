@@ -189,16 +189,6 @@ public class RubyModule extends RubyObject {
         return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
     }
     
-    protected static class Generation {
-        public Object token;
-        public Generation() {
-            token = new Object();
-        }
-        public synchronized void update() {
-            token = new Object();
-        }
-    }
-    
     public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
             Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
@@ -215,18 +205,7 @@ public class RubyModule extends RubyObject {
         id = runtime.allocModuleId(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
-        generation = new Generation();
-    }
-
-    /** separate path for MetaClass construction
-     * 
-     */
-    protected RubyModule(Ruby runtime, RubyClass metaClass, Generation generation, boolean objectSpace) {
-        super(runtime, metaClass, objectSpace);
-        id = runtime.allocModuleId(this);
-        // if (parent == null) parent = runtime.getObject();
-        setFlag(USER7_F, !isClass());
-        this.generation = generation;
+        generation = new Object();
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -893,7 +872,7 @@ public class RubyModule extends RubyObject {
     }
     
     public final Object getCacheToken() {
-        return generation.token;
+        return generation;
     }
 
     private final Map<String, CacheEntry> getCachedMethods() {
@@ -962,7 +941,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        generation.update();
+        generation = new Object();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
@@ -3183,7 +3162,7 @@ public class RubyModule extends RubyObject {
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
-    protected final Generation generation;
+    protected Object generation;
 
     protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
 
