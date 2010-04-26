@@ -11,10 +11,9 @@ public abstract class Variable extends Operand implements Comparable {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        // You can only value-replace atomic values
         Operand v = valueMap.get(this);
-
-        return ((v != null) && !v.isNonAtomicValue()) ? v : this;
+        // You can only value-replace atomic values
+        return ((v == null) || v.isNonAtomicValue()) ? this : v;
     }
 
     @Override

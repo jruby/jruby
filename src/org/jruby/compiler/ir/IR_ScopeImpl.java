@@ -15,6 +15,7 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
+import org.jruby.compiler.ir.operands.RenamedVariable;
 
 /**
  * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
@@ -124,7 +125,7 @@ public abstract class IR_ScopeImpl implements IR_Scope {
 
     // Generate a new variable for inlined code (just for ease of debugging, use differently named variables for inlined code)
     public Variable getNewInlineVariable() {
-        return new TemporaryVariable(allocateNextPrefixedName("%i"));
+        return new RenamedVariable("%i", allocateNextPrefixedName("%i"));
     }
 
     public int getTemporaryVariableSize() {
