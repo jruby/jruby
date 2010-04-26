@@ -19,6 +19,7 @@ module JRuby::Compiler
     java = false
     javac = false
     classpath = []
+    javac_options = []
 
     opt_parser = OptionParser.new("", 24, '  ') do |opts|
       opts.banner = "jrubyc [options] (FILE|DIRECTORY)"
@@ -36,11 +37,15 @@ module JRuby::Compiler
         target = tgt
       end
 
-      opts.on("-j", "--java", "Generate .java classes to accompany the script") do
+      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |tgt|
+        javac_options << tgt
+      end
+
+      opts.on("--java", "Generate .java classes to accompany the script") do
         java = true
       end
 
-      opts.on("-J", "--javac", "Generate and compile .java classes to accompany the script") do
+      opts.on("--javac", "Generate and compile .java classes to accompany the script") do
         javac = true
       end
 
@@ -55,11 +60,11 @@ module JRuby::Compiler
       raise "No files or directories specified"
     end
 
-    compile_files(argv, basedir, prefix, target, java, javac, classpath)
+    compile_files(argv, basedir, prefix, target, java, javac, javac_options, classpath)
   end
   module_function :compile_argv
 
-  def compile_files(filenames, basedir = Dir.pwd, prefix = DEFAULT_PREFIX, target = Dir.pwd, java = false, javac = false, classpath = [])
+  def compile_files(filenames, basedir = Dir.pwd, prefix = DEFAULT_PREFIX, target = Dir.pwd, java = false, javac = false, javac_options = [], classpath = [])
     runtime = JRuby.runtime
 
     unless File.exist? target
@@ -138,7 +143,7 @@ module JRuby::Compiler
     end
 
     if javac
-      javac_string = JavaGenerator.generate_javac(files, classpath, target)
+      javac_string = JavaGenerator.generate_javac(files, javac_options, classpath, target)
       puts javac_string
       system javac_string
     end
