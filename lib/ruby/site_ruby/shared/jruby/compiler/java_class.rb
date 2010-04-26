@@ -623,13 +623,13 @@ JAVA
       walker.script
     end
 
-    def generate_javac(files, classpath, target)
+    def generate_javac(files, options, classpath, target)
       files_string = files.join(' ')
       jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
       end
       classpath_string = classpath.size > 0 ? classpath.join(":") : "."
-      compile_string = "javac -d #{target} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
+      compile_string = "javac #{options.join(' ')} -d #{target} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
 
       compile_string
     end
