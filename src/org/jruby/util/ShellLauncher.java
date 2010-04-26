@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
- * 
+ * Copyright (C) 2007-2010 JRuby Team <team@jruby.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,7 +31,7 @@ package org.jruby.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilterInputStream;
+import java.io.BufferedInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -586,10 +586,10 @@ public class ShellLauncher {
      */
     public static InputStream unwrapBufferedStream(InputStream filteredStream) {
         if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
-        while (filteredStream instanceof FilterInputStream) {
+        while (filteredStream instanceof BufferedInputStream) {
             try {
                 filteredStream = (InputStream)
-                    FieldAccess.getProtectedFieldValue(FilterInputStream.class,
+                    FieldAccess.getProtectedFieldValue(BufferedInputStream.class,
                         "in", filteredStream);
             } catch (Exception e) {
                 break; // break out if we've dug as deep as we can
