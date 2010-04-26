@@ -751,9 +751,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // for callers that unconditionally pass null retval type (JRUBY-4737)
         if (target == void.class) return null;
 
-        if (target.isAssignableFrom(getClass())) {
-            return this;
-        } else if (dataGetStruct() instanceof JavaObject) {
+        if (dataGetStruct() instanceof JavaObject) {
             // for interface impls
 
             JavaObject innerWrapper = (JavaObject)dataGetStruct();
@@ -765,12 +763,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
                 return innerWrapper.getValue();
             }
-        } else {
-            if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
-                if (!respondsTo("java_object")) {
-                    return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
-                }
+        } else if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
+            if (!respondsTo("java_object")) {
+                return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
             }
+        } else if (target.isAssignableFrom(getClass())) {
+            return this;
         }
         
         throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);
