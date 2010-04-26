@@ -1817,7 +1817,11 @@ public class RubyIO extends RubyObject {
             
             myOpenFile.checkWritable(runtime);
         
-            myOpenFile.getWriteStream().sync();
+            Stream writeStream = myOpenFile.getWriteStream();
+
+            writeStream.fflush();
+            writeStream.sync();
+
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (PipeException ex) {
