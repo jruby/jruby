@@ -124,7 +124,7 @@ public class RubyFileStat extends RubyObject {
             
             try {
                 ZipFile zipFile = new ZipFile(zipfilename);
-                ZipEntry zipEntry = zipFile.getEntry(zipFileEntry);
+                ZipEntry zipEntry = RubyFile.getFileEntry(zipFile, zipFileEntry);
 
                 if (zipEntry == null) {
                     throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);

@@ -48,6 +48,8 @@ import java.io.Reader;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -1660,6 +1662,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newFixnum(args.length);
+    }
+
+    public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {
+        ZipEntry entry = zf.getEntry(path);
+        if (entry == null) {
+            // try canonicalizing the path to eliminate . and .. (JRUBY-4760)
+            entry = zf.getEntry(new File("/" + path).getCanonicalPath().substring(1));
+        }
+        return entry;
+    }
+
+    public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
+        ZipEntry entry = zf.getEntry(path + "/"); // first try as directory
+        if (entry == null) {
+            // try canonicalizing the path to eliminate . and .. (JRUBY-4760)
+            entry = zf.getEntry(new File("/" + path + "/").getCanonicalPath().substring(1));
+            if (entry == null) {
+                // try as file
+                entry = getFileEntry(zf, path);
+            }
+        }
+        return entry;
     }
 
     /**

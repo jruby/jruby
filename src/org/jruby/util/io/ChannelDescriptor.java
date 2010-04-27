@@ -49,6 +49,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import org.jruby.RubyFile;
 
 import org.jruby.RubyIO;
 import org.jruby.ext.posix.POSIX;
@@ -627,13 +628,13 @@ public class ChannelDescriptor {
                 }
 
                 JarFile jf = new JarFile(filePath);
-                ZipEntry zf = jf.getEntry(internalPath);
+                ZipEntry entry = RubyFile.getFileEntry(jf, internalPath);
 
-                if(zf == null) {
+                if (entry == null) {
                     throw new FileNotFoundException(path);
                 }
 
-                InputStream is = jf.getInputStream(zf);
+                InputStream is = jf.getInputStream(entry);
                 // FIXME: don't use RubyIO for this
                 return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
             } else {

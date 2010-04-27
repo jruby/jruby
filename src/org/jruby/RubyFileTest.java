@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.jar.JarFile;
@@ -339,10 +340,7 @@ public class RubyFileTest {
             String after = file.substring(bang + 2);
             try {
                 JarFile jf = new JarFile(jar);
-                ZipEntry entry = jf.getEntry(after + "/"); // first try as directory
-                if (entry == null) {
-                    entry = jf.getEntry(after); // next as regular file
-                }
+                ZipEntry entry = RubyFile.getDirOrFileEntry(jf, after);
                 return entry;
             } catch (Exception e) {
             }
