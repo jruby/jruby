@@ -34,7 +34,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyFile;
 
 import org.jruby.ext.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
@@ -582,8 +584,8 @@ public class Dir {
                     JarFile jf = new JarFile(st);
                     
                     if (jar.startsWith("/")) jar = jar.substring(1);
-                    if (jf.getEntry(jar + "/") != null) jar = jar + "/";
-                    if (jf.getEntry(jar) != null) {
+                    ZipEntry entry = RubyFile.getDirOrFileEntry(jf, jar);
+                    if (entry != null) {
                         status = func.call(bytes, begin, end, arg);
                     }
                 } catch(Exception e) {}
