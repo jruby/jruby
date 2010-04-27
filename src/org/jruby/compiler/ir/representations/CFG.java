@@ -104,6 +104,11 @@ public class CFG {
         return _nextBBId;
     }
 
+    // NOTE: Because nodes can be removed, this may be smaller than getMaxNodeID()
+    public int numNodes() {
+        return _cfg.vertexSet().size();
+    }
+
     public Set<CFG_Edge> incomingEdgesOf(BasicBlock bb) {
         return _cfg.incomingEdgesOf(bb);
     }
@@ -327,6 +332,27 @@ public class CFG {
         _cfg = g;
     }
 
+    private void mergeBBs(BasicBlock a, BasicBlock b) {
+        a.swallowBB(b);
+        _cfg.removeEdge(a, b);
+        for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+            _cfg.addEdge(a, e._dst);
+        }
+        _cfg.removeVertex(b);
+    }
+
+        // callBB will only have a single successor & splitBB will only have a single predecessor
+        // after inlining the callee.  Merge them with their successor/predecessors respectively
+    private void mergeStraightlineBBs(BasicBlock callBB, BasicBlock splitBB) {
+        Set<CFG_Edge> edges = outgoingEdgesOf(callBB);
+        assert(edges.size() == 1);
+        mergeBBs(callBB, edges.iterator().next()._dst);
+
+        edges = incomingEdgesOf(splitBB);
+        assert(edges.size() == 1);
+        mergeBBs(edges.iterator().next()._src, splitBB);
+    }
+
     private void inlineClosureAtYieldSite(InlinerInfo ii, IR_Closure cl, BasicBlock yieldBB, YIELD_Instr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
@@ -346,7 +372,7 @@ public class CFG {
         for (BasicBlock b: ccfg.getNodes()) {
             if (b != cEntry && b != cExit) {
               _cfg.addVertex(b);
-				  b.updateCFG(this);
+              b.updateCFG(this);
               b.processClosureArgAndReturnInstrs(ii, yield);
             }
         }
@@ -358,6 +384,10 @@ public class CFG {
             if (e._src != cEntry)
                 _cfg.addEdge(e._src, splitBB);
         }
+
+        // callBB will only have a single successor & splitBB will only have a single predecessor
+        // after inlining the callee.  Merge them with their successor/predecessors respectively
+        mergeStraightlineBBs(yieldBB, splitBB);
 
         // 3. TODO: Patch up exception edges
     }
@@ -410,6 +440,10 @@ public class CFG {
             if (e._src != mEntry)
                 _cfg.addEdge(bbRenameMap.get(e._src), splitBB);
         }
+
+        // callBB will only have a single successor & splitBB will only have a single predecessor
+        // after inlining the callee.  Merge them with their successor/predecessors respectively
+        mergeStraightlineBBs(callBB, splitBB);
 
         // 5. TODO: Patch up exception edges
 
@@ -474,7 +508,7 @@ public class CFG {
             buildPostOrderTraversal();
         }
 
-        return _postOrderList.listIterator(getMaxNodeID());
+        return _postOrderList.listIterator(numNodes());
     }
 
     private Integer intersectDomSets(Integer[] idomMap, Integer nb1, Integer nb2) {

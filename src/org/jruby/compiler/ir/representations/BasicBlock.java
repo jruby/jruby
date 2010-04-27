@@ -86,6 +86,10 @@ public class BasicBlock {
         return newBB;
     }
 
+    public void swallowBB(BasicBlock foodBB) {
+        this._instrs.addAll(foodBB._instrs);
+    }
+
     public BasicBlock cloneForInlining(InlinerInfo ii) {
         BasicBlock clonedBB = new BasicBlock(ii.callerCFG, ii.getRenamedLabel(_label));
         for (IR_Instr i: getInstrs()) {
