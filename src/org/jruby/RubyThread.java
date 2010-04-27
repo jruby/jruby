@@ -788,17 +788,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
         
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " succeeded with kill");
-
-        // FIXME: is this still necessary?
-//        try {
-//            threadImpl.join();
-//        } catch (InterruptedException ie) {
-//            // we were interrupted, check thread events again
-//            currentThread.pollThreadEvents();
-//        } catch (ExecutionException ie) {
-//            // we were interrupted, check thread events again
-//            currentThread.pollThreadEvents();
-//        }
         
         return this;
     }
@@ -811,6 +800,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "safe_level")
     public IRubyObject safe_level() {
         throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject backtrace(ThreadContext context) {
+        return context.createCallerBacktrace(context.getRuntime(), 0);
     }
 
     private boolean isCurrent() {
