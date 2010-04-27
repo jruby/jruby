@@ -32,6 +32,7 @@ describe "A Ruby class generating a Java stub" do
     files = %w[Foo.java Bar.java]
     javac = JRuby::Compiler::JavaGenerator.generate_javac(
       files,
+      [],
       ENV_JAVA['java.class.path'].split(RbConfig::CONFIG['PATH_SEPARATOR']),
       '/tmp')
 
