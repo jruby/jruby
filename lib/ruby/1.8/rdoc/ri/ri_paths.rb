@@ -99,3 +99,5 @@ module RI
 
   end
 end
+
+require 'rdoc/ri/jruby_paths'
