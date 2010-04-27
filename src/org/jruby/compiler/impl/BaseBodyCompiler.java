@@ -496,6 +496,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         buildRubyArray(sourceArray, callback, lightweight);
     }
 
+    public void createNewLiteralArray(Object[] sourceArray, ArrayCallback callback, boolean lightweight) {
+        buildRubyLiteralArray(sourceArray, callback, lightweight);
+    }
+
     public void createEmptyArray() {
         loadRuntime();
 
@@ -574,6 +578,98 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
     }
 
+    private void buildRubyLiteralArray(Object[] sourceArray, ArrayCallback callback, boolean light) {
+        if (sourceArray.length < 100) {
+            // don't chunk arrays smaller than 100 elements
+            loadRuntime();
+            buildRubyArray(sourceArray, callback, light);
+        } else {
+            // populate the array in a separate series of methods
+            SkinnyMethodAdapter oldMethod = method;
+
+            // prepare the first builder in the chain
+            String methodName = "array_builder_" + script.getAndIncrementMethodIndex() + "";
+            method = new SkinnyMethodAdapter(
+                    script.getClassVisitor().visitMethod(
+                    ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
+                    methodName,
+                    sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class),
+                    null,
+                    null));
+            method.start();
+            
+            method.aload(1);
+            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+            method.astore(getRuntimeIndex());
+
+            method.aload(getRuntimeIndex());
+            method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+            method.astore(getNilIndex());
+
+            for (int i = 0; i < sourceArray.length; i++) {
+                // for every hundred elements, chain to the next call
+                if ((i + 1) % 100 == 0) {
+                    String nextName = "array_builder_" + script.getAndIncrementMethodIndex() + "";
+
+                    method.aloadMany(0, 1, 2);
+                    method.invokestatic(script.getClassname(), nextName,
+                            sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class));
+                    method.areturn();
+                    method.end();
+                    
+                    method = new SkinnyMethodAdapter(
+                            script.getClassVisitor().visitMethod(
+                            ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
+                            nextName,
+                            sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class),
+                            null,
+                            null));
+                    method.start();
+                    
+                    method.aload(1);
+                    method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                    method.astore(getRuntimeIndex());
+
+                    method.aload(getRuntimeIndex());
+                    method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+                    method.astore(getNilIndex());
+                }
+
+                method.aload(2);
+                method.pushInt(i);
+
+                callback.nextValue(this, sourceArray, i);
+
+                method.arraystore();
+            }
+
+            // close out the last method in the chain
+            method.aload(2);
+            method.areturn();
+            method.end();
+
+            // restore original method, prepare runtime and array, and invoke the chain
+            method = oldMethod;
+
+            loadRuntime(); // for newArray* call below
+
+            // chain invoke
+            method.aload(StandardASMCompiler.THIS);
+            method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
+            method.pushInt(sourceArray.length);
+            method.anewarray(p(IRubyObject.class));
+            method.invokestatic(script.getClassname(), methodName,
+                    sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class));
+
+            // array construct
+            if (light) {
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopyLight", sig(RubyArray.class, Ruby.class, IRubyObject[].class));
+            } else {
+                method.invokestatic(p(RubyArray.class), "newArrayNoCopy", sig(RubyArray.class, Ruby.class, IRubyObject[].class));
+            }
+        }
+    }
+
     public void createEmptyHash() {
         loadRuntime();
 
@@ -582,6 +678,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
         createNewHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+    }
+
+    public void createNewLiteralHash(Object elements, ArrayCallback callback, int keyCount) {
+        createNewLiteralHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
     }
     
     public void createNewHash19(Object elements, ArrayCallback callback, int keyCount) {
@@ -605,6 +705,87 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             loadRuntime();
             callback.nextValue(this, elements, i);
             method.invokevirtual(p(RubyHash.class), methodName, sig(void.class, params(Ruby.class, IRubyObject.class, IRubyObject.class)));
+        }
+    }
+
+    private void createNewLiteralHashCommon(Object elements, ArrayCallback callback, int keyCount,
+            String constructorName, String methodName) {
+        if (keyCount < 50) {
+            // small hash, use standard construction
+            createNewHashCommon(elements, callback, keyCount, constructorName, methodName);
+        } else {
+            // populate the hash in a separate series of methods
+            SkinnyMethodAdapter oldMethod = method;
+
+            // prepare the first builder in the chain
+            String builderMethod = "hash_builder_" + script.getAndIncrementMethodIndex() + "";
+            method = new SkinnyMethodAdapter(
+                    script.getClassVisitor().visitMethod(
+                    ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
+                    builderMethod,
+                    sig(RubyHash.class, "L" + script.getClassname() + ";", ThreadContext.class, RubyHash.class),
+                    null,
+                    null));
+            method.start();
+
+            method.aload(1);
+            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+            method.astore(getRuntimeIndex());
+
+            method.aload(getRuntimeIndex());
+            method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+            method.astore(getNilIndex());
+
+            for (int i = 0; i < keyCount; i++) {
+                // for every hundred keys, chain to the next call
+                if ((i + 1) % 100 == 0) {
+                    String nextName = "hash_builder_" + script.getAndIncrementMethodIndex() + "";
+
+                    method.aloadMany(0, 1, 2);
+                    method.invokestatic(script.getClassname(), nextName,
+                            sig(RubyHash.class, "L" + script.getClassname() + ";", ThreadContext.class, RubyHash.class));
+                    method.areturn();
+                    method.end();
+
+                    method = new SkinnyMethodAdapter(
+                            script.getClassVisitor().visitMethod(
+                            ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
+                            nextName,
+                            sig(RubyHash.class, "L" + script.getClassname() + ";", ThreadContext.class, RubyHash.class),
+                            null,
+                            null));
+                    method.start();
+
+                    method.aload(1);
+                    method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                    method.astore(getRuntimeIndex());
+
+                    method.aload(getRuntimeIndex());
+                    method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
+                    method.astore(getNilIndex());
+                }
+
+                method.aload(2);
+                loadRuntime();
+                callback.nextValue(this, elements, i);
+                method.invokevirtual(p(RubyHash.class), methodName, sig(void.class, params(Ruby.class, IRubyObject.class, IRubyObject.class)));
+            }
+
+            // close out the last method in the chain
+            method.aload(2);
+            method.areturn();
+            method.end();
+
+            // restore original method
+            method = oldMethod;
+
+            // chain invoke
+            method.aload(StandardASMCompiler.THIS);
+            method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
+            loadRuntime();
+            method.invokestatic(p(RubyHash.class), "newHash", sig(RubyHash.class, Ruby.class));
+            method.invokestatic(script.getClassname(), builderMethod,
+                    sig(RubyHash.class, "L" + script.getClassname() + ";", ThreadContext.class, RubyHash.class));
         }
     }
 

@@ -615,14 +615,19 @@ public class ASTCompiler {
         
         if (doit) {
             ArrayCallback callback = new ArrayCallback() {
+                public void nextValue(BodyCompiler context, Object sourceArray, int index) {
+                    Node node = (Node) ((Object[]) sourceArray)[index];
+                    compile(node, context, true);
+                }
+            };
 
-                        public void nextValue(BodyCompiler context, Object sourceArray, int index) {
-                            Node node = (Node) ((Object[]) sourceArray)[index];
-                            compile(node, context, true);
-                        }
-                    };
+            List<Node> childNodes = arrayNode.childNodes();
 
-            context.createNewArray(arrayNode.childNodes().toArray(), callback, arrayNode.isLightweight());
+            if (isListAllLiterals(arrayNode)) {
+                context.createNewLiteralArray(childNodes.toArray(), callback, arrayNode.isLightweight());
+            } else {
+                context.createNewArray(childNodes.toArray(), callback, arrayNode.isLightweight());
+            }
 
             if (popit) context.consumeCurrentValue();
         } else {
@@ -631,6 +636,42 @@ public class ASTCompiler {
                 compile(nextNode, context, false);
             }
         }
+    }
+
+    private boolean isListAllLiterals(ListNode listNode) {
+        for (int i = 0; i < listNode.size(); i++) {
+            switch (listNode.get(i).getNodeType()) {
+            case STRNODE:
+            case FLOATNODE:
+            case FIXNUMNODE:
+            case BIGNUMNODE:
+            case REGEXPNODE:
+            case ZARRAYNODE:
+            case SYMBOLNODE:
+            case NILNODE:
+                // simple literals, continue
+                continue;
+            case ARRAYNODE:
+                // scan contained array
+                if (isListAllLiterals((ArrayNode)listNode.get(i))) {
+                    continue;
+                } else {
+                    return false;
+                }
+            case HASHNODE:
+                // scan contained hash
+                if (isListAllLiterals(((HashNode)listNode.get(i)).getListNode())) {
+                    continue;
+                } else {
+                    return false;
+                }
+            default:
+                return false;
+            }
+        }
+
+        // all good!
+        return true;
     }
 
     public void compileArgsCat(Node node, BodyCompiler context, boolean expr) {
@@ -2465,17 +2506,21 @@ public class ASTCompiler {
             }
 
             ArrayCallback hashCallback = new ArrayCallback() {
+                public void nextValue(BodyCompiler context, Object sourceArray,
+                        int index) {
+                    ListNode listNode = (ListNode) sourceArray;
+                    int keyIndex = index * 2;
+                    compile(listNode.get(keyIndex), context, true);
+                    compile(listNode.get(keyIndex + 1), context, true);
+                }
+            };
 
-                        public void nextValue(BodyCompiler context, Object sourceArray,
-                                int index) {
-                            ListNode listNode = (ListNode) sourceArray;
-                            int keyIndex = index * 2;
-                            compile(listNode.get(keyIndex), context, true);
-                            compile(listNode.get(keyIndex + 1), context, true);
-                        }
-                    };
+            if (isListAllLiterals(hashNode.getListNode())) {
+                context.createNewLiteralHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+            } else {
+                context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+            }
 
-            createNewHash(context, hashNode, hashCallback);
             if (popit) context.consumeCurrentValue();
         } else {
             for (Node nextNode : hashNode.getListNode().childNodes()) {
