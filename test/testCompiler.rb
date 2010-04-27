@@ -8,6 +8,26 @@ ASTInspector = org.jruby.compiler.ASTInspector
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
 
+class CompilerTestUtil
+  def self.compile_to_class(src)
+    next_src_id = next_id
+    node = JRuby.parse(src, "testCompiler#{next_src_id}", false)
+    filename = node.position.file
+    classname = filename.sub("/", ".").sub("\\", ".").sub(".rb", "")
+    inspector = ASTInspector.new
+    inspector.inspect(node)
+    context = StandardASMCompiler.new(classname, filename)
+    compiler = ASTCompiler.new
+    compiler.compileRoot(node, context, inspector)
+
+    context.loadClass(JRuby.runtime.getJRubyClassLoader)
+  end
+
+  def self.next_id
+    @foo ? (@foo += 1) : (@foo = 0)
+  end
+end
+
 def silence_warnings
   verb = $VERBOSE
   $VERBOSE = nil
@@ -17,16 +37,7 @@ ensure
 end
 
 def compile_to_class(src)
-  node = JRuby.parse(src, "testCompiler#{src.object_id}", false)
-  filename = node.position.file
-  classname = filename.sub("/", ".").sub("\\", ".").sub(".rb", "")
-  inspector = ASTInspector.new
-  inspector.inspect(node)
-  context = StandardASMCompiler.new(classname, filename)
-  compiler = ASTCompiler.new
-  compiler.compileRoot(node, context, inspector)
-
-  context.loadClass(JRuby.runtime.getJRubyClassLoader)
+  CompilerTestUtil.compile_to_class(src)
 end
 
 def compile_and_run(src)
@@ -528,3 +539,11 @@ end
 [NilClass, FalseClass].each {|c| c.__send__ :include, SelfCheck}
 test_equal false, nil.self_check
 test_equal false, false.self_check
+
+# JRUBY-4757 and JRUBY-2621: can't compile large array/hash
+large_array = (1..10000).to_a.inspect
+large_hash = large_array
+large_hash.gsub!('[', '{')
+large_hash.gsub!(']', '}')
+test_equal(eval(large_array), compile_and_run(large_array))
+test_equal(eval(large_hash), compile_and_run(large_hash))

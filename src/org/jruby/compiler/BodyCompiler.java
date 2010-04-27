@@ -159,11 +159,25 @@ public interface BodyCompiler {
     public void createNewArray(boolean lightweight);
 
     /**
-     * Given an aggregated set of objects (likely created through a call to createObjectArray)
-     * create a Ruby array object. This version accepts an array of objects
-     * to feed to an ArrayCallback to construct the elements of the array.
+     * Construct a Ruby array given an array of objects to feed to an ArrayCallback
+     * to construct the elements of the array.
+     *
+     * @param sourceArray The objects that will be used to construct elements
+     * @param callback The callback to which to pass the objects
+     * @param lightweight Whether the array should be lightweight
      */
     public void createNewArray(Object[] sourceArray, ArrayCallback callback, boolean lightweight);
+
+    /**
+     * Construct a Ruby array given an array of objects to feed to an ArrayCallback
+     * to construct the elements of the array. All the elements are guaranteed
+     * to be literals, so the contents can safely be chunked if too large.
+     *
+     * @param sourceArray The objects that will be used to construct elements
+     * @param callback The callback to which to pass the objects
+     * @param lightweight Whether the array should be lightweight
+     */
+    public void createNewLiteralArray(Object[] sourceArray, ArrayCallback callback, boolean lightweight);
 
     /**
      * Create an empty Ruby array
@@ -186,6 +200,19 @@ public interface BodyCompiler {
      * @param keyCount the total count of key-value pairs to be constructed from the elements collection.
      */
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount);
+
+    /**
+     * Create a new hash by calling back to the specified ArrayCallback. It is expected that the keyCount
+     * will be the actual count of key/value pairs, and the caller will handle passing an appropriate elements
+     * collection in and dealing with the sequential indices passed to the callback. This version expects
+     * that all elements will be literals, and will break up the hash construction if it is too large.
+     *
+     * @param elements An object holding the elements from which to create the Hash.
+     * @param callback An ArrayCallback implementation to which the elements array and iteration counts
+     * are passed in sequence.
+     * @param keyCount the total count of key-value pairs to be constructed from the elements collection.
+     */
+    public void createNewLiteralHash(Object elements, ArrayCallback callback, int keyCount);
     
     /**
     * @see createNewHash
