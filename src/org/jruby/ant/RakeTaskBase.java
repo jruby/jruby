@@ -27,14 +27,20 @@ public class RakeTaskBase extends Task {
     }
 
     protected void acquireRakeReference() {
-        System.setProperty("jruby.native.enabled", "false"); // Problem with cl w/ jnr + jffi
-        container = new ScriptingContainer();
+        ClassLoader prevClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+            System.setProperty("jruby.native.enabled", "false"); // Problem with cl w/ jnr + jffi
+            container = new ScriptingContainer();
 
-        // FIXME: This needs to be replaced by something which does not assume CWD
-        container.setLoadPaths(Arrays.asList("lib"));
-        container.runScriptlet("require 'ant/tasks/raketasks'");
+            // FIXME: This needs to be replaced by something which does not assume CWD
+            container.setLoadPaths(Arrays.asList("lib"));
+            container.runScriptlet("require 'ant/tasks/raketasks'");
 
-        rakeWrapper = container.runScriptlet("RakeWrapper.new");
+            rakeWrapper = container.runScriptlet("RakeWrapper.new");
+        } finally {
+            Thread.currentThread().setContextClassLoader(prevClassLoader);
+        }
     }
 
     protected List handleFilenameArgument() {
