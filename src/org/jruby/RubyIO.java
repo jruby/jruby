@@ -294,8 +294,11 @@ public class RubyIO extends RubyObject {
 
     @Override
     protected void finalize() throws Throwable {
-        // Make sure it's been cleaned up
-        openFile.cleanup(getRuntime(), false);
+        // clean up fileno map; streams will take care of themselves (?)
+        Stream mainStream = openFile.getMainStream();
+        Stream pipeStream = openFile.getPipeStream();
+        if (mainStream != null) unregisterDescriptor(mainStream.getDescriptor().getFileno());
+        if (mainStream != null) unregisterDescriptor(pipeStream.getDescriptor().getFileno());
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
