@@ -291,6 +291,15 @@ public class RubyIO extends RubyObject {
         
         registerDescriptor(openFile.getMainStream().getDescriptor());        
     }
+
+    public void finalize() {
+        // shut the bugger down
+        try {
+            openFile.cleanup(getRuntime(), false);
+        } catch (Throwable t) {
+            // ignore
+        }
+    }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
         return new RubyIO(runtime, channel);
