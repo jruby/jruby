@@ -431,8 +431,8 @@ class Pathname
             prefix, *resolved = h[path]
           end
         else
-          s = File.lstat(path)
-          if s.symlink?
+          # This check is JRuby-specific for accessing files inside a jar
+          if File.symlink?(path)
             h[path] = :resolving
             link_prefix, link_names = split_names(File.readlink(path))
             if link_prefix == ''
