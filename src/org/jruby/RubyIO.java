@@ -292,13 +292,10 @@ public class RubyIO extends RubyObject {
         registerDescriptor(openFile.getMainStream().getDescriptor());        
     }
 
-    public void finalize() {
-        // shut the bugger down
-        try {
-            openFile.cleanup(getRuntime(), false);
-        } catch (Throwable t) {
-            // ignore
-        }
+    @Override
+    protected void finalize() throws Throwable {
+        // Make sure it's been cleaned up
+        openFile.cleanup(getRuntime(), false);
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
