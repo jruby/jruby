@@ -2906,9 +2906,13 @@ public class RubyModule extends RubyObject {
     // fetch/store/list class variables for this module
     //
 
-    protected synchronized Map<String, IRubyObject> getClassVariables() {
+    protected Map<String, IRubyObject> getClassVariables() {
         if (classVariables == Collections.EMPTY_MAP) {
-            classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
+            synchronized (this) {
+                if (classVariables == Collections.EMPTY_MAP) {
+                    classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
+                }
+            }
         }
         return classVariables;
     }
