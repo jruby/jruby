@@ -376,197 +376,190 @@ public class RubyIO extends RubyObject {
         return getOpenFileChecked().getMainStream();
     }
 
+    protected void reopenPath(Ruby runtime, IRubyObject[] args) {
+        IRubyObject pathString = args[0].convertToString();
+
+        // TODO: check safe, taint on incoming string
+
+        try {
+            ModeFlags modes;
+            if (args.length > 1) {
+                IRubyObject modeString = args[1].convertToString();
+                modes = getIOModes(runtime, modeString.toString());
+
+                openFile.setMode(modes.getOpenFileFlags());
+            } else {
+                modes = getIOModes(runtime, "r");
+            }
+
+            String path = pathString.toString();
+
+            // Ruby code frequently uses a platform check to choose "NUL:" on windows
+            // but since that check doesn't work well on JRuby, we help it out
+
+            openFile.setPath(path);
+
+            if (openFile.getMainStream() == null) {
+                try {
+                    openFile.setMainStream(ChannelStream.fopen(runtime, path, modes));
+                } catch (FileExistsException fee) {
+                    throw runtime.newErrnoEEXISTError(path);
+                }
+
+                registerDescriptor(openFile.getMainStream().getDescriptor());
+                if (openFile.getPipeStream() != null) {
+                    openFile.getPipeStream().fclose();
+                    unregisterDescriptor(openFile.getPipeStream().getDescriptor().getFileno());
+                    openFile.setPipeStream(null);
+                }
+            } else {
+                // TODO: This is an freopen in MRI, this is close, but not quite the same
+                openFile.getMainStream().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
+
+                // re-register
+                registerDescriptor(openFile.getMainStream().getDescriptor());
+
+                if (openFile.getPipeStream() != null) {
+                    // TODO: pipe handler to be reopened with path and "w" mode
+                }
+            }
+        } catch (PipeException pe) {
+            throw runtime.newErrnoEPIPEError();
+        } catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
+        } catch (BadDescriptorException ex) {
+            throw runtime.newErrnoEBADFError();
+        } catch (InvalidValueException e) {
+            throw runtime.newErrnoEINVALError();
+        }
+    }
+
+    protected void reopenIO(Ruby runtime, RubyIO ios) {
+        try {
+            if (ios.openFile == this.openFile) return;
+
+            OpenFile originalFile = ios.getOpenFileChecked();
+            OpenFile selfFile = getOpenFileChecked();
+
+            long pos = 0;
+            if (originalFile.isReadable()) {
+                pos = originalFile.getMainStream().fgetpos();
+            }
+
+            if (originalFile.getPipeStream() != null) {
+                originalFile.getPipeStream().fflush();
+            } else if (originalFile.isWritable()) {
+                originalFile.getMainStream().fflush();
+            }
+
+            if (selfFile.isWritable()) {
+                selfFile.getWriteStream().fflush();
+            }
+
+            selfFile.setMode(originalFile.getMode());
+            selfFile.setProcess(originalFile.getProcess());
+            selfFile.setLineNumber(originalFile.getLineNumber());
+            selfFile.setPath(originalFile.getPath());
+            selfFile.setFinalizer(originalFile.getFinalizer());
+
+            ChannelDescriptor selfDescriptor = selfFile.getMainStream().getDescriptor();
+            ChannelDescriptor originalDescriptor = originalFile.getMainStream().getDescriptor();
+
+            // confirm we're not reopening self's channel
+            if (selfDescriptor.getChannel() != originalDescriptor.getChannel()) {
+                // check if we're a stdio IO, and ensure we're not badly mutilated
+                if (selfDescriptor.getFileno() >= 0 && selfDescriptor.getFileno() <= 2) {
+                    selfFile.getMainStream().clearerr();
+
+                    // dup2 new fd into self to preserve fileno and references to it
+                    originalDescriptor.dup2Into(selfDescriptor);
+
+                    // re-register, since fileno points at something new now
+                    registerDescriptor(selfDescriptor);
+                } else {
+                    Stream pipeFile = selfFile.getPipeStream();
+                    int mode = selfFile.getMode();
+                    selfFile.getMainStream().fclose();
+                    selfFile.setPipeStream(null);
+
+                    // TODO: turn off readable? am I reading this right?
+                    // This only seems to be used while duping below, since modes gets
+                    // reset to actual modes afterward
+                    //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
+
+                    if (pipeFile != null) {
+                        selfFile.setMainStream(ChannelStream.fdopen(runtime, originalDescriptor, new ModeFlags()));
+                        selfFile.setPipeStream(pipeFile);
+                    } else {
+                        selfFile.setMainStream(
+                                ChannelStream.open(
+                                runtime,
+                                originalDescriptor.dup2(selfDescriptor.getFileno())));
+
+                        // re-register the descriptor
+                        registerDescriptor(selfFile.getMainStream().getDescriptor());
+
+                        // since we're not actually duping the incoming channel into our handler, we need to
+                        // copy the original sync behavior from the other handler
+                        selfFile.getMainStream().setSync(selfFile.getMainStream().isSync());
+                    }
+                    selfFile.setMode(mode);
+                }
+
+                // TODO: anything threads attached to original fd are notified of the close...
+                // see rb_thread_fd_close
+
+                if (originalFile.isReadable() && pos >= 0) {
+                    selfFile.seek(pos, Stream.SEEK_SET);
+                    originalFile.seek(pos, Stream.SEEK_SET);
+                }
+            }
+
+            if (selfFile.getPipeStream() != null && selfDescriptor.getFileno() != selfFile.getPipeStream().getDescriptor().getFileno()) {
+                int fd = selfFile.getPipeStream().getDescriptor().getFileno();
+
+                if (originalFile.getPipeStream() == null) {
+                    selfFile.getPipeStream().fclose();
+                    selfFile.setPipeStream(null);
+                } else if (fd != originalFile.getPipeStream().getDescriptor().getFileno()) {
+                    selfFile.getPipeStream().fclose();
+                    ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
+                    selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, getIOModes(runtime, "w")));
+
+                    // re-register, since fileno points at something new now
+                    registerDescriptor(newFD2);
+                }
+            }
+
+            // TODO: restore binary mode
+            //            if (fptr->mode & FMODE_BINMODE) {
+            //                rb_io_binmode(io);
+            //            }
+
+            // TODO: set our metaclass to target's class (i.e. scary!)
+
+        } catch (IOException ex) { // TODO: better error handling
+            throw runtime.newIOError("could not reopen: " + ex.getMessage());
+        } catch (BadDescriptorException ex) {
+            throw runtime.newIOError("could not reopen: " + ex.getMessage());
+        } catch (PipeException ex) {
+            throw runtime.newIOError("could not reopen: " + ex.getMessage());
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError();
+        }
+    }
+
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        
-    	if (args.length < 1) {
-            throw runtime.newArgumentError("wrong number of arguments");
-    	}
-    	
     	IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getIO(), "to_io");
         
     	if (!tmp.isNil()) {
-            try {
-                RubyIO ios = (RubyIO) tmp;
-
-                if (ios.openFile == this.openFile) {
-                    return this;
-                }
-
-                OpenFile originalFile = ios.getOpenFileChecked();
-                OpenFile selfFile = getOpenFileChecked();
-
-                long pos = 0;
-                if (originalFile.isReadable()) {
-                    pos = originalFile.getMainStream().fgetpos();
-                }
-
-                if (originalFile.getPipeStream() != null) {
-                    originalFile.getPipeStream().fflush();
-                } else if (originalFile.isWritable()) {
-                    originalFile.getMainStream().fflush();
-                }
-
-                if (selfFile.isWritable()) {
-                    selfFile.getWriteStream().fflush();
-                }
-
-                selfFile.setMode(originalFile.getMode());
-                selfFile.setProcess(originalFile.getProcess());
-                selfFile.setLineNumber(originalFile.getLineNumber());
-                selfFile.setPath(originalFile.getPath());
-                selfFile.setFinalizer(originalFile.getFinalizer());
-
-                ChannelDescriptor selfDescriptor = selfFile.getMainStream().getDescriptor();
-                ChannelDescriptor originalDescriptor = originalFile.getMainStream().getDescriptor();
-
-                // confirm we're not reopening self's channel
-                if (selfDescriptor.getChannel() != originalDescriptor.getChannel()) {
-                    // check if we're a stdio IO, and ensure we're not badly mutilated
-                    if (selfDescriptor.getFileno() >=0 && selfDescriptor.getFileno() <= 2) {
-                        selfFile.getMainStream().clearerr();
-                        
-                        // dup2 new fd into self to preserve fileno and references to it
-                        originalDescriptor.dup2Into(selfDescriptor);
-                        
-                        // re-register, since fileno points at something new now
-                        registerDescriptor(selfDescriptor);
-                    } else {
-                        Stream pipeFile = selfFile.getPipeStream();
-                        int mode = selfFile.getMode();
-                        selfFile.getMainStream().fclose();
-                        selfFile.setPipeStream(null);
-
-                        // TODO: turn off readable? am I reading this right?
-                        // This only seems to be used while duping below, since modes gets
-                        // reset to actual modes afterward
-                        //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
-
-                        if (pipeFile != null) {
-                            selfFile.setMainStream(ChannelStream.fdopen(runtime, originalDescriptor, new ModeFlags()));
-                            selfFile.setPipeStream(pipeFile);
-                        } else {
-                            selfFile.setMainStream(
-                                    ChannelStream.open(
-                                        runtime,
-                                        originalDescriptor.dup2(selfDescriptor.getFileno())));
-                            
-                            // re-register the descriptor
-                            registerDescriptor(selfFile.getMainStream().getDescriptor());
-                            
-                            // since we're not actually duping the incoming channel into our handler, we need to
-                            // copy the original sync behavior from the other handler
-                            selfFile.getMainStream().setSync(selfFile.getMainStream().isSync());
-                        }
-                        selfFile.setMode(mode);
-                    }
-                    
-                    // TODO: anything threads attached to original fd are notified of the close...
-                    // see rb_thread_fd_close
-                    
-                    if (originalFile.isReadable() && pos >= 0) {
-                        selfFile.seek(pos, Stream.SEEK_SET);
-                        originalFile.seek(pos, Stream.SEEK_SET);
-                    }
-                }
-
-                if (selfFile.getPipeStream() != null && selfDescriptor.getFileno() != selfFile.getPipeStream().getDescriptor().getFileno()) {
-                    int fd = selfFile.getPipeStream().getDescriptor().getFileno();
-                    
-                    if (originalFile.getPipeStream() == null) {
-                        selfFile.getPipeStream().fclose();
-                        selfFile.setPipeStream(null);
-                    } else if (fd != originalFile.getPipeStream().getDescriptor().getFileno()) {
-                        selfFile.getPipeStream().fclose();
-                        ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
-                        selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, getIOModes(runtime, "w")));
-                        
-                        // re-register, since fileno points at something new now
-                        registerDescriptor(newFD2);
-                    }
-                }
-                
-                // TODO: restore binary mode
-    //            if (fptr->mode & FMODE_BINMODE) {
-    //                rb_io_binmode(io);
-    //            }
-                
-                // TODO: set our metaclass to target's class (i.e. scary!)
-
-            } catch (IOException ex) { // TODO: better error handling
-                throw runtime.newIOError("could not reopen: " + ex.getMessage());
-            } catch (BadDescriptorException ex) {
-                throw runtime.newIOError("could not reopen: " + ex.getMessage());
-            } catch (PipeException ex) {
-                throw runtime.newIOError("could not reopen: " + ex.getMessage());
-            } catch (InvalidValueException ive) {
-                throw runtime.newErrnoEINVALError();
-            }
+            reopenIO(runtime, (RubyIO) tmp);
         } else {
-            IRubyObject pathString = args[0].convertToString();
-            
-            // TODO: check safe, taint on incoming string
-            
-            if (openFile == null) {
-                openFile = new OpenFile();
-            }
-            
-            try {
-                ModeFlags modes;
-                if (args.length > 1) {
-                    IRubyObject modeString = args[1].convertToString();
-                    modes = getIOModes(runtime, modeString.toString());
-
-                    openFile.setMode(modes.getOpenFileFlags());
-                } else {
-                    modes = getIOModes(runtime, "r");
-                }
-
-                String path = pathString.toString();
-                
-                // Ruby code frequently uses a platform check to choose "NUL:" on windows
-                // but since that check doesn't work well on JRuby, we help it out
-                
-                openFile.setPath(path);
-            
-                if (openFile.getMainStream() == null) {
-                    try {
-                        openFile.setMainStream(ChannelStream.fopen(runtime, path, modes));
-                    } catch (FileExistsException fee) {
-                        throw runtime.newErrnoEEXISTError(path);
-                    }
-                    
-                    registerDescriptor(openFile.getMainStream().getDescriptor());
-                    if (openFile.getPipeStream() != null) {
-                        openFile.getPipeStream().fclose();
-                        unregisterDescriptor(openFile.getPipeStream().getDescriptor().getFileno());
-                        openFile.setPipeStream(null);
-                    }
-                    return this;
-                } else {
-                    // TODO: This is an freopen in MRI, this is close, but not quite the same
-                    openFile.getMainStream().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
-
-                    // re-register
-                    registerDescriptor(openFile.getMainStream().getDescriptor());
-
-                    if (openFile.getPipeStream() != null) {
-                        // TODO: pipe handler to be reopened with path and "w" mode
-                    }
-                }
-            } catch (PipeException pe) {
-                throw runtime.newErrnoEPIPEError();
-            } catch (IOException ex) {
-                throw runtime.newIOErrorFromException(ex);
-            } catch (BadDescriptorException ex) {
-                throw runtime.newErrnoEBADFError();
-            } catch (InvalidValueException e) {
-            	throw runtime.newErrnoEINVALError();
-            }
+            reopenPath(runtime, args);
         }
         
-        // A potentially previously close IO is being 'reopened'.
         return this;
     }
     
