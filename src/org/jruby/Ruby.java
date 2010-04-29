@@ -128,6 +128,7 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.lang.ref.Reference;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
@@ -3366,9 +3367,26 @@ public final class Ruby {
         }
     }
 
+    public Map<Integer, WeakDescriptorReference> getDescriptors() {
+        return descriptors;
+    }
+
+    private void cleanDescriptors() {
+        Reference reference;
+        while ((reference = descriptorQueue.poll()) != null) {
+            int fileno = ((WeakDescriptorReference)reference).getFileno();
+            descriptors.remove(fileno);
+        }
+    }
+
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
+        cleanDescriptors();
+        
         Integer filenoKey = descriptor.getFileno();
-        retainedDescriptors.put(filenoKey, descriptor);
+        descriptors.put(filenoKey, new WeakDescriptorReference(descriptor, descriptorQueue));
+        if (isRetained) {
+            retainedDescriptors.put(filenoKey, descriptor);
+        }
     }
 
     public void registerDescriptor(ChannelDescriptor descriptor) {
@@ -3376,12 +3394,21 @@ public final class Ruby {
     }
 
     public void unregisterDescriptor(int aFileno) {
+        cleanDescriptors();
+        
         Integer aFilenoKey = aFileno;
+        descriptors.remove(aFilenoKey);
         retainedDescriptors.remove(aFilenoKey);
     }
 
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return retainedDescriptors.get(aFileno);
+        cleanDescriptors();
+        
+        Reference reference = descriptors.get(aFileno);
+        if (reference == null) {
+            return null;
+        }
+        return (ChannelDescriptor)reference.get();
     }
 
     public long incrementRandomSeedSequence() {
@@ -3727,7 +3754,10 @@ public final class Ruby {
     private final ObjectSpace objectSpace = new ObjectSpace();
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private final Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
+    private Map<Integer, WeakDescriptorReference> descriptors = new ConcurrentHashMap<Integer, WeakDescriptorReference>();
+    private ReferenceQueue<ChannelDescriptor> descriptorQueue = new ReferenceQueue<ChannelDescriptor>();
+    // ChannelDescriptors opened by sysopen are cached to avoid collection
+    private Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
 
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
