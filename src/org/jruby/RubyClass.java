@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
@@ -250,11 +251,6 @@ public class RubyClass extends RubyModule {
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableAccessors;
     }
-
-    public synchronized Map<String, VariableAccessor> getVariableAccessorsForWrite() {
-        if (variableAccessors == Collections.EMPTY_MAP) variableAccessors = new Hashtable<String, VariableAccessor>(1);
-        return variableAccessors;
-    }
     
     private volatile int accessorCount = 0;
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
@@ -263,12 +259,21 @@ public class RubyClass extends RubyModule {
         return new VariableAccessor(accessorCount++, this.id);
     }
 
-    public synchronized VariableAccessor getVariableAccessorForWrite(String name) {
-        Map<String, VariableAccessor> myVariableAccessors = getVariableAccessorsForWrite();
-        VariableAccessor ivarAccessor = myVariableAccessors.get(name);
+    public VariableAccessor getVariableAccessorForWrite(String name) {
+        VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
-            ivarAccessor = allocateVariableAccessor();
-            myVariableAccessors.put(name, ivarAccessor);
+            synchronized (this) {
+                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
+                ivarAccessor = myVariableAccessors.get(name);
+                if (ivarAccessor == null) {
+                    // allocate a new accessor and populate a new table
+                    ivarAccessor = allocateVariableAccessor();
+                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+                    newVariableAccessors.putAll(myVariableAccessors);
+                    newVariableAccessors.put(name, ivarAccessor);
+                    variableAccessors = newVariableAccessors;
+                }
+            }
         }
         return ivarAccessor;
     }
