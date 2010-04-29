@@ -6,7 +6,7 @@
 # License:: 
 #  Copyright (c) 2001 akira yamada <akira@ruby-lang.org>
 #  You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: uri.rb 16038 2008-04-15 09:41:47Z kazu $
+# Revision:: $Id$
 # 
 # See URI for documentation
 #

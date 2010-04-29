@@ -13,7 +13,7 @@
 # Author:: Sean Russell <serATgermaneHYPHENsoftwareDOTcom>
 # Version:: 3.1.7.2
 # Date:: 2007/275
-# Revision:: $Revision: 22842 $
+# Revision:: $Revision$
 # 
 # This API documentation can be downloaded from the REXML home page, or can
 # be accessed online[http://www.germane-software.com/software/rexml_doc]

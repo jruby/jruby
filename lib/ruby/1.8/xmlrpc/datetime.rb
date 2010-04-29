@@ -138,5 +138,5 @@ end # module XMLRPC
 
 =begin
 = History
-    $Id: datetime.rb 11708 2007-02-12 23:01:19Z shyouhei $
+    $Id$
 =end

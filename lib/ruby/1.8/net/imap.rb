@@ -2767,10 +2767,10 @@ module Net
           token = lookahead
           if token.symbol == T_SPACE
             shift_token
-          @lex_state = EXPR_CTEXT
-          token = match(T_TEXT)
-          @lex_state = EXPR_BEG
-          result = ResponseCode.new(name, token.value)
+            @lex_state = EXPR_CTEXT
+            token = match(T_TEXT)
+            @lex_state = EXPR_BEG
+            result = ResponseCode.new(name, token.value)
           else
             result = ResponseCode.new(name, nil)
           end

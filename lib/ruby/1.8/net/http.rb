@@ -22,7 +22,7 @@
 # http://www.ruby-lang.org/ja/man/?cmd=view;name=net%2Fhttp.rb
 # 
 #--
-# $Id: http.rb 25851 2009-11-19 06:32:19Z shyouhei $
+# $Id$
 #++ 
 
 require 'net/protocol'
