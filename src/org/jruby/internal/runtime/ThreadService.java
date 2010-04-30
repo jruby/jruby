@@ -34,10 +34,12 @@ import java.lang.ref.SoftReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import java.util.Hashtable;
+import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
@@ -66,7 +68,7 @@ public class ThreadService {
             this.rubyThreadGroup = Thread.currentThread().getThreadGroup();
         }
 
-        this.threadContextMap = new Hashtable<RubyThread, ThreadContext>();
+        this.threadContextMap = Collections.synchronizedMap(new WeakHashMap<RubyThread, ThreadContext>());
         this.rubyThreadMap = new RubyThreadMap(threadContextMap);
         
         // Must be called from main thread (it is currently, but this bothers me)
