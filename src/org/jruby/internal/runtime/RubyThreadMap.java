@@ -108,7 +108,7 @@ public class RubyThreadMap {
     public RubyThread put(Object key, RubyThread value) {
         cleanup();
         key = nullKey(key);
-        return map.put(new RubyThreadWeakReference(key, value), value);
+        return map.put(new RubyThreadWeakReference(key, queue, value), value);
     }
 
     public RubyThread remove(Object key) {
