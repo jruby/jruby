@@ -4,6 +4,7 @@
  */
 package org.jruby.compiler.impl;
 
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -56,6 +57,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
@@ -2619,6 +2621,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             invokeUtilityMethod("def", sig(IRubyObject.class,
                     params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String[].class, int.class, int.class, int.class, int.class, String.class, int.class, CallConfiguration.class)));
         }
+
+        script.addInvokerDescriptor(newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
     }
 
     public void rethrowIfSystemExit() {

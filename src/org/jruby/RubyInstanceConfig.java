@@ -282,6 +282,8 @@ public class RubyInstanceConfig {
     public static final boolean INTERFACES_USE_PROXY
             = SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy");
 
+    public static final boolean JIT_LOADING_DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
+
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
 

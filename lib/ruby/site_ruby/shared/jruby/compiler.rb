@@ -67,6 +67,10 @@ module JRuby::Compiler
         options[:sha1] = true
       end
 
+      opts.on("--handles", "Also generate all direct handle classes for the source file") do
+        options[:handles] = true
+      end
+
       opts.parse!(argv)
     end
 
@@ -89,7 +93,8 @@ module JRuby::Compiler
       :javac => javac,
       :javac_options => javac_options,
       :classpath => classpath,
-      :sha1 => false
+      :sha1 => false,
+      :handles => false
     )
   end
   module_function :compile_files
@@ -110,7 +115,6 @@ module JRuby::Compiler
 
         if options[:sha1]
           pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(File.read(filename)).upcase
-          puts File.read(filename)
         else
           pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix])
         end
@@ -145,7 +149,14 @@ module JRuby::Compiler
           compiler = ASTCompiler.new
           compiler.compile_root(node, asmCompiler, inspector)
 
-          asmCompiler.write_class(JavaFile.new(options[:target]))
+          target_file = JavaFile.new(options[:target])
+          asmCompiler.write_class(target_file)
+
+          if options[:handles]
+            puts "Generating direct handles for #{filename}"
+
+            asmCompiler.write_invokers(target_file)
+          end
         end
 
         0

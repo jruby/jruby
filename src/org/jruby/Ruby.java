@@ -2577,21 +2577,21 @@ public final class Ruby {
                 Class contents;
                 try {
                     contents = jrubyClassLoader.loadClass(className);
-                    if (JITCompiler.DEBUG) {
-                        System.err.println("found jitted code in classloader: " + className);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("found jitted code for " + filename + " at class: " + className);
                     }
                     script = (Script)contents.newInstance();
                     readStream = new ByteArrayInputStream(buffer);
                 } catch (ClassNotFoundException cnfe) {
-                    if (JITCompiler.DEBUG) {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("no jitted code in classloader for file " + filename + " at class: " + className);
                     }
                 } catch (InstantiationException ie) {
-                    if (JITCompiler.DEBUG) {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 } catch (IllegalAccessException iae) {
-                    if (JITCompiler.DEBUG) {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 }

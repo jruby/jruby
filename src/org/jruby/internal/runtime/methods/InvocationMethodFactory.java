@@ -195,7 +195,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position,
                 new InvocationMethodFactory(classLoader));
     }
-            
 
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
@@ -205,283 +204,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, Arity arity, 
             Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
-        String sup = COMPILED_SUPER_CLASS;
         Class scriptClass = scriptObject.getClass();
-        String mname = scriptClass.getName() + "Invoker" + method + arity;
+        String typePath = p(scriptClass);
+        String invokerName = typePath.replaceAll("/", "_") + "Invoker" + method + arity;
         synchronized (classLoader) {
-            Class generatedClass = tryClass(mname, scriptClass);
+            Class generatedClass = tryClass(invokerName, scriptClass);
 
             try {
                 if (generatedClass == null) {
-                    String typePath = p(scriptClass);
-                    String mnamePath = typePath + "Invoker" + method + arity;
-                    ClassWriter cw;
-                    int dotIndex = typePath.lastIndexOf('/');
-                    cw = createCompiledCtor(mnamePath, typePath.substring(dotIndex + 1) + "#" + method.substring(method.lastIndexOf('$') + 1), sup);
-                    SkinnyMethodAdapter mv = null;
-                    String signature = null;
-                    boolean specificArity = false;
-
-                    // if trace, need to at least populate a backtrace frame
-                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                        switch (callConfig) {
-                        case FrameNoneScopeDummy:
-                            callConfig = CallConfiguration.FrameBacktraceScopeDummy;
-                            break;
-                        case FrameNoneScopeFull:
-                            callConfig = CallConfiguration.FrameBacktraceScopeFull;
-                            break;
-                        case FrameNoneScopeNone:
-                            callConfig = CallConfiguration.FrameBacktraceScopeNone;
-                            break;
-                        }
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("no generated handle in classloader for: " + invokerName);
                     }
-                    
-                    if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
-                        signature = COMPILED_CALL_SIG_BLOCK;
-                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
-                    } else {
-                        specificArity = true;
-                        
-                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
-                        mv.start();
-                        mv.line(-1);
-                        
-                        // check arity
-                        mv.aloadMany(0, 1, 4, 5); // method, context, name, args, required
-                        mv.pushInt(scope.getRequiredArgs());
-                        mv.invokestatic(p(JavaMethod.class), "checkArgumentCount", sig(void.class, JavaMethod.class, ThreadContext.class, String.class, IRubyObject[].class, int.class));
-
-                        mv.aloadMany(0, 1, 2, 3, 4);
-                        for (int i = 0; i < scope.getRequiredArgs(); i++) {
-                            mv.aload(5);
-                            mv.ldc(i);
-                            mv.arrayload();
-                        }
-                        mv.aload(6);
-
-                        switch (scope.getRequiredArgs()) {
-                        case 0:
-                            signature = COMPILED_CALL_SIG_ZERO_BLOCK;
-                            break;
-                        case 1:
-                            signature = COMPILED_CALL_SIG_ONE_BLOCK;
-                            break;
-                        case 2:
-                            signature = COMPILED_CALL_SIG_TWO_BLOCK;
-                            break;
-                        case 3:
-                            signature = COMPILED_CALL_SIG_THREE_BLOCK;
-                            break;
-                        }
-                        
-                        mv.invokevirtual(mnamePath, "call", signature);
-                        mv.areturn();
-                        mv.end();
-
-                        // Define a second version that doesn't take a block, so we have unique code paths for both cases.
-                        switch (scope.getRequiredArgs()) {
-                        case 0:
-                            signature = COMPILED_CALL_SIG_ZERO;
-                            break;
-                        case 1:
-                            signature = COMPILED_CALL_SIG_ONE;
-                            break;
-                        case 2:
-                            signature = COMPILED_CALL_SIG_TWO;
-                            break;
-                        case 3:
-                            signature = COMPILED_CALL_SIG_THREE;
-                            break;
-                        }
-                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
-                        mv.start();
-                        mv.line(-1);
-
-                        mv.aloadMany(0, 1, 2, 3, 4);
-                        for (int i = 1; i <= scope.getRequiredArgs(); i++) {
-                            mv.aload(4 + i);
-                        }
-                        mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-
-                        switch (scope.getRequiredArgs()) {
-                        case 0:
-                            signature = COMPILED_CALL_SIG_ZERO_BLOCK;
-                            break;
-                        case 1:
-                            signature = COMPILED_CALL_SIG_ONE_BLOCK;
-                            break;
-                        case 2:
-                            signature = COMPILED_CALL_SIG_TWO_BLOCK;
-                            break;
-                        case 3:
-                            signature = COMPILED_CALL_SIG_THREE_BLOCK;
-                            break;
-                        }
-
-                        mv.invokevirtual(mnamePath, "call", signature);
-                        mv.areturn();
-                        mv.end();
-                        
-                        mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
-                    }
-
-                    mv.visitCode();
-                    mv.line(-1);
-
-                    // invoke pre method stuff
-                    if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                        if (specificArity) {
-                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true, callConfig);
-                        } else {
-                            invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true, callConfig);
-                        }
-                    }
-
-                    int traceBoolIndex = -1;
-                    if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                        // load and store trace enabled flag
-                        if (specificArity) {
-                            switch (scope.getRequiredArgs()) {
-                            case -1:
-                                traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
-                                break;
-                            case 0:
-                                traceBoolIndex = ARGS_INDEX + 1/*block*/;
-                                break;
-                            default:
-                                traceBoolIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
-                            }
-                        } else {
-                            traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
-                        }
-
-                        mv.aload(1);
-                        mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                        mv.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
-                        mv.istore(traceBoolIndex);
-                        // tracing pre
-                        invokeTraceCompiledPre(mv, COMPILED_SUPER_CLASS, traceBoolIndex, position);
-                    }
-
-                    Label tryBegin = new Label();
-                    Label tryEnd = new Label();
-                    Label doFinally = new Label();
-                    Label doReturnFinally = new Label();
-                    Label doRedoFinally = new Label();
-                    Label catchReturnJump = new Label();
-                    Label catchRedoJump = new Label();
-
-                    boolean heapScoped = callConfig.scoping() == Scoping.Full;
-                    boolean framed = callConfig.framing() == Framing.Full;
-
-                    if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
-                    if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
-                    if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, doFinally, null);
-                    if (framed || heapScoped)   mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
-                    if (framed)                 mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
-                    if (framed || heapScoped)   mv.label(tryBegin);
-
-                    // main body
-                    {
-                        mv.aload(0);
-                        // FIXME we want to eliminate these type casts when possible
-                        mv.getfield(mnamePath, "$scriptObject", ci(Object.class));
-                        mv.checkcast(typePath);
-                        mv.aloadMany(THREADCONTEXT_INDEX, RECEIVER_INDEX);
-                        if (specificArity) {
-                            for (int i = 0; i < scope.getRequiredArgs(); i++) {
-                                mv.aload(ARGS_INDEX + i);
-                            }
-                            mv.aload(ARGS_INDEX + scope.getRequiredArgs());
-                            mv.invokestatic(typePath, method, StandardASMCompiler.getStaticMethodSignature(typePath, scope.getRequiredArgs()));
-                        } else {
-                            mv.aloadMany(ARGS_INDEX, BLOCK_INDEX);
-                            mv.invokestatic(typePath, method, StandardASMCompiler.getStaticMethodSignature(typePath, 4));
-                        }
-                    }
-                    if (framed || heapScoped) {
-                        mv.label(tryEnd);
-                    }
-                    
-                    // normal exit, perform finally and return
-                    {
-                        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                            invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
-                        }
-                        if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
-                        }
-                        mv.visitInsn(ARETURN);
-                    }
-
-                    // return jump handling
-                    if (framed || heapScoped) {
-                        mv.label(catchReturnJump);
-                        {
-                            mv.aload(0);
-                            mv.swap();
-                            mv.aload(1);
-                            mv.swap();
-                            mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class));
-                            mv.label(doReturnFinally);
-
-                            // finally
-                            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
-                            }
-                            if (!callConfig.isNoop()) {
-                                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
-                            }
-
-                            // return result if we're still good
-                            mv.areturn();
-                        }
-                    }
-
-                    if (framed) {
-                        // redo jump handling
-                        mv.label(catchRedoJump);
-                        {
-                            // clear the redo
-                            mv.pop();
-
-                            // get runtime, create jump error, and throw it
-                            mv.aload(1);
-                            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                            mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
-                            mv.label(doRedoFinally);
-
-                            // finally
-                            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
-                            }
-                            if (!callConfig.isNoop()) {
-                                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
-                            }
-
-                            // throw redo error if we're still good
-                            mv.athrow();
-                        }
-                    }
-
-                    // finally handling for abnormal exit
-                    if (framed || heapScoped) {
-                        mv.label(doFinally);
-
-                        //call post method stuff (exception raised)
-                        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                            invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
-                        }
-                        if (!callConfig.isNoop()) {
-                            invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
-                        }
-
-                        // rethrow exception
-                        mv.athrow(); // rethrow it
-                    }
-
-                    generatedClass = endCall(cw,mv,mname);
+                    byte[] invokerBytes = getCompiledMethodOffline(method, typePath, invokerName, arity, scope, callConfig, position.getFile(), position.getStartLine());
+                    generatedClass = endCallWithBytes(invokerBytes, invokerName);
+                } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    System.err.println("found generated handle in classloader: " + invokerName);
                 }
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
@@ -492,6 +229,284 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 throw implementationClass.getRuntime().newLoadError(e.getMessage());
             }
         }
+    }
+
+    /**
+     * Use code generation to provide a method handle for a compiled Ruby method.
+     *
+     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     */
+    public byte[] getCompiledMethodOffline(
+            String method, String className, String invokerPath, Arity arity,
+            StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+        String sup = COMPILED_SUPER_CLASS;
+        ClassWriter cw;
+        int dotIndex = invokerPath.lastIndexOf('/');
+        cw = createCompiledCtor(invokerPath, invokerPath.substring(dotIndex + 1) + "#" + method.substring(method.lastIndexOf('$') + 1), sup);
+        SkinnyMethodAdapter mv = null;
+        String signature = null;
+        boolean specificArity = false;
+
+        // if trace, need to at least populate a backtrace frame
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            switch (callConfig) {
+            case FrameNoneScopeDummy:
+                callConfig = CallConfiguration.FrameBacktraceScopeDummy;
+                break;
+            case FrameNoneScopeFull:
+                callConfig = CallConfiguration.FrameBacktraceScopeFull;
+                break;
+            case FrameNoneScopeNone:
+                callConfig = CallConfiguration.FrameBacktraceScopeNone;
+                break;
+            }
+        }
+
+        if (scope.getRestArg() >= 0 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3) {
+            signature = COMPILED_CALL_SIG_BLOCK;
+            mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
+        } else {
+            specificArity = true;
+
+            mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", COMPILED_CALL_SIG_BLOCK, null, null));
+            mv.start();
+            mv.line(-1);
+
+            // check arity
+            mv.aloadMany(0, 1, 4, 5); // method, context, name, args, required
+            mv.pushInt(scope.getRequiredArgs());
+            mv.invokestatic(p(JavaMethod.class), "checkArgumentCount", sig(void.class, JavaMethod.class, ThreadContext.class, String.class, IRubyObject[].class, int.class));
+
+            mv.aloadMany(0, 1, 2, 3, 4);
+            for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                mv.aload(5);
+                mv.ldc(i);
+                mv.arrayload();
+            }
+            mv.aload(6);
+
+            switch (scope.getRequiredArgs()) {
+            case 0:
+                signature = COMPILED_CALL_SIG_ZERO_BLOCK;
+                break;
+            case 1:
+                signature = COMPILED_CALL_SIG_ONE_BLOCK;
+                break;
+            case 2:
+                signature = COMPILED_CALL_SIG_TWO_BLOCK;
+                break;
+            case 3:
+                signature = COMPILED_CALL_SIG_THREE_BLOCK;
+                break;
+            }
+
+            mv.invokevirtual(invokerPath, "call", signature);
+            mv.areturn();
+            mv.end();
+
+            // Define a second version that doesn't take a block, so we have unique code paths for both cases.
+            switch (scope.getRequiredArgs()) {
+            case 0:
+                signature = COMPILED_CALL_SIG_ZERO;
+                break;
+            case 1:
+                signature = COMPILED_CALL_SIG_ONE;
+                break;
+            case 2:
+                signature = COMPILED_CALL_SIG_TWO;
+                break;
+            case 3:
+                signature = COMPILED_CALL_SIG_THREE;
+                break;
+            }
+            mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
+            mv.start();
+            mv.line(-1);
+
+            mv.aloadMany(0, 1, 2, 3, 4);
+            for (int i = 1; i <= scope.getRequiredArgs(); i++) {
+                mv.aload(4 + i);
+            }
+            mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+
+            switch (scope.getRequiredArgs()) {
+            case 0:
+                signature = COMPILED_CALL_SIG_ZERO_BLOCK;
+                break;
+            case 1:
+                signature = COMPILED_CALL_SIG_ONE_BLOCK;
+                break;
+            case 2:
+                signature = COMPILED_CALL_SIG_TWO_BLOCK;
+                break;
+            case 3:
+                signature = COMPILED_CALL_SIG_THREE_BLOCK;
+                break;
+            }
+
+            mv.invokevirtual(invokerPath, "call", signature);
+            mv.areturn();
+            mv.end();
+
+            mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "call", signature, null, null));
+        }
+
+        mv.visitCode();
+        mv.line(-1);
+
+        // invoke pre method stuff
+        if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            if (specificArity) {
+                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, scope.getRequiredArgs(), true, callConfig);
+            } else {
+                invokeCallConfigPre(mv, COMPILED_SUPER_CLASS, -1, true, callConfig);
+            }
+        }
+
+        int traceBoolIndex = -1;
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // load and store trace enabled flag
+            if (specificArity) {
+                switch (scope.getRequiredArgs()) {
+                case -1:
+                    traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
+                    break;
+                case 0:
+                    traceBoolIndex = ARGS_INDEX + 1/*block*/;
+                    break;
+                default:
+                    traceBoolIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                }
+            } else {
+                traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
+            }
+
+            mv.aload(1);
+            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+            mv.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
+            mv.istore(traceBoolIndex);
+            // tracing pre
+            invokeTraceCompiledPre(mv, COMPILED_SUPER_CLASS, traceBoolIndex, filename, line);
+        }
+
+        Label tryBegin = new Label();
+        Label tryEnd = new Label();
+        Label doFinally = new Label();
+        Label doReturnFinally = new Label();
+        Label doRedoFinally = new Label();
+        Label catchReturnJump = new Label();
+        Label catchRedoJump = new Label();
+
+        boolean heapScoped = callConfig.scoping() == Scoping.Full;
+        boolean framed = callConfig.framing() == Framing.Full;
+
+        if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
+        if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
+        if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, doFinally, null);
+        if (framed || heapScoped)   mv.trycatch(catchReturnJump, doReturnFinally, doFinally, null);
+        if (framed)                 mv.trycatch(catchRedoJump, doRedoFinally, doFinally, null);
+        if (framed || heapScoped)   mv.label(tryBegin);
+
+        // main body
+        {
+            mv.aload(0);
+            // FIXME we want to eliminate these type casts when possible
+            mv.getfield(invokerPath, "$scriptObject", ci(Object.class));
+            mv.checkcast(className);
+            mv.aloadMany(THREADCONTEXT_INDEX, RECEIVER_INDEX);
+            if (specificArity) {
+                for (int i = 0; i < scope.getRequiredArgs(); i++) {
+                    mv.aload(ARGS_INDEX + i);
+                }
+                mv.aload(ARGS_INDEX + scope.getRequiredArgs());
+                mv.invokestatic(className, method, StandardASMCompiler.getStaticMethodSignature(className, scope.getRequiredArgs()));
+            } else {
+                mv.aloadMany(ARGS_INDEX, BLOCK_INDEX);
+                mv.invokestatic(className, method, StandardASMCompiler.getStaticMethodSignature(className, 4));
+            }
+        }
+        if (framed || heapScoped) {
+            mv.label(tryEnd);
+        }
+
+        // normal exit, perform finally and return
+        {
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+            }
+            if (!callConfig.isNoop()) {
+                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+            }
+            mv.visitInsn(ARETURN);
+        }
+
+        // return jump handling
+        if (framed || heapScoped) {
+            mv.label(catchReturnJump);
+            {
+                mv.aload(0);
+                mv.swap();
+                mv.aload(1);
+                mv.swap();
+                mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class));
+                mv.label(doReturnFinally);
+
+                // finally
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                }
+                if (!callConfig.isNoop()) {
+                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                }
+
+                // return result if we're still good
+                mv.areturn();
+            }
+        }
+
+        if (framed) {
+            // redo jump handling
+            mv.label(catchRedoJump);
+            {
+                // clear the redo
+                mv.pop();
+
+                // get runtime, create jump error, and throw it
+                mv.aload(1);
+                mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
+                mv.invokevirtual(p(Ruby.class), "newRedoLocalJumpError", sig(RaiseException.class));
+                mv.label(doRedoFinally);
+
+                // finally
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+                }
+                if (!callConfig.isNoop()) {
+                    invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+                }
+
+                // throw redo error if we're still good
+                mv.athrow();
+            }
+        }
+
+        // finally handling for abnormal exit
+        if (framed || heapScoped) {
+            mv.label(doFinally);
+
+            //call post method stuff (exception raised)
+            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                invokeTraceCompiledPost(mv, COMPILED_SUPER_CLASS, traceBoolIndex);
+            }
+            if (!callConfig.isNoop()) {
+                invokeCallConfigPost(mv, COMPILED_SUPER_CLASS, callConfig);
+            }
+
+            // rethrow exception
+            mv.athrow(); // rethrow it
+        }
+
+        return endCallOffline(cw,mv);
     }
     
     private class DescriptorInfo {
@@ -1004,7 +1019,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private ClassWriter createCompiledCtor(String namePath, String shortPath, String sup) throws Exception {
+    private ClassWriter createCompiledCtor(String namePath, String shortPath, String sup) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
         cw.visitSource(shortPath, null);
@@ -1238,6 +1253,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return endClass(cw, name);
     }
 
+    protected Class endCallWithBytes(byte[] classBytes, String name) {
+        return endClassWithBytes(classBytes, name);
+    }
+
+    protected byte[] endCallOffline(ClassWriter cw, MethodVisitor mv) {
+        endMethod(mv);
+        return endClassOffline(cw);
+    }
+
     protected void endMethod(MethodVisitor mv) {
         mv.visitMaxs(0,0);
         mv.visitEnd();
@@ -1249,6 +1273,18 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
          
         return classLoader.defineClass(name, code);
+    }
+
+    protected Class endClassWithBytes(byte[] code, String name) {
+        return classLoader.defineClass(name, code);
+    }
+
+    protected byte[] endClassOffline(ClassWriter cw) {
+        cw.visitEnd();
+        byte[] code = cw.toByteArray();
+        if (DEBUG) CheckClassAdapter.verify(new ClassReader(code), false, new PrintWriter(System.err));
+
+        return code;
     }
     
     private SkinnyMethodAdapter beginMethod(ClassWriter cw, String methodName, int specificArity, boolean block) {
@@ -1423,12 +1459,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
 
-    private void invokeTraceCompiledPre(SkinnyMethodAdapter mv, String superClass, int traceBoolIndex, ISourcePosition position) {
+    private void invokeTraceCompiledPre(SkinnyMethodAdapter mv, String superClass, int traceBoolIndex, String filename, int line) {
         mv.aloadMany(0, 1); // method, threadContext
         mv.iload(traceBoolIndex); // traceEnable
         mv.aload(4); // invokedName
-        mv.ldc(position.getFile());
-        mv.ldc(position.getStartLine());
+        mv.ldc(filename);
+        mv.ldc(line);
         mv.invokevirtual(superClass, "callTraceCompiled", sig(void.class, ThreadContext.class, boolean.class, String.class, String.class, int.class));
     }
 

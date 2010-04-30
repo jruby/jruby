@@ -279,6 +279,13 @@ public class RuntimeHelpers {
         
         return runtime.getNil();
     }
+
+    public static byte[] defOffline(String name, String classPath, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+        MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
+        byte[] methodBytes = factory.getCompiledMethodOffline(name, classPath, invokerName, arity, scope, callConfig, filename, line);
+
+        return methodBytes;
+    }
     
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
