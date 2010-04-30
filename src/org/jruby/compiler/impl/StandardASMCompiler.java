@@ -37,6 +37,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -46,8 +48,10 @@ import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.ScriptCompiler;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -156,6 +160,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final Constructor invDynInvCompilerConstructor;
     public static final Method invDynSupportInstaller;
 
+    private List<InvokerDescriptor> invokerDescriptors = new ArrayList<InvokerDescriptor>();
+
     static {
         Constructor compilerConstructor = null;
         Method installerMethod = null;
@@ -204,18 +210,40 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public void writeClass(File destination) throws IOException {
-        writeClass(getClassname(),destination, classWriter);
+        writeClass(getClassname(), destination, classWriter);
+    }
+
+    public void writeInvokers(File destination) throws IOException {
+        for (InvokerDescriptor descriptor : invokerDescriptors) {
+            byte[] invokerBytes = RuntimeHelpers.defOffline(
+                    descriptor.getName(),
+                    descriptor.getClassname(),
+                    descriptor.getInvokerName(),
+                    descriptor.getArity(),
+                    descriptor.getScope(),
+                    descriptor.getCallConfig(),
+                    descriptor.getFile(),
+                    descriptor.getLine());
+
+            CheckClassAdapter.verify(new ClassReader(invokerBytes), false, new PrintWriter(System.err));
+
+            writeClassFile(destination, invokerBytes, descriptor.getInvokerName());
+        }
     }
 
     private void writeClass(String classname, File destination, ClassWriter writer) throws IOException {
-        String fullname = classname + ".class";
-        String filename = null;
-        String path = null;
-        
         // verify the class
         byte[] bytecode = writer.toByteArray();
         CheckClassAdapter.verify(new ClassReader(bytecode), false, new PrintWriter(System.err));
-        
+
+        writeClassFile(destination, bytecode, classname);
+    }
+
+    private void writeClassFile(File destination, byte[] bytecode, String classname) throws IOException {
+        String fullname = classname + ".class";
+        String filename = null;
+        String path = null;
+
         if (fullname.lastIndexOf("/") == -1) {
             filename = fullname;
             path = "";
@@ -231,6 +259,69 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         out.write(bytecode);
         out.close();
+    }
+
+    public static class InvokerDescriptor {
+        private final String name;
+        private final String classname;
+        private final String invokerName;
+        private final Arity arity;
+        private final StaticScope scope;
+        private final CallConfiguration callConfig;
+        private final String file;
+        private final int line;
+        
+        public InvokerDescriptor(String name, String classname, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line) {
+            this.name = name;
+            this.classname = classname;
+            this.invokerName = invokerName;
+            this.arity = arity;
+            this.scope = scope;
+            this.callConfig = callConfig;
+            this.file = file;
+            this.line = line;
+        }
+
+        public Arity getArity() {
+            return arity;
+        }
+
+        public CallConfiguration getCallConfig() {
+            return callConfig;
+        }
+
+        public String getClassname() {
+            return classname;
+        }
+
+        public String getFile() {
+            return file;
+        }
+
+        public String getInvokerName() {
+            return invokerName;
+        }
+
+        public int getLine() {
+            return line;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public StaticScope getScope() {
+            return scope;
+        }
+    }
+
+    public void addInvokerDescriptor(String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+        String classPath = classname.replaceAll("/", "_");
+        Arity arity = Arity.createArity(methodArity);
+        String invokerName = classPath + "Invoker" + newMethodName + arity;
+        InvokerDescriptor descriptor = new InvokerDescriptor(newMethodName, classname, invokerName, arity, scope, callConfig, filename, line);
+
+        invokerDescriptors.add(descriptor);
     }
 
     public String getClassname() {

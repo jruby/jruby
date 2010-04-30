@@ -57,12 +57,10 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.ClassReader;
 
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
-    public static final boolean DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
     
     private AtomicLong compiledCount = new AtomicLong(0);
     private AtomicLong successCount = new AtomicLong(0);
@@ -217,7 +215,7 @@ public class JITCompiler implements JITCompilerMBean {
             // write to code cache
             FileOutputStream fos = null;
             try {
-                if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
                 fos = new FileOutputStream(cachedClassFile);
                 fos.write(bytecode);
             } catch (Exception e) {
@@ -271,7 +269,7 @@ public class JITCompiler implements JITCompilerMBean {
                     cachedClassFile.exists()) {
                 FileInputStream fis = null;
                 try {
-                    if (DEBUG) System.err.println("loading cached code from: " + cachedClassFile);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) System.err.println("loading cached code from: " + cachedClassFile);
                     fis = new FileInputStream(cachedClassFile);
                     bytecode = new byte[(int)fis.getChannel().size()];
                     fis.read(bytecode);
