@@ -1,5 +1,6 @@
 require 'optparse'
 require 'fileutils'
+require 'digest/sha1'
 require 'jruby'
 require 'jruby/compiler/java_class'
 
@@ -11,46 +12,59 @@ module JRuby::Compiler
   JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
   DEFAULT_PREFIX = ""
+
+  def default_options
+    {
+      :basedir => Dir.pwd,
+      :prefix => DEFAULT_PREFIX,
+      :target => Dir.pwd,
+      :java => false,
+      :javac => false,
+      :classpath => [],
+      :javac_options => [],
+      :sha1 => false,
+      :handles => false
+    }
+  end
+  module_function :default_options
   
   def compile_argv(argv)
-    basedir = Dir.pwd
-    prefix = DEFAULT_PREFIX
-    target = Dir.pwd
-    java = false
-    javac = false
-    classpath = []
-    javac_options = []
+    options = default_options
 
-    opt_parser = OptionParser.new("", 24, '  ') do |opts|
+    OptionParser.new("", 24, '  ') do |opts|
       opts.banner = "jrubyc [options] (FILE|DIRECTORY)"
       opts.separator ""
 
       opts.on("-d", "--dir DIR", "Use DIR as the root of the compiled package and filename") do |dir|
-        basedir = dir
+        options[:basedir] = dir
       end
 
       opts.on("-p", "--prefix PREFIX", "Prepend PREFIX to the file path and package. Default is no prefix.") do |pre|
-        prefix = pre
+        options[:prefix] = pre
       end
 
       opts.on("-t", "--target TARGET", "Output files to TARGET directory") do |tgt|
-        target = tgt
+        options[:target] = tgt
       end
 
       opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |tgt|
-        javac_options << tgt
+        options[:javac_options] << tgt
       end
 
       opts.on("--java", "Generate .java classes to accompany the script") do
-        java = true
+        options[:java] = true
       end
 
       opts.on("--javac", "Generate and compile .java classes to accompany the script") do
-        javac = true
+        options[:javac] = true
       end
 
       opts.on("-c", "--classpath CLASSPATH", "Add a jar to the classpath for building") do |cp|
-        classpath.concat cp.split(':')
+        options[:classpath].concat cp.split(':')
+      end
+
+      opts.on("--sha1", "Compile to a class named using the SHA1 hash of the source file") do
+        options[:sha1] = true
       end
 
       opts.parse!(argv)
@@ -60,15 +74,31 @@ module JRuby::Compiler
       raise "No files or directories specified"
     end
 
-    compile_files(argv, basedir, prefix, target, java, javac, javac_options, classpath)
+    compile_files_with_options(argv, options)
   end
   module_function :compile_argv
 
+  # deprecated, but retained for backward compatibility
   def compile_files(filenames, basedir = Dir.pwd, prefix = DEFAULT_PREFIX, target = Dir.pwd, java = false, javac = false, javac_options = [], classpath = [])
+    compile_files_with_options(
+      filenames,
+      :basedir => basedir,
+      :prefix => prefix,
+      :target => target,
+      :java => java,
+      :javac => javac,
+      :javac_options => javac_options,
+      :classpath => classpath,
+      :sha1 => false
+    )
+  end
+  module_function :compile_files
+  
+  def compile_files_with_options(filenames, options = default_options)
     runtime = JRuby.runtime
 
-    unless File.exist? target
-      raise "Target dir not found: #{target}"
+    unless File.exist? options[:target]
+      raise "Target dir not found: #{options[:target]}"
     end
 
     files = []
@@ -78,17 +108,22 @@ module JRuby::Compiler
       begin
         file = File.open(filename)
 
-        pathname = Mangler.mangle_filename_for_classpath(filename, basedir, prefix)
+        if options[:sha1]
+          pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(File.read(filename)).upcase
+          puts File.read(filename)
+        else
+          pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix])
+        end
 
         inspector = org.jruby.compiler.ASTInspector.new
 
         source = file.read
         node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
 
-        if java || javac
+        if options[:java] || options[:javac]
           ruby_script = JavaGenerator.generate_java(node, filename)
           ruby_script.classes.each do |cls|
-            java_dir = File.join(target, cls.package.gsub('.', '/'))
+            java_dir = File.join(options[:target], cls.package.gsub('.', '/'))
 
             FileUtils.mkdir_p java_dir
 
@@ -106,11 +141,11 @@ module JRuby::Compiler
 
           inspector.inspect(node)
 
-          asmCompiler = BytecodeCompiler.new(pathname, filename)
+          asmCompiler = BytecodeCompiler.new(pathname.gsub(".", "/"), filename)
           compiler = ASTCompiler.new
           compiler.compile_root(node, asmCompiler, inspector)
 
-          asmCompiler.write_class(JavaFile.new(target))
+          asmCompiler.write_class(JavaFile.new(options[:target]))
         end
 
         0
@@ -142,13 +177,13 @@ module JRuby::Compiler
       end
     end
 
-    if javac
-      javac_string = JavaGenerator.generate_javac(files, javac_options, classpath, target)
+    if options[:javac]
+      javac_string = JavaGenerator.generate_javac(files, options)
       puts javac_string
       system javac_string
     end
 
     errors
   end
-  module_function :compile_files
+  module_function :compile_files_with_options
 end

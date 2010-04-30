@@ -67,6 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
@@ -2571,7 +2572,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             CompilerCallback receiver, ASTInspector inspector, boolean root, String filename, int line) {
         // TODO: build arg list based on number of args, optionals, etc
         String newMethodName;
-        if (root && Boolean.getBoolean("jruby.compile.toplevel")) {
+        if (root && SafePropertyAccessor.getBoolean("jruby.compile.toplevel", false)) {
             newMethodName = name;
         } else {
             String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
