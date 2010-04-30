@@ -188,12 +188,11 @@ public class JITCompiler implements JITCompilerMBean {
             MessageDigest sha1 = MessageDigest.getInstance("SHA1");
             sha1.update(bytes);
             byte[] digest = sha1.digest();
-            char[] digestChars = new char[digest.length * 2];
+            StringBuilder builder = new StringBuilder();
             for (int i = 0; i < digest.length; i++) {
-                digestChars[i * 2] = Character.forDigit(digest[i] & 0xF, 16);
-                digestChars[i * 2 + 1] = Character.forDigit((digest[i] & 0xF0) >> 4, 16);
+                builder.append(Integer.toString( ( digest[i] & 0xff ) + 0x100, 16).substring( 1 ));
             }
-            return new String(digestChars).toUpperCase(Locale.ENGLISH);
+            return builder.toString().toUpperCase(Locale.ENGLISH);
         } catch (NoSuchAlgorithmException nsae) {
             throw new RuntimeException(nsae);
         }
