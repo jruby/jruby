@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import java.util.Hashtable;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
@@ -245,5 +244,26 @@ public class ThreadService {
 
         // then deliver mail to the target
         event.target.receiveMail(event);
+    }
+
+    /**
+     * Get the map from threadlike objects to RubyThread instances. Used mainly
+     * for testing purposes.
+     *
+     * @return The ruby thread map
+     */
+    public RubyThreadMap getRubyThreadMap() {
+        return rubyThreadMap;
+    }
+
+    /**
+     * Get the map from RubyThread objects to ThreadContext objects. Used for
+     * testing purposes.
+     *
+     * @return The thread context map
+     * @return
+     */
+    public Map getThreadContextMap() {
+        return threadContextMap;
     }
 }
