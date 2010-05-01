@@ -89,7 +89,7 @@ module FFI
     if lib && File.basename(lib) == lib
       ext = ".#{Platform::LIBSUFFIX}"
       lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
-      lib += ext unless lib =~ /#{ext}/
+      lib += ext unless lib =~ /#{Regexp.escape(ext)}/
     end
     lib
   end
