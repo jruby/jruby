@@ -43,9 +43,10 @@ public class Platform {
     public static final OS OS = determineOS();
 
     public static final String NAME = CPU + "-" + OS;
-    public static final String LIBC = determineLibC();
     public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
     public static final String LIBSUFFIX = determineLibExt();
+    public static final String LIBC = determineLibC();
+    
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
@@ -144,7 +145,7 @@ public class Platform {
     private static final String determineLibC() {
         switch (OS) {
             case WINDOWS:
-                return "msvcrt";
+                return "msvcrt.dll";
             case LINUX:
                 return "libc.so.6";
             case AIX:
@@ -154,7 +155,7 @@ public class Platform {
                     return "libc.a(shr_64.o)";
                 }
             default:
-                return "c";
+                return LIBPREFIX + "c." + LIBSUFFIX;
         }
     }
 
