@@ -228,6 +228,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         
         rubyThread.threadImpl = new NativeThread(rubyThread, t);
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+        runtime.getThreadService().associateThread(t, rubyThread);
         
         context.preAdoptThread();
         
