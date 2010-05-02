@@ -537,12 +537,11 @@ public class RubyInstanceConfig {
     public String getExtendedHelp() {
         StringBuilder sb = new StringBuilder();
         sb
-                .append("These flags are for extended JRuby options.\n")
-                .append("Specify them by passing -X<option>\n")
-                .append("  -O              run with ObjectSpace disabled (default; improves performance)\n")
-                .append("  +O              run with ObjectSpace enabled (reduces performance)\n")
-                .append("  -C              disable all compilation\n")
-                .append("  +C              force compilation of all scripts before they are run (except eval)\n");
+                .append("Extended options:\n")
+                .append("  -X-O        run with ObjectSpace disabled (default; improves performance)\n")
+                .append("  -X+O        run with ObjectSpace enabled (reduces performance)\n")
+                .append("  -X-C        disable all compilation\n")
+                .append("  -X+C        force compilation of all scripts before they are run (except eval)\n");
 
         return sb.toString();
     }
@@ -1249,7 +1248,9 @@ public class RubyInstanceConfig {
                     String extendedOption = grabOptionalValue();
 
                     if (extendedOption == null) {
-                        throw new MainExitException(0, "jruby: missing extended option, listing available options\n" + getExtendedHelp());
+                        throw new MainExitException(0, "jruby: missing argument\n" + getExtendedHelp());
+                    } else if (extendedOption.equals("nopreamble")) {
+                        throw new MainExitException(0, getExtendedHelp());
                     } else if (extendedOption.equals("-O")) {
                         objectSpaceEnabled = false;
                     } else if (extendedOption.equals("+O")) {
