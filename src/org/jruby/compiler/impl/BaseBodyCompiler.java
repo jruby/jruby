@@ -1034,6 +1034,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadSelf();
         script.getCacheCompiler().cacheClosure(this, closureMethodName, arity, scope, hasMultipleArgsHead, argsNodeId, inspector);
 
+        script.addBlockCallbackDescriptor(closureMethodName);
+
         invokeUtilityMethod("createBlock", sig(Block.class,
                 params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
     }
@@ -1062,6 +1064,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadThreadContext();
         loadSelf();
         script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, hasMultipleArgsHead, argsNodeId, inspector);
+
+        script.addBlockCallback19Descriptor(closureMethodName);
 
         invokeUtilityMethod("createBlock19", sig(Block.class,
                 params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
