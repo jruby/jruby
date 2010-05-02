@@ -32,8 +32,6 @@ package org.jruby.compiler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
@@ -62,15 +60,15 @@ import org.objectweb.asm.ClassReader;
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
     
-    private AtomicLong compiledCount = new AtomicLong(0);
-    private AtomicLong successCount = new AtomicLong(0);
-    private AtomicLong failCount = new AtomicLong(0);
-    private AtomicLong abandonCount = new AtomicLong(0);
-    private AtomicLong compileTime = new AtomicLong(0);
-    private AtomicLong averageCompileTime = new AtomicLong(0);
-    private AtomicLong codeSize = new AtomicLong(0);
-    private AtomicLong averageCodeSize = new AtomicLong(0);
-    private AtomicLong largestCodeSize = new AtomicLong(0);
+    private final AtomicLong compiledCount = new AtomicLong(0);
+    private final AtomicLong successCount = new AtomicLong(0);
+    private final AtomicLong failCount = new AtomicLong(0);
+    private final AtomicLong abandonCount = new AtomicLong(0);
+    private final AtomicLong compileTime = new AtomicLong(0);
+    private final AtomicLong averageCompileTime = new AtomicLong(0);
+    private final AtomicLong codeSize = new AtomicLong(0);
+    private final AtomicLong averageCodeSize = new AtomicLong(0);
+    private final AtomicLong largestCodeSize = new AtomicLong(0);
     
     public JITCompiler(Ruby ruby) {
         ruby.getBeanManager().register(this);
@@ -345,7 +343,7 @@ public class JITCompiler implements JITCompilerMBean {
             codeSize.addAndGet(bytecode.length);
             averageCompileTime.set(compileTime.get() / compiledCount.get());
             averageCodeSize.set(codeSize.get() / compiledCount.get());
-            synchronized (largestCodeSize) {
+            synchronized (JITCompiler.this) {
                 if (largestCodeSize.get() < bytecode.length) {
                     largestCodeSize.set(bytecode.length);
                 }
@@ -369,6 +367,7 @@ public class JITCompiler implements JITCompilerMBean {
             return jitCallConfig;
         }
 
+        @Override
         public String toString() {
             return methodName + "() at " + bodyNode.getPosition().getFile() + ":" + bodyNode.getPosition().getLine();
         }

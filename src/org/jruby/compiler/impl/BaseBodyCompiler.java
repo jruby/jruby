@@ -4,7 +4,6 @@
  */
 package org.jruby.compiler.impl;
 
-import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -57,7 +56,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
@@ -591,11 +589,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             SkinnyMethodAdapter oldMethod = method;
 
             // prepare the first builder in the chain
-            String methodName = "array_builder_" + script.getAndIncrementMethodIndex() + "";
+            String newMethodName = "array_builder_" + script.getAndIncrementMethodIndex() + "";
             method = new SkinnyMethodAdapter(
                     script.getClassVisitor().visitMethod(
                     ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
-                    methodName,
+                    newMethodName,
                     sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class),
                     null,
                     null));
@@ -661,7 +659,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
             method.pushInt(sourceArray.length);
             method.anewarray(p(IRubyObject.class));
-            method.invokestatic(script.getClassname(), methodName,
+            method.invokestatic(script.getClassname(), newMethodName,
                     sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class));
 
             // array construct

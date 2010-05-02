@@ -8,7 +8,6 @@ import org.jruby.runtime.Visibility;
 
 public abstract class FieldMethodOne extends JavaMethodOne {
     Field field;
-    String name;
 
     FieldMethodOne(String name, RubyModule host, Field field) {
         super(host, Visibility.PUBLIC);
@@ -16,6 +15,5 @@ public abstract class FieldMethodOne extends JavaMethodOne {
             field.setAccessible(true);
         }
         this.field = field;
-        this.name = name;
     }
 }

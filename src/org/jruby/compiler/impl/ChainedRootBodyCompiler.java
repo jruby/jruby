@@ -5,8 +5,6 @@ import org.jruby.parser.StaticScope;
 import org.objectweb.asm.Label;
 
 public class ChainedRootBodyCompiler extends RootScopedBodyCompiler {
-    RootScopedBodyCompiler parent;
-
     @Override
     public void endBody() {
         // return last value from execution
@@ -19,7 +17,6 @@ public class ChainedRootBodyCompiler extends RootScopedBodyCompiler {
 
     public ChainedRootBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, ASTInspector inspector, StaticScope scope, RootScopedBodyCompiler parent) {
         super(scriptCompiler, methodName, inspector, scope);
-        this.parent = parent;
         this.inNestedMethod = true;
     }
 }

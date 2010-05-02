@@ -120,15 +120,19 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
                 return MessageFormat.format("{0}.{1}", obj, m);
             }
         } else {  // with argument(s)
-            String argsString = "";
+            StringBuilder builder = new StringBuilder();
+            boolean first = true;
             for (String arg : args) {
-                argsString += arg + ", ";
+                if (!first) {
+                    builder.append(", ");
+                }
+                first = false;
+                builder.append(arg);
             }
-            argsString = argsString.substring(0, argsString.length()-2);
             if (obj == null || obj.length() == 0) {
-                return MessageFormat.format("{0}({1})", m, argsString); //top level method
+                return MessageFormat.format("{0}({1})", m, builder.toString()); //top level method
             } else {
-                return MessageFormat.format("{0}.{1}({2})", obj, m, argsString);
+                return MessageFormat.format("{0}.{1}({2})", obj, m, builder.toString());
             }
         }
     }

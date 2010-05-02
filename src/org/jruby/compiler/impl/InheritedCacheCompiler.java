@@ -45,7 +45,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
     Map<String, Integer> stringIndices = new HashMap<String, Integer>();
-    Map<BigInteger, String> bigIntegers = new HashMap<BigInteger, String>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
@@ -432,7 +431,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();
 
         // generate call sites portion of descriptor
-        int callSiteCount = callSiteList.size();
+        int callSiteListSize = callSiteList.size();
         int otherCount = scopeCount
                 + inheritedSymbolCount
                 + inheritedFixnumCount
@@ -445,12 +444,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 + inheritedBlockCallbackCount
                 + inheritedMethodCount
                 + inheritedStringCount;
-        if (callSiteCount + otherCount != 0) {
+        if (callSiteListSize + otherCount != 0) {
             ensureRuntimeCacheInited(initMethod);
 
-            StringBuffer descriptor = new StringBuffer(callSiteCount * 5 + 12); // rough guess of total size
+            StringBuffer descriptor = new StringBuffer(callSiteListSize * 5 + 12); // rough guess of total size
 
-            for (int i = 0; i < callSiteCount; i++) {
+            for (int i = 0; i < callSiteListSize; i++) {
                 String name = callSiteList.get(i);
                 CallType callType = callTypeList.get(i);
                 

@@ -205,7 +205,6 @@ public class IntHashMap {
     private abstract class HashIterator implements Iterator {
 		Entry next; // next entry to return
 		int index; // current slot
-		Entry current; // current entry
 
 		HashIterator() {
 			Entry[] t = table;
@@ -213,7 +212,6 @@ public class IntHashMap {
 			Entry n = null;
 			if(count != 0) { // advance to first entry
 				while (i > 0 && (n = t[--i]) == null) {
-					;
 				}
 			}
 			next = n;
@@ -237,7 +235,7 @@ public class IntHashMap {
 			}
 			index = i;
 			next = n;
-			return current = e;
+			return e;
 		}
 
 		public void remove() {
@@ -292,6 +290,7 @@ public class IntHashMap {
 			return count;
 		}
 
+        @Override
 		public boolean contains(Object o) {
 			if(o instanceof Number) {
 				return containsKey(((Number)o).intValue());
@@ -299,10 +298,12 @@ public class IntHashMap {
 			return false;
 		}
 
+        @Override
 		public boolean remove(Object o) {
             throw new UnsupportedOperationException();
 		}
 
+        @Override
 		public void clear() {
 			IntHashMap.this.clear();
 		}
@@ -322,10 +323,12 @@ public class IntHashMap {
 			return count;
 		}
 
+        @Override
 		public boolean contains(Object o) {
 			return containsValue(o);
 		}
 
+        @Override
 		public void clear()	{
 			IntHashMap.this.clear();
 		}
@@ -341,6 +344,7 @@ public class IntHashMap {
 			return newEntryIterator();
 		}
 
+        @Override
 		public boolean contains(Object o) {
 			if (!(o instanceof Entry))
 			{
@@ -351,6 +355,7 @@ public class IntHashMap {
 			return candidate != null && candidate.equals(e);
 		}
 
+        @Override
 		public boolean remove(Object o)	{
             throw new UnsupportedOperationException();
 		}
@@ -359,6 +364,7 @@ public class IntHashMap {
 			return count;
 		}
 
+        @Override
 		public void clear() {
 			IntHashMap.this.clear();
 		}

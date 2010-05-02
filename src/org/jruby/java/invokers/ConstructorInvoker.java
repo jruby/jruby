@@ -14,8 +14,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConstructorInvoker extends RubyToJavaInvoker {
-    private Constructor[] ctors;
-    
     public ConstructorInvoker(RubyModule host, List<Constructor> ctors) {
         super(host, ctors.toArray(new Constructor[ctors.size()]));
 

@@ -28,8 +28,6 @@
 
 package org.jruby.libraries;
 
-import java.io.IOException;
-
 import java.util.WeakHashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;

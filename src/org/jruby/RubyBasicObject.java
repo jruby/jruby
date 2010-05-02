@@ -135,7 +135,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @see org.jruby.runtime.ObjectAllocator
      */
-    public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBasicObject(runtime, klass);
         }
@@ -1131,14 +1131,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return null;
     }
 
-    public synchronized void setVariable(int index, Object value) {
+    public void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
         if (index < 0) return;
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
     }
 
-    private synchronized void setObjectId(int index, long value) {
+    private void setObjectId(int index, long value) {
         if (index < 0) return;
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;

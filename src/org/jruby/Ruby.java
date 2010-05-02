@@ -45,8 +45,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,7 +134,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
-import org.jruby.runtime.CallBlock;
 import org.jruby.threading.DaemonThreadFactory;
 
 /**
@@ -1100,7 +1097,7 @@ public final class Ruby {
         boolean oneNine = is1_9();
         // Bootstrap the top of the hierarchy
         if (oneNine) {
-            basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.OBJECT_ALLOCATOR);
+            basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.BASICOBJECT_ALLOCATOR);
             objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
         } else {
             objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
@@ -3351,19 +3348,6 @@ public final class Ruby {
 
     public ObjectSpace getObjectSpace() {
         return objectSpace;
-    }
-
-    private class WeakDescriptorReference extends WeakReference {
-        private int fileno;
-
-        public WeakDescriptorReference(ChannelDescriptor descriptor, ReferenceQueue queue) {
-            super(descriptor, queue);
-            this.fileno = descriptor.getFileno();
-        }
-
-        public int getFileno() {
-            return fileno;
-        }
     }
 
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {

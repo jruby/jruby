@@ -918,9 +918,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
     
     public void interrupt() {
-        Selector selector = currentSelector;
-        if (selector != null) {
-            selector.wakeup();
+        Selector activeSelector = currentSelector;
+        if (activeSelector != null) {
+            activeSelector.wakeup();
         }
         BlockingIO.Condition iowait = blockingIO;
         if (iowait != null) {
@@ -1029,6 +1029,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return hash;
     }
 
+    @Override
     public String toString() {
         return threadImpl.toString();
     }

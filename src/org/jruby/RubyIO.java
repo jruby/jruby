@@ -121,7 +121,7 @@ public class RubyIO extends RubyObject {
     }
     
     // FIXME can't use static; would interfere with other runtimes in the same JVM
-    protected static AtomicInteger filenoIndex = new AtomicInteger(2);
+    protected static final AtomicInteger filenoIndex = new AtomicInteger(2);
     
     public static int getNewFileno() {
         return filenoIndex.incrementAndGet();
@@ -637,7 +637,7 @@ public class RubyIO extends RubyObject {
         return getSeparatorFromArgs(runtime, args, 0);
     }
 
-    public IRubyObject getline(Ruby runtime, ByteList separator, ByteListCache cache) {
+    private IRubyObject getline(Ruby runtime, ByteList separator, ByteListCache cache) {
         return getline(runtime, separator, -1, cache);
     }
 
@@ -653,11 +653,12 @@ public class RubyIO extends RubyObject {
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         return getline(runtime, separator, limit, null);
     }
+    
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      *
      */
-    public IRubyObject getline(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
+    private IRubyObject getline(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
 
@@ -805,7 +806,7 @@ public class RubyIO extends RubyObject {
         return vendor.startsWith("Apple") && e.getMessage().equals(msgEINTR);
     }
     
-    public IRubyObject getlineFast(Ruby runtime, int delim, ByteListCache cache) throws IOException, BadDescriptorException {
+    private IRubyObject getlineFast(Ruby runtime, int delim, ByteListCache cache) throws IOException, BadDescriptorException {
         Stream readStream = openFile.getMainStream();
         int c = -1;
 
@@ -1331,7 +1332,7 @@ public class RubyIO extends RubyObject {
                     key.interestOps(key.interestOps()|real_ops);
                 }
 
-                while(selector.select() == 0);
+                while(selector.select() == 0) {}
 
                 for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
                     SelectionKey skey = (SelectionKey) i.next();

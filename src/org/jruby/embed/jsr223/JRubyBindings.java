@@ -138,10 +138,9 @@ public class JRubyBindings implements Bindings {
         if (t == null) {
             throw new NullPointerException("map is null");
         }
-        Set set = t.keySet();
-        for (Object key : set) {
-            Object value = t.get(key);
-            put((String)key, value);
+        Set<Map.Entry> set = t.entrySet();
+        for (Map.Entry entry : set) {
+            put((String)entry.getKey(), entry.getValue());
         }
     }
 

@@ -32,7 +32,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * Implementation of the Random class.
@@ -81,7 +80,7 @@ public class RubyRandom extends RubyObject {
             seedLong = RubyNumeric.num2long(seed);
         } else if (arg instanceof RubyBignum) {
             seed = arg;
-            seedLong = new Double(RubyBignum.big2dbl((RubyBignum)arg)).longValue();
+            seedLong = (long)RubyBignum.big2dbl((RubyBignum)arg);
         } else {
             seed = arg.convertToInteger();
             seedLong = RubyNumeric.num2long(seed);
@@ -146,12 +145,12 @@ public class RubyRandom extends RubyObject {
         } else { // OTHERWISE
             int max = 0;
             if (arg instanceof RubyBignum) {
-                max = new Double(RubyBignum.big2dbl((RubyBignum)arg)).intValue();
+                max = (int)RubyBignum.big2dbl((RubyBignum)arg);
             } else {
                 if (arg.respondsTo("to_i")) {
                     arg = arg.callMethod(context, "to_i");
                 }
-                max = new Long(RubyNumeric.num2long(arg)).intValue();
+                max = (int)RubyNumeric.num2long(arg);
             }
 
             if (max <= 0 && raiseArgError) {

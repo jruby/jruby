@@ -209,10 +209,18 @@ public class ThreadService {
     
     public void setCritical(boolean critical) {
         if (critical && !criticalLock.isHeldByCurrentThread()) {
-            criticalLock.lock();
+            acquireCritical();
         } else if (!critical && criticalLock.isHeldByCurrentThread()) {
-            criticalLock.unlock();
+            releaseCritical();
         }
+    }
+
+    private void acquireCritical() {
+        criticalLock.lock();
+    }
+
+    private void releaseCritical() {
+        criticalLock.unlock();
     }
     
     public boolean getCritical() {

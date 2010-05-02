@@ -297,7 +297,7 @@ public final class ThreadContext {
     public Continuation getActiveCatch(String tag) {
         for (int i = catchIndex; i >= 0; i--) {
             Continuation c = catchStack[i];
-            if (c.tag == tag) return c;
+            if (c.tag.equals(tag)) return c;
         }
         return null;
     }
@@ -655,7 +655,7 @@ public final class ThreadContext {
         RubyString traceLine;
         String fileName = frame.getFileName();
         if (fileName == null) fileName = "";
-        if (previousFrame.getMethodName() == UNKNOWN_NAME) {
+        if (previousFrame.getMethodName().equals(UNKNOWN_NAME)) {
             traceLine = RubyString.newString(runtime, fileName + ':' + (frame.getLineNumber()));
         } else {
             traceLine = RubyString.newString(runtime, fileName + ':' + (frame.getLineNumber()) + ":in `" + previousFrame.getMethodName() + '\'');

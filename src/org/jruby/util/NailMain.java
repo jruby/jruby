@@ -8,7 +8,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 
 public class NailMain {
-    public static ClassCache<Script> classCache;
+    public static final ClassCache<Script> classCache;
 
     static {
          classCache = new ClassCache<Script>(NailMain.class.getClassLoader(), RubyInstanceConfig.JIT_MAX_METHODS_LIMIT);

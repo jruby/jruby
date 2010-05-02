@@ -828,7 +828,7 @@ public class RubyFloat extends RubyNumeric {
         return result;
     }
 
-    private static final ByteList NAN_BYTELIST = new ByteList(new String("nan").getBytes());
-    private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList(new String("-inf").getBytes());
-    private static final ByteList INFINITY_BYTELIST = new ByteList(new String("inf").getBytes());
+    private static final ByteList NAN_BYTELIST = new ByteList("nan".getBytes());
+    private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList("-inf".getBytes());
+    private static final ByteList INFINITY_BYTELIST = new ByteList("inf".getBytes());
 }

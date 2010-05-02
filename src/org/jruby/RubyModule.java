@@ -52,7 +52,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -247,23 +246,17 @@ public class RubyModule extends RubyObject {
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
     // FIXME: synchronization is still wrong in CP code
     public synchronized void addClassProvider(ClassProvider provider) {
-        if (classProviders == null) {
-            List<ClassProvider> cp = Collections.synchronizedList(new ArrayList<ClassProvider>());
+        if (!classProviders.contains(provider)) {
+            Set<ClassProvider> cp = new HashSet<ClassProvider>(classProviders);
             cp.add(provider);
             classProviders = cp;
-        } else {
-            synchronized(classProviders) {
-                if (!classProviders.contains(provider)) {
-                    classProviders.add(provider);
-                }
-            }
         }
     }
 
-    public void removeClassProvider(ClassProvider provider) {
-        if (classProviders != null) {
-            classProviders.remove(provider);
-        }
+    public synchronized void removeClassProvider(ClassProvider provider) {
+        Set<ClassProvider> cp = new HashSet<ClassProvider>(classProviders);
+        cp.remove(provider);
+        classProviders = cp;
     }
 
     private void checkForCyclicInclude(RubyModule m) throws RaiseException {
@@ -273,28 +266,20 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
-        if (classProviders != null) {
-            synchronized(classProviders) {
-                RubyClass clazz;
-                for (ClassProvider classProvider: classProviders) {
-                    if ((clazz = classProvider.defineClassUnder(this, name, superClazz)) != null) {
-                        return clazz;
-                    }
-                }
+        RubyClass clazz;
+        for (ClassProvider classProvider: classProviders) {
+            if ((clazz = classProvider.defineClassUnder(this, name, superClazz)) != null) {
+                return clazz;
             }
         }
         return null;
     }
 
     private RubyModule searchProvidersForModule(String name) {
-        if (classProviders != null) {
-            synchronized(classProviders) {
-                RubyModule module;
-                for (ClassProvider classProvider: classProviders) {
-                    if ((module = classProvider.defineModuleUnder(this, name)) != null) {
-                        return module;
-                    }
-                }
+        RubyModule module;
+        for (ClassProvider classProvider: classProviders) {
+            if ((module = classProvider.defineModuleUnder(this, name)) != null) {
+                return module;
             }
         }
         return null;
@@ -326,10 +311,10 @@ public class RubyModule extends RubyObject {
     }
 
     public synchronized Map<String, DynamicMethod> getMethodsForWrite() {
-        Map<String, DynamicMethod> methods = this.methods;
-        return methods == Collections.EMPTY_MAP ?
+        Map<String, DynamicMethod> myMethods = this.methods;
+        return myMethods == Collections.EMPTY_MAP ?
             this.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1) :
-            methods;
+            myMethods;
     }
     
     // note that addMethod now does its own put, so any change made to
@@ -880,10 +865,10 @@ public class RubyModule extends RubyObject {
     }
 
     private final Map<String, CacheEntry> getCachedMethodsForWrite() {
-        Map<String, CacheEntry> cachedMethods = this.cachedMethods;
-        return cachedMethods == Collections.EMPTY_MAP ?
+        Map<String, CacheEntry> myCachedMethods = this.cachedMethods;
+        return myCachedMethods == Collections.EMPTY_MAP ?
             this.cachedMethods = new ConcurrentHashMap<String, CacheEntry>(0, 0.75f, 1) :
-            cachedMethods;
+            myCachedMethods;
     }
     
     private CacheEntry cacheHit(String name) {
@@ -902,13 +887,13 @@ public class RubyModule extends RubyObject {
         public abstract CacheEntry newCacheEntry(DynamicMethod method, Object token);
     }
 
-    protected static CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
+    protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
         public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
             return new CacheEntry(method, token);
         }
     };
 
-    protected static CacheEntryFactory SynchronizedCacheEntryFactory = new CacheEntryFactory() {
+    protected static final CacheEntryFactory SynchronizedCacheEntryFactory = new CacheEntryFactory() {
         public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
             return new CacheEntry(new SynchronizedDynamicMethod(method), token);
         }
@@ -3172,7 +3157,7 @@ public class RubyModule extends RubyObject {
 
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax.
-    private transient List<ClassProvider> classProviders;
+    private transient volatile Set<ClassProvider> classProviders = Collections.EMPTY_SET;
 
     private String bareName;
     private String fullName;

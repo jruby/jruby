@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import org.jruby.runtime.ThreadContext;
 
 /**
  * A Utility class to emulate blocking I/O operations on non-blocking channels.
@@ -189,7 +188,7 @@ public class BlockingIO {
         //
         // Synchronize and re-check to avoid creating more than one Selector per provider
         //
-        synchronized (selectors) {
+        synchronized (provider) {
             sel = selectors.get(provider);
             if (sel == null) {
                 sel = new IOSelector(provider);

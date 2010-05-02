@@ -538,12 +538,12 @@ public class RubyDateFormat extends DateFormat {
     }
 
 	private String formatWeekYear(int firstDayOfWeek) {
-            java.util.Calendar calendar = dt.toGregorianCalendar();
-            calendar.setFirstDayOfWeek(firstDayOfWeek);
-            calendar.setMinimalDaysInFirstWeek(7);
-            int value = calendar.get(java.util.Calendar.WEEK_OF_YEAR);
+            java.util.Calendar dtCalendar = dt.toGregorianCalendar();
+            dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
+            dtCalendar.setMinimalDaysInFirstWeek(7);
+            int value = dtCalendar.get(java.util.Calendar.WEEK_OF_YEAR);
             if ((value == 52 || value == 53)
-                    && (calendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+                    && (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
                 // MRI behavior: Week values are monotonous.
                 // So, weeks that effectively belong to previous year,
                 // will get the value of 0, not 52 or 53, as in Java.

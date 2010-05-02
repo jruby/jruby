@@ -94,23 +94,27 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         return adapter.convertToRubyString(obj);
     }
 
-    public synchronized IRubyObject setInstanceVariable(IRubyObject obj, String variableName, IRubyObject value) {
+    public IRubyObject setInstanceVariable(IRubyObject obj, String variableName, IRubyObject value) {
         BiVariableMap map = container.getVarMap();
-        if (map.containsKey(variableName)) {
-            BiVariable bv = map.getVariable(variableName);
-            bv.setRubyObject(value);
-        } else {
-            InstanceVariable iv = new InstanceVariable(obj, variableName, value);
-            map.update(variableName, iv);
+        synchronized (map) {
+            if (map.containsKey(variableName)) {
+                BiVariable bv = map.getVariable(variableName);
+                bv.setRubyObject(value);
+            } else {
+                InstanceVariable iv = new InstanceVariable(obj, variableName, value);
+                map.update(variableName, iv);
+            }
         }
         return obj.getInstanceVariables().setInstanceVariable(variableName, value);
     }
 
     public IRubyObject getInstanceVariable(IRubyObject obj, String variableName) {
         BiVariableMap map = container.getVarMap();
-        if (map.containsKey(variableName)) {
-            BiVariable bv = map.getVariable(variableName);
-            return bv.getRubyObject();
+        synchronized (map) {
+            if (map.containsKey(variableName)) {
+                BiVariable bv = map.getVariable(variableName);
+                return bv.getRubyObject();
+            }
         }
         return null;
     }

@@ -52,7 +52,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.CompiledBlockCallback19;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -236,6 +235,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      *
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
+    @Override
     public byte[] getCompiledMethodOffline(
             String method, String className, String invokerPath, Arity arity,
             StaticScope scope, CallConfiguration callConfig, String filename, int line) {
@@ -509,7 +509,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return endCallOffline(cw,mv);
     }
     
-    private class DescriptorInfo {
+    private static class DescriptorInfo {
         private int min;
         private int max;
         private boolean frame;

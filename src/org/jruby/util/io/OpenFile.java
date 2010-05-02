@@ -35,7 +35,7 @@ public class OpenFile {
         return mainStream;
     }
 
-    public synchronized void setMainStream(Stream mainStream) {
+    public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
     }
 
@@ -43,7 +43,7 @@ public class OpenFile {
         return pipeStream;
     }
 
-    public synchronized void setPipeStream(Stream pipeStream) {
+    public void setPipeStream(Stream pipeStream) {
         this.pipeStream = pipeStream;
     }
 

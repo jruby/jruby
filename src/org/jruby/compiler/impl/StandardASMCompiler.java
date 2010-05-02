@@ -150,7 +150,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private SkinnyMethodAdapter clinitMethod;
     private int methodIndex = 0;
     private int innerIndex = 0;
-    int fieldIndex = 0;
     private int rescueNumber = 1;
     private int ensureNumber = 1;
     StaticScope topLevelScope;
@@ -257,8 +256,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         FileOutputStream out = new FileOutputStream(new File(pathfile, filename));
 
-        out.write(bytecode);
-        out.close();
+        try {
+            out.write(bytecode);
+        } finally {
+            out.close();
+        }
     }
 
     public static class InvokerDescriptor {
