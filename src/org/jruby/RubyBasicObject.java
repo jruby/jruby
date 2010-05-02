@@ -1088,7 +1088,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void addFinalizer(IRubyObject f) {
         Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
         if (finalizer == null) {
-            finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
+            finalizer = new Finalizer((RubyFixnum)id());
             fastSetInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
@@ -1514,13 +1514,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Class that keeps track of the finalizers for the object under
      * operation.
      */
-    public class Finalizer implements Finalizable {
-        private long id;
+    public static class Finalizer implements Finalizable {
+        private RubyFixnum id;
         private IRubyObject firstFinalizer;
         private List<IRubyObject> finalizers;
         private AtomicBoolean finalized;
 
-        public Finalizer(long id) {
+        public Finalizer(RubyFixnum id) {
             this.id = id;
             this.finalized = new AtomicBoolean(false);
         }
@@ -1554,7 +1554,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         private void callFinalizer(IRubyObject finalizer) {
             RuntimeHelpers.invoke(
                     finalizer.getRuntime().getCurrentContext(),
-                    finalizer, "call", RubyBasicObject.this.id());
+                    finalizer, "call", id);
         }
     }
 }
