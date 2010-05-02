@@ -1340,11 +1340,12 @@ public final class Ruby {
 
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
-                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator()); 
+                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator());
                 encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
                 invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
                 undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
+                fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
             }
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
@@ -1453,8 +1454,9 @@ public final class Ruby {
         if (is1_9()) {
             addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
             addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
+            addLazyBuiltin("fiber.rb", "fiber", "org.jruby.libraries.FiberLibrary$ExtLibrary");
         }
-        
+
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.libraries.NetProtocolBufferedIOLibrary");
         }
@@ -2141,6 +2143,10 @@ public final class Ruby {
 
     public RubyClass getConverterNotFoundError() {
         return converterNotFoundError;
+    }
+
+    public RubyClass getFiberError() {
+        return fiberError;
     }
 
     public RubyClass getUndefinedConversionError() {
@@ -3300,6 +3306,10 @@ public final class Ruby {
         return newRaiseException(getConverterNotFoundError(), message);
     }
 
+    public RaiseException newFiberError(String message) {
+        return newRaiseException(getFiberError(), message);
+    }
+
     public RaiseException newUndefinedConversionError(String message) {
         return newRaiseException(getUndefinedConversionError(), message);
     }
@@ -3795,7 +3805,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, randomClass;
+            invalidByteSequenceError, fiberError, randomClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and
