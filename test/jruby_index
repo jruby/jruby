@@ -122,3 +122,4 @@ test_weak_drb_id_conv
 test_kernel
 test_dir_with_plusses
 test_jar_file
+test_thread_service

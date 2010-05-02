@@ -33,6 +33,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -90,6 +91,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // Error info is per-thread
     private IRubyObject errorInfo;
+
+    // weak reference to associated ThreadContext
+    private volatile WeakReference<ThreadContext> contextRef;
     
     private static final boolean DEBUG = false;
 
@@ -153,6 +157,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject setErrorInfo(IRubyObject errorInfo) {
         this.errorInfo = errorInfo;
         return errorInfo;
+    }
+
+    public void setContext(ThreadContext context) {
+        this.contextRef = new WeakReference<ThreadContext>(context);
+    }
+
+    public ThreadContext getContext() {
+        return contextRef.get();
     }
     
     /**

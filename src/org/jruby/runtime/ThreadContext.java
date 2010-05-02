@@ -255,6 +255,11 @@ public final class ThreadContext {
     
     public void setThread(RubyThread thread) {
         this.thread = thread;
+
+        // associate the thread with this context, unless we're clearing the reference
+        if (thread != null) {
+            thread.setContext(this);
+        }
     }
     
     public Fiber getFiber() {
