@@ -816,25 +816,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
         String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
-        String mnamePath = typePathString + "BlockCallback$" + method + "xx1";
         synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    ClassWriter cw = createBlockCtor(mnamePath, typeClass);
-                    SkinnyMethodAdapter mv = startBlockCall(cw);
-                    mv.line(-1);
-                    mv.aload(0);
-                    mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
-                    mv.aloadMany(1, 2, 3, 4);
-                    mv.invokestatic(typePathString, method, sig(
-                            IRubyObject.class, "L" + typePathString + ";", ThreadContext.class,
-                                    IRubyObject.class, IRubyObject.class, Block.class));
-                    mv.areturn();
-
-                    mv.visitMaxs(2, 3);
-                    c = endCall(cw, mv, mname);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("no generated handle in classloader for: " + mname);
+                    }
+                    byte[] bytes = getBlockCallbackOffline(method, typePathString);
+                    c = endCallWithBytes(bytes, mname);
+                } else {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("found generated handle in classloader for: " + mname);
+                    }
                 }
+                
                 CompiledBlockCallback ic = (CompiledBlockCallback) c.getConstructor(Object.class).newInstance(scriptObject);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -846,29 +842,43 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    @Override
+    public byte[] getBlockCallbackOffline(String method, String classname) {
+        String mnamePath = classname + "BlockCallback$" + method + "xx1";
+        ClassWriter cw = createBlockCtor(mnamePath, classname);
+        SkinnyMethodAdapter mv = startBlockCall(cw);
+        mv.line(-1);
+        mv.aload(0);
+        mv.getfield(mnamePath, "$scriptObject", "L" + classname + ";");
+        mv.aloadMany(1, 2, 3, 4);
+        mv.invokestatic(classname, method, sig(
+                IRubyObject.class, "L" + classname + ";", ThreadContext.class,
+                        IRubyObject.class, IRubyObject.class, Block.class));
+        mv.areturn();
+
+        mv.visitMaxs(2, 3);
+        return endCallOffline(cw, mv);
+    }
+
     public CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
         String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
-        String mnamePath = typePathString + "BlockCallback$" + method + "xx1";
         synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
                 if (c == null) {
-                    ClassWriter cw = createBlockCtor19(mnamePath, typeClass);
-                    SkinnyMethodAdapter mv = startBlockCall19(cw);
-                    mv.line(-1);
-                    mv.aload(0);
-                    mv.getfield(mnamePath, "$scriptObject", ci(typeClass));
-                    mv.aloadMany(1, 2, 3, 4);
-                    mv.invokestatic(typePathString, method, sig(
-                            IRubyObject.class, "L" + typePathString + ";", ThreadContext.class,
-                                    IRubyObject.class, IRubyObject[].class, Block.class));
-                    mv.areturn();
-
-                    mv.visitMaxs(2, 3);
-                    c = endCall(cw, mv, mname);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("no generated handle in classloader for: " + mname);
+                    }
+                    byte[] bytes = getBlockCallback19Offline(method, typePathString);
+                    c = endClassWithBytes(bytes, mname);
+                } else {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("found generated handle in classloader for: " + mname);
+                    }
                 }
+                
                 CompiledBlockCallback19 ic = (CompiledBlockCallback19) c.getConstructor(Object.class).newInstance(scriptObject);
                 return ic;
             } catch (IllegalArgumentException e) {
@@ -878,6 +888,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 throw new IllegalArgumentException(e.getMessage());
             }
         }
+    }
+
+    @Override
+    public byte[] getBlockCallback19Offline(String method, String classname) {
+        String mnamePath = classname + "BlockCallback$" + method + "xx1";
+        ClassWriter cw = createBlockCtor19(mnamePath, classname);
+        SkinnyMethodAdapter mv = startBlockCall19(cw);
+        mv.line(-1);
+        mv.aload(0);
+        mv.getfield(mnamePath, "$scriptObject", "L" + classname + ";");
+        mv.aloadMany(1, 2, 3, 4);
+        mv.invokestatic(classname, method, sig(
+                IRubyObject.class, "L" + classname + ";", ThreadContext.class,
+                        IRubyObject.class, IRubyObject[].class, Block.class));
+        mv.areturn();
+
+        mv.visitMaxs(2, 3);
+        return endCallOffline(cw, mv);
     }
 
     private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
@@ -898,36 +926,38 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return mv;
     }
 
-    private ClassWriter createBlockCtor(String namePath, Class fieldClass) throws Exception {
+    private ClassWriter createBlockCtor(String namePath, String classname) {
+        String ciClassname = "L" + classname + ";";
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(CompiledBlockCallback.class), null);
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
         mv.line(-1);
         mv.aload(0);
         mv.invokespecial(p(CompiledBlockCallback.class), "<init>", sig(void.class));
         mv.aloadMany(0, 1);
-        mv.checkcast(p(fieldClass));
-        mv.putfield(namePath, "$scriptObject", ci(fieldClass));
+        mv.checkcast(classname);
+        mv.putfield(namePath, "$scriptObject", ciClassname);
         mv.voidreturn();
         mv.end();
 
         return cw;
     }
 
-    private ClassWriter createBlockCtor19(String namePath, Class fieldClass) throws Exception {
+    private ClassWriter createBlockCtor19(String namePath, String classname) {
+        String ciClassname = "L" + classname + ";";
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {p(CompiledBlockCallback19.class)});
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ci(fieldClass), null, null);
+        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null));
         mv.start();
         mv.line(-1);
         mv.aload(0);
         mv.invokespecial(p(Object.class), "<init>", sig(void.class));
         mv.aloadMany(0, 1);
-        mv.checkcast(p(fieldClass));
-        mv.putfield(namePath, "$scriptObject", ci(fieldClass));
+        mv.checkcast(classname);
+        mv.putfield(namePath, "$scriptObject", ciClassname);
         mv.voidreturn();
         mv.end();
 

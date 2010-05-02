@@ -160,6 +160,18 @@ public class RuntimeHelpers {
 
         return factory.getBlockCallback19(closureMethod, scriptObject);
     }
+
+    public static byte[] createBlockCallbackOffline(String classPath, String closureMethod) {
+        MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
+
+        return factory.getBlockCallbackOffline(closureMethod, classPath);
+    }
+
+    public static byte[] createBlockCallback19Offline(String classPath, String closureMethod) {
+        MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
+
+        return factory.getBlockCallback19Offline(closureMethod, classPath);
+    }
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
