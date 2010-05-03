@@ -186,8 +186,10 @@ class UNIXSocketTests < Test::Unit::TestCase
     end
     
     def test_unix_socket_raises_exception_on_path_that_cant_exist 
+      path = "a"
+      File.unlink(path) if File.exist?(path)
       assert_raises(Errno::ENOENT) do 
-        UNIXSocket.new("a")
+        UNIXSocket.new(path)
       end
     end
     
