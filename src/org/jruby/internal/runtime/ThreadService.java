@@ -54,6 +54,8 @@ import org.jruby.runtime.ThreadContext;
  * <li>ThreadContext, which contains frames, scopes, etc needed for Ruby execution</li>
  * <li>RubyThread, the Ruby object representation of a thread's state</li>
  * <li>RubyThreadGroup, which represents a group of Ruby threads</li>
+ * <li>NativeThread, used to wrap native Java threads</li>
+ * <li>FutureThread, used to wrap java.util.concurrent.Future</li>
  * </ul>
  *
  * In order to ensure these structures do not linger after the thread has terminated,
@@ -67,15 +69,15 @@ import org.jruby.runtime.ThreadContext;
  * quickly when a Java thread leaves Ruby space completely, which would otherwise
  * result in a lot of ThreadContext object churn.</li>
  * <li>ThreadService maintains a weak map from the actual java.lang.Thread (or
- * java.util.concurrent.Future) instance to the associated RubyThread. @see org.jruby.internal.runtime.RubyThreadMap.
- * Because this map is weak-valued rather than weak-keyed, it may hold Thread/Future
- * references beyond their useful lifetime, but they will get cleaned when the
- * map is accessed again.</li>
+ * java.util.concurrent.Future) instance to the associated RubyThread. The map
+ * is weak-keyyed, so it will not prevent the collection of the associated
+ * Thread or Future. The associated RubyThread will remain alive as long as the
+ * Thread/Future and this ThreadService instance are both alive, maintaining
+ * the external thread's identity in Ruby-land.</li>
  * <li>RubyThread has a weak reference to its to ThreadContext.</li>
  * <li>ThreadContext has a hard reference to its associated RubyThread. Ignoring other
- * resources, this will usually mean RubyThread is softly reachable via the
- * soft threadlocal reference to ThreadContext in ThreadService, but weakly
- * referenced otherwise.</li>
+ * references, this will usually mean RubyThread is softly reachable via the
+ * soft threadlocal reference to ThreadContext in ThreadService.</li>
  * <li>RubyThreadGroup has hard references to threads it owns. The thread removes
  * itself on termination (if it's a Ruby thread) or when the ThreadContext is
  * collected (as in the case of "adopted" Java threads.</li>
@@ -126,10 +128,10 @@ public class ThreadService {
     private ThreadGroup rubyThreadGroup;
 
     /**
-     * A map from a Java Thread or Future to its RubyThread instance. This map
-     * is weak-valued, so it will not prevent collection of the RubyThread. It
-     * lazily cleans out dead entries, so it may hold references to Threads or
-     * Futures longer then their useful lifetime.
+     * A map from a Java Thread or Future to its RubyThread instance. This is
+     * a synchronized WeakHashMap, so it weakly references its keys; this means
+     * that when the Thread/Future goes away, eventually its entry in this map
+     * will follow.
      */
     private final Map<Object, RubyThread> rubyThreadMap;
     
