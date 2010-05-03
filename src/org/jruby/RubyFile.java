@@ -54,6 +54,7 @@ import java.util.zip.ZipFile;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ext.posix.FileStat;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -1655,6 +1656,22 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newFixnum(args.length);
+    }
+
+    @JRubyMethod(name = "size", backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject size(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) {
+            flush();
+        }
+
+        FileStat stat = runtime.getPosix().fstat(
+                getOpenFileChecked().getMainStream().getDescriptor().getFileDescriptor());
+        if (stat == null) {
+            throw runtime.newErrnoEACCESError(path);
+        }
+
+        return runtime.newFixnum(stat.st_size());
     }
 
     public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {

@@ -1,11 +1,4 @@
 fails:File.size? accepts an object that has a #to_path method
 fails:File.size accepts an object that has a #to_path method
-fails:File#size is an instance method
-fails:File#size returns the file's size as a Fixnum
-fails:File#size returns the file's size in bytes
-fails:File#size returns the cached size of the file if subsequently deleted
-fails:File#size returns the file's current size even if modified
-fails:File#size returns 0 for an empty file
-fails:File#size follows symlinks if necessary
 fails(JRUBY-4667):File.size? accepts a String-like (to_str) parameter
 fails(JRUBY-4667):File.size accepts a String-like (to_str) parameter
