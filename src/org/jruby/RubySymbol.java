@@ -406,25 +406,12 @@ public class RubySymbol extends RubyObject {
         }
 
         public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block blk) {
-            IRubyObject[] currentArgs = args;
-            switch(currentArgs.length) {
-            case 0: throw symbol.getRuntime().newArgumentError("no receiver given");
-            case 1: {
-                if((currentArgs[0] instanceof RubyArray) && ((RubyArray)currentArgs[0]).getLength() != 0) {
-                    // This is needed to unpack stuff
-                    currentArgs = ((RubyArray)currentArgs[0]).toJavaArrayMaybeUnsafe();
-                    IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
-                    System.arraycopy(currentArgs, 1, args2, 0, args2.length);
-                    return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol, args2);
-                } else {
-                    return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol);
-                }
-            }
-            default: {
-                IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
-                System.arraycopy(currentArgs, 1, args2, 0, args2.length);
-                return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol, args2);
-            }
+            if (args.length == 0) {
+                throw symbol.getRuntime().newArgumentError("no receiver given");
+            } else {
+                IRubyObject[] args2 = new IRubyObject[args.length-1];
+                System.arraycopy(args, 1, args2, 0, args2.length);
+                return RuntimeHelpers.invoke(ctx, args[0], symbol.symbol, args2);
             }
         }
     }
