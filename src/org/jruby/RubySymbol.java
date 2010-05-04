@@ -46,8 +46,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -426,14 +428,15 @@ public class RubySymbol extends RubyObject {
             }
         }
     }
-    /*
-    @JRubyMethod
+    
+    @JRubyMethod(frame = true)
     public IRubyObject to_proc() {
+        Block block = CallBlock.newCallClosure(this, getRuntime().getSymbol(), Arity.noArguments(), new ToProcCallback(this), getRuntime().getCurrentContext());
         return RubyProc.newProc(getRuntime(),
-                                CallBlock.newCallClosure(this, getRuntime().getSymbol(), Arity.noArguments(), new ToProcCallback(this), getRuntime().getCurrentContext()),
+                                block,
                                 Block.Type.PROC);
     }
-    */
+    
     private static boolean isIdentStart(char c) {
         return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z')
                 || c == '_');

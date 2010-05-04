@@ -1488,7 +1488,6 @@ public final class Ruby {
             loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
         }
 
-        getLoadService().require("builtin/core_ext/symbol");
         getLoadService().require("enumerator");
     }
 
