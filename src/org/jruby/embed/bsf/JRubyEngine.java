@@ -73,7 +73,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class JRubyEngine extends BSFEngineImpl {
-    private static final String bsfProps = "org/jruby/embed/bsf/BsfJRubyEngine.properties";
     private ScriptingContainer container;
 
     @Override
@@ -148,7 +147,7 @@ public class JRubyEngine extends BSFEngineImpl {
         super.initialize(manager, language, someDeclaredBeans);
         LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
         LocalVariableBehavior behavior = LocalVariableBehavior.BSF;
-        container = new ScriptingContainer(scope, behavior, bsfProps);
+        container = new ScriptingContainer(scope, behavior);
         SystemPropertyCatcher.setConfiguration(container);
         //container.getProvider().setLoadPaths(getClassPath(manager));
         if (SystemPropertyCatcher.isRuby19(language)) {

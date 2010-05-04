@@ -30,17 +30,16 @@
 package org.jruby.embed;
 
 import org.jruby.embed.internal.LocalContextProvider;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.Enumeration;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PropertyResourceBundle;
 import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.Ruby;
@@ -159,9 +158,8 @@ import org.jruby.util.KCode;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
-    private static final String defaultProps = "org/jruby/embed/jruby-embed.properties";
-    //private final Map<String, String[]> properties;
     private PropertyReader propertyReader = null;
+    private Map basicProperties = null;
     private LocalContextProvider provider = null;
     private EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
     private EmbedRubyObjectAdapter objectAdapter = new EmbedRubyObjectAdapterImpl(this);
@@ -171,19 +169,19 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Constructs a ScriptingContainer with a default values.
      */
     public ScriptingContainer() {
-        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT, defaultProps);
+        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT);
     }
 
     public ScriptingContainer(LocalContextScope scope) {
-        this(scope, LocalVariableBehavior.TRANSIENT, defaultProps);
+        this(scope, LocalVariableBehavior.TRANSIENT);
     }
 
     public ScriptingContainer(LocalVariableBehavior behavior) {
-        this(LocalContextScope.SINGLETON, behavior, defaultProps);
+        this(LocalContextScope.SINGLETON, behavior);
     }
 
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
-        this(scope, behavior, defaultProps);
+        this(scope, behavior, null);
     }
 
     /**
@@ -212,6 +210,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
             ex.printStackTrace((PrintWriter)w);
             throw new RuntimeException(ex);
         }
+        setBasicProperties();
     }
 
     private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior) {
@@ -226,25 +225,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         }
     }
 
-    private void prepareProperties(String propertyname, Map<String, String[]> map) {
-        try {
-            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            PropertyResourceBundle resource =
-                    new PropertyResourceBundle(classloader.getResourceAsStream(propertyname));
-            Enumeration<String> keys = resource.getKeys();
-            while (keys.hasMoreElements()) {
-                String key = keys.nextElement();
-                String[] values = resource.getString(key).split(",\\s*");
-                for (int i = 0; i < values.length; i++) {
-                    values[i] = values[i].trim();
-                }
-                map.put(key, values);
-            }
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(ex);
-        }
-    }
-
     private void initConfig() throws URISyntaxException {
         List<String> paths = SystemPropertyCatcher.findLoadPaths();
         provider.getRubyInstanceConfig().setLoadPaths(paths);
@@ -254,6 +234,15 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         }
         provider.getRubyInstanceConfig().setCompileMode(CompileMode.OFF);
         provider.getRubyInstanceConfig().setScriptFileName("<script>");
+    }
+
+    // maybe these properties are not used at all?
+    private void setBasicProperties() {
+        basicProperties = new HashMap();
+        basicProperties.put("container.ids", new String[]{"ruby", "jruby"});
+        basicProperties.put("language.extension", new String[]{"rb"});
+        basicProperties.put("language.name", new String[]{"ruby"});
+        basicProperties.put("language.mimetypes", new String[]{"application/x-ruby"});
     }
 
     /**
@@ -941,7 +930,13 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return values associated to the key
      */
     public String[] getProperty(String key) {
-        return propertyReader.getProperty(key);
+        if (basicProperties.containsKey(key)) {
+            return (String[]) basicProperties.get(key);
+        } else if (propertyReader != null) {
+            return propertyReader.getProperty(key);
+        } else {
+            return null;
+        }
     }
 
     /**

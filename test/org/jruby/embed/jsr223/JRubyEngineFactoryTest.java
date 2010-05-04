@@ -110,7 +110,7 @@ public class JRubyEngineFactoryTest {
     public void testGetEngineVersion() {
         logger1.info("getEngineVersion");
         JRubyEngineFactory instance = new JRubyEngineFactory();
-        String expResult = "0.2.1";
+        String expResult = org.jruby.runtime.Constants.VERSION;
         String result = instance.getEngineVersion();
         assertEquals(expResult, result);
 
@@ -242,7 +242,7 @@ public class JRubyEngineFactoryTest {
         assertEquals(expResult, result);
 
         key = ScriptEngine.ENGINE_VERSION;
-        expResult = "0.2.1";
+        expResult = org.jruby.runtime.Constants.VERSION;
         result = instance.getParameter(key);
         assertEquals(expResult, result);
 
