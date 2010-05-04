@@ -155,9 +155,9 @@
         <format property="build.date" pattern="yyyy-MM-dd"/>
     </tstamp>
 
-    <copy todir="${jruby.classes.dir}" overwrite="true">
+    <copy todir="${basedir}/src_gen" overwrite="true">
         <fileset dir="${src.dir}">
-            <include name="**/*.properties"/>
+            <include name="org/jruby/runtime/Constants.java"/>
         </fileset>
         <filterset>
             <filter token="version.ruby.major" value="${version.ruby.major}"/>
@@ -173,6 +173,12 @@
             <filter token="os.arch" value="${os.arch}"/>
         </filterset>
     </copy>
+
+    <antcall target="_update_scm_revision_"/>
+
+    <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${basedir}/src_gen"
+        includes="org/jruby/runtime/Constants.java" source="${javac.version}"
+        target="${javac.version}" deprecation="true" encoding="UTF-8"/>
   </target>
 
   <target name="compile-annotation-binder">
@@ -191,9 +197,11 @@
 
   <target name="compile-jruby" depends="prepare-resources, compile-annotation-binder, check-for-optional-packages">
     <!-- Generate binding logic ahead of time -->
-    <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
+    <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}"
+        debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
       <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
+      <exclude name="org/jruby/runtime/Constants.java"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
@@ -262,7 +270,7 @@
       <echo message="Using '${ruby.executable}' to calculate revision"/>
       <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" dir="${base.dir}" executable="${ruby.executable}">
           <arg value="${base.dir}/tool/snapshot.rb"/>
-          <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
+          <arg value="${base.dir}/src_gen/org/jruby/runtime/Constants.java"/>
       </exec>
       <condition property="ruby.failed">
           <istrue value="${ruby.command.failed}"/>
@@ -278,7 +286,7 @@
         <sysproperty key="jruby.home" value="${jruby.home}"/>
         <jvmarg value="${run.jvm.model}"/>
         <arg value="${base.dir}/tool/snapshot.rb"/>
-        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
+        <arg value="${base.dir}/src_gen/org/jruby/runtime/Constants.java"/>
       </java>
   </target>
 
@@ -288,8 +296,6 @@
   </target>
 
   <target name="jar-jruby" depends="generate-method-classes, generate-unsafe, unzip-native-libs" unless="jar-up-to-date">
-      <antcall target="_update_scm_revision_"/>
-
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
@@ -349,8 +355,6 @@
   </target>
 
   <target name="jar-jruby-light" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
-      <antcall target="_update_scm_revision_"/>
-
       <jar destfile="${lib.dir}/jruby-light.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}">
             <exclude name="**/*$Populator.class"/>
@@ -379,8 +383,6 @@
   </target>
 
   <target name="jar-jruby-dist" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
-      <antcall target="_update_scm_revision_"/>
-
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>

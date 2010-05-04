@@ -30,73 +30,28 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public final class Constants {
-    private static final Properties properties = new Properties();
     public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
     public static final int MARSHAL_MINOR = 8;
 
-    public static final String RUBY_MAJOR_VERSION;
-    public static final String RUBY_VERSION;
-    public static final int    RUBY_PATCHLEVEL;
-    public static final String RUBY1_9_MAJOR_VERSION;
-    public static final String RUBY1_9_VERSION;
-    public static final int    RUBY1_9_PATCHLEVEL;
+    public static final String RUBY_MAJOR_VERSION = "@version.ruby.major@";
+    public static final String RUBY_VERSION = "@version.ruby@";
+    public static final int    RUBY_PATCHLEVEL = Integer.parseInt("@version.ruby.patchlevel@");
+    public static final String RUBY1_9_MAJOR_VERSION = "@version.ruby1_9.major@";
+    public static final String RUBY1_9_VERSION = "@version.ruby1_9@";
+    public static final int    RUBY1_9_PATCHLEVEL = Integer.parseInt("@version.ruby1_9.patchlevel@");
 
-    public static final String COMPILE_DATE;
-    public static final String VERSION;
-    public static final String BUILD;
-    public static final String TARGET;
-    public static final String REVISION;
+    public static final String COMPILE_DATE = "@build.date@";
+    public static final String VERSION = "@version.jruby@";
+    public static final String BUILD = "java@java.specification.version@";
+    public static final String TARGET = "java@javac.version@";
+    public static final String REVISION = "0000";
     public static final String ENGINE = "jruby";
 
+    @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
-
-    static {
-        InputStream stream = null;
-        try {
-            stream = Constants.class.getResourceAsStream(JRUBY_PROPERTIES);
-            if (stream == null) {
-                throw new RuntimeException("Resource not found: " + JRUBY_PROPERTIES);
-            }
-            properties.load(stream);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    // silently ignore
-                }
-            }
-        }
-
-        RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
-        RUBY_VERSION = properties.getProperty("version.ruby");
-        RUBY_PATCHLEVEL = Integer.parseInt(properties.getProperty("version.ruby.patchlevel"));
-
-        RUBY1_9_MAJOR_VERSION = properties.getProperty("version.ruby1_9.major");
-        RUBY1_9_VERSION = properties.getProperty("version.ruby1_9");
-        RUBY1_9_PATCHLEVEL = Integer.parseInt(properties.getProperty("version.ruby1_9.patchlevel"));
-        COMPILE_DATE = properties.getProperty("release.date");
-        VERSION = properties.getProperty("version.jruby");
-        BUILD = properties.getProperty("build.jruby");
-        TARGET = properties.getProperty("target.jruby");
-        Matcher matcher = Pattern.compile("\\$Revision: (.*?) \\$").matcher(properties.getProperty("revision.jruby"));
-        if (matcher.find()) {
-            REVISION = matcher.group(1);
-        } else {
-            REVISION = "0000";
-        }
-    }
 
     private Constants() {}
 }

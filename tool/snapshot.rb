@@ -2,11 +2,11 @@
 
 require 'yaml'
 
-abort "jruby.properties filename location needed" unless ARGV[0]
+abort "Constants.java filename location needed" unless ARGV[0]
 
 def update_jruby_properties(revision)
   properties = File.open(ARGV[0]) {|f| f.read}
-  properties.sub!(/Revision: \d+/, "Revision: #{revision}")
+  properties.sub!(/REVISION = "0000"/, "REVISION = \"#{revision}\"")
   File.open(ARGV[0], "w") {|f| f << properties }
 end
 
