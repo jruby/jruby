@@ -170,12 +170,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         super(runtime, runtime.getFile());
         this.path = path;
         try {
-            this.openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(in), getNewFileno(), new FileDescriptor())));
+            this.openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(in))));
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         }
         this.openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
 
     private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
@@ -521,8 +520,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
-        
-        registerDescriptor(descriptor);
     }
 
     protected void openInternal(String path, String modeString, ModeFlags modes) throws InvalidValueException {
@@ -531,8 +528,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modeString));
-
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     protected void openInternal(String path, String modeString) throws InvalidValueException {
@@ -541,8 +536,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMode(getIOModes(getRuntime(), modeString).getOpenFileFlags());
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modeString));
-        
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) throws InvalidValueException {
@@ -774,7 +767,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public String toString() {
-        return "RubyFile(" + path + ", " + openFile.getMode() + ", " + openFile.getMainStream().getDescriptor().getFileno() + ")";
+        return "RubyFile(" + path + ", " + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStream().getDescriptor()) + ")";
     }
 
     // TODO: This is also defined in the MetaClass too...Consolidate somewhere.

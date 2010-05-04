@@ -3349,22 +3349,53 @@ public final class Ruby {
         return objectSpace;
     }
 
+    private final Map<Integer, Integer> filenoExtIntMap = new HashMap<Integer, Integer>();
+    private final Map<Integer, Integer> filenoIntExtMap = new HashMap<Integer, Integer>();
+
+    public void putFilenoMap(int external, int internal) {
+        filenoExtIntMap.put(external, internal);
+        filenoIntExtMap.put(internal, external);
+    }
+
+    public int getFilenoExtMap(int external) {
+        Integer internal = filenoExtIntMap.get(external);
+        if (internal != null) return internal;
+        return external;
+    }
+
+    public int getFilenoIntMap(int internal) {
+        Integer external = filenoIntExtMap.get(internal);
+        if (external != null) return external;
+        return internal;
+    }
+
+    /**
+     * Get the "external" fileno for a given ChannelDescriptor. Primarily for
+     * the shared 0, 1, and 2 filenos, which we can't actually share across
+     * JRuby runtimes.
+     *
+     * @param descriptor The descriptor for which to get the fileno
+     * @return The external fileno for the descriptor
+     */
+    public int getFileno(ChannelDescriptor descriptor) {
+        return getFilenoIntMap(descriptor.getFileno());
+    }
+
+    @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
-        Integer filenoKey = descriptor.getFileno();
-        retainedDescriptors.put(filenoKey, descriptor);
     }
 
+    @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor) {
-        registerDescriptor(descriptor,false); // default: don't retain
     }
 
+    @Deprecated
     public void unregisterDescriptor(int aFileno) {
-        Integer aFilenoKey = aFileno;
-        retainedDescriptors.remove(aFilenoKey);
     }
 
+    @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return retainedDescriptors.get(aFileno);
+        return ChannelDescriptor.getDescriptorByFileno(aFileno);
     }
 
     public long incrementRandomSeedSequence() {
@@ -3710,7 +3741,6 @@ public final class Ruby {
     private final ObjectSpace objectSpace = new ObjectSpace();
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private final Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
 
     private long randomSeed = 0;
     private long randomSeedSequence = 0;

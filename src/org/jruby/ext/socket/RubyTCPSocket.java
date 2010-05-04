@@ -113,7 +113,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             } finally {
                 channel.configureBlocking(true);
             }
-            initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch(ConnectException e) {

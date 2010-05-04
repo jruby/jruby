@@ -102,29 +102,27 @@ public class RubyIO extends RubyObject {
     protected List<RubyThread> blockingThreads;
     protected IRubyObject externalEncoding;
     protected IRubyObject internalEncoding;
-    
 
+    @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
-        getRuntime().registerDescriptor(descriptor,isRetained);
     }
 
+    @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor) {
-        registerDescriptor(descriptor,false); // default: don't retain
     }
-    
+
+    @Deprecated
     public void unregisterDescriptor(int aFileno) {
-        getRuntime().unregisterDescriptor(aFileno);
     }
-    
+
+    @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return getRuntime().getDescriptorByFileno(aFileno);
+        return ChannelDescriptor.getDescriptorByFileno(aFileno);
     }
-    
-    // FIXME can't use static; would interfere with other runtimes in the same JVM
-    protected static final AtomicInteger filenoIndex = new AtomicInteger(2);
-    
+
+    @Deprecated
     public static int getNewFileno() {
-        return filenoIndex.incrementAndGet();
+        return ChannelDescriptor.getNewFileno();
     }
 
     // This should only be called by this and RubyFile.
@@ -146,14 +144,12 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream), getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream))));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
         
         openFile.setMode(OpenFile.WRITABLE | OpenFile.APPEND);
-        
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     public RubyIO(Ruby runtime, InputStream inputStream) {
@@ -166,14 +162,12 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream), getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream))));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
         
         openFile.setMode(OpenFile.READABLE);
-        
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     public RubyIO(Ruby runtime, Channel channel) {
@@ -187,14 +181,12 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(channel, getNewFileno(), new FileDescriptor())));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(channel)));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }
         
         openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
-        
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, ModeFlags modes) {
@@ -217,13 +209,10 @@ public class RubyIO extends RubyObject {
                 }
                 
                 ChannelDescriptor main = new ChannelDescriptor(
-                        inChannel,
-                        getNewFileno(),
-                        new FileDescriptor());
+                        inChannel);
                 main.setCanBeSeekable(false);
                 
                 openFile.setMainStream(ChannelStream.open(getRuntime(), main));
-                registerDescriptor(main);
             }
             
             if (openFile.isWritable() && process.hasOutput()) {
@@ -236,9 +225,7 @@ public class RubyIO extends RubyObject {
                 }
 
                 ChannelDescriptor pipe = new ChannelDescriptor(
-                        outChannel,
-                        getNewFileno(),
-                        new FileDescriptor());
+                        outChannel);
                 pipe.setCanBeSeekable(false);
                 
                 if (openFile.getMainStream() != null) {
@@ -246,8 +233,6 @@ public class RubyIO extends RubyObject {
                 } else {
                     openFile.setMainStream(ChannelStream.open(getRuntime(), pipe));
                 }
-                
-                registerDescriptor(pipe);
             }
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
@@ -258,28 +243,35 @@ public class RubyIO extends RubyObject {
         super(runtime, runtime.getIO());
         
         openFile = new OpenFile();
+        ChannelDescriptor descriptor;
 
         try {
             switch (stdio) {
             case IN:
+                // special constructor that accepts stream, not channel
+                descriptor = new ChannelDescriptor(runtime.getIn(), new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in);
+                runtime.putFilenoMap(0, descriptor.getFileno());
                 openFile.setMainStream(
                         ChannelStream.open(
                             runtime, 
-                            // special constructor that accepts stream, not channel
-                            new ChannelDescriptor(runtime.getIn(), 0, new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in)));
+                            descriptor));
                 break;
             case OUT:
+                descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getOut()), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out);
+                runtime.putFilenoMap(1, descriptor.getFileno());
                 openFile.setMainStream(
                         ChannelStream.open(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getOut()), 1, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out)));
+                            descriptor));
                 openFile.getMainStream().setSync(true);
                 break;
             case ERR:
+                descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getErr()), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err);
+                runtime.putFilenoMap(2, descriptor.getFileno());
                 openFile.setMainStream(
                         ChannelStream.open(
                             runtime, 
-                            new ChannelDescriptor(Channels.newChannel(runtime.getErr()), 2, new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err)));
+                            descriptor));
                 openFile.getMainStream().setSync(true);
                 break;
             }
@@ -288,17 +280,6 @@ public class RubyIO extends RubyObject {
         }
         
         openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
-        
-        registerDescriptor(openFile.getMainStream().getDescriptor());        
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        // clean up fileno map; streams will take care of themselves (?)
-        Stream mainStream = openFile.getMainStream();
-        Stream pipeStream = openFile.getPipeStream();
-        if (mainStream != null) unregisterDescriptor(mainStream.getDescriptor().getFileno());
-        if (mainStream != null) unregisterDescriptor(pipeStream.getDescriptor().getFileno());
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
@@ -409,19 +390,14 @@ public class RubyIO extends RubyObject {
                     throw runtime.newErrnoEEXISTError(path);
                 }
 
-                registerDescriptor(openFile.getMainStream().getDescriptor());
                 if (openFile.getPipeStream() != null) {
                     openFile.getPipeStream().fclose();
-                    unregisterDescriptor(openFile.getPipeStream().getDescriptor().getFileno());
                     openFile.setPipeStream(null);
                 }
             } else {
                 // TODO: This is an freopen in MRI, this is close, but not quite the same
                 openFile.getMainStream().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
-
-                // re-register
-                registerDescriptor(openFile.getMainStream().getDescriptor());
-
+                
                 if (openFile.getPipeStream() != null) {
                     // TODO: pipe handler to be reopened with path and "w" mode
                 }
@@ -471,14 +447,11 @@ public class RubyIO extends RubyObject {
             // confirm we're not reopening self's channel
             if (selfDescriptor.getChannel() != originalDescriptor.getChannel()) {
                 // check if we're a stdio IO, and ensure we're not badly mutilated
-                if (selfDescriptor.getFileno() >= 0 && selfDescriptor.getFileno() <= 2) {
+                if (runtime.getFileno(selfDescriptor) >= 0 && runtime.getFileno(selfDescriptor) <= 2) {
                     selfFile.getMainStream().clearerr();
 
                     // dup2 new fd into self to preserve fileno and references to it
                     originalDescriptor.dup2Into(selfDescriptor);
-
-                    // re-register, since fileno points at something new now
-                    registerDescriptor(selfDescriptor);
                 } else {
                     Stream pipeFile = selfFile.getPipeStream();
                     int mode = selfFile.getMode();
@@ -494,13 +467,11 @@ public class RubyIO extends RubyObject {
                         selfFile.setMainStream(ChannelStream.fdopen(runtime, originalDescriptor, new ModeFlags()));
                         selfFile.setPipeStream(pipeFile);
                     } else {
+                        // only use internal fileno here, stdio is handled above
                         selfFile.setMainStream(
                                 ChannelStream.open(
                                 runtime,
                                 originalDescriptor.dup2(selfDescriptor.getFileno())));
-
-                        // re-register the descriptor
-                        registerDescriptor(selfFile.getMainStream().getDescriptor());
 
                         // since we're not actually duping the incoming channel into our handler, we need to
                         // copy the original sync behavior from the other handler
@@ -518,6 +489,7 @@ public class RubyIO extends RubyObject {
                 }
             }
 
+            // only use internal fileno here, stdio is handled above
             if (selfFile.getPipeStream() != null && selfDescriptor.getFileno() != selfFile.getPipeStream().getDescriptor().getFileno()) {
                 int fd = selfFile.getPipeStream().getDescriptor().getFileno();
 
@@ -528,9 +500,6 @@ public class RubyIO extends RubyObject {
                     selfFile.getPipeStream().fclose();
                     ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
                     selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, getIOModes(runtime, "w")));
-
-                    // re-register, since fileno points at something new now
-                    registerDescriptor(newFD2);
                 }
             }
 
@@ -870,7 +839,7 @@ public class RubyIO extends RubyObject {
 
     private IRubyObject initializeCommon19(int fileno, ModeFlags modes) {
         try {
-            ChannelDescriptor descriptor = getDescriptorByFileno(fileno);
+            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(getRuntime().getFilenoExtMap(fileno));
 
             if (descriptor == null) throw getRuntime().newErrnoEBADFError();
 
@@ -966,7 +935,7 @@ public class RubyIO extends RubyObject {
         int fileno = RubyNumeric.fix2int(args[0]);
         
         try {
-            ChannelDescriptor descriptor = getDescriptorByFileno(fileno);
+            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(getRuntime().getFilenoExtMap(fileno));
             
             if (descriptor == null) {
                 throw getRuntime().newErrnoEBADFError();
@@ -1153,7 +1122,7 @@ public class RubyIO extends RubyObject {
             ChannelDescriptor descriptor =
                 ChannelDescriptor.open(runtime.getCurrentDirectory(),
                                        path, modes, perms, runtime.getPosix());
-            runtime.registerDescriptor(descriptor,true); // isRetained=true
+            // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
         }
         catch (FileNotFoundException fnfe) {
@@ -1517,7 +1486,9 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "fileno", alias = "to_i")
     public RubyFixnum fileno(ThreadContext context) {
-        return context.getRuntime().newFixnum(getOpenFileChecked().getMainStream().getDescriptor().getFileno());
+        Ruby runtime = context.getRuntime();
+        // map to external fileno
+        return runtime.newFixnum(runtime.getFileno(getOpenFileChecked().getMainStream().getDescriptor()));
     }
     
     /** Returns the current line number.
@@ -1967,9 +1938,6 @@ public class RubyIO extends RubyObject {
 //    if (fptr->mode & FMODE_BINMODE) {
 //	rb_io_binmode(dest);
 //    }
-            
-            // Register the new descriptor
-            registerDescriptor(newFile.getMainStream().getDescriptor());
         } catch (IOException ex) {
             throw runtime.newIOError("could not init copy: " + ex);
         } catch (BadDescriptorException ex) {
@@ -3093,7 +3061,7 @@ public class RubyIO extends RubyObject {
 
     @Override
     public String toString() {
-        return "RubyIO(" + openFile.getMode() + ", " + openFile.getMainStream().getDescriptor().getFileno() + ")";
+        return "RubyIO(" + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStream().getDescriptor()) + ")";
     }
     
     /* class methods for IO */

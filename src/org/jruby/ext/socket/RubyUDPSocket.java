@@ -86,7 +86,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     public IRubyObject initialize(ThreadContext context) {
         try {
             DatagramChannel channel = DatagramChannel.open();
-            initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
         } catch (org.jruby.util.io.InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch (ConnectException e) {

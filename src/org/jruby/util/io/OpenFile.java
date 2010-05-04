@@ -272,7 +272,6 @@ public class OpenFile {
                     } finally {
                         // make sure the pipe stream is set to null
                         pipeStream = null;
-                        runtime.unregisterDescriptor(pipe.getFileno());
                     }
                 }
                 Stream ms = mainStream;
@@ -292,7 +291,6 @@ public class OpenFile {
                     } finally {
                         // make sure the main stream is set to null
                         mainStream = null;
-                        runtime.unregisterDescriptor(main.getFileno());
                     }
                 }
             }
