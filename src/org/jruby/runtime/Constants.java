@@ -47,11 +47,16 @@ public final class Constants {
     public static final String VERSION = "@version.jruby@";
     public static final String BUILD = "java@java.specification.version@";
     public static final String TARGET = "java@javac.version@";
-    public static final String REVISION = "0000";
+    public static final String REVISION;
     public static final String ENGINE = "jruby";
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
+
+    static {
+        // This is populated here to avoid javac propagating the value to consumers
+        REVISION = "@jruby.revision@";
+    }
 
     private Constants() {}
 }

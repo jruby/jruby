@@ -155,6 +155,10 @@
         <format property="build.date" pattern="yyyy-MM-dd"/>
     </tstamp>
 
+    <exec executable="git" outputproperty="jruby.revision" failonerror="false">
+      <arg line="log -1 --format=format:%h"/>
+    </exec>
+
     <copy todir="${basedir}/src_gen" overwrite="true">
         <fileset dir="${src.dir}">
             <include name="org/jruby/runtime/Constants.java"/>
@@ -171,10 +175,9 @@
             <filter token="java.specification.version" value="${java.specification.version}"/>
             <filter token="javac.version" value="${javac.version}"/>
             <filter token="os.arch" value="${os.arch}"/>
+            <filter token="jruby.revision" value="${jruby.revision}"/>
         </filterset>
     </copy>
-
-    <antcall target="_update_scm_revision_"/>
 
     <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${basedir}/src_gen"
         includes="org/jruby/runtime/Constants.java" source="${javac.version}"
@@ -256,38 +259,6 @@
       <arg value="org.jruby.util.unsafe"/>
       <arg value="${jruby.classes.dir}/org/jruby/util/unsafe"/>
     </java>
-  </target>
-
-  <target name="_update_scm_revision_">
-      <condition property="ruby.available">
-          <available file="${ruby.executable}"/>
-      </condition>
-      <antcall target="_update_scm_revision_with_ruby_"/>
-      <antcall target="_update_scm_revision_with_jruby_"/>
-  </target>
-
-  <target name="_update_scm_revision_with_ruby_" if="ruby.available">
-      <echo message="Using '${ruby.executable}' to calculate revision"/>
-      <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" dir="${base.dir}" executable="${ruby.executable}">
-          <arg value="${base.dir}/tool/snapshot.rb"/>
-          <arg value="${base.dir}/src_gen/org/jruby/runtime/Constants.java"/>
-      </exec>
-      <condition property="ruby.failed">
-          <istrue value="${ruby.command.failed}"/>
-      </condition>
-  </target>
-
-  <target name="_update_scm_revision_with_jruby_" unless="ruby.available">
-      <echo message="Using JRuby to calculate revision..."/>
-      <echo message="Adjust ruby.executable value in build.properties to speed things up!"/>
-      <property name="jruby.home" value="${basedir}"/>
-      <java classname="org.jruby.Main" resultproperty="snapshot.result" errorproperty="snapshot.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <jvmarg value="${run.jvm.model}"/>
-        <arg value="${base.dir}/tool/snapshot.rb"/>
-        <arg value="${base.dir}/src_gen/org/jruby/runtime/Constants.java"/>
-      </java>
   </target>
 
   <target name="unzip-native-libs" unless="native-libs-uptodate">
