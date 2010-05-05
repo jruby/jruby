@@ -760,11 +760,10 @@ public final class Ruby {
     public int allocModuleId() {
         return moduleLastId.incrementAndGet();
     }
-    public int allocModuleId(RubyModule module) {
+    public void addModule(RubyModule module) {
         synchronized (allModules) {
             allModules.add(module);
         }
-        return allocModuleId();
     }
     public void eachModule(Function1<Object, IRubyObject> func) {
         synchronized (allModules) {
