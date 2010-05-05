@@ -212,7 +212,8 @@ public class RubyModule extends RubyObject {
      */
     protected RubyModule(Ruby runtime, RubyClass metaClass, boolean objectSpace) {
         super(runtime, metaClass, objectSpace);
-        id = runtime.allocModuleId(this);
+        id = runtime.allocModuleId();
+        runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
         generation = new Generation();
@@ -223,7 +224,8 @@ public class RubyModule extends RubyObject {
      */
     protected RubyModule(Ruby runtime, RubyClass metaClass, Generation generation, boolean objectSpace) {
         super(runtime, metaClass, objectSpace);
-        id = runtime.allocModuleId(this);
+        id = runtime.allocModuleId();
+        runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
         this.generation = generation;
