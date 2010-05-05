@@ -78,11 +78,6 @@ public class JavaProxy extends RubyObject {
         this.object = object;
     }
 
-    private JavaObject getJavaObject() {
-        lazyJavaObject();
-        return (JavaObject)dataGetStruct();
-    }
-
     private void lazyJavaObject() {
         if (javaObject == null) {
             javaObject = JavaObject.wrap(getRuntime(), object);
