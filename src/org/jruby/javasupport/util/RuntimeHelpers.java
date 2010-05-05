@@ -1847,4 +1847,12 @@ public class RuntimeHelpers {
         if (left.getMetaClass().isMethodBound(name, true)) return "method";
         return null;
     }
+
+    public static RubyModule getSuperClassForDefined(Ruby runtime, RubyModule klazz) {
+        RubyModule superklazz = klazz.getSuperClass();
+
+        if (superklazz == null && klazz.isModule()) superklazz = runtime.getObject();
+
+        return superklazz;
+    }
 }

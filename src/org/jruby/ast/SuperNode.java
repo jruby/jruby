@@ -37,6 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -116,7 +117,7 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         String name = context.getFrameName();
         RubyModule klazz = context.getFrameKlazz();
         
-        if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
+        if (name != null && klazz != null && RuntimeHelpers.getSuperClassForDefined(runtime, klazz).isMethodBound(name, false)) {
             return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, "super", self, aBlock);
         }
             
