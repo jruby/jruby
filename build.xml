@@ -155,7 +155,7 @@
         <format property="build.date" pattern="yyyy-MM-dd"/>
     </tstamp>
 
-    <exec executable="git" outputproperty="jruby.revision" failonerror="false">
+    <exec executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
       <arg line="log -1 --format=format:%h"/>
     </exec>
 
