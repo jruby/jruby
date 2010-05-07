@@ -30,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -530,10 +531,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             for (JavaMethodDescriptor desc: descs) {
                 int specificArity = -1;
                 if (desc.hasVarArgs) {
-                    if (desc.optional == 0 && !desc.rest) {
+                    if (desc.optional == 0 && !desc.rest && desc.required == 0) {
                         throw new RuntimeException("IRubyObject[] args but neither of optional or rest specified for method " + desc.declaringClassName + "." + desc.name);
                     }
                     rest = true;
+                    if (descs.size() == 1) {
+                        min = -1;
+                    }
                 } else {
                     if (desc.optional == 0 && !desc.rest) {
                         if (desc.required == 0) {
@@ -640,20 +644,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
         JavaMethodDescriptor desc1 = descs.get(0);
 
-        if (descs.size() == 1) {
-            // simple path, no multimethod
-            return getAnnotatedMethodClass(desc1);
-        }
-
         if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
             System.err.println("warning: binding non-public class" + desc1.declaringClassName + "; reflected handles won't work");
         }
         
         String javaMethodName = desc1.name;
         
-        if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+        if (DEBUG) {
+            if (descs.size() > 1) {
+                out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
+            } else {
+                out.println("Binding single: " + desc1.declaringClassName + "." + javaMethodName);
+            }
+        }
         
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, true, desc1.anno.frame());
+        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, descs.size() > 1, desc1.anno.frame());
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
             generatedClassName += "_DBG";
@@ -670,7 +675,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 Class superClass = null;
                 if (info.getMin() == -1) {
                     // normal all-rest method
-                    superClass = JavaMethod.JavaMethodN.class;
+                    if (info.isBlock()) {
+                        superClass = JavaMethod.JavaMethodNBlock.class;
+                    } else {
+                        superClass = JavaMethod.JavaMethodN.class;
+                    }
                 } else {
                     if (info.isRest()) {
                         if (info.isBlock()) {
@@ -692,31 +701,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 int dotIndex = desc1.declaringClassName.lastIndexOf('.');
                 ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "#" + desc1.name, superClassString);
 
-                for (JavaMethodDescriptor desc: descs) {
-                    int specificArity = -1;
-                    if (desc.optional == 0 && !desc.rest) {
-                        if (desc.required == 0) {
-                            if (desc.actualRequired <= 3) {
-                                specificArity = desc.actualRequired;
-                            } else {
-                                specificArity = -1;
-                            }
-                        } else if (desc.required >= 0 && desc.required <= 3) {
-                            specificArity = desc.required;
-                        }
-                    }
-
-                    boolean hasBlock = desc.hasBlock;
-                    SkinnyMethodAdapter mv = null;
-
-                    mv = beginMethod(cw, "call", specificArity, hasBlock);
-                    mv.visitCode();
-                    mv.line(-1);
-
-                    createAnnotatedMethodInvocation(desc, mv, superClassString, specificArity, hasBlock);
-
-                    endMethod(mv);
-                }
+                addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
 
                 c = endClass(cw, generatedClassName);
             }
@@ -736,7 +721,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         synchronized (classLoader) {
             try {
-                Class c = getAnnotatedMethodClass(desc);
+                Class c = getAnnotatedMethodClass(Arrays.asList(desc));
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
 
@@ -749,66 +734,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 e.printStackTrace();
                 throw implementationClass.getRuntime().newLoadError(e.getMessage());
             }
-        }
-    }
-
-    /**
-     * Use code generation to provide a method handle based on an annotated Java
-     * method.
-     * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
-     */
-    public Class getAnnotatedMethodClass(JavaMethodDescriptor desc) throws Exception {
-        String javaMethodName = desc.name;
-
-        if (!Modifier.isPublic(desc.getDeclaringClass().getModifiers())) {
-            System.err.println("warning: binding non-public class " + desc.declaringClassName + "; reflected handles won't work");
-        }
-        
-        String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc.declaringClassName, desc.isStatic, desc.actualRequired, desc.optional, false, desc.anno.frame());
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
-            generatedClassName += "_DBG";
-        }
-        String generatedClassPath = generatedClassName.replace('.', '/');
-        
-        synchronized (classLoader) {
-            Class c = tryClass(generatedClassName, desc.getDeclaringClass());
-
-            if (c == null) {
-                int specificArity = -1;
-                if (desc.optional == 0 && !desc.rest) {
-                    if (desc.required == 0) {
-                        if (desc.actualRequired <= 3) {
-                            specificArity = desc.actualRequired;
-                        } else {
-                            specificArity = -1;
-                        }
-                    } else if (desc.required >= 0 && desc.required <= 3) {
-                        specificArity = desc.required;
-                    }
-                }
-
-                boolean block = desc.hasBlock;
-
-                String superClass = p(selectSuperClass(specificArity, block));
-
-                int dotIndex = desc.declaringClassName.lastIndexOf('.');
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc.declaringClassName.substring(dotIndex + 1) + "#" + desc.name, superClass);
-                SkinnyMethodAdapter mv = null;
-
-                mv = beginMethod(cw, "call", specificArity, block);
-                mv.visitCode();
-                mv.line(-1);
-
-                createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, block);
-
-                endMethod(mv);
-
-                c = endClass(cw, generatedClassName);
-            }
-            
-            return c;
         }
     }
 
@@ -1352,24 +1277,32 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
     }
-    
-    private Class selectSuperClass(int specificArity, boolean block) {
-        switch (specificArity) {
-        default: case -1:
-            return block ? JavaMethod.class :
-                JavaMethod.JavaMethodN.class;
-        case 0:
-            return block ? JavaMethod.JavaMethodZeroBlock.class :
-                JavaMethod.JavaMethodZero.class;
-        case 1:
-            return block ? JavaMethod.JavaMethodOneBlock.class :
-                JavaMethod.JavaMethodOne.class;
-        case 2:
-            return block ? JavaMethod.JavaMethodTwoBlock.class :
-                JavaMethod.JavaMethodTwo.class;
-        case 3:
-            return block ? JavaMethod.JavaMethodThreeBlock.class :
-                JavaMethod.JavaMethodThree.class;
+
+    private void addAnnotatedMethodInvoker(ClassWriter cw, String callName, String superClass, List<JavaMethodDescriptor> descs) {
+        for (JavaMethodDescriptor desc: descs) {
+            int specificArity = -1;
+            if (desc.optional == 0 && !desc.rest) {
+                if (desc.required == 0) {
+                    if (desc.actualRequired <= 3) {
+                        specificArity = desc.actualRequired;
+                    } else {
+                        specificArity = -1;
+                    }
+                } else if (desc.required >= 0 && desc.required <= 3) {
+                    specificArity = desc.required;
+                }
+            }
+
+            boolean hasBlock = desc.hasBlock;
+            SkinnyMethodAdapter mv = null;
+
+            mv = beginMethod(cw, callName, specificArity, hasBlock);
+            mv.visitCode();
+            mv.line(-1);
+
+            createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
+
+            endMethod(mv);
         }
     }
 
