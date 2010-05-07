@@ -54,8 +54,24 @@ public class LocalOptimizationPass implements CompilerPass
         }
     }
 
-    private static void runLocalOpts(IR_ExecutionScope s)
-    {
+    private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {
+        valueMap.put(res, val);
+
+        // If 'res' has simplified to a variable, then record this reverse mapping
+        // so, we can respect Read-After-Write scenarios for 'val' and purge this
+        // simplification when 'val' gets modified
+        if (val instanceof Variable) {
+           Variable v = (Variable)val;
+           List<Variable> x = simplificationMap.get(val);
+           if (x == null) {
+              x = new java.util.ArrayList<Variable>();
+              simplificationMap.put(v, x);
+           }
+           x.add(res);
+        }
+    }
+
+    private static void runLocalOpts(IR_ExecutionScope s) {
         // Reset value map if this instruction is the start/end of a basic block
         //
         // Right now, calls are considered hard boundaries for optimization and
@@ -69,8 +85,9 @@ public class LocalOptimizationPass implements CompilerPass
         //   - etc.
         //
         // This information is probably already present in the AST Inspector
-        Label     deoptLabel = s.getNewLabel();
+        Label deoptLabel = s.getNewLabel();
         Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
+        Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
         Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();
         ListIterator<IR_Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
@@ -78,6 +95,7 @@ public class LocalOptimizationPass implements CompilerPass
             Operation iop = i._op;
             if (iop.startsBasicBlock()) {
                 valueMap = new HashMap<Operand,Operand>();
+                simplificationMap = new HashMap<Variable,List<Variable>>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
 
@@ -88,7 +106,8 @@ public class LocalOptimizationPass implements CompilerPass
 //            System.out.println("For " + i + "; dst = " + res + "; val = " + val);
 //            System.out.println("AFTER: " + i);
             if (val != null && res != null && res != val) {
-                valueMap.put(res, val);
+                recordSimplification(res, val, valueMap, simplificationMap);
+
                 if (val instanceof BreakResult) {
                     BreakResult br = (BreakResult)val;
                     i.markDead();
@@ -143,15 +162,26 @@ public class LocalOptimizationPass implements CompilerPass
                         if (val != null) {
                             i.markDead();
                             instrs.add(new COPY_Instr(res, val));
-                            valueMap.put(res, val);
+                            recordSimplification(res, val, valueMap, simplificationMap);
                         }
                     }
                 }
-            } 
+            }
+
+            // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)
+            if (res != null) {
+                List<Variable> simplifiedVars = simplificationMap.get(res);
+                if (simplifiedVars != null) {
+                    for (Variable v: simplifiedVars)
+                        valueMap.remove(v);
+                    simplificationMap.remove(res);
+                }
+            }
 
             // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
             if (iop.endsBasicBlock() || (iop.isCall() && !i.isDead())) {
                 valueMap = new HashMap<Operand,Operand>();
+                simplificationMap = new HashMap<Variable,List<Variable>>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
         }

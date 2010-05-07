@@ -15,7 +15,7 @@ public class LINE_NUM_Instr extends NoOperandInstr
         _lnum = n;
     }
 
-    public String toString() { return super.toString() + ":" + _lnum; }
+    public String toString() { return super.toString() + "(" + _lnum + ")"; }
 
     public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

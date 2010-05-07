@@ -83,4 +83,8 @@ public enum Operation
     {
         return isCall() || isEval() || isStore() || isReturn();
     }
+
+    public String toString() { 
+        return name().toLowerCase();
+    }
 }

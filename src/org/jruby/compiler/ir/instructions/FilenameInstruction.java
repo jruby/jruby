@@ -13,7 +13,7 @@ public class FilenameInstruction extends NoOperandInstr {
 
     @Override
     public String toString() {
-        return super.toString() + ":" + filename;
+        return super.toString() + "(" + filename + ")";
     }
 
     public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }

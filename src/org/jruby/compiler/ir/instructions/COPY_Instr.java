@@ -16,10 +16,6 @@ public class COPY_Instr extends OneOperandInstr
         super(Operation.COPY, d, s);
     }
 
-    public String toString() {
-        return "\t[COPY]: " + _result + " = " + _arg; 
-    }
-
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
         return _arg;
