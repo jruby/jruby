@@ -1474,6 +1474,7 @@ public class RubyBigDecimal extends RubyNumeric {
      *                 if the argument number is negative
      * @throws IllegalArgumentException
      *                 if rootMC has precision 0
+     * @see http://oldblog.novaloka.nl/blogger.xs4all.nl/novaloka/archive/2007/09/15/295396.html
      */
     public static BigDecimal bigSqrt(BigDecimal squarD, MathContext rootMC) {
        // General number and precision checking
@@ -1511,7 +1512,7 @@ public class RubyBigDecimal extends RubyNumeric {
       if (scale % 2 == 1) {
           root *= SQRT_10;                        // 5 -> 2, -5 -> -3 need half a scale more..
       }
-      scale = (int) Math.floor(scale/2.);         // ..where 100 -> 10 shifts the scale
+      scale = (int) Math.ceil(scale/2.);         // ..where 100 -> 10 shifts the scale
 
       // Initial x - use double root - multiply by halfBack to unshift - set new scale
       x = new BigDecimal(root, nMC);
