@@ -1068,7 +1068,7 @@ public class RubyKernel {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
         if (level < 0) {
-            throw context.getRuntime().newArgumentError("negative level(" + level + ')');
+            throw context.getRuntime().newArgumentError("negative level (" + level + ')');
         }
 
         return context.createCallerBacktrace(context.getRuntime(), level);
@@ -1079,7 +1079,7 @@ public class RubyKernel {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
         if (level < 0) {
-            throw context.getRuntime().newArgumentError("negative level(" + level + ')');
+            throw context.getRuntime().newArgumentError("negative level (" + level + ')');
         }
 
         return context.createCallerBacktrace(context.getRuntime(), level);
