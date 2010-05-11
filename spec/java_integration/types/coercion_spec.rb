@@ -781,4 +781,12 @@ describe "Time\"to_java" do
       d.class.should == org.joda.time.DateTime
     end
   end
+
+  describe "when passed java.lang.Object" do
+    it "coerces to java.util.Date" do
+      t = Time.now
+      d = t.to_java(java.lang.Object)
+      d.class.should == java.util.Date
+    end
+  end
 end
