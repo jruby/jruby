@@ -749,6 +749,8 @@ public class RubyTime extends RubyObject {
             return new java.sql.Time(dt.getMillis());
         } else if (target.equals(java.sql.Timestamp.class)) {
             return new java.sql.Timestamp(dt.getMillis());
+        } else if (target.isAssignableFrom(Date.class)) {
+            return getJavaDate();
         } else {
             return super.toJava(target);
         }
